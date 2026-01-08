@@ -1,87 +1,49 @@
-# Welcome to React Router!
+# StockFlow Client
 
-A modern, production-ready template for building full-stack React applications using React Router.
+React Router v7 frontend for the StockFlow multi-tenant inventory and invoicing platform.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+For complete documentation, see the main [README](../README.md).
 
-## Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-
-## Getting Started
-
-### Installation
-
-Install the dependencies:
+## Quick Start
 
 ```bash
+# Install dependencies
 npm install
-```
 
-### Development
-
-Start the development server with HMR:
-
-```bash
+# Start development server (port 5173)
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
+## Available Scripts
 
-## Building for Production
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Development server with HMR |
+| `npm run build` | Production build to ./build/ |
+| `npm run start` | Serve production build |
+| `npm run typecheck` | TypeScript type checking |
 
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
+## Directory Structure
 
 ```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
+app/
+├── routes/         # Page components
+├── routes.ts       # Route definitions
+└── root.tsx        # Root layout and error boundary
+
+public/             # Static assets
+
+.react-router/
+└── types/          # Generated route types
 ```
 
-## Styling
+## Path Aliases
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+- `~/*` maps to `./app/*`
 
----
+## Features
 
-Built with ❤️ using React Router.
+- Server-side rendering (SSR)
+- Hot Module Replacement (HMR)
+- TailwindCSS v4 for styling
+- TypeScript with strict mode

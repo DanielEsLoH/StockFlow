@@ -11,7 +11,10 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CustomValidationPipe, ValidationErrorResponse } from './validation.pipe';
+import {
+  CustomValidationPipe,
+  ValidationErrorResponse,
+} from './validation.pipe';
 
 // Test DTOs
 class SimpleDto {
@@ -134,7 +137,9 @@ describe('CustomValidationPipe', () => {
       const result = await pipe.transform(validData, metadata);
 
       expect(result).toBeInstanceOf(DtoWithOptionalField);
-      expect((result as DtoWithOptionalField).description).toBe('A description');
+      expect((result as DtoWithOptionalField).description).toBe(
+        'A description',
+      );
     });
 
     it('should pass validation with optional field omitted', async () => {
@@ -172,7 +177,9 @@ describe('CustomValidationPipe', () => {
       const result = await pipe.transform(validData, metadata);
 
       expect(result).toBeInstanceOf(DtoWithNestedObject);
-      expect((result as DtoWithNestedObject).address).toBeInstanceOf(NestedAddressDto);
+      expect((result as DtoWithNestedObject).address).toBeInstanceOf(
+        NestedAddressDto,
+      );
     });
   });
 

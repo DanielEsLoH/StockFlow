@@ -115,7 +115,10 @@ export class CustomValidationPipe implements PipeTransform<unknown> {
   /**
    * Transforms and validates incoming data
    */
-  async transform(value: unknown, metadata: ArgumentMetadata): Promise<unknown> {
+  async transform(
+    value: unknown,
+    metadata: ArgumentMetadata,
+  ): Promise<unknown> {
     const { metatype } = metadata;
 
     // Skip validation for primitives and missing metatypes
@@ -155,7 +158,9 @@ export class CustomValidationPipe implements PipeTransform<unknown> {
    * Determines if the metatype should be validated
    * Skips primitive types and built-in types
    */
-  private shouldValidate(metatype: new (...args: unknown[]) => unknown): boolean {
+  private shouldValidate(
+    metatype: new (...args: unknown[]) => unknown,
+  ): boolean {
     const typesToSkip: (new (...args: unknown[]) => unknown)[] = [
       String,
       Boolean,

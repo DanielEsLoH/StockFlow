@@ -8,6 +8,7 @@ import {
   PrismaExceptionFilter,
   PrismaValidationExceptionFilter,
 } from './common/filters';
+import { LoggingInterceptor } from './common/interceptors';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -23,6 +24,12 @@ async function bootstrap() {
     new PrismaValidationExceptionFilter(),
     new HttpExceptionFilter(),
   );
+
+  // Global interceptors
+  // LoggingInterceptor: logs HTTP method, URL, and response duration
+  // - Only active in development (NODE_ENV !== 'production')
+  // - Excludes health check routes by default
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // Global validation pipe
   // - whitelist: strips properties not in DTO

@@ -1,3 +1,17 @@
+// Context (AsyncLocalStorage for request-scoped data)
+export type { TenantContext } from './context';
+export {
+  tenantStorage,
+  getTenantId,
+  getUserId,
+  getCurrentContext,
+  runWithTenantContext,
+} from './context';
+
+// Middleware
+export { TenantMiddleware } from './middleware';
+export type { AuthenticatedRequest } from './middleware';
+
 // Decorators
 export {
   Roles,

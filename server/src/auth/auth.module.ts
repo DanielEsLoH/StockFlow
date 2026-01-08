@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
-import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
+import { JwtModule, type JwtModuleOptions } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy, JwtRefreshStrategy } from './strategies';
-import { PrismaModule } from '../prisma/prisma.module';
 
 /**
  * AuthModule provides authentication functionality including:
@@ -19,7 +18,7 @@ import { PrismaModule } from '../prisma/prisma.module';
  */
 @Module({
   imports: [
-    PrismaModule,
+    // PrismaModule is @Global(), so PrismaService is available without importing here
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

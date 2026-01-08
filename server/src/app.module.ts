@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaModule } from './prisma/prisma.module';
+import { PrismaModule } from './prisma';
 import { AuthModule } from './auth/auth.module';
 import { configuration, validateEnv } from './config';
+import { TenantMiddleware } from './common/middleware';
 
 @Module({
   imports: [
@@ -20,4 +21,20 @@ import { configuration, validateEnv } from './config';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  /**
+   * Configure middleware for the application.
+   *
+   * TenantMiddleware is applied to all routes ('*') to:
+   * 1. Extract tenant context from authenticated requests
+   * 2. Store tenant context in AsyncLocalStorage for access throughout the request
+   * 3. Attach tenantId directly to the request object for controller access
+   *
+   * Note: For authenticated routes, this middleware works in conjunction with
+   * JwtAuthGuard which must be applied at the controller/route level to
+   * populate the user object on the request.
+   */
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(TenantMiddleware).forRoutes('*');
+  }
+}

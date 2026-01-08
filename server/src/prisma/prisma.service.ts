@@ -8,6 +8,7 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { PaginatedResult, PaginationParams } from './types';
+import { getTenantId } from '../common/context';
 
 /**
  * Configuration options for the PrismaService
@@ -335,6 +336,180 @@ export class PrismaService
       const message =
         error instanceof Error ? error.message : 'Unknown database error';
       return { connected: false, error: message };
+    }
+  }
+
+  // ============================================================================
+  // MULTI-TENANT HELPERS
+  // ============================================================================
+
+  /**
+   * List of Prisma model names that are tenant-scoped (have tenantId field).
+   * These models require tenant filtering for data isolation.
+   *
+   * Models NOT in this list:
+   * - Tenant: The tenant itself (no tenantId field)
+   * - InvoiceItem: Linked through Invoice, inherits tenant scope
+   */
+  static readonly TENANT_SCOPED_MODELS = [
+    'user',
+    'product',
+    'category',
+    'customer',
+    'warehouse',
+    'warehouseStock',
+    'invoice',
+    'payment',
+    'stockMovement',
+  ] as const;
+
+  /**
+   * Type for tenant-scoped model names
+   */
+  static isTenantScopedModel(
+    modelName: string,
+  ): modelName is (typeof PrismaService.TENANT_SCOPED_MODELS)[number] {
+    return (PrismaService.TENANT_SCOPED_MODELS as readonly string[]).includes(
+      modelName.toLowerCase(),
+    );
+  }
+
+  /**
+   * Gets the current tenant ID from AsyncLocalStorage context.
+   *
+   * This is useful when you need to access the tenant ID in services
+   * without explicitly passing it through method parameters.
+   *
+   * @returns The current tenant ID, or undefined if not in a tenant context
+   *
+   * @example
+   * ```typescript
+   * const tenantId = this.prisma.getCurrentTenantId();
+   * if (!tenantId) {
+   *   throw new UnauthorizedException('Tenant context required');
+   * }
+   * ```
+   */
+  getCurrentTenantId(): string | undefined {
+    return getTenantId();
+  }
+
+  /**
+   * Requires that a tenant context is present and returns the tenant ID.
+   *
+   * @throws Error if no tenant context is available
+   * @returns The current tenant ID
+   *
+   * @example
+   * ```typescript
+   * const tenantId = this.prisma.requireTenantId();
+   * // tenantId is guaranteed to be a string here
+   * ```
+   */
+  requireTenantId(): string {
+    const tenantId = getTenantId();
+    if (!tenantId) {
+      throw new Error(
+        'Tenant context required but not found. Ensure TenantMiddleware is applied and user is authenticated.',
+      );
+    }
+    return tenantId;
+  }
+
+  /**
+   * Creates a where clause with automatic tenant filtering.
+   *
+   * This helper merges the provided where clause with the current tenant ID
+   * from AsyncLocalStorage, ensuring all queries are properly scoped.
+   *
+   * @param where - The original where clause
+   * @returns The where clause with tenantId added
+   *
+   * @example
+   * ```typescript
+   * // In a service
+   * async findProducts(filters: ProductFilters) {
+   *   return this.prisma.product.findMany({
+   *     where: this.prisma.withTenantScope({
+   *       status: filters.status,
+   *       categoryId: filters.categoryId,
+   *     }),
+   *   });
+   * }
+   * ```
+   */
+  withTenantScope<T extends Record<string, unknown>>(
+    where?: T,
+  ): T & { tenantId: string } {
+    const tenantId = this.requireTenantId();
+    return {
+      ...(where ?? ({} as T)),
+      tenantId,
+    };
+  }
+
+  /**
+   * Creates data for insert operations with automatic tenant ID injection.
+   *
+   * This helper adds the current tenant ID to the data object,
+   * ensuring new records are properly associated with the tenant.
+   *
+   * @param data - The data object to create
+   * @returns The data object with tenantId added
+   *
+   * @example
+   * ```typescript
+   * // In a service
+   * async createProduct(dto: CreateProductDto) {
+   *   return this.prisma.product.create({
+   *     data: this.prisma.withTenantData({
+   *       name: dto.name,
+   *       sku: dto.sku,
+   *       price: dto.price,
+   *     }),
+   *   });
+   * }
+   * ```
+   */
+  withTenantData<T extends Record<string, unknown>>(
+    data: T,
+  ): T & { tenantId: string } {
+    const tenantId = this.requireTenantId();
+    return {
+      ...data,
+      tenantId,
+    };
+  }
+
+  /**
+   * Validates that a record belongs to the current tenant.
+   *
+   * This is useful for update/delete operations where you need to verify
+   * ownership before making changes.
+   *
+   * @param record - The record to validate (must have tenantId property)
+   * @throws Error if the record does not belong to the current tenant
+   *
+   * @example
+   * ```typescript
+   * // In a service
+   * async updateProduct(id: string, dto: UpdateProductDto) {
+   *   const product = await this.prisma.product.findUnique({ where: { id } });
+   *   if (!product) throw new NotFoundException();
+   *
+   *   this.prisma.validateTenantOwnership(product);
+   *
+   *   return this.prisma.product.update({
+   *     where: { id },
+   *     data: dto,
+   *   });
+   * }
+   * ```
+   */
+  validateTenantOwnership(record: { tenantId: string }): void {
+    const currentTenantId = this.requireTenantId();
+    if (record.tenantId !== currentTenantId) {
+      throw new Error('Access denied: Record belongs to a different tenant.');
     }
   }
 }

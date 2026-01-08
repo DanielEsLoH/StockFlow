@@ -26,7 +26,7 @@ interface AuthenticatedRequest extends Request {
 /**
  * AuthController handles authentication endpoints for user registration, login,
  * token refresh, and logout.
- * These endpoints are public and do not require authentication guards,
+ * These endpoints are public, and they do not require authentication guards,
  * except logout which requires a valid user context.
  */
 @Controller('auth')
@@ -48,7 +48,7 @@ export class AuthController {
    *   "password": "securePassword123",
    *   "firstName": "John",
    *   "lastName": "Doe",
-   *   "tenantId": "clx1234567890abcdef"
+   *   "tenantId": "tenant-uuid-1234-5678"
    * }
    */
   @Post('register')
@@ -87,7 +87,7 @@ export class AuthController {
    * @example
    * POST /auth/refresh
    * {
-   *   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+   *   "refreshToken": "<jwt-refresh-token>"
    * }
    */
   @Post('refresh')
@@ -114,7 +114,7 @@ export class AuthController {
    * @example
    * POST /auth/logout
    * {
-   *   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+   *   "refreshToken": "<jwt-refresh-token>"
    * }
    */
   @Post('logout')
@@ -131,7 +131,7 @@ export class AuthController {
     }
 
     // Otherwise, we need to decode the refresh token to get the user ID
-    // The refreshTokens method validates the token and we can use the same approach
+    // The refreshTokens method validates the token, and we can use the same approach
     // For logout, we'll validate the token first via refresh, then logout
     // This is a simplified approach - in production, you'd use a proper guard
     const authResponse = await this.authService.refreshTokens(

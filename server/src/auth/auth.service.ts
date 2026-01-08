@@ -9,7 +9,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma';
 import { RegisterDto } from './dto';
 import { JwtPayload } from './types';
 import {
@@ -288,79 +288,72 @@ export class AuthService {
   async refreshTokens(refreshToken: string): Promise<AuthResponse> {
     this.logger.debug('Processing token refresh request');
 
+    // Verify the refresh token - wrap only JWT verification in try-catch
+    let payload: JwtPayload;
     try {
-      // Verify the refresh token
       const jwtRefreshSecret =
         this.configService.get<string>('jwt.refreshSecret');
 
-      const payload = await this.jwtService.verifyAsync<JwtPayload>(
-        refreshToken,
-        { secret: jwtRefreshSecret },
-      );
-
-      // Ensure it's a refresh token, not an access token
-      if (payload.type !== 'refresh') {
-        this.logger.warn('Invalid token type for refresh');
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      // Find the user and verify the stored refresh token matches
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.sub },
-        include: { tenant: true },
+      payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
+        secret: jwtRefreshSecret,
       });
-
-      if (!user) {
-        this.logger.warn(`Refresh failed - user not found: ${payload.sub}`);
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      // Verify the refresh token matches what's stored in the database
-      if (user.refreshToken !== refreshToken) {
-        this.logger.warn(
-          `Refresh failed - token mismatch for user: ${user.email}`,
-        );
-        throw new UnauthorizedException('Invalid refresh token');
-      }
-
-      // Validate tenant status
-      this.validateTenantStatus(user.tenant);
-
-      // Validate user status
-      this.validateUserStatus(user);
-
-      // Generate new tokens (token rotation for security)
-      const tokens = await this.generateTokens(
-        user.id,
-        user.email,
-        user.role,
-        user.tenantId,
-      );
-
-      // Update the stored refresh token
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { refreshToken: tokens.refreshToken },
-      });
-
-      this.logger.log(`Tokens refreshed successfully for user: ${user.email}`);
-
-      return {
-        user: this.mapToAuthUser(user),
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-      };
-    } catch (error) {
-      if (
-        error instanceof UnauthorizedException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-
+    } catch {
       this.logger.warn('Token refresh failed - invalid or expired token');
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
+
+    // Ensure it's a refresh token, not an access token
+    if (payload.type !== 'refresh') {
+      this.logger.warn('Invalid token type for refresh');
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Find the user and verify the stored refresh token matches
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: { tenant: true },
+    });
+
+    if (!user) {
+      this.logger.warn(`Refresh failed - user not found: ${payload.sub}`);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Verify the refresh token matches what's stored in the database
+    if (user.refreshToken !== refreshToken) {
+      this.logger.warn(
+        `Refresh failed - token mismatch for user: ${user.email}`,
+      );
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Validate tenant status
+    this.validateTenantStatus(user.tenant);
+
+    // Validate user status
+    this.validateUserStatus(user);
+
+    // Generate new tokens (token rotation for security)
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.tenantId,
+    );
+
+    // Update the stored refresh token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: tokens.refreshToken },
+    });
+
+    this.logger.log(`Tokens refreshed successfully for user: ${user.email}`);
+
+    return {
+      user: this.mapToAuthUser(user),
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
   }
 
   /**

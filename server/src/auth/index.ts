@@ -7,5 +7,8 @@ export { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 // Strategies
 export { JwtStrategy, JwtRefreshStrategy } from './strategies';
 
+// Guards
+export { JwtAuthGuard, RolesGuard } from './guards';
+
 // Types
 export type { JwtPayload, RequestUser } from './types';

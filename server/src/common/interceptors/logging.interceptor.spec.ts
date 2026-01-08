@@ -222,7 +222,7 @@ describe('LoggingInterceptor', () => {
 
     it('should call next.handle()', () => {
       interceptor.intercept(mockExecutionContext, mockCallHandler);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+
       expect(mockCallHandler.handle).toHaveBeenCalled();
     });
   });

@@ -86,8 +86,13 @@ export class AuthService {
     }
 
     // Check if user account is active
-    if (user.status !== UserStatus.ACTIVE && user.status !== UserStatus.PENDING) {
-      this.logger.debug(`User account is not active: ${email}, status: ${user.status}`);
+    if (
+      user.status !== UserStatus.ACTIVE &&
+      user.status !== UserStatus.PENDING
+    ) {
+      this.logger.debug(
+        `User account is not active: ${email}, status: ${user.status}`,
+      );
       return null;
     }
 
@@ -231,9 +236,12 @@ export class AuthService {
     tenantId: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const jwtSecret = this.configService.get<string>('jwt.secret');
-    const jwtExpiration = this.configService.get<string>('jwt.expiration') ?? '15m';
-    const jwtRefreshSecret = this.configService.get<string>('jwt.refreshSecret');
-    const jwtRefreshExpiration = this.configService.get<string>('jwt.refreshExpiration') ?? '7d';
+    const jwtExpiration =
+      this.configService.get<string>('jwt.expiration') ?? '15m';
+    const jwtRefreshSecret =
+      this.configService.get<string>('jwt.refreshSecret');
+    const jwtRefreshExpiration =
+      this.configService.get<string>('jwt.refreshExpiration') ?? '7d';
 
     const accessTokenPayload: JwtPayload = {
       sub: userId,

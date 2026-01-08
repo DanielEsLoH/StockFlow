@@ -134,19 +134,28 @@ describe('AuthService', () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await service.validateUser('test@example.com', 'password123');
+      const result = await service.validateUser(
+        'test@example.com',
+        'password123',
+      );
 
       expect(result).toEqual(mockUser);
       expect(prismaService.user.findFirst).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
       });
-      expect(bcrypt.compare).toHaveBeenCalledWith('password123', mockUser.password);
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'password123',
+        mockUser.password,
+      );
     });
 
     it('should return null when user is not found', async () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      const result = await service.validateUser('notfound@example.com', 'password123');
+      const result = await service.validateUser(
+        'notfound@example.com',
+        'password123',
+      );
 
       expect(result).toBeNull();
       expect(bcrypt.compare).not.toHaveBeenCalled();
@@ -156,37 +165,55 @@ describe('AuthService', () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      const result = await service.validateUser('test@example.com', 'wrongpassword');
+      const result = await service.validateUser(
+        'test@example.com',
+        'wrongpassword',
+      );
 
       expect(result).toBeNull();
     });
 
     it('should return null when user status is SUSPENDED', async () => {
       const suspendedUser = { ...mockUser, status: UserStatus.SUSPENDED };
-      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(suspendedUser);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        suspendedUser,
+      );
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await service.validateUser('test@example.com', 'password123');
+      const result = await service.validateUser(
+        'test@example.com',
+        'password123',
+      );
 
       expect(result).toBeNull();
     });
 
     it('should return null when user status is INACTIVE', async () => {
       const inactiveUser = { ...mockUser, status: UserStatus.INACTIVE };
-      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(inactiveUser);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        inactiveUser,
+      );
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await service.validateUser('test@example.com', 'password123');
+      const result = await service.validateUser(
+        'test@example.com',
+        'password123',
+      );
 
       expect(result).toBeNull();
     });
 
     it('should return user when status is PENDING', async () => {
       const pendingUser = { ...mockUser, status: UserStatus.PENDING };
-      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(pendingUser);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        pendingUser,
+      );
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await service.validateUser('test@example.com', 'password123');
+      const result = await service.validateUser(
+        'test@example.com',
+        'password123',
+      );
 
       expect(result).toEqual(pendingUser);
     });
@@ -277,7 +304,9 @@ describe('AuthService', () => {
     };
 
     beforeEach(() => {
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
       (prismaService.user.create as jest.Mock).mockResolvedValue(newUser);
@@ -516,7 +545,9 @@ describe('AuthService', () => {
 
       await service.validateUser('test@example.com', 'password');
 
-      expect(debugSpy).toHaveBeenCalledWith('Validating user: test@example.com');
+      expect(debugSpy).toHaveBeenCalledWith(
+        'Validating user: test@example.com',
+      );
     });
 
     it('should log success message on login', async () => {
@@ -539,7 +570,9 @@ describe('AuthService', () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
       const newUser = { ...mockUser, status: UserStatus.PENDING };
 
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
       (prismaService.user.create as jest.Mock).mockResolvedValue(newUser);

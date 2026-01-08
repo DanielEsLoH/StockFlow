@@ -127,12 +127,13 @@ export class CustomValidationPipe implements PipeTransform<unknown> {
     }
 
     // Transform plain object to class instance
-    const object = plainToInstance(metatype, value, {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const object: object = plainToInstance(metatype, value, {
       enableImplicitConversion: this.options.enableImplicitConversion,
     });
 
     // Validate the object
-    const errors = await validate(object as object, {
+    const errors = await validate(object, {
       whitelist: this.options.whitelist,
       forbidNonWhitelisted: this.options.forbidNonWhitelisted,
     });

@@ -55,7 +55,11 @@ export class EnvironmentVariables {
   JWT_REFRESH_EXPIRATION: string = '7d';
 
   @IsUrl(
-    { require_tld: false, require_protocol: true, protocols: ['http', 'https'] },
+    {
+      require_tld: false,
+      require_protocol: true,
+      protocols: ['http', 'https'],
+    },
     { message: 'FRONTEND_URL must be a valid URL' },
   )
   @IsOptional()
@@ -70,7 +74,9 @@ export class EnvironmentVariables {
  * @returns Validated environment variables
  * @throws Error if validation fails
  */
-export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {
+export function validateEnv(
+  config: Record<string, unknown>,
+): EnvironmentVariables {
   const validatedConfig = plainToInstance(EnvironmentVariables, config, {
     enableImplicitConversion: true,
   });

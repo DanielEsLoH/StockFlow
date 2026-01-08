@@ -27,7 +27,11 @@ import { PrismaModule } from '../prisma/prisma.module';
         return {
           secret: configService.get<string>('jwt.secret'),
           signOptions: {
-            expiresIn: expiration as JwtModuleOptions['signOptions'] extends { expiresIn?: infer T } ? T : never,
+            expiresIn: expiration as JwtModuleOptions['signOptions'] extends {
+              expiresIn?: infer T;
+            }
+              ? T
+              : never,
           },
         };
       },

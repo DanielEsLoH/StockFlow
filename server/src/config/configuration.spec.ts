@@ -1,5 +1,14 @@
-import configuration, { appConfig, databaseConfig, jwtConfig } from './configuration';
-import type { Configuration, AppConfig, DatabaseConfig, JwtConfig } from './configuration';
+import configuration, {
+  appConfig,
+  databaseConfig,
+  jwtConfig,
+} from './configuration';
+import type {
+  Configuration,
+  AppConfig,
+  DatabaseConfig,
+  JwtConfig,
+} from './configuration';
 
 describe('Configuration', () => {
   const originalEnv = process.env;
@@ -51,7 +60,9 @@ describe('Configuration', () => {
       expect(config.app.nodeEnv).toBe('production');
       expect(config.app.port).toBe(4000);
       expect(config.app.frontendUrl).toBe('https://stockflow.com');
-      expect(config.database.url).toBe('postgresql://user:pass@localhost:5432/db');
+      expect(config.database.url).toBe(
+        'postgresql://user:pass@localhost:5432/db',
+      );
       expect(config.jwt.secret).toBe('my-secret');
       expect(config.jwt.refreshSecret).toBe('my-refresh-secret');
       expect(config.jwt.expiration).toBe('30m');

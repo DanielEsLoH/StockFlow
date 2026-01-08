@@ -1,5 +1,9 @@
 import 'reflect-metadata';
-import { validateEnv, EnvironmentVariables, Environment } from './env.validation';
+import {
+  validateEnv,
+  EnvironmentVariables,
+  Environment,
+} from './env.validation';
 
 describe('Environment Validation', () => {
   describe('validateEnv()', () => {
@@ -98,7 +102,9 @@ describe('Environment Validation', () => {
         const envWithoutDb = { ...validEnv };
         delete envWithoutDb.DATABASE_URL;
 
-        expect(() => validateEnv(envWithoutDb)).toThrow('DATABASE_URL is required');
+        expect(() => validateEnv(envWithoutDb)).toThrow(
+          'DATABASE_URL is required',
+        );
       });
 
       it('should throw when DATABASE_URL is empty', () => {
@@ -111,7 +117,9 @@ describe('Environment Validation', () => {
         const envWithoutJwt = { ...validEnv };
         delete envWithoutJwt.JWT_SECRET;
 
-        expect(() => validateEnv(envWithoutJwt)).toThrow('JWT_SECRET is required');
+        expect(() => validateEnv(envWithoutJwt)).toThrow(
+          'JWT_SECRET is required',
+        );
       });
 
       it('should throw when JWT_SECRET is empty', () => {
@@ -124,36 +132,47 @@ describe('Environment Validation', () => {
         const envWithoutRefresh = { ...validEnv };
         delete envWithoutRefresh.JWT_REFRESH_SECRET;
 
-        expect(() => validateEnv(envWithoutRefresh)).toThrow('JWT_REFRESH_SECRET is required');
+        expect(() => validateEnv(envWithoutRefresh)).toThrow(
+          'JWT_REFRESH_SECRET is required',
+        );
       });
 
       it('should throw when JWT_REFRESH_SECRET is empty', () => {
-        expect(() => validateEnv({ ...validEnv, JWT_REFRESH_SECRET: '' })).toThrow(
-          'JWT_REFRESH_SECRET is required',
-        );
+        expect(() =>
+          validateEnv({ ...validEnv, JWT_REFRESH_SECRET: '' }),
+        ).toThrow('JWT_REFRESH_SECRET is required');
       });
     });
 
     describe('FRONTEND_URL validation', () => {
       it('should accept valid HTTP URLs', () => {
-        const result = validateEnv({ ...validEnv, FRONTEND_URL: 'http://example.com' });
+        const result = validateEnv({
+          ...validEnv,
+          FRONTEND_URL: 'http://example.com',
+        });
         expect(result.FRONTEND_URL).toBe('http://example.com');
       });
 
       it('should accept valid HTTPS URLs', () => {
-        const result = validateEnv({ ...validEnv, FRONTEND_URL: 'https://example.com' });
+        const result = validateEnv({
+          ...validEnv,
+          FRONTEND_URL: 'https://example.com',
+        });
         expect(result.FRONTEND_URL).toBe('https://example.com');
       });
 
       it('should accept localhost URLs', () => {
-        const result = validateEnv({ ...validEnv, FRONTEND_URL: 'http://localhost:3000' });
+        const result = validateEnv({
+          ...validEnv,
+          FRONTEND_URL: 'http://localhost:3000',
+        });
         expect(result.FRONTEND_URL).toBe('http://localhost:3000');
       });
 
       it('should throw for invalid URLs', () => {
-        expect(() => validateEnv({ ...validEnv, FRONTEND_URL: 'not-a-url' })).toThrow(
-          'FRONTEND_URL must be a valid URL',
-        );
+        expect(() =>
+          validateEnv({ ...validEnv, FRONTEND_URL: 'not-a-url' }),
+        ).toThrow('FRONTEND_URL must be a valid URL');
       });
     });
 
@@ -164,7 +183,9 @@ describe('Environment Validation', () => {
           PORT: '3000',
         };
 
-        expect(() => validateEnv(invalidEnv)).toThrow('Environment validation failed');
+        expect(() => validateEnv(invalidEnv)).toThrow(
+          'Environment validation failed',
+        );
       });
     });
   });

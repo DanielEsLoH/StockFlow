@@ -288,6 +288,173 @@ describe('TenantMiddleware', () => {
   });
 });
 
+describe('multi-tenant isolation scenarios', () => {
+  let middleware: TenantMiddleware;
+  let mockResponse: Partial<Response>;
+
+  beforeEach(() => {
+    middleware = new TenantMiddleware();
+    mockResponse = {};
+  });
+
+  it('should not cross-contaminate tenant context between sequential requests', (done) => {
+    const tenantARequest: Partial<AuthenticatedRequest> = {
+      user: {
+        userId: 'user-a',
+        email: 'a@example.com',
+        role: UserRole.ADMIN,
+        tenantId: 'tenant-a',
+      },
+    };
+
+    const tenantBRequest: Partial<AuthenticatedRequest> = {
+      user: {
+        userId: 'user-b',
+        email: 'b@example.com',
+        role: UserRole.ADMIN,
+        tenantId: 'tenant-b',
+      },
+    };
+
+    let contextDuringA: string | undefined;
+    let contextDuringB: string | undefined;
+
+    const nextA = jest.fn().mockImplementation(() => {
+      contextDuringA = getTenantId();
+    });
+
+    const nextB = jest.fn().mockImplementation(() => {
+      contextDuringB = getTenantId();
+    });
+
+    // Process request A
+    middleware.use(
+      tenantARequest as AuthenticatedRequest,
+      mockResponse as Response,
+      nextA,
+    );
+
+    // Process request B immediately after
+    middleware.use(
+      tenantBRequest as AuthenticatedRequest,
+      mockResponse as Response,
+      nextB,
+    );
+
+    // Each request should have seen its own tenant context
+    expect(contextDuringA).toBe('tenant-a');
+    expect(contextDuringB).toBe('tenant-b');
+
+    // Request objects should have correct tenantId
+    expect(tenantARequest.tenantId).toBe('tenant-a');
+    expect(tenantBRequest.tenantId).toBe('tenant-b');
+
+    done();
+  });
+
+  it('should handle empty tenantId string as unauthenticated', () => {
+    const mockRequest: Partial<AuthenticatedRequest> = {
+      user: {
+        userId: 'user-empty',
+        email: 'empty@example.com',
+        role: UserRole.EMPLOYEE,
+        tenantId: '', // Empty string
+      },
+    };
+    const mockNext = jest.fn();
+
+    middleware.use(
+      mockRequest as AuthenticatedRequest,
+      mockResponse as Response,
+      mockNext,
+    );
+
+    expect(mockNext).toHaveBeenCalledTimes(1);
+    // Empty string is falsy, so tenantId should not be set
+    expect(mockRequest.tenantId).toBeUndefined();
+  });
+
+  it('should handle user object with null tenantId', () => {
+    const mockRequest: Partial<AuthenticatedRequest> = {
+      user: {
+        userId: 'user-null',
+        email: 'null@example.com',
+        role: UserRole.EMPLOYEE,
+        tenantId: null as unknown as string, // Null tenantId
+      },
+    };
+    const mockNext = jest.fn();
+
+    middleware.use(
+      mockRequest as AuthenticatedRequest,
+      mockResponse as Response,
+      mockNext,
+    );
+
+    expect(mockNext).toHaveBeenCalledTimes(1);
+    // Null is falsy, so tenantId should not be set
+    expect(mockRequest.tenantId).toBeUndefined();
+  });
+
+  it('should preserve existing request properties when setting tenantId', () => {
+    const mockRequest: Partial<AuthenticatedRequest> = {
+      user: {
+        userId: 'user-preserve',
+        email: 'preserve@example.com',
+        role: UserRole.MANAGER,
+        tenantId: 'tenant-preserve',
+      },
+      method: 'GET',
+      url: '/api/products',
+      headers: { 'content-type': 'application/json' },
+    } as Partial<AuthenticatedRequest>;
+
+    const mockNext = jest.fn();
+
+    middleware.use(
+      mockRequest as AuthenticatedRequest,
+      mockResponse as Response,
+      mockNext,
+    );
+
+    // Original properties should be preserved
+    expect(mockRequest.method).toBe('GET');
+    expect(mockRequest.url).toBe('/api/products');
+    expect(mockRequest.headers).toEqual({ 'content-type': 'application/json' });
+
+    // TenantId should be added
+    expect(mockRequest.tenantId).toBe('tenant-preserve');
+  });
+
+  it('should handle SUPER_ADMIN with tenant context correctly', (done) => {
+    // SUPER_ADMIN still belongs to a tenant, but may have cross-tenant access
+    // via role-based guards, not via middleware
+    const mockRequest: Partial<AuthenticatedRequest> = {
+      user: {
+        userId: 'super-admin-user',
+        email: 'superadmin@example.com',
+        role: UserRole.SUPER_ADMIN,
+        tenantId: 'super-admin-tenant',
+      },
+    };
+
+    const mockNext = jest.fn().mockImplementation(() => {
+      // SUPER_ADMIN should still have their tenant context set
+      expect(getTenantId()).toBe('super-admin-tenant');
+      expect(getUserId()).toBe('super-admin-user');
+      done();
+    });
+
+    middleware.use(
+      mockRequest as AuthenticatedRequest,
+      mockResponse as Response,
+      mockNext,
+    );
+
+    expect(mockRequest.tenantId).toBe('super-admin-tenant');
+  });
+});
+
 describe('AuthenticatedRequest interface', () => {
   it('should allow optional user property', () => {
     const request: AuthenticatedRequest = {} as AuthenticatedRequest;

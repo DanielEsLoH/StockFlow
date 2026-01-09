@@ -8,13 +8,33 @@ import {
 import { DocumentType, CustomerStatus } from '@prisma/client';
 import { CustomersService } from './customers.service';
 import { PrismaService } from '../prisma';
-import { TenantContextService } from '../common/services';
-import { CreateCustomerDto, UpdateCustomerDto } from './dto';
+import { TenantContextService } from '../common';
+import type { CreateCustomerDto, UpdateCustomerDto } from './dto';
 
 describe('CustomersService', () => {
   let service: CustomersService;
   let prismaService: jest.Mocked<PrismaService>;
   let tenantContextService: jest.Mocked<TenantContextService>;
+
+  // Expected fields in CustomerResponse
+  const expectedCustomerFields = [
+    'id',
+    'tenantId',
+    'name',
+    'email',
+    'phone',
+    'documentType',
+    'documentNumber',
+    'address',
+    'city',
+    'state',
+    'businessName',
+    'taxId',
+    'notes',
+    'status',
+    'createdAt',
+    'updatedAt',
+  ] as const;
 
   // Test data
   const mockTenantId = 'tenant-123';
@@ -241,22 +261,9 @@ describe('CustomersService', () => {
 
       const result = await service.findOne('customer-123');
 
-      expect(result).toHaveProperty('id');
-      expect(result).toHaveProperty('tenantId');
-      expect(result).toHaveProperty('name');
-      expect(result).toHaveProperty('email');
-      expect(result).toHaveProperty('phone');
-      expect(result).toHaveProperty('documentType');
-      expect(result).toHaveProperty('documentNumber');
-      expect(result).toHaveProperty('address');
-      expect(result).toHaveProperty('city');
-      expect(result).toHaveProperty('state');
-      expect(result).toHaveProperty('businessName');
-      expect(result).toHaveProperty('taxId');
-      expect(result).toHaveProperty('notes');
-      expect(result).toHaveProperty('status');
-      expect(result).toHaveProperty('createdAt');
-      expect(result).toHaveProperty('updatedAt');
+      expectedCustomerFields.forEach((field) => {
+        expect(result).toHaveProperty(field);
+      });
     });
 
     it('should scope findOne to tenant', async () => {
@@ -937,31 +944,6 @@ describe('CustomersService', () => {
   });
 
   describe('mapToCustomerResponse', () => {
-    it('should include all expected fields', async () => {
-      (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
-        mockCustomer,
-      );
-
-      const result = await service.findOne('customer-123');
-
-      expect(result).toHaveProperty('id');
-      expect(result).toHaveProperty('tenantId');
-      expect(result).toHaveProperty('name');
-      expect(result).toHaveProperty('email');
-      expect(result).toHaveProperty('phone');
-      expect(result).toHaveProperty('documentType');
-      expect(result).toHaveProperty('documentNumber');
-      expect(result).toHaveProperty('address');
-      expect(result).toHaveProperty('city');
-      expect(result).toHaveProperty('state');
-      expect(result).toHaveProperty('businessName');
-      expect(result).toHaveProperty('taxId');
-      expect(result).toHaveProperty('notes');
-      expect(result).toHaveProperty('status');
-      expect(result).toHaveProperty('createdAt');
-      expect(result).toHaveProperty('updatedAt');
-    });
-
     it('should return correct values', async () => {
       (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
         mockCustomer,

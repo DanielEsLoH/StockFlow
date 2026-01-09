@@ -1,9 +1,31 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService, AuthResponse, LogoutResponse } from './auth.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 import { UserRole, UserStatus } from '@prisma/client';
+
+/**
+ * Mock authenticated request interface matching the controller's expected type
+ */
+interface MockAuthenticatedRequest extends Partial<Request> {
+  user?: {
+    sub?: string;
+    email?: string;
+    role?: string;
+    tenantId?: string;
+  };
+}
+
+/**
+ * Helper to create a mock authenticated request
+ */
+function createMockRequest(
+  user?: MockAuthenticatedRequest['user'],
+): MockAuthenticatedRequest {
+  return user ? { user } : {};
+}
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -154,20 +176,42 @@ describe('AuthController', () => {
       refreshToken: 'valid-refresh-token',
     };
 
+    /**
+     * Helper to test logout via refresh token fallback
+     */
+    async function testLogoutViaRefreshTokenFallback(
+      req: MockAuthenticatedRequest,
+    ): Promise<void> {
+      authService.refreshTokens.mockResolvedValue(mockAuthResponse);
+      authService.logout.mockResolvedValue(mockLogoutResponse);
+
+      const result = await controller.logout(
+        refreshTokenDto,
+        req as Parameters<typeof controller.logout>[1],
+      );
+
+      expect(result).toEqual(mockLogoutResponse);
+      expect(authService.refreshTokens).toHaveBeenCalledWith(
+        refreshTokenDto.refreshToken,
+      );
+      expect(authService.logout).toHaveBeenCalledWith(mockUser.id);
+    }
+
     describe('when user is in request (from JWT guard)', () => {
       it('should logout using user ID from request', async () => {
-        const req = {
-          user: {
-            sub: 'user-123',
-            email: 'test@example.com',
-            role: 'ADMIN',
-            tenantId: 'tenant-123',
-          },
-        } as any;
+        const req = createMockRequest({
+          sub: 'user-123',
+          email: 'test@example.com',
+          role: 'ADMIN',
+          tenantId: 'tenant-123',
+        });
 
         authService.logout.mockResolvedValue(mockLogoutResponse);
 
-        const result = await controller.logout(refreshTokenDto, req);
+        const result = await controller.logout(
+          refreshTokenDto,
+          req as Parameters<typeof controller.logout>[1],
+        );
 
         expect(result).toEqual(mockLogoutResponse);
         expect(authService.logout).toHaveBeenCalledWith('user-123');
@@ -177,50 +221,28 @@ describe('AuthController', () => {
 
     describe('when user is not in request', () => {
       it('should decode refresh token and logout', async () => {
-        const req = {} as any;
-
-        authService.refreshTokens.mockResolvedValue(mockAuthResponse);
-        authService.logout.mockResolvedValue(mockLogoutResponse);
-
-        const result = await controller.logout(refreshTokenDto, req);
-
-        expect(result).toEqual(mockLogoutResponse);
-        expect(authService.refreshTokens).toHaveBeenCalledWith(
-          refreshTokenDto.refreshToken,
-        );
-        expect(authService.logout).toHaveBeenCalledWith(mockUser.id);
+        await testLogoutViaRefreshTokenFallback(createMockRequest());
       });
 
       it('should propagate errors for invalid refresh token during logout', async () => {
-        const req = {} as any;
+        const req = createMockRequest();
         const error = new Error('Invalid refresh token');
         authService.refreshTokens.mockRejectedValue(error);
 
-        await expect(controller.logout(refreshTokenDto, req)).rejects.toThrow(
-          error,
-        );
+        await expect(
+          controller.logout(
+            refreshTokenDto,
+            req as Parameters<typeof controller.logout>[1],
+          ),
+        ).rejects.toThrow(error);
       });
     });
 
     describe('when request user has no sub', () => {
       it('should fall back to refresh token decoding', async () => {
-        const req = {
-          user: {
-            email: 'test@example.com',
-            // sub is missing
-          },
-        } as any;
-
-        authService.refreshTokens.mockResolvedValue(mockAuthResponse);
-        authService.logout.mockResolvedValue(mockLogoutResponse);
-
-        const result = await controller.logout(refreshTokenDto, req);
-
-        expect(result).toEqual(mockLogoutResponse);
-        expect(authService.refreshTokens).toHaveBeenCalledWith(
-          refreshTokenDto.refreshToken,
+        await testLogoutViaRefreshTokenFallback(
+          createMockRequest({ email: 'test@example.com' }),
         );
-        expect(authService.logout).toHaveBeenCalledWith(mockUser.id);
       });
     });
   });

@@ -192,6 +192,42 @@ describe('InvoicesController', () => {
       expect(invoicesService.findAll).toHaveBeenCalledWith({});
     });
 
+    it('should use default page 1 when page is undefined', async () => {
+      invoicesService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.findAll({ limit: 20 });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('page: 1'),
+      );
+    });
+
+    it('should use default limit 10 when limit is undefined', async () => {
+      invoicesService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.findAll({ page: 2 });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('limit: 10'),
+      );
+    });
+
+    it('should log actual page and limit when provided', async () => {
+      invoicesService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.findAll({ page: 5, limit: 25 });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('page: 5'),
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('limit: 25'),
+      );
+    });
+
     it('should propagate service errors', async () => {
       const error = new Error('Database error');
       invoicesService.findAll.mockRejectedValue(error);

@@ -1857,5 +1857,42 @@ describe('InvoicesService', () => {
       expect(result.items?.[0].productId).toBeNull();
       expect(result.items?.[0].product).toBeUndefined();
     });
+
+    it('should handle invoice without user', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoice,
+        userId: null,
+        user: null,
+      });
+
+      const result = await service.findOne('invoice-123');
+
+      expect(result.userId).toBeNull();
+      expect(result.user).toBeUndefined();
+    });
+
+    it('should handle invoice without items array', async () => {
+      const invoiceWithoutItems = { ...mockInvoice };
+      delete (invoiceWithoutItems as Record<string, unknown>).items;
+
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        invoiceWithoutItems,
+      );
+
+      const result = await service.findOne('invoice-123');
+
+      expect(result.items).toBeUndefined();
+    });
+
+    it('should handle invoice with empty items array', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoice,
+        items: [],
+      });
+
+      const result = await service.findOne('invoice-123');
+
+      expect(result.items).toEqual([]);
+    });
   });
 });

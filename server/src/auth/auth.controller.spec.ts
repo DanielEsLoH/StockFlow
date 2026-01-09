@@ -28,7 +28,6 @@ describe('AuthController', () => {
 
   const mockLogoutResponse: LogoutResponse = {
     message: 'Successfully logged out',
-    success: true,
   };
 
   beforeEach(async () => {

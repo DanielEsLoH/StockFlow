@@ -33,10 +33,12 @@ describe('CategoriesController', () => {
 
   const mockPaginatedResponse: PaginatedCategoriesResponse = {
     data: [mockCategory, mockCategory2],
-    total: 2,
-    page: 1,
-    limit: 10,
-    totalPages: 1,
+    meta: {
+      total: 2,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+    },
   };
 
   beforeEach(async () => {

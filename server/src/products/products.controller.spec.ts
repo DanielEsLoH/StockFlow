@@ -24,15 +24,19 @@ describe('ProductsController', () => {
     id: 'product-123',
     tenantId: 'tenant-123',
     categoryId: 'category-123',
-    warehouseId: 'warehouse-123',
     sku: 'SKU-001',
     barcode: '1234567890',
     name: 'Wireless Headphones',
     description: 'High-quality wireless headphones',
     costPrice: 50,
     salePrice: 79.99,
+    taxRate: 0,
     stock: 100,
     minStock: 10,
+    maxStock: null,
+    brand: null,
+    unit: 'unit',
+    imageUrl: null,
     status: ProductStatus.ACTIVE,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -48,10 +52,12 @@ describe('ProductsController', () => {
 
   const mockPaginatedResponse: PaginatedProductsResponse = {
     data: [mockProduct, mockProduct2],
-    total: 2,
-    page: 1,
-    limit: 10,
-    totalPages: 1,
+    meta: {
+      total: 2,
+      page: 1,
+      limit: 10,
+      totalPages: 1,
+    },
   };
 
   beforeEach(async () => {

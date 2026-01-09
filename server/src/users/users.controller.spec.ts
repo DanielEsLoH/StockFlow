@@ -337,37 +337,37 @@ describe('UsersController', () => {
       });
     });
 
-    describe('VIEWER role authorization', () => {
-      const viewerCurrentUser = {
-        userId: 'viewer-123',
-        email: 'viewer@example.com',
-        role: UserRole.VIEWER,
+    describe('non-privileged EMPLOYEE role authorization', () => {
+      const employeeCurrentUser = {
+        userId: 'employee-123',
+        email: 'employee@example.com',
+        role: UserRole.EMPLOYEE,
         tenantId: mockTenantId,
       };
 
-      const mockViewerUser: UserResponse = {
+      const mockEmployeeUser: UserResponse = {
         ...mockUser,
-        id: 'viewer-123',
-        email: 'viewer@example.com',
-        role: UserRole.VIEWER,
+        id: 'employee-123',
+        email: 'employee@example.com',
+        role: UserRole.EMPLOYEE,
       };
 
-      it('should allow VIEWER to view their own profile', async () => {
-        usersService.findOne.mockResolvedValue(mockViewerUser);
+      it('should allow EMPLOYEE to view their own profile', async () => {
+        usersService.findOne.mockResolvedValue(mockEmployeeUser);
 
-        const result = await controller.findOne('viewer-123', viewerCurrentUser);
+        const result = await controller.findOne('employee-123', employeeCurrentUser);
 
-        expect(result).toEqual(mockViewerUser);
-        expect(usersService.findOne).toHaveBeenCalledWith('viewer-123');
+        expect(result).toEqual(mockEmployeeUser);
+        expect(usersService.findOne).toHaveBeenCalledWith('employee-123');
       });
 
-      it('should return own profile when VIEWER tries to view other user', async () => {
-        usersService.findOne.mockResolvedValue(mockViewerUser);
+      it('should return own profile when EMPLOYEE tries to view other user', async () => {
+        usersService.findOne.mockResolvedValue(mockEmployeeUser);
 
-        const result = await controller.findOne('user-123', viewerCurrentUser);
+        const result = await controller.findOne('user-123', employeeCurrentUser);
 
-        expect(result).toEqual(mockViewerUser);
-        expect(usersService.findOne).toHaveBeenCalledWith('viewer-123');
+        expect(result).toEqual(mockEmployeeUser);
+        expect(usersService.findOne).toHaveBeenCalledWith('employee-123');
       });
     });
 

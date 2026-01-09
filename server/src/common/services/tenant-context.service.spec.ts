@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { REQUEST } from '@nestjs/core';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, Logger } from '@nestjs/common';
 import { TenantStatus, SubscriptionPlan } from '@prisma/client';
 import { TenantContextService, LimitType } from './tenant-context.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -15,6 +15,7 @@ describe('TenantContextService', () => {
   let service: TenantContextService;
   let prismaService: jest.Mocked<PrismaService>;
   let mockRequest: { tenantId?: string; user?: { tenantId?: string } };
+  let loggerErrorSpy: jest.SpyInstance;
 
   const mockTenant = {
     id: 'tenant-123',
@@ -75,8 +76,18 @@ describe('TenantContextService', () => {
     service = await module.resolve<TenantContextService>(TenantContextService);
     prismaService = module.get(PrismaService);
 
+    // Mock logger to suppress expected error logs during tests
+    loggerErrorSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => {});
+
     // Reset mocks
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    // Restore logger after each test
+    loggerErrorSpy.mockRestore();
   });
 
   describe('getTenantId', () => {

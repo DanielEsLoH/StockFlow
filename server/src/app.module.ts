@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common';
 import { UsersModule } from './users';
 import { CategoriesModule } from './categories';
+import { ProductsModule } from './products';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 
@@ -23,6 +24,7 @@ import { TenantMiddleware } from './common/middleware';
     AuthModule,
     UsersModule,
     CategoriesModule,
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

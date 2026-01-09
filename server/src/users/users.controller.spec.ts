@@ -304,7 +304,10 @@ describe('UsersController', () => {
       it('should allow EMPLOYEE to view their own profile', async () => {
         usersService.findOne.mockResolvedValue(mockUser);
 
-        const result = await controller.findOne('user-123', employeeCurrentUser);
+        const result = await controller.findOne(
+          'user-123',
+          employeeCurrentUser,
+        );
 
         expect(result).toEqual(mockUser);
         expect(usersService.findOne).toHaveBeenCalledWith('user-123');
@@ -355,7 +358,10 @@ describe('UsersController', () => {
       it('should allow EMPLOYEE to view their own profile', async () => {
         usersService.findOne.mockResolvedValue(mockEmployeeUser);
 
-        const result = await controller.findOne('employee-123', employeeCurrentUser);
+        const result = await controller.findOne(
+          'employee-123',
+          employeeCurrentUser,
+        );
 
         expect(result).toEqual(mockEmployeeUser);
         expect(usersService.findOne).toHaveBeenCalledWith('employee-123');
@@ -364,7 +370,10 @@ describe('UsersController', () => {
       it('should return own profile when EMPLOYEE tries to view other user', async () => {
         usersService.findOne.mockResolvedValue(mockEmployeeUser);
 
-        const result = await controller.findOne('user-123', employeeCurrentUser);
+        const result = await controller.findOne(
+          'user-123',
+          employeeCurrentUser,
+        );
 
         expect(result).toEqual(mockEmployeeUser);
         expect(usersService.findOne).toHaveBeenCalledWith('employee-123');
@@ -524,7 +533,10 @@ describe('UsersController', () => {
 
       await controller.delete('some-user', adminCurrentUser);
 
-      expect(usersService.delete).toHaveBeenCalledWith('some-user', 'admin-123');
+      expect(usersService.delete).toHaveBeenCalledWith(
+        'some-user',
+        'admin-123',
+      );
     });
 
     it('should propagate not found errors', async () => {
@@ -683,7 +695,10 @@ describe('UsersController', () => {
 
       expect(result).toEqual(suspendedUser);
       expect(result.status).toBe(UserStatus.SUSPENDED);
-      expect(usersService.suspend).toHaveBeenCalledWith('user-123', 'admin-123');
+      expect(usersService.suspend).toHaveBeenCalledWith(
+        'user-123',
+        'admin-123',
+      );
     });
 
     it('should pass current user ID to prevent self-suspension', async () => {
@@ -692,7 +707,10 @@ describe('UsersController', () => {
 
       await controller.suspend('some-user', adminCurrentUser);
 
-      expect(usersService.suspend).toHaveBeenCalledWith('some-user', 'admin-123');
+      expect(usersService.suspend).toHaveBeenCalledWith(
+        'some-user',
+        'admin-123',
+      );
     });
 
     it('should propagate not found errors', async () => {
@@ -781,7 +799,11 @@ describe('UsersController', () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
       usersService.update.mockResolvedValue(mockUser);
 
-      await controller.update('user-123', { firstName: 'Updated' }, adminCurrentUser);
+      await controller.update(
+        'user-123',
+        { firstName: 'Updated' },
+        adminCurrentUser,
+      );
 
       expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining('Updating user'),

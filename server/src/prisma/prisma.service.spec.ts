@@ -47,7 +47,9 @@ describe('PrismaService', () => {
   let originalEnv: NodeJS.ProcessEnv;
 
   // Helper to create service with specific environment
-  const createServiceWithEnv = (envOverrides: Record<string, string | undefined> = {}) => {
+  const createServiceWithEnv = (
+    envOverrides: Record<string, string | undefined> = {},
+  ) => {
     // Apply environment overrides
     Object.entries(envOverrides).forEach(([key, value]) => {
       if (value === undefined) {
@@ -120,7 +122,9 @@ describe('PrismaService', () => {
         });
 
         // Verify $on was called for query logging setup
-        expect((service as unknown as { $on: jest.Mock }).$on).toHaveBeenCalled();
+        expect(
+          (service as unknown as { $on: jest.Mock }).$on,
+        ).toHaveBeenCalled();
       });
 
       it('should enable query logging in non-production environment by default', () => {
@@ -129,7 +133,9 @@ describe('PrismaService', () => {
           PRISMA_QUERY_LOGGING: undefined,
         });
 
-        expect((service as unknown as { $on: jest.Mock }).$on).toHaveBeenCalled();
+        expect(
+          (service as unknown as { $on: jest.Mock }).$on,
+        ).toHaveBeenCalled();
       });
 
       it('should disable query logging in production environment by default', () => {
@@ -138,7 +144,9 @@ describe('PrismaService', () => {
           PRISMA_QUERY_LOGGING: undefined,
         });
 
-        expect((service as unknown as { $on: jest.Mock }).$on).not.toHaveBeenCalled();
+        expect(
+          (service as unknown as { $on: jest.Mock }).$on,
+        ).not.toHaveBeenCalled();
       });
 
       it('should enable query logging in production if explicitly set', () => {
@@ -147,7 +155,9 @@ describe('PrismaService', () => {
           PRISMA_QUERY_LOGGING: 'true',
         });
 
-        expect((service as unknown as { $on: jest.Mock }).$on).toHaveBeenCalled();
+        expect(
+          (service as unknown as { $on: jest.Mock }).$on,
+        ).toHaveBeenCalled();
       });
 
       it('should use default slow query threshold of 1000ms', () => {
@@ -177,7 +187,9 @@ describe('PrismaService', () => {
     it('should connect to database successfully', async () => {
       await service.onModuleInit();
 
-      expect((service as unknown as { $connect: jest.Mock }).$connect).toHaveBeenCalled();
+      expect(
+        (service as unknown as { $connect: jest.Mock }).$connect,
+      ).toHaveBeenCalled();
     });
 
     it('should log success message on connection', async () => {
@@ -196,7 +208,9 @@ describe('PrismaService', () => {
 
       await service.onModuleInit();
 
-      expect(logSpy).toHaveBeenCalledWith('Query logging enabled (development mode)');
+      expect(logSpy).toHaveBeenCalledWith(
+        'Query logging enabled (development mode)',
+      );
     });
 
     it('should not log query logging status when disabled', async () => {
@@ -208,17 +222,21 @@ describe('PrismaService', () => {
 
       await service.onModuleInit();
 
-      expect(logSpy).not.toHaveBeenCalledWith('Query logging enabled (development mode)');
+      expect(logSpy).not.toHaveBeenCalledWith(
+        'Query logging enabled (development mode)',
+      );
     });
 
     it('should throw error and log on connection failure', async () => {
       const connectionError = new Error('Connection refused');
-      (service as unknown as { $connect: jest.Mock }).$connect.mockRejectedValue(
-        connectionError,
-      );
+      (
+        service as unknown as { $connect: jest.Mock }
+      ).$connect.mockRejectedValue(connectionError);
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
 
-      await expect(service.onModuleInit()).rejects.toThrow('Connection refused');
+      await expect(service.onModuleInit()).rejects.toThrow(
+        'Connection refused',
+      );
       expect(errorSpy).toHaveBeenCalledWith(
         'Failed to connect to database',
         connectionError,
@@ -234,7 +252,9 @@ describe('PrismaService', () => {
     it('should disconnect from database', async () => {
       await service.onModuleDestroy();
 
-      expect((service as unknown as { $disconnect: jest.Mock }).$disconnect).toHaveBeenCalled();
+      expect(
+        (service as unknown as { $disconnect: jest.Mock }).$disconnect,
+      ).toHaveBeenCalled();
     });
 
     it('should end the connection pool', async () => {
@@ -269,10 +289,9 @@ describe('PrismaService', () => {
 
       const result = await service.executeInTransaction(callback);
 
-      expect((service as unknown as { $transaction: jest.Mock }).$transaction).toHaveBeenCalledWith(
-        callback,
-        undefined,
-      );
+      expect(
+        (service as unknown as { $transaction: jest.Mock }).$transaction,
+      ).toHaveBeenCalledWith(callback, undefined);
       expect(result).toBe('result');
     });
 
@@ -285,10 +304,9 @@ describe('PrismaService', () => {
 
       await service.executeInTransaction(callback, options);
 
-      expect((service as unknown as { $transaction: jest.Mock }).$transaction).toHaveBeenCalledWith(
-        callback,
-        options,
-      );
+      expect(
+        (service as unknown as { $transaction: jest.Mock }).$transaction,
+      ).toHaveBeenCalledWith(callback, options);
     });
   });
 
@@ -447,7 +465,9 @@ describe('PrismaService', () => {
 
     it('should update record with deletedAt timestamp', async () => {
       const mockModel = {
-        update: jest.fn().mockResolvedValue({ id: 'test-id', deletedAt: new Date() }),
+        update: jest
+          .fn()
+          .mockResolvedValue({ id: 'test-id', deletedAt: new Date() }),
       };
       const beforeCall = new Date();
 
@@ -488,13 +508,15 @@ describe('PrismaService', () => {
       const result = await service.healthCheck();
 
       expect(result).toEqual({ connected: true });
-      expect((service as unknown as { $queryRaw: jest.Mock }).$queryRaw).toHaveBeenCalled();
+      expect(
+        (service as unknown as { $queryRaw: jest.Mock }).$queryRaw,
+      ).toHaveBeenCalled();
     });
 
     it('should return connected: false with error message when database is unreachable', async () => {
-      (service as unknown as { $queryRaw: jest.Mock }).$queryRaw.mockRejectedValue(
-        new Error('Connection timeout'),
-      );
+      (
+        service as unknown as { $queryRaw: jest.Mock }
+      ).$queryRaw.mockRejectedValue(new Error('Connection timeout'));
 
       const result = await service.healthCheck();
 
@@ -505,9 +527,9 @@ describe('PrismaService', () => {
     });
 
     it('should handle non-Error exceptions', async () => {
-      (service as unknown as { $queryRaw: jest.Mock }).$queryRaw.mockRejectedValue(
-        'String error',
-      );
+      (
+        service as unknown as { $queryRaw: jest.Mock }
+      ).$queryRaw.mockRejectedValue('String error');
 
       const result = await service.healthCheck();
 
@@ -639,7 +661,10 @@ describe('PrismaService', () => {
     });
 
     it('should add tenantId to existing where clause', () => {
-      const result = service.withTenantScope({ status: 'ACTIVE', categoryId: 'cat-1' });
+      const result = service.withTenantScope({
+        status: 'ACTIVE',
+        categoryId: 'cat-1',
+      });
 
       expect(result).toEqual({
         status: 'ACTIVE',
@@ -754,7 +779,11 @@ describe('PrismaService', () => {
       // Find the query event handler
       const queryHandler = onMock.mock.calls.find(
         (call: [string, unknown]) => call[0] === 'query',
-      )?.[1] as (e: { duration: number; query: string; params: string }) => void;
+      )?.[1] as (e: {
+        duration: number;
+        query: string;
+        params: string;
+      }) => void;
 
       if (queryHandler) {
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
@@ -782,7 +811,11 @@ describe('PrismaService', () => {
       const onMock = (service as unknown as { $on: jest.Mock }).$on;
       const queryHandler = onMock.mock.calls.find(
         (call: [string, unknown]) => call[0] === 'query',
-      )?.[1] as (e: { duration: number; query: string; params: string }) => void;
+      )?.[1] as (e: {
+        duration: number;
+        query: string;
+        params: string;
+      }) => void;
 
       if (queryHandler) {
         const debugSpy = jest.spyOn(Logger.prototype, 'debug');
@@ -866,9 +899,9 @@ describe('PrismaService', () => {
 
     it('should handle transaction errors', async () => {
       const transactionError = new Error('Transaction failed');
-      (service as unknown as { $transaction: jest.Mock }).$transaction.mockRejectedValue(
-        transactionError,
-      );
+      (
+        service as unknown as { $transaction: jest.Mock }
+      ).$transaction.mockRejectedValue(transactionError);
 
       const callback = jest.fn();
 

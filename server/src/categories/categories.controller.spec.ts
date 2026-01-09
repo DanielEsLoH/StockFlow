@@ -220,9 +220,9 @@ describe('CategoriesController', () => {
       const error = new Error('Category not found');
       categoriesService.update.mockRejectedValue(error);
 
-      await expect(
-        controller.update('invalid-id', updateDto),
-      ).rejects.toThrow(error);
+      await expect(controller.update('invalid-id', updateDto)).rejects.toThrow(
+        error,
+      );
     });
   });
 
@@ -243,7 +243,9 @@ describe('CategoriesController', () => {
     });
 
     it('should propagate conflict errors when category has products', async () => {
-      const error = new Error('Cannot delete category with associated products');
+      const error = new Error(
+        'Cannot delete category with associated products',
+      );
       categoriesService.delete.mockRejectedValue(error);
 
       await expect(controller.delete('category-123')).rejects.toThrow(error);

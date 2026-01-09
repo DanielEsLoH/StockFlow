@@ -247,7 +247,11 @@ describe('ProductsService', () => {
           mockProduct2,
         ]);
 
-        const result = await service.findAll({ lowStock: true, page: 1, limit: 10 });
+        const result = await service.findAll({
+          lowStock: true,
+          page: 1,
+          limit: 10,
+        });
 
         // Should only include the low stock product
         expect(result.data.length).toBe(1);
@@ -269,7 +273,11 @@ describe('ProductsService', () => {
           lowStockProducts,
         );
 
-        const result = await service.findAll({ lowStock: true, page: 2, limit: 10 });
+        const result = await service.findAll({
+          lowStock: true,
+          page: 2,
+          limit: 10,
+        });
 
         expect(result.meta.page).toBe(2);
         expect(result.meta.limit).toBe(10);

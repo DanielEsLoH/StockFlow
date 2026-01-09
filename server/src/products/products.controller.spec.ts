@@ -76,9 +76,7 @@ describe('ProductsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
-      providers: [
-        { provide: ProductsService, useValue: mockProductsService },
-      ],
+      providers: [{ provide: ProductsService, useValue: mockProductsService }],
     }).compile();
 
     controller = module.get<ProductsController>(ProductsController);
@@ -330,9 +328,9 @@ describe('ProductsController', () => {
       const error = new Error('Product not found');
       productsService.update.mockRejectedValue(error);
 
-      await expect(
-        controller.update('invalid-id', updateDto),
-      ).rejects.toThrow(error);
+      await expect(controller.update('invalid-id', updateDto)).rejects.toThrow(
+        error,
+      );
     });
   });
 
@@ -391,7 +389,10 @@ describe('ProductsController', () => {
       const updatedProduct = { ...mockProduct, stock: 80 };
       productsService.updateStock.mockResolvedValue(updatedProduct);
 
-      const result = await controller.updateStock('product-123', removeStockDto);
+      const result = await controller.updateStock(
+        'product-123',
+        removeStockDto,
+      );
 
       expect(result).toEqual(updatedProduct);
       expect(productsService.updateStock).toHaveBeenCalledWith(

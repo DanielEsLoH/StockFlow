@@ -63,6 +63,16 @@ enum CustomerStatus {
   INACTIVE
 }
 
+enum DocumentType {
+  CC
+  NIT
+  RUT
+  PASSPORT
+  CE
+  DNI
+  OTHER
+}
+
 enum InvoiceStatus {
   DRAFT
   PENDING
@@ -266,16 +276,17 @@ model StockMovement {
 model Customer {
   id             String         @id @default(cuid())
   tenantId       String         @map("tenant_id")
-  documentType   String         @default("CC") @map("document_type")
-  documentNumber String         @map("document_number")
   name           String
   email          String?
   phone          String?
+  documentType   DocumentType   @default(CC) @map("document_type")
+  documentNumber String         @map("document_number")
   address        String?
   city           String?
   state          String?
   businessName   String?        @map("business_name")
   taxId          String?        @map("tax_id")
+  notes          String?
   status         CustomerStatus @default(ACTIVE)
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
@@ -284,8 +295,7 @@ model Customer {
   invoices Invoice[]
 
   @@unique([tenantId, documentNumber])
-  @@index([tenantId])
-  @@index([tenantId, documentNumber])
+  @@index([tenantId, name])
   @@map("customers")
 }
 

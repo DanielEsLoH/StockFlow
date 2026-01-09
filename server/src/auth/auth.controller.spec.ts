@@ -196,9 +196,9 @@ describe('AuthController', () => {
         const error = new Error('Invalid refresh token');
         authService.refreshTokens.mockRejectedValue(error);
 
-        await expect(
-          controller.logout(refreshTokenDto, req),
-        ).rejects.toThrow(error);
+        await expect(controller.logout(refreshTokenDto, req)).rejects.toThrow(
+          error,
+        );
       });
     });
 

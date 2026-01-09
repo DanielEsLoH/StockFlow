@@ -193,7 +193,10 @@ describe('AllExceptionsFilter', () => {
       });
 
       it('should handle null in response', () => {
-        const exception = new HttpException(null as unknown as string, HttpStatus.BAD_REQUEST);
+        const exception = new HttpException(
+          null as unknown as string,
+          HttpStatus.BAD_REQUEST,
+        );
 
         filter.catch(exception, mockArgumentsHost);
 

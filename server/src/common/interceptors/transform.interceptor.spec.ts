@@ -217,7 +217,9 @@ describe('TransformInterceptor', () => {
           interceptor.intercept(mockExecutionContext, mockCallHandler),
         );
 
-        expect((result as { data: typeof nestedData }).data).toEqual(nestedData);
+        expect((result as { data: typeof nestedData }).data).toEqual(
+          nestedData,
+        );
       });
     });
 
@@ -337,7 +339,9 @@ describe('TransformInterceptor', () => {
           interceptor.intercept(mockExecutionContext, mockCallHandler),
         );
 
-        expect((result as { data: typeof unicodeData }).data.name).toBe('Test with special chars');
+        expect((result as { data: typeof unicodeData }).data.name).toBe(
+          'Test with special chars',
+        );
       });
 
       it('should handle large numeric values', async () => {
@@ -349,7 +353,9 @@ describe('TransformInterceptor', () => {
           interceptor.intercept(mockExecutionContext, mockCallHandler),
         );
 
-        expect((result as { data: typeof numericData }).data.value).toBe(largeNumber);
+        expect((result as { data: typeof numericData }).data.value).toBe(
+          largeNumber,
+        );
       });
 
       it('should handle zero', async () => {
@@ -427,7 +433,9 @@ describe('TransformInterceptor', () => {
         interceptor.intercept(mockExecutionContext, mockCallHandler),
       );
 
-      expect((result as { data: typeof complexData }).data).toEqual(complexData);
+      expect((result as { data: typeof complexData }).data).toEqual(
+        complexData,
+      );
     });
   });
 });

@@ -311,7 +311,10 @@ describe('HttpExceptionFilter', () => {
       });
 
       it('should return correct text for Unprocessable Entity', () => {
-        const exception = new HttpException({}, HttpStatus.UNPROCESSABLE_ENTITY);
+        const exception = new HttpException(
+          {},
+          HttpStatus.UNPROCESSABLE_ENTITY,
+        );
 
         filter.catch(exception, mockArgumentsHost);
 

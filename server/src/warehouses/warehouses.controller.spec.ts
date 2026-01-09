@@ -475,7 +475,9 @@ describe('WarehousesController', () => {
     });
 
     it('should propagate conflict errors for duplicate code', async () => {
-      const error = new Error('A warehouse with the code "WH-NEW" already exists');
+      const error = new Error(
+        'A warehouse with the code "WH-NEW" already exists',
+      );
       warehousesService.create.mockRejectedValue(error);
 
       await expect(controller.create(createDto)).rejects.toThrow(error);
@@ -551,16 +553,18 @@ describe('WarehousesController', () => {
       const error = new Error('Warehouse not found');
       warehousesService.update.mockRejectedValue(error);
 
-      await expect(
-        controller.update('invalid-id', updateDto),
-      ).rejects.toThrow(error);
+      await expect(controller.update('invalid-id', updateDto)).rejects.toThrow(
+        error,
+      );
     });
 
     it('should propagate conflict errors for duplicate code', async () => {
       const codeUpdateDto: UpdateWarehouseDto = {
         code: 'EXISTING-CODE',
       };
-      const error = new Error('A warehouse with the code "EXISTING-CODE" already exists');
+      const error = new Error(
+        'A warehouse with the code "EXISTING-CODE" already exists',
+      );
       warehousesService.update.mockRejectedValue(error);
 
       await expect(

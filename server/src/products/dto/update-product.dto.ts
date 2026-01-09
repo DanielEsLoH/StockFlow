@@ -114,7 +114,9 @@ export class UpdateProductDto {
    * Product status
    * @example "ACTIVE"
    */
-  @IsEnum(ProductStatus, { message: 'Status must be ACTIVE, INACTIVE, or OUT_OF_STOCK' })
+  @IsEnum(ProductStatus, {
+    message: 'Status must be ACTIVE, INACTIVE, or OUT_OF_STOCK',
+  })
   @IsOptional()
   status?: ProductStatus;
 }

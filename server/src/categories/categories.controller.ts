@@ -61,7 +61,9 @@ export class CategoriesController {
       Math.max(1, parseInt(limit ?? '10', 10) || 10),
     );
 
-    this.logger.log(`Listing categories - page: ${pageNum}, limit: ${limitNum}`);
+    this.logger.log(
+      `Listing categories - page: ${pageNum}, limit: ${limitNum}`,
+    );
 
     return this.categoriesService.findAll(pageNum, limitNum);
   }

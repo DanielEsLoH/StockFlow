@@ -15,7 +15,6 @@ import {
   UpdateProductDto,
   UpdateStockDto,
   StockAdjustmentType,
-  FilterProductsDto,
 } from './dto';
 
 describe('ProductsService', () => {
@@ -197,7 +196,9 @@ describe('ProductsService', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             OR: expect.arrayContaining([
-              expect.objectContaining({ name: { contains: 'test', mode: 'insensitive' } }),
+              expect.objectContaining({
+                name: { contains: 'test', mode: 'insensitive' },
+              }),
             ]),
           }),
         }),
@@ -287,9 +288,15 @@ describe('ProductsService', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             OR: expect.arrayContaining([
-              expect.objectContaining({ name: { contains: 'Test', mode: 'insensitive' } }),
-              expect.objectContaining({ sku: { contains: 'Test', mode: 'insensitive' } }),
-              expect.objectContaining({ barcode: { contains: 'Test', mode: 'insensitive' } }),
+              expect.objectContaining({
+                name: { contains: 'Test', mode: 'insensitive' },
+              }),
+              expect.objectContaining({
+                sku: { contains: 'Test', mode: 'insensitive' },
+              }),
+              expect.objectContaining({
+                barcode: { contains: 'Test', mode: 'insensitive' },
+              }),
             ]),
           }),
         }),
@@ -297,7 +304,7 @@ describe('ProductsService', () => {
     });
 
     it('should paginate search results', async () => {
-      const result = await service.search('Test', 2, 10);
+      await service.search('Test', 2, 10);
 
       expect(prismaService.product.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ skip: 10, take: 10 }),
@@ -419,7 +426,9 @@ describe('ProductsService', () => {
     it('should enforce tenant product limit', async () => {
       await service.create(createDto);
 
-      expect(tenantContextService.enforceLimit).toHaveBeenCalledWith('products');
+      expect(tenantContextService.enforceLimit).toHaveBeenCalledWith(
+        'products',
+      );
     });
 
     it('should throw ForbiddenException when product limit reached', async () => {
@@ -427,7 +436,9 @@ describe('ProductsService', () => {
         new ForbiddenException('Products limit reached'),
       );
 
-      await expect(service.create(createDto)).rejects.toThrow(ForbiddenException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should trim SKU', async () => {
@@ -460,7 +471,9 @@ describe('ProductsService', () => {
         mockProduct,
       );
 
-      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ConflictException with correct message for duplicate SKU', async () => {
@@ -489,7 +502,9 @@ describe('ProductsService', () => {
         mockProduct,
       );
 
-      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ConflictException with correct message for duplicate barcode', async () => {
@@ -629,9 +644,9 @@ describe('ProductsService', () => {
     it('should throw NotFoundException when product not found', async () => {
       (prismaService.product.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.update('nonexistent', updateDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update('nonexistent', updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException with correct message', async () => {
@@ -1144,7 +1159,9 @@ describe('ProductsService', () => {
       (prismaService.product.findFirst as jest.Mock).mockResolvedValue(
         mockProduct,
       );
-      (prismaService.product.update as jest.Mock).mockResolvedValue(mockProduct);
+      (prismaService.product.update as jest.Mock).mockResolvedValue(
+        mockProduct,
+      );
 
       await service.update('product-123', { name: 'Updated' });
 
@@ -1159,7 +1176,9 @@ describe('ProductsService', () => {
         mockProduct,
       );
       (prismaService.invoiceItem.count as jest.Mock).mockResolvedValue(0);
-      (prismaService.product.delete as jest.Mock).mockResolvedValue(mockProduct);
+      (prismaService.product.delete as jest.Mock).mockResolvedValue(
+        mockProduct,
+      );
 
       await service.delete('product-123');
 

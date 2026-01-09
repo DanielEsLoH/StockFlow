@@ -58,7 +58,9 @@ export class ProductsController {
    * GET /products?page=1&limit=20&status=ACTIVE&categoryId=xxx
    */
   @Get()
-  async findAll(@Query() filters: FilterProductsDto): Promise<PaginatedProductsResponse> {
+  async findAll(
+    @Query() filters: FilterProductsDto,
+  ): Promise<PaginatedProductsResponse> {
     this.logger.log(
       `Listing products - page: ${filters.page ?? 1}, limit: ${filters.limit ?? 10}`,
     );

@@ -292,7 +292,9 @@ describe('CategoriesService', () => {
         mockCategory,
       );
 
-      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ConflictException with correct message', async () => {
@@ -375,9 +377,9 @@ describe('CategoriesService', () => {
     it('should throw NotFoundException when category not found', async () => {
       (prismaService.category.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.update('nonexistent', updateDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update('nonexistent', updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException with correct message', async () => {

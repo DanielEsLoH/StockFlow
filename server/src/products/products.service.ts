@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Product, ProductStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma';
-import { TenantContextService } from '../common/services';
+import { TenantContextService } from '../common';
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -76,9 +76,18 @@ export class ProductsService {
    * @param filters - Filter and pagination options
    * @returns Paginated list of products
    */
-  async findAll(filters: FilterProductsDto = {}): Promise<PaginatedProductsResponse> {
+  async findAll(
+    filters: FilterProductsDto = {},
+  ): Promise<PaginatedProductsResponse> {
     const tenantId = this.tenantContext.requireTenantId();
-    const { page = 1, limit = 10, search, categoryId, status, lowStock } = filters;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      categoryId,
+      status,
+      lowStock,
+    } = filters;
     const skip = (page - 1) * limit;
 
     this.logger.debug(
@@ -112,19 +121,7 @@ export class ProductsService {
         orderBy: { name: 'asc' },
       });
 
-      const lowStockProducts = allProducts.filter((p) => p.stock < p.minStock);
-      const total = lowStockProducts.length;
-      const paginatedProducts = lowStockProducts.slice(skip, skip + limit);
-
-      return {
-        data: paginatedProducts.map((product) => this.mapToProductResponse(product)),
-        meta: {
-          total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit),
-        },
-      };
+      return this.filterAndPaginateLowStock(allProducts, page, limit);
     }
 
     const [products, total] = await Promise.all([
@@ -137,15 +134,7 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
 
-    return {
-      data: products.map((product) => this.mapToProductResponse(product)),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return this.buildPaginatedResponse(products, total, page, limit);
   }
 
   /**
@@ -157,7 +146,6 @@ export class ProductsService {
    */
   async findLowStock(page = 1, limit = 10): Promise<PaginatedProductsResponse> {
     const tenantId = this.tenantContext.requireTenantId();
-    const skip = (page - 1) * limit;
 
     this.logger.debug(
       `Listing low stock products for tenant ${tenantId}, page ${page}, limit ${limit}`,
@@ -169,19 +157,7 @@ export class ProductsService {
       orderBy: { name: 'asc' },
     });
 
-    const lowStockProducts = allProducts.filter((p) => p.stock < p.minStock);
-    const total = lowStockProducts.length;
-    const paginatedProducts = lowStockProducts.slice(skip, skip + limit);
-
-    return {
-      data: paginatedProducts.map((product) => this.mapToProductResponse(product)),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return this.filterAndPaginateLowStock(allProducts, page, limit);
   }
 
   /**
@@ -223,15 +199,7 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
 
-    return {
-      data: products.map((product) => this.mapToProductResponse(product)),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return this.buildPaginatedResponse(products, total, page, limit);
   }
 
   /**
@@ -655,5 +623,41 @@ export class ProductsService {
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
+  }
+
+  /**
+   * Builds a paginated response from products and pagination params
+   */
+  private buildPaginatedResponse(
+    products: Product[],
+    total: number,
+    page: number,
+    limit: number,
+  ): PaginatedProductsResponse {
+    return {
+      data: products.map((product) => this.mapToProductResponse(product)),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: total > 0 ? Math.ceil(total / limit) : 0,
+      },
+    };
+  }
+
+  /**
+   * Filters and paginates low stock products from a list
+   */
+  private filterAndPaginateLowStock(
+    products: Product[],
+    page: number,
+    limit: number,
+  ): PaginatedProductsResponse {
+    const lowStockProducts = products.filter((p) => p.stock < p.minStock);
+    const total = lowStockProducts.length;
+    const skip = (page - 1) * limit;
+    const paginatedProducts = lowStockProducts.slice(skip, skip + limit);
+
+    return this.buildPaginatedResponse(paginatedProducts, total, page, limit);
   }
 }

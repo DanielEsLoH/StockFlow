@@ -1,3 +1,6 @@
+// Module
+export { CommonModule } from './common.module';
+
 // Context (AsyncLocalStorage for request-scoped data)
 export type { TenantContext } from './context';
 export {
@@ -41,3 +44,7 @@ export type { ValidationErrorDetail, ValidationErrorResponse } from './pipes';
 
 // DTOs
 export { PaginationDto, TestValidationDto } from './dto';
+
+// Services
+export { TenantContextService } from './services';
+export type { LimitType } from './services';

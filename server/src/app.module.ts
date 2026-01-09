@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma';
 import { AuthModule } from './auth/auth.module';
+import { CommonModule } from './common';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 
@@ -16,6 +17,7 @@ import { TenantMiddleware } from './common/middleware';
       validate: validateEnv,
     }),
     PrismaModule,
+    CommonModule,
     AuthModule,
   ],
   controllers: [AppController],

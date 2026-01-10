@@ -17,7 +17,13 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
-import { CreateInvoiceDto, UpdateInvoiceDto, FilterInvoicesDto } from './dto';
+import {
+  CreateInvoiceDto,
+  UpdateInvoiceDto,
+  FilterInvoicesDto,
+  AddInvoiceItemDto,
+  UpdateInvoiceItemDto,
+} from './dto';
 
 /**
  * Invoice item data returned in responses
@@ -681,6 +687,464 @@ export class InvoicesService {
     );
 
     return this.mapToInvoiceResponse(cancelledInvoice);
+  }
+
+  /**
+   * Adds a new item to an existing DRAFT invoice.
+   * Validates product exists and has sufficient stock, decrements stock,
+   * creates stock movement, and recalculates invoice totals.
+   *
+   * @param invoiceId - Invoice ID to add item to
+   * @param dto - Item data (productId, quantity, unitPrice, taxRate, discount)
+   * @param userId - ID of the user performing the action
+   * @returns Updated invoice data with all items
+   * @throws NotFoundException if invoice or product not found
+   * @throws BadRequestException if invoice is not DRAFT or insufficient stock
+   */
+  async addItem(
+    invoiceId: string,
+    dto: AddInvoiceItemDto,
+    userId: string,
+  ): Promise<InvoiceResponse> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(
+      `Adding item to invoice ${invoiceId} in tenant ${tenantId}`,
+    );
+
+    // Find the invoice
+    const invoice = await this.prisma.invoice.findFirst({
+      where: { id: invoiceId, tenantId },
+    });
+
+    if (!invoice) {
+      this.logger.warn(`Invoice not found: ${invoiceId}`);
+      throw new NotFoundException('Factura no encontrada');
+    }
+
+    // Only DRAFT invoices can have items added
+    if (invoice.status !== InvoiceStatus.DRAFT) {
+      throw new BadRequestException(
+        'Solo se pueden agregar items a facturas en borrador',
+      );
+    }
+
+    // Validate product exists and has sufficient stock
+    const product = await this.prisma.product.findFirst({
+      where: { id: dto.productId, tenantId },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Producto no encontrado: ${dto.productId}`);
+    }
+
+    if (product.stock < dto.quantity) {
+      throw new BadRequestException(
+        `Stock insuficiente para el producto: ${product.name}`,
+      );
+    }
+
+    // Calculate item totals
+    const subtotal = dto.quantity * dto.unitPrice;
+    const taxRate = dto.taxRate ?? 19;
+    const discount = dto.discount ?? 0;
+    const tax = subtotal * (taxRate / 100);
+    const total = subtotal + tax - discount;
+
+    // Execute within a transaction
+    const updatedInvoice = await this.prisma.$transaction(async (tx) => {
+      // Create the invoice item
+      await tx.invoiceItem.create({
+        data: {
+          invoiceId,
+          productId: dto.productId,
+          quantity: dto.quantity,
+          unitPrice: dto.unitPrice,
+          taxRate,
+          discount,
+          subtotal,
+          tax,
+          total,
+        },
+      });
+
+      // Decrement product stock
+      await tx.product.update({
+        where: { id: dto.productId },
+        data: {
+          stock: {
+            decrement: dto.quantity,
+          },
+        },
+      });
+
+      // Create stock movement
+      await tx.stockMovement.create({
+        data: {
+          tenantId,
+          productId: dto.productId,
+          userId,
+          type: 'SALE',
+          quantity: -dto.quantity,
+          reason: `Venta - Item agregado a factura ${invoice.invoiceNumber}`,
+          notes: `Producto: ${product.name}`,
+          invoiceId,
+        },
+      });
+
+      // Recalculate invoice totals
+      const allItems = await tx.invoiceItem.findMany({
+        where: { invoiceId },
+      });
+
+      const invoiceSubtotal = allItems.reduce(
+        (sum, item) => sum + Number(item.subtotal),
+        0,
+      );
+      const invoiceTax = allItems.reduce(
+        (sum, item) => sum + Number(item.tax),
+        0,
+      );
+      const invoiceDiscount = allItems.reduce(
+        (sum, item) => sum + Number(item.discount),
+        0,
+      );
+      const invoiceTotal = invoiceSubtotal + invoiceTax - invoiceDiscount;
+
+      // Update invoice totals
+      return tx.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          subtotal: invoiceSubtotal,
+          tax: invoiceTax,
+          discount: invoiceDiscount,
+          total: invoiceTotal,
+        },
+        include: {
+          items: {
+            include: {
+              product: true,
+            },
+          },
+          customer: true,
+          user: true,
+        },
+      });
+    });
+
+    this.logger.log(
+      `Item added to invoice ${invoice.invoiceNumber}: product ${product.name}, qty ${dto.quantity}`,
+    );
+
+    return this.mapToInvoiceResponse(updatedInvoice);
+  }
+
+  /**
+   * Updates an existing item on a DRAFT invoice.
+   * Adjusts stock based on quantity difference, creates stock movement,
+   * and recalculates invoice totals.
+   *
+   * @param invoiceId - Invoice ID containing the item
+   * @param itemId - Item ID to update
+   * @param dto - Update data (quantity, unitPrice, taxRate, discount)
+   * @param userId - ID of the user performing the action
+   * @returns Updated invoice data with all items
+   * @throws NotFoundException if invoice or item not found
+   * @throws BadRequestException if invoice is not DRAFT or insufficient stock
+   */
+  async updateItem(
+    invoiceId: string,
+    itemId: string,
+    dto: UpdateInvoiceItemDto,
+    userId: string,
+  ): Promise<InvoiceResponse> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(
+      `Updating item ${itemId} on invoice ${invoiceId} in tenant ${tenantId}`,
+    );
+
+    // Find the invoice
+    const invoice = await this.prisma.invoice.findFirst({
+      where: { id: invoiceId, tenantId },
+    });
+
+    if (!invoice) {
+      this.logger.warn(`Invoice not found: ${invoiceId}`);
+      throw new NotFoundException('Factura no encontrada');
+    }
+
+    // Only DRAFT invoices can have items updated
+    if (invoice.status !== InvoiceStatus.DRAFT) {
+      throw new BadRequestException(
+        'Solo se pueden modificar items de facturas en borrador',
+      );
+    }
+
+    // Find the item
+    const item = await this.prisma.invoiceItem.findFirst({
+      where: { id: itemId, invoiceId },
+      include: { product: true },
+    });
+
+    if (!item) {
+      this.logger.warn(`Invoice item not found: ${itemId}`);
+      throw new NotFoundException('Item de factura no encontrado');
+    }
+
+    // Get the current quantity and calculate the difference if quantity is being updated
+    const oldQuantity = item.quantity;
+    const newQuantity = dto.quantity ?? oldQuantity;
+    const quantityDiff = newQuantity - oldQuantity;
+
+    // If quantity is increasing, validate sufficient stock
+    if (quantityDiff > 0 && item.productId) {
+      const product = await this.prisma.product.findUnique({
+        where: { id: item.productId },
+      });
+
+      if (product && product.stock < quantityDiff) {
+        throw new BadRequestException(
+          `Stock insuficiente para el producto: ${product.name}`,
+        );
+      }
+    }
+
+    // Calculate new item totals
+    const unitPrice = dto.unitPrice ?? Number(item.unitPrice);
+    const taxRate = dto.taxRate ?? Number(item.taxRate);
+    const discount = dto.discount ?? Number(item.discount);
+    const subtotal = newQuantity * unitPrice;
+    const tax = subtotal * (taxRate / 100);
+    const total = subtotal + tax - discount;
+
+    // Execute within a transaction
+    const updatedInvoice = await this.prisma.$transaction(async (tx) => {
+      // Update the invoice item
+      await tx.invoiceItem.update({
+        where: { id: itemId },
+        data: {
+          quantity: newQuantity,
+          unitPrice,
+          taxRate,
+          discount,
+          subtotal,
+          tax,
+          total,
+        },
+      });
+
+      // Adjust stock if quantity changed and product exists
+      if (quantityDiff !== 0 && item.productId) {
+        // If quantity increased, decrement stock by the difference
+        // If quantity decreased, increment stock by the absolute difference
+        if (quantityDiff > 0) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: quantityDiff,
+              },
+            },
+          });
+        } else {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                increment: Math.abs(quantityDiff),
+              },
+            },
+          });
+        }
+
+        // Create stock movement for the adjustment
+        await tx.stockMovement.create({
+          data: {
+            tenantId,
+            productId: item.productId,
+            userId,
+            type: 'ADJUSTMENT',
+            quantity: -quantityDiff, // Negative if increased, positive if decreased
+            reason: `Ajuste - Modificación de item en factura ${invoice.invoiceNumber}`,
+            notes: `Cantidad anterior: ${oldQuantity}, Nueva cantidad: ${newQuantity}`,
+            invoiceId,
+          },
+        });
+      }
+
+      // Recalculate invoice totals
+      const allItems = await tx.invoiceItem.findMany({
+        where: { invoiceId },
+      });
+
+      const invoiceSubtotal = allItems.reduce(
+        (sum, i) => sum + Number(i.subtotal),
+        0,
+      );
+      const invoiceTax = allItems.reduce((sum, i) => sum + Number(i.tax), 0);
+      const invoiceDiscount = allItems.reduce(
+        (sum, i) => sum + Number(i.discount),
+        0,
+      );
+      const invoiceTotal = invoiceSubtotal + invoiceTax - invoiceDiscount;
+
+      // Update invoice totals
+      return tx.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          subtotal: invoiceSubtotal,
+          tax: invoiceTax,
+          discount: invoiceDiscount,
+          total: invoiceTotal,
+        },
+        include: {
+          items: {
+            include: {
+              product: true,
+            },
+          },
+          customer: true,
+          user: true,
+        },
+      });
+    });
+
+    this.logger.log(
+      `Item ${itemId} updated on invoice ${invoice.invoiceNumber}`,
+    );
+
+    return this.mapToInvoiceResponse(updatedInvoice);
+  }
+
+  /**
+   * Deletes an item from a DRAFT invoice.
+   * Restores product stock, creates stock movement, and recalculates invoice totals.
+   *
+   * @param invoiceId - Invoice ID containing the item
+   * @param itemId - Item ID to delete
+   * @param userId - ID of the user performing the action
+   * @returns Updated invoice data with remaining items
+   * @throws NotFoundException if invoice or item not found
+   * @throws BadRequestException if invoice is not DRAFT
+   */
+  async deleteItem(
+    invoiceId: string,
+    itemId: string,
+    userId: string,
+  ): Promise<InvoiceResponse> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(
+      `Deleting item ${itemId} from invoice ${invoiceId} in tenant ${tenantId}`,
+    );
+
+    // Find the invoice
+    const invoice = await this.prisma.invoice.findFirst({
+      where: { id: invoiceId, tenantId },
+    });
+
+    if (!invoice) {
+      this.logger.warn(`Invoice not found: ${invoiceId}`);
+      throw new NotFoundException('Factura no encontrada');
+    }
+
+    // Only DRAFT invoices can have items deleted
+    if (invoice.status !== InvoiceStatus.DRAFT) {
+      throw new BadRequestException(
+        'Solo se pueden eliminar items de facturas en borrador',
+      );
+    }
+
+    // Find the item
+    const item = await this.prisma.invoiceItem.findFirst({
+      where: { id: itemId, invoiceId },
+      include: { product: true },
+    });
+
+    if (!item) {
+      this.logger.warn(`Invoice item not found: ${itemId}`);
+      throw new NotFoundException('Item de factura no encontrado');
+    }
+
+    // Execute within a transaction
+    const updatedInvoice = await this.prisma.$transaction(async (tx) => {
+      // Restore product stock if product exists
+      if (item.productId) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              increment: item.quantity,
+            },
+          },
+        });
+
+        // Create stock movement for the restoration
+        await tx.stockMovement.create({
+          data: {
+            tenantId,
+            productId: item.productId,
+            userId,
+            type: 'RETURN',
+            quantity: item.quantity,
+            reason: `Devolución - Item eliminado de factura ${invoice.invoiceNumber}`,
+            notes: `Producto: ${item.product?.name ?? item.productId}`,
+            invoiceId,
+          },
+        });
+      }
+
+      // Delete the item
+      await tx.invoiceItem.delete({
+        where: { id: itemId },
+      });
+
+      // Recalculate invoice totals
+      const remainingItems = await tx.invoiceItem.findMany({
+        where: { invoiceId },
+      });
+
+      const invoiceSubtotal = remainingItems.reduce(
+        (sum, i) => sum + Number(i.subtotal),
+        0,
+      );
+      const invoiceTax = remainingItems.reduce(
+        (sum, i) => sum + Number(i.tax),
+        0,
+      );
+      const invoiceDiscount = remainingItems.reduce(
+        (sum, i) => sum + Number(i.discount),
+        0,
+      );
+      const invoiceTotal = invoiceSubtotal + invoiceTax - invoiceDiscount;
+
+      // Update invoice totals
+      return tx.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          subtotal: invoiceSubtotal,
+          tax: invoiceTax,
+          discount: invoiceDiscount,
+          total: invoiceTotal,
+        },
+        include: {
+          items: {
+            include: {
+              product: true,
+            },
+          },
+          customer: true,
+          user: true,
+        },
+      });
+    });
+
+    this.logger.log(
+      `Item ${itemId} deleted from invoice ${invoice.invoiceNumber}`,
+    );
+
+    return this.mapToInvoiceResponse(updatedInvoice);
   }
 
   /**

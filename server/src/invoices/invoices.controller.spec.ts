@@ -1,14 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger } from '@nestjs/common';
+import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InvoicesController } from './invoices.controller';
 import { InvoicesService } from './invoices.service';
 import type {
   InvoiceResponse,
   PaginatedInvoicesResponse,
 } from './invoices.service';
-import { CreateInvoiceDto, UpdateInvoiceDto, FilterInvoicesDto } from './dto';
+import {
+  CreateInvoiceDto,
+  UpdateInvoiceDto,
+  FilterInvoicesDto,
+  AddInvoiceItemDto,
+  UpdateInvoiceItemDto,
+} from './dto';
 import { InvoiceStatus, PaymentStatus } from '@prisma/client';
-import type { RequestUser } from '../auth/types';
+import type { RequestUser } from '../auth';
 
 describe('InvoicesController', () => {
   let controller: InvoicesController;
@@ -121,6 +127,23 @@ describe('InvoicesController', () => {
     customerId: 'customer-123',
   };
 
+  // Invoice item DTOs
+  const addItemDto: AddInvoiceItemDto = {
+    productId: 'product-456',
+    quantity: 3,
+    unitPrice: 75,
+    taxRate: 19,
+    discount: 0,
+  };
+
+  const updateItemDto: UpdateInvoiceItemDto = {
+    quantity: 5,
+    unitPrice: 80,
+  };
+
+  // Mock response for invoice operations
+  const mockInvoiceResponse: InvoiceResponse = mockInvoice;
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -132,6 +155,9 @@ describe('InvoicesController', () => {
       delete: jest.fn(),
       send: jest.fn(),
       cancel: jest.fn(),
+      addItem: jest.fn(),
+      updateItem: jest.fn(),
+      deleteItem: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -198,9 +224,7 @@ describe('InvoicesController', () => {
 
       await controller.findAll({ limit: 20 });
 
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('page: 1'),
-      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('page: 1'));
     });
 
     it('should use default limit 10 when limit is undefined', async () => {
@@ -209,9 +233,7 @@ describe('InvoicesController', () => {
 
       await controller.findAll({ page: 2 });
 
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('limit: 10'),
-      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('limit: 10'));
     });
 
     it('should log actual page and limit when provided', async () => {
@@ -220,12 +242,8 @@ describe('InvoicesController', () => {
 
       await controller.findAll({ page: 5, limit: 25 });
 
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('page: 5'),
-      );
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('limit: 25'),
-      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('page: 5'));
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('limit: 25'));
     });
 
     it('should propagate service errors', async () => {
@@ -532,6 +550,272 @@ describe('InvoicesController', () => {
       invoicesService.cancel.mockRejectedValue(dbError);
 
       await expect(controller.cancel('invoice-123')).rejects.toThrow(dbError);
+    });
+
+    it('should propagate database errors from addItem', async () => {
+      const dbError = new Error('Database connection failed');
+      invoicesService.addItem.mockRejectedValue(dbError);
+
+      await expect(
+        controller.addItem('invoice-123', addItemDto, mockUser),
+      ).rejects.toThrow(dbError);
+    });
+
+    it('should propagate database errors from updateItem', async () => {
+      const dbError = new Error('Database connection failed');
+      invoicesService.updateItem.mockRejectedValue(dbError);
+
+      await expect(
+        controller.updateItem(
+          'invoice-123',
+          'item-123',
+          updateItemDto,
+          mockUser,
+        ),
+      ).rejects.toThrow(dbError);
+    });
+
+    it('should propagate database errors from deleteItem', async () => {
+      const dbError = new Error('Database connection failed');
+      invoicesService.deleteItem.mockRejectedValue(dbError);
+
+      await expect(
+        controller.deleteItem('invoice-123', 'item-123', mockUser),
+      ).rejects.toThrow(dbError);
+    });
+  });
+
+  // ============================================================================
+  // INVOICE ITEMS ENDPOINTS TESTS
+  // ============================================================================
+
+  describe('addItem', () => {
+    it('should add item to invoice', async () => {
+      invoicesService.addItem.mockResolvedValue(mockInvoiceResponse);
+
+      const result = await controller.addItem(
+        'invoice-123',
+        addItemDto,
+        mockUser,
+      );
+
+      expect(result).toEqual(mockInvoiceResponse);
+      expect(invoicesService.addItem).toHaveBeenCalledWith(
+        'invoice-123',
+        addItemDto,
+        mockUser.userId,
+      );
+    });
+
+    it('should call service with correct parameters', async () => {
+      invoicesService.addItem.mockResolvedValue(mockInvoiceResponse);
+
+      await controller.addItem('invoice-456', addItemDto, mockUser);
+
+      expect(invoicesService.addItem).toHaveBeenCalledWith(
+        'invoice-456',
+        addItemDto,
+        mockUser.userId,
+      );
+    });
+
+    it('should propagate NotFoundException from service', async () => {
+      const error = new NotFoundException('Factura no encontrada');
+      invoicesService.addItem.mockRejectedValue(error);
+
+      await expect(
+        controller.addItem('nonexistent', addItemDto, mockUser),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should propagate BadRequestException for non-DRAFT invoice', async () => {
+      const error = new BadRequestException(
+        'Solo se pueden agregar items a facturas en borrador',
+      );
+      invoicesService.addItem.mockRejectedValue(error);
+
+      await expect(
+        controller.addItem('invoice-123', addItemDto, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate BadRequestException for insufficient stock', async () => {
+      const error = new BadRequestException(
+        'Stock insuficiente para el producto',
+      );
+      invoicesService.addItem.mockRejectedValue(error);
+
+      await expect(
+        controller.addItem('invoice-123', addItemDto, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate NotFoundException for product not found', async () => {
+      const error = new NotFoundException('Producto no encontrado');
+      invoicesService.addItem.mockRejectedValue(error);
+
+      await expect(
+        controller.addItem('invoice-123', addItemDto, mockUser),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('updateItem', () => {
+    it('should update item on invoice', async () => {
+      invoicesService.updateItem.mockResolvedValue(mockInvoiceResponse);
+
+      const result = await controller.updateItem(
+        'invoice-123',
+        'item-123',
+        updateItemDto,
+        mockUser,
+      );
+
+      expect(result).toEqual(mockInvoiceResponse);
+      expect(invoicesService.updateItem).toHaveBeenCalledWith(
+        'invoice-123',
+        'item-123',
+        updateItemDto,
+        mockUser.userId,
+      );
+    });
+
+    it('should call service with correct parameters', async () => {
+      invoicesService.updateItem.mockResolvedValue(mockInvoiceResponse);
+
+      await controller.updateItem(
+        'invoice-456',
+        'item-456',
+        updateItemDto,
+        mockUser,
+      );
+
+      expect(invoicesService.updateItem).toHaveBeenCalledWith(
+        'invoice-456',
+        'item-456',
+        updateItemDto,
+        mockUser.userId,
+      );
+    });
+
+    it('should propagate NotFoundException for invoice not found', async () => {
+      const error = new NotFoundException('Factura no encontrada');
+      invoicesService.updateItem.mockRejectedValue(error);
+
+      await expect(
+        controller.updateItem(
+          'nonexistent',
+          'item-123',
+          updateItemDto,
+          mockUser,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should propagate NotFoundException for item not found', async () => {
+      const error = new NotFoundException('Item de factura no encontrado');
+      invoicesService.updateItem.mockRejectedValue(error);
+
+      await expect(
+        controller.updateItem(
+          'invoice-123',
+          'nonexistent',
+          updateItemDto,
+          mockUser,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should propagate BadRequestException for non-DRAFT invoice', async () => {
+      const error = new BadRequestException(
+        'Solo se pueden modificar items de facturas en borrador',
+      );
+      invoicesService.updateItem.mockRejectedValue(error);
+
+      await expect(
+        controller.updateItem(
+          'invoice-123',
+          'item-123',
+          updateItemDto,
+          mockUser,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate BadRequestException for insufficient stock', async () => {
+      const error = new BadRequestException(
+        'Stock insuficiente para el producto',
+      );
+      invoicesService.updateItem.mockRejectedValue(error);
+
+      await expect(
+        controller.updateItem(
+          'invoice-123',
+          'item-123',
+          updateItemDto,
+          mockUser,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('deleteItem', () => {
+    it('should delete item from invoice', async () => {
+      invoicesService.deleteItem.mockResolvedValue(mockInvoiceResponse);
+
+      const result = await controller.deleteItem(
+        'invoice-123',
+        'item-123',
+        mockUser,
+      );
+
+      expect(result).toEqual(mockInvoiceResponse);
+      expect(invoicesService.deleteItem).toHaveBeenCalledWith(
+        'invoice-123',
+        'item-123',
+        mockUser.userId,
+      );
+    });
+
+    it('should call service with correct parameters', async () => {
+      invoicesService.deleteItem.mockResolvedValue(mockInvoiceResponse);
+
+      await controller.deleteItem('invoice-456', 'item-456', mockUser);
+
+      expect(invoicesService.deleteItem).toHaveBeenCalledWith(
+        'invoice-456',
+        'item-456',
+        mockUser.userId,
+      );
+    });
+
+    it('should propagate NotFoundException for invoice not found', async () => {
+      const error = new NotFoundException('Factura no encontrada');
+      invoicesService.deleteItem.mockRejectedValue(error);
+
+      await expect(
+        controller.deleteItem('nonexistent', 'item-123', mockUser),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should propagate NotFoundException for item not found', async () => {
+      const error = new NotFoundException('Item de factura no encontrado');
+      invoicesService.deleteItem.mockRejectedValue(error);
+
+      await expect(
+        controller.deleteItem('invoice-123', 'nonexistent', mockUser),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should propagate BadRequestException for non-DRAFT invoice', async () => {
+      const error = new BadRequestException(
+        'Solo se pueden eliminar items de facturas en borrador',
+      );
+      invoicesService.deleteItem.mockRejectedValue(error);
+
+      await expect(
+        controller.deleteItem('invoice-123', 'item-123', mockUser),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

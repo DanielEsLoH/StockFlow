@@ -124,10 +124,16 @@ describe('InvoicesService', () => {
         findUnique: jest.fn(),
       },
       invoiceItem: {
+        create: jest.fn(),
         createMany: jest.fn(),
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
         deleteMany: jest.fn(),
       },
       product: {
+        findFirst: jest.fn(),
         update: jest.fn(),
       },
       stockMovement: {
@@ -153,11 +159,18 @@ describe('InvoicesService', () => {
         count: jest.fn(),
       },
       invoiceItem: {
+        create: jest.fn(),
         createMany: jest.fn(),
+        findFirst: jest.fn(),
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
         deleteMany: jest.fn(),
       },
       product: {
         findFirst: jest.fn(),
+        findUnique: jest.fn(),
         update: jest.fn(),
       },
       customer: {
@@ -1893,6 +1906,998 @@ describe('InvoicesService', () => {
       const result = await service.findOne('invoice-123');
 
       expect(result.items).toEqual([]);
+    });
+  });
+
+  describe('addItem', () => {
+    const addItemDto = {
+      productId: 'product-456',
+      quantity: 3,
+      unitPrice: 50,
+      taxRate: 19,
+      discount: 0,
+    };
+
+    const mockProduct2 = {
+      ...mockProduct,
+      id: 'product-456',
+      name: 'Test Product 2',
+      stock: 50,
+    };
+
+    beforeEach(() => {
+      // Mock invoice findFirst - DRAFT invoice
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        mockInvoice,
+      );
+      // Mock product findFirst
+      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(
+        mockProduct2,
+      );
+
+      // Setup transaction mock
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.create = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest.fn().mockResolvedValue([
+        mockInvoiceItem,
+        {
+          ...mockInvoiceItem,
+          id: 'item-456',
+          productId: 'product-456',
+          quantity: 3,
+          unitPrice: 50,
+          subtotal: 150,
+          tax: 28.5,
+          total: 178.5,
+        },
+      ]);
+      txMock.invoice.update.mockResolvedValue({
+        ...mockInvoice,
+        subtotal: 349.98,
+        tax: 66.4962,
+        total: 416.4762,
+        items: [mockInvoiceItem],
+      });
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+    });
+
+    it('should add an item to a DRAFT invoice', async () => {
+      const result = await service.addItem(
+        'invoice-123',
+        addItemDto,
+        mockUserId,
+      );
+
+      expect(result).toBeDefined();
+      expect(prismaService.$transaction).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when invoice not found', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.addItem('nonexistent', addItemDto, mockUserId),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException with correct message for invoice not found', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.addItem('nonexistent', addItemDto, mockUserId),
+      ).rejects.toThrow('Factura no encontrada');
+    });
+
+    it('should throw BadRequestException for non-DRAFT invoice', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoice,
+        status: InvoiceStatus.SENT,
+      });
+
+      await expect(
+        service.addItem('invoice-123', addItemDto, mockUserId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException with correct message for non-DRAFT', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoice,
+        status: InvoiceStatus.SENT,
+      });
+
+      await expect(
+        service.addItem('invoice-123', addItemDto, mockUserId),
+      ).rejects.toThrow('Solo se pueden agregar items a facturas en borrador');
+    });
+
+    it('should throw NotFoundException when product not found', async () => {
+      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.addItem('invoice-123', addItemDto, mockUserId),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException with correct message for product not found', async () => {
+      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.addItem('invoice-123', addItemDto, mockUserId),
+      ).rejects.toThrow(`Producto no encontrado: ${addItemDto.productId}`);
+    });
+
+    it('should throw BadRequestException for insufficient stock', async () => {
+      (prismaService.product.findFirst as jest.Mock).mockResolvedValue({
+        ...mockProduct2,
+        stock: 2, // Less than requested quantity of 3
+      });
+
+      await expect(
+        service.addItem('invoice-123', addItemDto, mockUserId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException with correct message for insufficient stock', async () => {
+      (prismaService.product.findFirst as jest.Mock).mockResolvedValue({
+        ...mockProduct2,
+        stock: 2,
+      });
+
+      await expect(
+        service.addItem('invoice-123', addItemDto, mockUserId),
+      ).rejects.toThrow(
+        `Stock insuficiente para el producto: ${mockProduct2.name}`,
+      );
+    });
+
+    it('should create invoice item with correct calculations', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.create = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.addItem('invoice-123', addItemDto, mockUserId);
+
+      // subtotal = 3 * 50 = 150
+      // tax = 150 * 0.19 = 28.5
+      // total = 150 + 28.5 - 0 = 178.5
+      expect(txMock.invoiceItem.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          invoiceId: 'invoice-123',
+          productId: 'product-456',
+          quantity: 3,
+          unitPrice: 50,
+          taxRate: 19,
+          discount: 0,
+          subtotal: 150,
+          tax: 28.5,
+          total: 178.5,
+        }),
+      });
+    });
+
+    it('should decrement product stock', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.create = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.addItem('invoice-123', addItemDto, mockUserId);
+
+      expect(txMock.product.update).toHaveBeenCalledWith({
+        where: { id: 'product-456' },
+        data: {
+          stock: {
+            decrement: 3,
+          },
+        },
+      });
+    });
+
+    it('should create stock movement', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.create = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.addItem('invoice-123', addItemDto, mockUserId);
+
+      expect(txMock.stockMovement.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          tenantId: mockTenantId,
+          productId: 'product-456',
+          userId: mockUserId,
+          type: 'SALE',
+          quantity: -3,
+          invoiceId: 'invoice-123',
+        }),
+      });
+    });
+
+    it('should use default taxRate of 19 if not provided', async () => {
+      const dtoWithoutTax = {
+        productId: 'product-456',
+        quantity: 3,
+        unitPrice: 50,
+      };
+
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.create = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.addItem('invoice-123', dtoWithoutTax, mockUserId);
+
+      expect(txMock.invoiceItem.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          taxRate: 19,
+        }),
+      });
+    });
+
+    it('should use default discount of 0 if not provided', async () => {
+      const dtoWithoutDiscount = {
+        productId: 'product-456',
+        quantity: 3,
+        unitPrice: 50,
+      };
+
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.create = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.addItem('invoice-123', dtoWithoutDiscount, mockUserId);
+
+      expect(txMock.invoiceItem.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          discount: 0,
+        }),
+      });
+    });
+
+    it('should recalculate invoice totals', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.create = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest.fn().mockResolvedValue([
+        { subtotal: 100, tax: 19, discount: 0 },
+        { subtotal: 150, tax: 28.5, discount: 0 },
+      ]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.addItem('invoice-123', addItemDto, mockUserId);
+
+      expect(txMock.invoice.update).toHaveBeenCalledWith({
+        where: { id: 'invoice-123' },
+        data: {
+          subtotal: 250,
+          tax: 47.5,
+          discount: 0,
+          total: 297.5,
+        },
+        include: expect.any(Object),
+      });
+    });
+
+    it('should require tenant context', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.create = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.addItem('invoice-123', addItemDto, mockUserId);
+
+      expect(tenantContextService.requireTenantId).toHaveBeenCalled();
+    });
+
+    it('should scope product check to tenant', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.create = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.addItem('invoice-123', addItemDto, mockUserId);
+
+      expect(prismaService.product.findFirst).toHaveBeenCalledWith({
+        where: { id: 'product-456', tenantId: mockTenantId },
+      });
+    });
+  });
+
+  describe('updateItem', () => {
+    const updateItemDto = {
+      quantity: 5,
+      unitPrice: 75,
+    };
+
+    beforeEach(() => {
+      // Mock invoice findFirst - DRAFT invoice
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        mockInvoice,
+      );
+      // Mock invoiceItem findFirst
+      (prismaService.invoiceItem.findFirst as jest.Mock) = jest
+        .fn()
+        .mockResolvedValue({
+          ...mockInvoiceItem,
+          product: mockProduct,
+        });
+      // Mock product findUnique for stock check
+      (prismaService.product.findUnique as jest.Mock) = jest
+        .fn()
+        .mockResolvedValue(mockProduct);
+
+      // Setup transaction mock
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.update = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest.fn().mockResolvedValue([
+        {
+          ...mockInvoiceItem,
+          quantity: 5,
+          subtotal: 375,
+          tax: 71.25,
+          total: 446.25,
+        },
+      ]);
+      txMock.invoice.update.mockResolvedValue({
+        ...mockInvoice,
+        subtotal: 375,
+        tax: 71.25,
+        total: 446.25,
+      });
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+    });
+
+    it('should update an item on a DRAFT invoice', async () => {
+      const result = await service.updateItem(
+        'invoice-123',
+        'item-123',
+        updateItemDto,
+        mockUserId,
+      );
+
+      expect(result).toBeDefined();
+      expect(prismaService.$transaction).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when invoice not found', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.updateItem(
+          'nonexistent',
+          'item-123',
+          updateItemDto,
+          mockUserId,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException with correct message for invoice not found', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.updateItem(
+          'nonexistent',
+          'item-123',
+          updateItemDto,
+          mockUserId,
+        ),
+      ).rejects.toThrow('Factura no encontrada');
+    });
+
+    it('should throw BadRequestException for non-DRAFT invoice', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoice,
+        status: InvoiceStatus.SENT,
+      });
+
+      await expect(
+        service.updateItem(
+          'invoice-123',
+          'item-123',
+          updateItemDto,
+          mockUserId,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException with correct message for non-DRAFT', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoice,
+        status: InvoiceStatus.SENT,
+      });
+
+      await expect(
+        service.updateItem(
+          'invoice-123',
+          'item-123',
+          updateItemDto,
+          mockUserId,
+        ),
+      ).rejects.toThrow(
+        'Solo se pueden modificar items de facturas en borrador',
+      );
+    });
+
+    it('should throw NotFoundException when item not found', async () => {
+      (prismaService.invoiceItem.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        service.updateItem(
+          'invoice-123',
+          'nonexistent',
+          updateItemDto,
+          mockUserId,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException with correct message for item not found', async () => {
+      (prismaService.invoiceItem.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        service.updateItem(
+          'invoice-123',
+          'nonexistent',
+          updateItemDto,
+          mockUserId,
+        ),
+      ).rejects.toThrow('Item de factura no encontrado');
+    });
+
+    it('should throw BadRequestException for insufficient stock when increasing quantity', async () => {
+      // Current quantity is 2, new quantity is 5, diff is 3
+      // Product stock is 1 (less than diff of 3)
+      (prismaService.product.findUnique as jest.Mock).mockResolvedValue({
+        ...mockProduct,
+        stock: 1,
+      });
+
+      await expect(
+        service.updateItem(
+          'invoice-123',
+          'item-123',
+          { quantity: 5 },
+          mockUserId,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException with correct message for insufficient stock', async () => {
+      (prismaService.product.findUnique as jest.Mock).mockResolvedValue({
+        ...mockProduct,
+        stock: 1,
+      });
+
+      await expect(
+        service.updateItem(
+          'invoice-123',
+          'item-123',
+          { quantity: 5 },
+          mockUserId,
+        ),
+      ).rejects.toThrow(
+        `Stock insuficiente para el producto: ${mockProduct.name}`,
+      );
+    });
+
+    it('should decrement stock when quantity increases', async () => {
+      // Current quantity is 2, new quantity is 5, diff is +3
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.update = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.updateItem(
+        'invoice-123',
+        'item-123',
+        { quantity: 5 },
+        mockUserId,
+      );
+
+      expect(txMock.product.update).toHaveBeenCalledWith({
+        where: { id: mockProduct.id },
+        data: {
+          stock: {
+            decrement: 3, // 5 - 2 = 3
+          },
+        },
+      });
+    });
+
+    it('should increment stock when quantity decreases', async () => {
+      // Current quantity is 2, new quantity is 1, diff is -1
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.update = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.updateItem(
+        'invoice-123',
+        'item-123',
+        { quantity: 1 },
+        mockUserId,
+      );
+
+      expect(txMock.product.update).toHaveBeenCalledWith({
+        where: { id: mockProduct.id },
+        data: {
+          stock: {
+            increment: 1, // abs(1 - 2) = 1
+          },
+        },
+      });
+    });
+
+    it('should create ADJUSTMENT stock movement when quantity changes', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.update = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.updateItem(
+        'invoice-123',
+        'item-123',
+        { quantity: 5 },
+        mockUserId,
+      );
+
+      expect(txMock.stockMovement.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          tenantId: mockTenantId,
+          productId: mockProduct.id,
+          userId: mockUserId,
+          type: 'ADJUSTMENT',
+          quantity: -3, // Negative of the diff (5 - 2 = 3)
+          invoiceId: 'invoice-123',
+        }),
+      });
+    });
+
+    it('should not update stock when quantity is unchanged', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.update = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      // Only updating unitPrice, not quantity
+      await service.updateItem(
+        'invoice-123',
+        'item-123',
+        { unitPrice: 100 },
+        mockUserId,
+      );
+
+      // product.update should not be called since quantity didn't change
+      expect(txMock.product.update).not.toHaveBeenCalled();
+      expect(txMock.stockMovement.create).not.toHaveBeenCalled();
+    });
+
+    it('should recalculate item totals correctly', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.update = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.updateItem(
+        'invoice-123',
+        'item-123',
+        { quantity: 5, unitPrice: 75 },
+        mockUserId,
+      );
+
+      // subtotal = 5 * 75 = 375
+      // tax = 375 * 0.19 = 71.25
+      // total = 375 + 71.25 - 0 = 446.25
+      expect(txMock.invoiceItem.update).toHaveBeenCalledWith({
+        where: { id: 'item-123' },
+        data: expect.objectContaining({
+          quantity: 5,
+          unitPrice: 75,
+          subtotal: 375,
+          tax: 71.25,
+          total: 446.25,
+        }),
+      });
+    });
+
+    it('should keep existing values when not provided in dto', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.update = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      // Only update quantity, keep other values
+      await service.updateItem(
+        'invoice-123',
+        'item-123',
+        { quantity: 3 },
+        mockUserId,
+      );
+
+      expect(txMock.invoiceItem.update).toHaveBeenCalledWith({
+        where: { id: 'item-123' },
+        data: expect.objectContaining({
+          quantity: 3,
+          unitPrice: Number(mockInvoiceItem.unitPrice),
+          taxRate: Number(mockInvoiceItem.taxRate),
+          discount: Number(mockInvoiceItem.discount),
+        }),
+      });
+    });
+
+    it('should recalculate invoice totals', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.update = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([{ subtotal: 375, tax: 71.25, discount: 5 }]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.updateItem(
+        'invoice-123',
+        'item-123',
+        updateItemDto,
+        mockUserId,
+      );
+
+      expect(txMock.invoice.update).toHaveBeenCalledWith({
+        where: { id: 'invoice-123' },
+        data: {
+          subtotal: 375,
+          tax: 71.25,
+          discount: 5,
+          total: 441.25, // 375 + 71.25 - 5
+        },
+        include: expect.any(Object),
+      });
+    });
+
+    it('should require tenant context', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.update = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([mockInvoiceItem]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.updateItem(
+        'invoice-123',
+        'item-123',
+        updateItemDto,
+        mockUserId,
+      );
+
+      expect(tenantContextService.requireTenantId).toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteItem', () => {
+    beforeEach(() => {
+      // Mock invoice findFirst - DRAFT invoice
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        mockInvoice,
+      );
+      // Mock invoiceItem findFirst
+      (prismaService.invoiceItem.findFirst as jest.Mock) = jest
+        .fn()
+        .mockResolvedValue({
+          ...mockInvoiceItem,
+          product: mockProduct,
+        });
+
+      // Setup transaction mock
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.delete = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest.fn().mockResolvedValue([]);
+      txMock.invoice.update.mockResolvedValue({
+        ...mockInvoice,
+        subtotal: 0,
+        tax: 0,
+        discount: 0,
+        total: 0,
+        items: [],
+      });
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+    });
+
+    it('should delete an item from a DRAFT invoice', async () => {
+      const result = await service.deleteItem(
+        'invoice-123',
+        'item-123',
+        mockUserId,
+      );
+
+      expect(result).toBeDefined();
+      expect(prismaService.$transaction).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when invoice not found', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.deleteItem('nonexistent', 'item-123', mockUserId),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException with correct message for invoice not found', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.deleteItem('nonexistent', 'item-123', mockUserId),
+      ).rejects.toThrow('Factura no encontrada');
+    });
+
+    it('should throw BadRequestException for non-DRAFT invoice', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoice,
+        status: InvoiceStatus.SENT,
+      });
+
+      await expect(
+        service.deleteItem('invoice-123', 'item-123', mockUserId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException with correct message for non-DRAFT', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoice,
+        status: InvoiceStatus.SENT,
+      });
+
+      await expect(
+        service.deleteItem('invoice-123', 'item-123', mockUserId),
+      ).rejects.toThrow(
+        'Solo se pueden eliminar items de facturas en borrador',
+      );
+    });
+
+    it('should throw NotFoundException when item not found', async () => {
+      (prismaService.invoiceItem.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        service.deleteItem('invoice-123', 'nonexistent', mockUserId),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException with correct message for item not found', async () => {
+      (prismaService.invoiceItem.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        service.deleteItem('invoice-123', 'nonexistent', mockUserId),
+      ).rejects.toThrow('Item de factura no encontrado');
+    });
+
+    it('should restore product stock', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.delete = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest.fn().mockResolvedValue([]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.deleteItem('invoice-123', 'item-123', mockUserId);
+
+      expect(txMock.product.update).toHaveBeenCalledWith({
+        where: { id: mockProduct.id },
+        data: {
+          stock: {
+            increment: mockInvoiceItem.quantity,
+          },
+        },
+      });
+    });
+
+    it('should create RETURN stock movement', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.delete = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest.fn().mockResolvedValue([]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.deleteItem('invoice-123', 'item-123', mockUserId);
+
+      expect(txMock.stockMovement.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          tenantId: mockTenantId,
+          productId: mockProduct.id,
+          userId: mockUserId,
+          type: 'RETURN',
+          quantity: mockInvoiceItem.quantity,
+          invoiceId: 'invoice-123',
+        }),
+      });
+    });
+
+    it('should delete the invoice item', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.delete = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest.fn().mockResolvedValue([]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.deleteItem('invoice-123', 'item-123', mockUserId);
+
+      expect(txMock.invoiceItem.delete).toHaveBeenCalledWith({
+        where: { id: 'item-123' },
+      });
+    });
+
+    it('should recalculate invoice totals after deletion', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.delete = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest
+        .fn()
+        .mockResolvedValue([{ subtotal: 200, tax: 38, discount: 10 }]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.deleteItem('invoice-123', 'item-123', mockUserId);
+
+      expect(txMock.invoice.update).toHaveBeenCalledWith({
+        where: { id: 'invoice-123' },
+        data: {
+          subtotal: 200,
+          tax: 38,
+          discount: 10,
+          total: 228, // 200 + 38 - 10
+        },
+        include: expect.any(Object),
+      });
+    });
+
+    it('should set invoice totals to 0 when all items are deleted', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.delete = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest.fn().mockResolvedValue([]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.deleteItem('invoice-123', 'item-123', mockUserId);
+
+      expect(txMock.invoice.update).toHaveBeenCalledWith({
+        where: { id: 'invoice-123' },
+        data: {
+          subtotal: 0,
+          tax: 0,
+          discount: 0,
+          total: 0,
+        },
+        include: expect.any(Object),
+      });
+    });
+
+    it('should not update stock when item has no productId', async () => {
+      (prismaService.invoiceItem.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoiceItem,
+        productId: null,
+        product: null,
+      });
+
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.delete = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest.fn().mockResolvedValue([]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.deleteItem('invoice-123', 'item-123', mockUserId);
+
+      expect(txMock.product.update).not.toHaveBeenCalled();
+      expect(txMock.stockMovement.create).not.toHaveBeenCalled();
+    });
+
+    it('should require tenant context', async () => {
+      const txMock = createMockTransaction();
+      txMock.invoiceItem.delete = jest.fn().mockResolvedValue({});
+      txMock.invoiceItem.findMany = jest.fn().mockResolvedValue([]);
+      txMock.invoice.update.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.deleteItem('invoice-123', 'item-123', mockUserId);
+
+      expect(tenantContextService.requireTenantId).toHaveBeenCalled();
     });
   });
 });

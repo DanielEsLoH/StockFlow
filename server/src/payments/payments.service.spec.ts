@@ -142,6 +142,22 @@ describe('PaymentsService', () => {
       });
     });
 
+    it('should use default empty object when called with no parameter', async () => {
+      // This tests the default parameter: filters: FilterPaymentsDto = {}
+      const result = await service.findAll();
+
+      expect(result.data).toHaveLength(2);
+      expect(result.meta).toEqual({
+        total: 2,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      });
+      expect(prismaService.payment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 0, take: 10 }),
+      );
+    });
+
     it('should calculate correct pagination for page 2', async () => {
       (prismaService.payment.findMany as jest.Mock).mockResolvedValue([
         mockPayment,
@@ -978,6 +994,31 @@ describe('PaymentsService', () => {
       const result = await service.findOne('payment-123');
 
       expect(result.invoice?.customer).toBeUndefined();
+    });
+
+    it('should handle payment without invoice relation', async () => {
+      // This tests line 464: the `if (payment.invoice)` branch when invoice is undefined
+      const paymentWithoutInvoice = {
+        id: 'payment-123',
+        tenantId: mockTenantId,
+        invoiceId: 'invoice-123',
+        amount: 500,
+        method: PaymentMethod.CASH,
+        reference: 'REC-001',
+        notes: 'Partial payment',
+        paymentDate: new Date('2024-01-15'),
+        createdAt: new Date('2024-01-15'),
+        // Note: no invoice property - simulates payment without eager-loaded relation
+      };
+      (prismaService.payment.findFirst as jest.Mock).mockResolvedValue(
+        paymentWithoutInvoice,
+      );
+
+      const result = await service.findOne('payment-123');
+
+      expect(result.id).toBe('payment-123');
+      expect(result.amount).toBe(500);
+      expect(result.invoice).toBeUndefined();
     });
   });
 });

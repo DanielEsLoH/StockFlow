@@ -168,6 +168,113 @@ describe('PaymentsController', () => {
       expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('limit: 25'));
     });
 
+    it('should use both default page and limit when neither provided', async () => {
+      // Tests both nullish coalescing branches (lines 55: filters.page ?? 1 and filters.limit ?? 10)
+      paymentsService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.findAll({});
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Listing payments - page: 1, limit: 10',
+      );
+    });
+
+    it('should handle filters with explicit undefined values', async () => {
+      // This explicitly tests the nullish coalescing when values are explicitly undefined
+      paymentsService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      const filtersWithUndefined: FilterPaymentsDto = {
+        page: undefined,
+        limit: undefined,
+      };
+
+      await controller.findAll(filtersWithUndefined);
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Listing payments - page: 1, limit: 10',
+      );
+      expect(paymentsService.findAll).toHaveBeenCalledWith(filtersWithUndefined);
+    });
+
+    it('should use page 0 when explicitly set (not trigger default)', async () => {
+      // Tests that nullish coalescing (??) does NOT replace 0 with 1
+      // since 0 is falsy but not null/undefined
+      paymentsService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.findAll({ page: 0, limit: 10 });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Listing payments - page: 0, limit: 10',
+      );
+    });
+
+    it('should use limit 0 when explicitly set (not trigger default)', async () => {
+      // Tests that nullish coalescing (??) does NOT replace 0 with 10
+      // since 0 is falsy but not null/undefined
+      paymentsService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.findAll({ page: 1, limit: 0 });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Listing payments - page: 1, limit: 0',
+      );
+    });
+
+    it('should use both page 0 and limit 0 when explicitly set', async () => {
+      // Tests both nullish coalescing branches with falsy (but defined) values
+      paymentsService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.findAll({ page: 0, limit: 0 });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Listing payments - page: 0, limit: 0',
+      );
+    });
+
+    it('should use default page 1 when page is null', async () => {
+      // Tests nullish coalescing with null (should trigger default)
+      paymentsService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.findAll({ page: null as unknown as number, limit: 20 });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Listing payments - page: 1, limit: 20',
+      );
+    });
+
+    it('should use default limit 10 when limit is null', async () => {
+      // Tests nullish coalescing with null (should trigger default)
+      paymentsService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.findAll({ page: 3, limit: null as unknown as number });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Listing payments - page: 3, limit: 10',
+      );
+    });
+
+    it('should use defaults when both page and limit are null', async () => {
+      // Tests both nullish coalescing branches with null values
+      paymentsService.findAll.mockResolvedValue(mockPaginatedResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.findAll({
+        page: null as unknown as number,
+        limit: null as unknown as number,
+      });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Listing payments - page: 1, limit: 10',
+      );
+    });
+
     it('should propagate service errors', async () => {
       const error = new Error('Database error');
       paymentsService.findAll.mockRejectedValue(error);
@@ -493,6 +600,159 @@ describe('PaymentsController', () => {
       const result = await controller.findOne('payment-123');
 
       expect(result.invoice?.customer).toBeNull();
+    });
+
+    it('should handle payment without invoice relation', async () => {
+      const paymentWithoutInvoice: PaymentResponse = {
+        ...mockPayment,
+        invoice: undefined,
+      };
+      paymentsService.findOne.mockResolvedValue(paymentWithoutInvoice);
+
+      const result = await controller.findOne('payment-123');
+
+      expect(result.invoice).toBeUndefined();
+    });
+
+    it('should handle UUID payment id', async () => {
+      const uuidId = '550e8400-e29b-41d4-a716-446655440000';
+      paymentsService.findOne.mockResolvedValue({
+        ...mockPayment,
+        id: uuidId,
+      });
+
+      const result = await controller.findOne(uuidId);
+
+      expect(result.id).toBe(uuidId);
+      expect(paymentsService.findOne).toHaveBeenCalledWith(uuidId);
+    });
+
+    it('should handle different id formats for deletion', async () => {
+      const uuidId = '550e8400-e29b-41d4-a716-446655440000';
+      paymentsService.delete.mockResolvedValue(undefined);
+
+      await controller.delete(uuidId);
+
+      expect(paymentsService.delete).toHaveBeenCalledWith(uuidId);
+    });
+
+    it('should log correct format for create with decimal amount', async () => {
+      const dtoWithDecimalAmount: CreatePaymentDto = {
+        invoiceId: 'invoice-123',
+        amount: 123.45,
+        method: PaymentMethod.CASH,
+      };
+      paymentsService.create.mockResolvedValue({
+        ...mockPayment,
+        amount: 123.45,
+      });
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.create(dtoWithDecimalAmount);
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Recording payment for invoice invoice-123, amount: 123.45',
+      );
+    });
+
+    it('should handle null reference and notes in create dto', async () => {
+      const dtoWithNulls: CreatePaymentDto = {
+        invoiceId: 'invoice-123',
+        amount: 100,
+        method: PaymentMethod.CASH,
+        reference: undefined,
+        notes: undefined,
+      };
+      paymentsService.create.mockResolvedValue({
+        ...mockPayment,
+        reference: null,
+        notes: null,
+      });
+
+      const result = await controller.create(dtoWithNulls);
+
+      expect(result.reference).toBeNull();
+      expect(result.notes).toBeNull();
+    });
+  });
+
+  describe('findOne edge cases', () => {
+    it('should handle empty string id', async () => {
+      paymentsService.findOne.mockResolvedValue(mockPayment);
+
+      await controller.findOne('');
+
+      expect(paymentsService.findOne).toHaveBeenCalledWith('');
+    });
+
+    it('should handle special characters in id', async () => {
+      const specialId = 'payment-123-abc';
+      paymentsService.findOne.mockResolvedValue({
+        ...mockPayment,
+        id: specialId,
+      });
+
+      const result = await controller.findOne(specialId);
+
+      expect(result.id).toBe(specialId);
+    });
+  });
+
+  describe('create edge cases', () => {
+    it('should handle zero amount', async () => {
+      const zeroAmountDto: CreatePaymentDto = {
+        invoiceId: 'invoice-123',
+        amount: 0,
+        method: PaymentMethod.CASH,
+      };
+      paymentsService.create.mockResolvedValue({
+        ...mockPayment,
+        amount: 0,
+      });
+
+      const result = await controller.create(zeroAmountDto);
+
+      expect(result.amount).toBe(0);
+    });
+
+    it('should handle payment with all optional fields', async () => {
+      const fullDto: CreatePaymentDto = {
+        invoiceId: 'invoice-123',
+        amount: 500,
+        method: PaymentMethod.BANK_TRANSFER,
+        reference: 'REF-123',
+        notes: 'Full payment',
+        paymentDate: new Date('2024-06-15'),
+      };
+      paymentsService.create.mockResolvedValue({
+        ...mockPayment,
+        ...fullDto,
+      });
+
+      const result = await controller.create(fullDto);
+
+      expect(result.reference).toBe('REF-123');
+      expect(result.notes).toBe('Full payment');
+      expect(paymentsService.create).toHaveBeenCalledWith(fullDto);
+    });
+  });
+
+  describe('delete edge cases', () => {
+    it('should handle empty string id for deletion', async () => {
+      paymentsService.delete.mockResolvedValue(undefined);
+
+      await controller.delete('');
+
+      expect(paymentsService.delete).toHaveBeenCalledWith('');
+    });
+
+    it('should complete deletion and return void', async () => {
+      paymentsService.delete.mockResolvedValue(undefined);
+
+      const result = await controller.delete('payment-123');
+
+      expect(result).toBeUndefined();
+      expect(paymentsService.delete).toHaveBeenCalledTimes(1);
     });
   });
 });

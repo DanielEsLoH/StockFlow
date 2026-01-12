@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService, DashboardResponse } from './dashboard.service';
-import type { RequestUser } from '../auth/types';
+import type { RequestUser } from '../auth';
 import { UserRole } from '@prisma/client';
 
 describe('DashboardController', () => {
@@ -239,6 +239,7 @@ describe('DashboardController', () => {
       // The guard is applied via decorator, we verify it's defined in the controller metadata
       const guards = Reflect.getMetadata('__guards__', DashboardController);
       expect(guards).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       expect(guards.length).toBeGreaterThan(0);
     });
 

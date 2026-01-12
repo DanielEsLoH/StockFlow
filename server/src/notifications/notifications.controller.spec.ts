@@ -6,7 +6,7 @@ import {
   LowStockProduct,
 } from './notifications.service';
 import { TenantContextService } from '../common';
-import { SendMailResult } from './mail/mail.service';
+import { SendMailResult } from './mail/brevo.service';
 
 describe('NotificationsController', () => {
   let controller: NotificationsController;
@@ -443,8 +443,8 @@ describe('NotificationsController', () => {
       process.env = originalEnv;
     });
 
-    it('should return configured status when MAIL_HOST is set', () => {
-      process.env.MAIL_HOST = 'smtp.example.com';
+    it('should return configured status when BREVO_API_KEY is set', () => {
+      process.env.BREVO_API_KEY = 'xkeysib-123456789';
 
       const result = controller.getStatus();
 
@@ -452,8 +452,8 @@ describe('NotificationsController', () => {
       expect(result.message).toContain('enabled');
     });
 
-    it('should return not configured status when MAIL_HOST is not set', () => {
-      delete process.env.MAIL_HOST;
+    it('should return not configured status when BREVO_API_KEY is not set', () => {
+      delete process.env.BREVO_API_KEY;
 
       const result = controller.getStatus();
 
@@ -471,26 +471,23 @@ describe('NotificationsController', () => {
     });
 
     it('should include environment variable hint when not configured', () => {
-      delete process.env.MAIL_HOST;
+      delete process.env.BREVO_API_KEY;
 
       const result = controller.getStatus();
 
-      expect(result.message).toContain('MAIL_HOST');
-      expect(result.message).toContain('MAIL_PORT');
-      expect(result.message).toContain('MAIL_USER');
-      expect(result.message).toContain('MAIL_PASSWORD');
+      expect(result.message).toContain('BREVO_API_KEY');
     });
 
     it('should return enabled message when configured', () => {
-      process.env.MAIL_HOST = 'smtp.example.com';
+      process.env.BREVO_API_KEY = 'xkeysib-123456789';
 
       const result = controller.getStatus();
 
       expect(result.message).toContain('scheduled jobs are active');
     });
 
-    it('should handle empty MAIL_HOST', () => {
-      process.env.MAIL_HOST = '';
+    it('should handle empty BREVO_API_KEY', () => {
+      process.env.BREVO_API_KEY = '';
 
       const result = controller.getStatus();
 

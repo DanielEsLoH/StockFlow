@@ -114,6 +114,36 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   MAIL_FROM?: string = 'StockFlow <noreply@stockflow.com>';
+
+  // ============================================================================
+  // BREVO EMAIL CONFIGURATION (Optional - for transactional emails via Brevo API)
+  // ============================================================================
+
+  /**
+   * Brevo API key for sending transactional emails.
+   * Get your API key from https://app.brevo.com/settings/keys/api
+   * If not set, email sending will be disabled (logs warning instead).
+   */
+  @IsString()
+  @IsOptional()
+  BREVO_API_KEY?: string;
+
+  /**
+   * Sender email address for Brevo emails.
+   * This email must be verified in your Brevo account.
+   * Default: "noreply@stockflow.com"
+   */
+  @IsString()
+  @IsOptional()
+  BREVO_SENDER_EMAIL?: string = 'noreply@stockflow.com';
+
+  /**
+   * Sender name displayed in email clients.
+   * Default: "StockFlow"
+   */
+  @IsString()
+  @IsOptional()
+  BREVO_SENDER_NAME?: string = 'StockFlow';
 }
 
 /**

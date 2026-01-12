@@ -8,12 +8,12 @@ import {
   PaymentEmailData,
 } from './notifications.service';
 import { PrismaService } from '../prisma';
-import { MailService, SendMailResult } from './mail/mail.service';
+import { BrevoService, SendMailResult } from './mail/brevo.service';
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
   let prismaService: jest.Mocked<PrismaService>;
-  let mailService: jest.Mocked<MailService>;
+  let brevoService: jest.Mocked<BrevoService>;
 
   // Test data
   const mockTenantId = 'tenant-123';
@@ -85,26 +85,26 @@ describe('NotificationsService', () => {
       },
     };
 
-    const mockMailService = {
+    const mockBrevoService = {
       isConfigured: jest.fn().mockReturnValue(true),
-      sendWelcome: jest.fn().mockResolvedValue(mockSendMailResult),
-      sendLowStockAlert: jest.fn().mockResolvedValue(mockSendMailResult),
-      sendInvoiceSent: jest.fn().mockResolvedValue(mockSendMailResult),
-      sendOverdueInvoice: jest.fn().mockResolvedValue(mockSendMailResult),
-      sendPaymentReceived: jest.fn().mockResolvedValue(mockSendMailResult),
+      sendWelcomeEmail: jest.fn().mockResolvedValue(mockSendMailResult),
+      sendLowStockAlertEmail: jest.fn().mockResolvedValue(mockSendMailResult),
+      sendInvoiceEmail: jest.fn().mockResolvedValue(mockSendMailResult),
+      sendOverdueInvoiceEmail: jest.fn().mockResolvedValue(mockSendMailResult),
+      sendPaymentReceivedEmail: jest.fn().mockResolvedValue(mockSendMailResult),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         NotificationsService,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: MailService, useValue: mockMailService },
+        { provide: BrevoService, useValue: mockBrevoService },
       ],
     }).compile();
 
     service = module.get<NotificationsService>(NotificationsService);
     prismaService = module.get(PrismaService);
-    mailService = module.get(MailService);
+    brevoService = module.get(BrevoService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'debug').mockImplementation();
@@ -132,7 +132,7 @@ describe('NotificationsService', () => {
       const result = await service.sendWelcomeEmail(mockUser);
 
       expect(result.success).toBe(true);
-      expect(mailService.sendWelcome).toHaveBeenCalledWith(
+      expect(brevoService.sendWelcomeEmail).toHaveBeenCalledWith(
         'user@example.com',
         'John Doe',
         'Acme Corp',
@@ -153,7 +153,7 @@ describe('NotificationsService', () => {
 
       await service.sendWelcomeEmail(mockUser);
 
-      expect(mailService.sendWelcome).toHaveBeenCalledWith(
+      expect(brevoService.sendWelcomeEmail).toHaveBeenCalledWith(
         'user@example.com',
         'John Doe',
         'Your Organization',
@@ -168,7 +168,7 @@ describe('NotificationsService', () => {
 
       await service.sendWelcomeEmail(userWithoutLastName);
 
-      expect(mailService.sendWelcome).toHaveBeenCalledWith(
+      expect(brevoService.sendWelcomeEmail).toHaveBeenCalledWith(
         'user@example.com',
         'John',
         'Acme Corp',
@@ -197,9 +197,8 @@ describe('NotificationsService', () => {
       const result = await service.sendLowStockAlert(mockTenantId);
 
       expect(result?.success).toBe(true);
-      expect(mailService.sendLowStockAlert).toHaveBeenCalledWith(
+      expect(brevoService.sendLowStockAlertEmail).toHaveBeenCalledWith(
         ['admin@example.com'],
-        'Acme Corp',
         [
           {
             sku: 'SKU-001',
@@ -208,6 +207,7 @@ describe('NotificationsService', () => {
             minStock: 10,
           },
         ],
+        'Acme Corp',
       );
     });
 
@@ -236,7 +236,7 @@ describe('NotificationsService', () => {
       const result = await service.sendLowStockAlert(mockTenantId);
 
       expect(result).toBeNull();
-      expect(mailService.sendLowStockAlert).not.toHaveBeenCalled();
+      expect(brevoService.sendLowStockAlertEmail).not.toHaveBeenCalled();
     });
 
     it('should return null when no admin users found', async () => {
@@ -273,10 +273,10 @@ describe('NotificationsService', () => {
 
       await service.sendLowStockAlert(mockTenantId);
 
-      expect(mailService.sendLowStockAlert).toHaveBeenCalledWith(
+      expect(brevoService.sendLowStockAlertEmail).toHaveBeenCalledWith(
         ['admin1@example.com', 'admin2@example.com'],
-        'Acme Corp',
         expect.any(Array),
+        'Acme Corp',
       );
     });
 
@@ -299,13 +299,13 @@ describe('NotificationsService', () => {
 
       await service.sendLowStockAlert(mockTenantId);
 
-      expect(mailService.sendLowStockAlert).toHaveBeenCalledWith(
+      expect(brevoService.sendLowStockAlertEmail).toHaveBeenCalledWith(
         expect.any(Array),
-        'Acme Corp',
         expect.arrayContaining([
           expect.objectContaining({ sku: 'SKU-001' }),
           expect.objectContaining({ sku: 'SKU-002' }),
         ]),
+        'Acme Corp',
       );
     });
   });
@@ -319,7 +319,7 @@ describe('NotificationsService', () => {
       const result = await service.sendInvoiceSentEmail(mockInvoice, mockTenantId);
 
       expect(result?.success).toBe(true);
-      expect(mailService.sendInvoiceSent).toHaveBeenCalledWith(
+      expect(brevoService.sendInvoiceEmail).toHaveBeenCalledWith(
         'customer@example.com',
         'Jane Customer',
         'INV-001',
@@ -338,7 +338,7 @@ describe('NotificationsService', () => {
       const result = await service.sendInvoiceSentEmail(invoiceWithoutEmail, mockTenantId);
 
       expect(result).toBeNull();
-      expect(mailService.sendInvoiceSent).not.toHaveBeenCalled();
+      expect(brevoService.sendInvoiceEmail).not.toHaveBeenCalled();
     });
 
     it('should return null when customer is null', async () => {
@@ -374,7 +374,7 @@ describe('NotificationsService', () => {
 
       await service.sendInvoiceSentEmail(mockInvoice, mockTenantId);
 
-      expect(mailService.sendInvoiceSent).toHaveBeenCalledWith(
+      expect(brevoService.sendInvoiceEmail).toHaveBeenCalledWith(
         'customer@example.com',
         'Jane Customer',
         'INV-001',
@@ -416,7 +416,7 @@ describe('NotificationsService', () => {
       const result = await service.sendOverdueInvoiceAlert(overdueInvoice, mockTenantId);
 
       expect(result?.success).toBe(true);
-      expect(mailService.sendOverdueInvoice).toHaveBeenCalledWith(
+      expect(brevoService.sendOverdueInvoiceEmail).toHaveBeenCalledWith(
         'customer@example.com',
         'Jane Customer',
         'INV-001',
@@ -436,7 +436,7 @@ describe('NotificationsService', () => {
       const result = await service.sendOverdueInvoiceAlert(invoiceWithoutEmail, mockTenantId);
 
       expect(result).toBeNull();
-      expect(mailService.sendOverdueInvoice).not.toHaveBeenCalled();
+      expect(brevoService.sendOverdueInvoiceEmail).not.toHaveBeenCalled();
     });
 
     it('should return null when invoice is not overdue', async () => {
@@ -468,7 +468,7 @@ describe('NotificationsService', () => {
 
       await service.sendOverdueInvoiceAlert(overdueInvoice, mockTenantId);
 
-      expect(mailService.sendOverdueInvoice).toHaveBeenCalledWith(
+      expect(brevoService.sendOverdueInvoiceEmail).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
         expect.any(String),
@@ -498,7 +498,7 @@ describe('NotificationsService', () => {
 
       await service.sendOverdueInvoiceAlert(invoiceOverdue30Days, mockTenantId);
 
-      expect(mailService.sendOverdueInvoice).toHaveBeenCalledWith(
+      expect(brevoService.sendOverdueInvoiceEmail).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
         expect.any(String),
@@ -528,7 +528,7 @@ describe('NotificationsService', () => {
       );
 
       expect(result?.success).toBe(true);
-      expect(mailService.sendPaymentReceived).toHaveBeenCalledWith(
+      expect(brevoService.sendPaymentReceivedEmail).toHaveBeenCalledWith(
         'customer@example.com',
         'Jane Customer',
         'INV-001',
@@ -552,7 +552,7 @@ describe('NotificationsService', () => {
       );
 
       expect(result).toBeNull();
-      expect(mailService.sendPaymentReceived).not.toHaveBeenCalled();
+      expect(brevoService.sendPaymentReceivedEmail).not.toHaveBeenCalled();
     });
 
     it('should handle invoice without previous payments (totalPaid undefined)', async () => {
@@ -567,7 +567,7 @@ describe('NotificationsService', () => {
         mockTenantId,
       );
 
-      expect(mailService.sendPaymentReceived).toHaveBeenCalledWith(
+      expect(brevoService.sendPaymentReceivedEmail).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
         expect.any(String),
@@ -590,7 +590,7 @@ describe('NotificationsService', () => {
         mockTenantId,
       );
 
-      expect(mailService.sendPaymentReceived).toHaveBeenCalledWith(
+      expect(brevoService.sendPaymentReceivedEmail).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
         expect.any(String),
@@ -613,7 +613,7 @@ describe('NotificationsService', () => {
         mockTenantId,
       );
 
-      expect(mailService.sendPaymentReceived).toHaveBeenCalledWith(
+      expect(brevoService.sendPaymentReceivedEmail).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
         expect.any(String),
@@ -633,7 +633,7 @@ describe('NotificationsService', () => {
         mockTenantId,
       );
 
-      expect(mailService.sendPaymentReceived).toHaveBeenCalledWith(
+      expect(brevoService.sendPaymentReceivedEmail).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
         expect.any(String),
@@ -681,8 +681,8 @@ describe('NotificationsService', () => {
       });
     });
 
-    it('should skip when mail is not configured', async () => {
-      mailService.isConfigured.mockReturnValue(false);
+    it('should skip when Brevo is not configured', async () => {
+      brevoService.isConfigured.mockReturnValue(false);
 
       await service.handleDailyLowStockAlert();
 
@@ -853,8 +853,8 @@ describe('NotificationsService', () => {
       });
     });
 
-    it('should skip when mail is not configured', async () => {
-      mailService.isConfigured.mockReturnValue(false);
+    it('should skip when Brevo is not configured', async () => {
+      brevoService.isConfigured.mockReturnValue(false);
 
       await service.handleDailyOverdueInvoiceReminder();
 
@@ -878,7 +878,7 @@ describe('NotificationsService', () => {
 
       await service.handleDailyOverdueInvoiceReminder();
 
-      expect(mailService.sendOverdueInvoice).not.toHaveBeenCalled();
+      expect(brevoService.sendOverdueInvoiceEmail).not.toHaveBeenCalled();
     });
 
     it('should skip invoices without due date', async () => {
@@ -888,12 +888,12 @@ describe('NotificationsService', () => {
 
       await service.handleDailyOverdueInvoiceReminder();
 
-      expect(mailService.sendOverdueInvoice).not.toHaveBeenCalled();
+      expect(brevoService.sendOverdueInvoiceEmail).not.toHaveBeenCalled();
     });
 
     it('should handle invoice processing failure', async () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
-      mailService.sendOverdueInvoice.mockRejectedValue(new Error('Send failed'));
+      brevoService.sendOverdueInvoiceEmail.mockRejectedValue(new Error('Send failed'));
 
       await service.handleDailyOverdueInvoiceReminder();
 
@@ -905,7 +905,7 @@ describe('NotificationsService', () => {
 
     it('should handle non-Error in invoice processing catch', async () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
-      mailService.sendOverdueInvoice.mockRejectedValue('string error');
+      brevoService.sendOverdueInvoiceEmail.mockRejectedValue('string error');
 
       await service.handleDailyOverdueInvoiceReminder();
 
@@ -954,7 +954,7 @@ describe('NotificationsService', () => {
     it('should convert Decimal total to Number', async () => {
       await service.handleDailyOverdueInvoiceReminder();
 
-      expect(mailService.sendOverdueInvoice).toHaveBeenCalledWith(
+      expect(brevoService.sendOverdueInvoiceEmail).toHaveBeenCalledWith(
         'customer@example.com',
         'Jane Customer',
         'INV-001',
@@ -987,7 +987,7 @@ describe('NotificationsService', () => {
     it('should call sendLowStockAlert internally', async () => {
       await service.triggerLowStockAlert(mockTenantId);
 
-      expect(mailService.sendLowStockAlert).toHaveBeenCalled();
+      expect(brevoService.sendLowStockAlertEmail).toHaveBeenCalled();
     });
   });
 

@@ -27,7 +27,7 @@ export interface JwtConfig {
 }
 
 /**
- * Mail configuration interface
+ * Mail configuration interface (legacy SMTP)
  */
 export interface MailConfig {
   host: string | undefined;
@@ -38,6 +38,15 @@ export interface MailConfig {
 }
 
 /**
+ * Email configuration interface (Brevo)
+ */
+export interface EmailConfig {
+  brevoApiKey: string | undefined;
+  senderEmail: string;
+  senderName: string;
+}
+
+/**
  * Complete application configuration interface
  */
 export interface Configuration {
@@ -45,6 +54,7 @@ export interface Configuration {
   database: DatabaseConfig;
   jwt: JwtConfig;
   mail: MailConfig;
+  email: EmailConfig;
 }
 
 /**
@@ -83,7 +93,7 @@ export const jwtConfig = registerAs(
 );
 
 /**
- * Mail configuration factory
+ * Mail configuration factory (legacy SMTP)
  */
 export const mailConfig = registerAs(
   'mail',
@@ -93,6 +103,18 @@ export const mailConfig = registerAs(
     user: process.env.MAIL_USER,
     password: process.env.MAIL_PASSWORD,
     from: process.env.MAIL_FROM || 'StockFlow <noreply@stockflow.com>',
+  }),
+);
+
+/**
+ * Email configuration factory (Brevo)
+ */
+export const emailConfig = registerAs(
+  'email',
+  (): EmailConfig => ({
+    brevoApiKey: process.env.BREVO_API_KEY,
+    senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@stockflow.com',
+    senderName: process.env.BREVO_SENDER_NAME || 'StockFlow',
   }),
 );
 
@@ -121,5 +143,10 @@ export default (): Configuration => ({
     user: process.env.MAIL_USER,
     password: process.env.MAIL_PASSWORD,
     from: process.env.MAIL_FROM || 'StockFlow <noreply@stockflow.com>',
+  },
+  email: {
+    brevoApiKey: process.env.BREVO_API_KEY,
+    senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@stockflow.com',
+    senderName: process.env.BREVO_SENDER_NAME || 'StockFlow',
   },
 });

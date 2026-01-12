@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { UserRole, PaymentStatus, InvoiceStatus } from '@prisma/client';
 import { PrismaService } from '../prisma';
-import { MailService, SendMailResult } from './mail/mail.service';
+import { BrevoService, SendMailResult } from './mail/brevo.service';
 
 /**
  * User data for welcome email
@@ -70,7 +70,7 @@ export class NotificationsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly mailService: MailService,
+    private readonly brevoService: BrevoService,
   ) {}
 
   // ============================================================================
@@ -95,7 +95,7 @@ export class NotificationsService {
     const tenantName = tenant?.name || 'Your Organization';
     const userName = `${user.firstName} ${user.lastName}`.trim();
 
-    return this.mailService.sendWelcome(user.email, userName, tenantName);
+    return this.brevoService.sendWelcomeEmail(user.email, userName, tenantName);
   }
 
   /**
@@ -164,15 +164,15 @@ export class NotificationsService {
 
     const adminEmails = adminUsers.map((u) => u.email);
 
-    return this.mailService.sendLowStockAlert(
+    return this.brevoService.sendLowStockAlertEmail(
       adminEmails,
-      tenant.name,
       lowStockProducts.map((p) => ({
         sku: p.sku,
         name: p.name,
         currentStock: p.stock,
         minStock: p.minStock,
       })),
+      tenant.name,
     );
   }
 
@@ -204,7 +204,7 @@ export class NotificationsService {
       select: { name: true },
     });
 
-    return this.mailService.sendInvoiceSent(
+    return this.brevoService.sendInvoiceEmail(
       invoice.customer.email,
       invoice.customer.name,
       invoice.invoiceNumber,
@@ -252,7 +252,7 @@ export class NotificationsService {
       select: { name: true },
     });
 
-    return this.mailService.sendOverdueInvoice(
+    return this.brevoService.sendOverdueInvoiceEmail(
       invoice.customer.email,
       invoice.customer.name,
       invoice.invoiceNumber,
@@ -297,7 +297,7 @@ export class NotificationsService {
     const totalPaid = (invoice.totalPaid || 0) + payment.amount;
     const remainingBalance = Math.max(0, invoice.total - totalPaid);
 
-    return this.mailService.sendPaymentReceived(
+    return this.brevoService.sendPaymentReceivedEmail(
       invoice.customer.email,
       invoice.customer.name,
       invoice.invoiceNumber,
@@ -326,8 +326,8 @@ export class NotificationsService {
   async handleDailyLowStockAlert(): Promise<void> {
     this.logger.log('Running daily low stock alert cron job');
 
-    if (!this.mailService.isConfigured()) {
-      this.logger.debug('Mail not configured, skipping low stock alerts');
+    if (!this.brevoService.isConfigured()) {
+      this.logger.debug('Brevo not configured, skipping low stock alerts');
       return;
     }
 
@@ -385,8 +385,8 @@ export class NotificationsService {
   async handleDailyOverdueInvoiceReminder(): Promise<void> {
     this.logger.log('Running daily overdue invoice reminder cron job');
 
-    if (!this.mailService.isConfigured()) {
-      this.logger.debug('Mail not configured, skipping overdue reminders');
+    if (!this.brevoService.isConfigured()) {
+      this.logger.debug('Brevo not configured, skipping overdue reminders');
       return;
     }
 

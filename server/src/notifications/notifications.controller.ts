@@ -228,7 +228,7 @@ export class NotificationsController {
    * GET /notifications/status
    *
    * Returns the status of the notification system.
-   * Checks if mail is configured and enabled.
+   * Checks if Brevo is configured and enabled.
    *
    * @returns Notification system status
    */
@@ -239,12 +239,9 @@ export class NotificationsController {
     scheduledJobs: string[];
     message: string;
   } {
-    // Access the mail service through notifications service
-    // Since we can't directly access MailService.isConfigured() here,
-    // we infer configuration status from the environment
-
-    const mailHost = process.env.MAIL_HOST;
-    const isConfigured = !!mailHost;
+    // Check if Brevo API key is configured
+    const brevoApiKey = process.env.BREVO_API_KEY;
+    const isConfigured = !!brevoApiKey;
 
     return {
       mailConfigured: isConfigured,
@@ -253,8 +250,8 @@ export class NotificationsController {
         'daily-overdue-invoice-reminder (10:00 AM)',
       ],
       message: isConfigured
-        ? 'Email notifications are enabled and scheduled jobs are active.'
-        : 'Email notifications are disabled. Set MAIL_HOST, MAIL_PORT, MAIL_USER, and MAIL_PASSWORD environment variables to enable.',
+        ? 'Email notifications are enabled via Brevo and scheduled jobs are active.'
+        : 'Email notifications are disabled. Set BREVO_API_KEY environment variable to enable.',
     };
   }
 }

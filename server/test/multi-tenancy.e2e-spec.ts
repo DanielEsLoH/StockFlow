@@ -28,6 +28,7 @@ import { App } from 'supertest/types';
 import { PrismaModule, PrismaService } from '../src/prisma';
 import { AuthModule } from '../src/auth/auth.module';
 import { CommonModule } from '../src/common';
+import { ArcjetModule, ArcjetService } from '../src/arcjet';
 import { configuration, validateEnv } from '../src/config';
 import { JwtAuthGuard, RolesGuard } from '../src/auth/guards';
 import { CurrentTenant, Roles } from '../src/common/decorators';
@@ -221,6 +222,15 @@ class TestProductController {
 // TEST MODULE
 // ============================================================================
 
+// Mock ArcjetService to disable rate limiting and bot protection in tests
+const mockArcjetService = {
+  isProtectionEnabled: jest.fn().mockReturnValue(false),
+  getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
+  checkRateLimit: jest.fn().mockResolvedValue({ allowed: true }),
+  checkBot: jest.fn().mockResolvedValue({ allowed: true }),
+  onModuleInit: jest.fn(),
+};
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -231,6 +241,7 @@ class TestProductController {
     }),
     PrismaModule,
     CommonModule,
+    ArcjetModule,
     AuthModule,
   ],
   controllers: [TestProductController],
@@ -267,7 +278,10 @@ describe('Multi-Tenancy E2E Tests', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [TestAppModule],
-    }).compile();
+    })
+      .overrideProvider(ArcjetService)
+      .useValue(mockArcjetService)
+      .compile();
 
     app = moduleFixture.createNestApplication();
 

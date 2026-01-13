@@ -1,7 +1,6 @@
 import {
   IsString,
   IsOptional,
-  IsUUID,
   IsEnum,
   IsBoolean,
 } from 'class-validator';
@@ -26,7 +25,7 @@ export class FilterProductsDto extends PaginationDto {
    * Filter by category ID
    * @example "clx1234567890abcdef"
    */
-  @IsUUID('all', { message: 'Category ID must be a valid UUID' })
+  @IsString({ message: 'Category ID must be a string' })
   @IsOptional()
   categoryId?: string;
 

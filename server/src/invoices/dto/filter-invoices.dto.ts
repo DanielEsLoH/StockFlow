@@ -1,7 +1,16 @@
-import { IsDate, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { InvoiceStatus, PaymentStatus } from '@prisma/client';
 import { PaginationDto } from '../../common/dto';
+
+// CUID pattern: starts with 'c' followed by lowercase letters and numbers, typically 25 chars
+const CUID_PATTERN = /^c[a-z0-9]{24,}$/;
 
 /**
  * Data transfer object for filtering and paginating invoices.
@@ -31,9 +40,10 @@ export class FilterInvoicesDto extends PaginationDto {
 
   /**
    * Filter by customer ID
-   * @example "550e8400-e29b-41d4-a716-446655440000"
+   * @example "cmkcykam80004reya0hsdx337"
    */
-  @IsUUID('all', { message: 'El ID del cliente debe ser un UUID válido' })
+  @IsString({ message: 'El ID del cliente debe ser una cadena de texto' })
+  @Matches(CUID_PATTERN, { message: 'El ID del cliente debe ser un CUID válido' })
   @IsOptional()
   customerId?: string;
 

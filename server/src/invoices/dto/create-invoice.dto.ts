@@ -5,12 +5,16 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
+  Matches,
   Min,
   Max,
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator';
+
+// CUID pattern: starts with 'c' followed by lowercase letters and numbers, typically 25 chars
+// Example: clh1234567890abcdefghijkl or cmkcykam80004reya0hsdx337
+const CUID_PATTERN = /^c[a-z0-9]{24,}$/;
 
 /**
  * Data transfer object for creating an invoice item.
@@ -19,9 +23,10 @@ import {
 export class CreateInvoiceItemDto {
   /**
    * Product ID for the invoice item
-   * @example "550e8400-e29b-41d4-a716-446655440000"
+   * @example "cmkcykam80004reya0hsdx337"
    */
-  @IsUUID('all', { message: 'El ID del producto debe ser un UUID válido' })
+  @IsString({ message: 'El ID del producto debe ser una cadena de texto' })
+  @Matches(CUID_PATTERN, { message: 'El ID del producto debe ser un CUID válido' })
   productId: string;
 
   /**
@@ -67,9 +72,10 @@ export class CreateInvoiceItemDto {
 export class CreateInvoiceDto {
   /**
    * Customer ID (optional for quick sales without customer)
-   * @example "550e8400-e29b-41d4-a716-446655440000"
+   * @example "cmkcykam80004reya0hsdx337"
    */
-  @IsUUID('all', { message: 'El ID del cliente debe ser un UUID válido' })
+  @IsString({ message: 'El ID del cliente debe ser una cadena de texto' })
+  @Matches(CUID_PATTERN, { message: 'El ID del cliente debe ser un CUID válido' })
   @IsOptional()
   customerId?: string;
 

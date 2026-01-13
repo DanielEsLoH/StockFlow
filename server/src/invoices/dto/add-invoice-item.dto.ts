@@ -1,11 +1,15 @@
 import {
-  IsUUID,
+  IsString,
   IsNumber,
   IsOptional,
   Min,
   Max,
   IsPositive,
+  Matches,
 } from 'class-validator';
+
+// CUID pattern: starts with 'c' followed by lowercase letters and numbers, typically 25 chars
+const CUID_PATTERN = /^c[a-z0-9]{24,}$/;
 
 /**
  * Data transfer object for adding an item to an existing DRAFT invoice.
@@ -14,9 +18,10 @@ import {
 export class AddInvoiceItemDto {
   /**
    * Product ID for the invoice item
-   * @example "550e8400-e29b-41d4-a716-446655440000"
+   * @example "cmkcykam80004reya0hsdx337"
    */
-  @IsUUID('all', { message: 'El ID del producto debe ser un UUID válido' })
+  @IsString({ message: 'El ID del producto debe ser una cadena de texto' })
+  @Matches(CUID_PATTERN, { message: 'El ID del producto debe ser un CUID válido' })
   productId: string;
 
   /**

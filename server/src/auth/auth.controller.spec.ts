@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { AuthService, AuthResponse, LogoutResponse } from './auth.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 import { UserRole, UserStatus } from '@prisma/client';
+import { ArcjetService } from '../arcjet/arcjet.service';
 
 /**
  * Mock authenticated request interface matching the controller's expected type
@@ -62,9 +63,19 @@ describe('AuthController', () => {
       logout: jest.fn(),
     };
 
+    const mockArcjetService = {
+      isProtectionEnabled: jest.fn().mockReturnValue(false),
+      checkRateLimit: jest.fn().mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
+      checkBot: jest.fn().mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
+      getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [{ provide: AuthService, useValue: mockAuthService }],
+      providers: [
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: ArcjetService, useValue: mockArcjetService },
+      ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);

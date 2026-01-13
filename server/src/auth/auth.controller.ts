@@ -6,10 +6,12 @@ import {
   HttpStatus,
   Logger,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthService, AuthResponse, LogoutResponse } from './auth.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
+import { RateLimitGuard, BotProtectionGuard, RateLimit, BotProtect } from '../arcjet';
 
 /**
  * Extended Request interface that includes user info from JWT
@@ -38,6 +40,9 @@ export class AuthController {
   /**
    * Registers a new user in the system
    *
+   * Rate limit: 3 requests per hour per IP (strict for registration)
+   * Bot protection: LIVE mode to block automated registrations
+   *
    * @param registerDto - User registration data
    * @returns Authentication response with user data and tokens
    *
@@ -53,6 +58,9 @@ export class AuthController {
    */
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RateLimitGuard, BotProtectionGuard)
+  @RateLimit({ requests: 3, window: '1h' })
+  @BotProtect({ mode: 'LIVE' })
   async register(@Body() registerDto: RegisterDto): Promise<AuthResponse> {
     this.logger.log(`Registration request for email: ${registerDto.email}`);
     return this.authService.register(registerDto);
@@ -60,6 +68,9 @@ export class AuthController {
 
   /**
    * Authenticates a user and returns access tokens
+   *
+   * Rate limit: 5 requests per 15 minutes per IP (prevents brute force)
+   * Bot protection: LIVE mode to block credential stuffing attacks
    *
    * @param loginDto - User login credentials
    * @returns Authentication response with user data and tokens
@@ -73,6 +84,9 @@ export class AuthController {
    */
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RateLimitGuard, BotProtectionGuard)
+  @RateLimit({ requests: 5, window: '15m' })
+  @BotProtect({ mode: 'LIVE' })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
     this.logger.log(`Login request for email: ${loginDto.email}`);
     return this.authService.login(loginDto.email, loginDto.password);
@@ -80,6 +94,8 @@ export class AuthController {
 
   /**
    * Refreshes access token using a valid refresh token
+   *
+   * Rate limit: 10 requests per 15 minutes per IP
    *
    * @param refreshTokenDto - Refresh token data
    * @returns Authentication response with new tokens
@@ -92,6 +108,8 @@ export class AuthController {
    */
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ requests: 10, window: '15m' })
   async refresh(
     @Body() refreshTokenDto: RefreshTokenDto,
   ): Promise<AuthResponse> {

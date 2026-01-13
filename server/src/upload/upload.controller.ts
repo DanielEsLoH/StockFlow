@@ -21,6 +21,7 @@ import {
   UploadResponse,
   MultiUploadResponse,
 } from './upload.service';
+import { RateLimitGuard, RateLimit } from '../arcjet';
 
 /**
  * Multer configuration for file uploads.
@@ -56,6 +57,8 @@ export class UploadController {
   /**
    * Uploads a single product image.
    *
+   * Rate limit: 20 uploads per hour per user (heavy operation)
+   *
    * @param file - The uploaded image file
    * @returns Upload response with URL path to the file
    *
@@ -69,6 +72,8 @@ export class UploadController {
    */
   @Post('product-image')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ requests: 20, window: '1h', byUser: true })
   @UseInterceptors(FileInterceptor('file', multerOptions))
   async uploadProductImage(
     @UploadedFile() file: Express.Multer.File,
@@ -89,6 +94,8 @@ export class UploadController {
   /**
    * Uploads multiple product images (up to 5).
    *
+   * Rate limit: 10 batch uploads per hour per user (heavy operation)
+   *
    * @param files - Array of uploaded image files
    * @returns Upload response with array of URL paths
    *
@@ -104,6 +111,8 @@ export class UploadController {
    */
   @Post('product-images')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ requests: 10, window: '1h', byUser: true })
   @UseInterceptors(FilesInterceptor('files', 5, multerOptions))
   async uploadProductImages(
     @UploadedFiles() files: Express.Multer.File[],

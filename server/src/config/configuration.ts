@@ -47,6 +47,15 @@ export interface EmailConfig {
 }
 
 /**
+ * Arcjet security configuration interface
+ */
+export interface ArcjetConfig {
+  key: string | undefined;
+  environment: 'development' | 'production';
+  enabled: boolean;
+}
+
+/**
  * Complete application configuration interface
  */
 export interface Configuration {
@@ -55,6 +64,7 @@ export interface Configuration {
   jwt: JwtConfig;
   mail: MailConfig;
   email: EmailConfig;
+  arcjet: ArcjetConfig;
 }
 
 /**
@@ -105,7 +115,6 @@ export const mailConfig = registerAs(
     from: process.env.MAIL_FROM || 'StockFlow <noreply@stockflow.com>',
   }),
 );
-
 /**
  * Email configuration factory (Brevo)
  */
@@ -115,6 +124,20 @@ export const emailConfig = registerAs(
     brevoApiKey: process.env.BREVO_API_KEY,
     senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@stockflow.com',
     senderName: process.env.BREVO_SENDER_NAME || 'StockFlow',
+  }),
+);
+
+/**
+ * Arcjet security configuration factory
+ * Provides rate limiting, bot protection, and API security
+ */
+export const arcjetConfig = registerAs(
+  'arcjet',
+  (): ArcjetConfig => ({
+    key: process.env.ARCJET_KEY,
+    environment:
+      process.env.NODE_ENV === 'production' ? 'production' : 'development',
+    enabled: process.env.ARCJET_ENABLED !== 'false',
   }),
 );
 
@@ -148,5 +171,11 @@ export default (): Configuration => ({
     brevoApiKey: process.env.BREVO_API_KEY,
     senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@stockflow.com',
     senderName: process.env.BREVO_SENDER_NAME || 'StockFlow',
+  },
+  arcjet: {
+    key: process.env.ARCJET_KEY,
+    environment:
+      process.env.NODE_ENV === 'production' ? 'production' : 'development',
+    enabled: process.env.ARCJET_ENABLED !== 'false',
   },
 });

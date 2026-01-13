@@ -102,6 +102,8 @@ const config: Config = {
   // Module path aliases (if needed)
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    // Mock @arcjet/node to avoid ESM import issues in tests
+    '^@arcjet/node$': '<rootDir>/__mocks__/@arcjet/node.ts',
   },
 };
 

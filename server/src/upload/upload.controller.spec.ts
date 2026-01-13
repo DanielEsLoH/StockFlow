@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { UploadController } from './upload.controller';
 import { UploadService, UploadResponse, MultiUploadResponse } from './upload.service';
 import { TenantContextService } from '../common/services';
+import { ArcjetService } from '../arcjet/arcjet.service';
 
 describe('UploadController', () => {
   let controller: UploadController;
@@ -62,11 +63,19 @@ describe('UploadController', () => {
       getTenant: jest.fn(),
     };
 
+    const mockArcjetService = {
+      isProtectionEnabled: jest.fn().mockReturnValue(false),
+      checkRateLimit: jest.fn().mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
+      checkBot: jest.fn().mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
+      getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UploadController],
       providers: [
         { provide: UploadService, useValue: mockUploadService },
         { provide: TenantContextService, useValue: mockTenantContextService },
+        { provide: ArcjetService, useValue: mockArcjetService },
       ],
     }).compile();
 

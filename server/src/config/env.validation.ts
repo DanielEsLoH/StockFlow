@@ -144,6 +144,28 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   BREVO_SENDER_NAME?: string = 'StockFlow';
+
+  // ============================================================================
+  // ARCJET SECURITY CONFIGURATION (Optional - for rate limiting and security)
+  // ============================================================================
+
+  /**
+   * Arcjet API key for rate limiting and security features.
+   * Get your API key from https://app.arcjet.com
+   * If not set, Arcjet protection will be disabled (logs warning instead).
+   */
+  @IsString()
+  @IsOptional()
+  ARCJET_KEY?: string;
+
+  /**
+   * Enable or disable Arcjet protection.
+   * Set to 'false' to disable Arcjet even if API key is present.
+   * Default: 'true'
+   */
+  @IsString()
+  @IsOptional()
+  ARCJET_ENABLED?: string = 'true';
 }
 
 /**

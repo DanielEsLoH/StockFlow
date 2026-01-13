@@ -16,6 +16,7 @@ import {
   ReportFormat,
 } from './dto';
 import { JwtAuthGuard } from '../auth';
+import { RateLimitGuard, RateLimit } from '../arcjet';
 
 /**
  * ReportsController handles all report generation endpoints.
@@ -23,12 +24,15 @@ import { JwtAuthGuard } from '../auth';
  * All endpoints require JWT authentication and return downloadable files.
  * Reports are scoped to the current tenant for data isolation.
  *
+ * Rate limit: 50 reports per hour per user (heavy operation)
+ *
  * Response formats:
  * - PDF: application/pdf
  * - Excel: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
  */
 @Controller()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RateLimitGuard)
+@RateLimit({ requests: 50, window: '1h', byUser: true })
 export class ReportsController {
   private readonly logger = new Logger(ReportsController.name);
 

@@ -9,6 +9,7 @@ import {
   ReportFormat,
 } from './dto';
 import type { Response } from 'express';
+import { ArcjetService } from '../arcjet/arcjet.service';
 
 describe('ReportsController', () => {
   let controller: ReportsController;
@@ -67,9 +68,19 @@ describe('ReportsController', () => {
       generateInvoicePdf: jest.fn(),
     };
 
+    const mockArcjetService = {
+      isProtectionEnabled: jest.fn().mockReturnValue(false),
+      checkRateLimit: jest.fn().mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
+      checkBot: jest.fn().mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
+      getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ReportsController],
-      providers: [{ provide: ReportsService, useValue: mockReportsService }],
+      providers: [
+        { provide: ReportsService, useValue: mockReportsService },
+        { provide: ArcjetService, useValue: mockArcjetService },
+      ],
     }).compile();
 
     controller = module.get<ReportsController>(ReportsController);

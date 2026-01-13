@@ -12,7 +12,10 @@ import {
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { AuditLogsService } from './audit-logs.service';
-import type { PaginatedAuditLogsResponse, AuditStatsResponse } from './audit-logs.service';
+import type {
+  PaginatedAuditLogsResponse,
+  AuditStatsResponse,
+} from './audit-logs.service';
 import { QueryAuditLogsDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { Roles, CurrentUser } from '../common/decorators';
@@ -112,7 +115,10 @@ export class AuditLogsController {
     const parsedPage = parseInt(page ?? '1', 10);
     const parsedLimit = parseInt(limit ?? '20', 10);
     const pageNum = Math.max(1, isNaN(parsedPage) ? 1 : parsedPage);
-    const limitNum = Math.min(100, Math.max(1, isNaN(parsedLimit) ? 20 : parsedLimit));
+    const limitNum = Math.min(
+      100,
+      Math.max(1, isNaN(parsedLimit) ? 20 : parsedLimit),
+    );
 
     this.logger.log(
       `Getting audit history for ${entityType} ${entityId} - tenant: ${user.tenantId}`,
@@ -150,7 +156,10 @@ export class AuditLogsController {
     const parsedPage = parseInt(page ?? '1', 10);
     const parsedLimit = parseInt(limit ?? '20', 10);
     const pageNum = Math.max(1, isNaN(parsedPage) ? 1 : parsedPage);
-    const limitNum = Math.min(100, Math.max(1, isNaN(parsedLimit) ? 20 : parsedLimit));
+    const limitNum = Math.min(
+      100,
+      Math.max(1, isNaN(parsedLimit) ? 20 : parsedLimit),
+    );
 
     this.logger.log(
       `Getting audit logs for user ${userId} - tenant: ${user.tenantId}`,

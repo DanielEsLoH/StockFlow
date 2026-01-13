@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { UploadController } from './upload.controller';
-import { UploadService, UploadResponse, MultiUploadResponse } from './upload.service';
+import {
+  UploadService,
+  UploadResponse,
+  MultiUploadResponse,
+} from './upload.service';
 import { TenantContextService } from '../common/services';
 import { ArcjetService } from '../arcjet/arcjet.service';
 
@@ -65,8 +69,12 @@ describe('UploadController', () => {
 
     const mockArcjetService = {
       isProtectionEnabled: jest.fn().mockReturnValue(false),
-      checkRateLimit: jest.fn().mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
-      checkBot: jest.fn().mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
+      checkRateLimit: jest
+        .fn()
+        .mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
+      checkBot: jest
+        .fn()
+        .mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
       getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
     };
 
@@ -112,12 +120,12 @@ describe('UploadController', () => {
     });
 
     it('should throw BadRequestException when no file provided', async () => {
-      await expect(
-        controller.uploadProductImage(null as any),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        controller.uploadProductImage(null as any),
-      ).rejects.toThrow('No file provided');
+      await expect(controller.uploadProductImage(null as any)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(controller.uploadProductImage(null as any)).rejects.toThrow(
+        'No file provided',
+      );
     });
 
     it('should throw BadRequestException when file is undefined', async () => {
@@ -214,18 +222,18 @@ describe('UploadController', () => {
     });
 
     it('should throw BadRequestException when no files provided', async () => {
-      await expect(
-        controller.uploadProductImages([] as any),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        controller.uploadProductImages([] as any),
-      ).rejects.toThrow('No files provided');
+      await expect(controller.uploadProductImages([] as any)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(controller.uploadProductImages([] as any)).rejects.toThrow(
+        'No files provided',
+      );
     });
 
     it('should throw BadRequestException when files is null', async () => {
-      await expect(
-        controller.uploadProductImages(null as any),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.uploadProductImages(null as any)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when files is undefined', async () => {
@@ -336,21 +344,21 @@ describe('UploadController', () => {
       const error = new NotFoundException('File not found');
       uploadService.deleteFile.mockRejectedValue(error);
 
-      await expect(
-        controller.deleteFile('nonexistent.jpg'),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        controller.deleteFile('nonexistent.jpg'),
-      ).rejects.toThrow('File not found');
+      await expect(controller.deleteFile('nonexistent.jpg')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(controller.deleteFile('nonexistent.jpg')).rejects.toThrow(
+        'File not found',
+      );
     });
 
     it('should propagate BadRequestException for invalid filename', async () => {
       const error = new BadRequestException('Invalid filename');
       uploadService.deleteFile.mockRejectedValue(error);
 
-      await expect(
-        controller.deleteFile('../secret.jpg'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.deleteFile('../secret.jpg')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should propagate service errors', async () => {

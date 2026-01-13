@@ -62,8 +62,7 @@ export class UploadService {
 
   constructor(private readonly configService: ConfigService) {
     // Set upload directory - defaults to ./uploads/products
-    const baseDir =
-      this.configService.get<string>('UPLOAD_DIR') || './uploads';
+    const baseDir = this.configService.get<string>('UPLOAD_DIR') || './uploads';
     this.uploadDir = path.join(baseDir, 'products');
     this.ensureUploadDirectoryExists();
   }

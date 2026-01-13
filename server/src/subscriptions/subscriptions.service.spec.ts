@@ -11,6 +11,34 @@ import Stripe from 'stripe';
 import { SubscriptionsService, PLAN_LIMITS } from './subscriptions.service';
 import { PrismaService } from '../prisma';
 
+// Type for mocked Stripe client
+interface MockStripeClient {
+  checkout: {
+    sessions: {
+      create: jest.Mock;
+    };
+  };
+  billingPortal: {
+    sessions: {
+      create: jest.Mock;
+    };
+  };
+  subscriptions: {
+    retrieve: jest.Mock;
+  };
+  customers: {
+    create: jest.Mock;
+  };
+  webhooks: {
+    constructEvent: jest.Mock;
+  };
+}
+
+// Helper to get typed stripe instance from service
+function getStripeInstance(service: SubscriptionsService): MockStripeClient {
+  return (service as unknown as { stripe: MockStripeClient }).stripe;
+}
+
 // Mock Stripe
 jest.mock('stripe', () => {
   return jest.fn().mockImplementation(() => ({
@@ -38,8 +66,6 @@ jest.mock('stripe', () => {
 
 describe('SubscriptionsService', () => {
   let service: SubscriptionsService;
-  let prismaService: jest.Mocked<PrismaService>;
-  let configService: jest.Mocked<ConfigService>;
 
   // Test data
   const mockTenantId = 'tenant-123';
@@ -141,8 +167,6 @@ describe('SubscriptionsService', () => {
     }).compile();
 
     service = module.get<SubscriptionsService>(SubscriptionsService);
-    prismaService = module.get(PrismaService);
-    configService = module.get(ConfigService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'debug').mockImplementation();
@@ -183,7 +207,10 @@ describe('SubscriptionsService', () => {
           SubscriptionsService,
           {
             provide: PrismaService,
-            useValue: { tenant: mockPrismaTenant, executeInTransaction: mockExecuteInTransaction },
+            useValue: {
+              tenant: mockPrismaTenant,
+              executeInTransaction: mockExecuteInTransaction,
+            },
           },
           { provide: ConfigService, useValue: mockConfigWithoutStripe },
         ],
@@ -248,7 +275,7 @@ describe('SubscriptionsService', () => {
       });
 
       // Access the mocked Stripe instance
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       stripeInstance.customers.create.mockResolvedValue({
         id: mockStripeCustomerId,
       });
@@ -307,7 +334,7 @@ describe('SubscriptionsService', () => {
     it('should use existing Stripe customer ID if present', async () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       await service.createCheckoutSession(mockTenantId, 'PRO');
 
       expect(stripeInstance.customers.create).not.toHaveBeenCalled();
@@ -321,7 +348,7 @@ describe('SubscriptionsService', () => {
     it('should create new Stripe customer if not present', async () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenant);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       await service.createCheckoutSession(mockTenantId, 'BASIC');
 
       expect(stripeInstance.customers.create).toHaveBeenCalledWith({
@@ -337,7 +364,7 @@ describe('SubscriptionsService', () => {
     it('should update tenant with new Stripe customer ID', async () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenant);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       stripeInstance.customers.create.mockResolvedValue({
         id: mockStripeCustomerId,
       });
@@ -353,7 +380,7 @@ describe('SubscriptionsService', () => {
     it('should include correct metadata in checkout session', async () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       await service.createCheckoutSession(mockTenantId, 'BASIC');
 
       expect(stripeInstance.checkout.sessions.create).toHaveBeenCalledWith(
@@ -375,7 +402,7 @@ describe('SubscriptionsService', () => {
     it('should include success and cancel URLs', async () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       await service.createCheckoutSession(mockTenantId, 'BASIC');
 
       expect(stripeInstance.checkout.sessions.create).toHaveBeenCalledWith(
@@ -389,7 +416,7 @@ describe('SubscriptionsService', () => {
     it('should throw InternalServerErrorException on Stripe error', async () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       stripeInstance.checkout.sessions.create.mockRejectedValue(
         new Error('Stripe error'),
       );
@@ -430,13 +457,17 @@ describe('SubscriptionsService', () => {
           SubscriptionsService,
           {
             provide: PrismaService,
-            useValue: { tenant: mockPrismaTenant, executeInTransaction: mockExecuteInTransaction },
+            useValue: {
+              tenant: mockPrismaTenant,
+              executeInTransaction: mockExecuteInTransaction,
+            },
           },
           { provide: ConfigService, useValue: mockConfigWithoutPrice },
         ],
       }).compile();
 
-      const serviceWithoutPrice = module.get<SubscriptionsService>(SubscriptionsService);
+      const serviceWithoutPrice =
+        module.get<SubscriptionsService>(SubscriptionsService);
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
       await expect(
@@ -450,7 +481,7 @@ describe('SubscriptionsService', () => {
     it('should throw InternalServerErrorException when Stripe customer creation fails', async () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenant);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       stripeInstance.customers.create.mockRejectedValue(
         new Error('Stripe customer creation failed'),
       );
@@ -466,7 +497,7 @@ describe('SubscriptionsService', () => {
     it('should handle checkout session with null URL', async () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       stripeInstance.checkout.sessions.create.mockResolvedValue({
         id: 'cs_test123',
         url: null, // URL can be null in some cases
@@ -484,7 +515,7 @@ describe('SubscriptionsService', () => {
     it('should handle non-Error object thrown in checkout session creation', async () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       stripeInstance.checkout.sessions.create.mockRejectedValue('String error');
 
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
@@ -507,7 +538,7 @@ describe('SubscriptionsService', () => {
     beforeEach(() => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       stripeInstance.billingPortal.sessions.create.mockResolvedValue(
         mockPortalSession,
       );
@@ -543,7 +574,7 @@ describe('SubscriptionsService', () => {
     it('should use custom return URL if provided', async () => {
       const customUrl = 'https://app.stockflow.com/custom/billing';
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       await service.createPortalSession(mockTenantId, customUrl);
 
       expect(stripeInstance.billingPortal.sessions.create).toHaveBeenCalledWith(
@@ -554,7 +585,7 @@ describe('SubscriptionsService', () => {
     });
 
     it('should use default return URL if not provided', async () => {
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       await service.createPortalSession(mockTenantId);
 
       expect(stripeInstance.billingPortal.sessions.create).toHaveBeenCalledWith(
@@ -565,7 +596,7 @@ describe('SubscriptionsService', () => {
     });
 
     it('should throw InternalServerErrorException on Stripe error', async () => {
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       stripeInstance.billingPortal.sessions.create.mockRejectedValue(
         new Error('Stripe error'),
       );
@@ -594,7 +625,7 @@ describe('SubscriptionsService', () => {
     beforeEach(() => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       stripeInstance.subscriptions.retrieve.mockResolvedValue(
         mockStripeSubscription,
       );
@@ -645,7 +676,7 @@ describe('SubscriptionsService', () => {
     });
 
     it('should handle Stripe API error gracefully', async () => {
-      const stripeInstance = (service as any).stripe;
+      const stripeInstance = getStripeInstance(service);
       stripeInstance.subscriptions.retrieve.mockRejectedValue(
         new Error('Stripe error'),
       );
@@ -675,8 +706,10 @@ describe('SubscriptionsService', () => {
         items: undefined,
       };
 
-      const stripeInstance = (service as any).stripe;
-      stripeInstance.subscriptions.retrieve.mockResolvedValue(subscriptionWithoutItems);
+      const stripeInstance = getStripeInstance(service);
+      stripeInstance.subscriptions.retrieve.mockResolvedValue(
+        subscriptionWithoutItems,
+      );
 
       const result = await service.getSubscriptionStatus(mockTenantId);
 
@@ -690,8 +723,10 @@ describe('SubscriptionsService', () => {
         items: { data: [] },
       };
 
-      const stripeInstance = (service as any).stripe;
-      stripeInstance.subscriptions.retrieve.mockResolvedValue(subscriptionWithEmptyItems);
+      const stripeInstance = getStripeInstance(service);
+      stripeInstance.subscriptions.retrieve.mockResolvedValue(
+        subscriptionWithEmptyItems,
+      );
 
       const result = await service.getSubscriptionStatus(mockTenantId);
 
@@ -712,8 +747,10 @@ describe('SubscriptionsService', () => {
         },
       };
 
-      const stripeInstance = (service as any).stripe;
-      stripeInstance.subscriptions.retrieve.mockResolvedValue(subscriptionWithoutPeriodEnd);
+      const stripeInstance = getStripeInstance(service);
+      stripeInstance.subscriptions.retrieve.mockResolvedValue(
+        subscriptionWithoutPeriodEnd,
+      );
 
       const result = await service.getSubscriptionStatus(mockTenantId);
 
@@ -742,7 +779,7 @@ describe('SubscriptionsService', () => {
     });
 
     describe('checkout.session.completed', () => {
-      const checkoutEvent: Partial<Stripe.Event> = {
+      const checkoutEvent = {
         type: 'checkout.session.completed',
         data: {
           object: {
@@ -752,12 +789,12 @@ describe('SubscriptionsService', () => {
               plan: 'PRO',
             },
             subscription: mockStripeSubscriptionId,
-          } as unknown as Stripe.Checkout.Session,
-        } as Stripe.Event.Data,
-      };
+          },
+        },
+      } as unknown as Stripe.Event;
 
       it('should update tenant plan on checkout completion', async () => {
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(checkoutEvent);
 
         await service.handleWebhook(mockSignature, mockRawBody);
@@ -766,7 +803,7 @@ describe('SubscriptionsService', () => {
       });
 
       it('should log plan upgrade', async () => {
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(checkoutEvent);
         const logSpy = jest.spyOn(Logger.prototype, 'log');
 
@@ -782,13 +819,13 @@ describe('SubscriptionsService', () => {
           ...checkoutEvent,
           data: {
             object: {
-              ...checkoutEvent.data!.object,
+              ...checkoutEvent.data.object,
               metadata: {},
             },
           },
         };
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           eventWithoutTenant,
         );
@@ -816,7 +853,7 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           eventWithoutSubscription,
         );
@@ -844,8 +881,10 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
-        stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithoutPlan);
+        const stripeInstance = getStripeInstance(service);
+        stripeInstance.webhooks.constructEvent.mockReturnValue(
+          eventWithoutPlan,
+        );
         stripeInstance.subscriptions.retrieve.mockResolvedValue({
           id: mockStripeSubscriptionId,
           metadata: {
@@ -875,8 +914,10 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
-        stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithoutPlan);
+        const stripeInstance = getStripeInstance(service);
+        stripeInstance.webhooks.constructEvent.mockReturnValue(
+          eventWithoutPlan,
+        );
         stripeInstance.subscriptions.retrieve.mockResolvedValue({
           id: mockStripeSubscriptionId,
           metadata: {
@@ -903,8 +944,10 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
-        stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithoutPlan);
+        const stripeInstance = getStripeInstance(service);
+        stripeInstance.webhooks.constructEvent.mockReturnValue(
+          eventWithoutPlan,
+        );
         stripeInstance.subscriptions.retrieve.mockRejectedValue(
           new Error('Stripe API error'),
         );
@@ -936,7 +979,7 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           eventWithSubscriptionObject,
         );
@@ -948,7 +991,7 @@ describe('SubscriptionsService', () => {
     });
 
     describe('customer.subscription.updated', () => {
-      const subscriptionUpdatedEvent: Partial<Stripe.Event> = {
+      const subscriptionUpdatedEvent = {
         type: 'customer.subscription.updated',
         data: {
           object: {
@@ -959,12 +1002,12 @@ describe('SubscriptionsService', () => {
               plan: 'PRO',
             },
             customer: mockStripeCustomerId,
-          } as unknown as Stripe.Subscription,
-        } as Stripe.Event.Data,
-      };
+          },
+        },
+      } as unknown as Stripe.Event;
 
       it('should update tenant on subscription update', async () => {
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           subscriptionUpdatedEvent,
         );
@@ -979,13 +1022,13 @@ describe('SubscriptionsService', () => {
           ...subscriptionUpdatedEvent,
           data: {
             object: {
-              ...subscriptionUpdatedEvent.data!.object,
+              ...subscriptionUpdatedEvent.data.object,
               metadata: { plan: 'PRO' },
             },
           },
         };
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           eventWithoutTenantId,
         );
@@ -1002,13 +1045,13 @@ describe('SubscriptionsService', () => {
           ...subscriptionUpdatedEvent,
           data: {
             object: {
-              ...subscriptionUpdatedEvent.data!.object,
+              ...subscriptionUpdatedEvent.data.object,
               status: 'past_due',
             },
           },
         };
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(pastDueEvent);
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
@@ -1024,21 +1067,19 @@ describe('SubscriptionsService', () => {
           ...subscriptionUpdatedEvent,
           data: {
             object: {
-              ...subscriptionUpdatedEvent.data!.object,
+              ...subscriptionUpdatedEvent.data.object,
               status: 'unpaid',
             },
           },
         };
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(unpaidEvent);
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
         await service.handleWebhook(mockSignature, mockRawBody);
 
-        expect(warnSpy).toHaveBeenCalledWith(
-          expect.stringContaining('unpaid'),
-        );
+        expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('unpaid'));
       });
 
       it('should warn when subscription updated without tenantId or customer ID', async () => {
@@ -1054,7 +1095,7 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithoutIds);
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
@@ -1070,7 +1111,7 @@ describe('SubscriptionsService', () => {
           ...subscriptionUpdatedEvent,
           data: {
             object: {
-              ...subscriptionUpdatedEvent.data!.object,
+              ...subscriptionUpdatedEvent.data.object,
               metadata: { plan: 'PRO' },
             },
           },
@@ -1078,8 +1119,10 @@ describe('SubscriptionsService', () => {
 
         mockPrismaTenant.findFirst.mockResolvedValue(null); // No tenant found
 
-        const stripeInstance = (service as any).stripe;
-        stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithoutTenantId);
+        const stripeInstance = getStripeInstance(service);
+        stripeInstance.webhooks.constructEvent.mockReturnValue(
+          eventWithoutTenantId,
+        );
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
         await service.handleWebhook(mockSignature, mockRawBody);
@@ -1104,8 +1147,10 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
-        stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithCustomerObject);
+        const stripeInstance = getStripeInstance(service);
+        stripeInstance.webhooks.constructEvent.mockReturnValue(
+          eventWithCustomerObject,
+        );
 
         await service.handleWebhook(mockSignature, mockRawBody);
 
@@ -1116,7 +1161,7 @@ describe('SubscriptionsService', () => {
     });
 
     describe('customer.subscription.deleted', () => {
-      const subscriptionDeletedEvent: Partial<Stripe.Event> = {
+      const subscriptionDeletedEvent = {
         type: 'customer.subscription.deleted',
         data: {
           object: {
@@ -1125,12 +1170,12 @@ describe('SubscriptionsService', () => {
               tenantId: mockTenantId,
             },
             customer: mockStripeCustomerId,
-          } as unknown as Stripe.Subscription,
-        } as Stripe.Event.Data,
-      };
+          },
+        },
+      } as unknown as Stripe.Event;
 
       it('should downgrade tenant to FREE plan', async () => {
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           subscriptionDeletedEvent,
         );
@@ -1141,7 +1186,7 @@ describe('SubscriptionsService', () => {
       });
 
       it('should log downgrade', async () => {
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           subscriptionDeletedEvent,
         );
@@ -1159,13 +1204,13 @@ describe('SubscriptionsService', () => {
           ...subscriptionDeletedEvent,
           data: {
             object: {
-              ...subscriptionDeletedEvent.data!.object,
+              ...subscriptionDeletedEvent.data.object,
               metadata: {},
             },
           },
         };
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           eventWithoutTenantId,
         );
@@ -1189,7 +1234,7 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithoutIds);
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
@@ -1205,7 +1250,7 @@ describe('SubscriptionsService', () => {
           ...subscriptionDeletedEvent,
           data: {
             object: {
-              ...subscriptionDeletedEvent.data!.object,
+              ...subscriptionDeletedEvent.data.object,
               metadata: {},
             },
           },
@@ -1213,8 +1258,10 @@ describe('SubscriptionsService', () => {
 
         mockPrismaTenant.findFirst.mockResolvedValue(null); // No tenant found
 
-        const stripeInstance = (service as any).stripe;
-        stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithoutTenantId);
+        const stripeInstance = getStripeInstance(service);
+        stripeInstance.webhooks.constructEvent.mockReturnValue(
+          eventWithoutTenantId,
+        );
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
         await service.handleWebhook(mockSignature, mockRawBody);
@@ -1238,8 +1285,10 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
-        stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithCustomerObject);
+        const stripeInstance = getStripeInstance(service);
+        stripeInstance.webhooks.constructEvent.mockReturnValue(
+          eventWithCustomerObject,
+        );
 
         await service.handleWebhook(mockSignature, mockRawBody);
 
@@ -1250,18 +1299,18 @@ describe('SubscriptionsService', () => {
     });
 
     describe('invoice.payment_failed', () => {
-      const paymentFailedEvent: Partial<Stripe.Event> = {
+      const paymentFailedEvent = {
         type: 'invoice.payment_failed',
         data: {
           object: {
             id: 'in_test123',
             customer: mockStripeCustomerId,
-          } as unknown as Stripe.Invoice,
-        } as Stripe.Event.Data,
-      };
+          },
+        },
+      } as unknown as Stripe.Event;
 
       it('should log payment failure', async () => {
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           paymentFailedEvent,
         );
@@ -1277,7 +1326,7 @@ describe('SubscriptionsService', () => {
       it('should handle unknown customer', async () => {
         mockPrismaTenant.findFirst.mockResolvedValue(null);
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           paymentFailedEvent,
         );
@@ -1301,8 +1350,10 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
-        stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithoutCustomer);
+        const stripeInstance = getStripeInstance(service);
+        stripeInstance.webhooks.constructEvent.mockReturnValue(
+          eventWithoutCustomer,
+        );
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
         await service.handleWebhook(mockSignature, mockRawBody);
@@ -1325,8 +1376,10 @@ describe('SubscriptionsService', () => {
           },
         };
 
-        const stripeInstance = (service as any).stripe;
-        stripeInstance.webhooks.constructEvent.mockReturnValue(eventWithCustomerObject);
+        const stripeInstance = getStripeInstance(service);
+        stripeInstance.webhooks.constructEvent.mockReturnValue(
+          eventWithCustomerObject,
+        );
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
         await service.handleWebhook(mockSignature, mockRawBody);
@@ -1342,7 +1395,7 @@ describe('SubscriptionsService', () => {
 
     describe('signature verification', () => {
       it('should throw BadRequestException on invalid signature', async () => {
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockImplementation(() => {
           throw new Error('Invalid signature');
         });
@@ -1353,7 +1406,7 @@ describe('SubscriptionsService', () => {
       });
 
       it('should log signature verification failure', async () => {
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockImplementation(() => {
           throw new Error('Invalid signature');
         });
@@ -1371,14 +1424,14 @@ describe('SubscriptionsService', () => {
 
     describe('unhandled event types', () => {
       it('should log unhandled event types', async () => {
-        const unknownEvent: Partial<Stripe.Event> = {
+        const unknownEvent = {
           type: 'unknown.event',
           data: {
             object: {},
-          } as Stripe.Event.Data,
-        };
+          },
+        } as unknown as Stripe.Event;
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(unknownEvent);
         const logSpy = jest.spyOn(Logger.prototype, 'log');
 
@@ -1392,7 +1445,7 @@ describe('SubscriptionsService', () => {
 
     describe('error handling', () => {
       it('should not throw on webhook processing error', async () => {
-        const checkoutEvent: Partial<Stripe.Event> = {
+        const checkoutEvent = {
           type: 'checkout.session.completed',
           data: {
             object: {
@@ -1402,11 +1455,11 @@ describe('SubscriptionsService', () => {
                 plan: 'PRO',
               },
               subscription: mockStripeSubscriptionId,
-            } as unknown as Stripe.Checkout.Session,
-          } as Stripe.Event.Data,
-        };
+            },
+          },
+        } as unknown as Stripe.Event;
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(checkoutEvent);
         mockExecuteInTransaction.mockRejectedValue(new Error('Database error'));
 
@@ -1417,7 +1470,7 @@ describe('SubscriptionsService', () => {
       });
 
       it('should log processing errors', async () => {
-        const checkoutEvent: Partial<Stripe.Event> = {
+        const checkoutEvent = {
           type: 'checkout.session.completed',
           data: {
             object: {
@@ -1427,11 +1480,11 @@ describe('SubscriptionsService', () => {
                 plan: 'PRO',
               },
               subscription: mockStripeSubscriptionId,
-            } as unknown as Stripe.Checkout.Session,
-          } as Stripe.Event.Data,
-        };
+            },
+          },
+        } as unknown as Stripe.Event;
 
-        const stripeInstance = (service as any).stripe;
+        const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(checkoutEvent);
         mockExecuteInTransaction.mockRejectedValue(new Error('Database error'));
         const errorSpy = jest.spyOn(Logger.prototype, 'error');

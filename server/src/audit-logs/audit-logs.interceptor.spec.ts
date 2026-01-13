@@ -67,8 +67,8 @@ describe('AuditInterceptor', () => {
       getType: () => 'http' as const,
       getArgs: () => [],
       getArgByIndex: () => undefined,
-      switchToRpc: () => ({} as ReturnType<ExecutionContext['switchToRpc']>),
-      switchToWs: () => ({} as ReturnType<ExecutionContext['switchToWs']>),
+      switchToRpc: () => ({}) as ReturnType<ExecutionContext['switchToRpc']>,
+      switchToWs: () => ({}) as ReturnType<ExecutionContext['switchToWs']>,
     } as ExecutionContext;
   };
 
@@ -727,7 +727,9 @@ describe('AuditInterceptor', () => {
           return undefined;
         });
 
-        (prismaService as unknown as Record<string, { findFirst: jest.Mock }>).user = {
+        (
+          prismaService as unknown as Record<string, { findFirst: jest.Mock }>
+        ).user = {
           findFirst: jest.fn().mockResolvedValue({
             id: 'user-123',
             email: 'user@example.com',
@@ -758,7 +760,12 @@ describe('AuditInterceptor', () => {
           });
         });
 
-        const createCall = (auditLogsService.create as jest.Mock).mock.calls[0][0];
+        const calls = (auditLogsService.create as jest.Mock).mock
+          .calls as unknown[][];
+        const createCall = calls[0][0] as {
+          oldValues: Record<string, unknown>;
+          newValues: Record<string, unknown>;
+        };
         expect(createCall.oldValues.password).toBe('[REDACTED]');
         expect(createCall.newValues.password).toBe('[REDACTED]');
       });
@@ -783,7 +790,11 @@ describe('AuditInterceptor', () => {
           });
         });
 
-        const createCall = (auditLogsService.create as jest.Mock).mock.calls[0][0];
+        const calls = (auditLogsService.create as jest.Mock).mock
+          .calls as unknown[][];
+        const createCall = calls[0][0] as {
+          oldValues: Record<string, unknown>;
+        };
         expect(createCall.oldValues.refreshToken).toBe('[REDACTED]');
       });
     });

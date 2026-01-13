@@ -14,7 +14,12 @@ import { LoggingInterceptor } from './common/interceptors';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Enable rawBody for Stripe webhook signature verification
+  // This preserves the raw Buffer on req.rawBody for specific routes
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
 
   // Serve static files from the uploads directory
   // Files will be accessible at /uploads/* URL paths

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -236,7 +237,9 @@ describe('LimitCheckInterceptor', () => {
         interceptor.intercept(context, mockCallHandler),
       ).rejects.toThrow('Tenant not found');
 
-      expect(errorSpy).toHaveBeenCalledWith(`Tenant not found: ${mockTenantId}`);
+      expect(errorSpy).toHaveBeenCalledWith(
+        `Tenant not found: ${mockTenantId}`,
+      );
     });
   });
 
@@ -478,9 +481,7 @@ describe('LimitCheckInterceptor', () => {
       expect(debugSpy).toHaveBeenCalledWith(
         expect.stringContaining('Checking products limit'),
       );
-      expect(debugSpy).toHaveBeenCalledWith(
-        expect.stringContaining('50/100'),
-      );
+      expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('50/100'));
     });
 
     it('should log debug message when limit is reached', async () => {

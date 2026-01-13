@@ -70,8 +70,12 @@ describe('ReportsController', () => {
 
     const mockArcjetService = {
       isProtectionEnabled: jest.fn().mockReturnValue(false),
-      checkRateLimit: jest.fn().mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
-      checkBot: jest.fn().mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
+      checkRateLimit: jest
+        .fn()
+        .mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
+      checkBot: jest
+        .fn()
+        .mockResolvedValue({ allowed: true, reason: 'DISABLED' }),
       getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
     };
 

@@ -1,6 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
-import { UserRole, PaymentStatus, InvoiceStatus, TenantStatus } from '@prisma/client';
+import {
+  UserRole,
+  PaymentStatus,
+  InvoiceStatus,
+  TenantStatus,
+} from '@prisma/client';
 import {
   NotificationsService,
   WelcomeEmailUser,
@@ -39,13 +44,13 @@ describe('NotificationsService', () => {
   const mockInvoice: InvoiceEmailData = {
     id: 'invoice-123',
     invoiceNumber: 'INV-001',
-    total: 1500.50,
+    total: 1500.5,
     dueDate: new Date('2024-02-15'),
     customer: mockCustomer,
   };
 
   const mockPayment: PaymentEmailData = {
-    amount: 500.00,
+    amount: 500.0,
     method: 'CREDIT_CARD',
   };
 
@@ -125,7 +130,9 @@ describe('NotificationsService', () => {
 
   describe('sendWelcomeEmail', () => {
     beforeEach(() => {
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
     });
 
     it('should send welcome email with user data', async () => {
@@ -188,9 +195,15 @@ describe('NotificationsService', () => {
 
   describe('sendLowStockAlert', () => {
     beforeEach(() => {
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
-      (prismaService.product.findMany as jest.Mock).mockResolvedValue([mockProduct]);
-      (prismaService.user.findMany as jest.Mock).mockResolvedValue([mockAdminUser]);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct,
+      ]);
+      (prismaService.user.findMany as jest.Mock).mockResolvedValue([
+        mockAdminUser,
+      ]);
     });
 
     it('should send low stock alert when products are below min stock', async () => {
@@ -269,7 +282,9 @@ describe('NotificationsService', () => {
         { email: 'admin1@example.com' },
         { email: 'admin2@example.com' },
       ];
-      (prismaService.user.findMany as jest.Mock).mockResolvedValue(multipleAdmins);
+      (prismaService.user.findMany as jest.Mock).mockResolvedValue(
+        multipleAdmins,
+      );
 
       await service.sendLowStockAlert(mockTenantId);
 
@@ -293,9 +308,16 @@ describe('NotificationsService', () => {
     it('should handle multiple low stock products', async () => {
       const multipleProducts = [
         mockProduct,
-        { ...mockProduct, id: 'product-456', sku: 'SKU-002', name: 'Product 2' },
+        {
+          ...mockProduct,
+          id: 'product-456',
+          sku: 'SKU-002',
+          name: 'Product 2',
+        },
       ];
-      (prismaService.product.findMany as jest.Mock).mockResolvedValue(multipleProducts);
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue(
+        multipleProducts,
+      );
 
       await service.sendLowStockAlert(mockTenantId);
 
@@ -312,18 +334,23 @@ describe('NotificationsService', () => {
 
   describe('sendInvoiceSentEmail', () => {
     beforeEach(() => {
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
     });
 
     it('should send invoice sent email successfully', async () => {
-      const result = await service.sendInvoiceSentEmail(mockInvoice, mockTenantId);
+      const result = await service.sendInvoiceSentEmail(
+        mockInvoice,
+        mockTenantId,
+      );
 
       expect(result?.success).toBe(true);
       expect(brevoService.sendInvoiceEmail).toHaveBeenCalledWith(
         'customer@example.com',
         'Jane Customer',
         'INV-001',
-        1500.50,
+        1500.5,
         mockInvoice.dueDate,
         'Acme Corp',
       );
@@ -335,7 +362,10 @@ describe('NotificationsService', () => {
         customer: { name: 'Jane Customer', email: null },
       };
 
-      const result = await service.sendInvoiceSentEmail(invoiceWithoutEmail, mockTenantId);
+      const result = await service.sendInvoiceSentEmail(
+        invoiceWithoutEmail,
+        mockTenantId,
+      );
 
       expect(result).toBeNull();
       expect(brevoService.sendInvoiceEmail).not.toHaveBeenCalled();
@@ -378,7 +408,7 @@ describe('NotificationsService', () => {
         'customer@example.com',
         'Jane Customer',
         'INV-001',
-        1500.50,
+        1500.5,
         mockInvoice.dueDate,
         'StockFlow',
       );
@@ -402,7 +432,9 @@ describe('NotificationsService', () => {
     };
 
     beforeEach(() => {
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
       // Mock Date.now to ensure consistent days overdue calculation
       jest.useFakeTimers();
       jest.setSystemTime(new Date('2024-01-16'));
@@ -413,14 +445,17 @@ describe('NotificationsService', () => {
     });
 
     it('should send overdue invoice alert successfully', async () => {
-      const result = await service.sendOverdueInvoiceAlert(overdueInvoice, mockTenantId);
+      const result = await service.sendOverdueInvoiceAlert(
+        overdueInvoice,
+        mockTenantId,
+      );
 
       expect(result?.success).toBe(true);
       expect(brevoService.sendOverdueInvoiceEmail).toHaveBeenCalledWith(
         'customer@example.com',
         'Jane Customer',
         'INV-001',
-        1500.50,
+        1500.5,
         overdueInvoice.dueDate,
         15,
         'Acme Corp',
@@ -433,7 +468,10 @@ describe('NotificationsService', () => {
         customer: { name: 'Jane Customer', email: null },
       };
 
-      const result = await service.sendOverdueInvoiceAlert(invoiceWithoutEmail, mockTenantId);
+      const result = await service.sendOverdueInvoiceAlert(
+        invoiceWithoutEmail,
+        mockTenantId,
+      );
 
       expect(result).toBeNull();
       expect(brevoService.sendOverdueInvoiceEmail).not.toHaveBeenCalled();
@@ -446,7 +484,10 @@ describe('NotificationsService', () => {
         dueDate: new Date('2024-01-01'),
       };
 
-      const result = await service.sendOverdueInvoiceAlert(notOverdueInvoice, mockTenantId);
+      const result = await service.sendOverdueInvoiceAlert(
+        notOverdueInvoice,
+        mockTenantId,
+      );
 
       expect(result).toBeNull();
     });
@@ -458,7 +499,10 @@ describe('NotificationsService', () => {
         dueDate: new Date('2024-02-01'),
       };
 
-      const result = await service.sendOverdueInvoiceAlert(futureInvoice, mockTenantId);
+      const result = await service.sendOverdueInvoiceAlert(
+        futureInvoice,
+        mockTenantId,
+      );
 
       expect(result).toBeNull();
     });
@@ -517,7 +561,9 @@ describe('NotificationsService', () => {
     };
 
     beforeEach(() => {
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
     });
 
     it('should send payment received email successfully', async () => {
@@ -532,9 +578,9 @@ describe('NotificationsService', () => {
         'customer@example.com',
         'Jane Customer',
         'INV-001',
-        500.00,
+        500.0,
         'CREDIT_CARD',
-        500.50, // 1500.50 - (500 + 500)
+        500.5, // 1500.50 - (500 + 500)
         'Acme Corp',
       );
     });
@@ -571,16 +617,16 @@ describe('NotificationsService', () => {
         expect.any(String),
         expect.any(String),
         expect.any(String),
-        500.00,
+        500.0,
         'CREDIT_CARD',
-        1000.50, // 1500.50 - 500
+        1000.5, // 1500.50 - 500
         expect.any(String),
       );
     });
 
     it('should calculate zero remaining balance when fully paid', async () => {
       const fullPayment: PaymentEmailData = {
-        amount: 1500.50,
+        amount: 1500.5,
         method: 'BANK_TRANSFER',
       };
 
@@ -594,7 +640,7 @@ describe('NotificationsService', () => {
         expect.any(String),
         expect.any(String),
         expect.any(String),
-        1500.50,
+        1500.5,
         'BANK_TRANSFER',
         0,
         expect.any(String),
@@ -665,9 +711,15 @@ describe('NotificationsService', () => {
         { id: 'tenant-1', name: 'Tenant 1' },
         { id: 'tenant-2', name: 'Tenant 2' },
       ]);
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
-      (prismaService.product.findMany as jest.Mock).mockResolvedValue([mockProduct]);
-      (prismaService.user.findMany as jest.Mock).mockResolvedValue([mockAdminUser]);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct,
+      ]);
+      (prismaService.user.findMany as jest.Mock).mockResolvedValue([
+        mockAdminUser,
+      ]);
     });
 
     it('should process all active tenants', async () => {
@@ -749,7 +801,9 @@ describe('NotificationsService', () => {
 
     it('should handle non-Error thrown values in outer catch', async () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
-      (prismaService.tenant.findMany as jest.Mock).mockRejectedValue('string error');
+      (prismaService.tenant.findMany as jest.Mock).mockRejectedValue(
+        'string error',
+      );
 
       await service.handleDailyLowStockAlert();
 
@@ -761,7 +815,9 @@ describe('NotificationsService', () => {
 
     it('should handle non-Error thrown values in inner catch', async () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
-      (prismaService.product.findMany as jest.Mock).mockRejectedValue('string error');
+      (prismaService.product.findMany as jest.Mock).mockRejectedValue(
+        'string error',
+      );
 
       await service.handleDailyLowStockAlert();
 
@@ -797,7 +853,7 @@ describe('NotificationsService', () => {
     const mockOverdueInvoice = {
       id: 'invoice-123',
       invoiceNumber: 'INV-001',
-      total: 1500.50,
+      total: 1500.5,
       dueDate: new Date('2024-01-01'),
       tenantId: mockTenantId,
       status: InvoiceStatus.SENT,
@@ -812,7 +868,9 @@ describe('NotificationsService', () => {
       (prismaService.invoice.findMany as jest.Mock).mockResolvedValue([
         mockOverdueInvoice,
       ]);
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
     });
 
     afterEach(() => {
@@ -893,7 +951,9 @@ describe('NotificationsService', () => {
 
     it('should handle invoice processing failure', async () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
-      brevoService.sendOverdueInvoiceEmail.mockRejectedValue(new Error('Send failed'));
+      brevoService.sendOverdueInvoiceEmail.mockRejectedValue(
+        new Error('Send failed'),
+      );
 
       await service.handleDailyOverdueInvoiceReminder();
 
@@ -931,7 +991,9 @@ describe('NotificationsService', () => {
 
     it('should handle non-Error in outer catch', async () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
-      (prismaService.invoice.findMany as jest.Mock).mockRejectedValue('string error');
+      (prismaService.invoice.findMany as jest.Mock).mockRejectedValue(
+        'string error',
+      );
 
       await service.handleDailyOverdueInvoiceReminder();
 
@@ -958,7 +1020,7 @@ describe('NotificationsService', () => {
         'customer@example.com',
         'Jane Customer',
         'INV-001',
-        1500.50,
+        1500.5,
         expect.any(Date),
         expect.any(Number),
         expect.any(String),
@@ -968,9 +1030,15 @@ describe('NotificationsService', () => {
 
   describe('triggerLowStockAlert', () => {
     beforeEach(() => {
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
-      (prismaService.product.findMany as jest.Mock).mockResolvedValue([mockProduct]);
-      (prismaService.user.findMany as jest.Mock).mockResolvedValue([mockAdminUser]);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct,
+      ]);
+      (prismaService.user.findMany as jest.Mock).mockResolvedValue([
+        mockAdminUser,
+      ]);
     });
 
     it('should manually trigger low stock alert', async () => {
@@ -995,7 +1063,7 @@ describe('NotificationsService', () => {
     const mockOverdueInvoice = {
       id: 'invoice-123',
       invoiceNumber: 'INV-001',
-      total: 1500.50,
+      total: 1500.5,
       dueDate: new Date('2024-01-01'),
       customer: mockCustomer,
     };
@@ -1006,7 +1074,9 @@ describe('NotificationsService', () => {
       (prismaService.invoice.findMany as jest.Mock).mockResolvedValue([
         mockOverdueInvoice,
       ]);
-      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
     });
 
     afterEach(() => {

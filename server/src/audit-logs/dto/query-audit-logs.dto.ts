@@ -44,7 +44,10 @@ export class QueryAuditLogsDto {
   userId?: string;
 
   @IsOptional()
-  @IsDateString({}, { message: 'startDate must be a valid ISO 8601 date string' })
+  @IsDateString(
+    {},
+    { message: 'startDate must be a valid ISO 8601 date string' },
+  )
   startDate?: string;
 
   @IsOptional()

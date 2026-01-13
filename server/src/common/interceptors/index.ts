@@ -40,3 +40,5 @@ export {
   type TransformInterceptorOptions,
   type ApiResponse,
 } from './transform.interceptor';
+
+export { LimitCheckInterceptor } from './limit-check.interceptor';

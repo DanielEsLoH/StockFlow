@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { UploadService } from './upload.service';
 import * as fs from 'fs';
-import * as path from 'path';
 
 // Mock the fs module
 jest.mock('fs', () => ({
@@ -17,7 +16,6 @@ jest.mock('fs', () => ({
 
 describe('UploadService', () => {
   let service: UploadService;
-  let configService: jest.Mocked<ConfigService>;
 
   // Test data
   const mockTenantId = 'tenant-123';
@@ -59,7 +57,6 @@ describe('UploadService', () => {
     }).compile();
 
     service = module.get<UploadService>(UploadService);
-    configService = module.get(ConfigService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -322,8 +319,12 @@ describe('UploadService', () => {
     });
 
     it('should throw BadRequestException when no files provided', async () => {
-      await expect(service.uploadFiles([])).rejects.toThrow(BadRequestException);
-      await expect(service.uploadFiles([])).rejects.toThrow('No files provided');
+      await expect(service.uploadFiles([])).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.uploadFiles([])).rejects.toThrow(
+        'No files provided',
+      );
     });
 
     it('should throw BadRequestException when files is null', async () => {
@@ -335,7 +336,10 @@ describe('UploadService', () => {
     it('should validate all files before uploading any', async () => {
       const files = [
         createMockFile({ originalname: 'image1.jpg' }),
-        createMockFile({ mimetype: 'application/pdf', originalname: 'doc.pdf' }),
+        createMockFile({
+          mimetype: 'application/pdf',
+          originalname: 'doc.pdf',
+        }),
         createMockFile({ originalname: 'image3.jpg' }),
       ];
 
@@ -367,7 +371,9 @@ describe('UploadService', () => {
 
       await service.uploadFiles(files);
 
-      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Uploaded 2'));
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Uploaded 2'),
+      );
     });
   });
 

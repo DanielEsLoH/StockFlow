@@ -97,7 +97,9 @@ describe('AuditLogsService', () => {
     };
 
     it('should create an audit log entry', async () => {
-      (prismaService.auditLog.create as jest.Mock).mockResolvedValue(mockAuditLog);
+      (prismaService.auditLog.create as jest.Mock).mockResolvedValue(
+        mockAuditLog,
+      );
 
       const result = await service.create(createData);
 
@@ -175,7 +177,9 @@ describe('AuditLogsService', () => {
         ...createData,
         metadata: { method: 'POST', path: '/products' },
       };
-      (prismaService.auditLog.create as jest.Mock).mockResolvedValue(mockAuditLog);
+      (prismaService.auditLog.create as jest.Mock).mockResolvedValue(
+        mockAuditLog,
+      );
 
       await service.create(dataWithMetadata);
 
@@ -207,7 +211,9 @@ describe('AuditLogsService', () => {
     });
 
     it('should log debug message on create', async () => {
-      (prismaService.auditLog.create as jest.Mock).mockResolvedValue(mockAuditLog);
+      (prismaService.auditLog.create as jest.Mock).mockResolvedValue(
+        mockAuditLog,
+      );
 
       await service.create(createData);
 
@@ -217,7 +223,9 @@ describe('AuditLogsService', () => {
     });
 
     it('should log success message after create', async () => {
-      (prismaService.auditLog.create as jest.Mock).mockResolvedValue(mockAuditLog);
+      (prismaService.auditLog.create as jest.Mock).mockResolvedValue(
+        mockAuditLog,
+      );
 
       await service.create(createData);
 
@@ -574,8 +582,18 @@ describe('AuditLogsService', () => {
         },
       );
       (prismaService.user.findMany as jest.Mock).mockResolvedValue([
-        { id: 'user-1', email: 'user1@test.com', firstName: 'User', lastName: 'One' },
-        { id: 'user-2', email: 'user2@test.com', firstName: 'User', lastName: 'Two' },
+        {
+          id: 'user-1',
+          email: 'user1@test.com',
+          firstName: 'User',
+          lastName: 'One',
+        },
+        {
+          id: 'user-2',
+          email: 'user2@test.com',
+          firstName: 'User',
+          lastName: 'Two',
+        },
       ]);
       (prismaService.auditLog.findMany as jest.Mock).mockResolvedValue([
         { createdAt: new Date('2024-01-15') },

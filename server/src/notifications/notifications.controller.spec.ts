@@ -1,10 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { NotificationsController } from './notifications.controller';
-import {
-  NotificationsService,
-  LowStockProduct,
-} from './notifications.service';
+import { NotificationsService, LowStockProduct } from './notifications.service';
 import { TenantContextService } from '../common';
 import { SendMailResult } from './mail/brevo.service';
 
@@ -401,7 +399,9 @@ describe('NotificationsController', () => {
       expect(result.success).toBe(false);
       expect(result.message).toContain('Invalid test email type');
       expect(result.message).toContain('invalid-type');
-      expect(result.message).toContain('welcome, low-stock, invoice-sent, overdue, payment');
+      expect(result.message).toContain(
+        'welcome, low-stock, invoice-sent, overdue, payment',
+      );
     });
 
     it('should require tenant context', () => {
@@ -425,9 +425,7 @@ describe('NotificationsController', () => {
 
       controller.sendTestEmail('payment');
 
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('payment'),
-      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('payment'));
     });
   });
 

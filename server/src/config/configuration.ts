@@ -56,6 +56,17 @@ export interface ArcjetConfig {
 }
 
 /**
+ * Stripe configuration interface
+ */
+export interface StripeConfig {
+  secretKey: string | undefined;
+  webhookSecret: string | undefined;
+  priceBasic: string | undefined;
+  pricePro: string | undefined;
+  priceEnterprise: string | undefined;
+}
+
+/**
  * Complete application configuration interface
  */
 export interface Configuration {
@@ -65,6 +76,7 @@ export interface Configuration {
   mail: MailConfig;
   email: EmailConfig;
   arcjet: ArcjetConfig;
+  stripe: StripeConfig;
 }
 
 /**
@@ -142,6 +154,21 @@ export const arcjetConfig = registerAs(
 );
 
 /**
+ * Stripe configuration factory
+ * Provides subscription billing and payment processing
+ */
+export const stripeConfig = registerAs(
+  'stripe',
+  (): StripeConfig => ({
+    secretKey: process.env.STRIPE_SECRET_KEY,
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    priceBasic: process.env.STRIPE_PRICE_BASIC,
+    pricePro: process.env.STRIPE_PRICE_PRO,
+    priceEnterprise: process.env.STRIPE_PRICE_ENTERPRISE,
+  }),
+);
+
+/**
  * Combined configuration factory function
  * Returns the complete configuration object
  */
@@ -177,5 +204,12 @@ export default (): Configuration => ({
     environment:
       process.env.NODE_ENV === 'production' ? 'production' : 'development',
     enabled: process.env.ARCJET_ENABLED !== 'false',
+  },
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY,
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    priceBasic: process.env.STRIPE_PRICE_BASIC,
+    pricePro: process.env.STRIPE_PRICE_PRO,
+    priceEnterprise: process.env.STRIPE_PRICE_ENTERPRISE,
   },
 });

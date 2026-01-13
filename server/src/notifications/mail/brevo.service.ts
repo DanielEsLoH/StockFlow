@@ -144,7 +144,9 @@ export class BrevoService {
     const recipients = Array.isArray(options.to) ? options.to : [options.to];
 
     // Validate email addresses
-    const invalidEmails = recipients.filter((email) => !this.isValidEmail(email));
+    const invalidEmails = recipients.filter(
+      (email) => !this.isValidEmail(email),
+    );
     if (invalidEmails.length > 0) {
       this.logger.warn(`Invalid email addresses: ${invalidEmails.join(', ')}`);
       return {

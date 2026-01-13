@@ -12,7 +12,7 @@ import { AuditAction } from '@prisma/client';
 import { AuditLogsService } from './audit-logs.service';
 import { PrismaService } from '../prisma';
 import { AUDIT_ENTITY_TYPE_KEY, SKIP_AUDIT_KEY } from './decorators';
-import { RequestUser } from '../auth/types';
+import { RequestUser } from '../auth';
 
 /**
  * Extended request interface with user and tenantId.
@@ -39,7 +39,7 @@ interface AuditRequest extends Request {
  * Apply globally in AppModule or per-controller/route.
  *
  * @example
- * ```typescript
+ * ```TypeScript
  * // Controller with audit decorator
  * @Controller('products')
  * @UseInterceptors(AuditInterceptor)
@@ -79,10 +79,10 @@ export class AuditInterceptor implements NestInterceptor {
     next: CallHandler,
   ): Promise<Observable<unknown>> {
     // Check if audit should be skipped
-    const skipAudit = this.reflector.getAllAndOverride<boolean>(SKIP_AUDIT_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const skipAudit = this.reflector.getAllAndOverride<boolean>(
+      SKIP_AUDIT_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (skipAudit) {
       return next.handle();
@@ -126,7 +126,10 @@ export class AuditInterceptor implements NestInterceptor {
     // Capture old values for UPDATE and DELETE operations
     let oldValues: Record<string, unknown> | null = null;
 
-    if ((action === AuditAction.UPDATE || action === AuditAction.DELETE) && entityId) {
+    if (
+      (action === AuditAction.UPDATE || action === AuditAction.DELETE) &&
+      entityId
+    ) {
       try {
         oldValues = await this.fetchOldValues(entityType, entityId, tenantId);
       } catch (error) {
@@ -141,47 +144,51 @@ export class AuditInterceptor implements NestInterceptor {
     const userAgent = request.headers['user-agent'] ?? null;
 
     return next.handle().pipe(
-      tap(async (response: unknown) => {
-        try {
-          // Extract entity ID from response for CREATE operations
-          const finalEntityId = entityId ?? this.extractEntityIdFromResponse(response);
+      tap((response: unknown) => {
+        // Use void to handle the async function without returning a Promise to tap
+        void (async () => {
+          try {
+            // Extract entity ID from response for CREATE operations
+            const finalEntityId =
+              entityId ?? this.extractEntityIdFromResponse(response);
 
-          if (!finalEntityId) {
-            this.logger.warn(
-              `Could not determine entity ID for ${action} ${entityType}`,
+            if (!finalEntityId) {
+              this.logger.warn(
+                `Could not determine entity ID for ${action} ${entityType}`,
+              );
+              return;
+            }
+
+            // Prepare new values from response
+            const newValues =
+              action === AuditAction.DELETE
+                ? null
+                : this.extractValuesFromResponse(response);
+
+            // Create audit log
+            await this.auditLogsService.create({
+              tenantId,
+              userId: user?.userId ?? null,
+              action,
+              entityType,
+              entityId: finalEntityId,
+              oldValues,
+              newValues,
+              ipAddress,
+              userAgent,
+              metadata: {
+                method,
+                path: request.path,
+              },
+            });
+          } catch (error) {
+            // Log error but don't break the response
+            this.logger.error(
+              `Failed to create audit log: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              error instanceof Error ? error.stack : undefined,
             );
-            return;
           }
-
-          // Prepare new values from response
-          const newValues =
-            action === AuditAction.DELETE
-              ? null
-              : this.extractValuesFromResponse(response);
-
-          // Create audit log
-          await this.auditLogsService.create({
-            tenantId,
-            userId: user?.userId ?? null,
-            action,
-            entityType,
-            entityId: finalEntityId,
-            oldValues,
-            newValues,
-            ipAddress,
-            userAgent,
-            metadata: {
-              method,
-              path: request.path,
-            },
-          });
-        } catch (error) {
-          // Log error but don't break the response
-          this.logger.error(
-            `Failed to create audit log: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            error instanceof Error ? error.stack : undefined,
-          );
-        }
+        })();
       }),
       catchError((error) => {
         // Re-throw the error without logging audit (operation failed)
@@ -224,9 +231,15 @@ export class AuditInterceptor implements NestInterceptor {
 
     try {
       // Use dynamic model access - cast through unknown for type safety
-      const model = (this.prisma as unknown as Record<string, unknown>)[modelName] as {
-        findFirst?: (args: { where: { id: string; tenantId?: string } }) => Promise<Record<string, unknown> | null>;
-      } | undefined;
+      const model = (this.prisma as unknown as Record<string, unknown>)[
+        modelName
+      ] as
+        | {
+            findFirst?: (args: {
+              where: { id: string; tenantId?: string };
+            }) => Promise<Record<string, unknown> | null>;
+          }
+        | undefined;
 
       if (!model?.findFirst) {
         return null;

@@ -6,8 +6,6 @@ import { MailService, SendMailOptions } from './mail.service';
 
 describe('MailService', () => {
   let service: MailService;
-  let mailerService: jest.Mocked<MailerService>;
-  let configService: jest.Mocked<ConfigService>;
 
   // Test data
   const mockSendMailOptions: SendMailOptions = {
@@ -44,8 +42,6 @@ describe('MailService', () => {
     }).compile();
 
     service = module.get<MailService>(MailService);
-    mailerService = module.get(MailerService);
-    configService = module.get(ConfigService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'debug').mockImplementation();
@@ -198,7 +194,10 @@ describe('MailService', () => {
           providers: [
             MailService,
             { provide: MailerService, useValue: { sendMail: jest.fn() } },
-            { provide: ConfigService, useValue: mockConfigServiceNotConfigured },
+            {
+              provide: ConfigService,
+              useValue: mockConfigServiceNotConfigured,
+            },
           ],
         }).compile();
 
@@ -206,7 +205,8 @@ describe('MailService', () => {
       });
 
       it('should return success with special messageId when not configured', async () => {
-        const result = await mailServiceNotConfigured.sendMail(mockSendMailOptions);
+        const result =
+          await mailServiceNotConfigured.sendMail(mockSendMailOptions);
 
         expect(result.success).toBe(true);
         expect(result.messageId).toBe('mail-not-configured');
@@ -265,7 +265,8 @@ describe('MailService', () => {
       });
 
       it('should send email successfully', async () => {
-        const result = await mailServiceConfigured.sendMail(mockSendMailOptions);
+        const result =
+          await mailServiceConfigured.sendMail(mockSendMailOptions);
 
         expect(result.success).toBe(true);
         expect(result.messageId).toBe('msg-123');
@@ -336,9 +337,7 @@ describe('MailService', () => {
         expect(logSpy).toHaveBeenCalledWith(
           expect.stringContaining('Email sent successfully'),
         );
-        expect(logSpy).toHaveBeenCalledWith(
-          expect.stringContaining('msg-123'),
-        );
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('msg-123'));
       });
 
       it('should handle array recipients in success log', async () => {
@@ -360,9 +359,7 @@ describe('MailService', () => {
 
         await mailServiceConfigured.sendMail(mockSendMailOptions);
 
-        expect(logSpy).toHaveBeenCalledWith(
-          expect.stringContaining('unknown'),
-        );
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('unknown'));
       });
     });
 
@@ -400,7 +397,8 @@ describe('MailService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendMailResult);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         // Advance through the retry delay
         await jest.advanceTimersByTimeAsync(1000);
@@ -417,7 +415,8 @@ describe('MailService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendMailResult);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -433,7 +432,8 @@ describe('MailService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendMailResult);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -448,7 +448,8 @@ describe('MailService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendMailResult);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -463,7 +464,8 @@ describe('MailService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendMailResult);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -478,7 +480,8 @@ describe('MailService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendMailResult);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -488,13 +491,16 @@ describe('MailService', () => {
       });
 
       it('should retry on error with ECONNRESET code', async () => {
-        const retryableError = new Error('Connection error') as NodeJS.ErrnoException;
+        const retryableError = new Error(
+          'Connection error',
+        ) as NodeJS.ErrnoException;
         retryableError.code = 'ECONNRESET';
         mailerServiceMock.sendMail
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendMailResult);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -510,7 +516,8 @@ describe('MailService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendMailResult);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         // First retry after 1000ms
         await jest.advanceTimersByTimeAsync(1000);
@@ -530,7 +537,8 @@ describe('MailService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendMailResult);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
         await resultPromise;
@@ -573,7 +581,8 @@ describe('MailService', () => {
         const retryableError = new Error('ECONNRESET');
         mailerServiceMock.sendMail.mockRejectedValue(retryableError);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         // Advance through all retry delays
         await jest.advanceTimersByTimeAsync(1000);
@@ -591,7 +600,8 @@ describe('MailService', () => {
         const retryableError = new Error('ECONNRESET');
         mailerServiceMock.sendMail.mockRejectedValue(retryableError);
 
-        const resultPromise = mailServiceConfigured.sendMail(mockSendMailOptions);
+        const resultPromise =
+          mailServiceConfigured.sendMail(mockSendMailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
         await jest.advanceTimersByTimeAsync(2000);
@@ -607,7 +617,8 @@ describe('MailService', () => {
         const nonRetryableError = new Error('Invalid recipient');
         mailerServiceMock.sendMail.mockRejectedValue(nonRetryableError);
 
-        const result = await mailServiceConfigured.sendMail(mockSendMailOptions);
+        const result =
+          await mailServiceConfigured.sendMail(mockSendMailOptions);
 
         expect(result.success).toBe(false);
         expect(result.error).toBe('Invalid recipient');
@@ -617,7 +628,8 @@ describe('MailService', () => {
       it('should handle non-Error objects in catch', async () => {
         mailerServiceMock.sendMail.mockRejectedValue('string error');
 
-        const result = await mailServiceConfigured.sendMail(mockSendMailOptions);
+        const result =
+          await mailServiceConfigured.sendMail(mockSendMailOptions);
 
         expect(result.success).toBe(false);
         expect(result.error).toBe('Unknown error');
@@ -626,7 +638,8 @@ describe('MailService', () => {
       it('should not retry non-Error thrown values', async () => {
         mailerServiceMock.sendMail.mockRejectedValue({ code: 'CUSTOM' });
 
-        const result = await mailServiceConfigured.sendMail(mockSendMailOptions);
+        const result =
+          await mailServiceConfigured.sendMail(mockSendMailOptions);
 
         expect(result.success).toBe(false);
         expect(mailerServiceMock.sendMail).toHaveBeenCalledTimes(1);
@@ -732,7 +745,8 @@ describe('MailService', () => {
         expect(mailerServiceMock.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: 'admin@example.com',
-            subject: '[StockFlow] Low Stock Alert - 1 product(s) need attention',
+            subject:
+              '[StockFlow] Low Stock Alert - 1 product(s) need attention',
             template: 'low-stock-alert',
             context: expect.objectContaining({
               tenantName: 'Acme Corp',
@@ -759,7 +773,8 @@ describe('MailService', () => {
         expect(mailerServiceMock.sendMail).toHaveBeenCalledWith(
           expect.objectContaining({
             to: ['admin1@example.com', 'admin2@example.com'],
-            subject: '[StockFlow] Low Stock Alert - 2 product(s) need attention',
+            subject:
+              '[StockFlow] Low Stock Alert - 2 product(s) need attention',
           }),
         );
       });
@@ -774,7 +789,7 @@ describe('MailService', () => {
           'customer@example.com',
           'Jane Doe',
           'INV-001',
-          1500.50,
+          1500.5,
           dueDate,
           'Acme Corp',
         );
@@ -801,7 +816,7 @@ describe('MailService', () => {
           'customer@example.com',
           'Jane Doe',
           'INV-001',
-          1500.50,
+          1500.5,
           null,
           'Acme Corp',
         );
@@ -825,7 +840,7 @@ describe('MailService', () => {
           'customer@example.com',
           'Jane Doe',
           'INV-001',
-          1500.50,
+          1500.5,
           dueDate,
           15,
           'Acme Corp',
@@ -856,9 +871,9 @@ describe('MailService', () => {
           'customer@example.com',
           'Jane Doe',
           'INV-001',
-          500.00,
+          500.0,
           'CREDIT_CARD',
-          1000.00,
+          1000.0,
           'Acme Corp',
         );
 
@@ -886,7 +901,7 @@ describe('MailService', () => {
           'customer@example.com',
           'Jane Doe',
           'INV-001',
-          1500.00,
+          1500.0,
           'BANK_TRANSFER',
           0,
           'Acme Corp',
@@ -918,7 +933,7 @@ describe('MailService', () => {
             'customer@example.com',
             'Jane Doe',
             'INV-001',
-            100.00,
+            100.0,
             input,
             0,
             'Acme Corp',

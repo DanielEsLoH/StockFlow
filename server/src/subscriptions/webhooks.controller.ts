@@ -11,7 +11,7 @@ import {
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 import { SubscriptionsService } from './subscriptions.service';
-import { Public } from '../common/decorators';
+import { Public } from '../common';
 
 /**
  * WebhooksController handles incoming Stripe webhook events.
@@ -27,7 +27,7 @@ import { Public } from '../common/decorators';
  * Stripe events handled:
  * - checkout.session.completed: User completed payment
  * - customer.subscription.updated: Subscription changed
- * - customer.subscription.deleted: Subscription cancelled
+ * - customer.subscription.deleted: Subscription canceled
  * - invoice.payment_failed: Payment failed
  */
 @Controller('webhooks')

@@ -11,7 +11,12 @@ import {
 import { Request } from 'express';
 import { AuthService, AuthResponse, LogoutResponse } from './auth.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
-import { RateLimitGuard, BotProtectionGuard, RateLimit, BotProtect } from '../arcjet';
+import {
+  RateLimitGuard,
+  BotProtectionGuard,
+  RateLimit,
+  BotProtect,
+} from '../arcjet';
 
 /**
  * Extended Request interface that includes user info from JWT

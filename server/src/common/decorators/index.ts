@@ -13,3 +13,6 @@ export { Public, IS_PUBLIC_KEY } from './public.decorator';
 // Parameter decorators for accessing current user data
 export { CurrentUser } from './current-user.decorator';
 export { CurrentTenant } from './current-tenant.decorator';
+
+// Limit check decorator for resource limits
+export { CheckLimit, CHECK_LIMIT_KEY } from './check-limit.decorator';

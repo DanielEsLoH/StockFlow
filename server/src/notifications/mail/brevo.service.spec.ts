@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BrevoService, SendEmailOptions, LowStockProductEmail } from './brevo.service';
+import {
+  BrevoService,
+  SendEmailOptions,
+  LowStockProductEmail,
+} from './brevo.service';
 import * as Brevo from '@getbrevo/brevo';
 
 // Mock the Brevo module
@@ -23,7 +27,6 @@ jest.mock('@getbrevo/brevo', () => {
 
 describe('BrevoService', () => {
   let service: BrevoService;
-  let configService: jest.Mocked<ConfigService>;
   let mockApiInstance: {
     sendTransacEmail: jest.Mock;
     setApiKey: jest.Mock;
@@ -40,7 +43,8 @@ describe('BrevoService', () => {
     jest.useFakeTimers();
 
     // Get the mock instance
-    const MockTransactionalEmailsApi = Brevo.TransactionalEmailsApi as jest.Mock;
+    const MockTransactionalEmailsApi =
+      Brevo.TransactionalEmailsApi as jest.Mock;
     mockApiInstance = {
       sendTransacEmail: jest.fn().mockResolvedValue(mockSendResult),
       setApiKey: jest.fn(),
@@ -59,7 +63,6 @@ describe('BrevoService', () => {
     }).compile();
 
     service = module.get<BrevoService>(BrevoService);
-    configService = module.get(ConfigService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'debug').mockImplementation();
@@ -208,7 +211,10 @@ describe('BrevoService', () => {
         const module: TestingModule = await Test.createTestingModule({
           providers: [
             BrevoService,
-            { provide: ConfigService, useValue: mockConfigServiceNotConfigured },
+            {
+              provide: ConfigService,
+              useValue: mockConfigServiceNotConfigured,
+            },
           ],
         }).compile();
 
@@ -216,7 +222,8 @@ describe('BrevoService', () => {
       });
 
       it('should return success with special messageId when not configured', async () => {
-        const result = await brevoServiceNotConfigured.sendEmail(mockEmailOptions);
+        const result =
+          await brevoServiceNotConfigured.sendEmail(mockEmailOptions);
 
         expect(result.success).toBe(true);
         expect(result.messageId).toBe('brevo-not-configured');
@@ -322,7 +329,8 @@ describe('BrevoService', () => {
         };
 
         // Reset mock
-        const MockTransactionalEmailsApi = Brevo.TransactionalEmailsApi as jest.Mock;
+        const MockTransactionalEmailsApi =
+          Brevo.TransactionalEmailsApi as jest.Mock;
         mockApiInstance = {
           sendTransacEmail: jest.fn().mockResolvedValue(mockSendResult),
           setApiKey: jest.fn(),
@@ -365,9 +373,7 @@ describe('BrevoService', () => {
 
         await brevoServiceConfigured.sendEmail(mockEmailOptions);
 
-        expect(logSpy).toHaveBeenCalledWith(
-          expect.stringContaining('unknown'),
-        );
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('unknown'));
       });
 
       it('should include text content when provided', async () => {
@@ -380,9 +386,7 @@ describe('BrevoService', () => {
       });
 
       it('should include attachments when provided', async () => {
-        const attachments = [
-          { name: 'test.pdf', content: 'base64content' },
-        ];
+        const attachments = [{ name: 'test.pdf', content: 'base64content' }];
 
         await brevoServiceConfigured.sendEmail({
           ...mockEmailOptions,
@@ -407,7 +411,8 @@ describe('BrevoService', () => {
           }),
         };
 
-        const MockTransactionalEmailsApi = Brevo.TransactionalEmailsApi as jest.Mock;
+        const MockTransactionalEmailsApi =
+          Brevo.TransactionalEmailsApi as jest.Mock;
         mockApiInstance = {
           sendTransacEmail: jest.fn(),
           setApiKey: jest.fn(),
@@ -430,7 +435,8 @@ describe('BrevoService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendResult);
 
-        const resultPromise = brevoServiceConfigured.sendEmail(mockEmailOptions);
+        const resultPromise =
+          brevoServiceConfigured.sendEmail(mockEmailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -446,7 +452,8 @@ describe('BrevoService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendResult);
 
-        const resultPromise = brevoServiceConfigured.sendEmail(mockEmailOptions);
+        const resultPromise =
+          brevoServiceConfigured.sendEmail(mockEmailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -461,7 +468,8 @@ describe('BrevoService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendResult);
 
-        const resultPromise = brevoServiceConfigured.sendEmail(mockEmailOptions);
+        const resultPromise =
+          brevoServiceConfigured.sendEmail(mockEmailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -476,7 +484,8 @@ describe('BrevoService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendResult);
 
-        const resultPromise = brevoServiceConfigured.sendEmail(mockEmailOptions);
+        const resultPromise =
+          brevoServiceConfigured.sendEmail(mockEmailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -491,7 +500,8 @@ describe('BrevoService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendResult);
 
-        const resultPromise = brevoServiceConfigured.sendEmail(mockEmailOptions);
+        const resultPromise =
+          brevoServiceConfigured.sendEmail(mockEmailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -501,13 +511,16 @@ describe('BrevoService', () => {
       });
 
       it('should retry on error with ECONNRESET code', async () => {
-        const retryableError = new Error('Connection error') as NodeJS.ErrnoException;
+        const retryableError = new Error(
+          'Connection error',
+        ) as NodeJS.ErrnoException;
         retryableError.code = 'ECONNRESET';
         mockApiInstance.sendTransacEmail
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendResult);
 
-        const resultPromise = brevoServiceConfigured.sendEmail(mockEmailOptions);
+        const resultPromise =
+          brevoServiceConfigured.sendEmail(mockEmailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
 
@@ -523,7 +536,8 @@ describe('BrevoService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendResult);
 
-        const resultPromise = brevoServiceConfigured.sendEmail(mockEmailOptions);
+        const resultPromise =
+          brevoServiceConfigured.sendEmail(mockEmailOptions);
 
         // First retry after 1000ms
         await jest.advanceTimersByTimeAsync(1000);
@@ -543,7 +557,8 @@ describe('BrevoService', () => {
           .mockRejectedValueOnce(retryableError)
           .mockResolvedValueOnce(mockSendResult);
 
-        const resultPromise = brevoServiceConfigured.sendEmail(mockEmailOptions);
+        const resultPromise =
+          brevoServiceConfigured.sendEmail(mockEmailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
         await resultPromise;
@@ -568,7 +583,8 @@ describe('BrevoService', () => {
           }),
         };
 
-        const MockTransactionalEmailsApi = Brevo.TransactionalEmailsApi as jest.Mock;
+        const MockTransactionalEmailsApi =
+          Brevo.TransactionalEmailsApi as jest.Mock;
         mockApiInstance = {
           sendTransacEmail: jest.fn(),
           setApiKey: jest.fn(),
@@ -589,7 +605,8 @@ describe('BrevoService', () => {
         const retryableError = new Error('ECONNRESET');
         mockApiInstance.sendTransacEmail.mockRejectedValue(retryableError);
 
-        const resultPromise = brevoServiceConfigured.sendEmail(mockEmailOptions);
+        const resultPromise =
+          brevoServiceConfigured.sendEmail(mockEmailOptions);
 
         // Advance through all retry delays
         await jest.advanceTimersByTimeAsync(1000);
@@ -607,7 +624,8 @@ describe('BrevoService', () => {
         const retryableError = new Error('ECONNRESET');
         mockApiInstance.sendTransacEmail.mockRejectedValue(retryableError);
 
-        const resultPromise = brevoServiceConfigured.sendEmail(mockEmailOptions);
+        const resultPromise =
+          brevoServiceConfigured.sendEmail(mockEmailOptions);
 
         await jest.advanceTimersByTimeAsync(1000);
         await jest.advanceTimersByTimeAsync(2000);
@@ -676,7 +694,8 @@ describe('BrevoService', () => {
         }),
       };
 
-      const MockTransactionalEmailsApi = Brevo.TransactionalEmailsApi as jest.Mock;
+      const MockTransactionalEmailsApi =
+        Brevo.TransactionalEmailsApi as jest.Mock;
       mockApiInstance = {
         sendTransacEmail: jest.fn().mockResolvedValue(mockSendResult),
         setApiKey: jest.fn(),
@@ -732,7 +751,7 @@ describe('BrevoService', () => {
           'customer@example.com',
           'Jane Customer',
           'INV-001',
-          1500.50,
+          1500.5,
           new Date('2024-02-15'),
           'Acme Corp',
         );
@@ -745,7 +764,7 @@ describe('BrevoService', () => {
           'customer@example.com',
           'Jane Customer',
           'INV-001',
-          1500.50,
+          1500.5,
           null,
           'Acme Corp',
         );
@@ -760,7 +779,7 @@ describe('BrevoService', () => {
           'customer@example.com',
           'Jane Customer',
           'INV-001',
-          1500.50,
+          1500.5,
           new Date('2024-02-15'),
           'Acme Corp',
           pdfBuffer,
@@ -776,7 +795,7 @@ describe('BrevoService', () => {
           'customer@example.com',
           'Jane Customer',
           'INV-001',
-          1500.50,
+          1500.5,
           new Date('2024-02-15'),
           'Acme Corp',
           pdfBuffer,
@@ -851,7 +870,7 @@ describe('BrevoService', () => {
           'customer@example.com',
           'Jane Customer',
           'INV-001',
-          1500.50,
+          1500.5,
           new Date('2024-01-01'),
           15,
           'Acme Corp',
@@ -865,7 +884,7 @@ describe('BrevoService', () => {
           'customer@example.com',
           'Jane Customer',
           'INV-001',
-          1500.50,
+          1500.5,
           new Date('2024-01-01'),
           15,
           'Acme Corp',
@@ -881,9 +900,9 @@ describe('BrevoService', () => {
           'customer@example.com',
           'Jane Customer',
           'INV-001',
-          500.00,
+          500.0,
           'CREDIT_CARD',
-          1000.00,
+          1000.0,
           'Acme Corp',
         );
 
@@ -895,7 +914,7 @@ describe('BrevoService', () => {
           'customer@example.com',
           'Jane Customer',
           'INV-001',
-          1500.00,
+          1500.0,
           'BANK_TRANSFER',
           0,
           'Acme Corp',
@@ -905,14 +924,21 @@ describe('BrevoService', () => {
       });
 
       it('should format payment methods correctly', async () => {
-        const paymentMethods = ['CASH', 'CREDIT_CARD', 'DEBIT_CARD', 'BANK_TRANSFER', 'CHECK', 'OTHER'];
+        const paymentMethods = [
+          'CASH',
+          'CREDIT_CARD',
+          'DEBIT_CARD',
+          'BANK_TRANSFER',
+          'CHECK',
+          'OTHER',
+        ];
 
         for (const method of paymentMethods) {
           const result = await brevoServiceConfigured.sendPaymentReceivedEmail(
             'customer@example.com',
             'Jane Customer',
             'INV-001',
-            100.00,
+            100.0,
             method,
             0,
             'Acme Corp',
@@ -927,7 +953,7 @@ describe('BrevoService', () => {
           'customer@example.com',
           'Jane Customer',
           'INV-001',
-          100.00,
+          100.0,
           'UNKNOWN_METHOD',
           0,
           'Acme Corp',
@@ -952,7 +978,8 @@ describe('BrevoService', () => {
         }),
       };
 
-      const MockTransactionalEmailsApi = Brevo.TransactionalEmailsApi as jest.Mock;
+      const MockTransactionalEmailsApi =
+        Brevo.TransactionalEmailsApi as jest.Mock;
       mockApiInstance = {
         sendTransacEmail: jest.fn().mockResolvedValue(mockSendResult),
         setApiKey: jest.fn(),
@@ -1004,7 +1031,8 @@ describe('BrevoService', () => {
         }),
       };
 
-      const MockTransactionalEmailsApi = Brevo.TransactionalEmailsApi as jest.Mock;
+      const MockTransactionalEmailsApi =
+        Brevo.TransactionalEmailsApi as jest.Mock;
       mockApiInstance = {
         sendTransacEmail: jest.fn().mockResolvedValue(mockSendResult),
         setApiKey: jest.fn(),

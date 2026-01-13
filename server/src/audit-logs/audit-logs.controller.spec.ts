@@ -132,7 +132,10 @@ describe('AuditLogsController', () => {
       const result = await controller.findAll(mockUser, query);
 
       expect(result).toEqual(mockPaginatedResponse);
-      expect(auditLogsService.findAll).toHaveBeenCalledWith(mockTenantId, query);
+      expect(auditLogsService.findAll).toHaveBeenCalledWith(
+        mockTenantId,
+        query,
+      );
     });
 
     it('should pass user tenantId to service', async () => {
@@ -156,7 +159,10 @@ describe('AuditLogsController', () => {
 
       await controller.findAll(mockUser, query);
 
-      expect(auditLogsService.findAll).toHaveBeenCalledWith(mockTenantId, query);
+      expect(auditLogsService.findAll).toHaveBeenCalledWith(
+        mockTenantId,
+        query,
+      );
     });
 
     it('should use default pagination when not specified', async () => {
@@ -164,7 +170,10 @@ describe('AuditLogsController', () => {
 
       await controller.findAll(mockUser, query);
 
-      expect(auditLogsService.findAll).toHaveBeenCalledWith(mockTenantId, query);
+      expect(auditLogsService.findAll).toHaveBeenCalledWith(
+        mockTenantId,
+        query,
+      );
     });
 
     it('should log the request', async () => {
@@ -191,7 +200,10 @@ describe('AuditLogsController', () => {
 
       await controller.findAll(mockUser, query);
 
-      expect(auditLogsService.findAll).toHaveBeenCalledWith(mockTenantId, query);
+      expect(auditLogsService.findAll).toHaveBeenCalledWith(
+        mockTenantId,
+        query,
+      );
     });
   });
 
@@ -261,7 +273,13 @@ describe('AuditLogsController', () => {
     });
 
     it('should parse page and limit from query strings', async () => {
-      await controller.findByEntity(mockUser, 'Product', 'product-789', '2', '10');
+      await controller.findByEntity(
+        mockUser,
+        'Product',
+        'product-789',
+        '2',
+        '10',
+      );
 
       expect(auditLogsService.findByEntity).toHaveBeenCalledWith(
         mockTenantId,
@@ -348,7 +366,9 @@ describe('AuditLogsController', () => {
       await controller.findByEntity(mockUser, 'Product', 'product-789');
 
       expect(Logger.prototype.log).toHaveBeenCalledWith(
-        expect.stringContaining('Getting audit history for Product product-789'),
+        expect.stringContaining(
+          'Getting audit history for Product product-789',
+        ),
       );
     });
 
@@ -431,7 +451,9 @@ describe('AuditLogsController', () => {
     it('should use default 90 days when not specified', async () => {
       await controller.cleanup(mockUser);
 
-      const callArg = (auditLogsService.cleanup as jest.Mock).mock.calls[0][1];
+      const calls = (auditLogsService.cleanup as jest.Mock).mock
+        .calls as unknown[][];
+      const callArg = calls[0][1] as Date;
       const expectedDate = new Date();
       expectedDate.setDate(expectedDate.getDate() - 90);
 
@@ -442,7 +464,9 @@ describe('AuditLogsController', () => {
     it('should calculate correct date from days parameter', async () => {
       await controller.cleanup(mockUser, '30');
 
-      const callArg = (auditLogsService.cleanup as jest.Mock).mock.calls[0][1];
+      const calls = (auditLogsService.cleanup as jest.Mock).mock
+        .calls as unknown[][];
+      const callArg = calls[0][1] as Date;
       const expectedDate = new Date();
       expectedDate.setDate(expectedDate.getDate() - 30);
 

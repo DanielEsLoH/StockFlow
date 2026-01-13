@@ -6,6 +6,7 @@ export {
   mailConfig,
   emailConfig,
   arcjetConfig,
+  stripeConfig,
 } from './configuration';
 export type {
   AppConfig,
@@ -14,6 +15,7 @@ export type {
   MailConfig,
   EmailConfig,
   ArcjetConfig,
+  StripeConfig,
   Configuration,
 } from './configuration';
 export {

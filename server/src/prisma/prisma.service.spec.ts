@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
 import { Logger } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import * as tenantContext from '../common/context';

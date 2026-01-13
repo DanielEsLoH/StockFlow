@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger, NotFoundException } from '@nestjs/common';
 import {
@@ -40,7 +41,6 @@ jest.mock('xlsx', () => ({
 
 describe('ReportsService', () => {
   let service: ReportsService;
-  let prismaService: jest.Mocked<PrismaService>;
   let tenantContextService: jest.Mocked<TenantContextService>;
 
   // Test data
@@ -155,7 +155,6 @@ describe('ReportsService', () => {
     }).compile();
 
     service = module.get<ReportsService>(ReportsService);
-    prismaService = module.get(PrismaService);
     tenantContextService = module.get(TenantContextService);
 
     // Suppress logger output during tests
@@ -928,7 +927,9 @@ describe('ReportsService', () => {
           ...mockCustomer,
           invoices: [],
         };
-        mockPrismaCustomer.findMany.mockResolvedValue([customerWithNoPurchases]);
+        mockPrismaCustomer.findMany.mockResolvedValue([
+          customerWithNoPurchases,
+        ]);
 
         const result = await service.generateCustomersReport('excel');
 
@@ -1021,15 +1022,15 @@ describe('ReportsService', () => {
       const invoiceWithDecimalValues = {
         ...mockInvoice,
         total: 357.99,
-        subtotal: 300.00,
+        subtotal: 300.0,
         tax: 57.99,
         discount: 0,
         items: [
           {
             ...mockInvoiceItem,
-            unitPrice: 150.50,
+            unitPrice: 150.5,
             total: 357.99,
-            subtotal: 300.00,
+            subtotal: 300.0,
             tax: 57.99,
             discount: 0,
             taxRate: 19,

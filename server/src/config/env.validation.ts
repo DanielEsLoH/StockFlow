@@ -166,6 +166,54 @@ export class EnvironmentVariables {
   @IsString()
   @IsOptional()
   ARCJET_ENABLED?: string = 'true';
+
+  // ============================================================================
+  // STRIPE CONFIGURATION (Optional - for subscription billing)
+  // ============================================================================
+
+  /**
+   * Stripe secret API key.
+   * Get your API key from https://dashboard.stripe.com/apikeys
+   * Use sk_test_... for testing and sk_live_... for production.
+   * If not set, Stripe features will be disabled.
+   */
+  @IsString()
+  @IsOptional()
+  STRIPE_SECRET_KEY?: string;
+
+  /**
+   * Stripe webhook signing secret.
+   * Get this from https://dashboard.stripe.com/webhooks
+   * Each webhook endpoint has its own signing secret.
+   * Required for secure webhook verification.
+   */
+  @IsString()
+  @IsOptional()
+  STRIPE_WEBHOOK_SECRET?: string;
+
+  /**
+   * Stripe Price ID for the BASIC subscription plan.
+   * Create a price in Stripe dashboard and copy the price_xxx ID.
+   */
+  @IsString()
+  @IsOptional()
+  STRIPE_PRICE_BASIC?: string;
+
+  /**
+   * Stripe Price ID for the PRO subscription plan.
+   * Create a price in Stripe dashboard and copy the price_xxx ID.
+   */
+  @IsString()
+  @IsOptional()
+  STRIPE_PRICE_PRO?: string;
+
+  /**
+   * Stripe Price ID for the ENTERPRISE subscription plan.
+   * Create a price in Stripe dashboard and copy the price_xxx ID.
+   */
+  @IsString()
+  @IsOptional()
+  STRIPE_PRICE_ENTERPRISE?: string;
 }
 
 /**

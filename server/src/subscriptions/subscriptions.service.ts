@@ -78,14 +78,14 @@ export interface PortalSessionResponse {
  * - Syncing subscription status with tenant records
  *
  * @example
- * ```typescript
+ * ```TypeScript
  * // In a controller
  * @Post('create-checkout')
  * async createCheckout(
  *   @CurrentTenant() tenantId: string,
  *   @Body() dto: CreateCheckoutDto,
  * ) {
- *   return this.subscriptionsService.createCheckoutSession(tenantId, dto.plan);
+ *   return this.subscriptionsService.createCheckoutSession(tenantId, dto. Plan);
  * }
  * ```
  */
@@ -571,7 +571,7 @@ export class SubscriptionsService {
     // Get plan from subscription metadata
     const plan = (subscription.metadata?.plan as SubscriptionPlan) || undefined;
 
-    // If subscription is active and we have a plan, update the tenant
+    // If subscription is active, and we have a plan, update the tenant
     if (subscription.status === 'active' && plan && PLAN_LIMITS[plan]) {
       const limits = PLAN_LIMITS[plan];
 
@@ -602,7 +602,7 @@ export class SubscriptionsService {
   /**
    * Handles customer.subscription.deleted webhook event.
    *
-   * Downgrades tenant to FREE plan when subscription is cancelled.
+   * Downgrades tenant to FREE plan when subscription is canceled.
    *
    * @param subscription - Stripe subscription
    */

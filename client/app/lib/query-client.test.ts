@@ -47,11 +47,14 @@ describe('Query Client', () => {
   });
 
   describe('mutation error handling', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockContext = {} as any;
+
     it('calls toast.error with error message', () => {
       const options = queryClient.getDefaultOptions();
       const error = new Error('Mutation failed');
 
-      options.mutations?.onError?.(error, undefined, undefined);
+      options.mutations?.onError?.(error, undefined, undefined, mockContext);
 
       expect(toast.error).toHaveBeenCalledWith('Mutation failed');
     });
@@ -59,7 +62,7 @@ describe('Query Client', () => {
     it('handles non-Error objects with default message', () => {
       const options = queryClient.getDefaultOptions();
 
-      options.mutations?.onError?.('string error' as unknown as Error, undefined, undefined);
+      options.mutations?.onError?.('string error' as unknown as Error, undefined, undefined, mockContext);
 
       expect(toast.error).toHaveBeenCalledWith('An error has occurred');
     });
@@ -67,7 +70,7 @@ describe('Query Client', () => {
     it('handles null error', () => {
       const options = queryClient.getDefaultOptions();
 
-      options.mutations?.onError?.(null as unknown as Error, undefined, undefined);
+      options.mutations?.onError?.(null as unknown as Error, undefined, undefined, mockContext);
 
       expect(toast.error).toHaveBeenCalledWith('An error has occurred');
     });
@@ -75,7 +78,7 @@ describe('Query Client', () => {
     it('handles undefined error', () => {
       const options = queryClient.getDefaultOptions();
 
-      options.mutations?.onError?.(undefined as unknown as Error, undefined, undefined);
+      options.mutations?.onError?.(undefined as unknown as Error, undefined, undefined, mockContext);
 
       expect(toast.error).toHaveBeenCalledWith('An error has occurred');
     });

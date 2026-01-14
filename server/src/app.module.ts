@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common';
 import { ArcjetModule } from './arcjet';
+import { ThrottlerModule } from './throttler';
 import { CacheModule } from './cache';
 import { UsersModule } from './users';
 import { CategoriesModule } from './categories';
@@ -35,6 +36,7 @@ import { TenantMiddleware } from './common/middleware';
     PrismaModule,
     CommonModule,
     CacheModule,
+    ThrottlerModule,
     ArcjetModule,
     AuthModule,
     UsersModule,

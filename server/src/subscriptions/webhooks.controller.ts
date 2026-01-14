@@ -8,10 +8,18 @@ import {
   Logger,
   BadRequestException,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiHeader,
+  ApiExcludeEndpoint,
+} from '@nestjs/swagger';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 import { SubscriptionsService } from './subscriptions.service';
 import { Public } from '../common';
+import { WebhookResponseEntity } from './entities/subscription.entity';
 
 /**
  * WebhooksController handles incoming Stripe webhook events.
@@ -30,6 +38,7 @@ import { Public } from '../common';
  * - customer.subscription.deleted: Subscription canceled
  * - invoice.payment_failed: Payment failed
  */
+@ApiTags('webhooks')
 @Controller('webhooks')
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
@@ -57,6 +66,21 @@ export class WebhooksController {
   @Post('stripe')
   @Public()
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Handle Stripe webhook',
+    description: 'Handles incoming Stripe webhook events. This endpoint is public and verifies requests using the Stripe signature header. Used for processing subscription lifecycle events.',
+  })
+  @ApiHeader({
+    name: 'stripe-signature',
+    description: 'Stripe webhook signature for verification',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Webhook received and processed',
+    type: WebhookResponseEntity,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request - Missing signature or invalid payload' })
   async handleStripeWebhook(
     @Headers('stripe-signature') signature: string,
     @Req() req: RawBodyRequest<Request>,

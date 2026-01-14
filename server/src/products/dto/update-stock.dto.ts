@@ -1,4 +1,5 @@
 import { IsInt, IsString, IsOptional, IsEnum } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * Adjustment type for stock operations
@@ -21,6 +22,10 @@ export class UpdateStockDto {
    * Quantity to adjust (interpretation depends on adjustmentType)
    * @example 50
    */
+  @ApiProperty({
+    description: 'Quantity to adjust (interpretation depends on adjustmentType)',
+    example: 50,
+  })
   @IsInt({ message: 'Quantity must be an integer' })
   quantity: number;
 
@@ -29,6 +34,12 @@ export class UpdateStockDto {
    * @default SET
    * @example "ADD"
    */
+  @ApiPropertyOptional({
+    description: 'Type of adjustment: SET (absolute value), ADD, or SUBTRACT',
+    enum: StockAdjustmentType,
+    default: StockAdjustmentType.SET,
+    example: 'ADD',
+  })
   @IsEnum(StockAdjustmentType, {
     message: 'Adjustment type must be SET, ADD, or SUBTRACT',
   })
@@ -39,6 +50,10 @@ export class UpdateStockDto {
    * Reason for the stock adjustment (required for audit trail)
    * @example "Physical inventory count correction"
    */
+  @ApiPropertyOptional({
+    description: 'Reason for the stock adjustment (for audit trail)',
+    example: 'Physical inventory count correction',
+  })
   @IsString({ message: 'Reason must be a string' })
   @IsOptional()
   reason?: string;
@@ -47,6 +62,10 @@ export class UpdateStockDto {
    * Additional notes about the adjustment
    * @example "Counted 50 units in warehouse A"
    */
+  @ApiPropertyOptional({
+    description: 'Additional notes about the adjustment',
+    example: 'Counted 50 units in warehouse A',
+  })
   @IsString({ message: 'Notes must be a string' })
   @IsOptional()
   notes?: string;

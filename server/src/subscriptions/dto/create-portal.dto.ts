@@ -1,4 +1,5 @@
 import { IsOptional, IsUrl } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * DTO for creating a Stripe customer portal session.
@@ -13,6 +14,11 @@ export class CreatePortalDto {
    *
    * @example 'https://app.stockflow.com/settings/billing'
    */
+  @ApiPropertyOptional({
+    description: 'Return URL after the customer leaves the portal (defaults to frontend URL)',
+    example: 'https://app.stockflow.com/settings/billing',
+    format: 'uri',
+  })
   @IsUrl(
     {
       require_tld: false,

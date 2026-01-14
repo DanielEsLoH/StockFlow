@@ -1,4 +1,5 @@
 import { IsEnum, IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 import { SubscriptionPlan } from '@prisma/client';
 
 /**
@@ -14,6 +15,11 @@ export class CreateCheckoutDto {
    *
    * @example 'BASIC'
    */
+  @ApiProperty({
+    description: 'Target subscription plan (BASIC, PRO, or ENTERPRISE)',
+    enum: SubscriptionPlan,
+    example: 'BASIC',
+  })
   @IsEnum(SubscriptionPlan, {
     message: 'Plan must be one of: FREE, BASIC, PRO, ENTERPRISE',
   })

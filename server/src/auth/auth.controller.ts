@@ -8,9 +8,16 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+} from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthService, AuthResponse, LogoutResponse } from './auth.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
+import { AuthResponseEntity, LogoutResponseEntity } from './entities';
 import {
   RateLimitGuard,
   BotProtectionGuard,
@@ -36,6 +43,7 @@ interface AuthenticatedRequest extends Request {
  * These endpoints are public, and they do not require authentication guards,
  * except logout which requires a valid user context.
  */
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
@@ -66,6 +74,28 @@ export class AuthController {
   @UseGuards(RateLimitGuard, BotProtectionGuard)
   @RateLimit({ requests: 3, window: '1h' })
   @BotProtect({ mode: 'LIVE' })
+  @ApiOperation({
+    summary: 'Register a new user',
+    description: 'Creates a new user account with the provided credentials and tenant association. Rate limited to 3 requests per hour per IP.',
+  })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({
+    status: 201,
+    description: 'User successfully registered',
+    type: AuthResponseEntity,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data or validation error',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'User with this email already exists',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests - rate limit exceeded',
+  })
   async register(@Body() registerDto: RegisterDto): Promise<AuthResponse> {
     this.logger.log(`Registration request for email: ${registerDto.email}`);
     return this.authService.register(registerDto);
@@ -92,6 +122,32 @@ export class AuthController {
   @UseGuards(RateLimitGuard, BotProtectionGuard)
   @RateLimit({ requests: 5, window: '15m' })
   @BotProtect({ mode: 'LIVE' })
+  @ApiOperation({
+    summary: 'User login',
+    description: 'Authenticates a user with email and password, returning JWT access and refresh tokens. Rate limited to 5 requests per 15 minutes per IP.',
+  })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully authenticated',
+    type: AuthResponseEntity,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid credentials',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Account suspended or inactive',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests - rate limit exceeded',
+  })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
     this.logger.log(`Login request for email: ${loginDto.email}`);
     return this.authService.login(loginDto.email, loginDto.password);
@@ -115,6 +171,24 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(RateLimitGuard)
   @RateLimit({ requests: 10, window: '15m' })
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description: 'Exchanges a valid refresh token for new access and refresh tokens. Rate limited to 10 requests per 15 minutes per IP.',
+  })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Tokens successfully refreshed',
+    type: AuthResponseEntity,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired refresh token',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests - rate limit exceeded',
+  })
   async refresh(
     @Body() refreshTokenDto: RefreshTokenDto,
   ): Promise<AuthResponse> {
@@ -142,6 +216,20 @@ export class AuthController {
    */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'User logout',
+    description: 'Invalidates the user refresh token and logs the user out of the system.',
+  })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully logged out',
+    type: LogoutResponseEntity,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid refresh token',
+  })
   async logout(
     @Body() refreshTokenDto: RefreshTokenDto,
     @Req() req: AuthenticatedRequest,

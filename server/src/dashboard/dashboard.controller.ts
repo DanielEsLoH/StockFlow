@@ -1,9 +1,16 @@
 import { Controller, Get, UseGuards, Logger } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import type { DashboardResponse } from './dashboard.service';
 import { JwtAuthGuard } from '../auth';
 import { CurrentUser } from '../common/decorators';
 import type { RequestUser } from '../auth/types';
+import { DashboardEntity } from './entities/dashboard.entity';
 
 /**
  * DashboardController handles the dashboard analytics endpoint.
@@ -49,6 +56,8 @@ import type { RequestUser } from '../auth/types';
  *   }
  * }
  */
+@ApiTags('dashboard')
+@ApiBearerAuth('JWT-auth')
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)
 export class DashboardController {
@@ -73,6 +82,16 @@ export class DashboardController {
    * GET /dashboard
    */
   @Get()
+  @ApiOperation({
+    summary: 'Get dashboard metrics',
+    description: 'Returns comprehensive dashboard analytics including sales metrics, product metrics, invoice status breakdown, customer metrics, and chart data for visualizations. All authenticated users can access this endpoint.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard metrics retrieved successfully',
+    type: DashboardEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
   async getDashboard(
     @CurrentUser() user: RequestUser,
   ): Promise<DashboardResponse> {

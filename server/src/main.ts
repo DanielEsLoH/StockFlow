@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { join } from 'path';
 import { AppModule } from './app.module';
 import {
@@ -59,9 +60,54 @@ async function bootstrap() {
     }),
   );
 
+  // Swagger API documentation configuration
+  const config = new DocumentBuilder()
+    .setTitle('StockFlow API')
+    .setDescription('API documentation for StockFlow SaaS - Inventory Management System')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addTag('health', 'Health check and system status endpoints')
+    .addTag('auth', 'Authentication endpoints for login, register, and token management')
+    .addTag('users', 'User management endpoints')
+    .addTag('products', 'Product management endpoints')
+    .addTag('categories', 'Product category management endpoints')
+    .addTag('warehouses', 'Warehouse management endpoints')
+    .addTag('customers', 'Customer management endpoints')
+    .addTag('invoices', 'Invoice management endpoints')
+    .addTag('payments', 'Payment management endpoints')
+    .addTag('stock-movements', 'Stock movement tracking endpoints')
+    .addTag('dashboard', 'Dashboard analytics and metrics endpoints')
+    .addTag('reports', 'Report generation endpoints')
+    .addTag('notifications', 'Notification management endpoints')
+    .addTag('subscriptions', 'Subscription and billing management endpoints')
+    .addTag('audit', 'Audit log endpoints for activity tracking')
+    .addTag('upload', 'File upload endpoints')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+    },
+    customSiteTitle: 'StockFlow API Documentation',
+  });
+
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
   logger.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`Swagger documentation available at: http://localhost:${port}/api/docs`);
 }
 void bootstrap();

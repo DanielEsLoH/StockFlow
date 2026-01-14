@@ -12,6 +12,14 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { WarehousesService } from './warehouses.service';
 import type {
@@ -23,6 +31,12 @@ import type {
 import { CreateWarehouseDto, UpdateWarehouseDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { Roles } from '../common/decorators';
+import {
+  WarehouseEntity,
+  WarehouseWithStockSummaryEntity,
+  PaginatedWarehousesEntity,
+  PaginatedWarehouseStockEntity,
+} from './entities/warehouse.entity';
 
 /**
  * WarehousesController handles all warehouse management endpoints.
@@ -36,6 +50,8 @@ import { Roles } from '../common/decorators';
  * - Update warehouse: ADMIN, MANAGER
  * - Delete warehouse: ADMIN only
  */
+@ApiTags('warehouses')
+@ApiBearerAuth('JWT-auth')
 @Controller('warehouses')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class WarehousesController {
@@ -54,6 +70,30 @@ export class WarehousesController {
    * GET /warehouses?page=1&limit=20
    */
   @Get()
+  @ApiOperation({
+    summary: 'List all warehouses',
+    description: 'Returns a paginated list of all warehouses in the current tenant. All authenticated users can access this endpoint.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10, max: 100)',
+    example: 10,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of warehouses retrieved successfully',
+    type: PaginatedWarehousesEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -81,6 +121,22 @@ export class WarehousesController {
    * GET /warehouses/:id
    */
   @Get(':id')
+  @ApiOperation({
+    summary: 'Get warehouse by ID',
+    description: 'Returns a single warehouse with stock summary by its ID. All authenticated users can access this endpoint.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Warehouse ID (CUID format)',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Warehouse retrieved successfully',
+    type: WarehouseWithStockSummaryEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 404, description: 'Warehouse not found' })
   async findOne(@Param('id') id: string): Promise<WarehouseWithStockSummary> {
     this.logger.log(`Getting warehouse: ${id}`);
 
@@ -99,6 +155,36 @@ export class WarehousesController {
    * GET /warehouses/:id/stock?page=1&limit=20
    */
   @Get(':id/stock')
+  @ApiOperation({
+    summary: 'Get warehouse stock',
+    description: 'Returns a paginated list of products and their quantities in a specific warehouse. All authenticated users can access this endpoint.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Warehouse ID (CUID format)',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10, max: 100)',
+    example: 10,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Warehouse stock retrieved successfully',
+    type: PaginatedWarehouseStockEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 404, description: 'Warehouse not found' })
   async getStock(
     @Param('id') id: string,
     @Query('page') page?: string,
@@ -137,6 +223,19 @@ export class WarehousesController {
   @Post()
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create a new warehouse',
+    description: 'Creates a new warehouse in the current tenant. Only ADMIN users can create warehouses. Respects tenant warehouse limits based on subscription plan.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Warehouse created successfully',
+    type: WarehouseEntity,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions or warehouse limit reached' })
+  @ApiResponse({ status: 409, description: 'Conflict - Warehouse code already exists' })
   async create(@Body() dto: CreateWarehouseDto): Promise<WarehouseResponse> {
     this.logger.log(`Creating warehouse: ${dto.name}`);
     return this.warehousesService.create(dto);
@@ -159,6 +258,25 @@ export class WarehousesController {
    */
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Update a warehouse',
+    description: 'Updates an existing warehouse. Only ADMIN and MANAGER users can update warehouses.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Warehouse ID to update',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Warehouse updated successfully',
+    type: WarehouseEntity,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'Warehouse not found' })
+  @ApiResponse({ status: 409, description: 'Conflict - Warehouse code already exists' })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateWarehouseDto,
@@ -180,6 +298,20 @@ export class WarehousesController {
   @Delete(':id')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete a warehouse',
+    description: 'Deletes a warehouse. Only ADMIN users can delete warehouses. Deletion fails if the warehouse has any stock.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Warehouse ID to delete',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @ApiResponse({ status: 204, description: 'Warehouse deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'Warehouse not found' })
+  @ApiResponse({ status: 409, description: 'Conflict - Warehouse has stock' })
   async delete(@Param('id') id: string): Promise<void> {
     this.logger.log(`Deleting warehouse: ${id}`);
     return this.warehousesService.delete(id);

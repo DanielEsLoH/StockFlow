@@ -1,4 +1,5 @@
 import { IsString, IsOptional, MinLength, Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * Data transfer object for creating a new category.
@@ -9,6 +10,11 @@ export class CreateCategoryDto {
    * Category name (must be unique within tenant, minimum 2 characters)
    * @example "Electronics"
    */
+  @ApiProperty({
+    description: 'Category name (must be unique within tenant)',
+    example: 'Electronics',
+    minLength: 2,
+  })
   @IsString({ message: 'Name must be a string' })
   @MinLength(2, { message: 'Name must be at least 2 characters long' })
   name: string;
@@ -17,6 +23,10 @@ export class CreateCategoryDto {
    * Category description (optional)
    * @example "Electronic devices and accessories"
    */
+  @ApiPropertyOptional({
+    description: 'Category description',
+    example: 'Electronic devices and accessories',
+  })
   @IsString({ message: 'Description must be a string' })
   @IsOptional()
   description?: string;
@@ -25,6 +35,11 @@ export class CreateCategoryDto {
    * Category color in hex format (optional)
    * @example "#3b82f6"
    */
+  @ApiPropertyOptional({
+    description: 'Category color in hex format',
+    example: '#3b82f6',
+    pattern: '^#[0-9A-Fa-f]{6}$',
+  })
   @IsString({ message: 'Color must be a string' })
   @IsOptional()
   @Matches(/^#[0-9A-Fa-f]{6}$/, {

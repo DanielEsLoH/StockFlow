@@ -8,6 +8,12 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { SubscriptionsService } from './subscriptions.service';
 import type {
@@ -18,6 +24,11 @@ import type {
 import { CreateCheckoutDto, CreatePortalDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { CurrentTenant, Roles } from '../common/decorators';
+import {
+  SubscriptionStatusEntity,
+  CheckoutSessionResponseEntity,
+  PortalSessionResponseEntity,
+} from './entities/subscription.entity';
 
 /**
  * SubscriptionsController handles all subscription management endpoints.
@@ -31,6 +42,8 @@ import { CurrentTenant, Roles } from '../common/decorators';
  * - POST /subscriptions/create-checkout - Create Stripe checkout session
  * - POST /subscriptions/portal - Create Stripe customer portal session
  */
+@ApiTags('subscriptions')
+@ApiBearerAuth('JWT-auth')
 @Controller('subscriptions')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SubscriptionsController {
@@ -64,6 +77,16 @@ export class SubscriptionsController {
    * }
    */
   @Get('status')
+  @ApiOperation({
+    summary: 'Get subscription status',
+    description: 'Returns the current subscription status for the tenant including plan, limits, and Stripe subscription details. All authenticated users can access this endpoint.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscription status retrieved successfully',
+    type: SubscriptionStatusEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
   async getStatus(
     @CurrentTenant() tenantId: string,
   ): Promise<SubscriptionStatus> {
@@ -96,6 +119,18 @@ export class SubscriptionsController {
   @Post('create-checkout')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create checkout session',
+    description: 'Creates a Stripe checkout session for upgrading to a paid plan. Redirect the user to the returned URL to complete payment. Only ADMIN users can create checkout sessions.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Checkout session created successfully',
+    type: CheckoutSessionResponseEntity,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request - Invalid plan or already subscribed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   async createCheckout(
     @CurrentTenant() tenantId: string,
     @Body() dto: CreateCheckoutDto,
@@ -133,6 +168,18 @@ export class SubscriptionsController {
   @Post('portal')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create portal session',
+    description: 'Creates a Stripe customer portal session for managing subscriptions, viewing invoices, and updating payment methods. Redirect the user to the returned URL. Only ADMIN users can access the billing portal.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Portal session created successfully',
+    type: PortalSessionResponseEntity,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request - No Stripe customer found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   async createPortal(
     @CurrentTenant() tenantId: string,
     @Body() dto: CreatePortalDto,

@@ -12,10 +12,19 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { UsersService } from './users.service';
 import type { UserResponse, PaginatedUsersResponse } from './users.service';
 import { CreateUserDto, UpdateUserDto, ChangePasswordDto } from './dto';
+import { UserEntity, PaginatedUsersEntity } from './entities';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { Roles, CurrentUser } from '../common/decorators';
 
@@ -44,6 +53,8 @@ interface CurrentUserContext {
  * - Change password: ADMIN (any user), or user changing own password
  * - Approve/Suspend: ADMIN only
  */
+@ApiTags('users')
+@ApiBearerAuth('JWT-auth')
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
@@ -53,16 +64,34 @@ export class UsersController {
 
   /**
    * Lists all users in the current tenant with pagination.
-   *
-   * @param page - Page number (default: 1)
-   * @param limit - Items per page (default: 10, max: 100)
-   * @returns Paginated list of users
-   *
-   * @example
-   * GET /users?page=1&limit=20
    */
   @Get()
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'List all users',
+    description: 'Returns a paginated list of all users in the current tenant. Requires ADMIN or MANAGER role.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10, max: 100)',
+    example: 10,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of users retrieved successfully',
+    type: PaginatedUsersEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -80,14 +109,18 @@ export class UsersController {
 
   /**
    * Gets the current authenticated user's profile.
-   *
-   * @param currentUser - Current authenticated user from JWT
-   * @returns User profile data
-   *
-   * @example
-   * GET /users/me
    */
   @Get('me')
+  @ApiOperation({
+    summary: 'Get current user profile',
+    description: 'Returns the profile of the currently authenticated user.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile retrieved successfully',
+    type: UserEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
   async getProfile(
     @CurrentUser() currentUser: CurrentUserContext,
   ): Promise<UserResponse> {
@@ -97,17 +130,24 @@ export class UsersController {
 
   /**
    * Gets a user by ID.
-   * ADMIN and MANAGER can view any user.
-   * Other roles can only view their own profile.
-   *
-   * @param id - User ID
-   * @param currentUser - Current authenticated user from JWT
-   * @returns User data
-   *
-   * @example
-   * GET /users/:id
    */
   @Get(':id')
+  @ApiOperation({
+    summary: 'Get user by ID',
+    description: 'Returns a specific user by their ID. ADMIN and MANAGER can view any user; others can only view their own profile.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID',
+    example: 'clx1234567890abcdef',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User retrieved successfully',
+    type: UserEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async findOne(
     @Param('id') id: string,
     @CurrentUser() currentUser: CurrentUserContext,
@@ -130,25 +170,23 @@ export class UsersController {
 
   /**
    * Creates a new user in the tenant.
-   * Only ADMIN users can create users.
-   * Checks tenant user limit before creation.
-   *
-   * @param dto - User creation data
-   * @returns Created user data
-   *
-   * @example
-   * POST /users
-   * {
-   *   "email": "john@example.com",
-   *   "password": "securePassword123",
-   *   "firstName": "John",
-   *   "lastName": "Doe",
-   *   "role": "EMPLOYEE"
-   * }
    */
   @Post()
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create a new user',
+    description: 'Creates a new user in the tenant. Only ADMIN users can create users. Checks tenant user limit before creation.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'User created successfully',
+    type: UserEntity,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions or tenant limit reached' })
+  @ApiResponse({ status: 409, description: 'User with this email already exists' })
   async create(@Body() dto: CreateUserDto): Promise<UserResponse> {
     this.logger.log(`Creating user: ${dto.email}`);
     return this.usersService.create(dto);
@@ -156,22 +194,26 @@ export class UsersController {
 
   /**
    * Updates a user.
-   * ADMIN can update any user.
-   * Other users can only update their own profile with limited fields.
-   *
-   * @param id - User ID to update
-   * @param dto - Update data
-   * @param currentUser - Current authenticated user from JWT
-   * @returns Updated user data
-   *
-   * @example
-   * PATCH /users/:id
-   * {
-   *   "firstName": "John",
-   *   "lastName": "Smith"
-   * }
    */
   @Patch(':id')
+  @ApiOperation({
+    summary: 'Update a user',
+    description: 'Updates a user. ADMIN can update any user; other users can only update their own profile with limited fields.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID to update',
+    example: 'clx1234567890abcdef',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User updated successfully',
+    type: UserEntity,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot update this user' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,
@@ -186,18 +228,23 @@ export class UsersController {
 
   /**
    * Deletes a user.
-   * Only ADMIN users can delete users.
-   * Users cannot delete themselves.
-   *
-   * @param id - User ID to delete
-   * @param currentUser - Current authenticated user from JWT
-   *
-   * @example
-   * DELETE /users/:id
    */
   @Delete(':id')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete a user',
+    description: 'Deletes a user. Only ADMIN users can delete users. Users cannot delete themselves.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID to delete',
+    example: 'clx1234567890abcdef',
+  })
+  @ApiResponse({ status: 204, description: 'User deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot delete yourself or insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async delete(
     @Param('id') id: string,
     @CurrentUser() currentUser: CurrentUserContext,
@@ -208,23 +255,23 @@ export class UsersController {
 
   /**
    * Changes a user's password.
-   * Users can change their own password.
-   * ADMIN can change any user's password.
-   * Requires current password for verification.
-   *
-   * @param id - User ID
-   * @param dto - Password change data
-   * @param currentUser - Current authenticated user from JWT
-   *
-   * @example
-   * PATCH /users/:id/change-password
-   * {
-   *   "currentPassword": "oldPassword123",
-   *   "newPassword": "newSecurePassword456"
-   * }
    */
   @Patch(':id/change-password')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Change user password',
+    description: 'Changes a user password. Users can change their own password; ADMIN can change any user password. Requires current password for verification.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID',
+    example: 'clx1234567890abcdef',
+  })
+  @ApiResponse({ status: 204, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data or current password incorrect' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot change this user password' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async changePassword(
     @Param('id') id: string,
     @Body() dto: ChangePasswordDto,
@@ -239,17 +286,27 @@ export class UsersController {
 
   /**
    * Approves a pending user.
-   * Changes user status from PENDING to ACTIVE.
-   * Only ADMIN users can approve users.
-   *
-   * @param id - User ID to approve
-   * @returns Updated user data
-   *
-   * @example
-   * PATCH /users/:id/approve
    */
   @Patch(':id/approve')
   @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Approve a pending user',
+    description: 'Changes user status from PENDING to ACTIVE. Only ADMIN users can approve users.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID to approve',
+    example: 'clx1234567890abcdef',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User approved successfully',
+    type: UserEntity,
+  })
+  @ApiResponse({ status: 400, description: 'User is not in PENDING status' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async approve(@Param('id') id: string): Promise<UserResponse> {
     this.logger.log(`Approving user: ${id}`);
     return this.usersService.approve(id);
@@ -257,19 +314,26 @@ export class UsersController {
 
   /**
    * Suspends a user.
-   * Changes user status to SUSPENDED.
-   * Only ADMIN users can suspend users.
-   * Users cannot suspend themselves.
-   *
-   * @param id - User ID to suspend
-   * @param currentUser - Current authenticated user from JWT
-   * @returns Updated user data
-   *
-   * @example
-   * PATCH /users/:id/suspend
    */
   @Patch(':id/suspend')
   @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Suspend a user',
+    description: 'Changes user status to SUSPENDED. Only ADMIN users can suspend users. Users cannot suspend themselves.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID to suspend',
+    example: 'clx1234567890abcdef',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User suspended successfully',
+    type: UserEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Cannot suspend yourself or insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async suspend(
     @Param('id') id: string,
     @CurrentUser() currentUser: CurrentUserContext,

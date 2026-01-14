@@ -9,6 +9,7 @@ import {
   Max,
   MinLength,
 } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ProductStatus } from '@prisma/client';
 
 /**
@@ -20,6 +21,10 @@ export class UpdateProductDto {
    * Stock Keeping Unit (must be unique within tenant)
    * @example "SKU-001"
    */
+  @ApiPropertyOptional({
+    description: 'Stock Keeping Unit (unique within tenant)',
+    example: 'SKU-001',
+  })
   @IsString({ message: 'SKU must be a string' })
   @IsOptional()
   sku?: string;
@@ -28,6 +33,11 @@ export class UpdateProductDto {
    * Product name (minimum 2 characters)
    * @example "Wireless Bluetooth Headphones"
    */
+  @ApiPropertyOptional({
+    description: 'Product name',
+    example: 'Wireless Bluetooth Headphones',
+    minLength: 2,
+  })
   @IsString({ message: 'Name must be a string' })
   @MinLength(2, { message: 'Name must be at least 2 characters long' })
   @IsOptional()
@@ -37,6 +47,10 @@ export class UpdateProductDto {
    * Product description
    * @example "High-quality wireless headphones with noise cancellation"
    */
+  @ApiPropertyOptional({
+    description: 'Product description',
+    example: 'High-quality wireless headphones with noise cancellation',
+  })
   @IsString({ message: 'Description must be a string' })
   @IsOptional()
   description?: string;
@@ -45,6 +59,11 @@ export class UpdateProductDto {
    * Category ID (must be valid UUID)
    * @example "clx1234567890abcdef"
    */
+  @ApiPropertyOptional({
+    description: 'Category ID (can be null to remove category)',
+    example: 'clx1234567890abcdef',
+    nullable: true,
+  })
   @IsUUID('all', { message: 'Category ID must be a valid UUID' })
   @IsOptional()
   categoryId?: string | null;
@@ -53,6 +72,11 @@ export class UpdateProductDto {
    * Cost price (purchase price)
    * @example 50.00
    */
+  @ApiPropertyOptional({
+    description: 'Cost price (purchase price)',
+    example: 50.0,
+    minimum: 0,
+  })
   @IsNumber({}, { message: 'Cost price must be a number' })
   @Min(0, { message: 'Cost price must be at least 0' })
   @IsOptional()
@@ -62,6 +86,11 @@ export class UpdateProductDto {
    * Sale price (selling price)
    * @example 79.99
    */
+  @ApiPropertyOptional({
+    description: 'Sale price (selling price)',
+    example: 79.99,
+    minimum: 0,
+  })
   @IsNumber({}, { message: 'Sale price must be a number' })
   @Min(0, { message: 'Sale price must be at least 0' })
   @IsOptional()
@@ -71,6 +100,12 @@ export class UpdateProductDto {
    * Tax rate percentage
    * @example 19
    */
+  @ApiPropertyOptional({
+    description: 'Tax rate percentage',
+    example: 19,
+    minimum: 0,
+    maximum: 100,
+  })
   @IsNumber({}, { message: 'Tax rate must be a number' })
   @Min(0, { message: 'Tax rate must be at least 0' })
   @Max(100, { message: 'Tax rate cannot exceed 100' })
@@ -81,6 +116,11 @@ export class UpdateProductDto {
    * Minimum stock level for low stock alerts
    * @example 10
    */
+  @ApiPropertyOptional({
+    description: 'Minimum stock level for low stock alerts',
+    example: 10,
+    minimum: 0,
+  })
   @IsInt({ message: 'Minimum stock must be an integer' })
   @Min(0, { message: 'Minimum stock must be at least 0' })
   @IsOptional()
@@ -90,6 +130,11 @@ export class UpdateProductDto {
    * Barcode (must be unique within tenant if provided)
    * @example "7501234567890"
    */
+  @ApiPropertyOptional({
+    description: 'Barcode (can be null to remove)',
+    example: '7501234567890',
+    nullable: true,
+  })
   @IsString({ message: 'Barcode must be a string' })
   @IsOptional()
   barcode?: string | null;
@@ -98,6 +143,10 @@ export class UpdateProductDto {
    * Brand name
    * @example "Sony"
    */
+  @ApiPropertyOptional({
+    description: 'Brand name',
+    example: 'Sony',
+  })
   @IsString({ message: 'Brand must be a string' })
   @IsOptional()
   brand?: string;
@@ -106,6 +155,10 @@ export class UpdateProductDto {
    * Unit of measurement
    * @example "UND"
    */
+  @ApiPropertyOptional({
+    description: 'Unit of measurement',
+    example: 'UND',
+  })
   @IsString({ message: 'Unit must be a string' })
   @IsOptional()
   unit?: string;
@@ -114,6 +167,11 @@ export class UpdateProductDto {
    * Product status
    * @example "ACTIVE"
    */
+  @ApiPropertyOptional({
+    description: 'Product status',
+    enum: ProductStatus,
+    example: 'ACTIVE',
+  })
   @IsEnum(ProductStatus, {
     message: 'Status must be ACTIVE, INACTIVE, or OUT_OF_STOCK',
   })

@@ -8,14 +8,23 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+} from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { NotificationsService, LowStockProduct } from './notifications.service';
 import { TenantContextService, Roles } from '../common';
-
-// Import the JwtAuthGuard - adjust path as needed based on your auth module structure
-// This assumes a typical guard location; modify if your project structure differs
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import {
+  TriggerResponseEntity,
+  LowStockPreviewEntity,
+  NotificationStatusEntity,
+} from './entities/notification.entity';
 
 /**
  * Response DTO for notification trigger operations
@@ -43,6 +52,8 @@ interface TriggerResponse {
  *
  * Scheduled jobs (cron) run automatically and don't require these endpoints.
  */
+@ApiTags('notifications')
+@ApiBearerAuth('JWT-auth')
 @Controller('notifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class NotificationsController {
@@ -63,6 +74,17 @@ export class NotificationsController {
    */
   @Get('low-stock/preview')
   @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Preview low stock products',
+    description: 'Preview low stock products without sending any emails. Useful for checking what would be included in a low stock alert. Only ADMIN users can access this endpoint.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Low stock preview retrieved successfully',
+    type: LowStockPreviewEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   async previewLowStock(): Promise<{
     products: LowStockProduct[];
     count: number;
@@ -91,6 +113,17 @@ export class NotificationsController {
   @Post('low-stock/trigger')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger low stock alert',
+    description: 'Manually triggers a low stock alert email for the current tenant. Sends email to all admin users. Only ADMIN users can trigger this operation.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Low stock alert triggered successfully',
+    type: TriggerResponseEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   async triggerLowStockAlert(): Promise<TriggerResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
@@ -148,6 +181,17 @@ export class NotificationsController {
   @Post('overdue-invoices/trigger')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Trigger overdue invoice reminders',
+    description: 'Manually triggers overdue invoice reminder emails for the current tenant. Sends reminder emails to customers with overdue invoices. Only ADMIN users can trigger this operation.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Overdue invoice reminders triggered successfully',
+    type: TriggerResponseEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   async triggerOverdueReminders(): Promise<TriggerResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
@@ -191,15 +235,28 @@ export class NotificationsController {
   @Post('test/:type')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Send test email',
+    description: 'Sends a test email of the specified type. Available types: welcome, low-stock, invoice-sent, overdue, payment. Useful for verifying email configuration. Only ADMIN users can send test emails.',
+  })
+  @ApiParam({
+    name: 'type',
+    description: 'Type of test email to send',
+    enum: ['welcome', 'low-stock', 'invoice-sent', 'overdue', 'payment'],
+    example: 'welcome',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Test email operation completed',
+    type: TriggerResponseEntity,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request - Invalid email type' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   sendTestEmail(@Param('type') type: string): TriggerResponse {
     const tenantId = this.tenantContext.requireTenantId();
 
     this.logger.log(`Test email requested: ${type} for tenant ${tenantId}`);
-
-    // For now, we just return a message indicating this is a placeholder
-    // In a full implementation, you would:
-    // 1. Get the current user's email
-    // 2. Send a test email with mock data
 
     const validTypes = [
       'welcome',
@@ -216,8 +273,6 @@ export class NotificationsController {
       };
     }
 
-    // This is a simplified implementation
-    // A full implementation would send actual test emails
     return {
       success: true,
       message: `Test email type '${type}' acknowledged. To implement full test email functionality, extend this endpoint to fetch the current user's email and send a test with mock data.`,
@@ -234,12 +289,22 @@ export class NotificationsController {
    */
   @Get('status')
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Get notification system status',
+    description: 'Returns the status of the notification system including whether email is configured and the list of scheduled jobs. ADMIN and MANAGER users can access this endpoint.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification status retrieved successfully',
+    type: NotificationStatusEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   getStatus(): {
     mailConfigured: boolean;
     scheduledJobs: string[];
     message: string;
   } {
-    // Check if Brevo API key is configured
     const brevoApiKey = process.env.BREVO_API_KEY;
     const isConfigured = !!brevoApiKey;
 

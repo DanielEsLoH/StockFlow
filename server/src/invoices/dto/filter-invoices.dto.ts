@@ -5,6 +5,7 @@ import {
   IsString,
   Matches,
 } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { InvoiceStatus, PaymentStatus } from '@prisma/client';
 import { PaginationDto } from '../../common/dto';
@@ -21,6 +22,11 @@ export class FilterInvoicesDto extends PaginationDto {
    * Filter by invoice status
    * @example "SENT"
    */
+  @ApiPropertyOptional({
+    description: 'Filter by invoice status',
+    enum: InvoiceStatus,
+    example: 'SENT',
+  })
   @IsEnum(InvoiceStatus, {
     message:
       'El estado debe ser DRAFT, PENDING, SENT, OVERDUE, CANCELLED o VOID',
@@ -32,6 +38,11 @@ export class FilterInvoicesDto extends PaginationDto {
    * Filter by payment status
    * @example "UNPAID"
    */
+  @ApiPropertyOptional({
+    description: 'Filter by payment status',
+    enum: PaymentStatus,
+    example: 'UNPAID',
+  })
   @IsEnum(PaymentStatus, {
     message: 'El estado de pago debe ser UNPAID, PARTIALLY_PAID o PAID',
   })
@@ -42,8 +53,12 @@ export class FilterInvoicesDto extends PaginationDto {
    * Filter by customer ID
    * @example "cmkcykam80004reya0hsdx337"
    */
+  @ApiPropertyOptional({
+    description: 'Filter by customer ID',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
   @IsString({ message: 'El ID del cliente debe ser una cadena de texto' })
-  @Matches(CUID_PATTERN, { message: 'El ID del cliente debe ser un CUID válido' })
+  @Matches(CUID_PATTERN, { message: 'El ID del cliente debe ser un CUID valido' })
   @IsOptional()
   customerId?: string;
 
@@ -51,7 +66,13 @@ export class FilterInvoicesDto extends PaginationDto {
    * Filter invoices from this date (inclusive)
    * @example "2024-01-01T00:00:00.000Z"
    */
-  @IsDate({ message: 'La fecha de inicio debe ser una fecha válida' })
+  @ApiPropertyOptional({
+    description: 'Filter invoices from this date (inclusive)',
+    example: '2024-01-01T00:00:00.000Z',
+    type: String,
+    format: 'date-time',
+  })
+  @IsDate({ message: 'La fecha de inicio debe ser una fecha valida' })
   @Type(() => Date)
   @IsOptional()
   fromDate?: Date;
@@ -60,7 +81,13 @@ export class FilterInvoicesDto extends PaginationDto {
    * Filter invoices until this date (inclusive)
    * @example "2024-12-31T23:59:59.000Z"
    */
-  @IsDate({ message: 'La fecha de fin debe ser una fecha válida' })
+  @ApiPropertyOptional({
+    description: 'Filter invoices until this date (inclusive)',
+    example: '2024-12-31T23:59:59.000Z',
+    type: String,
+    format: 'date-time',
+  })
+  @IsDate({ message: 'La fecha de fin debe ser una fecha valida' })
   @Type(() => Date)
   @IsOptional()
   toDate?: Date;

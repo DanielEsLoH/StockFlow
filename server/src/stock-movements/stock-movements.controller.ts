@@ -10,6 +10,13 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+} from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { StockMovementsService } from './stock-movements.service';
 import type {
@@ -19,6 +26,10 @@ import type {
 import { CreateMovementDto, FilterMovementsDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { Roles, CurrentUser } from '../common/decorators';
+import {
+  StockMovementEntity,
+  PaginatedStockMovementsEntity,
+} from './entities/stock-movement.entity';
 
 /**
  * StockMovementsController handles all stock movement management endpoints.
@@ -31,6 +42,8 @@ import { Roles, CurrentUser } from '../common/decorators';
  * - Product movements: All authenticated roles
  * - Warehouse movements: All authenticated roles
  */
+@ApiTags('stock-movements')
+@ApiBearerAuth('JWT-auth')
 @Controller('stock-movements')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class StockMovementsController {
@@ -48,6 +61,16 @@ export class StockMovementsController {
    * GET /stock-movements?page=1&limit=20&type=ADJUSTMENT&productId=uuid
    */
   @Get()
+  @ApiOperation({
+    summary: 'List all stock movements',
+    description: 'Returns a paginated list of stock movements with optional filters for type, product, warehouse, and date range. All authenticated users can access this endpoint.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of stock movements retrieved successfully',
+    type: PaginatedStockMovementsEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
   async findAll(
     @Query() filters: FilterMovementsDto,
   ): Promise<PaginatedMovementsResponse> {
@@ -69,6 +92,22 @@ export class StockMovementsController {
    * GET /stock-movements/:id
    */
   @Get(':id')
+  @ApiOperation({
+    summary: 'Get stock movement by ID',
+    description: 'Returns a single stock movement with product, warehouse, and user relations. All authenticated users can access this endpoint.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Stock movement ID (CUID format)',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Stock movement retrieved successfully',
+    type: StockMovementEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 404, description: 'Stock movement not found' })
   async findOne(@Param('id') id: string): Promise<StockMovementResponse> {
     this.logger.log(`Getting stock movement: ${id}`);
 
@@ -103,6 +142,19 @@ export class StockMovementsController {
   @Post()
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create stock adjustment',
+    description: 'Creates a manual stock adjustment movement. Updates product stock based on quantity (positive for additions, negative for subtractions). Only ADMIN and MANAGER users can create adjustments.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Stock adjustment created successfully',
+    type: StockMovementEntity,
+  })
+  @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data or insufficient stock for negative adjustment' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'Product or warehouse not found' })
   async create(
     @Body() dto: CreateMovementDto,
     @CurrentUser('userId') userId: string,
@@ -121,6 +173,8 @@ export class StockMovementsController {
  * All endpoints require JWT authentication.
  * All authenticated roles can access these endpoints.
  */
+@ApiTags('stock-movements')
+@ApiBearerAuth('JWT-auth')
 @Controller('products/:productId/movements')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductMovementsController {
@@ -140,6 +194,22 @@ export class ProductMovementsController {
    * GET /products/:productId/movements?page=1&limit=20&type=SALE
    */
   @Get()
+  @ApiOperation({
+    summary: 'Get product stock movements',
+    description: 'Returns a paginated list of stock movements for a specific product. Useful for viewing product inventory history. All authenticated users can access this endpoint.',
+  })
+  @ApiParam({
+    name: 'productId',
+    description: 'Product ID (CUID format)',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Product stock movements retrieved successfully',
+    type: PaginatedStockMovementsEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 404, description: 'Product not found' })
   async findByProduct(
     @Param('productId') productId: string,
     @Query() filters: FilterMovementsDto,
@@ -158,6 +228,8 @@ export class ProductMovementsController {
  * All endpoints require JWT authentication.
  * All authenticated roles can access these endpoints.
  */
+@ApiTags('stock-movements')
+@ApiBearerAuth('JWT-auth')
 @Controller('warehouses/:warehouseId/movements')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class WarehouseMovementsController {
@@ -177,6 +249,22 @@ export class WarehouseMovementsController {
    * GET /warehouses/:warehouseId/movements?page=1&limit=20&type=TRANSFER
    */
   @Get()
+  @ApiOperation({
+    summary: 'Get warehouse stock movements',
+    description: 'Returns a paginated list of stock movements for a specific warehouse. Useful for viewing warehouse inventory activity. All authenticated users can access this endpoint.',
+  })
+  @ApiParam({
+    name: 'warehouseId',
+    description: 'Warehouse ID (CUID format)',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Warehouse stock movements retrieved successfully',
+    type: PaginatedStockMovementsEntity,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 404, description: 'Warehouse not found' })
   async findByWarehouse(
     @Param('warehouseId') warehouseId: string,
     @Query() filters: FilterMovementsDto,

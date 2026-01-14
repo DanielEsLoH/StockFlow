@@ -204,6 +204,42 @@ describe('useAuth', () => {
         expect(result.current.isLoggingIn).toBe(false);
       });
     });
+
+    it('should show error toast with error message on login failure', async () => {
+      const { toast } = await import('~/components/ui/Toast');
+      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+      vi.mocked(authService.login).mockRejectedValue(new Error('Invalid credentials'));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.login({ email: 'test@example.com', password: 'wrong' });
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Invalid credentials');
+      });
+    });
+
+    it('should show default error toast when login error has no message', async () => {
+      const { toast } = await import('~/components/ui/Toast');
+      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+      vi.mocked(authService.login).mockRejectedValue(new Error(''));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.login({ email: 'test@example.com', password: 'wrong' });
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Credenciales invalidas');
+      });
+    });
   });
 
   describe('register mutation', () => {
@@ -284,6 +320,52 @@ describe('useAuth', () => {
 
       await waitFor(() => {
         expect(result.current.isRegistering).toBe(false);
+      });
+    });
+
+    it('should show error toast with error message on registration failure', async () => {
+      const { toast } = await import('~/components/ui/Toast');
+      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+      vi.mocked(authService.register).mockRejectedValue(new Error('Email already exists'));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.register({
+          email: 'existing@example.com',
+          password: 'password123',
+          firstName: 'Jane',
+          lastName: 'Smith',
+        });
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Email already exists');
+      });
+    });
+
+    it('should show default error toast when register error has no message', async () => {
+      const { toast } = await import('~/components/ui/Toast');
+      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+      vi.mocked(authService.register).mockRejectedValue(new Error(''));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.register({
+          email: 'new@example.com',
+          password: 'password123',
+          firstName: 'Jane',
+          lastName: 'Smith',
+        });
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Error al registrarse');
       });
     });
   });
@@ -376,6 +458,42 @@ describe('useAuth', () => {
         expect(authService.forgotPassword).toHaveBeenCalledWith('forgot@example.com');
       });
     });
+
+    it('should show error toast with error message on failure', async () => {
+      const { toast } = await import('~/components/ui/Toast');
+      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+      vi.mocked(authService.forgotPassword).mockRejectedValue(new Error('User not found'));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.forgotPassword('notfound@example.com');
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('User not found');
+      });
+    });
+
+    it('should show default error toast when error has no message', async () => {
+      const { toast } = await import('~/components/ui/Toast');
+      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+      vi.mocked(authService.forgotPassword).mockRejectedValue(new Error(''));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.forgotPassword('test@example.com');
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Error al enviar correo');
+      });
+    });
   });
 
   describe('resetPassword mutation', () => {
@@ -410,6 +528,42 @@ describe('useAuth', () => {
 
       await waitFor(() => {
         expect(mockNavigate).toHaveBeenCalledWith('/login');
+      });
+    });
+
+    it('should show error toast with error message on reset failure', async () => {
+      const { toast } = await import('~/components/ui/Toast');
+      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+      vi.mocked(authService.resetPassword).mockRejectedValue(new Error('Token expired'));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.resetPassword({ token: 'invalid-token', password: 'newPassword' });
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Token expired');
+      });
+    });
+
+    it('should show default error toast when reset error has no message', async () => {
+      const { toast } = await import('~/components/ui/Toast');
+      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+      vi.mocked(authService.resetPassword).mockRejectedValue(new Error(''));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.resetPassword({ token: 'token', password: 'newPassword' });
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Error al restablecer contrasena');
       });
     });
   });

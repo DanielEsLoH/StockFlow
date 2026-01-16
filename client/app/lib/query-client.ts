@@ -115,10 +115,13 @@ export const queryKeys = {
   // Reports
   reports: {
     all: ['reports'] as const,
+    recent: (limit?: number) => [...queryKeys.reports.all, 'recent', limit] as const,
     sales: (params?: Record<string, unknown>) =>
       [...queryKeys.reports.all, 'sales', params] as const,
     inventory: (params?: Record<string, unknown>) =>
       [...queryKeys.reports.all, 'inventory', params] as const,
+    customers: (params?: Record<string, unknown>) =>
+      [...queryKeys.reports.all, 'customers', params] as const,
   },
 
   // Notifications

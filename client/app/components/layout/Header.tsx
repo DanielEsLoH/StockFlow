@@ -24,12 +24,11 @@ import { useAuth } from '~/hooks/useAuth';
 import {
   useRecentNotifications,
   useUnreadCount,
-  useMarkAsRead,
   useMarkAllAsRead,
   useNotificationClick,
 } from '~/hooks/useNotifications';
 import { getNotificationCategory } from '~/types/notification';
-import type { NotificationSummary, NotificationCategory } from '~/types/notification';
+import type { NotificationCategory } from '~/types/notification';
 import { ThemeToggle } from '~/components/ui/ThemeToggle';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
@@ -70,13 +69,12 @@ export function Header() {
   const profileRef = useRef<HTMLDivElement>(null);
 
   const { toggleSidebar, sidebarOpen } = useUIStore();
-  const { user, tenant } = useAuthStore();
+  const { user } = useAuthStore();
   const { logout, isLoggingOut } = useAuth();
 
   // Notification hooks
   const { data: notifications = [], isLoading: notificationsLoading } = useRecentNotifications(5);
   const { data: unreadCountData } = useUnreadCount();
-  const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
   const handleNotificationClick = useNotificationClick();
 
@@ -344,7 +342,7 @@ export function Header() {
                           >
                             <div
                               className={cn(
-                                'flex h-10 w-10 items-center justify-center rounded-full flex-shrink-0',
+                                'flex h-10 w-10 items-center justify-center rounded-full shrink-0',
                                 getNotificationIconClass(category)
                               )}
                             >
@@ -362,7 +360,7 @@ export function Header() {
                               </p>
                             </div>
                             {!notification.read && (
-                              <div className="h-2 w-2 rounded-full bg-primary-500 flex-shrink-0 mt-2" />
+                              <div className="h-2 w-2 rounded-full bg-primary-500 shrink-0 mt-2" />
                             )}
                           </div>
                         );

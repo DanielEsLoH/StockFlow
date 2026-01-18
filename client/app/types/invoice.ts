@@ -116,7 +116,7 @@ export interface UpdateInvoiceItemData extends Partial<CreateInvoiceItemData> {
 export interface CreateInvoiceData {
   customerId: string;
   status?: InvoiceStatus;
-  issueDate: string;
+  issueDate?: string;
   dueDate: string;
   items: CreateInvoiceItemData[];
   notes?: string;

@@ -1,15 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { invoicesService, generateInvoiceNumber, mockInvoices } from './invoices.service';
 import type {
-  Invoice,
   InvoiceFilters,
-  InvoicesResponse,
   CreateInvoiceData,
   UpdateInvoiceData,
   CreateInvoiceItemData,
   UpdateInvoiceItemData,
-  InvoiceStats,
-  InvoiceStatus,
 } from '~/types/invoice';
 
 // Note: The invoices service currently uses mock data internally

@@ -308,6 +308,14 @@ describe('Query Keys', () => {
         { warehouse: 'main' },
       ]);
     });
+
+    it('generates customers key with params', () => {
+      expect(queryKeys.reports.customers({ segment: 'enterprise' })).toEqual([
+        'reports',
+        'customers',
+        { segment: 'enterprise' },
+      ]);
+    });
   });
 
   describe('notifications keys', () => {

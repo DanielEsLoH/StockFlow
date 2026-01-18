@@ -298,4 +298,19 @@ describe('StatusBadge', () => {
       expect(badge).toHaveClass('custom-status');
     });
   });
+
+  describe('Unknown Status', () => {
+    it('should fallback to default variant and use status as label for unknown status', () => {
+      // Test the fallback branch when status is not in statusConfig
+      const unknownStatus = 'UNKNOWN_STATUS' as 'ACTIVE';
+      render(<StatusBadge status={unknownStatus} data-testid="badge" />);
+      const badge = screen.getByTestId('badge');
+
+      // Should display the raw status value as the label
+      expect(screen.getByText('UNKNOWN_STATUS')).toBeInTheDocument();
+      // Should apply default variant styles
+      expect(badge).toHaveClass('bg-neutral-100');
+      expect(badge).toHaveClass('text-neutral-800');
+    });
+  });
 });

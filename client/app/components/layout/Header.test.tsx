@@ -11,10 +11,14 @@ import type { User, Tenant } from '~/stores/auth.store';
 
 // Mock useAuth hook
 const mockLogout = vi.fn();
+let mockIsLoggingOut = false;
+
 vi.mock('~/hooks/useAuth', () => ({
   useAuth: () => ({
     logout: mockLogout,
-    isLoggingOut: false,
+    get isLoggingOut() {
+      return mockIsLoggingOut;
+    },
   }),
 }));
 
@@ -23,44 +27,72 @@ const mockMarkAsReadMutate = vi.fn();
 const mockMarkAllAsReadMutate = vi.fn();
 const mockNotificationClick = vi.fn();
 
+// Default mock data for notifications
+const mockNotifications = [
+  {
+    id: '1',
+    type: 'LOW_STOCK',
+    title: 'Stock bajo',
+    message: 'El producto "Widget A" tiene stock bajo',
+    priority: 'HIGH',
+    read: false,
+    link: '/products/1',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    type: 'NEW_INVOICE',
+    title: 'Nueva factura',
+    message: 'Se ha creado la factura #INV-001',
+    priority: 'MEDIUM',
+    read: false,
+    link: '/invoices/1',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    type: 'PAYMENT_RECEIVED',
+    title: 'Pago recibido',
+    message: 'Se ha recibido un pago de $1,000',
+    priority: 'LOW',
+    read: true,
+    link: '/payments/1',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: '4',
+    type: 'PAYMENT_FAILED',
+    title: 'Pago fallido',
+    message: 'El pago de la factura #INV-002 ha fallado',
+    priority: 'HIGH',
+    read: false,
+    link: '/payments/2',
+    createdAt: new Date().toISOString(),
+  },
+];
+
+// Track if markAllAsRead should be pending
+let mockMarkAllAsReadIsPending = false;
+// Track if notifications are loading
+let mockNotificationsLoading = false;
+// Track if unreadCount data should be null
+let mockUnreadCountData: { count: number; byType: object; byPriority: object } | undefined = { count: 2, byType: {}, byPriority: {} };
+// Track if notifications should be empty
+let mockNotificationsEmpty = false;
+
 vi.mock('~/hooks/useNotifications', () => ({
   useRecentNotifications: () => ({
-    data: [
-      {
-        id: '1',
-        type: 'LOW_STOCK',
-        title: 'Stock bajo',
-        message: 'El producto "Widget A" tiene stock bajo',
-        priority: 'HIGH',
-        read: false,
-        link: '/products/1',
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        type: 'NEW_INVOICE',
-        title: 'Nueva factura',
-        message: 'Se ha creado la factura #INV-001',
-        priority: 'MEDIUM',
-        read: false,
-        link: '/invoices/1',
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '3',
-        type: 'PAYMENT_RECEIVED',
-        title: 'Pago recibido',
-        message: 'Se ha recibido un pago de $1,000',
-        priority: 'LOW',
-        read: true,
-        link: '/payments/1',
-        createdAt: new Date().toISOString(),
-      },
-    ],
-    isLoading: false,
+    get data() {
+      return mockNotificationsEmpty ? [] : mockNotifications;
+    },
+    get isLoading() {
+      return mockNotificationsLoading;
+    },
   }),
   useUnreadCount: () => ({
-    data: { count: 2, byType: {}, byPriority: {} },
+    get data() {
+      return mockUnreadCountData;
+    },
   }),
   useMarkAsRead: () => ({
     mutate: mockMarkAsReadMutate,
@@ -68,7 +100,9 @@ vi.mock('~/hooks/useNotifications', () => ({
   }),
   useMarkAllAsRead: () => ({
     mutate: mockMarkAllAsReadMutate,
-    isPending: false,
+    get isPending() {
+      return mockMarkAllAsReadIsPending;
+    },
   }),
   useNotificationClick: () => mockNotificationClick,
 }));
@@ -130,6 +164,12 @@ describe('Header', () => {
       isAuthenticated: true,
       isLoading: false,
     });
+    // Reset mutable mock state
+    mockMarkAllAsReadIsPending = false;
+    mockIsLoggingOut = false;
+    mockNotificationsLoading = false;
+    mockUnreadCountData = { count: 2, byType: {}, byPriority: {} };
+    mockNotificationsEmpty = false;
     vi.clearAllMocks();
   });
 
@@ -812,6 +852,301 @@ describe('Header', () => {
           expect(document.querySelector('.fixed.inset-0.z-50.bg-black\\/50')).not.toBeInTheDocument();
         });
       }
+    });
+  });
+
+  describe('mark all as read pending state', () => {
+    it('should show loading spinner when mark all as read is pending (line 304)', async () => {
+      // Set the pending state to true BEFORE rendering
+      mockMarkAllAsReadIsPending = true;
+
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open notifications dropdown
+      await user.click(screen.getByLabelText('Notificaciones'));
+
+      // Wait for dropdown to open
+      await waitFor(() => {
+        expect(screen.getByText('Marcar todas como leidas')).toBeInTheDocument();
+      });
+
+      // The button should show loading spinner (Loader2) instead of Check icon
+      // The Loader2 icon has class 'animate-spin'
+      const markAllButton = screen.getByText('Marcar todas como leidas').closest('button');
+      expect(markAllButton).toBeInTheDocument();
+
+      // Check that the loading spinner (animate-spin) is present
+      const spinner = markAllButton?.querySelector('.animate-spin');
+      expect(spinner).toBeInTheDocument();
+
+      // The button should be disabled
+      expect(markAllButton).toBeDisabled();
+    });
+  });
+
+  describe('notification click handler', () => {
+    it('should call handleNotificationClick and close dropdown when notification is clicked (lines 334-335)', async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open notifications dropdown
+      await user.click(screen.getByLabelText('Notificaciones'));
+
+      // Wait for dropdown to open
+      await waitFor(() => {
+        expect(screen.getByText('Stock bajo')).toBeInTheDocument();
+      });
+
+      // Click on a notification item
+      const notificationItem = screen.getByText('Stock bajo').closest('div[class*="cursor-pointer"]');
+      expect(notificationItem).toBeInTheDocument();
+
+      if (notificationItem) {
+        await user.click(notificationItem);
+
+        // Verify handleNotificationClick was called with the notification
+        expect(mockNotificationClick).toHaveBeenCalledTimes(1);
+        expect(mockNotificationClick).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: '1',
+            type: 'LOW_STOCK',
+            title: 'Stock bajo',
+          })
+        );
+
+        // Verify dropdown is closed
+        await waitFor(() => {
+          expect(screen.queryByText('Stock bajo')).not.toBeInTheDocument();
+        });
+      }
+    });
+
+    it('should handle clicking on different notification types', async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open notifications dropdown
+      await user.click(screen.getByLabelText('Notificaciones'));
+
+      // Wait for dropdown to open
+      await waitFor(() => {
+        expect(screen.getByText('Nueva factura')).toBeInTheDocument();
+      });
+
+      // Click on the second notification item (Nueva factura)
+      const notificationItem = screen.getByText('Nueva factura').closest('div[class*="cursor-pointer"]');
+
+      if (notificationItem) {
+        await user.click(notificationItem);
+
+        // Verify handleNotificationClick was called with the correct notification
+        expect(mockNotificationClick).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: '2',
+            type: 'NEW_INVOICE',
+            title: 'Nueva factura',
+          })
+        );
+      }
+    });
+  });
+
+  describe('desktop search clear button (line 209)', () => {
+    it('should clear search query and close search when desktop clear button is clicked', async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open search by clicking the search button
+      await user.click(screen.getByText('Buscar...'));
+
+      // Wait for search input to appear
+      const searchInput = await screen.findByPlaceholderText(/buscar productos/i);
+      expect(searchInput).toBeInTheDocument();
+
+      // Type something in the search input
+      await user.type(searchInput, 'test search');
+      expect(searchInput).toHaveValue('test search');
+
+      // Find the desktop search container (the one with the expanded search input)
+      // The clear button is in the rightElement of the Input component
+      const desktopSearchContainer = searchInput.closest('.relative');
+      expect(desktopSearchContainer).toBeInTheDocument();
+
+      // Find the X button within the search area (not the mobile overlay)
+      // We need to specifically target the button that is NOT in the mobile overlay
+      const allCloseButtons = document.querySelectorAll('button');
+      let desktopClearButton: HTMLElement | null = null;
+
+      allCloseButtons.forEach((btn) => {
+        // Check if the button has the X icon and is in the desktop area (sm:block parent)
+        const hasXIcon = btn.querySelector('.lucide-x');
+        const isInMobileOverlay = btn.closest('.fixed.inset-0.z-50');
+        if (hasXIcon && !isInMobileOverlay) {
+          desktopClearButton = btn;
+        }
+      });
+
+      expect(desktopClearButton).not.toBeNull();
+
+      if (desktopClearButton) {
+        // Click the clear button - this tests line 209 (setSearchOpen(false) in the onClick handler)
+        await user.click(desktopClearButton);
+
+        // Verify search is closed
+        await waitFor(() => {
+          expect(screen.queryByPlaceholderText(/buscar productos/i)).not.toBeInTheDocument();
+        });
+
+        // Verify the "Buscar..." button is back
+        expect(screen.getByText('Buscar...')).toBeInTheDocument();
+      }
+    });
+  });
+
+  describe('mark all as read button click (line 304)', () => {
+    it('should call markAllAsRead.mutate when button is clicked', async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open notifications dropdown
+      await user.click(screen.getByLabelText('Notificaciones'));
+
+      // Wait for dropdown to open
+      await waitFor(() => {
+        expect(screen.getByText('Marcar todas como leidas')).toBeInTheDocument();
+      });
+
+      // Click the mark all as read button
+      const markAllButton = screen.getByText('Marcar todas como leidas').closest('button');
+      expect(markAllButton).toBeInTheDocument();
+
+      if (markAllButton) {
+        await user.click(markAllButton);
+
+        // Verify mutate was called
+        expect(mockMarkAllAsReadMutate).toHaveBeenCalledTimes(1);
+      }
+    });
+  });
+
+  describe('notification icon/style for error category (lines 144, 157)', () => {
+    it('should render error notification with correct icon and styling', async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open notifications dropdown
+      await user.click(screen.getByLabelText('Notificaciones'));
+
+      // Wait for dropdown to open and find the error notification (PAYMENT_FAILED type)
+      await waitFor(() => {
+        expect(screen.getByText('Pago fallido')).toBeInTheDocument();
+      });
+
+      // Find the error notification item
+      const errorNotificationItem = screen.getByText('Pago fallido').closest('div[class*="cursor-pointer"]');
+      expect(errorNotificationItem).toBeInTheDocument();
+
+      // Verify the error icon class is applied (bg-error-100)
+      // The icon container should have error styling classes
+      const iconContainer = errorNotificationItem?.querySelector('[class*="bg-error"]');
+      expect(iconContainer).toBeInTheDocument();
+
+      // Verify the AlertCircle icon is rendered (error icon)
+      // The AlertCircle icon has class lucide-circle-alert
+      const errorIcon = iconContainer?.querySelector('.lucide-circle-alert');
+      expect(errorIcon).toBeInTheDocument();
+    });
+  });
+
+  describe('edge cases for branch coverage', () => {
+    it('should show role as-is when role is unknown (line 134)', async () => {
+      const user = userEvent.setup();
+      // Set an unknown role
+      useAuthStore.setState({ user: { ...mockUser, role: 'UNKNOWN_ROLE' as never } });
+
+      render(<Header />, { wrapper: createWrapper() });
+      await user.click(screen.getByText('John Doe'));
+
+      // Should display the raw role value
+      await waitFor(() => {
+        expect(screen.getByText('UNKNOWN_ROLE')).toBeInTheDocument();
+      });
+    });
+
+    it('should show "Cerrando sesion..." when isLoggingOut is true (line 498)', async () => {
+      // Set the logging out state to true BEFORE rendering
+      mockIsLoggingOut = true;
+
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open profile dropdown
+      await user.click(screen.getByText('John Doe'));
+
+      // Wait for dropdown to open and check for the logging out text
+      await waitFor(() => {
+        expect(screen.getByText('Cerrando sesion...')).toBeInTheDocument();
+      });
+
+      // The logout button should be disabled when logging out
+      const logoutButton = screen.getByRole('button', { name: /cerrando sesion/i });
+      expect(logoutButton).toBeDisabled();
+    });
+
+    it('should default to 0 unread count when unreadCountData is undefined (line 88)', () => {
+      // Set the unreadCount data to undefined
+      mockUnreadCountData = undefined;
+
+      render(<Header />, { wrapper: createWrapper() });
+
+      // The badge should not be visible when count is 0
+      // or there should be no "2" badge (the default count)
+      const notificationButton = screen.getByLabelText('Notificaciones');
+      expect(notificationButton).toBeInTheDocument();
+
+      // No unread count badge should be displayed when count is 0 or undefined
+      expect(screen.queryByText('2')).not.toBeInTheDocument();
+    });
+
+    it('should show loading state when notifications are loading (lines 320-327)', async () => {
+      // Set the notifications loading state to true BEFORE rendering
+      mockNotificationsLoading = true;
+
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open notifications dropdown
+      await user.click(screen.getByLabelText('Notificaciones'));
+
+      // Wait for dropdown to open and show loading text
+      await waitFor(() => {
+        expect(screen.getByText('Cargando notificaciones...')).toBeInTheDocument();
+      });
+
+      // Find the loading spinner (animate-spin class in the dropdown)
+      const loadingSpinner = document.querySelector('.animate-spin');
+      expect(loadingSpinner).toBeInTheDocument();
+    });
+
+    it('should show empty state when no notifications exist (line 327 else branch)', async () => {
+      // Set the notifications to empty BEFORE rendering
+      mockNotificationsEmpty = true;
+      mockUnreadCountData = { count: 0, byType: {}, byPriority: {} };
+
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open notifications dropdown
+      await user.click(screen.getByLabelText('Notificaciones'));
+
+      // Wait for dropdown to open and show empty state text
+      await waitFor(() => {
+        expect(screen.getByText('No tienes notificaciones')).toBeInTheDocument();
+      });
+
+      // The "View all notifications" link should not be visible when there are no notifications
+      expect(screen.queryByText('Ver todas las notificaciones')).not.toBeInTheDocument();
     });
   });
 });

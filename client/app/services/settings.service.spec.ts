@@ -1153,4 +1153,70 @@ describe('settingsService', () => {
       expect(result.url).toBeDefined();
     });
   });
+
+  describe('SSR environment (window undefined)', () => {
+    let originalWindow: typeof globalThis.window;
+
+    beforeEach(() => {
+      originalWindow = globalThis.window;
+    });
+
+    afterEach(() => {
+      // Restore window
+      globalThis.window = originalWindow;
+    });
+
+    it('getPreferences should return default preferences when window is undefined', () => {
+      // @ts-expect-error - Intentionally setting window to undefined for SSR test
+      delete globalThis.window;
+
+      const result = settingsService.getPreferences();
+
+      expect(result.theme).toBe('system');
+      expect(result.language).toBe('es');
+      expect(result.currency).toBe('COP');
+      expect(result.dateFormat).toBe('DD/MM/YYYY');
+      expect(result.notifications.email).toBe(true);
+      expect(result.notifications.push).toBe(true);
+      expect(result.notifications.lowStock).toBe(true);
+      expect(result.notifications.invoices).toBe(true);
+      expect(result.notifications.reports).toBe(false);
+      expect(result.dashboard.showSalesChart).toBe(true);
+      expect(result.dashboard.showCategoryDistribution).toBe(true);
+      expect(result.dashboard.showTopProducts).toBe(true);
+      expect(result.dashboard.showLowStockAlerts).toBe(true);
+    });
+
+    it('updatePreferences should return preferences without saving when window is undefined', () => {
+      // @ts-expect-error - Intentionally setting window to undefined for SSR test
+      delete globalThis.window;
+
+      const preferences: UserPreferences = {
+        theme: 'dark',
+        language: 'en',
+        currency: 'USD',
+        dateFormat: 'YYYY-MM-DD',
+        notifications: {
+          email: false,
+          push: false,
+          lowStock: true,
+          invoices: true,
+          reports: true,
+        },
+        dashboard: {
+          showSalesChart: false,
+          showCategoryDistribution: false,
+          showTopProducts: true,
+          showLowStockAlerts: true,
+        },
+      };
+
+      const result = settingsService.updatePreferences(preferences);
+
+      // Should return the same preferences passed in
+      expect(result).toEqual(preferences);
+      expect(result.theme).toBe('dark');
+      expect(result.language).toBe('en');
+    });
+  });
 });

@@ -1892,6 +1892,50 @@ describe('useInvoices hooks', () => {
       );
     });
 
+    it('should preserve paidAt when optimistically updating status to non-PAID status', async () => {
+      const { toast } = await import('~/components/ui/Toast');
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+
+      // Pre-populate cache with invoice that has paidAt set (e.g., a paid invoice)
+      const invoiceWithPaidAt = { ...mockPaidInvoice, paidAt: '2024-01-15T10:00:00Z' };
+      queryClient.setQueryData(['invoices', '2'], invoiceWithPaidAt);
+
+      const cancelledInvoice = { ...invoiceWithPaidAt, status: 'CANCELLED' as const };
+      vi.mocked(invoicesService.updateInvoiceStatus).mockResolvedValue(cancelledInvoice);
+
+      function Wrapper({ children }: { children: ReactNode }) {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <MemoryRouter>{children}</MemoryRouter>
+          </QueryClientProvider>
+        );
+      }
+
+      const { result } = renderHook(() => useUpdateInvoiceStatus(), {
+        wrapper: Wrapper,
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          id: '2',
+          status: 'CANCELLED',
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(toast.success).toHaveBeenCalledWith(
+        `Factura "${cancelledInvoice.invoiceNumber}" cancelada`
+      );
+    });
+
     it('should rollback optimistic update on error when previousInvoice exists', async () => {
       const { toast } = await import('~/components/ui/Toast');
       const queryClient = new QueryClient({
@@ -2119,6 +2163,86 @@ describe('useInvoices hooks', () => {
       expect(cachedInvoice).toEqual(mockInvoice);
 
       expect(toast.error).toHaveBeenCalledWith('Cantidad no puede ser negativa');
+    });
+  });
+
+  describe('useUpdateInvoiceItem - optimistic update with multiple items', () => {
+    it('should only update the targeted item and leave other items unchanged', async () => {
+      const { toast } = await import('~/components/ui/Toast');
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+
+      // Create an invoice with multiple items
+      const secondItem: InvoiceItem = {
+        id: '1-2',
+        invoiceId: '1',
+        productId: 'prod-2',
+        description: 'AirPods Pro',
+        quantity: 1,
+        unitPrice: 1099000,
+        discount: 0,
+        tax: 19,
+        subtotal: 1099000,
+        total: 1307810,
+        createdAt: '2024-01-05T10:00:00Z',
+        updatedAt: '2024-01-05T10:00:00Z',
+      };
+
+      const invoiceWithMultipleItems: Invoice = {
+        ...mockInvoice,
+        items: [mockInvoiceItem, secondItem],
+      };
+
+      // Pre-populate the cache with the invoice
+      queryClient.setQueryData(['invoices', '1'], invoiceWithMultipleItems);
+
+      // Server response after update
+      const updatedInvoice = {
+        ...invoiceWithMultipleItems,
+        items: [
+          { ...mockInvoiceItem, quantity: 5 },
+          secondItem, // This item should remain unchanged
+        ],
+      };
+      vi.mocked(invoicesService.updateInvoiceItem).mockResolvedValue(updatedInvoice);
+
+      function Wrapper({ children }: { children: ReactNode }) {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <MemoryRouter>{children}</MemoryRouter>
+          </QueryClientProvider>
+        );
+      }
+
+      const { result } = renderHook(() => useUpdateInvoiceItem(), {
+        wrapper: Wrapper,
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          invoiceId: '1',
+          itemId: '1-1', // Update only the first item
+          data: { quantity: 5 },
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(toast.success).toHaveBeenCalledWith('Item actualizado');
+
+      // Verify the cache was updated correctly
+      const cachedInvoice = queryClient.getQueryData<Invoice>(['invoices', '1']);
+      expect(cachedInvoice?.items).toHaveLength(2);
+      // The first item should be updated
+      expect(cachedInvoice?.items[0].quantity).toBe(5);
+      // The second item should remain unchanged
+      expect(cachedInvoice?.items[1]).toEqual(secondItem);
     });
   });
 

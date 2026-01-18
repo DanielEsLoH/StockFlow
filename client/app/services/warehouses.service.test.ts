@@ -154,6 +154,35 @@ describe('warehousesService', () => {
       expect(typeof result.id).toBe('string');
       expect(result.id.length).toBeGreaterThan(0);
     });
+
+    it('should default isActive to true when not provided', async () => {
+      const newWarehouseData = {
+        name: 'Warehouse Without isActive',
+        address: 'Test Address',
+        city: 'Test City',
+      };
+
+      const promise = warehousesService.createWarehouse(newWarehouseData);
+      vi.advanceTimersByTime(400);
+      const result = await promise;
+
+      expect(result.isActive).toBe(true);
+    });
+
+    it('should respect isActive false when explicitly provided', async () => {
+      const newWarehouseData = {
+        name: 'Inactive Warehouse',
+        address: 'Test Address',
+        city: 'Test City',
+        isActive: false,
+      };
+
+      const promise = warehousesService.createWarehouse(newWarehouseData);
+      vi.advanceTimersByTime(400);
+      const result = await promise;
+
+      expect(result.isActive).toBe(false);
+    });
   });
 
   describe('updateWarehouse', () => {
@@ -478,6 +507,17 @@ describe('warehousesService', () => {
       const result = await statsPromise;
 
       expect(result.utilizationPercentage).toBe(0);
+    });
+
+    it('should handle warehouse with capacity but zero currentOccupancy', async () => {
+      // Warehouse 4 (Almacen Costa) has capacity: 3000 and currentOccupancy: 0
+      const promise = warehousesService.getWarehouseStats('4');
+      vi.advanceTimersByTime(200);
+      const result = await promise;
+
+      // With capacity 3000 and currentOccupancy 0, utilization should be 0%
+      expect(result.utilizationPercentage).toBe(0);
+      expect(result.totalProducts).toBe(0);
     });
 
     it('should throw error for non-existent warehouse', async () => {

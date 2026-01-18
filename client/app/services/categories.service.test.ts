@@ -327,5 +327,16 @@ describe('categoriesService', () => {
       expect(result.data.length).toBe(0);
       expect(result.meta.total).toBe(0);
     });
+
+    it('should handle sorting by a field with undefined values (parentId)', async () => {
+      // Sorting by parentId triggers the ?? '' fallback since most categories have undefined parentId
+      const promise = categoriesService.getCategoriesWithFilters({ sortBy: 'parentId', sortOrder: 'asc' });
+      vi.advanceTimersByTime(300);
+      const result = await promise;
+
+      // Should still return results without errors
+      expect(result.data.length).toBeGreaterThan(0);
+      expect(result.meta.total).toBeGreaterThan(0);
+    });
   });
 });

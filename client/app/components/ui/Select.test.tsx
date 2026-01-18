@@ -382,5 +382,29 @@ describe('MultiSelect', () => {
       // Dropdown should close - there should be no option buttons visible
       // (just the main trigger button)
     });
+
+    it('should not close dropdown when clicking inside the container', () => {
+      const { container } = render(
+        <MultiSelect
+          options={mockOptions}
+          value={[]}
+          onChange={vi.fn()}
+        />
+      );
+
+      // Open the dropdown
+      const mainButton = screen.getByRole('button');
+      fireEvent.click(mainButton);
+
+      // Dropdown should be open
+      expect(screen.getAllByText('Option 1').length).toBeGreaterThan(0);
+
+      // Click inside the container (on the container div itself)
+      const containerDiv = container.firstChild as HTMLElement;
+      fireEvent.mouseDown(containerDiv);
+
+      // Dropdown should remain open since we clicked inside
+      expect(screen.getAllByText('Option 1').length).toBeGreaterThan(0);
+    });
   });
 });

@@ -103,6 +103,33 @@ describe('Pagination', () => {
 
       expect(onPageChange).toHaveBeenCalledWith(2);
     });
+
+    it('should not call onPageChange when clicking previous on first page', () => {
+      const onPageChange = vi.fn();
+      render(
+        <Pagination
+          currentPage={1}
+          totalPages={5}
+          onPageChange={onPageChange}
+        />
+      );
+
+      const prevButton = screen.getByRole('button', { name: 'Pagina anterior' }) as HTMLButtonElement;
+      // Access the React fiber to get the onClick prop
+      const fiberKey = Object.keys(prevButton).find(key => key.startsWith('__reactFiber$'));
+      if (fiberKey) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fiber = (prevButton as any)[fiberKey];
+        const onClick = fiber.memoizedProps?.onClick;
+        if (onClick) {
+          // Directly invoke the onClick handler
+          onClick();
+        }
+      }
+
+      // The guard condition (currentPage > 1) should prevent the call
+      expect(onPageChange).not.toHaveBeenCalled();
+    });
   });
 
   describe('Next Button', () => {
@@ -148,6 +175,33 @@ describe('Pagination', () => {
       fireEvent.click(nextButton);
 
       expect(onPageChange).toHaveBeenCalledWith(4);
+    });
+
+    it('should not call onPageChange when clicking next on last page', () => {
+      const onPageChange = vi.fn();
+      render(
+        <Pagination
+          currentPage={5}
+          totalPages={5}
+          onPageChange={onPageChange}
+        />
+      );
+
+      const nextButton = screen.getByRole('button', { name: 'Pagina siguiente' }) as HTMLButtonElement;
+      // Access the React fiber to get the onClick prop
+      const fiberKey = Object.keys(nextButton).find(key => key.startsWith('__reactFiber$'));
+      if (fiberKey) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fiber = (nextButton as any)[fiberKey];
+        const onClick = fiber.memoizedProps?.onClick;
+        if (onClick) {
+          // Directly invoke the onClick handler
+          onClick();
+        }
+      }
+
+      // The guard condition (currentPage < totalPages) should prevent the call
+      expect(onPageChange).not.toHaveBeenCalled();
     });
   });
 

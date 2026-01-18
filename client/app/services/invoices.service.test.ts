@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { invoicesService } from './invoices.service';
+import { invoicesService, generateInvoiceNumber, mockInvoices } from './invoices.service';
 import type {
   Invoice,
   InvoiceFilters,
@@ -1468,6 +1468,447 @@ describe('invoicesService', () => {
       vi.advanceTimersByTime(350);
 
       await expect(promise).rejects.toThrow('Factura no encontrada');
+    });
+  });
+
+  describe('generateInvoiceNumber', () => {
+    it('should generate invoice number starting from 1 when no invoices exist', () => {
+      const result = generateInvoiceNumber([]);
+      const year = new Date().getFullYear();
+      expect(result).toBe(`FAC-${year}-0001`);
+    });
+
+    it('should generate next invoice number based on existing invoices', () => {
+      const invoices = [
+        { invoiceNumber: 'FAC-2024-0001' },
+        { invoiceNumber: 'FAC-2024-0003' },
+        { invoiceNumber: 'FAC-2024-0002' },
+      ];
+      const result = generateInvoiceNumber(invoices);
+      const year = new Date().getFullYear();
+      expect(result).toBe(`FAC-${year}-0004`);
+    });
+
+    it('should skip invoices with non-matching invoice number format', () => {
+      // This test covers line 469 - the return max branch when regex doesn't match
+      const invoices = [
+        { invoiceNumber: 'FAC-2024-0005' },
+        { invoiceNumber: 'INVALID-NUMBER' },  // Does not match pattern
+        { invoiceNumber: 'ANOTHER-BAD-FORMAT' },  // Does not match pattern
+        { invoiceNumber: 'FAC-2024-0010' },
+      ];
+      const result = generateInvoiceNumber(invoices);
+      const year = new Date().getFullYear();
+      // Should be based on max valid number (10) + 1 = 11
+      expect(result).toBe(`FAC-${year}-0011`);
+    });
+
+    it('should return 0001 when all invoices have non-matching format', () => {
+      // This test ensures all invoices with non-matching format are skipped
+      const invoices = [
+        { invoiceNumber: 'INVALID-001' },
+        { invoiceNumber: 'BAD-FORMAT' },
+        { invoiceNumber: '12345' },
+      ];
+      const result = generateInvoiceNumber(invoices);
+      const year = new Date().getFullYear();
+      expect(result).toBe(`FAC-${year}-0001`);
+    });
+
+    it('should keep max when current number is not greater', () => {
+      // Test the branch where num > max is false (num <= max)
+      const invoices = [
+        { invoiceNumber: 'FAC-2024-0010' },  // max becomes 10
+        { invoiceNumber: 'FAC-2024-0005' },  // 5 is not > 10, so max stays 10
+        { invoiceNumber: 'FAC-2024-0003' },  // 3 is not > 10, so max stays 10
+      ];
+      const result = generateInvoiceNumber(invoices);
+      const year = new Date().getFullYear();
+      expect(result).toBe(`FAC-${year}-0011`);
+    });
+  });
+
+  describe('edge cases with undefined items', () => {
+    let originalLength: number;
+    let testInvoiceId: string;
+
+    beforeEach(() => {
+      originalLength = mockInvoices.length;
+      // Add a test invoice without items to cover the || 0 and || [] branches
+      testInvoiceId = 'test-no-items-invoice';
+      mockInvoices.push({
+        id: testInvoiceId,
+        invoiceNumber: 'FAC-TEST-0001',
+        customerId: '1',
+        customer: undefined,
+        status: 'DRAFT',
+        issueDate: '2024-01-01T00:00:00Z',
+        dueDate: '2024-01-15T00:00:00Z',
+        items: undefined as unknown as typeof mockInvoices[0]['items'],
+        subtotal: 0,
+        taxAmount: 0,
+        discountAmount: 0,
+        total: 0,
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+      });
+    });
+
+    afterEach(() => {
+      // Remove the test invoice
+      const idx = mockInvoices.findIndex((inv) => inv.id === testInvoiceId);
+      if (idx !== -1) {
+        mockInvoices.splice(idx, 1);
+      }
+      // Restore original length if needed
+      while (mockInvoices.length > originalLength) {
+        mockInvoices.pop();
+      }
+    });
+
+    it('should handle invoice with undefined items in getInvoices (toInvoiceSummary)', async () => {
+      // This covers line 335: itemCount: invoice.items?.length || 0
+      const filters: InvoiceFilters = { search: 'FAC-TEST-0001' };
+      const promise = invoicesService.getInvoices(filters);
+      vi.advanceTimersByTime(400);
+      const result = await promise;
+
+      const testInvoice = result.data.find((inv) => inv.invoiceNumber === 'FAC-TEST-0001');
+      expect(testInvoice).toBeDefined();
+      expect(testInvoice?.itemCount).toBe(0);
+    });
+
+    it('should handle invoice with undefined items in addInvoiceItem', async () => {
+      // This covers lines 775-776: invoice.items?.length || 0
+      // and line 789-790: invoice.items || []
+      const newItem: CreateInvoiceItemData = {
+        productId: 'prod-test',
+        description: 'Test Product',
+        quantity: 1,
+        unitPrice: 10000,
+      };
+
+      const promise = invoicesService.addInvoiceItem(testInvoiceId, newItem);
+      vi.advanceTimersByTime(350);
+      const result = await promise;
+
+      expect(result.items).toBeDefined();
+      expect(result.items.length).toBe(1);
+      expect(result.items[0].description).toBe('Test Product');
+    });
+
+    it('should handle invoice with undefined items in updateInvoiceItem (itemIndex undefined)', async () => {
+      // This covers line 829-830: invoice.items?.findIndex() returning undefined
+      // when items is undefined, causing itemIndex === undefined
+      const updateData: UpdateInvoiceItemData = {
+        quantity: 5,
+      };
+
+      const promise = invoicesService.updateInvoiceItem(testInvoiceId, 'any-item', updateData);
+      vi.advanceTimersByTime(350);
+
+      await expect(promise).rejects.toThrow('Item no encontrado');
+    });
+
+    it('should handle invoice with undefined items in removeInvoiceItem', async () => {
+      // This covers line 890: (invoice.items || []).filter(...)
+      // When items is undefined, it becomes [] and after filter, length is 0
+      const promise = invoicesService.removeInvoiceItem(testInvoiceId, 'any-item');
+      vi.advanceTimersByTime(300);
+
+      await expect(promise).rejects.toThrow('La factura debe tener al menos un item');
+    });
+  });
+
+  describe('updateInvoice - item update edge cases', () => {
+    it('should use empty string fallback when productId and description are missing in both update and existing', async () => {
+      // First create a draft invoice
+      const createPromise = invoicesService.createInvoice({
+        customerId: '1',
+        issueDate: '2024-01-15T10:00:00Z',
+        dueDate: '2024-01-30T10:00:00Z',
+        items: [
+          {
+            productId: 'prod-1',
+            description: 'Original Product',
+            quantity: 1,
+            unitPrice: 100000,
+          },
+        ],
+      });
+      vi.advanceTimersByTime(500);
+      const createdInvoice = await createPromise;
+
+      // Update with new items that have no matching existing item AND no productId/description
+      // This covers lines 659-660: || '' fallbacks
+      const updatePromise = invoicesService.updateInvoice(createdInvoice.id, {
+        items: [
+          {
+            // No id means no matching existing item
+            // Also not providing productId and description
+            quantity: 2,
+            unitPrice: 50000,
+            tax: 19,
+          },
+        ],
+      });
+      vi.advanceTimersByTime(400);
+      const result = await updatePromise;
+
+      // Should have empty string fallbacks for productId and description
+      expect(result.items.length).toBe(1);
+      expect(result.items[0].productId).toBe('');
+      expect(result.items[0].description).toBe('');
+    });
+
+    it('should use all existing values when updating item with minimal data', async () => {
+      // First create a draft invoice
+      const createPromise = invoicesService.createInvoice({
+        customerId: '1',
+        issueDate: '2024-01-15T10:00:00Z',
+        dueDate: '2024-01-30T10:00:00Z',
+        items: [
+          {
+            productId: 'prod-1',
+            description: 'Original Product',
+            quantity: 5,
+            unitPrice: 100000,
+            discount: 10,
+            tax: 15,
+          },
+        ],
+      });
+      vi.advanceTimersByTime(500);
+      const createdInvoice = await createPromise;
+      const itemId = createdInvoice.items[0].id;
+
+      // Update with empty data object - should use all existing values
+      // This ensures all ?? branches fallback to existing values
+      const updateData: UpdateInvoiceItemData = {};
+
+      const updatePromise = invoicesService.updateInvoiceItem(createdInvoice.id, itemId, updateData);
+      vi.advanceTimersByTime(350);
+      const result = await updatePromise;
+
+      // All values should be preserved from existing item
+      const updatedItem = result.items.find((item) => item.id === itemId);
+      expect(updatedItem?.quantity).toBe(5);
+      expect(updatedItem?.unitPrice).toBe(100000);
+      expect(updatedItem?.discount).toBe(10);
+      expect(updatedItem?.tax).toBe(15);
+      expect(updatedItem?.productId).toBe('prod-1');
+      expect(updatedItem?.description).toBe('Original Product');
+    });
+  });
+
+  describe('getInvoiceStats - empty mock data edge case', () => {
+    it('should return zero averageInvoiceValue when no invoices exist', async () => {
+      // Store original invoices
+      const originalInvoices = [...mockInvoices];
+
+      // Clear all invoices
+      mockInvoices.length = 0;
+
+      const promise = invoicesService.getInvoiceStats();
+      vi.advanceTimersByTime(400);
+      const result = await promise;
+
+      // Should return 0 for averageInvoiceValue when totalInvoices is 0
+      // This covers line 935: totalInvoices > 0 ? ... : 0
+      expect(result.totalInvoices).toBe(0);
+      expect(result.averageInvoiceValue).toBe(0);
+      expect(result.totalRevenue).toBe(0);
+      expect(result.pendingAmount).toBe(0);
+      expect(result.overdueAmount).toBe(0);
+
+      // Restore original invoices
+      mockInvoices.push(...originalInvoices);
+    });
+  });
+
+  describe('createInvoice - default values edge cases', () => {
+    it('should use current date as issueDate when not provided', async () => {
+      // This covers line 594: issueDate: data.issueDate || now
+      const newInvoiceData: CreateInvoiceData = {
+        customerId: '1',
+        // Not providing issueDate
+        dueDate: '2024-01-30T10:00:00Z',
+        items: [
+          {
+            productId: 'prod-1',
+            description: 'Test Product',
+            quantity: 1,
+            unitPrice: 50000,
+          },
+        ],
+      };
+
+      const promise = invoicesService.createInvoice(newInvoiceData);
+      vi.advanceTimersByTime(500);
+      const result = await promise;
+
+      // issueDate should be set to current time (default)
+      expect(result.issueDate).toBeDefined();
+      // Since we're using fake timers, this should be the fake "now"
+    });
+  });
+
+  describe('updateInvoice - default values for item properties', () => {
+    it('should use default fallback values when item and existing have no values', async () => {
+      // First create a draft invoice
+      const createPromise = invoicesService.createInvoice({
+        customerId: '1',
+        issueDate: '2024-01-15T10:00:00Z',
+        dueDate: '2024-01-30T10:00:00Z',
+        items: [
+          {
+            productId: 'prod-1',
+            description: 'Original Product',
+            quantity: 1,
+            unitPrice: 100000,
+          },
+        ],
+      });
+      vi.advanceTimersByTime(500);
+      const createdInvoice = await createPromise;
+
+      // Update with new item that has no id (won't match existing) and minimal properties
+      // This tests lines 649-652: the ?? 0, ?? 19, ?? 1, ?? 0 fallbacks
+      const updatePromise = invoicesService.updateInvoice(createdInvoice.id, {
+        items: [
+          {
+            // No id - won't match any existing item
+            // Not providing discount, tax, quantity, unitPrice
+            // This will trigger all the default fallbacks
+          },
+        ],
+      });
+      vi.advanceTimersByTime(400);
+      const result = await updatePromise;
+
+      // Should have default fallback values
+      expect(result.items.length).toBe(1);
+      expect(result.items[0].discount).toBe(0);  // ?? 0
+      expect(result.items[0].tax).toBe(19);      // ?? 19
+      expect(result.items[0].quantity).toBe(1);  // ?? 1
+      expect(result.items[0].unitPrice).toBe(0); // ?? 0
+    });
+  });
+
+  describe('sorting with undefined customer', () => {
+    let testInvoiceId1: string;
+    let testInvoiceId2: string;
+    let originalLength: number;
+
+    beforeEach(() => {
+      originalLength = mockInvoices.length;
+      // Add two test invoices without customers to cover lines 428-429
+      // We need two invoices with undefined customer to ensure both aValue and bValue
+      // go through the || '' fallback during comparison
+      testInvoiceId1 = 'test-no-customer-invoice-1';
+      testInvoiceId2 = 'test-no-customer-invoice-2';
+
+      mockInvoices.push({
+        id: testInvoiceId1,
+        invoiceNumber: 'FAC-TEST-NOCUST-0001',
+        customerId: 'non-existent-customer-1',
+        customer: undefined,  // This triggers the || '' fallback for aValue
+        status: 'DRAFT',
+        issueDate: '2024-01-01T00:00:00Z',
+        dueDate: '2024-01-15T00:00:00Z',
+        items: [
+          {
+            id: 'test-item-1',
+            invoiceId: testInvoiceId1,
+            productId: 'prod-test',
+            description: 'Test Product',
+            quantity: 1,
+            unitPrice: 10000,
+            discount: 0,
+            tax: 19,
+            subtotal: 10000,
+            total: 11900,
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+          },
+        ],
+        subtotal: 10000,
+        taxAmount: 1900,
+        discountAmount: 0,
+        total: 11900,
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+      });
+
+      mockInvoices.push({
+        id: testInvoiceId2,
+        invoiceNumber: 'FAC-TEST-NOCUST-0002',
+        customerId: 'non-existent-customer-2',
+        customer: undefined,  // This triggers the || '' fallback for bValue
+        status: 'DRAFT',
+        issueDate: '2024-01-02T00:00:00Z',
+        dueDate: '2024-01-16T00:00:00Z',
+        items: [
+          {
+            id: 'test-item-2',
+            invoiceId: testInvoiceId2,
+            productId: 'prod-test-2',
+            description: 'Test Product 2',
+            quantity: 1,
+            unitPrice: 20000,
+            discount: 0,
+            tax: 19,
+            subtotal: 20000,
+            total: 23800,
+            createdAt: '2024-01-02T00:00:00Z',
+            updatedAt: '2024-01-02T00:00:00Z',
+          },
+        ],
+        subtotal: 20000,
+        taxAmount: 3800,
+        discountAmount: 0,
+        total: 23800,
+        createdAt: '2024-01-02T00:00:00Z',
+        updatedAt: '2024-01-02T00:00:00Z',
+      });
+    });
+
+    afterEach(() => {
+      // Remove the test invoices
+      const idx1 = mockInvoices.findIndex((inv) => inv.id === testInvoiceId1);
+      if (idx1 !== -1) {
+        mockInvoices.splice(idx1, 1);
+      }
+      const idx2 = mockInvoices.findIndex((inv) => inv.id === testInvoiceId2);
+      if (idx2 !== -1) {
+        mockInvoices.splice(idx2, 1);
+      }
+      while (mockInvoices.length > originalLength) {
+        mockInvoices.pop();
+      }
+    });
+
+    it('should sort by customerName with undefined customer using empty string fallback', async () => {
+      // This covers lines 428-429: a.customer?.name || '' and b.customer?.name || ''
+      // With two invoices having undefined customers, both branches will be covered
+      // during the sort comparison
+      const filters: InvoiceFilters = { sortBy: 'customerName', sortOrder: 'asc' };
+      const promise = invoicesService.getInvoices(filters);
+      vi.advanceTimersByTime(400);
+      const result = await promise;
+
+      // Both invoices with undefined customer should be in the results
+      const testInvoice1 = result.data.find((inv) => inv.invoiceNumber === 'FAC-TEST-NOCUST-0001');
+      const testInvoice2 = result.data.find((inv) => inv.invoiceNumber === 'FAC-TEST-NOCUST-0002');
+      expect(testInvoice1).toBeDefined();
+      expect(testInvoice2).toBeDefined();
+
+      // All invoices should be sorted by customerName, with empty strings first
+      for (let i = 0; i < result.data.length - 1; i++) {
+        const aName = result.data[i].customer?.name || '';
+        const bName = result.data[i + 1].customer?.name || '';
+        expect(aName.localeCompare(bName)).toBeLessThanOrEqual(0);
+      }
     });
   });
 });

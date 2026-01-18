@@ -17,6 +17,28 @@ describe('theme utilities', () => {
     vi.mocked(localStorage.clear).mockClear();
   });
 
+  describe('SSR environment (window undefined)', () => {
+    it('getSystemTheme returns "light" when window is undefined', async () => {
+      vi.resetModules();
+      vi.stubGlobal('window', undefined);
+
+      const { getSystemTheme } = await import('./theme');
+      expect(getSystemTheme()).toBe('light');
+
+      vi.unstubAllGlobals();
+    });
+
+    it('getStoredTheme returns "system" when window is undefined', async () => {
+      vi.resetModules();
+      vi.stubGlobal('window', undefined);
+
+      const { getStoredTheme } = await import('./theme');
+      expect(getStoredTheme()).toBe('system');
+
+      vi.unstubAllGlobals();
+    });
+  });
+
   describe('getSystemTheme', () => {
     it('returns "dark" when system prefers dark mode', () => {
       Object.defineProperty(window, 'matchMedia', {
@@ -226,6 +248,51 @@ describe('theme utilities', () => {
 
       initializeTheme();
       expect(addEventListenerMock).not.toHaveBeenCalled();
+    });
+
+    it('reapplies system theme when system preference changes', () => {
+      let changeCallback: (() => void) | null = null;
+      const addEventListenerMock = vi.fn((event: string, callback: () => void) => {
+        if (event === 'change') {
+          changeCallback = callback;
+        }
+      });
+
+      vi.mocked(localStorage.getItem).mockReturnValue('system');
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: vi.fn().mockImplementation(() => ({
+          matches: false,
+          media: '',
+          onchange: null,
+          addEventListener: addEventListenerMock,
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
+
+      initializeTheme();
+      expect(document.documentElement.classList.contains('light')).toBe(true);
+
+      // Simulate system theme change to dark
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: vi.fn().mockImplementation((query: string) => ({
+          matches: query === '(prefers-color-scheme: dark)',
+          media: query,
+          onchange: null,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        })),
+      });
+
+      // Invoke the change callback (line 34)
+      expect(changeCallback).not.toBeNull();
+      changeCallback!();
+
+      expect(document.documentElement.classList.contains('dark')).toBe(true);
+      expect(document.documentElement.classList.contains('light')).toBe(false);
     });
   });
 });

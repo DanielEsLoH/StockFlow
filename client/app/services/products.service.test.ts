@@ -429,5 +429,29 @@ describe('productsService', () => {
         expect(result.data[i].name.localeCompare(result.data[i + 1].name)).toBeLessThanOrEqual(0);
       }
     });
+
+    it('should handle sorting by non-string non-number fields by returning 0', async () => {
+      // Sorting by 'images' (an array) should trigger the fallback return 0 branch
+      const filters: ProductFilters = { sortBy: 'images', sortOrder: 'asc' };
+      const promise = productsService.getProducts(filters);
+      vi.advanceTimersByTime(500);
+      const result = await promise;
+
+      // The result should still be valid - sorting by non-comparable fields just preserves order
+      expect(result.data).toBeDefined();
+      expect(Array.isArray(result.data)).toBe(true);
+    });
+
+    it('should handle sorting by object fields by returning 0', async () => {
+      // Sorting by 'category' (an object) should trigger the fallback return 0 branch
+      const filters: ProductFilters = { sortBy: 'category', sortOrder: 'desc' };
+      const promise = productsService.getProducts(filters);
+      vi.advanceTimersByTime(500);
+      const result = await promise;
+
+      // The result should still be valid - sorting by non-comparable fields just preserves order
+      expect(result.data).toBeDefined();
+      expect(Array.isArray(result.data)).toBe(true);
+    });
   });
 });

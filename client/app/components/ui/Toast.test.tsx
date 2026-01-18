@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ToastProvider, toast } from './Toast';
 
@@ -164,9 +164,9 @@ describe('Toast system', () => {
       });
     });
 
-    // Note: Skipped due to Radix UI internal pointer capture issues in jsdom
+    // Note: Skipped due to Radix UI internal pointer capture issues in jsdom with userEvent
     // The dismiss functionality is tested via programmatic dismissal above
-    it.skip('dismisses toast when close button clicked', async () => {
+    it.skip('dismisses toast when close button clicked with userEvent', async () => {
       vi.useRealTimers();
       const user = userEvent.setup();
 
@@ -183,6 +183,30 @@ describe('Toast system', () => {
 
       await waitFor(() => {
         expect(screen.queryByText('Dismissable message')).not.toBeInTheDocument();
+      });
+    });
+
+    it('dismisses toast when close button clicked with fireEvent', async () => {
+      renderWithToastProvider();
+
+      act(() => {
+        toast.success('Click to dismiss', 0);
+      });
+
+      const toastMessage = screen.getByText('Click to dismiss');
+      expect(toastMessage).toBeInTheDocument();
+
+      // Find the close button within this specific toast
+      const toastElement = toastMessage.closest('li');
+      const closeButton = toastElement?.querySelector('button');
+      expect(closeButton).toBeTruthy();
+
+      act(() => {
+        fireEvent.click(closeButton!);
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByText('Click to dismiss')).not.toBeInTheDocument();
       });
     });
   });

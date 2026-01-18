@@ -119,7 +119,8 @@ function createItem(
 }
 
 // Mock data for development
-const mockInvoices: Invoice[] = [
+// Exported for testing purposes
+export const mockInvoices: Invoice[] = [
   {
     id: '1',
     invoiceNumber: 'FAC-2024-0001',
@@ -458,9 +459,10 @@ function filterInvoices(
 }
 
 // Helper to generate next invoice number
-function generateInvoiceNumber(): string {
+// Exported for testing purposes
+export function generateInvoiceNumber(invoices: { invoiceNumber: string }[] = mockInvoices): string {
   const year = new Date().getFullYear();
-  const maxNumber = mockInvoices.reduce((max, invoice) => {
+  const maxNumber = invoices.reduce((max, invoice) => {
     const match = invoice.invoiceNumber.match(/FAC-\d{4}-(\d+)/);
     if (match) {
       const num = parseInt(match[1], 10);

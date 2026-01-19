@@ -1,646 +1,451 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Maximize2,
+  Minimize2,
+  ArrowLeft,
+  ShoppingCart,
+  Package,
+} from 'lucide-react';
 import { Link } from 'react-router';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Save, FileText, Plus, Trash2, Package } from 'lucide-react';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import type { Route } from './+types/_app.invoices.new';
-import { cn, formatCurrency, generateId } from '~/lib/utils';
+import { cn, formatCurrency } from '~/lib/utils';
+import { getTodayDate, getDateFromNow } from '~/lib/pos-utils';
 import { useCreateInvoice } from '~/hooks/useInvoices';
 import { useCustomers } from '~/hooks/useCustomers';
 import { useProducts } from '~/hooks/useProducts';
+import { useCategories } from '~/hooks/useCategories';
+import { usePOSCart } from '~/hooks/usePOSCart';
 import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
-import { Select } from '~/components/ui/Select';
+import { ThemeToggle } from '~/components/ui/ThemeToggle';
+import { toast } from '~/components/ui/Toast';
+import {
+  ProductCatalog,
+  CartPanel,
+  QuickSearch,
+  CustomerSelect,
+} from '~/components/pos';
 import type { InvoiceStatus } from '~/types/invoice';
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Nueva Factura - StockFlow' },
-    { name: 'description', content: 'Crear una nueva factura' },
+    { title: 'Punto de Venta - StockFlow' },
+    { name: 'description', content: 'Sistema de punto de venta para facturacion rapida' },
   ];
 };
 
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
+// Mobile tab type
+type MobileTab = 'products' | 'cart';
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
-};
+export default function POSPage() {
+  // SSR-safe state for client-only features
+  const [isMounted, setIsMounted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<MobileTab>('products');
 
-// Line item schema
-const lineItemSchema = z.object({
-  id: z.string(),
-  productId: z.string().min(1, 'Seleccione un producto'),
-  description: z.string().min(1, 'La descripcion es requerida'),
-  quantity: z.number().min(1, 'La cantidad debe ser mayor a 0'),
-  unitPrice: z.number().min(0, 'El precio debe ser mayor o igual a 0'),
-  discount: z.number().min(0).max(100),
-  tax: z.number().min(0).max(100), // Default IVA in Colombia
-});
-
-// Form schema
-const invoiceSchema = z.object({
-  customerId: z.string().min(1, 'Seleccione un cliente'),
-  issueDate: z.string().min(1, 'La fecha de emision es requerida'),
-  dueDate: z.string().min(1, 'La fecha de vencimiento es requerida'),
-  notes: z.string().max(500, 'Maximo 500 caracteres').optional(),
-  items: z.array(lineItemSchema).min(1, 'Debe agregar al menos un item'),
-});
-
-type InvoiceFormData = z.infer<typeof invoiceSchema>;
-type LineItem = z.infer<typeof lineItemSchema>;
-
-// Get today's date in YYYY-MM-DD format
-function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-// Get date 30 days from now
-function getDefaultDueDate(): string {
-  const date = new Date();
-  date.setDate(date.getDate() + 30);
-  return date.toISOString().split('T')[0];
-}
-
-// Calculate line item totals
-function calculateLineItemTotals(item: LineItem) {
-  const subtotal = item.quantity * item.unitPrice;
-  const discountAmount = subtotal * (item.discount / 100);
-  const taxableAmount = subtotal - discountAmount;
-  const taxAmount = taxableAmount * (item.tax / 100);
-  const total = taxableAmount + taxAmount;
-  return { subtotal, discountAmount, taxAmount, total };
-}
-
-// Calculate invoice totals
-function calculateInvoiceTotals(items: LineItem[]) {
-  return items.reduce(
-    (acc, item) => {
-      const { subtotal, discountAmount, taxAmount, total } = calculateLineItemTotals(item);
-      return {
-        subtotal: acc.subtotal + subtotal,
-        discountAmount: acc.discountAmount + discountAmount,
-        taxAmount: acc.taxAmount + taxAmount,
-        total: acc.total + total,
-      };
-    },
-    { subtotal: 0, discountAmount: 0, taxAmount: 0, total: 0 }
-  );
-}
-
-// Create empty line item
-function createEmptyLineItem(): LineItem {
-  return {
-    id: generateId(),
-    productId: '',
-    description: '',
-    quantity: 1,
-    unitPrice: 0,
-    discount: 0,
-    tax: 19,
-  };
-}
-
-export default function NewInvoicePage() {
-  const [saveAsStatus, setSaveAsStatus] = useState<InvoiceStatus>('PENDING');
-
-  // Queries
+  // Data queries
   const { data: customersData, isLoading: isLoadingCustomers } = useCustomers({ limit: 100 });
-  const { data: productsData, isLoading: isLoadingProducts } = useProducts({ limit: 100 });
+  const { data: productsData, isLoading: isLoadingProducts } = useProducts({ limit: 200 });
+  const { data: categoriesData, isLoading: isLoadingCategories } = useCategories();
   const createInvoice = useCreateInvoice();
 
-  // Form
+  // POS Cart hook
   const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<InvoiceFormData>({
-    resolver: zodResolver(invoiceSchema),
-    defaultValues: {
-      customerId: '',
-      issueDate: getTodayDate(),
-      dueDate: getDefaultDueDate(),
-      notes: '',
-      items: [createEmptyLineItem()],
-    },
-  });
+    cart,
+    totals,
+    selectedCustomerId,
+    searchQuery,
+    selectedCategory,
+    isProcessing,
+    notes,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    incrementQuantity,
+    decrementQuantity,
+    clearCart,
+    setCustomer,
+    setSearchQuery,
+    setSelectedCategory,
+    setProcessing,
+    setNotes,
+    resetState,
+    getCartQuantity,
+    canCheckout,
+  } = usePOSCart();
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'items',
-  });
+  // Set mounted state for SSR safety
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  const watchedItems = watch('items');
-
-  // Memoized options
-  const customerOptions = useMemo(
-    () => [
-      { value: '', label: 'Seleccionar cliente...' },
-      ...(customersData?.data || [])
-        .filter((c) => c.isActive)
-        .map((c) => ({ value: c.id, label: c.name })),
-    ],
-    [customersData]
-  );
-
-  const productOptions = useMemo(
-    () => [
-      { value: '', label: 'Seleccionar producto...' },
-      ...(productsData?.data || [])
-        .filter((p) => p.status === 'ACTIVE')
-        .map((p) => ({ value: p.id, label: `${p.name} (${p.sku})` })),
-    ],
-    [productsData]
-  );
-
-  // Product lookup map
-  const productsMap = useMemo(() => {
-    const map = new Map<string, { name: string; price: number; description?: string }>();
-    (productsData?.data || []).forEach((p) => {
-      map.set(p.id, { name: p.name, price: p.price, description: p.description });
-    });
-    return map;
-  }, [productsData]);
-
-  // Handle product selection - auto-fill price and description
-  const handleProductChange = useCallback(
-    (index: number, productId: string) => {
-      const product = productsMap.get(productId);
-      if (product) {
-        setValue(`items.${index}.productId`, productId);
-        setValue(`items.${index}.unitPrice`, product.price);
-        setValue(`items.${index}.description`, product.description || product.name);
-      }
-    },
-    [productsMap, setValue]
-  );
-
-  // Add new line item
-  const handleAddItem = () => {
-    append(createEmptyLineItem());
-  };
-
-  // Remove line item
-  const handleRemoveItem = (index: number) => {
-    if (fields.length > 1) {
-      remove(index);
+  // Fullscreen toggle handler
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
     }
-  };
+  }, []);
 
-  // Calculate totals
-  const totals = useMemo(() => calculateInvoiceTotals(watchedItems || []), [watchedItems]);
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
 
-  // Submit handler
-  const onSubmit = (data: InvoiceFormData) => {
-    createInvoice.mutate({
-      customerId: data.customerId,
-      issueDate: data.issueDate,
-      dueDate: data.dueDate,
-      notes: data.notes,
-      status: saveAsStatus,
-      items: data.items.map((item) => ({
-        productId: item.productId,
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        discount: item.discount,
-        tax: item.tax,
-      })),
-    });
-  };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
-  const handleSaveAsDraft = () => {
-    setSaveAsStatus('DRAFT');
-  };
+  // Handle checkout
+  const handleCheckout = useCallback(
+    (status: 'PENDING' | 'PAID') => {
+      if (!canCheckout) {
+        if (!selectedCustomerId) {
+          toast.error('Selecciona un cliente para continuar');
+        } else if (cart.length === 0) {
+          toast.error('Agrega productos al carrito');
+        }
+        return;
+      }
 
-  const handleSaveAsPending = () => {
-    setSaveAsStatus('PENDING');
-  };
+      setProcessing(true);
+
+      createInvoice.mutate(
+        {
+          customerId: selectedCustomerId!,
+          status: status as InvoiceStatus,
+          issueDate: getTodayDate(),
+          dueDate: getDateFromNow(30),
+          notes: notes || undefined,
+          items: cart.map((item) => ({
+            productId: item.productId,
+            description: item.product.description || item.product.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            discount: item.discount,
+            tax: item.tax,
+          })),
+        },
+        {
+          onSuccess: () => {
+            resetState();
+            // Navigation is handled by the mutation hook
+          },
+          onError: () => {
+            setProcessing(false);
+          },
+        }
+      );
+    },
+    [
+      canCheckout,
+      selectedCustomerId,
+      cart,
+      notes,
+      createInvoice,
+      setProcessing,
+      resetState,
+    ]
+  );
+
+  // Handle clear cart with confirmation
+  const handleClearCart = useCallback(() => {
+    clearCart();
+    toast.info('Carrito limpiado');
+  }, [clearCart]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if typing in an input
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'F4':
+          e.preventDefault();
+          handleCheckout('PAID');
+          break;
+        case 'F8':
+          e.preventDefault();
+          handleCheckout('PENDING');
+          break;
+        case 'F9':
+          e.preventDefault();
+          if (cart.length > 0) {
+            handleClearCart();
+          }
+          break;
+        case 'F11':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case 'Escape':
+          if (searchQuery) {
+            setSearchQuery('');
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    handleCheckout,
+    handleClearCart,
+    toggleFullscreen,
+    cart.length,
+    searchQuery,
+    setSearchQuery,
+  ]);
+
+  // Get data arrays
+  const products = productsData?.data ?? [];
+  const customers = customersData?.data ?? [];
+  const categories = categoriesData ?? [];
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <div className="flex h-[calc(100vh-4rem)] flex-col lg:h-[calc(100vh-2rem)]">
       {/* Header */}
-      <motion.div variants={itemVariants}>
-        <div className="flex items-center gap-4">
-          <Link to="/invoices">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
-              Nueva Factura
-            </h1>
-            <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-              Crea una nueva factura para un cliente
-            </p>
+      <header className="shrink-0 border-b border-neutral-200 bg-white px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left: Back & Title */}
+          <div className="flex items-center gap-3">
+            <Link to="/invoices">
+              <Button variant="ghost" size="icon-sm">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="hidden sm:block">
+              <h1 className="text-lg font-bold text-neutral-900 dark:text-white">
+                Punto de Venta
+              </h1>
+            </div>
+          </div>
+
+          {/* Center: Search */}
+          <div className="flex-1 max-w-xl">
+            <QuickSearch
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Buscar productos... (F2)"
+            />
+          </div>
+
+          {/* Right: Customer + Actions */}
+          <div className="flex items-center gap-3">
+            <div className="hidden md:block">
+              <CustomerSelect
+                customers={customers}
+                selectedCustomerId={selectedCustomerId}
+                onSelectCustomer={setCustomer}
+                isLoading={isLoadingCustomers}
+              />
+            </div>
+
+            {/* Fullscreen Toggle */}
+            {isMounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleFullscreen}
+                title={isFullscreen ? 'Salir pantalla completa (F11)' : 'Pantalla completa (F11)'}
+              >
+                {isFullscreen ? (
+                  <Minimize2 className="h-5 w-5" />
+                ) : (
+                  <Maximize2 className="h-5 w-5" />
+                )}
+              </Button>
+            )}
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
           </div>
         </div>
-      </motion.div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Customer & Dates */}
-            <motion.div variants={itemVariants}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informacion de la Factura</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                      Cliente *
-                    </label>
-                    <Controller
-                      name="customerId"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          options={customerOptions}
-                          value={field.value}
-                          onChange={field.onChange}
-                          error={!!errors.customerId}
-                          disabled={isLoadingCustomers}
-                        />
-                      )}
-                    />
-                    {errors.customerId && (
-                      <p className="mt-1 text-sm text-error-500">{errors.customerId.message}</p>
-                    )}
-                  </div>
+        {/* Mobile: Customer Select */}
+        <div className="mt-3 md:hidden">
+          <CustomerSelect
+            customers={customers}
+            selectedCustomerId={selectedCustomerId}
+            onSelectCustomer={setCustomer}
+            isLoading={isLoadingCustomers}
+            className="w-full"
+          />
+        </div>
+      </header>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                        Fecha de Emision *
-                      </label>
-                      <Input
-                        {...register('issueDate')}
-                        type="date"
-                        error={!!errors.issueDate}
-                      />
-                      {errors.issueDate && (
-                        <p className="mt-1 text-sm text-error-500">{errors.issueDate.message}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                        Fecha de Vencimiento *
-                      </label>
-                      <Input
-                        {...register('dueDate')}
-                        type="date"
-                        error={!!errors.dueDate}
-                      />
-                      {errors.dueDate && (
-                        <p className="mt-1 text-sm text-error-500">{errors.dueDate.message}</p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+      {/* Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Desktop: Side by Side Layout */}
+        <div className="hidden lg:flex lg:flex-1">
+          {/* Left Panel: Product Catalog (58%) */}
+          <div className="flex w-[58%] flex-col overflow-hidden border-r border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900/50">
+            <ProductCatalog
+              products={products}
+              categories={categories}
+              selectedCategory={selectedCategory}
+              searchQuery={searchQuery}
+              onSelectCategory={setSelectedCategory}
+              onAddToCart={addToCart}
+              getCartQuantity={getCartQuantity}
+              isLoadingProducts={isLoadingProducts}
+              isLoadingCategories={isLoadingCategories}
+            />
+          </div>
 
-            {/* Line Items */}
-            <motion.div variants={itemVariants}>
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Items de la Factura</CardTitle>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleAddItem}
-                      leftIcon={<Plus className="h-4 w-4" />}
-                    >
-                      Agregar Item
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {errors.items?.message && (
-                    <p className="mb-4 text-sm text-error-500">{errors.items.message}</p>
-                  )}
+          {/* Right Panel: Cart (42%) */}
+          <div className="flex w-[42%] flex-col overflow-hidden bg-neutral-50 p-4 dark:bg-neutral-900/50">
+            <CartPanel
+              items={cart}
+              totals={totals}
+              notes={notes}
+              isProcessing={isProcessing}
+              canCheckout={canCheckout}
+              onUpdateQuantity={updateQuantity}
+              onIncrement={incrementQuantity}
+              onDecrement={decrementQuantity}
+              onRemove={removeFromCart}
+              onClearCart={handleClearCart}
+              onSetNotes={setNotes}
+              onCheckout={handleCheckout}
+              className="h-full"
+            />
+          </div>
+        </div>
 
-                  <div className="space-y-4">
-                    {fields.map((field, index) => {
-                      const item = watchedItems?.[index];
-                      const itemTotals = item ? calculateLineItemTotals(item) : { subtotal: 0, total: 0 };
+        {/* Tablet/Mobile: Tab-based Layout */}
+        <div className="flex flex-1 flex-col lg:hidden">
+          {/* Mobile Tab Navigation */}
+          <div className="flex shrink-0 border-b border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+            <button
+              type="button"
+              onClick={() => setMobileTab('products')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors',
+                mobileTab === 'products'
+                  ? 'border-b-2 border-primary-600 text-primary-600'
+                  : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+              )}
+            >
+              <Package className="h-5 w-5" />
+              Productos
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab('cart')}
+              className={cn(
+                'relative flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors',
+                mobileTab === 'cart'
+                  ? 'border-b-2 border-primary-600 text-primary-600'
+                  : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+              )}
+            >
+              <ShoppingCart className="h-5 w-5" />
+              Carrito
+              {cart.length > 0 && (
+                <span className="absolute right-4 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
+                  {totals.itemCount}
+                </span>
+              )}
+            </button>
+          </div>
 
-                      return (
-                        <div
-                          key={field.id}
-                          className="p-4 border border-neutral-200 dark:border-neutral-700 rounded-lg space-y-4"
-                        >
-                          {/* Item header */}
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                              Item #{index + 1}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveItem(index)}
-                              disabled={fields.length === 1}
-                              className="text-error-500 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-
-                          {/* Product selection */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                                Producto *
-                              </label>
-                              <Controller
-                                name={`items.${index}.productId`}
-                                control={control}
-                                render={({ field: selectField }) => (
-                                  <Select
-                                    options={productOptions}
-                                    value={selectField.value}
-                                    onChange={(value) => handleProductChange(index, value)}
-                                    error={!!errors.items?.[index]?.productId}
-                                    disabled={isLoadingProducts}
-                                  />
-                                )}
-                              />
-                              {errors.items?.[index]?.productId && (
-                                <p className="mt-1 text-sm text-error-500">
-                                  {errors.items[index]?.productId?.message}
-                                </p>
-                              )}
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                                Descripcion *
-                              </label>
-                              <Input
-                                {...register(`items.${index}.description`)}
-                                placeholder="Descripcion del item"
-                                error={!!errors.items?.[index]?.description}
-                              />
-                              {errors.items?.[index]?.description && (
-                                <p className="mt-1 text-sm text-error-500">
-                                  {errors.items[index]?.description?.message}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Quantity, Price, Discount, Tax */}
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                                Cantidad *
-                              </label>
-                              <Input
-                                {...register(`items.${index}.quantity`, { valueAsNumber: true })}
-                                type="number"
-                                min="1"
-                                step="1"
-                                error={!!errors.items?.[index]?.quantity}
-                              />
-                              {errors.items?.[index]?.quantity && (
-                                <p className="mt-1 text-sm text-error-500">
-                                  {errors.items[index]?.quantity?.message}
-                                </p>
-                              )}
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                                Precio Unit. *
-                              </label>
-                              <Input
-                                {...register(`items.${index}.unitPrice`, { valueAsNumber: true })}
-                                type="number"
-                                min="0"
-                                step="100"
-                                error={!!errors.items?.[index]?.unitPrice}
-                              />
-                              {errors.items?.[index]?.unitPrice && (
-                                <p className="mt-1 text-sm text-error-500">
-                                  {errors.items[index]?.unitPrice?.message}
-                                </p>
-                              )}
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                                Descuento %
-                              </label>
-                              <Input
-                                {...register(`items.${index}.discount`, { valueAsNumber: true })}
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="1"
-                                error={!!errors.items?.[index]?.discount}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                                IVA %
-                              </label>
-                              <Input
-                                {...register(`items.${index}.tax`, { valueAsNumber: true })}
-                                type="number"
-                                min="0"
-                                max="100"
-                                step="1"
-                                error={!!errors.items?.[index]?.tax}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Item totals */}
-                          <div className="flex justify-end gap-6 pt-2 border-t border-neutral-200 dark:border-neutral-700">
-                            <div className="text-right">
-                              <p className="text-sm text-neutral-500 dark:text-neutral-400">Subtotal</p>
-                              <p className="font-medium text-neutral-900 dark:text-white">
-                                {formatCurrency(itemTotals.subtotal)}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-neutral-500 dark:text-neutral-400">Total</p>
-                              <p className="font-semibold text-neutral-900 dark:text-white">
-                                {formatCurrency(itemTotals.total)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Empty state */}
-                  {fields.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <Package className="h-12 w-12 text-neutral-300 dark:text-neutral-600 mb-3" />
-                      <p className="text-neutral-500 dark:text-neutral-400">
-                        No hay items en la factura
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddItem}
-                        className="mt-3"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Agregar primer item
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Notes */}
-            <motion.div variants={itemVariants}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Notas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <textarea
-                    {...register('notes')}
-                    placeholder="Notas adicionales para la factura (opcional)"
-                    rows={4}
-                    className={cn(
-                      'w-full rounded-lg border border-neutral-300 dark:border-neutral-600',
-                      'bg-white dark:bg-neutral-900 px-4 py-2.5',
-                      'text-neutral-900 dark:text-white placeholder:text-neutral-400',
-                      'focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none',
-                      'transition-colors resize-none'
-                    )}
+          {/* Mobile Content */}
+          <div className="flex-1 overflow-hidden">
+            <AnimatePresence mode="wait">
+              {mobileTab === 'products' ? (
+                <motion.div
+                  key="products"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.2 }}
+                  className="h-full overflow-auto bg-neutral-50 p-4 dark:bg-neutral-900/50"
+                >
+                  <ProductCatalog
+                    products={products}
+                    categories={categories}
+                    selectedCategory={selectedCategory}
+                    searchQuery={searchQuery}
+                    onSelectCategory={setSelectedCategory}
+                    onAddToCart={(product) => {
+                      addToCart(product);
+                      // Optionally switch to cart tab after adding
+                    }}
+                    getCartQuantity={getCartQuantity}
+                    isLoadingProducts={isLoadingProducts}
+                    isLoadingCategories={isLoadingCategories}
+                    itemsPerPage={8}
                   />
-                  {errors.notes && (
-                    <p className="mt-1 text-sm text-error-500">{errors.notes.message}</p>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="cart"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="h-full overflow-auto bg-neutral-50 p-4 dark:bg-neutral-900/50"
+                >
+                  <CartPanel
+                    items={cart}
+                    totals={totals}
+                    notes={notes}
+                    isProcessing={isProcessing}
+                    canCheckout={canCheckout}
+                    onUpdateQuantity={updateQuantity}
+                    onIncrement={incrementQuantity}
+                    onDecrement={decrementQuantity}
+                    onRemove={removeFromCart}
+                    onClearCart={handleClearCart}
+                    onSetNotes={setNotes}
+                    onCheckout={handleCheckout}
+                    className="h-full"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Totals Summary */}
-            <motion.div variants={itemVariants}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Resumen</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500 dark:text-neutral-400">Subtotal</span>
-                    <span className="text-neutral-900 dark:text-white">
-                      {formatCurrency(totals.subtotal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500 dark:text-neutral-400">Descuento</span>
-                    <span className="text-error-500">
-                      -{formatCurrency(totals.discountAmount)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500 dark:text-neutral-400">IVA</span>
-                    <span className="text-neutral-900 dark:text-white">
-                      {formatCurrency(totals.taxAmount)}
-                    </span>
-                  </div>
-                  <div className="pt-3 border-t border-neutral-200 dark:border-neutral-700">
-                    <div className="flex justify-between">
-                      <span className="font-semibold text-neutral-900 dark:text-white">Total</span>
-                      <span className="text-xl font-bold text-neutral-900 dark:text-white">
-                        {formatCurrency(totals.total)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          {/* Mobile Cart Summary Bar (when on products tab) */}
+          {mobileTab === 'products' && cart.length > 0 && (
+            <motion.div
+              initial={{ y: 100 }}
+              animate={{ y: 0 }}
+              className="shrink-0 border-t border-neutral-200 bg-white p-4 shadow-lg dark:border-neutral-700 dark:bg-neutral-800"
+            >
+              <button
+                type="button"
+                onClick={() => setMobileTab('cart')}
+                className="flex w-full items-center justify-between rounded-xl bg-primary-600 px-4 py-3 text-white shadow-lg transition-colors hover:bg-primary-700"
+              >
+                <div className="flex items-center gap-3">
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="font-medium">
+                    {totals.itemCount} {totals.itemCount === 1 ? 'item' : 'items'}
+                  </span>
+                </div>
+                <span className="text-lg font-bold">
+                  {formatCurrency(totals.total)}
+                </span>
+              </button>
             </motion.div>
-
-            {/* Actions */}
-            <motion.div variants={itemVariants}>
-              <Card>
-                <CardContent className="p-4 space-y-3">
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    isLoading={isSubmitting || (createInvoice.isPending && saveAsStatus === 'PENDING')}
-                    onClick={handleSaveAsPending}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Crear Factura
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    className="w-full"
-                    isLoading={isSubmitting || (createInvoice.isPending && saveAsStatus === 'DRAFT')}
-                    onClick={handleSaveAsDraft}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Guardar como Borrador
-                  </Button>
-                  <Link to="/invoices" className="block">
-                    <Button type="button" variant="ghost" className="w-full">
-                      Cancelar
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Help Info */}
-            <motion.div variants={itemVariants}>
-              <Card>
-                <CardContent className="p-4">
-                  <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-2">
-                    Informacion
-                  </h4>
-                  <ul className="text-sm text-neutral-500 dark:text-neutral-400 space-y-1">
-                    <li>- Las facturas en borrador pueden ser editadas</li>
-                    <li>- Las facturas pendientes estan listas para cobro</li>
-                    <li>- El IVA por defecto es 19%</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
+          )}
         </div>
-      </form>
-    </motion.div>
+      </div>
+    </div>
   );
 }

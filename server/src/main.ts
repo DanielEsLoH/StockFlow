@@ -31,6 +31,29 @@ async function bootstrap() {
     app.set('trust proxy', 1);
   }
 
+  // CORS configuration
+  // Allow requests from the frontend origin
+  const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:3001',
+    'http://localhost:3001',
+    'http://localhost:5173', // Vite dev server
+    'http://localhost',
+  ].filter(Boolean);
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  });
+
   // Compression middleware for gzip response compression
   // - level 6: balanced compression ratio vs CPU usage
   // - threshold 1024: only compress responses >= 1KB

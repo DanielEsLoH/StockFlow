@@ -93,6 +93,10 @@ COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 # Copy package.json for version info
 COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
 
+# Create uploads directory with proper permissions
+RUN mkdir -p /app/uploads/products && \
+    chown -R nestjs:nodejs /app/uploads
+
 # Expose the application port
 EXPOSE 3000
 

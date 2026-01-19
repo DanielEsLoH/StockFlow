@@ -91,6 +91,11 @@ export default function CategoriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Get current filters from URL
   const filters: CategoryFilters = useMemo(
@@ -217,7 +222,7 @@ export default function CategoriesPage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial="hidden"
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="space-y-6"
     >

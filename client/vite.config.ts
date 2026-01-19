@@ -44,56 +44,35 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Manual chunk splitting for optimal caching
+        // Note: Libraries with React peer dependencies must be in the same chunk
+        // or loaded after React to avoid "Cannot read properties of undefined" errors
         manualChunks: (id) => {
-          // React core
-          if (id.includes("node_modules/react-dom")) {
-            return "vendor-react";
-          }
-          if (id.includes("node_modules/react/")) {
-            return "vendor-react";
-          }
-
-          // React Router
+          // React ecosystem - keep together to ensure proper load order
           if (
-            id.includes("node_modules/react-router") ||
-            id.includes("node_modules/@react-router")
+            id.includes("node_modules/react-dom") ||
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/scheduler")
           ) {
-            return "vendor-router";
+            return "vendor-react";
           }
 
-          // Radix UI components
-          if (id.includes("node_modules/@radix-ui")) {
-            return "vendor-radix";
-          }
-
-          // Framer Motion
-          if (id.includes("node_modules/framer-motion")) {
-            return "vendor-framer";
-          }
-
-          // Recharts
-          if (id.includes("node_modules/recharts")) {
-            return "vendor-charts";
-          }
-
-          // Date utilities
+          // Date utilities (no React dependency)
           if (id.includes("node_modules/date-fns")) {
             return "vendor-date";
           }
 
-          // TanStack Query
-          if (id.includes("node_modules/@tanstack/react-query")) {
-            return "vendor-query";
+          // Zod (no React dependency)
+          if (id.includes("node_modules/zod")) {
+            return "vendor-zod";
           }
 
-          // Form handling (react-hook-form, hookform resolvers, zod)
-          if (
-            id.includes("node_modules/react-hook-form") ||
-            id.includes("node_modules/@hookform") ||
-            id.includes("node_modules/zod")
-          ) {
-            return "vendor-forms";
-          }
+          // Let Vite handle chunking for React-dependent libraries:
+          // - react-router, @react-router
+          // - @radix-ui
+          // - framer-motion
+          // - recharts
+          // - @tanstack/react-query
+          // - react-hook-form
         },
       },
     },

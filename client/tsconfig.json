@@ -1,13 +1,22 @@
 {
   "include": [
-    "**/*",
-    "**/.server/**/*",
-    "**/.client/**/*",
-    ".react-router/types/**/*"
+    "app/**/*",
+    "app/**/.server/**/*",
+    "app/**/.client/**/*",
+    ".react-router/types/**/*",
+    "test/**/*",
+    "*.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".react-router"
   ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["node", "vite/client"],
+    "types": ["node", "vite/client", "vitest/globals"],
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "bundler",

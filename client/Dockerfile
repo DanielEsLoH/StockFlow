@@ -46,6 +46,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build arguments for Vite environment variables
+# These are embedded into the client bundle at build time
+ARG VITE_API_URL=/api
+
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
@@ -56,8 +60,11 @@ COPY package.json package-lock.json ./
 # Note: .dockerignore excludes unnecessary files
 COPY . .
 
-# Set NODE_ENV to production for optimized build output
+# Set environment variables for the build
+# NODE_ENV=production enables optimized build output
+# VITE_* variables are embedded into the client bundle by Vite
 ENV NODE_ENV=production
+ENV VITE_API_URL=${VITE_API_URL}
 
 # Build the React Router SSR application
 # This creates:

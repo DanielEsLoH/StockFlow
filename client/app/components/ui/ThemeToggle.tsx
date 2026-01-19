@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { useTheme } from '~/hooks/useTheme';
 import type { Theme } from '~/lib/theme';
@@ -17,6 +18,12 @@ const labels: Record<Theme, string> = {
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  // Track if component has mounted to avoid SSR hydration issues with animations
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <motion.button
@@ -30,15 +37,17 @@ export function ThemeToggle() {
                  dark:hover:bg-neutral-700 dark:hover:text-neutral-100"
       title={labels[theme]}
     >
-      <motion.div
-        key={theme}
-        initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-        animate={{ opacity: 1, rotate: 0, scale: 1 }}
-        exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-        transition={{ duration: 0.2 }}
-      >
-        {icons[theme]}
-      </motion.div>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={theme}
+          initial={isMounted ? { opacity: 0, rotate: -90, scale: 0.5 } : false}
+          animate={{ opacity: 1, rotate: 0, scale: 1 }}
+          exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+          transition={{ duration: 0.2 }}
+        >
+          {icons[theme]}
+        </motion.div>
+      </AnimatePresence>
     </motion.button>
   );
 }

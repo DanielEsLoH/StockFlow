@@ -4,7 +4,7 @@ import { authService } from '~/services/auth.service';
 import { useAuthStore } from '~/stores/auth.store';
 import { queryKeys } from '~/lib/query-client';
 import { toast } from '~/components/ui/Toast';
-import type { LoginCredentials, RegisterData } from '~/services/auth.service';
+import type { LoginCredentials, RegisterData, RegisterResponse } from '~/services/auth.service';
 
 export function useAuth() {
   const navigate = useNavigate();
@@ -42,9 +42,10 @@ export function useAuth() {
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: (userData: RegisterData) => authService.register(userData),
-    onSuccess: () => {
+    onSuccess: (data: RegisterResponse) => {
+      // Registration pending approval - show message and redirect to login
       toast.success(
-        'Registro exitoso. Tu cuenta esta pendiente de aprobacion.'
+        `Registro exitoso, ${data.user.firstName}! Tu cuenta esta pendiente de aprobacion. Te notificaremos cuando sea activada.`
       );
       navigate('/login');
     },

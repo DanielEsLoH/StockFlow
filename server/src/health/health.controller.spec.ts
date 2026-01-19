@@ -61,7 +61,13 @@ describe('HealthController', () => {
     diskHealth = module.get(DiskHealthIndicator);
 
     // Setup default mock implementations
-    healthCheckService.check.mockResolvedValue(mockHealthResult);
+    // This mock executes all callback functions to improve coverage
+    healthCheckService.check.mockImplementation(async (callbacks) => {
+      for (const callback of callbacks) {
+        await callback();
+      }
+      return mockHealthResult;
+    });
     prismaHealth.isHealthy.mockResolvedValue({ database: { status: 'up' } });
     memoryHealth.checkHeap.mockResolvedValue({ memory_heap: { status: 'up' } });
     memoryHealth.checkRSS.mockResolvedValue({ memory_rss: { status: 'up' } });
@@ -90,6 +96,30 @@ describe('HealthController', () => {
 
       const checks = healthCheckService.check.mock.calls[0][0];
       expect(checks.length).toBe(3);
+    });
+
+    it('should call prismaHealth.isHealthy with correct key', async () => {
+      await controller.check();
+
+      expect(prismaHealth.isHealthy).toHaveBeenCalledWith('database');
+    });
+
+    it('should call memoryHealth.checkHeap with correct parameters', async () => {
+      await controller.check();
+
+      expect(memoryHealth.checkHeap).toHaveBeenCalledWith(
+        'memory_heap',
+        expect.any(Number),
+      );
+    });
+
+    it('should call memoryHealth.checkRSS with correct parameters', async () => {
+      await controller.check();
+
+      expect(memoryHealth.checkRSS).toHaveBeenCalledWith(
+        'memory_rss',
+        expect.any(Number),
+      );
     });
   });
 
@@ -122,6 +152,12 @@ describe('HealthController', () => {
       const checks = healthCheckService.check.mock.calls[0][0];
       expect(checks.length).toBe(1);
     });
+
+    it('should call prismaHealth.isHealthy with correct key', async () => {
+      await controller.ready();
+
+      expect(prismaHealth.isHealthy).toHaveBeenCalledWith('database');
+    });
   });
 
   describe('database', () => {
@@ -138,6 +174,12 @@ describe('HealthController', () => {
       const checks = healthCheckService.check.mock.calls[0][0];
       expect(checks.length).toBe(1);
     });
+
+    it('should call prismaHealth.isHealthy with correct key', async () => {
+      await controller.database();
+
+      expect(prismaHealth.isHealthy).toHaveBeenCalledWith('database');
+    });
   });
 
   describe('memory', () => {
@@ -153,6 +195,24 @@ describe('HealthController', () => {
 
       const checks = healthCheckService.check.mock.calls[0][0];
       expect(checks.length).toBe(2);
+    });
+
+    it('should call memoryHealth.checkHeap with correct parameters', async () => {
+      await controller.memory();
+
+      expect(memoryHealth.checkHeap).toHaveBeenCalledWith(
+        'memory_heap',
+        expect.any(Number),
+      );
+    });
+
+    it('should call memoryHealth.checkRSS with correct parameters', async () => {
+      await controller.memory();
+
+      expect(memoryHealth.checkRSS).toHaveBeenCalledWith(
+        'memory_rss',
+        expect.any(Number),
+      );
     });
   });
 });

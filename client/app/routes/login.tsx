@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -49,7 +49,12 @@ export function meta({}: Route.MetaArgs) {
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { login, isLoggingIn } = useAuth();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const {
     register,
@@ -82,7 +87,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           {/* Logo */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={isMounted ? { opacity: 0, x: -20 } : false}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
           >
@@ -103,7 +108,7 @@ export default function LoginPage() {
 
           {/* Main content */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={isMounted ? { opacity: 0, y: 20 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             className="space-y-6"
@@ -121,7 +126,7 @@ export default function LoginPage() {
 
           {/* Stats */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={isMounted ? { opacity: 0, y: 20 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
             className="grid grid-cols-3 gap-8"
@@ -144,7 +149,7 @@ export default function LoginPage() {
       <div className="flex flex-1 items-center justify-center bg-neutral-50 p-8 dark:bg-neutral-950">
         <motion.div
           variants={containerVariants}
-          initial="hidden"
+          initial={isMounted ? "hidden" : false}
           animate="visible"
           className="w-full max-w-md space-y-8"
         >

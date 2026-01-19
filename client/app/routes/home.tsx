@@ -1,15 +1,27 @@
-import type { Route } from './+types/home';
-import { ThemeToggle } from '~/components/ui/ThemeToggle';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import type { Route } from "./+types/home";
+import { ThemeToggle } from "~/components/ui/ThemeToggle";
+import { motion } from "framer-motion";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: 'StockFlow - Inventory & Billing System' },
-    { name: 'description', content: 'Multi-tenant SaaS inventory and billing system' },
+    { title: "StockFlow - Inventory & Billing System" },
+    {
+      name: "description",
+      content: "Multi-tenant SaaS inventory and billing system",
+    },
   ];
 }
 
 export default function Home() {
+  // Track if component has mounted (client-side)
+  // This prevents SSR from rendering with opacity: 0
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 dark:bg-neutral-950">
       <div className="absolute right-4 top-4">
@@ -17,18 +29,18 @@ export default function Home() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={isMounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="text-center"
       >
         <motion.div
-          initial={{ scale: 0.8 }}
+          initial={isMounted ? { scale: 0.8 } : false}
           animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+          transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
           className="mb-8"
         >
-          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-xl shadow-primary-500/30">
+          <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-linear-to-br from-primary-500 to-primary-700 shadow-xl shadow-primary-500/30">
             <svg
               className="h-12 w-12 text-white"
               fill="none"
@@ -77,7 +89,7 @@ export default function Home() {
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={isMounted ? { opacity: 0 } : false}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
         className="absolute bottom-8 text-sm text-neutral-500 dark:text-neutral-500"

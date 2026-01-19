@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CallHandler, ExecutionContext, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { of, throwError } from 'rxjs';
+import { of, throwError, firstValueFrom } from 'rxjs';
 import { AuditAction, UserRole } from '@prisma/client';
 import { AuditInterceptor } from './audit-logs.interceptor';
 import { AuditLogsService } from './audit-logs.service';
@@ -26,7 +26,16 @@ describe('AuditInterceptor', () => {
     tenantId: mockTenantId,
   };
 
-  const mockRequest = {
+  const mockRequest: {
+    method: string;
+    params: { id: string };
+    path: string;
+    user: typeof mockUser;
+    tenantId: string;
+    headers: Record<string, string | string[] | undefined>;
+    ip: string | undefined;
+    socket: { remoteAddress: string } | undefined;
+  } = {
     method: 'POST',
     params: { id: mockEntityId },
     path: '/products',
@@ -547,6 +556,138 @@ describe('AuditInterceptor', () => {
         );
       });
 
+      it('should capture IP address from x-real-ip header when x-forwarded-for is not present', async () => {
+        const context = createMockExecutionContext({
+          headers: {
+            'x-real-ip': '172.16.0.1',
+            'user-agent': 'Mozilla/5.0',
+          },
+        });
+        const handler = createMockCallHandler();
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(auditLogsService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            ipAddress: '172.16.0.1',
+          }),
+        );
+      });
+
+      it('should capture IP address from socket remoteAddress when headers are not present', async () => {
+        const context = createMockExecutionContext({
+          headers: {
+            'user-agent': 'Mozilla/5.0',
+          },
+          ip: undefined,
+          socket: { remoteAddress: '192.168.100.1' },
+        });
+        const handler = createMockCallHandler();
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(auditLogsService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            ipAddress: '192.168.100.1',
+          }),
+        );
+      });
+
+      it('should capture IP address from request.ip when other methods fail', async () => {
+        const context = createMockExecutionContext({
+          headers: {
+            'user-agent': 'Mozilla/5.0',
+          },
+          ip: '10.10.10.10',
+          socket: undefined,
+        });
+        const handler = createMockCallHandler();
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(auditLogsService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            ipAddress: '10.10.10.10',
+          }),
+        );
+      });
+
+      it('should handle x-forwarded-for as array', async () => {
+        const context = createMockExecutionContext({
+          headers: {
+            'x-forwarded-for': ['203.0.113.1', '198.51.100.1'],
+            'user-agent': 'Mozilla/5.0',
+          },
+        });
+        const handler = createMockCallHandler();
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(auditLogsService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            ipAddress: '203.0.113.1',
+          }),
+        );
+      });
+
+      it('should handle x-real-ip as array', async () => {
+        const context = createMockExecutionContext({
+          headers: {
+            'x-real-ip': ['198.51.100.50'],
+            'user-agent': 'Mozilla/5.0',
+          },
+        });
+        const handler = createMockCallHandler();
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(auditLogsService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            ipAddress: '198.51.100.50',
+          }),
+        );
+      });
+
       it('should capture user agent', async () => {
         const context = createMockExecutionContext();
         const handler = createMockCallHandler();
@@ -652,7 +793,7 @@ describe('AuditInterceptor', () => {
 
         const result = await interceptor.intercept(context, handler);
 
-        await expect(result.toPromise()).rejects.toThrow('Handler error');
+        await expect(firstValueFrom(result)).rejects.toThrow('Handler error');
         expect(auditLogsService.create).not.toHaveBeenCalled();
       });
 
@@ -694,6 +835,33 @@ describe('AuditInterceptor', () => {
         });
 
         expect(Logger.prototype.error).toHaveBeenCalled();
+      });
+
+      it('should warn when fetchOldValues throws an error', async () => {
+        // Spy on the private fetchOldValues method and make it throw
+        jest
+          .spyOn(
+            interceptor as unknown as { fetchOldValues: () => Promise<null> },
+            'fetchOldValues',
+          )
+          .mockRejectedValue(new Error('Database error'));
+
+        const context = createMockExecutionContext({ method: 'PATCH' });
+        const handler = createMockCallHandler();
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(Logger.prototype.warn).toHaveBeenCalledWith(
+          expect.stringContaining('Failed to fetch old values'),
+        );
       });
 
       it('should warn when entity ID cannot be determined', async () => {

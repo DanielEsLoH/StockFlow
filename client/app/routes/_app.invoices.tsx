@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -147,6 +147,11 @@ export default function InvoicesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingInvoice, setDeletingInvoice] = useState<InvoiceSummary | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Get current filters from URL
   const filters: InvoiceFilters = useMemo(
@@ -240,7 +245,7 @@ export default function InvoicesPage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial="hidden"
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="space-y-6"
     >

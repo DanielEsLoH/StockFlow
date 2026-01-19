@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -171,6 +171,11 @@ export default function PaymentsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingPayment, setDeletingPayment] = useState<PaymentSummary | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Get current filters from URL
   const filters: PaymentFilters = useMemo(
@@ -260,7 +265,7 @@ export default function PaymentsPage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial="hidden"
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="space-y-6"
     >

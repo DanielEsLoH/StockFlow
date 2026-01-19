@@ -131,6 +131,12 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION:-15m}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
 
+      # System Admin JWT Configuration (REQUIRED - set in .env)
+      SYSTEM_ADMIN_JWT_SECRET: ${SYSTEM_ADMIN_JWT_SECRET}
+      SYSTEM_ADMIN_JWT_REFRESH_SECRET: ${SYSTEM_ADMIN_JWT_REFRESH_SECRET}
+      SYSTEM_ADMIN_JWT_EXPIRATION: ${SYSTEM_ADMIN_JWT_EXPIRATION:-15m}
+      SYSTEM_ADMIN_JWT_REFRESH_EXPIRATION: ${SYSTEM_ADMIN_JWT_REFRESH_EXPIRATION:-7d}
+
       # CORS Configuration
       # In production, this should be your domain
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
@@ -171,6 +177,9 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        # Vite embeds this at build time - use /api to go through nginx proxy
+        VITE_API_URL: /api
     container_name: stockflow-client
     restart: unless-stopped
     ports:

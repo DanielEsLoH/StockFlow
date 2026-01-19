@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
   HttpCode,
@@ -13,9 +14,10 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { Request } from 'express';
-import { AuthService, AuthResponse, LogoutResponse } from './auth.service';
+import { AuthService, AuthResponse, RegisterResponse, LogoutResponse } from './auth.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 import { AuthResponseEntity, LogoutResponseEntity } from './entities';
 import {
@@ -24,6 +26,9 @@ import {
   RateLimit,
   BotProtect,
 } from '../arcjet';
+import { JwtAuthGuard } from './guards';
+import { CurrentUser } from '../common/decorators';
+import { UserRole } from '@prisma/client';
 
 /**
  * Extended Request interface that includes user info from JWT
@@ -38,6 +43,16 @@ interface AuthenticatedRequest extends Request {
 }
 
 /**
+ * Current user context from JWT authentication
+ */
+interface CurrentUserContext {
+  userId: string;
+  email: string;
+  role: UserRole;
+  tenantId: string;
+}
+
+/**
  * AuthController handles authentication endpoints for user registration, login,
  * token refresh, and logout.
  * These endpoints are public, and they do not require authentication guards,
@@ -49,6 +64,37 @@ export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
   constructor(private readonly authService: AuthService) {}
+
+  /**
+   * Gets the current authenticated user's information
+   *
+   * @param user - Current user context from JWT
+   * @returns Authentication response with user data and tokens
+   *
+   * @example
+   * GET /auth/me
+   * Authorization: Bearer <access-token>
+   */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get current user',
+    description: 'Returns the currently authenticated user information',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Current user information',
+    type: AuthResponseEntity,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid or expired token',
+  })
+  async getMe(@CurrentUser() user: CurrentUserContext): Promise<AuthResponse> {
+    this.logger.log(`Get me request for user: ${user.email}`);
+    return this.authService.getMe(user.userId);
+  }
 
   /**
    * Registers a new user in the system
@@ -76,13 +122,12 @@ export class AuthController {
   @BotProtect({ mode: 'LIVE' })
   @ApiOperation({
     summary: 'Register a new user',
-    description: 'Creates a new user account with the provided credentials and tenant association. Rate limited to 3 requests per hour per IP.',
+    description: 'Creates a new user account with the provided credentials. Account will be pending approval by a system administrator. Rate limited to 3 requests per hour per IP.',
   })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({
     status: 201,
-    description: 'User successfully registered',
-    type: AuthResponseEntity,
+    description: 'Registration successful - pending admin approval',
   })
   @ApiResponse({
     status: 400,
@@ -96,7 +141,7 @@ export class AuthController {
     status: 429,
     description: 'Too many requests - rate limit exceeded',
   })
-  async register(@Body() registerDto: RegisterDto): Promise<AuthResponse> {
+  async register(@Body() registerDto: RegisterDto): Promise<RegisterResponse> {
     this.logger.log(`Registration request for email: ${registerDto.email}`);
     return this.authService.register(registerDto);
   }

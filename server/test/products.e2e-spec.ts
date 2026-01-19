@@ -232,7 +232,7 @@ describe('Products E2E Tests', () => {
         password: hashedPassword,
         firstName: 'Staff',
         lastName: 'A',
-        role: UserRole.STAFF,
+        role: UserRole.EMPLOYEE,
         status: 'ACTIVE',
       },
     });

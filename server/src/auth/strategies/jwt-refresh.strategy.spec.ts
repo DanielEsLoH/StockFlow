@@ -248,6 +248,26 @@ describe('JwtRefreshStrategy', () => {
           strategy.validate(mockRequest as Request, validRefreshPayload),
         ).rejects.toThrow(UnauthorizedException);
       });
+
+      it('should throw UnauthorizedException when refreshToken is not a string', async () => {
+        const mockRequest: Partial<Request> = {
+          body: { refreshToken: 12345 },
+        };
+
+        await expect(
+          strategy.validate(mockRequest as Request, validRefreshPayload),
+        ).rejects.toThrow(UnauthorizedException);
+      });
+
+      it('should throw UnauthorizedException when refreshToken is null', async () => {
+        const mockRequest: Partial<Request> = {
+          body: { refreshToken: null },
+        };
+
+        await expect(
+          strategy.validate(mockRequest as Request, validRefreshPayload),
+        ).rejects.toThrow(UnauthorizedException);
+      });
     });
 
     describe('user validation', () => {

@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router';
-import type { ReactNode } from 'react';
-import { useAuth } from './useAuth';
-import { authService } from '~/services/auth.service';
-import { useAuthStore } from '~/stores/auth.store';
-import type { User, Tenant } from '~/stores/auth.store';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router";
+import type { ReactNode } from "react";
+import { useAuth } from "./useAuth";
+import { authService } from "~/services/auth.service";
+import { useAuthStore } from "~/stores/auth.store";
+import type { User, Tenant } from "~/stores/auth.store";
 
 // Mock dependencies
-vi.mock('~/services/auth.service', () => ({
+vi.mock("~/services/auth.service", () => ({
   authService: {
     login: vi.fn(),
     register: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock('~/services/auth.service', () => ({
   },
 }));
 
-vi.mock('~/components/ui/Toast', () => ({
+vi.mock("~/components/ui/Toast", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
@@ -30,8 +30,8 @@ vi.mock('~/components/ui/Toast', () => ({
 }));
 
 const mockNavigate = vi.fn();
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -39,27 +39,28 @@ vi.mock('react-router', async () => {
 });
 
 const mockUser: User = {
-  id: '1',
-  email: 'test@example.com',
-  firstName: 'John',
-  lastName: 'Doe',
-  role: 'ADMIN',
-  status: 'ACTIVE',
-  tenantId: 'tenant-1',
+  id: "1",
+  email: "test@example.com",
+  firstName: "John",
+  lastName: "Doe",
+  role: "ADMIN",
+  status: "ACTIVE",
+  tenantId: "tenant-1",
 };
 
 const mockTenant: Tenant = {
-  id: 'tenant-1',
-  name: 'Test Company',
-  slug: 'test-company',
-  plan: 'PRO',
-  status: 'ACTIVE',
+  id: "tenant-1",
+  name: "Test Company",
+  slug: "test-company",
+  plan: "PRO",
+  status: "ACTIVE",
 };
 
 const mockAuthResponse = {
   user: mockUser,
   tenant: mockTenant,
-  accessToken: 'mock-token',
+  accessToken: "mock-token",
+  refreshToken: "mock-refresh-token",
 };
 
 function createWrapper() {
@@ -79,7 +80,7 @@ function createWrapper() {
   };
 }
 
-describe('useAuth', () => {
+describe("useAuth", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset auth store
@@ -95,8 +96,8 @@ describe('useAuth', () => {
     vi.resetAllMocks();
   });
 
-  describe('initial state', () => {
-    it('should return loading state initially', () => {
+  describe("initial state", () => {
+    it("should return loading state initially", () => {
       vi.mocked(authService.getMe).mockReturnValue(new Promise(() => {})); // Never resolves
 
       const { result } = renderHook(() => useAuth(), {
@@ -108,8 +109,8 @@ describe('useAuth', () => {
       expect(result.current.isAuthenticated).toBe(false);
     });
 
-    it('should call getMe on mount', () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+    it("should call getMe on mount", () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
 
       renderHook(() => useAuth(), {
         wrapper: createWrapper(),
@@ -119,9 +120,9 @@ describe('useAuth', () => {
     });
   });
 
-  describe('login mutation', () => {
-    it('should call authService.login with credentials', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+  describe("login mutation", () => {
+    it("should call authService.login with credentials", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
       vi.mocked(authService.login).mockResolvedValue(mockAuthResponse);
 
       const { result } = renderHook(() => useAuth(), {
@@ -129,19 +130,22 @@ describe('useAuth', () => {
       });
 
       await act(async () => {
-        result.current.login({ email: 'test@example.com', password: 'password' });
+        result.current.login({
+          email: "test@example.com",
+          password: "password",
+        });
       });
 
       await waitFor(() => {
         expect(authService.login).toHaveBeenCalledWith({
-          email: 'test@example.com',
-          password: 'password',
+          email: "test@example.com",
+          password: "password",
         });
       });
     });
 
-    it('should navigate to dashboard on successful login', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+    it("should navigate to dashboard on successful login", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
       vi.mocked(authService.login).mockResolvedValue(mockAuthResponse);
 
       const { result } = renderHook(() => useAuth(), {
@@ -149,16 +153,19 @@ describe('useAuth', () => {
       });
 
       await act(async () => {
-        result.current.login({ email: 'test@example.com', password: 'password' });
+        result.current.login({
+          email: "test@example.com",
+          password: "password",
+        });
       });
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+        expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
       });
     });
 
-    it('should update auth store on successful login', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+    it("should update auth store on successful login", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
       vi.mocked(authService.login).mockResolvedValue(mockAuthResponse);
 
       const { result } = renderHook(() => useAuth(), {
@@ -166,7 +173,10 @@ describe('useAuth', () => {
       });
 
       await act(async () => {
-        result.current.login({ email: 'test@example.com', password: 'password' });
+        result.current.login({
+          email: "test@example.com",
+          password: "password",
+        });
       });
 
       await waitFor(() => {
@@ -176,8 +186,8 @@ describe('useAuth', () => {
       });
     });
 
-    it('should set isLoggingIn to true during login', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+    it("should set isLoggingIn to true during login", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
       let resolveLogin: (value: typeof mockAuthResponse) => void;
       const loginPromise = new Promise<typeof mockAuthResponse>((resolve) => {
         resolveLogin = resolve;
@@ -189,7 +199,10 @@ describe('useAuth', () => {
       });
 
       act(() => {
-        result.current.login({ email: 'test@example.com', password: 'password' });
+        result.current.login({
+          email: "test@example.com",
+          password: "password",
+        });
       });
 
       await waitFor(() => {
@@ -205,57 +218,67 @@ describe('useAuth', () => {
       });
     });
 
-    it('should show error toast with error message on login failure', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.login).mockRejectedValue(new Error('Invalid credentials'));
+    it("should show error toast with error message on login failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.login).mockRejectedValue(
+        new Error("Invalid credentials"),
+      );
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
 
       await act(async () => {
-        result.current.login({ email: 'test@example.com', password: 'wrong' });
+        result.current.login({ email: "test@example.com", password: "wrong" });
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Invalid credentials');
+        expect(toast.error).toHaveBeenCalledWith("Invalid credentials");
       });
     });
 
-    it('should show default error toast when login error has no message', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.login).mockRejectedValue(new Error(''));
+    it("should show default error toast when login error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.login).mockRejectedValue(new Error(""));
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
 
       await act(async () => {
-        result.current.login({ email: 'test@example.com', password: 'wrong' });
+        result.current.login({ email: "test@example.com", password: "wrong" });
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Credenciales invalidas');
+        expect(toast.error).toHaveBeenCalledWith("Credenciales invalidas");
       });
     });
   });
 
-  describe('register mutation', () => {
-    it('should call authService.register with user data', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.register).mockResolvedValue({ message: 'Success' });
+  describe("register mutation", () => {
+    it("should call authService.register with user data", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.register).mockResolvedValue({
+        message: "Success",
+        user: {
+          email: "new@example.com",
+          firstName: "Jane",
+          lastName: "Smith",
+        },
+        tenant: { name: "Test Tenant" },
+      });
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
 
       const userData = {
-        email: 'new@example.com',
-        password: 'password123',
-        firstName: 'Jane',
-        lastName: 'Smith',
+        email: "new@example.com",
+        password: "password123",
+        firstName: "Jane",
+        lastName: "Smith",
       };
 
       await act(async () => {
@@ -267,9 +290,17 @@ describe('useAuth', () => {
       });
     });
 
-    it('should navigate to login on successful registration', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.register).mockResolvedValue({ message: 'Success' });
+    it("should navigate to login on successful registration", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.register).mockResolvedValue({
+        message: "Success",
+        user: {
+          email: "new@example.com",
+          firstName: "Jane",
+          lastName: "Smith",
+        },
+        tenant: { name: "Test Tenant" },
+      });
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
@@ -277,24 +308,35 @@ describe('useAuth', () => {
 
       await act(async () => {
         result.current.register({
-          email: 'new@example.com',
-          password: 'password123',
-          firstName: 'Jane',
-          lastName: 'Smith',
+          email: "new@example.com",
+          password: "password123",
+          firstName: "Jane",
+          lastName: "Smith",
         });
       });
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/login');
+        expect(mockNavigate).toHaveBeenCalledWith("/login");
       });
     });
 
-    it('should set isRegistering during registration', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+    it("should set isRegistering during registration", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
       let resolveRegister: () => void;
-      const registerPromise = new Promise<{ message: string }>((resolve) => {
-        resolveRegister = () => resolve({ message: 'Success' });
-      });
+      const mockRegisterResponse = {
+        message: "Success",
+        user: {
+          email: "new@example.com",
+          firstName: "Jane",
+          lastName: "Smith",
+        },
+        tenant: { name: "Test Tenant" },
+      };
+      const registerPromise = new Promise<typeof mockRegisterResponse>(
+        (resolve) => {
+          resolveRegister = () => resolve(mockRegisterResponse);
+        },
+      );
       vi.mocked(authService.register).mockReturnValue(registerPromise);
 
       const { result } = renderHook(() => useAuth(), {
@@ -303,10 +345,10 @@ describe('useAuth', () => {
 
       act(() => {
         result.current.register({
-          email: 'new@example.com',
-          password: 'password123',
-          firstName: 'Jane',
-          lastName: 'Smith',
+          email: "new@example.com",
+          password: "password123",
+          firstName: "Jane",
+          lastName: "Smith",
         });
       });
 
@@ -323,10 +365,12 @@ describe('useAuth', () => {
       });
     });
 
-    it('should show error toast with error message on registration failure', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.register).mockRejectedValue(new Error('Email already exists'));
+    it("should show error toast with error message on registration failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.register).mockRejectedValue(
+        new Error("Email already exists"),
+      );
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
@@ -334,22 +378,22 @@ describe('useAuth', () => {
 
       await act(async () => {
         result.current.register({
-          email: 'existing@example.com',
-          password: 'password123',
-          firstName: 'Jane',
-          lastName: 'Smith',
+          email: "existing@example.com",
+          password: "password123",
+          firstName: "Jane",
+          lastName: "Smith",
         });
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Email already exists');
+        expect(toast.error).toHaveBeenCalledWith("Email already exists");
       });
     });
 
-    it('should show default error toast when register error has no message', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.register).mockRejectedValue(new Error(''));
+    it("should show default error toast when register error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.register).mockRejectedValue(new Error(""));
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
@@ -357,21 +401,21 @@ describe('useAuth', () => {
 
       await act(async () => {
         result.current.register({
-          email: 'new@example.com',
-          password: 'password123',
-          firstName: 'Jane',
-          lastName: 'Smith',
+          email: "new@example.com",
+          password: "password123",
+          firstName: "Jane",
+          lastName: "Smith",
         });
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Error al registrarse');
+        expect(toast.error).toHaveBeenCalledWith("Error al registrarse");
       });
     });
   });
 
-  describe('logout mutation', () => {
-    it('should call authService.logout', async () => {
+  describe("logout mutation", () => {
+    it("should call authService.logout", async () => {
       vi.mocked(authService.getMe).mockResolvedValue(mockAuthResponse);
       vi.mocked(authService.logout).mockResolvedValue();
 
@@ -392,7 +436,7 @@ describe('useAuth', () => {
       });
     });
 
-    it('should navigate to login on logout', async () => {
+    it("should navigate to login on logout", async () => {
       vi.mocked(authService.getMe).mockResolvedValue(mockAuthResponse);
       vi.mocked(authService.logout).mockResolvedValue();
 
@@ -409,11 +453,11 @@ describe('useAuth', () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/login');
+        expect(mockNavigate).toHaveBeenCalledWith("/login");
       });
     });
 
-    it('should clear auth store on logout', async () => {
+    it("should clear auth store on logout", async () => {
       vi.mocked(authService.getMe).mockResolvedValue(mockAuthResponse);
       vi.mocked(authService.logout).mockResolvedValue();
 
@@ -441,135 +485,164 @@ describe('useAuth', () => {
     });
   });
 
-  describe('forgotPassword mutation', () => {
-    it('should call authService.forgotPassword with email', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.forgotPassword).mockResolvedValue({ message: 'Email sent' });
+  describe("forgotPassword mutation", () => {
+    it("should call authService.forgotPassword with email", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.forgotPassword).mockResolvedValue({
+        message: "Email sent",
+      });
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
 
       await act(async () => {
-        result.current.forgotPassword('forgot@example.com');
+        result.current.forgotPassword("forgot@example.com");
       });
 
       await waitFor(() => {
-        expect(authService.forgotPassword).toHaveBeenCalledWith('forgot@example.com');
+        expect(authService.forgotPassword).toHaveBeenCalledWith(
+          "forgot@example.com",
+        );
       });
     });
 
-    it('should show error toast with error message on failure', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.forgotPassword).mockRejectedValue(new Error('User not found'));
+    it("should show error toast with error message on failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.forgotPassword).mockRejectedValue(
+        new Error("User not found"),
+      );
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
 
       await act(async () => {
-        result.current.forgotPassword('notfound@example.com');
+        result.current.forgotPassword("notfound@example.com");
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('User not found');
+        expect(toast.error).toHaveBeenCalledWith("User not found");
       });
     });
 
-    it('should show default error toast when error has no message', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.forgotPassword).mockRejectedValue(new Error(''));
+    it("should show default error toast when error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.forgotPassword).mockRejectedValue(new Error(""));
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
       });
 
       await act(async () => {
-        result.current.forgotPassword('test@example.com');
+        result.current.forgotPassword("test@example.com");
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Error al enviar correo');
-      });
-    });
-  });
-
-  describe('resetPassword mutation', () => {
-    it('should call authService.resetPassword with token and password', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.resetPassword).mockResolvedValue({ message: 'Password reset' });
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        result.current.resetPassword({ token: 'reset-token', password: 'newPassword' });
-      });
-
-      await waitFor(() => {
-        expect(authService.resetPassword).toHaveBeenCalledWith('reset-token', 'newPassword');
-      });
-    });
-
-    it('should navigate to login on successful reset', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.resetPassword).mockResolvedValue({ message: 'Password reset' });
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        result.current.resetPassword({ token: 'reset-token', password: 'newPassword' });
-      });
-
-      await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/login');
-      });
-    });
-
-    it('should show error toast with error message on reset failure', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.resetPassword).mockRejectedValue(new Error('Token expired'));
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        result.current.resetPassword({ token: 'invalid-token', password: 'newPassword' });
-      });
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Token expired');
-      });
-    });
-
-    it('should show default error toast when reset error has no message', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
-      vi.mocked(authService.resetPassword).mockRejectedValue(new Error(''));
-
-      const { result } = renderHook(() => useAuth(), {
-        wrapper: createWrapper(),
-      });
-
-      await act(async () => {
-        result.current.resetPassword({ token: 'token', password: 'newPassword' });
-      });
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Error al restablecer contrasena');
+        expect(toast.error).toHaveBeenCalledWith("Error al enviar correo");
       });
     });
   });
 
-  describe('authenticated user query', () => {
-    it('should return user data when authenticated', async () => {
+  describe("resetPassword mutation", () => {
+    it("should call authService.resetPassword with token and password", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.resetPassword).mockResolvedValue({
+        message: "Password reset",
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.resetPassword({
+          token: "reset-token",
+          password: "newPassword",
+        });
+      });
+
+      await waitFor(() => {
+        expect(authService.resetPassword).toHaveBeenCalledWith(
+          "reset-token",
+          "newPassword",
+        );
+      });
+    });
+
+    it("should navigate to login on successful reset", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.resetPassword).mockResolvedValue({
+        message: "Password reset",
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.resetPassword({
+          token: "reset-token",
+          password: "newPassword",
+        });
+      });
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith("/login");
+      });
+    });
+
+    it("should show error toast with error message on reset failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.resetPassword).mockRejectedValue(
+        new Error("Token expired"),
+      );
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.resetPassword({
+          token: "invalid-token",
+          password: "newPassword",
+        });
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Token expired");
+      });
+    });
+
+    it("should show default error toast when reset error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.resetPassword).mockRejectedValue(new Error(""));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.resetPassword({
+          token: "token",
+          password: "newPassword",
+        });
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Error al restablecer contrasena",
+        );
+      });
+    });
+  });
+
+  describe("authenticated user query", () => {
+    it("should return user data when authenticated", async () => {
       vi.mocked(authService.getMe).mockResolvedValue(mockAuthResponse);
 
       const { result } = renderHook(() => useAuth(), {
@@ -585,8 +658,8 @@ describe('useAuth', () => {
       expect(result.current.isAuthenticated).toBe(true);
     });
 
-    it('should return null user when not authenticated', async () => {
-      vi.mocked(authService.getMe).mockRejectedValue(new Error('Unauthorized'));
+    it("should return null user when not authenticated", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),

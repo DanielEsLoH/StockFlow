@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthController } from './auth.controller';
-import { AuthService, AuthResponse, LogoutResponse } from './auth.service';
+import { AuthService, AuthResponse, RegisterResponse, LogoutResponse } from './auth.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 import { UserRole, UserStatus } from '@prisma/client';
 import { ArcjetService } from '../arcjet/arcjet.service';
@@ -43,8 +43,17 @@ describe('AuthController', () => {
     tenantId: 'tenant-123',
   };
 
+  const mockTenant = {
+    id: 'tenant-123',
+    name: 'Test Company',
+    slug: 'test-company',
+    plan: 'BASIC',
+    status: 'ACTIVE',
+  };
+
   const mockAuthResponse: AuthResponse = {
     user: mockUser,
+    tenant: mockTenant,
     accessToken: 'mock-access-token',
     refreshToken: 'mock-refresh-token',
   };
@@ -108,15 +117,27 @@ describe('AuthController', () => {
       password: 'securePassword123',
       firstName: 'Jane',
       lastName: 'Doe',
-      tenantId: 'tenant-123',
+      tenantName: 'Test Company',
     };
 
-    it('should register a new user and return auth response', async () => {
-      authService.register.mockResolvedValue(mockAuthResponse);
+    const mockRegisterResponse: RegisterResponse = {
+      message: 'Registration successful. Your account is pending approval.',
+      user: {
+        email: 'newuser@example.com',
+        firstName: 'Jane',
+        lastName: 'Doe',
+      },
+      tenant: {
+        name: 'Test Company',
+      },
+    };
+
+    it('should register a new user and return pending approval response', async () => {
+      authService.register.mockResolvedValue(mockRegisterResponse);
 
       const result = await controller.register(registerDto);
 
-      expect(result).toEqual(mockAuthResponse);
+      expect(result).toEqual(mockRegisterResponse);
       expect(authService.register).toHaveBeenCalledWith(registerDto);
       expect(authService.register).toHaveBeenCalledTimes(1);
     });

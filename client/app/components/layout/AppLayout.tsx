@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router';
 import { motion } from 'framer-motion';
 import { cn } from '~/lib/utils';
@@ -7,6 +8,11 @@ import { Header } from './Header';
 
 export function AppLayout() {
   const { sidebarCollapsed, sidebarOpen } = useUIStore();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950">
@@ -37,7 +43,7 @@ export function AppLayout() {
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={isMounted ? { opacity: 0, y: 10 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
             className="container mx-auto px-4 py-6 lg:px-8"

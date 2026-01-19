@@ -37,12 +37,39 @@ export interface AuthUser {
 }
 
 /**
- * Response structure for login and registration
+ * Tenant data returned after successful authentication
+ */
+export interface AuthTenant {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+  status: string;
+}
+
+/**
+ * Response structure for login
  */
 export interface AuthResponse {
   user: AuthUser;
+  tenant: AuthTenant;
   accessToken: string;
   refreshToken: string;
+}
+
+/**
+ * Response structure for registration (pending approval)
+ */
+export interface RegisterResponse {
+  message: string;
+  user: {
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  tenant: {
+    name: string;
+  };
 }
 
 /**
@@ -188,47 +215,46 @@ export class AuthService {
 
     return {
       user: this.mapToAuthUser(user),
+      tenant: this.mapToAuthTenant(user.tenant),
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
   }
 
   /**
-   * Registers a new user with the provided details
+   * Generates a URL-safe slug from a tenant name
+   *
+   * @param name - The tenant name to convert to a slug
+   * @returns A lowercase, hyphenated slug
+   */
+  private generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove accents
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+  }
+
+  /**
+   * Registers a new user and creates a new tenant (company)
+   * User is created with PENDING status and requires super admin approval
    *
    * @param dto - Registration data transfer object
-   * @returns Authentication response with user data and tokens
-   * @throws ConflictException if email already exists for the tenant
-   * @throws NotFoundException if tenant doesn't exist
-   * @throws ForbiddenException if tenant is suspended/inactive
+   * @returns Registration confirmation message (no tokens - pending approval)
+   * @throws ConflictException if email already exists globally
    */
-  async register(dto: RegisterDto): Promise<AuthResponse> {
-    const { email, password, firstName, lastName, tenantId } = dto;
+  async register(dto: RegisterDto): Promise<RegisterResponse> {
+    const { email, password, firstName, lastName, tenantName } = dto;
     const normalizedEmail = email.toLowerCase();
 
     this.logger.debug(`Registering new user: ${normalizedEmail}`);
 
-    // Check if tenant exists
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
-    });
-
-    if (!tenant) {
-      this.logger.warn(`Registration failed - tenant not found: ${tenantId}`);
-      throw new NotFoundException('Tenant not found');
-    }
-
-    // Validate tenant status
-    this.validateTenantStatus(tenant);
-
-    // Check if user already exists for this tenant (compound key)
-    const existingUser = await this.prisma.user.findUnique({
-      where: {
-        tenantId_email: {
-          tenantId,
-          email: normalizedEmail,
-        },
-      },
+    // Check if email already exists globally (email should be unique across all tenants for self-registration)
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
@@ -238,42 +264,63 @@ export class AuthService {
       throw new ConflictException('A user with this email already exists');
     }
 
+    // Generate a unique slug for the tenant
+    let baseSlug = this.generateSlug(tenantName);
+    let slug = baseSlug;
+    let slugCounter = 1;
+
+    // Ensure slug is unique
+    while (await this.prisma.tenant.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${slugCounter}`;
+      slugCounter++;
+    }
+
     // Hash password with bcrypt (salt rounds 12)
     const hashedPassword = await bcrypt.hash(password, this.saltRounds);
 
-    // Create user with PENDING status and EMPLOYEE role
-    const user = await this.prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        tenantId,
-        status: UserStatus.PENDING,
-        role: UserRole.EMPLOYEE,
-      },
+    // Create tenant and user in a transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Create the tenant with TRIAL status (pending approval)
+      const tenant = await tx.tenant.create({
+        data: {
+          name: tenantName,
+          slug,
+          email: normalizedEmail,
+          status: TenantStatus.TRIAL, // Trial until approved
+        },
+      });
+
+      // Create user as ADMIN of the new tenant with PENDING status
+      const user = await tx.user.create({
+        data: {
+          email: normalizedEmail,
+          password: hashedPassword,
+          firstName,
+          lastName,
+          tenantId: tenant.id,
+          status: UserStatus.PENDING, // Requires super admin approval
+          role: UserRole.ADMIN, // Admin since they created the company
+        },
+      });
+
+      return { user, tenant };
     });
 
-    // Generate tokens so user can access limited features while pending
-    const tokens = await this.generateTokens(
-      user.id,
-      user.email,
-      user.role,
-      user.tenantId,
+    this.logger.log(
+      `User registered (pending approval): ${result.user.email}, tenant: ${result.tenant.name}`,
     );
 
-    // Store refresh token
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: tokens.refreshToken },
-    });
-
-    this.logger.log(`User registered successfully: ${user.email}`);
-
     return {
-      user: this.mapToAuthUser(user),
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      message:
+        'Registration successful. Your account is pending approval by an administrator. You will receive an email once your account is activated.',
+      user: {
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+      },
+      tenant: {
+        name: result.tenant.name,
+      },
     };
   }
 
@@ -351,6 +398,7 @@ export class AuthService {
 
     return {
       user: this.mapToAuthUser(user),
+      tenant: this.mapToAuthTenant(user.tenant),
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
@@ -384,6 +432,55 @@ export class AuthService {
     this.logger.log(`User logged out successfully: ${user.email}`);
 
     return { message: 'Logged out successfully' };
+  }
+
+  /**
+   * Gets the current authenticated user's information
+   *
+   * @param userId - The ID of the user to fetch
+   * @returns Authentication response with user data and tokens
+   * @throws NotFoundException if user is not found
+   * @throws ForbiddenException if tenant or user is suspended/inactive
+   */
+  async getMe(userId: string): Promise<AuthResponse> {
+    this.logger.debug(`Fetching user info for: ${userId}`);
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { tenant: true },
+    });
+
+    if (!user) {
+      this.logger.warn(`Get me failed - user not found: ${userId}`);
+      throw new NotFoundException('User not found');
+    }
+
+    // Validate tenant status
+    this.validateTenantStatus(user.tenant);
+
+    // Validate user status
+    this.validateUserStatus(user);
+
+    // Generate fresh tokens
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.tenantId,
+    );
+
+    // Update the stored refresh token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: tokens.refreshToken },
+    });
+
+    return {
+      user: this.mapToAuthUser(user),
+      tenant: this.mapToAuthTenant(user.tenant),
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
   }
 
   /**
@@ -459,6 +556,22 @@ export class AuthService {
       role: user.role,
       status: user.status,
       tenantId: user.tenantId,
+    };
+  }
+
+  /**
+   * Maps a Tenant entity to an AuthTenant response object
+   *
+   * @param tenant - The tenant entity to map
+   * @returns AuthTenant object with safe tenant data
+   */
+  private mapToAuthTenant(tenant: Tenant): AuthTenant {
+    return {
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      plan: tenant.plan,
+      status: tenant.status,
     };
   }
 }

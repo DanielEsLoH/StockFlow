@@ -23,6 +23,7 @@ import { UploadModule } from './upload';
 import { SubscriptionsModule } from './subscriptions';
 import { AuditLogsModule } from './audit-logs';
 import { HealthModule } from './health';
+import { SystemAdminModule } from './system-admin';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 
@@ -55,6 +56,7 @@ import { TenantMiddleware } from './common/middleware';
     SubscriptionsModule,
     AuditLogsModule,
     HealthModule,
+    SystemAdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

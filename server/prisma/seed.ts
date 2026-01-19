@@ -25,8 +25,29 @@ async function main() {
   await prisma.customer.deleteMany();
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
+  await prisma.systemAdminAuditLog.deleteMany();
+  await prisma.systemAdmin.deleteMany();
 
   console.log('🗑️  Cleaned existing data\n');
+
+  // ============================================================================
+  // STEP 1.5: Create System Admin (Super Admin for platform management)
+  // ============================================================================
+  const systemAdminPassword = process.env.SYSTEM_ADMIN_PASSWORD || 'admin123!';
+  const hashedSystemAdminPassword = await bcrypt.hash(systemAdminPassword, 12);
+
+  const systemAdmin = await prisma.systemAdmin.create({
+    data: {
+      email: process.env.SYSTEM_ADMIN_EMAIL || 'superadmin@stockflow.com',
+      password: hashedSystemAdminPassword,
+      firstName: 'Super',
+      lastName: 'Admin',
+      role: 'SUPER_ADMIN',
+      status: 'ACTIVE',
+    },
+  });
+
+  console.log('✅ System Admin created:', systemAdmin.email);
 
   // ============================================================================
   // STEP 2: Create Tenant
@@ -553,7 +574,11 @@ async function main() {
   // DONE!
   // ============================================================================
   console.log('\n🎉 Seeding completed successfully!\n');
-  console.log('📧 Login credentials:');
+  console.log('🔐 System Admin (Super Admin) credentials:');
+  console.log(`   Email: ${systemAdmin.email}`);
+  console.log(`   Password: ${systemAdminPassword}`);
+  console.log('   Access: /system-admin/login\n');
+  console.log('📧 Demo Tenant User credentials:');
   console.log('   Admin: admin@tienda-demo.com / password123');
   console.log('   Employee: empleado@tienda-demo.com / password123\n');
 }

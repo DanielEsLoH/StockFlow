@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -63,6 +63,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -71,6 +72,10 @@ export function Header() {
   const { toggleSidebar, sidebarOpen } = useUIStore();
   const { user } = useAuthStore();
   const { logout, isLoggingOut } = useAuth();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Notification hooks
   const { data: notifications = [], isLoading: notificationsLoading } = useRecentNotifications(5);
@@ -216,7 +221,7 @@ export function Header() {
                 </motion.div>
               ) : (
                 <motion.button
-                  initial={{ opacity: 0 }}
+                  initial={isMounted ? { opacity: 0 } : false}
                   animate={{ opacity: 1 }}
                   onClick={() => {
                     setSearchOpen(true);

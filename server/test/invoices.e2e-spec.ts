@@ -262,7 +262,7 @@ describe('Invoices E2E Tests', () => {
         password: hashedPassword,
         firstName: 'Staff',
         lastName: 'User',
-        role: UserRole.STAFF,
+        role: UserRole.EMPLOYEE,
         status: 'ACTIVE',
       },
     });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -62,7 +62,12 @@ export function meta({}: Route.MetaArgs) {
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { register: registerUser, isRegistering } = useAuth();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const {
     register,
@@ -133,7 +138,7 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-8 dark:bg-neutral-950">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={isMounted ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-lg"
       >
@@ -219,7 +224,7 @@ export default function RegisterPage() {
               {currentStep === 1 && (
                 <motion.div
                   key="step1"
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={isMounted ? { opacity: 0, x: 20 } : false}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-4"
@@ -284,7 +289,7 @@ export default function RegisterPage() {
               {currentStep === 2 && (
                 <motion.div
                   key="step2"
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={isMounted ? { opacity: 0, x: 20 } : false}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-4"
@@ -371,7 +376,7 @@ export default function RegisterPage() {
               {currentStep === 3 && (
                 <motion.div
                   key="step3"
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={isMounted ? { opacity: 0, x: 20 } : false}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-4"
@@ -426,11 +431,11 @@ export default function RegisterPage() {
                   )}
 
                   {/* Info box */}
-                  <div className="rounded-xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-900/20">
-                    <p className="text-sm text-primary-700 dark:text-primary-300">
-                      <strong>Nota:</strong> Tu cuenta estara pendiente de
-                      aprobacion por un administrador. Te notificaremos por
-                      correo cuando este activa.
+                  <div className="rounded-xl border border-warning-200 bg-warning-50 p-4 dark:border-warning-800 dark:bg-warning-900/20">
+                    <p className="text-sm text-warning-700 dark:text-warning-300">
+                      <strong>Nota:</strong> Al registrarte, tu cuenta quedara
+                      pendiente de aprobacion por un administrador. Te
+                      notificaremos cuando tu cuenta sea activada.
                     </p>
                   </div>
                 </motion.div>

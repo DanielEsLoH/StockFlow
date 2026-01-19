@@ -1,4 +1,9 @@
-import { api, setAccessToken } from '~/lib/api';
+import {
+  api,
+  setAccessToken,
+  setRefreshToken,
+  getRefreshToken,
+} from '~/lib/api';
 import type { User, Tenant } from '~/stores/auth.store';
 
 // Types
@@ -19,6 +24,19 @@ export interface AuthResponse {
   user: User;
   tenant: Tenant;
   accessToken: string;
+  refreshToken: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  user: {
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  tenant: {
+    name: string;
+  };
 }
 
 // Service
@@ -26,25 +44,32 @@ export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const { data } = await api.post<AuthResponse>('/auth/login', credentials);
     setAccessToken(data.accessToken);
+    setRefreshToken(data.refreshToken);
     return data;
   },
 
-  async register(userData: RegisterData): Promise<{ message: string }> {
-    const { data } = await api.post('/auth/register', userData);
+  async register(userData: RegisterData): Promise<RegisterResponse> {
+    const { data } = await api.post<RegisterResponse>('/auth/register', userData);
+    // No token returned - registration is pending approval
     return data;
   },
 
   async logout(): Promise<void> {
     try {
-      await api.post('/auth/logout');
+      const refreshToken = getRefreshToken();
+      await api.post('/auth/logout', { refreshToken });
     } finally {
       setAccessToken(null);
+      setRefreshToken(null);
     }
   },
 
   async getMe(): Promise<AuthResponse> {
     const { data } = await api.get<AuthResponse>('/auth/me');
     setAccessToken(data.accessToken);
+    if (data.refreshToken) {
+      setRefreshToken(data.refreshToken);
+    }
     return data;
   },
 

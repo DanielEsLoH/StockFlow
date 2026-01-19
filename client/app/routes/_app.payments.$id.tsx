@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -459,6 +459,11 @@ export default function PaymentDetailPage() {
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const { data: payment, isLoading, isError } = usePayment(id!);
   const deletePayment = useDeletePayment();
@@ -516,7 +521,7 @@ export default function PaymentDetailPage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial="hidden"
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="space-y-6"
     >

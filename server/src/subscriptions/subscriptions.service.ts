@@ -92,7 +92,8 @@ export interface PortalSessionResponse {
 @Injectable()
 export class SubscriptionsService {
   private readonly logger = new Logger(SubscriptionsService.name);
-  private readonly stripe: Stripe;
+  private readonly stripe: Stripe | null;
+  private readonly stripeEnabled: boolean;
   private readonly frontendUrl: string;
   private readonly webhookSecret: string;
   private readonly priceIds: Record<Exclude<SubscriptionPlan, 'FREE'>, string>;
@@ -107,13 +108,16 @@ export class SubscriptionsService {
       this.logger.warn(
         'STRIPE_SECRET_KEY not configured - Stripe features will be disabled',
       );
+      this.stripe = null;
+      this.stripeEnabled = false;
+    } else {
+      // Initialize Stripe client only if key is provided
+      this.stripe = new Stripe(stripeSecretKey, {
+        apiVersion: '2025-12-15.clover',
+        typescript: true,
+      });
+      this.stripeEnabled = true;
     }
-
-    // Initialize Stripe client
-    this.stripe = new Stripe(stripeSecretKey || '', {
-      apiVersion: '2025-12-15.clover',
-      typescript: true,
-    });
 
     this.frontendUrl =
       this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
@@ -127,6 +131,22 @@ export class SubscriptionsService {
       ENTERPRISE:
         this.configService.get<string>('STRIPE_PRICE_ENTERPRISE') || '',
     };
+  }
+
+  /**
+   * Checks if Stripe is enabled and returns the Stripe instance.
+   * Throws an error if Stripe is not configured.
+   *
+   * @returns The Stripe instance
+   * @throws BadRequestException if Stripe is not enabled
+   */
+  private getStripeClient(): Stripe {
+    if (!this.stripeEnabled || !this.stripe) {
+      throw new BadRequestException(
+        'Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.',
+      );
+    }
+    return this.stripe;
   }
 
   /**
@@ -147,6 +167,7 @@ export class SubscriptionsService {
     tenantId: string,
     plan: SubscriptionPlan,
   ): Promise<CheckoutSessionResponse> {
+    const stripe = this.getStripeClient();
     this.logger.log(`Creating checkout session for tenant ${tenantId}`);
 
     if (plan === 'FREE') {
@@ -176,7 +197,7 @@ export class SubscriptionsService {
 
     try {
       // Create checkout session
-      const session = await this.stripe.checkout.sessions.create({
+      const session = await stripe.checkout.sessions.create({
         customer: stripeCustomerId,
         mode: 'subscription',
         payment_method_types: ['card'],
@@ -235,6 +256,7 @@ export class SubscriptionsService {
     tenantId: string,
     returnUrl?: string,
   ): Promise<PortalSessionResponse> {
+    const stripe = this.getStripeClient();
     this.logger.log(`Creating portal session for tenant ${tenantId}`);
 
     const tenant = await this.prisma.tenant.findUnique({
@@ -252,7 +274,7 @@ export class SubscriptionsService {
     }
 
     try {
-      const session = await this.stripe.billingPortal.sessions.create({
+      const session = await stripe.billingPortal.sessions.create({
         customer: tenant.stripeCustomerId,
         return_url: returnUrl || `${this.frontendUrl}/settings/billing`,
       });
@@ -303,8 +325,8 @@ export class SubscriptionsService {
       },
     };
 
-    // If there's an active Stripe subscription, fetch additional details
-    if (tenant.stripeSubscriptionId) {
+    // If there's an active Stripe subscription and Stripe is enabled, fetch additional details
+    if (tenant.stripeSubscriptionId && this.stripeEnabled && this.stripe) {
       try {
         const subscriptionResponse = await this.stripe.subscriptions.retrieve(
           tenant.stripeSubscriptionId,
@@ -350,10 +372,11 @@ export class SubscriptionsService {
    * @param rawBody - Raw request body for signature verification
    */
   async handleWebhook(signature: string, rawBody: Buffer): Promise<void> {
+    const stripe = this.getStripeClient();
     let event: Stripe.Event;
 
     try {
-      event = this.stripe.webhooks.constructEvent(
+      event = stripe.webhooks.constructEvent(
         rawBody,
         signature,
         this.webhookSecret,
@@ -412,8 +435,11 @@ export class SubscriptionsService {
       return tenant.stripeCustomerId;
     }
 
+    // Note: This method is only called after getStripeClient() has verified stripe is non-null
+    const stripe = this.stripe!;
+
     try {
-      const customer = await this.stripe.customers.create({
+      const customer = await stripe.customers.create({
         email: tenant.email,
         name: tenant.name,
         metadata: {
@@ -478,7 +504,7 @@ export class SubscriptionsService {
     // Determine plan from metadata or subscription
     let plan: SubscriptionPlan = planFromMetadata || 'BASIC';
 
-    if (!planFromMetadata) {
+    if (!planFromMetadata && this.stripe) {
       // Try to get plan from subscription metadata
       try {
         const subscription =

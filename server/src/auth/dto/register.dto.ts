@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * Data transfer object for user registration requests
+ * When registering, a new tenant (company) is created with the provided name
  */
 export class RegisterDto {
   /**
@@ -57,14 +58,14 @@ export class RegisterDto {
   lastName: string;
 
   /**
-   * ID of the tenant the user belongs to
-   * @example "clx1234567890abcdef"
+   * Name of the company/tenant to create
+   * @example "My Company S.A.S"
    */
   @ApiProperty({
-    description: 'ID of the tenant the user belongs to',
-    example: 'clx1234567890abcdef',
+    description: 'Name of the company/tenant to create',
+    example: 'My Company S.A.S',
   })
-  @IsString({ message: 'Tenant ID must be a string' })
-  @IsNotEmpty({ message: 'Tenant ID is required' })
-  tenantId: string;
+  @IsString({ message: 'Company name must be a string' })
+  @IsNotEmpty({ message: 'Company name is required' })
+  tenantName: string;
 }

@@ -13,7 +13,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma';
-
+import { InvitationsService } from '../invitations/invitations.service';
 import { BrevoService } from '../notifications/mail/brevo.service';
 import {
   UserRole,
@@ -32,6 +32,7 @@ describe('AuthService', () => {
   let jwtService: jest.Mocked<JwtService>;
   let configService: jest.Mocked<ConfigService>;
   let brevoService: jest.Mocked<BrevoService>;
+  let invitationsService: jest.Mocked<InvitationsService>;
 
   // Test data
   const mockTenant = {
@@ -144,6 +145,14 @@ describe('AuthService', () => {
       sendVerificationEmail: jest.fn().mockResolvedValue({ success: true }),
     };
 
+    const mockInvitationsService = {
+      findByToken: jest.fn(),
+      create: jest.fn(),
+      cancel: jest.fn(),
+      resend: jest.fn(),
+      findAllByTenant: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -151,6 +160,7 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: BrevoService, useValue: mockBrevoService },
+        { provide: InvitationsService, useValue: mockInvitationsService },
       ],
     }).compile();
 
@@ -159,6 +169,7 @@ describe('AuthService', () => {
     jwtService = module.get(JwtService);
     configService = module.get(ConfigService);
     brevoService = module.get(BrevoService);
+    invitationsService = module.get(InvitationsService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'debug').mockImplementation();
@@ -1552,7 +1563,9 @@ describe('AuthService', () => {
       (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
         unverifiedUser,
       );
-      (prismaService.user.update as jest.Mock).mockResolvedValue(unverifiedUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(
+        unverifiedUser,
+      );
 
       const beforeCall = Date.now();
       await service.resendVerification('test@example.com');

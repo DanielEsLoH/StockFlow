@@ -5,7 +5,7 @@ import { useAuthStore } from '~/stores/auth.store';
 import { queryKeys } from '~/lib/query-client';
 import { getAccessToken } from '~/lib/api';
 import { toast } from '~/components/ui/Toast';
-import type { LoginCredentials, RegisterData, RegisterResponse } from '~/services/auth.service';
+import type { LoginCredentials, RegisterData, RegisterResponse, AcceptInvitationData } from '~/services/auth.service';
 
 export function useAuth() {
   const navigate = useNavigate();
@@ -113,6 +113,21 @@ export function useAuth() {
     },
   });
 
+  // Accept invitation mutation
+  const acceptInvitationMutation = useMutation({
+    mutationFn: (data: AcceptInvitationData) => authService.acceptInvitation(data),
+    onSuccess: (data) => {
+      setUser(data.user);
+      setTenant(data.tenant);
+      queryClient.setQueryData(queryKeys.auth.me(), data);
+      toast.success(`Bienvenido a ${data.tenant.name}, ${data.user.firstName}!`);
+      navigate('/dashboard');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Error al aceptar la invitacion');
+    },
+  });
+
   return {
     user: authData?.user ?? null,
     tenant: authData?.tenant ?? null,
@@ -140,5 +155,21 @@ export function useAuth() {
 
     resendVerification: resendVerificationMutation.mutate,
     isResendingVerification: resendVerificationMutation.isPending,
+
+    acceptInvitation: acceptInvitationMutation.mutate,
+    isAcceptingInvitation: acceptInvitationMutation.isPending,
   };
+}
+
+/**
+ * Hook to fetch invitation details by token
+ */
+export function useInvitation(token: string | null) {
+  return useQuery({
+    queryKey: ['invitation', token],
+    queryFn: () => authService.getInvitation(token!),
+    enabled: !!token,
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 }

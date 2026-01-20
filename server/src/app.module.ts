@@ -24,6 +24,7 @@ import { SubscriptionsModule } from './subscriptions';
 import { AuditLogsModule } from './audit-logs';
 import { HealthModule } from './health';
 import { SystemAdminModule } from './system-admin';
+import { InvitationsModule } from './invitations';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 
@@ -57,6 +58,7 @@ import { TenantMiddleware } from './common/middleware';
     AuditLogsModule,
     HealthModule,
     SystemAdminModule,
+    InvitationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

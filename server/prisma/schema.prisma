@@ -121,6 +121,13 @@ enum SystemAdminStatus {
   SUSPENDED
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -142,15 +149,16 @@ model Tenant {
   createdAt              DateTime         @default(now()) @map("created_at")
   updatedAt              DateTime         @updatedAt @map("updated_at")
 
-  users      User[]
-  products   Product[]
-  customers  Customer[]
-  invoices   Invoice[]
-  warehouses Warehouse[]
-  categories Category[]
-  movements  StockMovement[]
-  payments   Payment[]
-  auditLogs  AuditLog[]
+  users       User[]
+  products    Product[]
+  customers   Customer[]
+  invoices    Invoice[]
+  warehouses  Warehouse[]
+  categories  Category[]
+  movements   StockMovement[]
+  payments    Payment[]
+  auditLogs   AuditLog[]
+  invitations Invitation[]
 
   @@map("tenants")
 }
@@ -176,10 +184,11 @@ model User {
   updatedAt                DateTime   @updatedAt @map("updated_at")
   lastLoginAt              DateTime?  @map("last_login_at")
 
-  tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoices  Invoice[]
-  movements StockMovement[]
-  auditLogs AuditLog[]
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoices    Invoice[]
+  movements   StockMovement[]
+  auditLogs   AuditLog[]
+  invitations Invitation[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -422,6 +431,27 @@ model AuditLog {
   @@index([createdAt])
   @@index([action])
   @@map("audit_logs")
+}
+
+model Invitation {
+  id          String           @id @default(uuid())
+  email       String
+  tenantId    String           @map("tenant_id")
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role        UserRole         @default(EMPLOYEE)
+  token       String           @unique
+  expiresAt   DateTime         @map("expires_at")
+  invitedById String           @map("invited_by_id")
+  invitedBy   User             @relation(fields: [invitedById], references: [id])
+  status      InvitationStatus @default(PENDING)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  acceptedAt  DateTime?        @map("accepted_at")
+
+  @@unique([email, tenantId])
+  @@index([tenantId])
+  @@index([token])
+  @@index([status])
+  @@map("invitations")
 }
 
 // ============================================================================

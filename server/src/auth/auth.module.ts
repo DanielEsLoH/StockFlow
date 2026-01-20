@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule, type JwtModuleOptions } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy, JwtRefreshStrategy } from './strategies';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { InvitationsModule } from '../invitations/invitations.module';
 
 /**
  * AuthModule provides authentication functionality including:
@@ -39,6 +40,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
       },
     }),
     NotificationsModule,
+    // Use forwardRef to handle circular dependency with InvitationsModule
+    forwardRef(() => InvitationsModule),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtRefreshStrategy],

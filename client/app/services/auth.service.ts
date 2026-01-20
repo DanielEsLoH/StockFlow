@@ -39,6 +39,21 @@ export interface RegisterResponse {
   };
 }
 
+export interface InvitationDetails {
+  email: string;
+  tenantName: string;
+  invitedByName: string;
+  role: string;
+  expiresAt: string;
+}
+
+export interface AcceptInvitationData {
+  token: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+}
+
 // Service
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -114,5 +129,17 @@ export const authService = {
   async resendVerification(email: string): Promise<{ message: string }> {
     const { data } = await api.post('/auth/resend-verification', { email });
     return data;
+  },
+
+  async getInvitation(token: string): Promise<InvitationDetails> {
+    const { data } = await api.get<InvitationDetails>(`/auth/invitation/${token}`);
+    return data;
+  },
+
+  async acceptInvitation(data: AcceptInvitationData): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/accept-invitation', data);
+    setAccessToken(response.data.accessToken);
+    setRefreshToken(response.data.refreshToken);
+    return response.data;
   },
 };

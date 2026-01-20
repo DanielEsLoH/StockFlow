@@ -146,4 +146,12 @@ export const queryKeys = {
     all: ['settings'] as const,
     preferences: () => [...queryKeys.settings.all, 'preferences'] as const,
   },
+
+  // Invitations
+  invitations: {
+    all: ['invitations'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.invitations.all, 'list', filters] as const,
+    detail: (id: string) => [...queryKeys.invitations.all, id] as const,
+  },
 };

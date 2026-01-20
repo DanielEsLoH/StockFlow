@@ -2,3 +2,4 @@ export { LoginDto } from './login.dto';
 export { RegisterDto } from './register.dto';
 export { RefreshTokenDto } from './refresh-token.dto';
 export { VerifyEmailDto, ResendVerificationDto } from './verify-email.dto';
+export { AcceptInvitationDto } from './accept-invitation.dto';

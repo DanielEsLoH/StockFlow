@@ -2,7 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { Request } from 'express';
 import { AuthController } from './auth.controller';
-import { AuthService, AuthResponse, RegisterResponse, LogoutResponse } from './auth.service';
+import {
+  AuthService,
+  AuthResponse,
+  RegisterResponse,
+  LogoutResponse,
+} from './auth.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 import { UserRole, UserStatus } from '@prisma/client';
 import { ArcjetService } from '../arcjet/arcjet.service';

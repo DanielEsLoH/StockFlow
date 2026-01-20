@@ -7,20 +7,24 @@ import {
   ForbiddenException,
   BadRequestException,
   GoneException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma';
-import { RegisterDto } from './dto';
+import { RegisterDto, AcceptInvitationDto } from './dto';
 import { JwtPayload } from './types';
+import { InvitationsService } from '../invitations/invitations.service';
 import {
   User,
   UserRole,
   UserStatus,
   TenantStatus,
   Tenant,
+  InvitationStatus,
 } from '@prisma/client';
 import { BrevoService } from '../notifications/mail/brevo.service';
 
@@ -98,6 +102,28 @@ export interface ResendVerificationResponse {
 }
 
 /**
+ * Response structure for getting invitation details
+ */
+export interface InvitationDetailsResponse {
+  email: string;
+  tenantName: string;
+  invitedByName: string;
+  role: UserRole;
+  expiresAt: Date;
+}
+
+/**
+ * Response structure for accepting invitation
+ */
+export interface AcceptInvitationResponse {
+  message: string;
+  user: AuthUser;
+  tenant: AuthTenant;
+  accessToken: string;
+  refreshToken: string;
+}
+
+/**
  * AuthService handles all authentication-related operations including
  * user validation, token generation, registration, login, refresh, and logout.
  */
@@ -111,6 +137,8 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly brevoService: BrevoService,
+    @Inject(forwardRef(() => InvitationsService))
+    private readonly invitationsService: InvitationsService,
   ) {}
 
   /**
@@ -294,7 +322,7 @@ export class AuthService {
     }
 
     // Generate a unique slug for the tenant
-    let baseSlug = this.generateSlug(tenantName);
+    const baseSlug = this.generateSlug(tenantName);
     let slug = baseSlug;
     let slugCounter = 1;
 
@@ -443,7 +471,9 @@ export class AuthService {
    * @throws Gone if token has expired (24h)
    */
   async verifyEmail(token: string): Promise<VerifyEmailResponse> {
-    this.logger.debug(`Verifying email with token: ${token.substring(0, 8)}...`);
+    this.logger.debug(
+      `Verifying email with token: ${token.substring(0, 8)}...`,
+    );
 
     // Find user by verification token
     const user = await this.prisma.user.findUnique({
@@ -825,6 +855,132 @@ export class AuthService {
       slug: tenant.slug,
       plan: tenant.plan,
       status: tenant.status,
+    };
+  }
+
+  /**
+   * Gets invitation details for the accept invitation page.
+   * This is a public endpoint that does not require authentication.
+   *
+   * @param token - The invitation token
+   * @returns Invitation details (email, tenant name, inviter name, role, expiration)
+   * @throws BadRequestException if invitation is invalid, expired, or already used
+   */
+  async getInvitationDetails(token: string): Promise<InvitationDetailsResponse> {
+    this.logger.debug(`Getting invitation details for token`);
+
+    // Use invitationsService.findByToken which handles all validation
+    const invitation = await this.invitationsService.findByToken(token);
+
+    return {
+      email: invitation.email,
+      tenantName: invitation.tenant.name,
+      invitedByName: `${invitation.invitedBy.firstName} ${invitation.invitedBy.lastName}`,
+      role: invitation.role,
+      expiresAt: invitation.expiresAt,
+    };
+  }
+
+  /**
+   * Accepts an invitation and creates a new user account.
+   * The user is created with ACTIVE status and emailVerified=true.
+   * Generates tokens for auto-login after account creation.
+   *
+   * @param dto - Accept invitation data (token, firstName, lastName, password)
+   * @returns Authentication response with user data and tokens for auto-login
+   * @throws BadRequestException if invitation is invalid, expired, or already used
+   * @throws ConflictException if user already exists with this email
+   */
+  async acceptInvitation(
+    dto: AcceptInvitationDto,
+  ): Promise<AcceptInvitationResponse> {
+    const { token, firstName, lastName, password } = dto;
+    this.logger.debug(`Processing invitation acceptance`);
+
+    // Find and validate invitation
+    const invitation = await this.invitationsService.findByToken(token);
+
+    // Additional check: ensure status is PENDING
+    if (invitation.status !== InvitationStatus.PENDING) {
+      this.logger.warn(`Invitation not pending: ${invitation.status}`);
+      throw new BadRequestException(
+        'Esta invitacion ya no es valida',
+      );
+    }
+
+    // Check if user already exists globally with this email
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email: invitation.email.toLowerCase() },
+    });
+
+    if (existingUser) {
+      this.logger.warn(
+        `User already exists with email: ${invitation.email}`,
+      );
+      throw new ConflictException(
+        'Ya existe un usuario con este email',
+      );
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, this.saltRounds);
+
+    // Create user and update invitation in a transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Create user with invitation's tenantId and role
+      const user = await tx.user.create({
+        data: {
+          email: invitation.email.toLowerCase(),
+          password: hashedPassword,
+          firstName,
+          lastName,
+          tenantId: invitation.tenantId,
+          role: invitation.role,
+          status: UserStatus.ACTIVE, // Invited users are active immediately
+          emailVerified: true, // Email is verified since they received the invitation
+        },
+        include: { tenant: true },
+      });
+
+      // Update invitation status to ACCEPTED
+      await tx.invitation.update({
+        where: { id: invitation.id },
+        data: {
+          status: InvitationStatus.ACCEPTED,
+          acceptedAt: new Date(),
+        },
+      });
+
+      return user;
+    });
+
+    this.logger.log(
+      `Invitation accepted. User created: ${result.email}, tenant: ${result.tenant.name}`,
+    );
+
+    // Generate tokens for auto-login
+    const tokens = await this.generateTokens(
+      result.id,
+      result.email,
+      result.role,
+      result.tenantId,
+    );
+
+    // Store refresh token
+    await this.prisma.user.update({
+      where: { id: result.id },
+      data: {
+        refreshToken: tokens.refreshToken,
+        lastLoginAt: new Date(),
+      },
+    });
+
+    return {
+      message: 'Cuenta creada exitosamente',
+      user: this.mapToAuthUser(result),
+      tenant: this.mapToAuthTenant(result.tenant),
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
     };
   }
 }

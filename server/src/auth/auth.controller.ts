@@ -6,7 +6,9 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Param,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -16,7 +18,7 @@ import {
   ApiBody,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { Request } from 'express';
+import type { Request, Response } from 'express';
 import {
   AuthService,
   AuthResponse,
@@ -24,6 +26,8 @@ import {
   LogoutResponse,
   VerifyEmailResponse,
   ResendVerificationResponse,
+  InvitationDetailsResponse,
+  AcceptInvitationResponse,
 } from './auth.service';
 import {
   LoginDto,
@@ -31,6 +35,7 @@ import {
   RefreshTokenDto,
   VerifyEmailDto,
   ResendVerificationDto,
+  AcceptInvitationDto,
 } from './dto';
 import { AuthResponseEntity, LogoutResponseEntity } from './entities';
 import {
@@ -135,7 +140,8 @@ export class AuthController {
   @BotProtect({ mode: 'LIVE' })
   @ApiOperation({
     summary: 'Register a new user',
-    description: 'Creates a new user account with the provided credentials. Account will be pending approval by a system administrator. Rate limited to 3 requests per hour per IP.',
+    description:
+      'Creates a new user account with the provided credentials. Account will be pending approval by a system administrator. Rate limited to 3 requests per hour per IP.',
   })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({
@@ -182,7 +188,8 @@ export class AuthController {
   @BotProtect({ mode: 'LIVE' })
   @ApiOperation({
     summary: 'User login',
-    description: 'Authenticates a user with email and password, returning JWT access and refresh tokens. Rate limited to 5 requests per 15 minutes per IP.',
+    description:
+      'Authenticates a user with email and password, returning JWT access and refresh tokens. Rate limited to 5 requests per 15 minutes per IP.',
   })
   @ApiBody({ type: LoginDto })
   @ApiResponse({
@@ -231,7 +238,8 @@ export class AuthController {
   @RateLimit({ requests: 10, window: '15m' })
   @ApiOperation({
     summary: 'Refresh access token',
-    description: 'Exchanges a valid refresh token for new access and refresh tokens. Rate limited to 10 requests per 15 minutes per IP.',
+    description:
+      'Exchanges a valid refresh token for new access and refresh tokens. Rate limited to 10 requests per 15 minutes per IP.',
   })
   @ApiBody({ type: RefreshTokenDto })
   @ApiResponse({
@@ -319,7 +327,8 @@ export class AuthController {
   @ApiBody({ type: ResendVerificationDto })
   @ApiResponse({
     status: 200,
-    description: 'Verification email sent (if account exists and is unverified)',
+    description:
+      'Verification email sent (if account exists and is unverified)',
   })
   @ApiResponse({
     status: 429,
@@ -332,6 +341,104 @@ export class AuthController {
       `Resend verification request for email: ${resendVerificationDto.email}`,
     );
     return this.authService.resendVerification(resendVerificationDto.email);
+  }
+
+  /**
+   * Gets invitation details for the accept invitation page.
+   * This is a public endpoint that does not require authentication.
+   *
+   * @param token - The invitation token from the URL
+   * @returns Invitation details (email, tenant name, inviter name, role, expiration)
+   *
+   * @example
+   * GET /auth/invitation/abc123def456...
+   */
+  @Get('invitation/:token')
+  @ApiOperation({
+    summary: 'Get invitation details',
+    description:
+      'Returns invitation details for the accept invitation page. Public endpoint.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Invitation details returned successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid, expired, or already used invitation',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Invitation not found',
+  })
+  async getInvitation(
+    @Param('token') token: string,
+  ): Promise<InvitationDetailsResponse> {
+    this.logger.log('Get invitation details request received');
+    return this.authService.getInvitationDetails(token);
+  }
+
+  /**
+   * Accepts an invitation and creates a new user account.
+   * Sets refresh token cookie for auto-login after account creation.
+   *
+   * @param dto - Accept invitation data (token, firstName, lastName, password)
+   * @param res - Response object for setting cookies
+   * @returns Authentication response with user data and tokens
+   *
+   * @example
+   * POST /auth/accept-invitation
+   * {
+   *   "token": "abc123def456...",
+   *   "firstName": "Juan",
+   *   "lastName": "Perez",
+   *   "password": "SecurePassword123"
+   * }
+   */
+  @Post('accept-invitation')
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RateLimitGuard, BotProtectionGuard)
+  @RateLimit({ requests: 5, window: '1h' })
+  @BotProtect({ mode: 'LIVE' })
+  @ApiOperation({
+    summary: 'Accept invitation and create account',
+    description:
+      'Accepts an invitation and creates a new user account. Returns tokens for auto-login. Rate limited to 5 requests per hour per IP.',
+  })
+  @ApiBody({ type: AcceptInvitationDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Account created successfully',
+    type: AuthResponseEntity,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid, expired, or already used invitation',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'User with this email already exists',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests - rate limit exceeded',
+  })
+  async acceptInvitation(
+    @Body() dto: AcceptInvitationDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AcceptInvitationResponse> {
+    this.logger.log('Accept invitation request received');
+    const result = await this.authService.acceptInvitation(dto);
+
+    // Set refresh token as HTTP-only cookie for security
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return result;
   }
 
   /**
@@ -356,7 +463,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'User logout',
-    description: 'Invalidates the user refresh token and logs the user out of the system.',
+    description:
+      'Invalidates the user refresh token and logs the user out of the system.',
   })
   @ApiBody({ type: RefreshTokenDto })
   @ApiResponse({

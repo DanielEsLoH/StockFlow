@@ -1038,4 +1038,88 @@ export class BrevoService {
       textContent: `Hola ${firstName}, gracias por registrarte en StockFlow. Para completar tu registro, verifica tu correo electronico visitando: ${verificationUrl}. Este enlace expirara en 24 horas. Si no creaste una cuenta, puedes ignorar este mensaje.`,
     });
   }
+
+  /**
+   * Sends an invitation email to a user who has been invited to join a tenant.
+   * The email includes details about who invited them, the organization, and their assigned role.
+   * The invitation link expires after 7 days.
+   *
+   * @param data - Invitation data including recipient, tenant info, inviter name, role, and invitation URL
+   * @returns Send result
+   */
+  async sendInvitationEmail(data: {
+    to: string;
+    tenantName: string;
+    invitedByName: string;
+    role: string;
+    invitationUrl: string;
+  }): Promise<SendMailResult> {
+    const { to, tenantName, invitedByName, role, invitationUrl } = data;
+
+    const content = `
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Has sido invitado a unirte a ${tenantName}
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Hola,
+      </p>
+      <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        <strong>${invitedByName}</strong> te ha invitado a unirte a <strong>${tenantName}</strong> en StockFlow.
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Empresa</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${tenantName}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Invitado por</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${invitedByName}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Tu rol</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${role}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px 0;">
+        <tr>
+          <td style="border-radius: 6px; background-color: #2563eb;">
+            <a href="${invitationUrl}" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
+              Aceptar invitacion
+            </a>
+          </td>
+        </tr>
+      </table>
+      <div style="padding: 16px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 500;">
+          Este enlace expira en 7 dias.
+        </p>
+      </div>
+      <p style="margin: 0; color: #6b7280; font-size: 14px;">
+        Si no esperabas esta invitacion, puedes ignorar este mensaje.
+      </p>`;
+
+    const htmlContent = this.getEmailTemplate(
+      content,
+      `Invitacion a ${tenantName} - StockFlow`,
+    );
+
+    return this.sendEmail({
+      to,
+      subject: `Has sido invitado a ${tenantName} en StockFlow`,
+      htmlContent,
+      textContent: `Hola, ${invitedByName} te ha invitado a unirte a ${tenantName} en StockFlow. Tu rol sera: ${role}. Acepta la invitacion visitando: ${invitationUrl}. Este enlace expira en 7 dias. Si no esperabas esta invitacion, puedes ignorar este mensaje.`,
+    });
+  }
 }

@@ -8,6 +8,7 @@ export default [
   route("login", "routes/login.tsx"),
   route("register", "routes/register.tsx"),
   route("verify-email", "routes/verify-email.tsx"),
+  route("accept-invitation", "routes/accept-invitation.tsx"),
 
   // System Admin routes (separate from tenant app)
   route("system-admin/login", "routes/system-admin.login.tsx"),
@@ -56,6 +57,9 @@ export default [
 
     // Reports module
     route("reports", "routes/_app.reports.tsx"),
+
+    // Team management
+    route("team", "routes/_app.team.tsx"),
 
     // Settings and Profile
     route("settings", "routes/_app.settings.tsx"),

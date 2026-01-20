@@ -6,6 +6,7 @@ import {
   FolderTree,
   Warehouse,
   Users,
+  UsersRound,
   FileText,
   CreditCard,
   BarChart3,
@@ -25,6 +26,7 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -33,6 +35,7 @@ const navItems: NavItem[] = [
   { name: 'Categorias', href: '/categories', icon: FolderTree },
   { name: 'Bodegas', href: '/warehouses', icon: Warehouse },
   { name: 'Clientes', href: '/customers', icon: Users },
+  { name: 'Equipo', href: '/team', icon: UsersRound, adminOnly: true },
   { name: 'Facturas', href: '/invoices', icon: FileText },
   { name: 'Pagos', href: '/payments', icon: CreditCard },
   { name: 'Reportes', href: '/reports', icon: BarChart3 },
@@ -174,7 +177,15 @@ function SidebarContent({
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-3">
         <ul className="space-y-1">
-          {navItems.map((item) => {
+          {navItems
+            .filter((item) => {
+              // Filter out admin-only items for non-admin users
+              if (item.adminOnly) {
+                return user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+              }
+              return true;
+            })
+            .map((item) => {
             const isActive =
               location.pathname === item.href ||
               location.pathname.startsWith(`${item.href}/`);

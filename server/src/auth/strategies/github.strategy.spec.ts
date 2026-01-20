@@ -6,7 +6,6 @@ import type { Profile } from 'passport-github2';
 
 describe('GitHubStrategy', () => {
   let strategy: GitHubStrategy;
-  let configService: jest.Mocked<ConfigService>;
 
   const mockConfig = {
     'github.clientId': 'test-client-id',
@@ -14,18 +13,17 @@ describe('GitHubStrategy', () => {
     'github.callbackUrl': 'http://localhost:3000/auth/github/callback',
   };
 
-  const createMockProfile = (overrides: Partial<Profile> = {}): Profile => ({
-    id: 'github-user-123',
-    displayName: 'John Doe',
-    username: 'johndoe',
-    profileUrl: 'https://github.com/johndoe',
-    emails: [{ value: 'john@example.com' }],
-    photos: [{ value: 'https://avatars.githubusercontent.com/u/123' }],
-    provider: 'github',
-    _raw: '',
-    _json: {},
-    ...overrides,
-  });
+  const createMockProfile = (overrides: Partial<Profile> = {}): Profile =>
+    ({
+      id: 'github-user-123',
+      displayName: 'John Doe',
+      username: 'johndoe',
+      profileUrl: 'https://github.com/johndoe',
+      emails: [{ value: 'john@example.com' }],
+      photos: [{ value: 'https://avatars.githubusercontent.com/u/123' }],
+      provider: 'github',
+      ...overrides,
+    }) as Profile;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -42,7 +40,6 @@ describe('GitHubStrategy', () => {
     }).compile();
 
     strategy = module.get<GitHubStrategy>(GitHubStrategy);
-    configService = module.get(ConfigService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'debug').mockImplementation();

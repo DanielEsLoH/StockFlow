@@ -40,6 +40,7 @@ describe('SystemAdminService', () => {
     lastName: 'Doe',
     role: 'EMPLOYEE',
     status: UserStatus.PENDING,
+    emailVerified: true,
     tenantId: 'tenant-1',
     tenant: {
       id: 'tenant-1',
@@ -376,6 +377,24 @@ describe('SystemAdminService', () => {
 
       await expect(service.approveUser(mockUser.id, mockSystemAdmin.id))
         .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException if email is not verified', async () => {
+      const unverifiedUser = { ...mockUser, emailVerified: false };
+      prismaService.user.findUnique = jest.fn().mockResolvedValue(unverifiedUser);
+
+      await expect(service.approveUser(mockUser.id, mockSystemAdmin.id))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException with correct message if email is not verified', async () => {
+      const unverifiedUser = { ...mockUser, emailVerified: false };
+      prismaService.user.findUnique = jest.fn().mockResolvedValue(unverifiedUser);
+
+      await expect(service.approveUser(mockUser.id, mockSystemAdmin.id))
+        .rejects.toThrow(
+          'Cannot approve user: email address has not been verified. The user must verify their email before approval.',
+        );
     });
   });
 

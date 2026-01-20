@@ -105,4 +105,14 @@ export const authService = {
     });
     return data;
   },
+
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const { data } = await api.post('/auth/verify-email', { token });
+    return data;
+  },
+
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const { data } = await api.post('/auth/resend-verification', { email });
+    return data;
+  },
 };

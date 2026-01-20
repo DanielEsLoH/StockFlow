@@ -5,10 +5,13 @@ import {
   ConflictException,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
+  GoneException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma';
 import { RegisterDto } from './dto';
 import { JwtPayload } from './types';
@@ -77,6 +80,20 @@ export interface RegisterResponse {
  * Response structure for logout
  */
 export interface LogoutResponse {
+  message: string;
+}
+
+/**
+ * Response structure for email verification
+ */
+export interface VerifyEmailResponse {
+  message: string;
+}
+
+/**
+ * Response structure for resend verification
+ */
+export interface ResendVerificationResponse {
   message: string;
 }
 
@@ -241,8 +258,18 @@ export class AuthService {
   }
 
   /**
+   * Generates a secure verification token
+   *
+   * @returns A 64-character hex string (32 bytes)
+   */
+  private generateVerificationToken(): string {
+    return crypto.randomBytes(32).toString('hex');
+  }
+
+  /**
    * Registers a new user and creates a new tenant (company)
    * User is created with PENDING status and requires super admin approval
+   * A verification email is sent to confirm the user's email address
    *
    * @param dto - Registration data transfer object
    * @returns Registration confirmation message (no tokens - pending approval)
@@ -280,6 +307,10 @@ export class AuthService {
     // Hash password with bcrypt (salt rounds 12)
     const hashedPassword = await bcrypt.hash(password, this.saltRounds);
 
+    // Generate verification token and set expiry to 24 hours from now
+    const verificationToken = this.generateVerificationToken();
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     // Create tenant and user in a transaction
     const result = await this.prisma.$transaction(async (tx) => {
       // Create the tenant with TRIAL status (pending approval)
@@ -302,6 +333,9 @@ export class AuthService {
           tenantId: tenant.id,
           status: UserStatus.PENDING, // Requires super admin approval
           role: UserRole.ADMIN, // Admin since they created the company
+          emailVerified: false,
+          verificationToken,
+          verificationTokenExpiry,
         },
       });
 
@@ -309,11 +343,15 @@ export class AuthService {
     });
 
     this.logger.log(
-      `User registered (pending approval): ${result.user.email}, tenant: ${result.tenant.name}`,
+      `User registered (pending email verification): ${result.user.email}, tenant: ${result.tenant.name}`,
     );
 
     // Send notification emails asynchronously - don't block registration on email delivery
-    this.sendRegistrationEmails(result.user, result.tenant).catch((error) => {
+    this.sendRegistrationEmails(
+      result.user,
+      result.tenant,
+      verificationToken,
+    ).catch((error) => {
       // This catch is a safety net - errors should already be handled inside sendRegistrationEmails
       this.logger.error(
         'Unexpected error in sendRegistrationEmails',
@@ -323,7 +361,7 @@ export class AuthService {
 
     return {
       message:
-        'Registration successful. Your account is pending approval by an administrator. You will receive an email once your account is activated.',
+        'Registration successful. Please check your email to verify your address. After verification, your account will be reviewed by an administrator.',
       user: {
         email: result.user.email,
         firstName: result.user.firstName,
@@ -336,19 +374,25 @@ export class AuthService {
   }
 
   /**
-   * Sends registration notification emails to admin and user
+   * Sends registration notification emails: verification email to user and notification to admin
    * Uses Promise.allSettled to ensure both emails are attempted independently
    * Logs errors but does not throw - registration should succeed even if emails fail
    *
    * @param user - The newly registered user
    * @param tenant - The newly created tenant
+   * @param verificationToken - The email verification token
    */
   private async sendRegistrationEmails(
     user: { email: string; firstName: string; lastName: string },
     tenant: { name: string },
+    verificationToken: string,
   ): Promise<void> {
     const userName = `${user.firstName} ${user.lastName}`;
     const registrationDate = new Date();
+    const frontendUrl =
+      this.configService.get<string>('app.frontendUrl') ||
+      'http://localhost:5173';
+    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
     const emailPromises = [
       // Admin notification email
@@ -358,11 +402,11 @@ export class AuthService {
         tenantName: tenant.name,
         registrationDate,
       }),
-      // User confirmation email
-      this.brevoService.sendUserRegistrationConfirmation({
+      // User verification email (NOT confirmation - they need to verify first)
+      this.brevoService.sendVerificationEmail({
         to: user.email,
         firstName: user.firstName,
-        tenantName: tenant.name,
+        verificationUrl,
       }),
     ];
 
@@ -370,7 +414,7 @@ export class AuthService {
 
     // Log results for monitoring
     results.forEach((result, index) => {
-      const emailType = index === 0 ? 'admin notification' : 'user confirmation';
+      const emailType = index === 0 ? 'admin notification' : 'verification';
       if (result.status === 'fulfilled') {
         if (result.value.success) {
           this.logger.log(
@@ -388,6 +432,149 @@ export class AuthService {
         );
       }
     });
+  }
+
+  /**
+   * Verifies a user's email address using the verification token
+   *
+   * @param token - The verification token sent to the user's email
+   * @returns Success message
+   * @throws BadRequestException if token is invalid
+   * @throws Gone if token has expired (24h)
+   */
+  async verifyEmail(token: string): Promise<VerifyEmailResponse> {
+    this.logger.debug(`Verifying email with token: ${token.substring(0, 8)}...`);
+
+    // Find user by verification token
+    const user = await this.prisma.user.findUnique({
+      where: { verificationToken: token },
+    });
+
+    if (!user) {
+      this.logger.warn('Email verification failed - invalid token');
+      throw new BadRequestException(
+        'Invalid verification token. Please request a new verification email.',
+      );
+    }
+
+    // Check if token has expired (24 hours)
+    if (
+      user.verificationTokenExpiry &&
+      user.verificationTokenExpiry < new Date()
+    ) {
+      this.logger.warn(
+        `Email verification failed - token expired for user: ${user.email}`,
+      );
+      throw new GoneException(
+        'Verification token has expired. Please request a new verification email.',
+      );
+    }
+
+    // Check if already verified
+    if (user.emailVerified) {
+      this.logger.debug(`Email already verified for user: ${user.email}`);
+      return {
+        message: 'Your email has already been verified.',
+      };
+    }
+
+    // Update user: set emailVerified = true and clear the token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null,
+      },
+    });
+
+    this.logger.log(`Email verified successfully for user: ${user.email}`);
+
+    return {
+      message:
+        'Email verified successfully. Your account is now pending approval by an administrator.',
+    };
+  }
+
+  /**
+   * Resends the verification email to a user
+   * For security, always returns a generic success message regardless of whether the email exists
+   *
+   * @param email - The email address to resend verification to
+   * @returns Generic success message
+   */
+  async resendVerification(email: string): Promise<ResendVerificationResponse> {
+    const normalizedEmail = email.toLowerCase();
+    this.logger.debug(`Resend verification requested for: ${normalizedEmail}`);
+
+    // Find user by email
+    const user = await this.prisma.user.findFirst({
+      where: { email: normalizedEmail },
+    });
+
+    // Generic message for security - don't reveal if email exists
+    const genericMessage =
+      'If an account exists with this email and has not been verified, a new verification email has been sent.';
+
+    if (!user) {
+      this.logger.debug(
+        `Resend verification - user not found: ${normalizedEmail}`,
+      );
+      return { message: genericMessage };
+    }
+
+    // Check if already verified
+    if (user.emailVerified) {
+      this.logger.debug(
+        `Resend verification - email already verified: ${normalizedEmail}`,
+      );
+      return { message: genericMessage };
+    }
+
+    // Generate new verification token
+    const verificationToken = this.generateVerificationToken();
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Update user with new token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationToken,
+        verificationTokenExpiry,
+      },
+    });
+
+    // Send verification email asynchronously
+    const frontendUrl =
+      this.configService.get<string>('app.frontendUrl') ||
+      'http://localhost:5173';
+    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+    this.brevoService
+      .sendVerificationEmail({
+        to: user.email,
+        firstName: user.firstName,
+        verificationUrl,
+      })
+      .then((result) => {
+        if (result.success) {
+          this.logger.log(
+            `Verification email resent successfully for user: ${user.email}`,
+          );
+        } else {
+          this.logger.warn(
+            `Verification email resend failed for user: ${user.email} - ${result.error}`,
+          );
+        }
+      })
+      .catch((error) => {
+        this.logger.error(
+          `Verification email resend threw error for user: ${user.email}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      });
+
+    return { message: genericMessage };
   }
 
   /**

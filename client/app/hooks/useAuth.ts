@@ -45,9 +45,9 @@ export function useAuth() {
   const registerMutation = useMutation({
     mutationFn: (userData: RegisterData) => authService.register(userData),
     onSuccess: (data: RegisterResponse) => {
-      // Registration pending approval - show message and redirect to login
+      // Registration successful - prompt user to verify email
       toast.success(
-        `Registro exitoso, ${data.user.firstName}! Tu cuenta esta pendiente de aprobacion. Te notificaremos cuando sea activada.`
+        `Registro exitoso! Te hemos enviado un correo de verificacion. Por favor verifica tu email antes de iniciar sesion.`
       );
       navigate('/login');
     },
@@ -91,6 +91,28 @@ export function useAuth() {
     },
   });
 
+  // Verify email mutation
+  const verifyEmailMutation = useMutation({
+    mutationFn: (token: string) => authService.verifyEmail(token),
+    onSuccess: () => {
+      toast.success('Email verificado correctamente');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Error al verificar email');
+    },
+  });
+
+  // Resend verification email mutation
+  const resendVerificationMutation = useMutation({
+    mutationFn: (email: string) => authService.resendVerification(email),
+    onSuccess: () => {
+      toast.success('Correo de verificacion enviado');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Error al enviar correo de verificacion');
+    },
+  });
+
   return {
     user: authData?.user ?? null,
     tenant: authData?.tenant ?? null,
@@ -112,5 +134,11 @@ export function useAuth() {
 
     resetPassword: resetPasswordMutation.mutate,
     isResettingPassword: resetPasswordMutation.isPending,
+
+    verifyEmail: verifyEmailMutation.mutate,
+    isVerifyingEmail: verifyEmailMutation.isPending,
+
+    resendVerification: resendVerificationMutation.mutate,
+    isResendingVerification: resendVerificationMutation.isPending,
   };
 }

@@ -7,6 +7,7 @@ export default [
   // Public routes (authentication)
   route("login", "routes/login.tsx"),
   route("register", "routes/register.tsx"),
+  route("verify-email", "routes/verify-email.tsx"),
 
   // System Admin routes (separate from tenant app)
   route("system-admin/login", "routes/system-admin.login.tsx"),

@@ -402,7 +402,7 @@ export class SystemAdminService {
    * @param adminId - The ID of the admin performing the action
    * @returns Action result
    * @throws NotFoundException if user is not found
-   * @throws BadRequestException if user is not in PENDING status
+   * @throws BadRequestException if user is not in PENDING status or email is not verified
    */
   async approveUser(userId: string, adminId: string): Promise<UserActionResult> {
     this.logger.debug(`Approving user: ${userId} by admin: ${adminId}`);
@@ -419,6 +419,13 @@ export class SystemAdminService {
     if (user.status !== UserStatus.PENDING) {
       throw new BadRequestException(
         `User is not in PENDING status. Current status: ${user.status}`,
+      );
+    }
+
+    // Check if email is verified before allowing approval
+    if (!user.emailVerified) {
+      throw new BadRequestException(
+        'Cannot approve user: email address has not been verified. The user must verify their email before approval.',
       );
     }
 

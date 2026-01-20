@@ -156,22 +156,25 @@ model Tenant {
 }
 
 model User {
-  id               String     @id @default(cuid())
-  tenantId         String     @map("tenant_id")
-  email            String
-  password         String
-  firstName        String     @map("first_name")
-  lastName         String     @map("last_name")
-  phone            String?
-  avatar           String?
-  role             UserRole   @default(EMPLOYEE)
-  status           UserStatus @default(PENDING)
-  refreshToken     String?    @map("refresh_token")
-  resetToken       String?    @map("reset_token")
-  resetTokenExpiry DateTime?  @map("reset_token_expiry")
-  createdAt        DateTime   @default(now()) @map("created_at")
-  updatedAt        DateTime   @updatedAt @map("updated_at")
-  lastLoginAt      DateTime?  @map("last_login_at")
+  id                       String     @id @default(cuid())
+  tenantId                 String     @map("tenant_id")
+  email                    String
+  password                 String
+  firstName                String     @map("first_name")
+  lastName                 String     @map("last_name")
+  phone                    String?
+  avatar                   String?
+  role                     UserRole   @default(EMPLOYEE)
+  status                   UserStatus @default(PENDING)
+  emailVerified            Boolean    @default(false) @map("email_verified")
+  verificationToken        String?    @unique @map("verification_token")
+  verificationTokenExpiry  DateTime?  @map("verification_token_expiry")
+  refreshToken             String?    @map("refresh_token")
+  resetToken               String?    @map("reset_token")
+  resetTokenExpiry         DateTime?  @map("reset_token_expiry")
+  createdAt                DateTime   @default(now()) @map("created_at")
+  updatedAt                DateTime   @updatedAt @map("updated_at")
+  lastLoginAt              DateTime?  @map("last_login_at")
 
   tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   invoices  Invoice[]

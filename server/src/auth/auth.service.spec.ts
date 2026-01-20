@@ -6,6 +6,8 @@ import {
   ConflictException,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
+  GoneException,
   Logger,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -139,6 +141,7 @@ describe('AuthService', () => {
       sendUserRegistrationConfirmation: jest
         .fn()
         .mockResolvedValue({ success: true }),
+      sendVerificationEmail: jest.fn().mockResolvedValue({ success: true }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -512,7 +515,7 @@ describe('AuthService', () => {
 
       expect(result).toEqual({
         message:
-          'Registration successful. Your account is pending approval by an administrator. You will receive an email once your account is activated.',
+          'Registration successful. Please check your email to verify your address. After verification, your account will be reviewed by an administrator.',
         user: {
           email: newUser.email,
           firstName: newUser.firstName,
@@ -1101,7 +1104,7 @@ describe('AuthService', () => {
       });
 
       expect(logSpy).toHaveBeenCalledWith(
-        'User registered (pending approval): new@example.com, tenant: Test Company',
+        'User registered (pending email verification): new@example.com, tenant: Test Company',
       );
     });
 
@@ -1356,6 +1359,212 @@ describe('AuthService', () => {
       expect(warnSpy).toHaveBeenCalledWith(
         'Get me failed - user not found: nonexistent-id',
       );
+    });
+  });
+
+  describe('verifyEmail', () => {
+    const validToken = 'valid-verification-token-123';
+    const mockUserWithToken = {
+      ...mockUser,
+      emailVerified: false,
+      verificationToken: validToken,
+      verificationTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h in future
+    };
+
+    it('should verify email and clear token when valid token provided', async () => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        mockUserWithToken,
+      );
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...mockUserWithToken,
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null,
+      });
+
+      const result = await service.verifyEmail(validToken);
+
+      expect(result.message).toBe(
+        'Email verified successfully. Your account is now pending approval by an administrator.',
+      );
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: mockUser.id },
+        data: {
+          emailVerified: true,
+          verificationToken: null,
+          verificationTokenExpiry: null,
+        },
+      });
+    });
+
+    it('should throw BadRequestException for invalid token', async () => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.verifyEmail('invalid-token')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException with correct message for invalid token', async () => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.verifyEmail('invalid-token')).rejects.toThrow(
+        'Invalid verification token. Please request a new verification email.',
+      );
+    });
+
+    it('should throw GoneException for expired token', async () => {
+      const expiredUserToken = {
+        ...mockUserWithToken,
+        verificationTokenExpiry: new Date(Date.now() - 1000), // Expired 1 second ago
+      };
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        expiredUserToken,
+      );
+
+      await expect(service.verifyEmail(validToken)).rejects.toThrow(
+        GoneException,
+      );
+    });
+
+    it('should throw GoneException with correct message for expired token', async () => {
+      const expiredUserToken = {
+        ...mockUserWithToken,
+        verificationTokenExpiry: new Date(Date.now() - 1000),
+      };
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        expiredUserToken,
+      );
+
+      await expect(service.verifyEmail(validToken)).rejects.toThrow(
+        'Verification token has expired. Please request a new verification email.',
+      );
+    });
+
+    it('should return already verified message if email already verified', async () => {
+      const alreadyVerifiedUser = {
+        ...mockUserWithToken,
+        emailVerified: true,
+      };
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        alreadyVerifiedUser,
+      );
+
+      const result = await service.verifyEmail(validToken);
+
+      expect(result.message).toBe('Your email has already been verified.');
+      expect(prismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should query user by verification token', async () => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        mockUserWithToken,
+      );
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...mockUserWithToken,
+        emailVerified: true,
+      });
+
+      await service.verifyEmail(validToken);
+
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { verificationToken: validToken },
+      });
+    });
+  });
+
+  describe('resendVerification', () => {
+    const unverifiedUser = {
+      ...mockUser,
+      emailVerified: false,
+      verificationToken: 'old-token',
+      verificationTokenExpiry: new Date(),
+    };
+
+    beforeEach(() => {
+      (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+    });
+
+    it('should generate new token and send verification email', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        unverifiedUser,
+      );
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...unverifiedUser,
+        verificationToken: 'new-token',
+      });
+
+      const result = await service.resendVerification('test@example.com');
+
+      expect(result.message).toBe(
+        'If an account exists with this email and has not been verified, a new verification email has been sent.',
+      );
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: mockUser.id },
+        data: {
+          verificationToken: expect.any(String),
+          verificationTokenExpiry: expect.any(Date),
+        },
+      });
+    });
+
+    it('should return generic message when user not found', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const result = await service.resendVerification('notfound@example.com');
+
+      expect(result.message).toBe(
+        'If an account exists with this email and has not been verified, a new verification email has been sent.',
+      );
+      expect(prismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should return generic message when email already verified', async () => {
+      const verifiedUser = {
+        ...unverifiedUser,
+        emailVerified: true,
+      };
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        verifiedUser,
+      );
+
+      const result = await service.resendVerification('test@example.com');
+
+      expect(result.message).toBe(
+        'If an account exists with this email and has not been verified, a new verification email has been sent.',
+      );
+      expect(prismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should normalize email to lowercase', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await service.resendVerification('TEST@EXAMPLE.COM');
+
+      expect(prismaService.user.findFirst).toHaveBeenCalledWith({
+        where: { email: 'test@example.com' },
+      });
+    });
+
+    it('should set verification token expiry to 24 hours from now', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        unverifiedUser,
+      );
+      (prismaService.user.update as jest.Mock).mockResolvedValue(unverifiedUser);
+
+      const beforeCall = Date.now();
+      await service.resendVerification('test@example.com');
+      const afterCall = Date.now();
+
+      const updateCall = (prismaService.user.update as jest.Mock).mock.calls[0];
+      const expiryDate = updateCall[0].data.verificationTokenExpiry as Date;
+      const expectedMinExpiry = beforeCall + 24 * 60 * 60 * 1000;
+      const expectedMaxExpiry = afterCall + 24 * 60 * 60 * 1000;
+
+      expect(expiryDate.getTime()).toBeGreaterThanOrEqual(expectedMinExpiry);
+      expect(expiryDate.getTime()).toBeLessThanOrEqual(expectedMaxExpiry);
     });
   });
 });

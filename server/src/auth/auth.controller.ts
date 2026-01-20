@@ -17,8 +17,21 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { Request } from 'express';
-import { AuthService, AuthResponse, RegisterResponse, LogoutResponse } from './auth.service';
-import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
+import {
+  AuthService,
+  AuthResponse,
+  RegisterResponse,
+  LogoutResponse,
+  VerifyEmailResponse,
+  ResendVerificationResponse,
+} from './auth.service';
+import {
+  LoginDto,
+  RegisterDto,
+  RefreshTokenDto,
+  VerifyEmailDto,
+  ResendVerificationDto,
+} from './dto';
 import { AuthResponseEntity, LogoutResponseEntity } from './entities';
 import {
   RateLimitGuard,
@@ -239,6 +252,86 @@ export class AuthController {
   ): Promise<AuthResponse> {
     this.logger.log('Token refresh request received');
     return this.authService.refreshTokens(refreshTokenDto.refreshToken);
+  }
+
+  /**
+   * Verifies a user's email address using the verification token
+   *
+   * @param verifyEmailDto - Contains the verification token
+   * @returns Success message
+   *
+   * @example
+   * POST /auth/verify-email
+   * {
+   *   "token": "a1b2c3d4e5f6..."
+   * }
+   */
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Verify email address',
+    description:
+      'Verifies the user email address using the token sent via email. Token expires after 24 hours.',
+  })
+  @ApiBody({ type: VerifyEmailDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verified successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid verification token',
+  })
+  @ApiResponse({
+    status: 410,
+    description: 'Verification token has expired',
+  })
+  async verifyEmail(
+    @Body() verifyEmailDto: VerifyEmailDto,
+  ): Promise<VerifyEmailResponse> {
+    this.logger.log('Email verification request received');
+    return this.authService.verifyEmail(verifyEmailDto.token);
+  }
+
+  /**
+   * Resends the verification email to a user
+   *
+   * Rate limit: 3 requests per 15 minutes per IP (prevents spam)
+   *
+   * @param resendVerificationDto - Contains the email address
+   * @returns Generic success message (does not reveal if email exists)
+   *
+   * @example
+   * POST /auth/resend-verification
+   * {
+   *   "email": "user@example.com"
+   * }
+   */
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ requests: 3, window: '15m' })
+  @ApiOperation({
+    summary: 'Resend verification email',
+    description:
+      'Resends the email verification link. Rate limited to 3 requests per 15 minutes per IP. For security, always returns success regardless of whether email exists.',
+  })
+  @ApiBody({ type: ResendVerificationDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification email sent (if account exists and is unverified)',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests - rate limit exceeded',
+  })
+  async resendVerification(
+    @Body() resendVerificationDto: ResendVerificationDto,
+  ): Promise<ResendVerificationResponse> {
+    this.logger.log(
+      `Resend verification request for email: ${resendVerificationDto.email}`,
+    );
+    return this.authService.resendVerification(resendVerificationDto.email);
   }
 
   /**

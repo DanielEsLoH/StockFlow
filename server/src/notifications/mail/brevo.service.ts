@@ -978,4 +978,64 @@ export class BrevoService {
       textContent: `Bienvenido a StockFlow, ${firstName}! Hemos recibido tu solicitud de registro para ${tenantName}. Tu cuenta esta pendiente de aprobacion. El proceso normalmente toma entre 24-48 horas habiles. Te notificaremos por correo electronico cuando tu cuenta sea aprobada.`,
     });
   }
+
+  /**
+   * Sends an email verification email to the user.
+   * This email contains a verification link that the user must click to verify their email address.
+   * The link expires after 24 hours.
+   *
+   * @param data - Verification data including recipient email, name, and verification URL
+   * @returns Send result
+   */
+  async sendVerificationEmail(data: {
+    to: string;
+    firstName: string;
+    verificationUrl: string;
+  }): Promise<SendMailResult> {
+    const { to, firstName, verificationUrl } = data;
+
+    const content = `
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Verifica tu correo electronico
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Hola ${firstName},
+      </p>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Gracias por registrarte en StockFlow. Para completar tu registro, por favor verifica tu direccion de correo electronico haciendo clic en el siguiente boton:
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px 0;">
+        <tr>
+          <td style="border-radius: 6px; background-color: #2563eb;">
+            <a href="${verificationUrl}" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
+              Verificar correo electronico
+            </a>
+          </td>
+        </tr>
+      </table>
+      <div style="padding: 16px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 500;">
+          Este enlace expirara en 24 horas.
+        </p>
+      </div>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Si no creaste una cuenta en StockFlow, puedes ignorar este correo de forma segura.
+      </p>
+      <p style="margin: 24px 0 0 0; color: #6b7280; font-size: 14px;">
+        Si el boton no funciona, copia y pega esta URL en tu navegador:<br>
+        <a href="${verificationUrl}" style="color: #2563eb; word-break: break-all;">${verificationUrl}</a>
+      </p>`;
+
+    const htmlContent = this.getEmailTemplate(
+      content,
+      'Verifica tu correo electronico - StockFlow',
+    );
+
+    return this.sendEmail({
+      to,
+      subject: 'StockFlow - Verifica tu correo electronico',
+      htmlContent,
+      textContent: `Hola ${firstName}, gracias por registrarte en StockFlow. Para completar tu registro, verifica tu correo electronico visitando: ${verificationUrl}. Este enlace expirara en 24 horas. Si no creaste una cuenta, puedes ignorar este mensaje.`,
+    });
+  }
 }

@@ -320,4 +320,159 @@ describe('authService', () => {
       ).rejects.toThrow('Current password is incorrect');
     });
   });
+
+  describe('verifyEmail', () => {
+    it('should call api.post with token', async () => {
+      const token = 'verify-token-123';
+      const mockResponse = { message: 'Email verified' };
+      vi.mocked(api.post).mockResolvedValueOnce({ data: mockResponse });
+
+      await authService.verifyEmail(token);
+
+      expect(api.post).toHaveBeenCalledWith('/auth/verify-email', { token });
+    });
+
+    it('should return success message', async () => {
+      const mockResponse = { message: 'Email verified' };
+      vi.mocked(api.post).mockResolvedValueOnce({ data: mockResponse });
+
+      const result = await authService.verifyEmail('token');
+
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should propagate error on invalid token', async () => {
+      const error = new Error('Invalid verification token');
+      vi.mocked(api.post).mockRejectedValueOnce(error);
+
+      await expect(authService.verifyEmail('invalid')).rejects.toThrow(
+        'Invalid verification token'
+      );
+    });
+  });
+
+  describe('resendVerification', () => {
+    it('should call api.post with email', async () => {
+      const email = 'test@example.com';
+      const mockResponse = { message: 'Verification email sent' };
+      vi.mocked(api.post).mockResolvedValueOnce({ data: mockResponse });
+
+      await authService.resendVerification(email);
+
+      expect(api.post).toHaveBeenCalledWith('/auth/resend-verification', { email });
+    });
+
+    it('should return success message', async () => {
+      const mockResponse = { message: 'Verification email sent' };
+      vi.mocked(api.post).mockResolvedValueOnce({ data: mockResponse });
+
+      const result = await authService.resendVerification('test@example.com');
+
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should propagate error when email not found', async () => {
+      const error = new Error('Email not found');
+      vi.mocked(api.post).mockRejectedValueOnce(error);
+
+      await expect(authService.resendVerification('unknown@example.com')).rejects.toThrow(
+        'Email not found'
+      );
+    });
+  });
+
+  describe('getInvitation', () => {
+    const mockInvitation = {
+      id: 'invitation-123',
+      email: 'invitee@example.com',
+      role: 'EMPLOYEE',
+      status: 'PENDING',
+      expiresAt: new Date().toISOString(),
+      tenant: {
+        id: 'tenant-123',
+        name: 'Test Company',
+        slug: 'test-company',
+      },
+      invitedBy: {
+        firstName: 'Admin',
+        lastName: 'User',
+      },
+    };
+
+    it('should call api.get with correct endpoint', async () => {
+      const token = 'invitation-token-123';
+      vi.mocked(api.get).mockResolvedValueOnce({ data: mockInvitation });
+
+      await authService.getInvitation(token);
+
+      expect(api.get).toHaveBeenCalledWith(`/auth/invitation/${token}`);
+    });
+
+    it('should return invitation details', async () => {
+      vi.mocked(api.get).mockResolvedValueOnce({ data: mockInvitation });
+
+      const result = await authService.getInvitation('token');
+
+      expect(result).toEqual(mockInvitation);
+    });
+
+    it('should propagate error when invitation not found', async () => {
+      const error = new Error('Invitation not found');
+      vi.mocked(api.get).mockRejectedValueOnce(error);
+
+      await expect(authService.getInvitation('invalid')).rejects.toThrow(
+        'Invitation not found'
+      );
+    });
+  });
+
+  describe('acceptInvitation', () => {
+    const mockAcceptData = {
+      token: 'invitation-token',
+      password: 'newPassword123',
+      firstName: 'Jane',
+      lastName: 'Doe',
+    };
+
+    it('should call api.post with invitation data', async () => {
+      vi.mocked(api.post).mockResolvedValueOnce({ data: mockAuthResponse });
+
+      await authService.acceptInvitation(mockAcceptData);
+
+      expect(api.post).toHaveBeenCalledWith('/auth/accept-invitation', mockAcceptData);
+    });
+
+    it('should set access token on successful acceptance', async () => {
+      vi.mocked(api.post).mockResolvedValueOnce({ data: mockAuthResponse });
+
+      await authService.acceptInvitation(mockAcceptData);
+
+      expect(setAccessToken).toHaveBeenCalledWith('mock-access-token');
+    });
+
+    it('should set refresh token on successful acceptance', async () => {
+      vi.mocked(api.post).mockResolvedValueOnce({ data: mockAuthResponse });
+
+      await authService.acceptInvitation(mockAcceptData);
+
+      expect(setRefreshToken).toHaveBeenCalledWith('mock-refresh-token');
+    });
+
+    it('should return auth response on successful acceptance', async () => {
+      vi.mocked(api.post).mockResolvedValueOnce({ data: mockAuthResponse });
+
+      const result = await authService.acceptInvitation(mockAcceptData);
+
+      expect(result).toEqual(mockAuthResponse);
+    });
+
+    it('should propagate error when invitation expired', async () => {
+      const error = new Error('Invitation has expired');
+      vi.mocked(api.post).mockRejectedValueOnce(error);
+
+      await expect(authService.acceptInvitation(mockAcceptData)).rejects.toThrow(
+        'Invitation has expired'
+      );
+    });
+  });
 });

@@ -15,7 +15,12 @@ import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma';
-import { RegisterDto, AcceptInvitationDto, OAuthUserDto, OAuthLoginResult } from './dto';
+import {
+  RegisterDto,
+  AcceptInvitationDto,
+  OAuthUserDto,
+  OAuthLoginResult,
+} from './dto';
 import { JwtPayload } from './types';
 import { InvitationsService } from '../invitations/invitations.service';
 import {
@@ -867,7 +872,9 @@ export class AuthService {
    * @returns Invitation details (email, tenant name, inviter name, role, expiration)
    * @throws BadRequestException if invitation is invalid, expired, or already used
    */
-  async getInvitationDetails(token: string): Promise<InvitationDetailsResponse> {
+  async getInvitationDetails(
+    token: string,
+  ): Promise<InvitationDetailsResponse> {
     this.logger.debug(`Getting invitation details for token`);
 
     // Use invitationsService.findByToken which handles all validation
@@ -904,9 +911,7 @@ export class AuthService {
     // Additional check: ensure status is PENDING
     if (invitation.status !== InvitationStatus.PENDING) {
       this.logger.warn(`Invitation not pending: ${invitation.status}`);
-      throw new BadRequestException(
-        'Esta invitacion ya no es valida',
-      );
+      throw new BadRequestException('Esta invitacion ya no es valida');
     }
 
     // Check if user already exists globally with this email
@@ -915,12 +920,8 @@ export class AuthService {
     });
 
     if (existingUser) {
-      this.logger.warn(
-        `User already exists with email: ${invitation.email}`,
-      );
-      throw new ConflictException(
-        'Ya existe un usuario con este email',
-      );
+      this.logger.warn(`User already exists with email: ${invitation.email}`);
+      throw new ConflictException('Ya existe un usuario con este email');
     }
 
     // Hash password
@@ -1015,9 +1016,12 @@ export class AuthService {
 
     try {
       // Determine which OAuth ID field to search
-      const oauthIdField = provider === AuthProvider.GOOGLE ? 'googleId' : 'githubId';
+      const oauthIdField =
+        provider === AuthProvider.GOOGLE ? 'googleId' : 'githubId';
       const oauthId =
-        provider === AuthProvider.GOOGLE ? oauthUser.googleId : oauthUser.githubId;
+        provider === AuthProvider.GOOGLE
+          ? oauthUser.googleId
+          : oauthUser.githubId;
 
       // First, try to find user by OAuth ID
       let user = await this.prisma.user.findFirst({
@@ -1049,7 +1053,9 @@ export class AuthService {
       return {
         status: 'error',
         error:
-          error instanceof Error ? error.message : 'OAuth authentication failed',
+          error instanceof Error
+            ? error.message
+            : 'OAuth authentication failed',
       };
     }
   }
@@ -1079,7 +1085,11 @@ export class AuthService {
     }> = {};
 
     // Link OAuth account if not already linked
-    if (provider === AuthProvider.GOOGLE && !user.googleId && oauthUser.googleId) {
+    if (
+      provider === AuthProvider.GOOGLE &&
+      !user.googleId &&
+      oauthUser.googleId
+    ) {
       updateData.googleId = oauthUser.googleId;
       this.logger.debug(`Linking Google account for user: ${user.email}`);
     } else if (
@@ -1142,8 +1152,7 @@ export class AuthService {
       this.logger.warn(`OAuth login denied - user not active: ${user.email}`);
       return {
         status: 'error',
-        error:
-          'Your account is not active. Please contact your administrator.',
+        error: 'Your account is not active. Please contact your administrator.',
       };
     }
 
@@ -1292,12 +1301,13 @@ export class AuthService {
     const userName = `${user.firstName} ${user.lastName}`;
 
     try {
-      const result = await this.brevoService.sendAdminNewRegistrationNotification({
-        userEmail: user.email,
-        userName,
-        tenantName: tenant.name,
-        registrationDate: new Date(),
-      });
+      const result =
+        await this.brevoService.sendAdminNewRegistrationNotification({
+          userEmail: user.email,
+          userName,
+          tenantName: tenant.name,
+          registrationDate: new Date(),
+        });
 
       if (result.success) {
         this.logger.log(

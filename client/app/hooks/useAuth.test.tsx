@@ -3,7 +3,7 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import type { ReactNode } from "react";
-import { useAuth } from "./useAuth";
+import { useAuth, useInvitation } from "./useAuth";
 import { authService } from "~/services/auth.service";
 import { useAuthStore } from "~/stores/auth.store";
 import type { User, Tenant } from "~/stores/auth.store";
@@ -17,6 +17,10 @@ vi.mock("~/services/auth.service", () => ({
     getMe: vi.fn(),
     forgotPassword: vi.fn(),
     resetPassword: vi.fn(),
+    verifyEmail: vi.fn(),
+    resendVerification: vi.fn(),
+    acceptInvitation: vi.fn(),
+    getInvitation: vi.fn(),
   },
 }));
 
@@ -710,6 +714,466 @@ describe("useAuth", () => {
       expect(result.current.isLoading).toBe(false);
       expect(result.current.user).toBeNull();
       expect(result.current.isAuthenticated).toBe(false);
+    });
+  });
+
+  describe("verifyEmail mutation", () => {
+    it("should call authService.verifyEmail with token", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.verifyEmail).mockResolvedValue({
+        message: "Email verified",
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.verifyEmail("verify-token");
+      });
+
+      await waitFor(() => {
+        expect(authService.verifyEmail).toHaveBeenCalledWith("verify-token");
+      });
+    });
+
+    it("should show success toast on successful verification", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.verifyEmail).mockResolvedValue({
+        message: "Email verified",
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.verifyEmail("verify-token");
+      });
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith("Email verificado correctamente");
+      });
+    });
+
+    it("should show error toast with error message on failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.verifyEmail).mockRejectedValue(
+        new Error("Invalid token"),
+      );
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.verifyEmail("invalid-token");
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Invalid token");
+      });
+    });
+
+    it("should show default error toast when error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.verifyEmail).mockRejectedValue(new Error(""));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.verifyEmail("token");
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Error al verificar email");
+      });
+    });
+
+    it("should set isVerifyingEmail during verification", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      let resolveVerify: () => void;
+      const verifyPromise = new Promise<{ message: string }>((resolve) => {
+        resolveVerify = () => resolve({ message: "Email verified" });
+      });
+      vi.mocked(authService.verifyEmail).mockReturnValue(verifyPromise);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.verifyEmail("verify-token");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isVerifyingEmail).toBe(true);
+      });
+
+      await act(async () => {
+        resolveVerify!();
+      });
+
+      await waitFor(() => {
+        expect(result.current.isVerifyingEmail).toBe(false);
+      });
+    });
+  });
+
+  describe("resendVerification mutation", () => {
+    it("should call authService.resendVerification with email", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.resendVerification).mockResolvedValue({
+        message: "Verification email sent",
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.resendVerification("resend@example.com");
+      });
+
+      await waitFor(() => {
+        expect(authService.resendVerification).toHaveBeenCalledWith(
+          "resend@example.com",
+        );
+      });
+    });
+
+    it("should show success toast on successful resend", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.resendVerification).mockResolvedValue({
+        message: "Verification email sent",
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.resendVerification("resend@example.com");
+      });
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith("Correo de verificacion enviado");
+      });
+    });
+
+    it("should show error toast with error message on failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.resendVerification).mockRejectedValue(
+        new Error("Too many requests"),
+      );
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.resendVerification("test@example.com");
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Too many requests");
+      });
+    });
+
+    it("should show default error toast when error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.resendVerification).mockRejectedValue(new Error(""));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.resendVerification("test@example.com");
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Error al enviar correo de verificacion",
+        );
+      });
+    });
+
+    it("should set isResendingVerification during resend", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      let resolveResend: () => void;
+      const resendPromise = new Promise<{ message: string }>((resolve) => {
+        resolveResend = () => resolve({ message: "Sent" });
+      });
+      vi.mocked(authService.resendVerification).mockReturnValue(resendPromise);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.resendVerification("test@example.com");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isResendingVerification).toBe(true);
+      });
+
+      await act(async () => {
+        resolveResend!();
+      });
+
+      await waitFor(() => {
+        expect(result.current.isResendingVerification).toBe(false);
+      });
+    });
+  });
+
+  describe("acceptInvitation mutation", () => {
+    const mockAcceptData = {
+      token: "invitation-token",
+      password: "newPassword123",
+      firstName: "Jane",
+      lastName: "Doe",
+    };
+
+    it("should call authService.acceptInvitation with data", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.acceptInvitation).mockResolvedValue(mockAuthResponse);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.acceptInvitation(mockAcceptData);
+      });
+
+      await waitFor(() => {
+        expect(authService.acceptInvitation).toHaveBeenCalledWith(mockAcceptData);
+      });
+    });
+
+    it("should navigate to dashboard on successful acceptance", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.acceptInvitation).mockResolvedValue(mockAuthResponse);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.acceptInvitation(mockAcceptData);
+      });
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
+      });
+    });
+
+    it("should update auth store on successful acceptance", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.acceptInvitation).mockResolvedValue(mockAuthResponse);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.acceptInvitation(mockAcceptData);
+      });
+
+      await waitFor(() => {
+        const state = useAuthStore.getState();
+        expect(state.user).toEqual(mockUser);
+        expect(state.tenant).toEqual(mockTenant);
+      });
+    });
+
+    it("should show success toast with tenant name on acceptance", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.acceptInvitation).mockResolvedValue(mockAuthResponse);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.acceptInvitation(mockAcceptData);
+      });
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith(
+          `Bienvenido a ${mockTenant.name}, ${mockUser.firstName}!`,
+        );
+      });
+    });
+
+    it("should show error toast with error message on failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.acceptInvitation).mockRejectedValue(
+        new Error("Invitation expired"),
+      );
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.acceptInvitation(mockAcceptData);
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Invitation expired");
+      });
+    });
+
+    it("should show default error toast when error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.acceptInvitation).mockRejectedValue(new Error(""));
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.acceptInvitation(mockAcceptData);
+      });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Error al aceptar la invitacion",
+        );
+      });
+    });
+
+    it("should set isAcceptingInvitation during acceptance", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      let resolveAccept: () => void;
+      const acceptPromise = new Promise<typeof mockAuthResponse>((resolve) => {
+        resolveAccept = () => resolve(mockAuthResponse);
+      });
+      vi.mocked(authService.acceptInvitation).mockReturnValue(acceptPromise);
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.acceptInvitation(mockAcceptData);
+      });
+
+      await waitFor(() => {
+        expect(result.current.isAcceptingInvitation).toBe(true);
+      });
+
+      await act(async () => {
+        resolveAccept!();
+      });
+
+      await waitFor(() => {
+        expect(result.current.isAcceptingInvitation).toBe(false);
+      });
+    });
+  });
+});
+
+describe("useInvitation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  const mockInvitationData = {
+    id: "invitation-123",
+    email: "invitee@example.com",
+    role: "EMPLOYEE",
+    status: "PENDING",
+    expiresAt: new Date().toISOString(),
+    tenant: {
+      id: "tenant-123",
+      name: "Test Company",
+      slug: "test-company",
+    },
+    invitedBy: {
+      firstName: "Admin",
+      lastName: "User",
+    },
+  };
+
+  it("should fetch invitation when token is provided", async () => {
+    vi.mocked(authService.getInvitation).mockResolvedValue(mockInvitationData);
+
+    const { result } = renderHook(() => useInvitation("valid-token"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(authService.getInvitation).toHaveBeenCalledWith("valid-token");
+    expect(result.current.data).toEqual(mockInvitationData);
+  });
+
+  it("should not fetch when token is null", () => {
+    const { result } = renderHook(() => useInvitation(null), {
+      wrapper: createWrapper(),
+    });
+
+    expect(authService.getInvitation).not.toHaveBeenCalled();
+    expect(result.current.data).toBeUndefined();
+  });
+
+  it("should return error when invitation fetch fails", async () => {
+    vi.mocked(authService.getInvitation).mockRejectedValue(
+      new Error("Invitation not found"),
+    );
+
+    const { result } = renderHook(() => useInvitation("invalid-token"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.error).toBeDefined();
+  });
+
+  it("should return loading state while fetching", async () => {
+    let resolveInvitation: () => void;
+    const invitationPromise = new Promise<typeof mockInvitationData>((resolve) => {
+      resolveInvitation = () => resolve(mockInvitationData);
+    });
+    vi.mocked(authService.getInvitation).mockReturnValue(invitationPromise);
+
+    const { result } = renderHook(() => useInvitation("valid-token"), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isLoading).toBe(true);
+
+    await act(async () => {
+      resolveInvitation!();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
     });
   });
 });

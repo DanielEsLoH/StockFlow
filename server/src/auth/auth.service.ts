@@ -15,7 +15,7 @@ import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma';
-import { RegisterDto, AcceptInvitationDto } from './dto';
+import { RegisterDto, AcceptInvitationDto, OAuthUserDto, OAuthLoginResult } from './dto';
 import { JwtPayload } from './types';
 import { InvitationsService } from '../invitations/invitations.service';
 import {
@@ -25,6 +25,7 @@ import {
   TenantStatus,
   Tenant,
   InvitationStatus,
+  AuthProvider,
 } from '@prisma/client';
 import { BrevoService } from '../notifications/mail/brevo.service';
 
@@ -982,5 +983,336 @@ export class AuthService {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
+  }
+
+  /**
+   * Handles OAuth login/registration flow for Google and GitHub authentication.
+   *
+   * This method:
+   * 1. Checks if user exists by OAuth ID (googleId/githubId) or email
+   * 2. If existing user:
+   *    - Links OAuth account if not already linked
+   *    - Updates avatar if missing
+   *    - Returns tokens if user is ACTIVE
+   *    - Returns pending status if user is PENDING
+   * 3. If new user:
+   *    - Creates tenant with name "{firstName}'s Company"
+   *    - Creates user with status=PENDING, emailVerified=true, role=ADMIN
+   *    - Sends admin notification email
+   *    - Returns pending status indicating approval required
+   *
+   * @param oauthUser - The OAuth user data from the provider
+   * @param provider - The authentication provider (GOOGLE or GITHUB)
+   * @returns OAuthLoginResult indicating success, pending, or error
+   */
+  async handleOAuthLogin(
+    oauthUser: OAuthUserDto,
+    provider: AuthProvider,
+  ): Promise<OAuthLoginResult> {
+    this.logger.debug(
+      `Processing OAuth login for ${oauthUser.email} via ${provider}`,
+    );
+
+    try {
+      // Determine which OAuth ID field to search
+      const oauthIdField = provider === AuthProvider.GOOGLE ? 'googleId' : 'githubId';
+      const oauthId =
+        provider === AuthProvider.GOOGLE ? oauthUser.googleId : oauthUser.githubId;
+
+      // First, try to find user by OAuth ID
+      let user = await this.prisma.user.findFirst({
+        where: { [oauthIdField]: oauthId },
+        include: { tenant: true },
+      });
+
+      // If not found by OAuth ID, try to find by email
+      if (!user) {
+        user = await this.prisma.user.findFirst({
+          where: { email: oauthUser.email.toLowerCase() },
+          include: { tenant: true },
+        });
+      }
+
+      if (user) {
+        // Existing user found
+        return this.handleExistingOAuthUser(user, oauthUser, provider);
+      } else {
+        // New user - create account
+        return this.handleNewOAuthUser(oauthUser, provider);
+      }
+    } catch (error) {
+      this.logger.error(
+        `OAuth login error for ${oauthUser.email}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      return {
+        status: 'error',
+        error:
+          error instanceof Error ? error.message : 'OAuth authentication failed',
+      };
+    }
+  }
+
+  /**
+   * Handles OAuth login for an existing user.
+   * Links OAuth account if not already linked and validates user status.
+   *
+   * @param user - The existing user with tenant
+   * @param oauthUser - The OAuth user data from the provider
+   * @param provider - The authentication provider
+   * @returns OAuthLoginResult
+   */
+  private async handleExistingOAuthUser(
+    user: User & { tenant: Tenant },
+    oauthUser: OAuthUserDto,
+    provider: AuthProvider,
+  ): Promise<OAuthLoginResult> {
+    this.logger.debug(`Existing user found: ${user.email}`);
+
+    // Prepare update data
+    const updateData: Partial<{
+      googleId: string;
+      githubId: string;
+      avatar: string;
+      authProvider: AuthProvider;
+    }> = {};
+
+    // Link OAuth account if not already linked
+    if (provider === AuthProvider.GOOGLE && !user.googleId && oauthUser.googleId) {
+      updateData.googleId = oauthUser.googleId;
+      this.logger.debug(`Linking Google account for user: ${user.email}`);
+    } else if (
+      provider === AuthProvider.GITHUB &&
+      !user.githubId &&
+      oauthUser.githubId
+    ) {
+      updateData.githubId = oauthUser.githubId;
+      this.logger.debug(`Linking GitHub account for user: ${user.email}`);
+    }
+
+    // Update avatar if missing
+    if (!user.avatar && oauthUser.avatarUrl) {
+      updateData.avatar = oauthUser.avatarUrl;
+    }
+
+    // Update authProvider if this is the first OAuth link and user registered with email
+    if (user.authProvider === AuthProvider.EMAIL) {
+      updateData.authProvider = provider;
+    }
+
+    // Apply updates if any
+    if (Object.keys(updateData).length > 0) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: updateData,
+      });
+    }
+
+    // Check user status
+    if (user.status === UserStatus.PENDING) {
+      this.logger.debug(
+        `OAuth login for pending user: ${user.email} - requires admin approval`,
+      );
+      return {
+        status: 'pending',
+        message:
+          'Your account is pending approval by an administrator. You will receive an email once approved.',
+      };
+    }
+
+    // Validate tenant status
+    if (
+      user.tenant.status === TenantStatus.SUSPENDED ||
+      user.tenant.status === TenantStatus.INACTIVE
+    ) {
+      this.logger.warn(`OAuth login denied - tenant not active: ${user.email}`);
+      return {
+        status: 'error',
+        error:
+          'Your organization account is not active. Please contact support.',
+      };
+    }
+
+    // Validate user status
+    if (
+      user.status === UserStatus.SUSPENDED ||
+      user.status === UserStatus.INACTIVE
+    ) {
+      this.logger.warn(`OAuth login denied - user not active: ${user.email}`);
+      return {
+        status: 'error',
+        error:
+          'Your account is not active. Please contact your administrator.',
+      };
+    }
+
+    // User is ACTIVE - generate tokens
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.tenantId,
+    );
+
+    // Update refresh token and lastLoginAt
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        refreshToken: tokens.refreshToken,
+        lastLoginAt: new Date(),
+      },
+    });
+
+    this.logger.log(`OAuth login successful for user: ${user.email}`);
+
+    return {
+      status: 'success',
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
+  }
+
+  /**
+   * Handles OAuth login for a new user.
+   * Creates a new tenant and user with PENDING status.
+   *
+   * @param oauthUser - The OAuth user data from the provider
+   * @param provider - The authentication provider
+   * @returns OAuthLoginResult with pending status
+   */
+  private async handleNewOAuthUser(
+    oauthUser: OAuthUserDto,
+    provider: AuthProvider,
+  ): Promise<OAuthLoginResult> {
+    this.logger.debug(`Creating new OAuth user: ${oauthUser.email}`);
+
+    // Generate tenant name
+    const tenantName = `${oauthUser.firstName}'s Company`;
+
+    // Generate a unique slug for the tenant
+    const baseSlug = this.generateSlug(tenantName);
+    let slug = baseSlug;
+    let slugCounter = 1;
+
+    // Ensure slug is unique
+    while (await this.prisma.tenant.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${slugCounter}`;
+      slugCounter++;
+    }
+
+    // Generate a random password for OAuth users (they won't use it)
+    const randomPassword = crypto.randomBytes(32).toString('hex');
+    const hashedPassword = await bcrypt.hash(randomPassword, this.saltRounds);
+
+    // Create tenant and user in a transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Create the tenant with TRIAL status
+      const tenant = await tx.tenant.create({
+        data: {
+          name: tenantName,
+          slug,
+          email: oauthUser.email.toLowerCase(),
+          status: TenantStatus.TRIAL,
+        },
+      });
+
+      // Create user data based on provider
+      const userData: {
+        email: string;
+        password: string;
+        firstName: string;
+        lastName: string;
+        avatar?: string;
+        tenantId: string;
+        status: UserStatus;
+        role: UserRole;
+        emailVerified: boolean;
+        authProvider: AuthProvider;
+        googleId?: string;
+        githubId?: string;
+      } = {
+        email: oauthUser.email.toLowerCase(),
+        password: hashedPassword,
+        firstName: oauthUser.firstName,
+        lastName: oauthUser.lastName,
+        avatar: oauthUser.avatarUrl,
+        tenantId: tenant.id,
+        status: UserStatus.PENDING, // Requires super admin approval
+        role: UserRole.ADMIN, // Admin since they created the company
+        emailVerified: true, // OAuth providers verify email
+        authProvider: provider,
+      };
+
+      // Add OAuth ID based on provider
+      if (provider === AuthProvider.GOOGLE && oauthUser.googleId) {
+        userData.googleId = oauthUser.googleId;
+      } else if (provider === AuthProvider.GITHUB && oauthUser.githubId) {
+        userData.githubId = oauthUser.githubId;
+      }
+
+      const user = await tx.user.create({
+        data: userData,
+      });
+
+      return { user, tenant };
+    });
+
+    this.logger.log(
+      `OAuth user created (pending approval): ${result.user.email}, tenant: ${result.tenant.name}`,
+    );
+
+    // Send admin notification email asynchronously
+    this.sendOAuthRegistrationNotification(result.user, result.tenant).catch(
+      (error) => {
+        this.logger.error(
+          'Failed to send OAuth registration notification',
+          error instanceof Error ? error.stack : undefined,
+        );
+      },
+    );
+
+    return {
+      status: 'pending',
+      message:
+        'Your account has been created and is pending approval by an administrator. You will receive an email once approved.',
+    };
+  }
+
+  /**
+   * Sends admin notification email for OAuth registration.
+   *
+   * @param user - The newly created user
+   * @param tenant - The newly created tenant
+   */
+  private async sendOAuthRegistrationNotification(
+    user: { email: string; firstName: string; lastName: string },
+    tenant: { name: string },
+  ): Promise<void> {
+    const userName = `${user.firstName} ${user.lastName}`;
+
+    try {
+      const result = await this.brevoService.sendAdminNewRegistrationNotification({
+        userEmail: user.email,
+        userName,
+        tenantName: tenant.name,
+        registrationDate: new Date(),
+      });
+
+      if (result.success) {
+        this.logger.log(
+          `OAuth registration admin notification sent for user: ${user.email}`,
+        );
+      } else {
+        this.logger.warn(
+          `OAuth registration admin notification failed for user: ${user.email} - ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `OAuth registration admin notification error for user: ${user.email}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 }

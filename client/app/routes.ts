@@ -9,6 +9,7 @@ export default [
   route("register", "routes/register.tsx"),
   route("verify-email", "routes/verify-email.tsx"),
   route("accept-invitation", "routes/accept-invitation.tsx"),
+  route("oauth/callback", "routes/oauth.callback.tsx"),
 
   // System Admin routes (separate from tenant app)
   route("system-admin/login", "routes/system-admin.login.tsx"),

@@ -128,6 +128,12 @@ enum InvitationStatus {
   CANCELLED
 }
 
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  GITHUB
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -172,6 +178,9 @@ model User {
   lastName                 String     @map("last_name")
   phone                    String?
   avatar                   String?
+  googleId                 String?       @unique @map("google_id")
+  githubId                 String?       @unique @map("github_id")
+  authProvider             AuthProvider  @default(EMAIL) @map("auth_provider")
   role                     UserRole   @default(EMPLOYEE)
   status                   UserStatus @default(PENDING)
   emailVerified            Boolean    @default(false) @map("email_verified")

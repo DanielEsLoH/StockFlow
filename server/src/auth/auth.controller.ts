@@ -10,6 +10,7 @@ import {
   Req,
   Res,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -36,6 +37,7 @@ import {
   VerifyEmailDto,
   ResendVerificationDto,
   AcceptInvitationDto,
+  OAuthUserDto,
 } from './dto';
 import { AuthResponseEntity, LogoutResponseEntity } from './entities';
 import {
@@ -45,8 +47,10 @@ import {
   BotProtect,
 } from '../arcjet';
 import { JwtAuthGuard } from './guards';
+import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../common/decorators';
-import { UserRole } from '@prisma/client';
+import { UserRole, AuthProvider } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 
 /**
  * Extended Request interface that includes user info from JWT
@@ -80,8 +84,16 @@ interface CurrentUserContext {
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
+  private readonly frontendUrl: string;
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {
+    this.frontendUrl =
+      this.configService.get<string>('app.frontendUrl') ||
+      'http://localhost:5173';
+  }
 
   /**
    * Gets the current authenticated user's information
@@ -495,5 +507,205 @@ export class AuthController {
       refreshTokenDto.refreshToken,
     );
     return this.authService.logout(authResponse.user.id);
+  }
+
+  // ============================================================================
+  // OAuth/SSO Endpoints
+  // ============================================================================
+
+  /**
+   * Initiates Google OAuth authentication flow.
+   * Redirects the user to Google's consent screen.
+   *
+   * @example
+   * GET /auth/google
+   */
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({
+    summary: 'Initiate Google OAuth',
+    description:
+      'Redirects to Google consent screen for OAuth authentication. Requires GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to be configured.',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirects to Google OAuth consent screen',
+  })
+  googleAuth(): void {
+    // Guard handles the redirect to Google
+    this.logger.log('Google OAuth initiation');
+  }
+
+  /**
+   * Handles the callback from Google OAuth.
+   * Processes the OAuth response and redirects to the frontend with tokens or status.
+   *
+   * @param req - The request containing the OAuth user from the Google strategy
+   * @param res - The response object for redirecting
+   *
+   * @example
+   * GET /auth/google/callback
+   * Redirects to:
+   * - Success: ${frontendUrl}/oauth/callback?token=xxx&refresh=xxx
+   * - Pending: ${frontendUrl}/oauth/callback?pending=true
+   * - Error: ${frontendUrl}/oauth/callback?error=message
+   */
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({
+    summary: 'Google OAuth callback',
+    description:
+      'Handles the OAuth callback from Google and redirects to frontend with authentication result.',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirects to frontend with tokens or error',
+  })
+  async googleAuthCallback(
+    @Req() req: Request & { user?: OAuthUserDto },
+    @Res() res: Response,
+  ): Promise<void> {
+    this.logger.log('Google OAuth callback received');
+
+    try {
+      if (!req.user) {
+        throw new UnauthorizedException('No user data from Google OAuth');
+      }
+
+      const result = await this.authService.handleOAuthLogin(
+        req.user,
+        AuthProvider.GOOGLE,
+      );
+
+      this.redirectOAuthResult(res, result);
+    } catch (error) {
+      this.logger.error(
+        `Google OAuth callback error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      const errorMessage =
+        error instanceof Error ? error.message : 'Authentication failed';
+      res.redirect(
+        `${this.frontendUrl}/oauth/callback?error=${encodeURIComponent(errorMessage)}`,
+      );
+    }
+  }
+
+  /**
+   * Initiates GitHub OAuth authentication flow.
+   * Redirects the user to GitHub's authorization screen.
+   *
+   * @example
+   * GET /auth/github
+   */
+  @Get('github')
+  @UseGuards(AuthGuard('github'))
+  @ApiOperation({
+    summary: 'Initiate GitHub OAuth',
+    description:
+      'Redirects to GitHub authorization screen for OAuth authentication. Requires GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to be configured.',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirects to GitHub OAuth authorization screen',
+  })
+  githubAuth(): void {
+    // Guard handles the redirect to GitHub
+    this.logger.log('GitHub OAuth initiation');
+  }
+
+  /**
+   * Handles the callback from GitHub OAuth.
+   * Processes the OAuth response and redirects to the frontend with tokens or status.
+   *
+   * @param req - The request containing the OAuth user from the GitHub strategy
+   * @param res - The response object for redirecting
+   *
+   * @example
+   * GET /auth/github/callback
+   * Redirects to:
+   * - Success: ${frontendUrl}/oauth/callback?token=xxx&refresh=xxx
+   * - Pending: ${frontendUrl}/oauth/callback?pending=true
+   * - Error: ${frontendUrl}/oauth/callback?error=message
+   */
+  @Get('github/callback')
+  @UseGuards(AuthGuard('github'))
+  @ApiOperation({
+    summary: 'GitHub OAuth callback',
+    description:
+      'Handles the OAuth callback from GitHub and redirects to frontend with authentication result.',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirects to frontend with tokens or error',
+  })
+  async githubAuthCallback(
+    @Req() req: Request & { user?: OAuthUserDto },
+    @Res() res: Response,
+  ): Promise<void> {
+    this.logger.log('GitHub OAuth callback received');
+
+    try {
+      if (!req.user) {
+        throw new UnauthorizedException('No user data from GitHub OAuth');
+      }
+
+      const result = await this.authService.handleOAuthLogin(
+        req.user,
+        AuthProvider.GITHUB,
+      );
+
+      this.redirectOAuthResult(res, result);
+    } catch (error) {
+      this.logger.error(
+        `GitHub OAuth callback error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+
+      const errorMessage =
+        error instanceof Error ? error.message : 'Authentication failed';
+      res.redirect(
+        `${this.frontendUrl}/oauth/callback?error=${encodeURIComponent(errorMessage)}`,
+      );
+    }
+  }
+
+  /**
+   * Redirects to the frontend based on the OAuth login result.
+   *
+   * @param res - The response object for redirecting
+   * @param result - The OAuth login result
+   */
+  private redirectOAuthResult(
+    res: Response,
+    result: {
+      status: 'success' | 'pending' | 'error';
+      accessToken?: string;
+      refreshToken?: string;
+      message?: string;
+      error?: string;
+    },
+  ): void {
+    switch (result.status) {
+      case 'success':
+        // Redirect with tokens
+        res.redirect(
+          `${this.frontendUrl}/oauth/callback?token=${result.accessToken}&refresh=${result.refreshToken}`,
+        );
+        break;
+
+      case 'pending':
+        // Redirect to pending approval page
+        res.redirect(`${this.frontendUrl}/oauth/callback?pending=true`);
+        break;
+
+      case 'error':
+        // Redirect with error message
+        res.redirect(
+          `${this.frontendUrl}/oauth/callback?error=${encodeURIComponent(result.error || 'Authentication failed')}`,
+        );
+        break;
+    }
   }
 }

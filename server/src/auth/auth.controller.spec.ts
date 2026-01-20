@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { AuthController } from './auth.controller';
 import {
@@ -88,11 +89,21 @@ describe('AuthController', () => {
       getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
     };
 
+    const mockConfigService = {
+      get: jest.fn((key: string) => {
+        const config: Record<string, string> = {
+          'app.frontendUrl': 'http://localhost:5173',
+        };
+        return config[key];
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: ArcjetService, useValue: mockArcjetService },
+        { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 

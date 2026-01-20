@@ -86,6 +86,24 @@ export interface RedisConfig {
 }
 
 /**
+ * Google OAuth configuration interface
+ */
+export interface GoogleOAuthConfig {
+  clientId: string | undefined;
+  clientSecret: string | undefined;
+  callbackUrl: string;
+}
+
+/**
+ * GitHub OAuth configuration interface
+ */
+export interface GitHubOAuthConfig {
+  clientId: string | undefined;
+  clientSecret: string | undefined;
+  callbackUrl: string;
+}
+
+/**
  * Complete application configuration interface
  */
 export interface Configuration {
@@ -98,6 +116,8 @@ export interface Configuration {
   arcjet: ArcjetConfig;
   stripe: StripeConfig;
   redis: RedisConfig;
+  google: GoogleOAuthConfig;
+  github: GitHubOAuthConfig;
 }
 
 /**
@@ -216,6 +236,36 @@ export const redisConfig = registerAs(
 );
 
 /**
+ * Google OAuth configuration factory
+ * Provides Google OAuth2 authentication settings
+ */
+export const googleConfig = registerAs(
+  'google',
+  (): GoogleOAuthConfig => ({
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackUrl:
+      process.env.GOOGLE_CALLBACK_URL ||
+      'http://localhost:3000/auth/google/callback',
+  }),
+);
+
+/**
+ * GitHub OAuth configuration factory
+ * Provides GitHub OAuth authentication settings
+ */
+export const githubConfig = registerAs(
+  'github',
+  (): GitHubOAuthConfig => ({
+    clientId: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    callbackUrl:
+      process.env.GITHUB_CALLBACK_URL ||
+      'http://localhost:3000/auth/github/callback',
+  }),
+);
+
+/**
  * Combined configuration factory function
  * Returns the complete configuration object
  */
@@ -269,5 +319,19 @@ export default (): Configuration => ({
     password: process.env.REDIS_PASSWORD,
     db: parseInt(process.env.REDIS_DB || '0', 10),
     ttl: parseInt(process.env.CACHE_TTL || '300', 10),
+  },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackUrl:
+      process.env.GOOGLE_CALLBACK_URL ||
+      'http://localhost:3000/auth/google/callback',
+  },
+  github: {
+    clientId: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    callbackUrl:
+      process.env.GITHUB_CALLBACK_URL ||
+      'http://localhost:3000/auth/github/callback',
   },
 });

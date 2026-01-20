@@ -15,7 +15,8 @@ export class CreatePortalDto {
    * @example 'https://app.stockflow.com/settings/billing'
    */
   @ApiPropertyOptional({
-    description: 'Return URL after the customer leaves the portal (defaults to frontend URL)',
+    description:
+      'Return URL after the customer leaves the portal (defaults to frontend URL)',
     example: 'https://app.stockflow.com/settings/billing',
     format: 'uri',
   })

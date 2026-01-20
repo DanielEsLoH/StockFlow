@@ -70,15 +70,22 @@ export class AuditLogsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'List audit logs',
-    description: 'Returns a paginated list of audit logs with optional filters for action, entity type, user, and date range. Only ADMIN and MANAGER users can access this endpoint.',
+    description:
+      'Returns a paginated list of audit logs with optional filters for action, entity type, user, and date range. Only ADMIN and MANAGER users can access this endpoint.',
   })
   @ApiResponse({
     status: 200,
     description: 'Audit logs retrieved successfully',
     type: PaginatedAuditLogsEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async findAll(
     @CurrentUser() user: RequestUser,
     @Query() query: QueryAuditLogsDto,
@@ -105,7 +112,8 @@ export class AuditLogsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Get audit statistics',
-    description: 'Returns audit statistics including counts by action type, entity type, and unique users. Can optionally filter by date range. Only ADMIN and MANAGER users can access this endpoint.',
+    description:
+      'Returns audit statistics including counts by action type, entity type, and unique users. Can optionally filter by date range. Only ADMIN and MANAGER users can access this endpoint.',
   })
   @ApiQuery({
     name: 'startDate',
@@ -126,8 +134,14 @@ export class AuditLogsController {
     description: 'Audit statistics retrieved successfully',
     type: AuditStatsEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async getStats(
     @CurrentUser() user: RequestUser,
     @Query('startDate') startDate?: string,
@@ -158,7 +172,8 @@ export class AuditLogsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Get entity audit history',
-    description: 'Returns the audit history for a specific entity. Useful for tracking all changes made to a particular record. Only ADMIN and MANAGER users can access this endpoint.',
+    description:
+      'Returns the audit history for a specific entity. Useful for tracking all changes made to a particular record. Only ADMIN and MANAGER users can access this endpoint.',
   })
   @ApiParam({
     name: 'entityType',
@@ -189,8 +204,14 @@ export class AuditLogsController {
     description: 'Entity audit history retrieved successfully',
     type: PaginatedAuditLogsEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async findByEntity(
     @CurrentUser() user: RequestUser,
     @Param('entityType') entityType: string,
@@ -235,7 +256,8 @@ export class AuditLogsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Get user activity logs',
-    description: 'Returns all audit logs for a specific user actions. Useful for tracking user activity and changes. Only ADMIN and MANAGER users can access this endpoint.',
+    description:
+      'Returns all audit logs for a specific user actions. Useful for tracking user activity and changes. Only ADMIN and MANAGER users can access this endpoint.',
   })
   @ApiParam({
     name: 'userId',
@@ -261,8 +283,14 @@ export class AuditLogsController {
     description: 'User activity logs retrieved successfully',
     type: PaginatedAuditLogsEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async findByUser(
     @CurrentUser() user: RequestUser,
     @Param('userId') userId: string,
@@ -305,13 +333,15 @@ export class AuditLogsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Cleanup old audit logs',
-    description: 'Deletes audit logs older than the specified number of days. Useful for data retention compliance. Only ADMIN users can perform this operation.',
+    description:
+      'Deletes audit logs older than the specified number of days. Useful for data retention compliance. Only ADMIN users can perform this operation.',
   })
   @ApiQuery({
     name: 'days',
     required: false,
     type: Number,
-    description: 'Number of days to retain (delete logs older than this, default: 90, min: 1)',
+    description:
+      'Number of days to retain (delete logs older than this, default: 90, min: 1)',
     example: 90,
   })
   @ApiResponse({
@@ -319,9 +349,18 @@ export class AuditLogsController {
     description: 'Audit logs cleaned up successfully',
     type: AuditCleanupResponseEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid days parameter' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid days parameter',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async cleanup(
     @CurrentUser() user: RequestUser,
     @Query('days') days?: string,

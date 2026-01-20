@@ -76,15 +76,22 @@ export class NotificationsController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: 'Preview low stock products',
-    description: 'Preview low stock products without sending any emails. Useful for checking what would be included in a low stock alert. Only ADMIN users can access this endpoint.',
+    description:
+      'Preview low stock products without sending any emails. Useful for checking what would be included in a low stock alert. Only ADMIN users can access this endpoint.',
   })
   @ApiResponse({
     status: 200,
     description: 'Low stock preview retrieved successfully',
     type: LowStockPreviewEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async previewLowStock(): Promise<{
     products: LowStockProduct[];
     count: number;
@@ -115,15 +122,22 @@ export class NotificationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Trigger low stock alert',
-    description: 'Manually triggers a low stock alert email for the current tenant. Sends email to all admin users. Only ADMIN users can trigger this operation.',
+    description:
+      'Manually triggers a low stock alert email for the current tenant. Sends email to all admin users. Only ADMIN users can trigger this operation.',
   })
   @ApiResponse({
     status: 200,
     description: 'Low stock alert triggered successfully',
     type: TriggerResponseEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async triggerLowStockAlert(): Promise<TriggerResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
@@ -183,15 +197,22 @@ export class NotificationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Trigger overdue invoice reminders',
-    description: 'Manually triggers overdue invoice reminder emails for the current tenant. Sends reminder emails to customers with overdue invoices. Only ADMIN users can trigger this operation.',
+    description:
+      'Manually triggers overdue invoice reminder emails for the current tenant. Sends reminder emails to customers with overdue invoices. Only ADMIN users can trigger this operation.',
   })
   @ApiResponse({
     status: 200,
     description: 'Overdue invoice reminders triggered successfully',
     type: TriggerResponseEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async triggerOverdueReminders(): Promise<TriggerResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
@@ -237,7 +258,8 @@ export class NotificationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Send test email',
-    description: 'Sends a test email of the specified type. Available types: welcome, low-stock, invoice-sent, overdue, payment. Useful for verifying email configuration. Only ADMIN users can send test emails.',
+    description:
+      'Sends a test email of the specified type. Available types: welcome, low-stock, invoice-sent, overdue, payment. Useful for verifying email configuration. Only ADMIN users can send test emails.',
   })
   @ApiParam({
     name: 'type',
@@ -251,8 +273,14 @@ export class NotificationsController {
     type: TriggerResponseEntity,
   })
   @ApiResponse({ status: 400, description: 'Bad Request - Invalid email type' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   sendTestEmail(@Param('type') type: string): TriggerResponse {
     const tenantId = this.tenantContext.requireTenantId();
 
@@ -291,15 +319,22 @@ export class NotificationsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Get notification system status',
-    description: 'Returns the status of the notification system including whether email is configured and the list of scheduled jobs. ADMIN and MANAGER users can access this endpoint.',
+    description:
+      'Returns the status of the notification system including whether email is configured and the list of scheduled jobs. ADMIN and MANAGER users can access this endpoint.',
   })
   @ApiResponse({
     status: 200,
     description: 'Notification status retrieved successfully',
     type: NotificationStatusEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   getStatus(): {
     mailConfigured: boolean;
     scheduledJobs: string[];

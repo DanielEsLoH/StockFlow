@@ -386,7 +386,7 @@ describe('Products E2E Tests', () => {
   // ==========================================================================
 
   describe('GET /products - List products with pagination', () => {
-    let paginationTestProducts: string[] = [];
+    const paginationTestProducts: string[] = [];
 
     beforeAll(async () => {
       // Create 15 products for pagination testing
@@ -461,7 +461,7 @@ describe('Products E2E Tests', () => {
   // ==========================================================================
 
   describe('GET /products - Filter products', () => {
-    let filterTestProducts: string[] = [];
+    const filterTestProducts: string[] = [];
 
     beforeAll(async () => {
       // Create products with different statuses and categories
@@ -1135,7 +1135,7 @@ describe('Products E2E Tests', () => {
   // ==========================================================================
 
   describe('GET /products/low-stock - Low stock products', () => {
-    let lowStockTestProducts: string[] = [];
+    const lowStockTestProducts: string[] = [];
 
     beforeAll(async () => {
       // Create products with low stock (stock < minStock)
@@ -1502,7 +1502,7 @@ describe('Products E2E Tests', () => {
   // ==========================================================================
 
   describe('GET /products/search - Search products', () => {
-    let searchTestProducts: string[] = [];
+    const searchTestProducts: string[] = [];
 
     beforeAll(async () => {
       const product1 = await prisma.product.create({
@@ -1571,9 +1571,9 @@ describe('Products E2E Tests', () => {
       const body = response.body as PaginatedProductsResponse;
 
       expect(body.data).toBeInstanceOf(Array);
-      expect(body.data.some((p) => p.barcode?.includes('BARCODE-KEYBOARD'))).toBe(
-        true,
-      );
+      expect(
+        body.data.some((p) => p.barcode?.includes('BARCODE-KEYBOARD')),
+      ).toBe(true);
     });
 
     it('should return empty results for non-matching search', async () => {

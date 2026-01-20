@@ -28,7 +28,9 @@ export class CreatePaymentDto {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @IsString({ message: 'El ID de la factura debe ser una cadena de texto' })
-  @Matches(CUID_PATTERN, { message: 'El ID de la factura debe ser un CUID valido' })
+  @Matches(CUID_PATTERN, {
+    message: 'El ID de la factura debe ser un CUID valido',
+  })
   invoiceId: string;
 
   /**
@@ -64,7 +66,8 @@ export class CreatePaymentDto {
    * @example "TXN-123456789"
    */
   @ApiPropertyOptional({
-    description: 'Payment reference number (transaction ID, check number, etc.)',
+    description:
+      'Payment reference number (transaction ID, check number, etc.)',
     example: 'TXN-123456789',
   })
   @IsString({ message: 'La referencia debe ser texto' })
@@ -88,7 +91,8 @@ export class CreatePaymentDto {
    * @example "2024-01-15T10:30:00.000Z"
    */
   @ApiPropertyOptional({
-    description: 'Date when the payment was made (defaults to current date/time)',
+    description:
+      'Date when the payment was made (defaults to current date/time)',
     example: '2024-01-15T10:30:00.000Z',
     type: String,
     format: 'date-time',

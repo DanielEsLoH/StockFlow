@@ -38,7 +38,10 @@ import { Roles, CurrentUser } from '../common/decorators';
 import type { RequestUser } from '../auth/types';
 import { PaymentsService } from '../payments';
 import type { PaymentResponse } from '../payments';
-import { InvoiceEntity, PaginatedInvoicesEntity } from './entities/invoice.entity';
+import {
+  InvoiceEntity,
+  PaginatedInvoicesEntity,
+} from './entities/invoice.entity';
 import { PaymentEntity } from '../payments/entities/payment.entity';
 
 /**
@@ -78,14 +81,18 @@ export class InvoicesController {
   @Get()
   @ApiOperation({
     summary: 'List all invoices',
-    description: 'Returns a paginated list of invoices with optional filters for status, payment status, customer, and date range. All authenticated users can access this endpoint.',
+    description:
+      'Returns a paginated list of invoices with optional filters for status, payment status, customer, and date range. All authenticated users can access this endpoint.',
   })
   @ApiResponse({
     status: 200,
     description: 'List of invoices retrieved successfully',
     type: PaginatedInvoicesEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   async findAll(
     @Query() filters: FilterInvoicesDto,
   ): Promise<PaginatedInvoicesResponse> {
@@ -109,7 +116,8 @@ export class InvoicesController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get invoice by ID',
-    description: 'Returns a single invoice with all its items, customer, and user relations. All authenticated users can access this endpoint.',
+    description:
+      'Returns a single invoice with all its items, customer, and user relations. All authenticated users can access this endpoint.',
   })
   @ApiParam({
     name: 'id',
@@ -121,7 +129,10 @@ export class InvoicesController {
     description: 'Invoice retrieved successfully',
     type: InvoiceEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async findOne(@Param('id') id: string): Promise<InvoiceResponse> {
     this.logger.log(`Getting invoice: ${id}`);
@@ -160,16 +171,27 @@ export class InvoicesController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new invoice',
-    description: 'Creates a new invoice with items. Automatically generates invoice number, reduces stock, and creates stock movements. Respects tenant monthly invoice limits based on subscription plan. Only ADMIN and MANAGER users can create invoices.',
+    description:
+      'Creates a new invoice with items. Automatically generates invoice number, reduces stock, and creates stock movements. Respects tenant monthly invoice limits based on subscription plan. Only ADMIN and MANAGER users can create invoices.',
   })
   @ApiResponse({
     status: 201,
     description: 'Invoice created successfully',
     type: InvoiceEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data or insufficient stock' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions or monthly invoice limit reached' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid input data or insufficient stock',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions or monthly invoice limit reached',
+  })
   @ApiResponse({ status: 404, description: 'Customer or product not found' })
   async create(
     @Body() dto: CreateInvoiceDto,
@@ -201,7 +223,8 @@ export class InvoicesController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Update an invoice',
-    description: 'Updates an existing invoice. Only DRAFT invoices can be updated. Only notes and dueDate can be modified. Only ADMIN and MANAGER users can update invoices.',
+    description:
+      'Updates an existing invoice. Only DRAFT invoices can be updated. Only notes and dueDate can be modified. Only ADMIN and MANAGER users can update invoices.',
   })
   @ApiParam({
     name: 'id',
@@ -213,9 +236,19 @@ export class InvoicesController {
     description: 'Invoice updated successfully',
     type: InvoiceEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data or invoice is not in DRAFT status' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad Request - Invalid input data or invoice is not in DRAFT status',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async update(
     @Param('id') id: string,
@@ -242,7 +275,8 @@ export class InvoicesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete an invoice',
-    description: 'Deletes a DRAFT invoice and restores stock. Only ADMIN users can delete invoices. Only DRAFT invoices can be deleted.',
+    description:
+      'Deletes a DRAFT invoice and restores stock. Only ADMIN users can delete invoices. Only DRAFT invoices can be deleted.',
   })
   @ApiParam({
     name: 'id',
@@ -250,9 +284,18 @@ export class InvoicesController {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @ApiResponse({ status: 204, description: 'Invoice deleted successfully' })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invoice is not in DRAFT status' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invoice is not in DRAFT status',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async delete(@Param('id') id: string): Promise<void> {
     this.logger.log(`Deleting invoice: ${id}`);
@@ -275,7 +318,8 @@ export class InvoicesController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Send an invoice',
-    description: 'Changes invoice status from DRAFT to SENT. Only DRAFT invoices can be sent. Only ADMIN and MANAGER users can send invoices.',
+    description:
+      'Changes invoice status from DRAFT to SENT. Only DRAFT invoices can be sent. Only ADMIN and MANAGER users can send invoices.',
   })
   @ApiParam({
     name: 'id',
@@ -287,9 +331,18 @@ export class InvoicesController {
     description: 'Invoice sent successfully',
     type: InvoiceEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invoice is not in DRAFT status' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invoice is not in DRAFT status',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async send(@Param('id') id: string): Promise<InvoiceResponse> {
     this.logger.log(`Sending invoice: ${id}`);
@@ -313,7 +366,8 @@ export class InvoicesController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: 'Cancel an invoice',
-    description: 'Cancels an invoice, restores stock, and creates return stock movements. Cannot cancel already cancelled or void invoices. Only ADMIN users can cancel invoices.',
+    description:
+      'Cancels an invoice, restores stock, and creates return stock movements. Cannot cancel already cancelled or void invoices. Only ADMIN users can cancel invoices.',
   })
   @ApiParam({
     name: 'id',
@@ -325,9 +379,18 @@ export class InvoicesController {
     description: 'Invoice cancelled successfully',
     type: InvoiceEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invoice is already cancelled or void' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invoice is already cancelled or void',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async cancel(@Param('id') id: string): Promise<InvoiceResponse> {
     this.logger.log(`Cancelling invoice: ${id}`);
@@ -352,7 +415,8 @@ export class InvoicesController {
   @Get(':id/payments')
   @ApiOperation({
     summary: 'Get invoice payments',
-    description: 'Returns all payments for a specific invoice. All authenticated users can access this endpoint.',
+    description:
+      'Returns all payments for a specific invoice. All authenticated users can access this endpoint.',
   })
   @ApiParam({
     name: 'id',
@@ -364,7 +428,10 @@ export class InvoicesController {
     description: 'Payments retrieved successfully',
     type: [PaymentEntity],
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async getPayments(@Param('id') id: string): Promise<PaymentResponse[]> {
     this.logger.log(`Getting payments for invoice: ${id}`);
@@ -403,7 +470,8 @@ export class InvoicesController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Add item to invoice',
-    description: 'Adds a new item to a DRAFT invoice. Validates product exists and has sufficient stock. Decrements product stock and creates stock movement. Recalculates invoice totals. Only ADMIN and MANAGER users can add items.',
+    description:
+      'Adds a new item to a DRAFT invoice. Validates product exists and has sufficient stock. Decrements product stock and creates stock movement. Recalculates invoice totals. Only ADMIN and MANAGER users can add items.',
   })
   @ApiParam({
     name: 'id',
@@ -416,9 +484,19 @@ export class InvoicesController {
     description: 'Item added successfully',
     type: InvoiceEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data, invoice not in DRAFT status, or insufficient stock' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad Request - Invalid input data, invoice not in DRAFT status, or insufficient stock',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Invoice or product not found' })
   async addItem(
     @Param('id') id: string,
@@ -454,7 +532,8 @@ export class InvoicesController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Update invoice item',
-    description: 'Updates an existing item on a DRAFT invoice. Adjusts product stock based on quantity difference. Creates stock movement for the adjustment. Recalculates invoice totals. Only ADMIN and MANAGER users can update items.',
+    description:
+      'Updates an existing item on a DRAFT invoice. Adjusts product stock based on quantity difference. Creates stock movement for the adjustment. Recalculates invoice totals. Only ADMIN and MANAGER users can update items.',
   })
   @ApiParam({
     name: 'id',
@@ -472,9 +551,19 @@ export class InvoicesController {
     description: 'Item updated successfully',
     type: InvoiceEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data, invoice not in DRAFT status, or insufficient stock' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad Request - Invalid input data, invoice not in DRAFT status, or insufficient stock',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Invoice or item not found' })
   async updateItem(
     @Param('id') id: string,
@@ -507,7 +596,8 @@ export class InvoicesController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Delete invoice item',
-    description: 'Deletes an item from a DRAFT invoice. Restores product stock and creates stock movement. Recalculates invoice totals. Only ADMIN and MANAGER users can delete items.',
+    description:
+      'Deletes an item from a DRAFT invoice. Restores product stock and creates stock movement. Recalculates invoice totals. Only ADMIN and MANAGER users can delete items.',
   })
   @ApiParam({
     name: 'id',
@@ -524,9 +614,18 @@ export class InvoicesController {
     description: 'Item deleted successfully',
     type: InvoiceEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invoice not in DRAFT status' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invoice not in DRAFT status',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Invoice or item not found' })
   async deleteItem(
     @Param('id') id: string,

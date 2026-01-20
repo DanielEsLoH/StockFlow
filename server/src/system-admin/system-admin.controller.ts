@@ -158,7 +158,8 @@ export class SystemAdminController {
   @ApiBearerAuth('SystemAdmin-JWT')
   @ApiOperation({
     summary: 'Get current system admin',
-    description: 'Returns the currently authenticated system admin information.',
+    description:
+      'Returns the currently authenticated system admin information.',
   })
   @ApiResponse({
     status: 200,
@@ -303,7 +304,9 @@ export class SystemAdminController {
     @Param() params: UserIdParamDto,
     @CurrentAdmin() admin: SystemAdminRequestUser,
   ): Promise<UserActionResult> {
-    this.logger.log(`Approve user request: ${params.id} by admin: ${admin.email}`);
+    this.logger.log(
+      `Approve user request: ${params.id} by admin: ${admin.email}`,
+    );
     return this.systemAdminService.approveUser(params.id, admin.adminId);
   }
 
@@ -358,8 +361,14 @@ export class SystemAdminController {
     @Body() body: SuspendUserDto,
     @CurrentAdmin() admin: SystemAdminRequestUser,
   ): Promise<UserActionResult> {
-    this.logger.log(`Suspend user request: ${params.id} by admin: ${admin.email}`);
-    return this.systemAdminService.suspendUser(params.id, admin.adminId, body.reason);
+    this.logger.log(
+      `Suspend user request: ${params.id} by admin: ${admin.email}`,
+    );
+    return this.systemAdminService.suspendUser(
+      params.id,
+      admin.adminId,
+      body.reason,
+    );
   }
 
   /**
@@ -413,8 +422,14 @@ export class SystemAdminController {
     @Body() body: DeleteUserDto,
     @CurrentAdmin() admin: SystemAdminRequestUser,
   ): Promise<UserActionResult> {
-    this.logger.log(`Delete user request: ${params.id} by admin: ${admin.email}`);
-    return this.systemAdminService.deleteUser(params.id, admin.adminId, body.reason);
+    this.logger.log(
+      `Delete user request: ${params.id} by admin: ${admin.email}`,
+    );
+    return this.systemAdminService.deleteUser(
+      params.id,
+      admin.adminId,
+      body.reason,
+    );
   }
 
   // ============================================================================

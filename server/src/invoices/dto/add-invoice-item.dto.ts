@@ -26,7 +26,9 @@ export class AddInvoiceItemDto {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @IsString({ message: 'El ID del producto debe ser una cadena de texto' })
-  @Matches(CUID_PATTERN, { message: 'El ID del producto debe ser un CUID válido' })
+  @Matches(CUID_PATTERN, {
+    message: 'El ID del producto debe ser un CUID válido',
+  })
   productId: string;
 
   /**

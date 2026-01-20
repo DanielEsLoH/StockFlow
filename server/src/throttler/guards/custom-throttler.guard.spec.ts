@@ -55,7 +55,9 @@ describe('CustomThrottlerGuard', () => {
         user: { userId: 'user-123', tenantId: 'tenant-456' },
       });
 
-      const tracker = await (guard as unknown as { getTracker: (req: unknown) => Promise<string> }).getTracker(req);
+      const tracker = await (
+        guard as unknown as { getTracker: (req: unknown) => Promise<string> }
+      ).getTracker(req);
 
       expect(tracker).toBe('user:user-123');
     });
@@ -66,7 +68,9 @@ describe('CustomThrottlerGuard', () => {
         ip: '192.168.1.1',
       });
 
-      const tracker = await (guard as unknown as { getTracker: (req: unknown) => Promise<string> }).getTracker(req);
+      const tracker = await (
+        guard as unknown as { getTracker: (req: unknown) => Promise<string> }
+      ).getTracker(req);
 
       expect(tracker).toBe('tenant:tenant-456:192.168.1.1');
     });
@@ -74,7 +78,9 @@ describe('CustomThrottlerGuard', () => {
     it('should return IP-based tracker for anonymous requests', async () => {
       const req = createMockRequest({ ip: '192.168.1.100' });
 
-      const tracker = await (guard as unknown as { getTracker: (req: unknown) => Promise<string> }).getTracker(req);
+      const tracker = await (
+        guard as unknown as { getTracker: (req: unknown) => Promise<string> }
+      ).getTracker(req);
 
       expect(tracker).toBe('ip:192.168.1.100');
     });
@@ -85,7 +91,9 @@ describe('CustomThrottlerGuard', () => {
         ip: '127.0.0.1',
       });
 
-      const tracker = await (guard as unknown as { getTracker: (req: unknown) => Promise<string> }).getTracker(req);
+      const tracker = await (
+        guard as unknown as { getTracker: (req: unknown) => Promise<string> }
+      ).getTracker(req);
 
       expect(tracker).toBe('ip:1.2.3.4');
     });
@@ -96,7 +104,9 @@ describe('CustomThrottlerGuard', () => {
         ip: '127.0.0.1',
       });
 
-      const tracker = await (guard as unknown as { getTracker: (req: unknown) => Promise<string> }).getTracker(req);
+      const tracker = await (
+        guard as unknown as { getTracker: (req: unknown) => Promise<string> }
+      ).getTracker(req);
 
       expect(tracker).toBe('ip:5.6.7.8');
     });
@@ -107,7 +117,9 @@ describe('CustomThrottlerGuard', () => {
         ip: '127.0.0.1',
       });
 
-      const tracker = await (guard as unknown as { getTracker: (req: unknown) => Promise<string> }).getTracker(req);
+      const tracker = await (
+        guard as unknown as { getTracker: (req: unknown) => Promise<string> }
+      ).getTracker(req);
 
       expect(tracker).toBe('ip:10.0.0.1');
     });
@@ -122,7 +134,9 @@ describe('CustomThrottlerGuard', () => {
         ip: '127.0.0.1',
       });
 
-      const tracker = await (guard as unknown as { getTracker: (req: unknown) => Promise<string> }).getTracker(req);
+      const tracker = await (
+        guard as unknown as { getTracker: (req: unknown) => Promise<string> }
+      ).getTracker(req);
 
       expect(tracker).toBe('ip:1.1.1.1');
     });
@@ -133,7 +147,9 @@ describe('CustomThrottlerGuard', () => {
         socket: { remoteAddress: '192.168.0.100' },
       });
 
-      const tracker = await (guard as unknown as { getTracker: (req: unknown) => Promise<string> }).getTracker(req);
+      const tracker = await (
+        guard as unknown as { getTracker: (req: unknown) => Promise<string> }
+      ).getTracker(req);
 
       expect(tracker).toBe('ip:192.168.0.100');
     });
@@ -152,7 +168,11 @@ describe('CustomThrottlerGuard', () => {
     it('should skip health check endpoint', async () => {
       const context = createMockContext('/health');
 
-      const shouldSkip = await (guard as unknown as { shouldSkip: (ctx: ExecutionContext) => Promise<boolean> }).shouldSkip(context);
+      const shouldSkip = await (
+        guard as unknown as {
+          shouldSkip: (ctx: ExecutionContext) => Promise<boolean>;
+        }
+      ).shouldSkip(context);
 
       expect(shouldSkip).toBe(true);
     });
@@ -160,7 +180,11 @@ describe('CustomThrottlerGuard', () => {
     it('should skip swagger documentation endpoints', async () => {
       const context = createMockContext('/api/docs');
 
-      const shouldSkip = await (guard as unknown as { shouldSkip: (ctx: ExecutionContext) => Promise<boolean> }).shouldSkip(context);
+      const shouldSkip = await (
+        guard as unknown as {
+          shouldSkip: (ctx: ExecutionContext) => Promise<boolean>;
+        }
+      ).shouldSkip(context);
 
       expect(shouldSkip).toBe(true);
     });
@@ -168,7 +192,11 @@ describe('CustomThrottlerGuard', () => {
     it('should skip nested swagger documentation endpoints', async () => {
       const context = createMockContext('/api/docs/swagger-ui.css');
 
-      const shouldSkip = await (guard as unknown as { shouldSkip: (ctx: ExecutionContext) => Promise<boolean> }).shouldSkip(context);
+      const shouldSkip = await (
+        guard as unknown as {
+          shouldSkip: (ctx: ExecutionContext) => Promise<boolean>;
+        }
+      ).shouldSkip(context);
 
       expect(shouldSkip).toBe(true);
     });
@@ -176,7 +204,11 @@ describe('CustomThrottlerGuard', () => {
     it('should not skip regular API endpoints', async () => {
       const context = createMockContext('/api/products');
 
-      const shouldSkip = await (guard as unknown as { shouldSkip: (ctx: ExecutionContext) => Promise<boolean> }).shouldSkip(context);
+      const shouldSkip = await (
+        guard as unknown as {
+          shouldSkip: (ctx: ExecutionContext) => Promise<boolean>;
+        }
+      ).shouldSkip(context);
 
       expect(shouldSkip).toBe(false);
     });
@@ -184,7 +216,11 @@ describe('CustomThrottlerGuard', () => {
     it('should not skip auth endpoints', async () => {
       const context = createMockContext('/auth/login');
 
-      const shouldSkip = await (guard as unknown as { shouldSkip: (ctx: ExecutionContext) => Promise<boolean> }).shouldSkip(context);
+      const shouldSkip = await (
+        guard as unknown as {
+          shouldSkip: (ctx: ExecutionContext) => Promise<boolean>;
+        }
+      ).shouldSkip(context);
 
       expect(shouldSkip).toBe(false);
     });
@@ -221,7 +257,14 @@ describe('CustomThrottlerGuard', () => {
       };
 
       await expect(
-        (guard as unknown as { throwThrottlingException: (ctx: ExecutionContext, detail: typeof throttlerDetail) => Promise<void> }).throwThrottlingException(context, throttlerDetail),
+        (
+          guard as unknown as {
+            throwThrottlingException: (
+              ctx: ExecutionContext,
+              detail: typeof throttlerDetail,
+            ) => Promise<void>;
+          }
+        ).throwThrottlingException(context, throttlerDetail),
       ).rejects.toThrow(ThrottlerException);
     });
 
@@ -239,7 +282,14 @@ describe('CustomThrottlerGuard', () => {
       };
 
       try {
-        await (guard as unknown as { throwThrottlingException: (ctx: ExecutionContext, detail: typeof throttlerDetail) => Promise<void> }).throwThrottlingException(context, throttlerDetail);
+        await (
+          guard as unknown as {
+            throwThrottlingException: (
+              ctx: ExecutionContext,
+              detail: typeof throttlerDetail,
+            ) => Promise<void>;
+          }
+        ).throwThrottlingException(context, throttlerDetail);
         fail('Expected ThrottlerException to be thrown');
       } catch (error) {
         expect((error as Error).message).toContain('45 seconds');

@@ -795,7 +795,9 @@ describe('Invoices E2E Tests', () => {
 
     it('should combine multiple filters', async () => {
       const response = await request(app.getHttpServer())
-        .get(`/invoices?status=DRAFT&paymentStatus=UNPAID&customerId=${customer.id}`)
+        .get(
+          `/invoices?status=DRAFT&paymentStatus=UNPAID&customerId=${customer.id}`,
+        )
         .set('Authorization', `Bearer ${adminUser.accessToken}`)
         .expect(200);
 

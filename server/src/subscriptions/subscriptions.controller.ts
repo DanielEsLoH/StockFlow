@@ -79,14 +79,18 @@ export class SubscriptionsController {
   @Get('status')
   @ApiOperation({
     summary: 'Get subscription status',
-    description: 'Returns the current subscription status for the tenant including plan, limits, and Stripe subscription details. All authenticated users can access this endpoint.',
+    description:
+      'Returns the current subscription status for the tenant including plan, limits, and Stripe subscription details. All authenticated users can access this endpoint.',
   })
   @ApiResponse({
     status: 200,
     description: 'Subscription status retrieved successfully',
     type: SubscriptionStatusEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   async getStatus(
     @CurrentTenant() tenantId: string,
   ): Promise<SubscriptionStatus> {
@@ -121,16 +125,26 @@ export class SubscriptionsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Create checkout session',
-    description: 'Creates a Stripe checkout session for upgrading to a paid plan. Redirect the user to the returned URL to complete payment. Only ADMIN users can create checkout sessions.',
+    description:
+      'Creates a Stripe checkout session for upgrading to a paid plan. Redirect the user to the returned URL to complete payment. Only ADMIN users can create checkout sessions.',
   })
   @ApiResponse({
     status: 200,
     description: 'Checkout session created successfully',
     type: CheckoutSessionResponseEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid plan or already subscribed' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid plan or already subscribed',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async createCheckout(
     @CurrentTenant() tenantId: string,
     @Body() dto: CreateCheckoutDto,
@@ -170,16 +184,26 @@ export class SubscriptionsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Create portal session',
-    description: 'Creates a Stripe customer portal session for managing subscriptions, viewing invoices, and updating payment methods. Redirect the user to the returned URL. Only ADMIN users can access the billing portal.',
+    description:
+      'Creates a Stripe customer portal session for managing subscriptions, viewing invoices, and updating payment methods. Redirect the user to the returned URL. Only ADMIN users can access the billing portal.',
   })
   @ApiResponse({
     status: 200,
     description: 'Portal session created successfully',
     type: PortalSessionResponseEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - No Stripe customer found' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - No Stripe customer found',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async createPortal(
     @CurrentTenant() tenantId: string,
     @Body() dto: CreatePortalDto,

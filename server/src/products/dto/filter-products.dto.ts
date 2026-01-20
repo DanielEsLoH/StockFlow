@@ -1,9 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsBoolean,
-} from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsBoolean } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { ProductStatus } from '@prisma/client';
@@ -58,7 +53,8 @@ export class FilterProductsDto extends PaginationDto {
    * @example true
    */
   @ApiPropertyOptional({
-    description: 'Filter to show only products with low stock (stock < minStock)',
+    description:
+      'Filter to show only products with low stock (stock < minStock)',
     example: true,
     type: Boolean,
   })

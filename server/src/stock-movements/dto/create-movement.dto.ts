@@ -42,7 +42,8 @@ export class CreateMovementDto {
    * @example -5
    */
   @ApiProperty({
-    description: 'Quantity to adjust (positive = add stock, negative = subtract stock)',
+    description:
+      'Quantity to adjust (positive = add stock, negative = subtract stock)',
     example: 10,
   })
   @IsInt({ message: 'La cantidad debe ser un numero entero' })

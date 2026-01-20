@@ -24,11 +24,7 @@ import {
   UserActionResult,
   TenantActionResult,
 } from './types';
-import {
-  UsersQueryDto,
-  PendingUsersQueryDto,
-  TenantsQueryDto,
-} from './dto';
+import { UsersQueryDto, PendingUsersQueryDto, TenantsQueryDto } from './dto';
 
 /**
  * SystemAdminService handles all system admin operations including:
@@ -62,7 +58,10 @@ export class SystemAdminService {
    * @returns Authentication response with admin data and tokens
    * @throws UnauthorizedException if credentials are invalid or admin is not active
    */
-  async login(email: string, password: string): Promise<SystemAdminAuthResponse> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<SystemAdminAuthResponse> {
     this.logger.debug(`System admin login attempt: ${email}`);
 
     const admin = await this.prisma.systemAdmin.findUnique({
@@ -77,7 +76,9 @@ export class SystemAdminService {
     const isPasswordValid = await bcrypt.compare(password, admin.password);
 
     if (!isPasswordValid) {
-      this.logger.warn(`System admin login failed - invalid password: ${email}`);
+      this.logger.warn(
+        `System admin login failed - invalid password: ${email}`,
+      );
       throw new UnauthorizedException('Invalid email or password');
     }
 
@@ -166,7 +167,9 @@ export class SystemAdminService {
         { secret: jwtRefreshSecret },
       );
     } catch {
-      this.logger.warn('System admin token refresh failed - invalid or expired token');
+      this.logger.warn(
+        'System admin token refresh failed - invalid or expired token',
+      );
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
@@ -188,12 +191,16 @@ export class SystemAdminService {
     });
 
     if (!admin) {
-      this.logger.warn(`System admin refresh failed - not found: ${payload.sub}`);
+      this.logger.warn(
+        `System admin refresh failed - not found: ${payload.sub}`,
+      );
       throw new UnauthorizedException('Invalid refresh token');
     }
 
     if (admin.refreshToken !== refreshToken) {
-      this.logger.warn(`System admin refresh failed - token mismatch: ${admin.email}`);
+      this.logger.warn(
+        `System admin refresh failed - token mismatch: ${admin.email}`,
+      );
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -218,7 +225,9 @@ export class SystemAdminService {
       data: { refreshToken: tokens.refreshToken },
     });
 
-    this.logger.log(`System admin tokens refreshed successfully: ${admin.email}`);
+    this.logger.log(
+      `System admin tokens refreshed successfully: ${admin.email}`,
+    );
 
     return {
       admin: this.mapToAuthUser(admin),
@@ -259,7 +268,9 @@ export class SystemAdminService {
    * @param query - Query filters and pagination options
    * @returns Paginated list of users
    */
-  async getAllUsers(query: UsersQueryDto): Promise<PaginatedResponse<UserListItem>> {
+  async getAllUsers(
+    query: UsersQueryDto,
+  ): Promise<PaginatedResponse<UserListItem>> {
     const { page = 1, limit = 20, status, role, tenantId, search } = query;
     const skip = (page - 1) * limit;
 
@@ -369,7 +380,9 @@ export class SystemAdminService {
 
     const totalPages = Math.ceil(total / limit);
 
-    this.logger.debug(`Retrieved ${users.length} pending users (total: ${total})`);
+    this.logger.debug(
+      `Retrieved ${users.length} pending users (total: ${total})`,
+    );
 
     return {
       data: users.map((user) => ({
@@ -404,7 +417,10 @@ export class SystemAdminService {
    * @throws NotFoundException if user is not found
    * @throws BadRequestException if user is not in PENDING status or email is not verified
    */
-  async approveUser(userId: string, adminId: string): Promise<UserActionResult> {
+  async approveUser(
+    userId: string,
+    adminId: string,
+  ): Promise<UserActionResult> {
     this.logger.debug(`Approving user: ${userId} by admin: ${adminId}`);
 
     const user = await this.prisma.user.findUnique({
@@ -436,14 +452,22 @@ export class SystemAdminService {
     });
 
     // Create audit log for this action
-    await this.createSystemAdminAuditLog(adminId, 'APPROVE_USER', 'User', userId, {
-      previousStatus: user.status,
-      newStatus: UserStatus.ACTIVE,
-      userEmail: user.email,
-      tenantName: user.tenant.name,
-    });
+    await this.createSystemAdminAuditLog(
+      adminId,
+      'APPROVE_USER',
+      'User',
+      userId,
+      {
+        previousStatus: user.status,
+        newStatus: UserStatus.ACTIVE,
+        userEmail: user.email,
+        tenantName: user.tenant.name,
+      },
+    );
 
-    this.logger.log(`User approved successfully: ${user.email} by admin: ${adminId}`);
+    this.logger.log(
+      `User approved successfully: ${user.email} by admin: ${adminId}`,
+    );
 
     return {
       success: true,
@@ -493,15 +517,23 @@ export class SystemAdminService {
     });
 
     // Create audit log
-    await this.createSystemAdminAuditLog(adminId, 'SUSPEND_USER', 'User', userId, {
-      previousStatus: user.status,
-      newStatus: UserStatus.SUSPENDED,
-      userEmail: user.email,
-      tenantName: user.tenant.name,
-      reason,
-    });
+    await this.createSystemAdminAuditLog(
+      adminId,
+      'SUSPEND_USER',
+      'User',
+      userId,
+      {
+        previousStatus: user.status,
+        newStatus: UserStatus.SUSPENDED,
+        userEmail: user.email,
+        tenantName: user.tenant.name,
+        reason,
+      },
+    );
 
-    this.logger.log(`User suspended successfully: ${user.email} by admin: ${adminId}`);
+    this.logger.log(
+      `User suspended successfully: ${user.email} by admin: ${adminId}`,
+    );
 
     return {
       success: true,
@@ -571,12 +603,20 @@ export class SystemAdminService {
     });
 
     // Create audit log
-    await this.createSystemAdminAuditLog(adminId, 'DELETE_USER', 'User', userId, {
-      ...userData,
-      reason,
-    });
+    await this.createSystemAdminAuditLog(
+      adminId,
+      'DELETE_USER',
+      'User',
+      userId,
+      {
+        ...userData,
+        reason,
+      },
+    );
 
-    this.logger.log(`User deleted successfully: ${userData.email} by admin: ${adminId}`);
+    this.logger.log(
+      `User deleted successfully: ${userData.email} by admin: ${adminId}`,
+    );
 
     return {
       success: true,
@@ -762,7 +802,8 @@ export class SystemAdminService {
       'SYSTEM_ADMIN_JWT_REFRESH_SECRET',
     );
     const jwtRefreshExpiration =
-      this.configService.get<string>('SYSTEM_ADMIN_JWT_REFRESH_EXPIRATION') ?? '7d';
+      this.configService.get<string>('SYSTEM_ADMIN_JWT_REFRESH_EXPIRATION') ??
+      '7d';
 
     const accessTokenPayload: SystemAdminJwtPayload = {
       sub: adminId,

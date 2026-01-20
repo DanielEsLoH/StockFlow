@@ -72,7 +72,8 @@ export class WarehousesController {
   @Get()
   @ApiOperation({
     summary: 'List all warehouses',
-    description: 'Returns a paginated list of all warehouses in the current tenant. All authenticated users can access this endpoint.',
+    description:
+      'Returns a paginated list of all warehouses in the current tenant. All authenticated users can access this endpoint.',
   })
   @ApiQuery({
     name: 'page',
@@ -93,7 +94,10 @@ export class WarehousesController {
     description: 'List of warehouses retrieved successfully',
     type: PaginatedWarehousesEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -123,7 +127,8 @@ export class WarehousesController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get warehouse by ID',
-    description: 'Returns a single warehouse with stock summary by its ID. All authenticated users can access this endpoint.',
+    description:
+      'Returns a single warehouse with stock summary by its ID. All authenticated users can access this endpoint.',
   })
   @ApiParam({
     name: 'id',
@@ -135,7 +140,10 @@ export class WarehousesController {
     description: 'Warehouse retrieved successfully',
     type: WarehouseWithStockSummaryEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   @ApiResponse({ status: 404, description: 'Warehouse not found' })
   async findOne(@Param('id') id: string): Promise<WarehouseWithStockSummary> {
     this.logger.log(`Getting warehouse: ${id}`);
@@ -157,7 +165,8 @@ export class WarehousesController {
   @Get(':id/stock')
   @ApiOperation({
     summary: 'Get warehouse stock',
-    description: 'Returns a paginated list of products and their quantities in a specific warehouse. All authenticated users can access this endpoint.',
+    description:
+      'Returns a paginated list of products and their quantities in a specific warehouse. All authenticated users can access this endpoint.',
   })
   @ApiParam({
     name: 'id',
@@ -183,7 +192,10 @@ export class WarehousesController {
     description: 'Warehouse stock retrieved successfully',
     type: PaginatedWarehouseStockEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   @ApiResponse({ status: 404, description: 'Warehouse not found' })
   async getStock(
     @Param('id') id: string,
@@ -225,7 +237,8 @@ export class WarehousesController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new warehouse',
-    description: 'Creates a new warehouse in the current tenant. Only ADMIN users can create warehouses. Respects tenant warehouse limits based on subscription plan.',
+    description:
+      'Creates a new warehouse in the current tenant. Only ADMIN users can create warehouses. Respects tenant warehouse limits based on subscription plan.',
   })
   @ApiResponse({
     status: 201,
@@ -233,9 +246,19 @@ export class WarehousesController {
     type: WarehouseEntity,
   })
   @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions or warehouse limit reached' })
-  @ApiResponse({ status: 409, description: 'Conflict - Warehouse code already exists' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Insufficient permissions or warehouse limit reached',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Warehouse code already exists',
+  })
   async create(@Body() dto: CreateWarehouseDto): Promise<WarehouseResponse> {
     this.logger.log(`Creating warehouse: ${dto.name}`);
     return this.warehousesService.create(dto);
@@ -260,7 +283,8 @@ export class WarehousesController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Update a warehouse',
-    description: 'Updates an existing warehouse. Only ADMIN and MANAGER users can update warehouses.',
+    description:
+      'Updates an existing warehouse. Only ADMIN and MANAGER users can update warehouses.',
   })
   @ApiParam({
     name: 'id',
@@ -273,10 +297,19 @@ export class WarehousesController {
     type: WarehouseEntity,
   })
   @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Warehouse not found' })
-  @ApiResponse({ status: 409, description: 'Conflict - Warehouse code already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Warehouse code already exists',
+  })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateWarehouseDto,
@@ -300,7 +333,8 @@ export class WarehousesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete a warehouse',
-    description: 'Deletes a warehouse. Only ADMIN users can delete warehouses. Deletion fails if the warehouse has any stock.',
+    description:
+      'Deletes a warehouse. Only ADMIN users can delete warehouses. Deletion fails if the warehouse has any stock.',
   })
   @ApiParam({
     name: 'id',
@@ -308,8 +342,14 @@ export class WarehousesController {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @ApiResponse({ status: 204, description: 'Warehouse deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Warehouse not found' })
   @ApiResponse({ status: 409, description: 'Conflict - Warehouse has stock' })
   async delete(@Param('id') id: string): Promise<void> {

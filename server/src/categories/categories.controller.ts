@@ -29,7 +29,10 @@ import type {
 import { CreateCategoryDto, UpdateCategoryDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { Roles } from '../common/decorators';
-import { CategoryEntity, PaginatedCategoriesEntity } from './entities/category.entity';
+import {
+  CategoryEntity,
+  PaginatedCategoriesEntity,
+} from './entities/category.entity';
 
 /**
  * CategoriesController handles all category management endpoints.
@@ -64,7 +67,8 @@ export class CategoriesController {
   @Get()
   @ApiOperation({
     summary: 'List all categories',
-    description: 'Returns a paginated list of all categories in the current tenant. All authenticated users can access this endpoint.',
+    description:
+      'Returns a paginated list of all categories in the current tenant. All authenticated users can access this endpoint.',
   })
   @ApiQuery({
     name: 'page',
@@ -85,7 +89,10 @@ export class CategoriesController {
     description: 'List of categories retrieved successfully',
     type: PaginatedCategoriesEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -115,7 +122,8 @@ export class CategoriesController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get category by ID',
-    description: 'Returns a single category by its ID. All authenticated users can access this endpoint.',
+    description:
+      'Returns a single category by its ID. All authenticated users can access this endpoint.',
   })
   @ApiParam({
     name: 'id',
@@ -127,7 +135,10 @@ export class CategoriesController {
     description: 'Category retrieved successfully',
     type: CategoryEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   @ApiResponse({ status: 404, description: 'Category not found' })
   async findOne(@Param('id') id: string): Promise<CategoryResponse> {
     this.logger.log(`Getting category: ${id}`);
@@ -155,7 +166,8 @@ export class CategoriesController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new category',
-    description: 'Creates a new category in the current tenant. Only ADMIN and MANAGER users can create categories.',
+    description:
+      'Creates a new category in the current tenant. Only ADMIN and MANAGER users can create categories.',
   })
   @ApiResponse({
     status: 201,
@@ -163,9 +175,18 @@ export class CategoriesController {
     type: CategoryEntity,
   })
   @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
-  @ApiResponse({ status: 409, description: 'Conflict - Category name already exists' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Category name already exists',
+  })
   async create(@Body() dto: CreateCategoryDto): Promise<CategoryResponse> {
     this.logger.log(`Creating category: ${dto.name}`);
     return this.categoriesService.create(dto);
@@ -191,7 +212,8 @@ export class CategoriesController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Update a category',
-    description: 'Updates an existing category. Only ADMIN and MANAGER users can update categories.',
+    description:
+      'Updates an existing category. Only ADMIN and MANAGER users can update categories.',
   })
   @ApiParam({
     name: 'id',
@@ -204,10 +226,19 @@ export class CategoriesController {
     type: CategoryEntity,
   })
   @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Category not found' })
-  @ApiResponse({ status: 409, description: 'Conflict - Category name already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Category name already exists',
+  })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateCategoryDto,
@@ -231,7 +262,8 @@ export class CategoriesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete a category',
-    description: 'Deletes a category. Only ADMIN users can delete categories. Deletion fails if products are associated with the category.',
+    description:
+      'Deletes a category. Only ADMIN users can delete categories. Deletion fails if products are associated with the category.',
   })
   @ApiParam({
     name: 'id',
@@ -239,10 +271,19 @@ export class CategoriesController {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @ApiResponse({ status: 204, description: 'Category deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Category not found' })
-  @ApiResponse({ status: 409, description: 'Conflict - Category has associated products' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Category has associated products',
+  })
   async delete(@Param('id') id: string): Promise<void> {
     this.logger.log(`Deleting category: ${id}`);
     return this.categoriesService.delete(id);

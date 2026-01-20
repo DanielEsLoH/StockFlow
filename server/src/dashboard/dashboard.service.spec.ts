@@ -46,9 +46,11 @@ describe('DashboardService', () => {
       get: jest.fn().mockResolvedValue(undefined),
       set: jest.fn().mockResolvedValue(undefined),
       del: jest.fn().mockResolvedValue(undefined),
-      generateKey: jest.fn().mockImplementation((prefix, tenantId, suffix) =>
-        suffix ? `${prefix}:${tenantId}:${suffix}` : `${prefix}:${tenantId}`
-      ),
+      generateKey: jest
+        .fn()
+        .mockImplementation((prefix, tenantId, suffix) =>
+          suffix ? `${prefix}:${tenantId}:${suffix}` : `${prefix}:${tenantId}`,
+        ),
       invalidate: jest.fn().mockResolvedValue(undefined),
     };
 

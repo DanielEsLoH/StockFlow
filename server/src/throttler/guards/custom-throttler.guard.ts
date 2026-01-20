@@ -77,7 +77,9 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
     // X-Forwarded-For (take first IP in chain)
     const forwardedFor = req.headers['x-forwarded-for'];
     if (forwardedFor) {
-      const ips = (typeof forwardedFor === 'string' ? forwardedFor : forwardedFor[0])
+      const ips = (
+        typeof forwardedFor === 'string' ? forwardedFor : forwardedFor[0]
+      )
         .split(',')
         .map((ip) => ip.trim());
       if (ips.length > 0 && ips[0]) {

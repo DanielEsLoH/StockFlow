@@ -31,7 +31,9 @@ export class CreateInvoiceItemDto {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @IsString({ message: 'El ID del producto debe ser una cadena de texto' })
-  @Matches(CUID_PATTERN, { message: 'El ID del producto debe ser un CUID valido' })
+  @Matches(CUID_PATTERN, {
+    message: 'El ID del producto debe ser un CUID valido',
+  })
   productId: string;
 
   /**
@@ -107,7 +109,9 @@ export class CreateInvoiceDto {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @IsString({ message: 'El ID del cliente debe ser una cadena de texto' })
-  @Matches(CUID_PATTERN, { message: 'El ID del cliente debe ser un CUID valido' })
+  @Matches(CUID_PATTERN, {
+    message: 'El ID del cliente debe ser un CUID valido',
+  })
   @IsOptional()
   customerId?: string;
 

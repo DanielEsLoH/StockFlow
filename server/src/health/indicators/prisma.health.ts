@@ -26,7 +26,9 @@ export class PrismaHealthIndicator extends HealthIndicator {
    * @returns Health indicator result
    * @throws HealthCheckError if the database is not reachable
    */
-  async isHealthy(key: string = HEALTH_KEYS.DATABASE): Promise<HealthIndicatorResult> {
+  async isHealthy(
+    key: string = HEALTH_KEYS.DATABASE,
+  ): Promise<HealthIndicatorResult> {
     try {
       // Create a promise that rejects after timeout
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -46,7 +48,8 @@ export class PrismaHealthIndicator extends HealthIndicator {
         responseTime: 'ok',
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
 
       throw new HealthCheckError(
         `${key} health check failed`,

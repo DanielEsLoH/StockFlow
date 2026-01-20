@@ -54,7 +54,9 @@ describe('PrismaHealthIndicator', () => {
     });
 
     it('should throw HealthCheckError when database is unreachable', async () => {
-      prismaService.$queryRaw.mockRejectedValue(new Error('Connection refused'));
+      prismaService.$queryRaw.mockRejectedValue(
+        new Error('Connection refused'),
+      );
 
       await expect(indicator.isHealthy('database')).rejects.toThrow(
         HealthCheckError,

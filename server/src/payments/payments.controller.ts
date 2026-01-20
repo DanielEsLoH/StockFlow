@@ -27,7 +27,10 @@ import type {
 import { CreatePaymentDto, FilterPaymentsDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { Roles } from '../common/decorators';
-import { PaymentEntity, PaginatedPaymentsEntity } from './entities/payment.entity';
+import {
+  PaymentEntity,
+  PaginatedPaymentsEntity,
+} from './entities/payment.entity';
 
 /**
  * PaymentsController handles all payment management endpoints.
@@ -60,14 +63,18 @@ export class PaymentsController {
   @Get()
   @ApiOperation({
     summary: 'List all payments',
-    description: 'Returns a paginated list of payments with optional filters for method, invoice, and date range. All authenticated users can access this endpoint.',
+    description:
+      'Returns a paginated list of payments with optional filters for method, invoice, and date range. All authenticated users can access this endpoint.',
   })
   @ApiResponse({
     status: 200,
     description: 'List of payments retrieved successfully',
     type: PaginatedPaymentsEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   async findAll(
     @Query() filters: FilterPaymentsDto,
   ): Promise<PaginatedPaymentsResponse> {
@@ -91,7 +98,8 @@ export class PaymentsController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get payment by ID',
-    description: 'Returns a single payment with invoice and customer relations. All authenticated users can access this endpoint.',
+    description:
+      'Returns a single payment with invoice and customer relations. All authenticated users can access this endpoint.',
   })
   @ApiParam({
     name: 'id',
@@ -103,7 +111,10 @@ export class PaymentsController {
     description: 'Payment retrieved successfully',
     type: PaymentEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   @ApiResponse({ status: 404, description: 'Payment not found' })
   async findOne(@Param('id') id: string): Promise<PaymentResponse> {
     this.logger.log(`Getting payment: ${id}`);
@@ -139,16 +150,27 @@ export class PaymentsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Record a payment',
-    description: 'Records a new payment against an invoice. Validates invoice exists, verifies payment does not exceed remaining balance, and automatically updates invoice payment status. Only ADMIN and MANAGER users can record payments.',
+    description:
+      'Records a new payment against an invoice. Validates invoice exists, verifies payment does not exceed remaining balance, and automatically updates invoice payment status. Only ADMIN and MANAGER users can record payments.',
   })
   @ApiResponse({
     status: 201,
     description: 'Payment recorded successfully',
     type: PaymentEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data or payment exceeds remaining balance' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad Request - Invalid input data or payment exceeds remaining balance',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async create(@Body() dto: CreatePaymentDto): Promise<PaymentResponse> {
     this.logger.log(
@@ -173,7 +195,8 @@ export class PaymentsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete a payment',
-    description: 'Deletes a payment and recalculates invoice payment status. Only ADMIN users can delete payments.',
+    description:
+      'Deletes a payment and recalculates invoice payment status. Only ADMIN users can delete payments.',
   })
   @ApiParam({
     name: 'id',
@@ -181,8 +204,14 @@ export class PaymentsController {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @ApiResponse({ status: 204, description: 'Payment deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Payment not found' })
   async delete(@Param('id') id: string): Promise<void> {
     this.logger.log(`Deleting payment: ${id}`);

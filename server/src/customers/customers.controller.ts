@@ -29,7 +29,10 @@ import type {
 import { CreateCustomerDto, UpdateCustomerDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { Roles } from '../common/decorators';
-import { CustomerEntity, PaginatedCustomersEntity } from './entities/customer.entity';
+import {
+  CustomerEntity,
+  PaginatedCustomersEntity,
+} from './entities/customer.entity';
 
 /**
  * CustomersController handles all customer management endpoints.
@@ -65,7 +68,8 @@ export class CustomersController {
   @Get()
   @ApiOperation({
     summary: 'List all customers',
-    description: 'Returns a paginated list of all customers in the current tenant. All authenticated users can access this endpoint.',
+    description:
+      'Returns a paginated list of all customers in the current tenant. All authenticated users can access this endpoint.',
   })
   @ApiQuery({
     name: 'page',
@@ -86,7 +90,10 @@ export class CustomersController {
     description: 'List of customers retrieved successfully',
     type: PaginatedCustomersEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -116,7 +123,8 @@ export class CustomersController {
   @Get('search')
   @ApiOperation({
     summary: 'Search customers',
-    description: 'Searches customers by name or document number. All authenticated users can access this endpoint.',
+    description:
+      'Searches customers by name or document number. All authenticated users can access this endpoint.',
   })
   @ApiQuery({
     name: 'q',
@@ -144,7 +152,10 @@ export class CustomersController {
     description: 'Search results retrieved successfully',
     type: PaginatedCustomersEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   async search(
     @Query('q') q?: string,
     @Query('page') page?: string,
@@ -176,7 +187,8 @@ export class CustomersController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get customer by ID',
-    description: 'Returns a single customer by its ID. All authenticated users can access this endpoint.',
+    description:
+      'Returns a single customer by its ID. All authenticated users can access this endpoint.',
   })
   @ApiParam({
     name: 'id',
@@ -188,7 +200,10 @@ export class CustomersController {
     description: 'Customer retrieved successfully',
     type: CustomerEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   @ApiResponse({ status: 404, description: 'Customer not found' })
   async findOne(@Param('id') id: string): Promise<CustomerResponse> {
     this.logger.log(`Getting customer: ${id}`);
@@ -217,7 +232,8 @@ export class CustomersController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new customer',
-    description: 'Creates a new customer in the current tenant. Only ADMIN and MANAGER users can create customers.',
+    description:
+      'Creates a new customer in the current tenant. Only ADMIN and MANAGER users can create customers.',
   })
   @ApiResponse({
     status: 201,
@@ -225,9 +241,18 @@ export class CustomersController {
     type: CustomerEntity,
   })
   @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
-  @ApiResponse({ status: 409, description: 'Conflict - Customer with same document already exists' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Customer with same document already exists',
+  })
   async create(@Body() dto: CreateCustomerDto): Promise<CustomerResponse> {
     this.logger.log(
       `Creating customer: ${dto.name} (Document: ${dto.documentNumber})`,
@@ -254,7 +279,8 @@ export class CustomersController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Update a customer',
-    description: 'Updates an existing customer. Only ADMIN and MANAGER users can update customers.',
+    description:
+      'Updates an existing customer. Only ADMIN and MANAGER users can update customers.',
   })
   @ApiParam({
     name: 'id',
@@ -267,10 +293,19 @@ export class CustomersController {
     type: CustomerEntity,
   })
   @ApiResponse({ status: 400, description: 'Bad Request - Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Customer not found' })
-  @ApiResponse({ status: 409, description: 'Conflict - Document number already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Document number already exists',
+  })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateCustomerDto,
@@ -294,7 +329,8 @@ export class CustomersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete a customer',
-    description: 'Deletes a customer. Only ADMIN users can delete customers. Deletion fails if the customer has associated invoices.',
+    description:
+      'Deletes a customer. Only ADMIN users can delete customers. Deletion fails if the customer has associated invoices.',
   })
   @ApiParam({
     name: 'id',
@@ -302,10 +338,19 @@ export class CustomersController {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @ApiResponse({ status: 204, description: 'Customer deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Customer not found' })
-  @ApiResponse({ status: 409, description: 'Conflict - Customer has associated invoices' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Customer has associated invoices',
+  })
   async delete(@Param('id') id: string): Promise<void> {
     this.logger.log(`Deleting customer: ${id}`);
     return this.customersService.delete(id);

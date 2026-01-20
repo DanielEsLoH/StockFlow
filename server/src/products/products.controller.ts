@@ -54,14 +54,18 @@ export class ProductsController {
   @Get()
   @ApiOperation({
     summary: 'List all products',
-    description: 'Returns a paginated list of all products in the current tenant with optional filtering.',
+    description:
+      'Returns a paginated list of all products in the current tenant with optional filtering.',
   })
   @ApiResponse({
     status: 200,
     description: 'List of products retrieved successfully',
     type: PaginatedProductsEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
   async findAll(
     @Query() filters: FilterProductsDto,
   ): Promise<PaginatedProductsResponse> {
@@ -78,7 +82,8 @@ export class ProductsController {
   @Get('low-stock')
   @ApiOperation({
     summary: 'List low stock products',
-    description: 'Returns a paginated list of products where current stock is below the minimum stock level.',
+    description:
+      'Returns a paginated list of products where current stock is below the minimum stock level.',
   })
   @ApiQuery({
     name: 'page',
@@ -99,7 +104,10 @@ export class ProductsController {
     description: 'Low stock products retrieved successfully',
     type: PaginatedProductsEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
   async findLowStock(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -123,7 +131,8 @@ export class ProductsController {
   @Get('search')
   @ApiOperation({
     summary: 'Search products',
-    description: 'Searches products by name, SKU, or barcode (case-insensitive).',
+    description:
+      'Searches products by name, SKU, or barcode (case-insensitive).',
   })
   @ApiQuery({
     name: 'q',
@@ -151,7 +160,10 @@ export class ProductsController {
     description: 'Search results retrieved successfully',
     type: PaginatedProductsEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
   async search(
     @Query('q') q?: string,
     @Query('page') page?: string,
@@ -189,7 +201,10 @@ export class ProductsController {
     description: 'Product retrieved successfully',
     type: ProductEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
   @ApiResponse({ status: 404, description: 'Product not found' })
   async findOne(@Param('id') id: string): Promise<ProductResponse> {
     this.logger.log(`Getting product: ${id}`);
@@ -205,7 +220,8 @@ export class ProductsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new product',
-    description: 'Creates a new product in the tenant. Only ADMIN and MANAGER users can create products. Respects tenant product limits.',
+    description:
+      'Creates a new product in the tenant. Only ADMIN and MANAGER users can create products. Respects tenant product limits.',
   })
   @ApiResponse({
     status: 201,
@@ -213,9 +229,18 @@ export class ProductsController {
     type: ProductEntity,
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions or tenant limit reached' })
-  @ApiResponse({ status: 409, description: 'Product with this SKU or barcode already exists' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions or tenant limit reached',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Product with this SKU or barcode already exists',
+  })
   async create(@Body() dto: CreateProductDto): Promise<ProductResponse> {
     this.logger.log(`Creating product: ${dto.name} (SKU: ${dto.sku})`);
     return this.productsService.create(dto);
@@ -228,7 +253,8 @@ export class ProductsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Update a product',
-    description: 'Updates an existing product. Only ADMIN and MANAGER users can update products.',
+    description:
+      'Updates an existing product. Only ADMIN and MANAGER users can update products.',
   })
   @ApiParam({
     name: 'id',
@@ -241,10 +267,19 @@ export class ProductsController {
     type: ProductEntity,
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  @ApiResponse({ status: 409, description: 'Product with this SKU or barcode already exists' })
+  @ApiResponse({
+    status: 409,
+    description: 'Product with this SKU or barcode already exists',
+  })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateProductDto,
@@ -261,7 +296,8 @@ export class ProductsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete a product',
-    description: 'Deletes a product. Only ADMIN users can delete products. Deletion fails if the product has associated invoice items.',
+    description:
+      'Deletes a product. Only ADMIN users can delete products. Deletion fails if the product has associated invoice items.',
   })
   @ApiParam({
     name: 'id',
@@ -269,10 +305,19 @@ export class ProductsController {
     example: 'clx1234567890abcdef',
   })
   @ApiResponse({ status: 204, description: 'Product deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  @ApiResponse({ status: 409, description: 'Cannot delete - product has associated invoice items' })
+  @ApiResponse({
+    status: 409,
+    description: 'Cannot delete - product has associated invoice items',
+  })
   async delete(@Param('id') id: string): Promise<void> {
     this.logger.log(`Deleting product: ${id}`);
     return this.productsService.delete(id);
@@ -285,7 +330,8 @@ export class ProductsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Adjust product stock',
-    description: 'Manually adjusts the stock of a product. Creates a stock movement record for audit trail. Only ADMIN and MANAGER users can adjust stock.',
+    description:
+      'Manually adjusts the stock of a product. Creates a stock movement record for audit trail. Only ADMIN and MANAGER users can adjust stock.',
   })
   @ApiParam({
     name: 'id',
@@ -298,8 +344,14 @@ export class ProductsController {
     type: ProductEntity,
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'Product not found' })
   async updateStock(
     @Param('id') id: string,

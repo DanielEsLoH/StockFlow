@@ -73,7 +73,11 @@ async function bootstrap() {
         directives: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-          styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            'https://fonts.googleapis.com',
+          ],
           fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
           imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
           connectSrc: ["'self'", 'https:', 'wss:'],
@@ -170,7 +174,9 @@ async function bootstrap() {
   if (enableSwagger) {
     const config = new DocumentBuilder()
       .setTitle('StockFlow API')
-      .setDescription('API documentation for StockFlow SaaS - Inventory Management System')
+      .setDescription(
+        'API documentation for StockFlow SaaS - Inventory Management System',
+      )
       .setVersion('1.0')
       .addBearerAuth(
         {
@@ -184,7 +190,10 @@ async function bootstrap() {
         'JWT-auth',
       )
       .addTag('health', 'Health check and system status endpoints')
-      .addTag('auth', 'Authentication endpoints for login, register, and token management')
+      .addTag(
+        'auth',
+        'Authentication endpoints for login, register, and token management',
+      )
       .addTag('users', 'User management endpoints')
       .addTag('products', 'Product management endpoints')
       .addTag('categories', 'Product category management endpoints')

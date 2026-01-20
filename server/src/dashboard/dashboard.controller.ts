@@ -84,14 +84,18 @@ export class DashboardController {
   @Get()
   @ApiOperation({
     summary: 'Get dashboard metrics',
-    description: 'Returns comprehensive dashboard analytics including sales metrics, product metrics, invoice status breakdown, customer metrics, and chart data for visualizations. All authenticated users can access this endpoint.',
+    description:
+      'Returns comprehensive dashboard analytics including sales metrics, product metrics, invoice status breakdown, customer metrics, and chart data for visualizations. All authenticated users can access this endpoint.',
   })
   @ApiResponse({
     status: 200,
     description: 'Dashboard metrics retrieved successfully',
     type: DashboardEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   async getDashboard(
     @CurrentUser() user: RequestUser,
   ): Promise<DashboardResponse> {

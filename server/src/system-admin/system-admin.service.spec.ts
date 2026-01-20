@@ -136,11 +136,19 @@ describe('SystemAdminService', () => {
       // We use a real bcrypt hash for testing
       const bcrypt = require('bcrypt');
       const hashedPassword = await bcrypt.hash('password123', 10);
-      const adminWithRealHash = { ...mockSystemAdmin, password: hashedPassword };
+      const adminWithRealHash = {
+        ...mockSystemAdmin,
+        password: hashedPassword,
+      };
 
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(adminWithRealHash);
-      prismaService.systemAdmin.update = jest.fn().mockResolvedValue(adminWithRealHash);
-      jwtService.signAsync = jest.fn()
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(adminWithRealHash);
+      prismaService.systemAdmin.update = jest
+        .fn()
+        .mockResolvedValue(adminWithRealHash);
+      jwtService.signAsync = jest
+        .fn()
         .mockResolvedValueOnce('access-token')
         .mockResolvedValueOnce('refresh-token');
 
@@ -155,8 +163,9 @@ describe('SystemAdminService', () => {
     it('should throw UnauthorizedException if admin not found', async () => {
       prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(null);
 
-      await expect(service.login('nonexistent@example.com', 'password'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.login('nonexistent@example.com', 'password'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if admin is not active', async () => {
@@ -167,27 +176,37 @@ describe('SystemAdminService', () => {
         password: hashedPassword,
         status: SystemAdminStatus.SUSPENDED,
       };
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(inactiveAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(inactiveAdmin);
 
-      await expect(service.login(mockSystemAdmin.email, 'password123'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.login(mockSystemAdmin.email, 'password123'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if password is invalid', async () => {
       const bcrypt = require('bcrypt');
       const hashedPassword = await bcrypt.hash('correctPassword', 10);
       const adminWithHash = { ...mockSystemAdmin, password: hashedPassword };
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(adminWithHash);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(adminWithHash);
 
-      await expect(service.login(mockSystemAdmin.email, 'wrongPassword'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.login(mockSystemAdmin.email, 'wrongPassword'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
   describe('logout', () => {
     it('should successfully logout a system admin', async () => {
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(mockSystemAdmin);
-      prismaService.systemAdmin.update = jest.fn().mockResolvedValue(mockSystemAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(mockSystemAdmin);
+      prismaService.systemAdmin.update = jest
+        .fn()
+        .mockResolvedValue(mockSystemAdmin);
 
       const result = await service.logout(mockSystemAdmin.id);
 
@@ -201,14 +220,17 @@ describe('SystemAdminService', () => {
     it('should throw NotFoundException if admin not found', async () => {
       prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(null);
 
-      await expect(service.logout('nonexistent-id'))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.logout('nonexistent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('getMe', () => {
     it('should return system admin data', async () => {
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(mockSystemAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(mockSystemAdmin);
 
       const result = await service.getMe(mockSystemAdmin.id);
 
@@ -220,8 +242,9 @@ describe('SystemAdminService', () => {
     it('should throw NotFoundException if admin not found', async () => {
       prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(null);
 
-      await expect(service.getMe('nonexistent-id'))
-        .rejects.toThrow(NotFoundException);
+      await expect(service.getMe('nonexistent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -287,7 +310,9 @@ describe('SystemAdminService', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             OR: expect.arrayContaining([
-              expect.objectContaining({ email: { contains: 'john', mode: 'insensitive' } }),
+              expect.objectContaining({
+                email: { contains: 'john', mode: 'insensitive' },
+              }),
             ]),
           }),
         }),
@@ -337,7 +362,9 @@ describe('SystemAdminService', () => {
           where: expect.objectContaining({
             status: UserStatus.PENDING,
             OR: expect.arrayContaining([
-              expect.objectContaining({ email: { contains: 'john', mode: 'insensitive' } }),
+              expect.objectContaining({
+                email: { contains: 'john', mode: 'insensitive' },
+              }),
             ]),
           }),
         }),
@@ -352,7 +379,9 @@ describe('SystemAdminService', () => {
         ...mockUser,
         status: UserStatus.ACTIVE,
       });
-      prismaService.systemAdminAuditLog.create = jest.fn().mockResolvedValue({});
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
 
       const result = await service.approveUser(mockUser.id, mockSystemAdmin.id);
 
@@ -367,34 +396,42 @@ describe('SystemAdminService', () => {
     it('should throw NotFoundException if user not found', async () => {
       prismaService.user.findUnique = jest.fn().mockResolvedValue(null);
 
-      await expect(service.approveUser('nonexistent-id', mockSystemAdmin.id))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.approveUser('nonexistent-id', mockSystemAdmin.id),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if user is not pending', async () => {
       const activeUser = { ...mockUser, status: UserStatus.ACTIVE };
       prismaService.user.findUnique = jest.fn().mockResolvedValue(activeUser);
 
-      await expect(service.approveUser(mockUser.id, mockSystemAdmin.id))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.approveUser(mockUser.id, mockSystemAdmin.id),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException if email is not verified', async () => {
       const unverifiedUser = { ...mockUser, emailVerified: false };
-      prismaService.user.findUnique = jest.fn().mockResolvedValue(unverifiedUser);
+      prismaService.user.findUnique = jest
+        .fn()
+        .mockResolvedValue(unverifiedUser);
 
-      await expect(service.approveUser(mockUser.id, mockSystemAdmin.id))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.approveUser(mockUser.id, mockSystemAdmin.id),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException with correct message if email is not verified', async () => {
       const unverifiedUser = { ...mockUser, emailVerified: false };
-      prismaService.user.findUnique = jest.fn().mockResolvedValue(unverifiedUser);
+      prismaService.user.findUnique = jest
+        .fn()
+        .mockResolvedValue(unverifiedUser);
 
-      await expect(service.approveUser(mockUser.id, mockSystemAdmin.id))
-        .rejects.toThrow(
-          'Cannot approve user: email address has not been verified. The user must verify their email before approval.',
-        );
+      await expect(
+        service.approveUser(mockUser.id, mockSystemAdmin.id),
+      ).rejects.toThrow(
+        'Cannot approve user: email address has not been verified. The user must verify their email before approval.',
+      );
     });
   });
 
@@ -406,9 +443,15 @@ describe('SystemAdminService', () => {
         ...activeUser,
         status: UserStatus.SUSPENDED,
       });
-      prismaService.systemAdminAuditLog.create = jest.fn().mockResolvedValue({});
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
 
-      const result = await service.suspendUser(mockUser.id, mockSystemAdmin.id, 'Test reason');
+      const result = await service.suspendUser(
+        mockUser.id,
+        mockSystemAdmin.id,
+        'Test reason',
+      );
 
       expect(result.success).toBe(true);
       expect(result.action).toBe('suspend');
@@ -423,17 +466,21 @@ describe('SystemAdminService', () => {
 
     it('should throw BadRequestException if user is already suspended', async () => {
       const suspendedUser = { ...mockUser, status: UserStatus.SUSPENDED };
-      prismaService.user.findUnique = jest.fn().mockResolvedValue(suspendedUser);
+      prismaService.user.findUnique = jest
+        .fn()
+        .mockResolvedValue(suspendedUser);
 
-      await expect(service.suspendUser(mockUser.id, mockSystemAdmin.id))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.suspendUser(mockUser.id, mockSystemAdmin.id),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException if user not found', async () => {
       prismaService.user.findUnique = jest.fn().mockResolvedValue(null);
 
-      await expect(service.suspendUser('nonexistent-id', mockSystemAdmin.id))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.suspendUser('nonexistent-id', mockSystemAdmin.id),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -442,7 +489,9 @@ describe('SystemAdminService', () => {
       prismaService.user.findUnique = jest.fn().mockResolvedValue(mockUser);
       prismaService.user.count = jest.fn().mockResolvedValue(1);
       prismaService.user.delete = jest.fn().mockResolvedValue(mockUser);
-      prismaService.systemAdminAuditLog.create = jest.fn().mockResolvedValue({});
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
 
       const result = await service.deleteUser(mockUser.id, mockSystemAdmin.id);
 
@@ -456,8 +505,9 @@ describe('SystemAdminService', () => {
     it('should throw NotFoundException if user not found', async () => {
       prismaService.user.findUnique = jest.fn().mockResolvedValue(null);
 
-      await expect(service.deleteUser('nonexistent-id', mockSystemAdmin.id))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.deleteUser('nonexistent-id', mockSystemAdmin.id),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException when deleting last admin of tenant', async () => {
@@ -465,8 +515,9 @@ describe('SystemAdminService', () => {
       prismaService.user.findUnique = jest.fn().mockResolvedValue(adminUser);
       prismaService.user.count = jest.fn().mockResolvedValue(0);
 
-      await expect(service.deleteUser(mockUser.id, mockSystemAdmin.id))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.deleteUser(mockUser.id, mockSystemAdmin.id),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -518,7 +569,9 @@ describe('SystemAdminService', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             OR: expect.arrayContaining([
-              expect.objectContaining({ name: { contains: 'acme', mode: 'insensitive' } }),
+              expect.objectContaining({
+                name: { contains: 'acme', mode: 'insensitive' },
+              }),
             ]),
           }),
         }),
@@ -533,7 +586,9 @@ describe('SystemAdminService', () => {
         ...mockTenant,
         plan: SubscriptionPlan.PRO,
       });
-      prismaService.systemAdminAuditLog.create = jest.fn().mockResolvedValue({});
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
 
       const result = await service.changeTenantPlan(
         mockTenant.id,
@@ -551,7 +606,11 @@ describe('SystemAdminService', () => {
       prismaService.tenant.findUnique = jest.fn().mockResolvedValue(null);
 
       await expect(
-        service.changeTenantPlan('nonexistent-id', SubscriptionPlan.PRO, mockSystemAdmin.id),
+        service.changeTenantPlan(
+          'nonexistent-id',
+          SubscriptionPlan.PRO,
+          mockSystemAdmin.id,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -559,7 +618,11 @@ describe('SystemAdminService', () => {
       prismaService.tenant.findUnique = jest.fn().mockResolvedValue(mockTenant);
 
       await expect(
-        service.changeTenantPlan(mockTenant.id, SubscriptionPlan.BASIC, mockSystemAdmin.id),
+        service.changeTenantPlan(
+          mockTenant.id,
+          SubscriptionPlan.BASIC,
+          mockSystemAdmin.id,
+        ),
       ).rejects.toThrow(ConflictException);
     });
   });
@@ -579,8 +642,11 @@ describe('SystemAdminService', () => {
         ...mockSystemAdmin,
         refreshToken: 'valid-refresh-token',
       });
-      prismaService.systemAdmin.update = jest.fn().mockResolvedValue(mockSystemAdmin);
-      jwtService.signAsync = jest.fn()
+      prismaService.systemAdmin.update = jest
+        .fn()
+        .mockResolvedValue(mockSystemAdmin);
+      jwtService.signAsync = jest
+        .fn()
         .mockResolvedValueOnce('new-access-token')
         .mockResolvedValueOnce('new-refresh-token');
 
@@ -591,10 +657,13 @@ describe('SystemAdminService', () => {
     });
 
     it('should throw UnauthorizedException for invalid token', async () => {
-      jwtService.verifyAsync = jest.fn().mockRejectedValue(new Error('Invalid token'));
+      jwtService.verifyAsync = jest
+        .fn()
+        .mockRejectedValue(new Error('Invalid token'));
 
-      await expect(service.refreshTokens('invalid-token'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshTokens('invalid-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException if not a refresh token', async () => {
@@ -608,8 +677,9 @@ describe('SystemAdminService', () => {
 
       jwtService.verifyAsync = jest.fn().mockResolvedValue(accessTokenPayload);
 
-      await expect(service.refreshTokens('access-token-instead'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.refreshTokens('access-token-instead'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if isSystemAdmin is false', async () => {
@@ -623,8 +693,9 @@ describe('SystemAdminService', () => {
 
       jwtService.verifyAsync = jest.fn().mockResolvedValue(nonAdminPayload);
 
-      await expect(service.refreshTokens('not-system-admin-token'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.refreshTokens('not-system-admin-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if admin not found', async () => {
@@ -639,8 +710,9 @@ describe('SystemAdminService', () => {
       jwtService.verifyAsync = jest.fn().mockResolvedValue(validPayload);
       prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(null);
 
-      await expect(service.refreshTokens('valid-refresh-token'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.refreshTokens('valid-refresh-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if stored token does not match', async () => {
@@ -658,8 +730,9 @@ describe('SystemAdminService', () => {
         refreshToken: 'different-stored-token',
       });
 
-      await expect(service.refreshTokens('mismatched-token'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshTokens('mismatched-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException if admin is not active', async () => {
@@ -678,8 +751,9 @@ describe('SystemAdminService', () => {
         status: SystemAdminStatus.SUSPENDED,
       });
 
-      await expect(service.refreshTokens('valid-refresh-token'))
-        .rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.refreshTokens('valid-refresh-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
@@ -693,7 +767,9 @@ describe('SystemAdminService', () => {
         ...mockTenant,
         plan: SubscriptionPlan.FREE,
       });
-      prismaService.systemAdminAuditLog.create = jest.fn().mockResolvedValue({});
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
 
       // Call changeTenantPlan which internally calls getPlanLimits
       const freeTenant = {
@@ -722,7 +798,9 @@ describe('SystemAdminService', () => {
         ...mockTenant,
         plan: SubscriptionPlan.PRO,
       });
-      prismaService.systemAdminAuditLog.create = jest.fn().mockResolvedValue({});
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
 
       const result = await service.changeTenantPlan(
         mockTenant.id,
@@ -740,7 +818,9 @@ describe('SystemAdminService', () => {
         ...mockTenant,
         plan: SubscriptionPlan.ENTERPRISE,
       });
-      prismaService.systemAdminAuditLog.create = jest.fn().mockResolvedValue({});
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
 
       const result = await service.changeTenantPlan(
         mockTenant.id,
@@ -761,9 +841,9 @@ describe('SystemAdminService', () => {
         ...activeUser,
         status: UserStatus.SUSPENDED,
       });
-      prismaService.systemAdminAuditLog.create = jest.fn().mockRejectedValue(
-        new Error('Database error'),
-      );
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockRejectedValue(new Error('Database error'));
 
       // Should not throw even if audit log fails
       const result = await service.suspendUser(mockUser.id, mockSystemAdmin.id);

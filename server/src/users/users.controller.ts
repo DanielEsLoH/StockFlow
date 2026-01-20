@@ -69,7 +69,8 @@ export class UsersController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'List all users',
-    description: 'Returns a paginated list of all users in the current tenant. Requires ADMIN or MANAGER role.',
+    description:
+      'Returns a paginated list of all users in the current tenant. Requires ADMIN or MANAGER role.',
   })
   @ApiQuery({
     name: 'page',
@@ -90,8 +91,14 @@ export class UsersController {
     description: 'List of users retrieved successfully',
     type: PaginatedUsersEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -120,7 +127,10 @@ export class UsersController {
     description: 'User profile retrieved successfully',
     type: UserEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
   async getProfile(
     @CurrentUser() currentUser: CurrentUserContext,
   ): Promise<UserResponse> {
@@ -134,7 +144,8 @@ export class UsersController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get user by ID',
-    description: 'Returns a specific user by their ID. ADMIN and MANAGER can view any user; others can only view their own profile.',
+    description:
+      'Returns a specific user by their ID. ADMIN and MANAGER can view any user; others can only view their own profile.',
   })
   @ApiParam({
     name: 'id',
@@ -146,7 +157,10 @@ export class UsersController {
     description: 'User retrieved successfully',
     type: UserEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async findOne(
     @Param('id') id: string,
@@ -176,7 +190,8 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new user',
-    description: 'Creates a new user in the tenant. Only ADMIN users can create users. Checks tenant user limit before creation.',
+    description:
+      'Creates a new user in the tenant. Only ADMIN users can create users. Checks tenant user limit before creation.',
   })
   @ApiResponse({
     status: 201,
@@ -184,9 +199,18 @@ export class UsersController {
     type: UserEntity,
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions or tenant limit reached' })
-  @ApiResponse({ status: 409, description: 'User with this email already exists' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions or tenant limit reached',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'User with this email already exists',
+  })
   async create(@Body() dto: CreateUserDto): Promise<UserResponse> {
     this.logger.log(`Creating user: ${dto.email}`);
     return this.usersService.create(dto);
@@ -198,7 +222,8 @@ export class UsersController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Update a user',
-    description: 'Updates a user. ADMIN can update any user; other users can only update their own profile with limited fields.',
+    description:
+      'Updates a user. ADMIN can update any user; other users can only update their own profile with limited fields.',
   })
   @ApiParam({
     name: 'id',
@@ -211,8 +236,14 @@ export class UsersController {
     type: UserEntity,
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Cannot update this user' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Cannot update this user',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async update(
     @Param('id') id: string,
@@ -234,7 +265,8 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete a user',
-    description: 'Deletes a user. Only ADMIN users can delete users. Users cannot delete themselves.',
+    description:
+      'Deletes a user. Only ADMIN users can delete users. Users cannot delete themselves.',
   })
   @ApiParam({
     name: 'id',
@@ -242,8 +274,15 @@ export class UsersController {
     example: 'clx1234567890abcdef',
   })
   @ApiResponse({ status: 204, description: 'User deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Cannot delete yourself or insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Cannot delete yourself or insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async delete(
     @Param('id') id: string,
@@ -260,7 +299,8 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Change user password',
-    description: 'Changes a user password. Users can change their own password; ADMIN can change any user password. Requires current password for verification.',
+    description:
+      'Changes a user password. Users can change their own password; ADMIN can change any user password. Requires current password for verification.',
   })
   @ApiParam({
     name: 'id',
@@ -268,9 +308,18 @@ export class UsersController {
     example: 'clx1234567890abcdef',
   })
   @ApiResponse({ status: 204, description: 'Password changed successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input data or current password incorrect' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Cannot change this user password' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data or current password incorrect',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Cannot change this user password',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async changePassword(
     @Param('id') id: string,
@@ -291,7 +340,8 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: 'Approve a pending user',
-    description: 'Changes user status from PENDING to ACTIVE. Only ADMIN users can approve users.',
+    description:
+      'Changes user status from PENDING to ACTIVE. Only ADMIN users can approve users.',
   })
   @ApiParam({
     name: 'id',
@@ -304,8 +354,14 @@ export class UsersController {
     type: UserEntity,
   })
   @ApiResponse({ status: 400, description: 'User is not in PENDING status' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async approve(@Param('id') id: string): Promise<UserResponse> {
     this.logger.log(`Approving user: ${id}`);
@@ -319,7 +375,8 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: 'Suspend a user',
-    description: 'Changes user status to SUSPENDED. Only ADMIN users can suspend users. Users cannot suspend themselves.',
+    description:
+      'Changes user status to SUSPENDED. Only ADMIN users can suspend users. Users cannot suspend themselves.',
   })
   @ApiParam({
     name: 'id',
@@ -331,8 +388,15 @@ export class UsersController {
     description: 'User suspended successfully',
     type: UserEntity,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Cannot suspend yourself or insufficient permissions' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Forbidden - Cannot suspend yourself or insufficient permissions',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async suspend(
     @Param('id') id: string,

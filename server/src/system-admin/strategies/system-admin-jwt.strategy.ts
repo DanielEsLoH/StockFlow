@@ -65,12 +65,16 @@ export class SystemAdminJwtStrategy extends PassportStrategy(
    * @returns System admin data to be attached to request.user
    * @throws UnauthorizedException if validation fails
    */
-  async validate(payload: SystemAdminJwtPayload): Promise<SystemAdminRequestUser> {
+  async validate(
+    payload: SystemAdminJwtPayload,
+  ): Promise<SystemAdminRequestUser> {
     this.logger.debug(`Validating system admin JWT for: ${payload.email}`);
 
     // Verify the token type is 'access'
     if (payload.type !== 'access') {
-      this.logger.warn(`Invalid token type: ${payload.type} for system admin access`);
+      this.logger.warn(
+        `Invalid token type: ${payload.type} for system admin access`,
+      );
       throw new UnauthorizedException('Invalid token type');
     }
 
@@ -98,7 +102,9 @@ export class SystemAdminJwtStrategy extends PassportStrategy(
       throw new UnauthorizedException('System admin account is not active');
     }
 
-    this.logger.debug(`System admin JWT validated successfully for: ${admin.email}`);
+    this.logger.debug(
+      `System admin JWT validated successfully for: ${admin.email}`,
+    );
 
     return {
       adminId: admin.id,

@@ -52,7 +52,11 @@ export class CacheService {
    * @example
    * await cacheService.set('products:tenant-123', products, CACHE_TTL.PRODUCTS);
    */
-  async set<T>(key: string, value: T, ttl: number = CACHE_TTL.MEDIUM): Promise<void> {
+  async set<T>(
+    key: string,
+    value: T,
+    ttl: number = CACHE_TTL.MEDIUM,
+  ): Promise<void> {
     try {
       // Convert TTL to milliseconds for cache-manager v5+
       await this.cacheManager.set(key, value, ttl * 1000);
@@ -92,7 +96,8 @@ export class CacheService {
   async delByPattern(pattern: string): Promise<void> {
     try {
       // Access the underlying stores from cache-manager v7
-      const stores = (this.cacheManager as unknown as { stores?: unknown[] }).stores;
+      const stores = (this.cacheManager as unknown as { stores?: unknown[] })
+        .stores;
 
       let keys: string[] = [];
 
@@ -113,7 +118,9 @@ export class CacheService {
 
       if (keys.length > 0) {
         await Promise.all(keys.map((key) => this.cacheManager.del(key)));
-        this.logger.debug(`Cache DEL pattern: ${pattern} (${keys.length} keys)`);
+        this.logger.debug(
+          `Cache DEL pattern: ${pattern} (${keys.length} keys)`,
+        );
       }
     } catch (error) {
       this.logger.warn(`Cache DEL pattern error for ${pattern}: ${error}`);
@@ -214,7 +221,12 @@ export class CacheService {
    * // After product update, invalidate product and dashboard caches
    * await cacheService.invalidateMultiple(['products', 'product', 'dashboard'], 'tenant-123');
    */
-  async invalidateMultiple(prefixes: string[], tenantId: string): Promise<void> {
-    await Promise.all(prefixes.map((prefix) => this.invalidate(prefix, tenantId)));
+  async invalidateMultiple(
+    prefixes: string[],
+    tenantId: string,
+  ): Promise<void> {
+    await Promise.all(
+      prefixes.map((prefix) => this.invalidate(prefix, tenantId)),
+    );
   }
 }

@@ -85,7 +85,10 @@ describe('SystemAdminJwtStrategy', () => {
         Test.createTestingModule({
           providers: [
             SystemAdminJwtStrategy,
-            { provide: PrismaService, useValue: { systemAdmin: { findUnique: jest.fn() } } },
+            {
+              provide: PrismaService,
+              useValue: { systemAdmin: { findUnique: jest.fn() } },
+            },
             { provide: ConfigService, useValue: mockConfigService },
           ],
         }).compile(),
@@ -97,7 +100,9 @@ describe('SystemAdminJwtStrategy', () => {
 
   describe('validate', () => {
     it('should return admin request user when validation succeeds', async () => {
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(mockSystemAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(mockSystemAdmin);
 
       const result = await strategy.validate(mockValidPayload);
 
@@ -152,7 +157,9 @@ describe('SystemAdminJwtStrategy', () => {
         ...mockSystemAdmin,
         status: SystemAdminStatus.SUSPENDED,
       };
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(suspendedAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(suspendedAdmin);
 
       await expect(strategy.validate(mockValidPayload)).rejects.toThrow(
         UnauthorizedException,
@@ -167,7 +174,9 @@ describe('SystemAdminJwtStrategy', () => {
         ...mockSystemAdmin,
         status: SystemAdminStatus.INACTIVE,
       };
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(inactiveAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(inactiveAdmin);
 
       await expect(strategy.validate(mockValidPayload)).rejects.toThrow(
         UnauthorizedException,
@@ -179,7 +188,9 @@ describe('SystemAdminJwtStrategy', () => {
 
     it('should log debug message when validating', async () => {
       const debugSpy = jest.spyOn(Logger.prototype, 'debug');
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(mockSystemAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(mockSystemAdmin);
 
       await strategy.validate(mockValidPayload);
 
@@ -190,7 +201,9 @@ describe('SystemAdminJwtStrategy', () => {
 
     it('should log success message after validation', async () => {
       const debugSpy = jest.spyOn(Logger.prototype, 'debug');
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(mockSystemAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(mockSystemAdmin);
 
       await strategy.validate(mockValidPayload);
 
@@ -254,7 +267,9 @@ describe('SystemAdminJwtStrategy', () => {
         ...mockSystemAdmin,
         status: SystemAdminStatus.SUSPENDED,
       };
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(suspendedAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(suspendedAdmin);
 
       try {
         await strategy.validate(mockValidPayload);
@@ -268,7 +283,9 @@ describe('SystemAdminJwtStrategy', () => {
     });
 
     it('should query prisma with correct admin id', async () => {
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(mockSystemAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(mockSystemAdmin);
 
       await strategy.validate(mockValidPayload);
 
@@ -284,7 +301,9 @@ describe('SystemAdminJwtStrategy', () => {
         email: 'support@stockflow.com',
         role: SystemAdminRole.SUPPORT,
       };
-      prismaService.systemAdmin.findUnique = jest.fn().mockResolvedValue(supportAdmin);
+      prismaService.systemAdmin.findUnique = jest
+        .fn()
+        .mockResolvedValue(supportAdmin);
 
       const supportPayload: SystemAdminJwtPayload = {
         ...mockValidPayload,

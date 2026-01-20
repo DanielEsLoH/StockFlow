@@ -57,12 +57,18 @@ export class SystemAdminJwtRefreshStrategy extends PassportStrategy(
    * @returns System admin data to be attached to request.user
    * @throws UnauthorizedException if validation fails
    */
-  async validate(payload: SystemAdminJwtPayload): Promise<SystemAdminRequestUser> {
-    this.logger.debug(`Validating system admin refresh JWT for: ${payload.email}`);
+  async validate(
+    payload: SystemAdminJwtPayload,
+  ): Promise<SystemAdminRequestUser> {
+    this.logger.debug(
+      `Validating system admin refresh JWT for: ${payload.email}`,
+    );
 
     // Verify the token type is 'refresh'
     if (payload.type !== 'refresh') {
-      this.logger.warn(`Invalid token type: ${payload.type} for system admin refresh`);
+      this.logger.warn(
+        `Invalid token type: ${payload.type} for system admin refresh`,
+      );
       throw new UnauthorizedException('Invalid refresh token type');
     }
 
@@ -90,7 +96,9 @@ export class SystemAdminJwtRefreshStrategy extends PassportStrategy(
       throw new UnauthorizedException('System admin account is not active');
     }
 
-    this.logger.debug(`System admin refresh JWT validated successfully for: ${admin.email}`);
+    this.logger.debug(
+      `System admin refresh JWT validated successfully for: ${admin.email}`,
+    );
 
     return {
       adminId: admin.id,

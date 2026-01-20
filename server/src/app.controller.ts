@@ -61,7 +61,8 @@ export class AppController {
   @Get()
   @ApiOperation({
     summary: 'Health check',
-    description: 'Returns a simple health check message to verify the API is running.',
+    description:
+      'Returns a simple health check message to verify the API is running.',
   })
   @ApiResponse({
     status: 200,
@@ -89,14 +90,18 @@ export class AppController {
   @Get('test-pagination')
   @ApiOperation({
     summary: 'Test pagination validation',
-    description: 'Test endpoint for validating PaginationDto. Tests query parameter transformation, default values, and min/max constraints.',
+    description:
+      'Test endpoint for validating PaginationDto. Tests query parameter transformation, default values, and min/max constraints.',
   })
   @ApiResponse({
     status: 200,
     description: 'Pagination validation successful',
     type: PaginationTestResponse,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid pagination parameters' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid pagination parameters',
+  })
   testPagination(@Query() pagination: PaginationDto): {
     message: string;
     received: PaginationDto;
@@ -129,14 +134,18 @@ export class AppController {
   @Post('test-validation')
   @ApiOperation({
     summary: 'Test body validation',
-    description: 'Test endpoint for validating request body with TestValidationDto. Tests required fields, email format, string length constraints, and nested objects.',
+    description:
+      'Test endpoint for validating request body with TestValidationDto. Tests required fields, email format, string length constraints, and nested objects.',
   })
   @ApiResponse({
     status: 200,
     description: 'Body validation successful',
     type: ValidationTestResponse,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid request body' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid request body',
+  })
   testValidation(@Body() dto: TestValidationDto): {
     message: string;
     received: TestValidationDto;

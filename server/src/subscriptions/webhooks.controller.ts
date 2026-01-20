@@ -68,7 +68,8 @@ export class WebhooksController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Handle Stripe webhook',
-    description: 'Handles incoming Stripe webhook events. This endpoint is public and verifies requests using the Stripe signature header. Used for processing subscription lifecycle events.',
+    description:
+      'Handles incoming Stripe webhook events. This endpoint is public and verifies requests using the Stripe signature header. Used for processing subscription lifecycle events.',
   })
   @ApiHeader({
     name: 'stripe-signature',
@@ -80,7 +81,10 @@ export class WebhooksController {
     description: 'Webhook received and processed',
     type: WebhookResponseEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Missing signature or invalid payload' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Missing signature or invalid payload',
+  })
   async handleStripeWebhook(
     @Headers('stripe-signature') signature: string,
     @Req() req: RawBodyRequest<Request>,

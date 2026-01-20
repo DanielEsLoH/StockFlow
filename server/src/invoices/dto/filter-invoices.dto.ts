@@ -1,10 +1,4 @@
-import {
-  IsDate,
-  IsEnum,
-  IsOptional,
-  IsString,
-  Matches,
-} from 'class-validator';
+import { IsDate, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { InvoiceStatus, PaymentStatus } from '@prisma/client';
@@ -58,7 +52,9 @@ export class FilterInvoicesDto extends PaginationDto {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @IsString({ message: 'El ID del cliente debe ser una cadena de texto' })
-  @Matches(CUID_PATTERN, { message: 'El ID del cliente debe ser un CUID valido' })
+  @Matches(CUID_PATTERN, {
+    message: 'El ID del cliente debe ser un CUID valido',
+  })
   @IsOptional()
   customerId?: string;
 

@@ -2,7 +2,14 @@
 import 'dotenv/config';
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe, Controller, Get, Post, Body } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  Controller,
+  Get,
+  Post,
+  Body,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -105,7 +112,7 @@ describe('Rate Limiting E2E Tests', () => {
 
   describe('Global Throttling', () => {
     it('should allow requests within rate limit', async () => {
-      const response = await request(app.getHttpServer() as App)
+      const response = await request(app.getHttpServer())
         .get('/test-rate-limit')
         .expect(200);
 
@@ -115,8 +122,9 @@ describe('Rate Limiting E2E Tests', () => {
     it('should handle multiple sequential requests', async () => {
       // Make multiple requests within the limit
       for (let i = 0; i < 10; i++) {
-        const response = await request(app.getHttpServer() as App)
-          .get('/test-rate-limit');
+        const response = await request(app.getHttpServer()).get(
+          '/test-rate-limit',
+        );
 
         // Should not be rate limited in development mode (10x default limit)
         expect(response.status).toBe(200);
@@ -124,7 +132,7 @@ describe('Rate Limiting E2E Tests', () => {
     });
 
     it('should track POST requests', async () => {
-      const response = await request(app.getHttpServer() as App)
+      const response = await request(app.getHttpServer())
         .post('/test-rate-limit')
         .send({ test: 'data' })
         .expect(201);
@@ -140,11 +148,11 @@ describe('Rate Limiting E2E Tests', () => {
   describe('IP-based Rate Limiting', () => {
     it('should accept requests from different IPs', async () => {
       // Simulate requests from different IPs
-      const response1 = await request(app.getHttpServer() as App)
+      const response1 = await request(app.getHttpServer())
         .get('/test-rate-limit')
         .set('X-Forwarded-For', '192.168.1.100');
 
-      const response2 = await request(app.getHttpServer() as App)
+      const response2 = await request(app.getHttpServer())
         .get('/test-rate-limit')
         .set('X-Forwarded-For', '192.168.1.101');
 
@@ -153,7 +161,7 @@ describe('Rate Limiting E2E Tests', () => {
     });
 
     it('should handle Cloudflare IP header', async () => {
-      const response = await request(app.getHttpServer() as App)
+      const response = await request(app.getHttpServer())
         .get('/test-rate-limit')
         .set('CF-Connecting-IP', '1.2.3.4');
 
@@ -161,7 +169,7 @@ describe('Rate Limiting E2E Tests', () => {
     });
 
     it('should handle X-Real-IP header', async () => {
-      const response = await request(app.getHttpServer() as App)
+      const response = await request(app.getHttpServer())
         .get('/test-rate-limit')
         .set('X-Real-IP', '5.6.7.8');
 
@@ -169,7 +177,7 @@ describe('Rate Limiting E2E Tests', () => {
     });
 
     it('should use first IP in X-Forwarded-For chain', async () => {
-      const response = await request(app.getHttpServer() as App)
+      const response = await request(app.getHttpServer())
         .get('/test-rate-limit')
         .set('X-Forwarded-For', '10.0.0.1, 10.0.0.2, 10.0.0.3');
 
@@ -185,8 +193,9 @@ describe('Rate Limiting E2E Tests', () => {
     it('should return proper error structure when throttled', async () => {
       // This test verifies the error message format when eventually throttled
       // In actual implementation, we'd need to exceed the rate limit
-      const response = await request(app.getHttpServer() as App)
-        .get('/test-rate-limit');
+      const response = await request(app.getHttpServer()).get(
+        '/test-rate-limit',
+      );
 
       // Should either succeed or have proper error structure
       if (response.status === 429) {

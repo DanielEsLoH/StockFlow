@@ -293,10 +293,7 @@ describe('CacheService', () => {
       mockStoreKeys.mockResolvedValue([]);
       mockCacheManager.del.mockResolvedValue(undefined);
 
-      await service.invalidateMultiple(
-        ['products', 'dashboard'],
-        'tenant-123',
-      );
+      await service.invalidateMultiple(['products', 'dashboard'], 'tenant-123');
 
       expect(mockCacheManager.del).toHaveBeenCalledWith('products:tenant-123');
       expect(mockCacheManager.del).toHaveBeenCalledWith('dashboard:tenant-123');

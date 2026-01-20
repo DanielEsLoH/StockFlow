@@ -8,7 +8,11 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { PrismaHealthIndicator } from './indicators';
-import { HEALTH_KEYS, MEMORY_THRESHOLDS, DISK_THRESHOLDS } from './health.constants';
+import {
+  HEALTH_KEYS,
+  MEMORY_THRESHOLDS,
+  DISK_THRESHOLDS,
+} from './health.constants';
 
 /**
  * Health check response structure.
@@ -55,7 +59,8 @@ export class HealthController {
   @HealthCheck()
   @ApiOperation({
     summary: 'Full health check',
-    description: 'Returns health status of all critical components including database, memory, and disk',
+    description:
+      'Returns health status of all critical components including database, memory, and disk',
   })
   @ApiResponse({
     status: 200,
@@ -101,7 +106,8 @@ export class HealthController {
   @Get('live')
   @ApiOperation({
     summary: 'Liveness probe',
-    description: 'Simple check to verify the application is running (for Kubernetes liveness probes)',
+    description:
+      'Simple check to verify the application is running (for Kubernetes liveness probes)',
   })
   @ApiResponse({
     status: 200,
@@ -128,7 +134,8 @@ export class HealthController {
   @HealthCheck()
   @ApiOperation({
     summary: 'Readiness probe',
-    description: 'Checks if the application is ready to receive traffic (for Kubernetes readiness probes)',
+    description:
+      'Checks if the application is ready to receive traffic (for Kubernetes readiness probes)',
   })
   @ApiResponse({
     status: 200,

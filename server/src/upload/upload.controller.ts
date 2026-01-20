@@ -31,7 +31,10 @@ import {
   MultiUploadResponse,
 } from './upload.service';
 import { RateLimitGuard, RateLimit } from '../arcjet';
-import { UploadResponseEntity, MultiUploadResponseEntity } from './entities/upload.entity';
+import {
+  UploadResponseEntity,
+  MultiUploadResponseEntity,
+} from './entities/upload.entity';
 
 /**
  * Multer configuration for file uploads.
@@ -89,7 +92,8 @@ export class UploadController {
   @UseInterceptors(FileInterceptor('file', multerOptions))
   @ApiOperation({
     summary: 'Upload single product image',
-    description: 'Uploads a single product image. Accepts JPEG, PNG, GIF, and WebP files up to 5MB. Rate limited to 20 uploads per hour per user.',
+    description:
+      'Uploads a single product image. Accepts JPEG, PNG, GIF, and WebP files up to 5MB. Rate limited to 20 uploads per hour per user.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -110,9 +114,18 @@ export class UploadController {
     description: 'Image uploaded successfully',
     type: UploadResponseEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - No file provided or invalid file type' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 429, description: 'Too Many Requests - Rate limit exceeded' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - No file provided or invalid file type',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too Many Requests - Rate limit exceeded',
+  })
   async uploadProductImage(
     @UploadedFile() file: Express.Multer.File,
   ): Promise<UploadResponse> {
@@ -154,7 +167,8 @@ export class UploadController {
   @UseInterceptors(FilesInterceptor('files', 5, multerOptions))
   @ApiOperation({
     summary: 'Upload multiple product images',
-    description: 'Uploads multiple product images (up to 5). Accepts JPEG, PNG, GIF, and WebP files up to 5MB each. Rate limited to 10 batch uploads per hour per user.',
+    description:
+      'Uploads multiple product images (up to 5). Accepts JPEG, PNG, GIF, and WebP files up to 5MB each. Rate limited to 10 batch uploads per hour per user.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -167,7 +181,8 @@ export class UploadController {
             type: 'string',
             format: 'binary',
           },
-          description: 'Image files to upload (max 5 files, JPEG/PNG/GIF/WebP, max 5MB each)',
+          description:
+            'Image files to upload (max 5 files, JPEG/PNG/GIF/WebP, max 5MB each)',
         },
       },
       required: ['files'],
@@ -178,9 +193,18 @@ export class UploadController {
     description: 'Images uploaded successfully',
     type: MultiUploadResponseEntity,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - No files provided or invalid file types' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 429, description: 'Too Many Requests - Rate limit exceeded' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - No files provided or invalid file types',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too Many Requests - Rate limit exceeded',
+  })
   async uploadProductImages(
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<MultiUploadResponse> {
@@ -209,7 +233,8 @@ export class UploadController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete uploaded file',
-    description: 'Deletes an uploaded file by filename. Only files belonging to the current tenant can be deleted.',
+    description:
+      'Deletes an uploaded file by filename. Only files belonging to the current tenant can be deleted.',
   })
   @ApiParam({
     name: 'filename',
@@ -217,7 +242,10 @@ export class UploadController {
     example: 'product-1234567890-987654321.jpg',
   })
   @ApiResponse({ status: 204, description: 'File deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   @ApiResponse({ status: 404, description: 'File not found' })
   async deleteFile(@Param('filename') filename: string): Promise<void> {
     const tenantId = this.tenantContext.getTenantId();

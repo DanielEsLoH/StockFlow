@@ -23,7 +23,8 @@ export class UpdateStockDto {
    * @example 50
    */
   @ApiProperty({
-    description: 'Quantity to adjust (interpretation depends on adjustmentType)',
+    description:
+      'Quantity to adjust (interpretation depends on adjustmentType)',
     example: 50,
   })
   @IsInt({ message: 'Quantity must be an integer' })

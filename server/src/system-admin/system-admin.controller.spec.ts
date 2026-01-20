@@ -84,9 +84,7 @@ describe('SystemAdminController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SystemAdminController],
-      providers: [
-        { provide: SystemAdminService, useValue: mockService },
-      ],
+      providers: [{ provide: SystemAdminService, useValue: mockService }],
     }).compile();
 
     controller = module.get<SystemAdminController>(SystemAdminController);
@@ -279,7 +277,10 @@ describe('SystemAdminController', () => {
       const result = await controller.getPendingUsers({ page: 1, limit: 10 });
 
       expect(result).toEqual(paginatedResponse);
-      expect(service.getPendingUsers).toHaveBeenCalledWith({ page: 1, limit: 10 });
+      expect(service.getPendingUsers).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+      });
     });
 
     it('should log the get pending users request', async () => {
@@ -315,7 +316,10 @@ describe('SystemAdminController', () => {
       const result = await controller.approveUser({ id: 'user-1' }, mockAdmin);
 
       expect(result).toEqual(actionResult);
-      expect(service.approveUser).toHaveBeenCalledWith('user-1', mockAdmin.adminId);
+      expect(service.approveUser).toHaveBeenCalledWith(
+        'user-1',
+        mockAdmin.adminId,
+      );
     });
 
     it('should log the approve user request', async () => {
@@ -473,7 +477,10 @@ describe('SystemAdminController', () => {
       const result = await controller.getAllTenants({ page: 1, limit: 10 });
 
       expect(result).toEqual(paginatedResponse);
-      expect(service.getAllTenants).toHaveBeenCalledWith({ page: 1, limit: 10 });
+      expect(service.getAllTenants).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+      });
     });
 
     it('should log the get all tenants request', async () => {

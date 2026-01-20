@@ -24,7 +24,8 @@ export class CreateWarehouseDto {
    * @example "WH-001"
    */
   @ApiPropertyOptional({
-    description: 'Warehouse code (unique within tenant, auto-generated if not provided)',
+    description:
+      'Warehouse code (unique within tenant, auto-generated if not provided)',
     example: 'WH-001',
   })
   @IsString({ message: 'Code must be a string' })

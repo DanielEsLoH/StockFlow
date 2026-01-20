@@ -61,16 +61,29 @@ export class ReportsController {
   @Get('reports/sales')
   @ApiOperation({
     summary: 'Generate sales report',
-    description: 'Generates a sales report for the specified date range. Can optionally filter by category. Returns a downloadable PDF or Excel file. Rate limited to 50 reports per hour.',
+    description:
+      'Generates a sales report for the specified date range. Can optionally filter by category. Returns a downloadable PDF or Excel file. Rate limited to 50 reports per hour.',
   })
-  @ApiProduces('application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiProduces(
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
   @ApiResponse({
     status: 200,
     description: 'Sales report generated successfully (file download)',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid query parameters' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 429, description: 'Too Many Requests - Rate limit exceeded' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid query parameters',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too Many Requests - Rate limit exceeded',
+  })
   async getSalesReport(
     @Query() query: ReportQueryDto,
     @Res() res: Response,
@@ -102,16 +115,29 @@ export class ReportsController {
   @Get('reports/inventory')
   @ApiOperation({
     summary: 'Generate inventory report',
-    description: 'Generates an inventory report showing all products and their stock levels. Can optionally filter by category. Returns a downloadable PDF or Excel file. Rate limited to 50 reports per hour.',
+    description:
+      'Generates an inventory report showing all products and their stock levels. Can optionally filter by category. Returns a downloadable PDF or Excel file. Rate limited to 50 reports per hour.',
   })
-  @ApiProduces('application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiProduces(
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
   @ApiResponse({
     status: 200,
     description: 'Inventory report generated successfully (file download)',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid query parameters' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 429, description: 'Too Many Requests - Rate limit exceeded' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid query parameters',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too Many Requests - Rate limit exceeded',
+  })
   async getInventoryReport(
     @Query() query: InventoryReportQueryDto,
     @Res() res: Response,
@@ -139,16 +165,29 @@ export class ReportsController {
   @Get('reports/customers')
   @ApiOperation({
     summary: 'Generate customers report',
-    description: 'Generates a customers report showing all customers and their details. Returns a downloadable PDF or Excel file. Rate limited to 50 reports per hour.',
+    description:
+      'Generates a customers report showing all customers and their details. Returns a downloadable PDF or Excel file. Rate limited to 50 reports per hour.',
   })
-  @ApiProduces('application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiProduces(
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
   @ApiResponse({
     status: 200,
     description: 'Customers report generated successfully (file download)',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid query parameters' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 429, description: 'Too Many Requests - Rate limit exceeded' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid query parameters',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too Many Requests - Rate limit exceeded',
+  })
   async getCustomersReport(
     @Query() query: CustomersReportQueryDto,
     @Res() res: Response,
@@ -174,7 +213,8 @@ export class ReportsController {
   @Get('invoices/:id/pdf')
   @ApiOperation({
     summary: 'Generate invoice PDF',
-    description: 'Generates a PDF for a specific invoice. Returns a downloadable PDF file. Rate limited to 50 reports per hour.',
+    description:
+      'Generates a PDF for a specific invoice. Returns a downloadable PDF file. Rate limited to 50 reports per hour.',
   })
   @ApiParam({
     name: 'id',
@@ -186,9 +226,15 @@ export class ReportsController {
     status: 200,
     description: 'Invoice PDF generated successfully (file download)',
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
-  @ApiResponse({ status: 429, description: 'Too Many Requests - Rate limit exceeded' })
+  @ApiResponse({
+    status: 429,
+    description: 'Too Many Requests - Rate limit exceeded',
+  })
   async getInvoicePdf(
     @Param('id') id: string,
     @Res() res: Response,

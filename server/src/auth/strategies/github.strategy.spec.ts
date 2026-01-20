@@ -7,7 +7,7 @@ import type { Profile } from 'passport-github2';
 describe('GitHubStrategy', () => {
   let strategy: GitHubStrategy;
 
-  const mockConfig = {
+  const mockConfig: Record<string, string> = {
     'github.clientId': 'test-client-id',
     'github.clientSecret': 'test-client-secret',
     'github.callbackUrl': 'http://localhost:3000/auth/github/callback',
@@ -17,8 +17,8 @@ describe('GitHubStrategy', () => {
     ({
       id: 'github-user-123',
       displayName: 'John Doe',
-      username: 'johndoe',
-      profileUrl: 'https://github.com/johndoe',
+      username: 'testuser',
+      profileUrl: 'https://github.com/testuser',
       emails: [{ value: 'john@example.com' }],
       photos: [{ value: 'https://avatars.githubusercontent.com/u/123' }],
       provider: 'github',
@@ -29,13 +29,16 @@ describe('GitHubStrategy', () => {
     jest.clearAllMocks();
 
     const mockConfigService = {
-      get: jest.fn().mockImplementation((key: string) => mockConfig[key]),
+      get: jest.fn().mockImplementation((key: string): string | undefined => mockConfig[key]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GitHubStrategy,
-        { provide: ConfigService, useValue: mockConfigService },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
       ],
     }).compile();
 
@@ -59,7 +62,7 @@ describe('GitHubStrategy', () => {
 
     it('should throw error when clientId is not configured', async () => {
       const mockConfigServiceWithoutClientId = {
-        get: jest.fn().mockImplementation((key: string) => {
+        get: jest.fn().mockImplementation((key: string): string | undefined => {
           if (key === 'github.clientId') return undefined;
           return mockConfig[key];
         }),
@@ -69,7 +72,10 @@ describe('GitHubStrategy', () => {
         Test.createTestingModule({
           providers: [
             GitHubStrategy,
-            { provide: ConfigService, useValue: mockConfigServiceWithoutClientId },
+            {
+              provide: ConfigService,
+              useValue: mockConfigServiceWithoutClientId,
+            },
           ],
         }).compile(),
       ).rejects.toThrow('GitHub OAuth credentials not configured');
@@ -77,7 +83,7 @@ describe('GitHubStrategy', () => {
 
     it('should throw error when clientSecret is not configured', async () => {
       const mockConfigServiceWithoutSecret = {
-        get: jest.fn().mockImplementation((key: string) => {
+        get: jest.fn().mockImplementation((key: string): string | undefined => {
           if (key === 'github.clientSecret') return undefined;
           return mockConfig[key];
         }),
@@ -87,7 +93,10 @@ describe('GitHubStrategy', () => {
         Test.createTestingModule({
           providers: [
             GitHubStrategy,
-            { provide: ConfigService, useValue: mockConfigServiceWithoutSecret },
+            {
+              provide: ConfigService,
+              useValue: mockConfigServiceWithoutSecret,
+            },
           ],
         }).compile(),
       ).rejects.toThrow('GitHub OAuth credentials not configured');
@@ -95,7 +104,7 @@ describe('GitHubStrategy', () => {
 
     it('should use default callback URL when not configured', async () => {
       const mockConfigServiceWithoutCallback = {
-        get: jest.fn().mockImplementation((key: string) => {
+        get: jest.fn().mockImplementation((key: string): string | undefined => {
           if (key === 'github.callbackUrl') return undefined;
           return mockConfig[key];
         }),
@@ -104,7 +113,10 @@ describe('GitHubStrategy', () => {
       const module = await Test.createTestingModule({
         providers: [
           GitHubStrategy,
-          { provide: ConfigService, useValue: mockConfigServiceWithoutCallback },
+          {
+            provide: ConfigService,
+            useValue: mockConfigServiceWithoutCallback,
+          },
         ],
       }).compile();
 
@@ -118,17 +130,22 @@ describe('GitHubStrategy', () => {
       freshLoggerSpy.mockClear();
 
       const mockConfigService = {
-        get: jest.fn().mockImplementation((key: string) => mockConfig[key]),
+        get: jest.fn().mockImplementation((key: string): string | undefined => mockConfig[key]),
       };
 
       await Test.createTestingModule({
         providers: [
           GitHubStrategy,
-          { provide: ConfigService, useValue: mockConfigService },
+          {
+            provide: ConfigService,
+            useValue: mockConfigService,
+          },
         ],
       }).compile();
 
-      expect(freshLoggerSpy).toHaveBeenCalledWith('GitHub OAuth strategy initialized');
+      expect(freshLoggerSpy).toHaveBeenCalledWith(
+        'GitHub OAuth strategy initialized',
+      );
     });
   });
 
@@ -354,6 +371,7 @@ describe('GitHubStrategy', () => {
       // Make emails throw a non-Error
       Object.defineProperty(profile, 'emails', {
         get: () => {
+          // eslint-disable-next-line @typescript-eslint/only-throw-error
           throw 'string error';
         },
       });
@@ -422,7 +440,7 @@ describe('GitHubStrategy', () => {
     it('should use username as firstName when no displayName', () => {
       const profile = createMockProfile({
         displayName: undefined,
-        username: 'johndoe',
+        username: 'testuser',
       });
       const done = jest.fn();
 
@@ -431,7 +449,7 @@ describe('GitHubStrategy', () => {
       expect(done).toHaveBeenCalledWith(
         null,
         expect.objectContaining({
-          firstName: 'johndoe',
+          firstName: 'testuser',
           lastName: 'User',
         }),
       );
@@ -458,7 +476,7 @@ describe('GitHubStrategy', () => {
     it('should handle empty displayName', () => {
       const profile = createMockProfile({
         displayName: '',
-        username: 'johndoe',
+        username: 'testuser',
       });
       const done = jest.fn();
 
@@ -467,7 +485,7 @@ describe('GitHubStrategy', () => {
       expect(done).toHaveBeenCalledWith(
         null,
         expect.objectContaining({
-          firstName: 'johndoe',
+          firstName: 'testuser',
           lastName: 'User',
         }),
       );

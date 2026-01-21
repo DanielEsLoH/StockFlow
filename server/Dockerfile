@@ -75,7 +75,6 @@ WORKDIR /app
 
 # Set environment to production
 ENV NODE_ENV=production
-ENV PORT=3000
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
@@ -97,8 +96,8 @@ COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
 RUN mkdir -p /app/uploads/products && \
     chown -R nestjs:nodejs /app/uploads
 
-# Expose the application port
-EXPOSE 3000
+# Expose the application port (Railway overrides with dynamic PORT)
+EXPOSE 8080
 
 # Switch to non-root user
 USER nestjs

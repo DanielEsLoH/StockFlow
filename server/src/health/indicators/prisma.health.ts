@@ -29,10 +29,12 @@ export class PrismaHealthIndicator extends HealthIndicator {
   async isHealthy(
     key: string = HEALTH_KEYS.DATABASE,
   ): Promise<HealthIndicatorResult> {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
     try {
       // Create a promise that rejects after timeout
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
           reject(new Error('Database health check timed out'));
         }, HEALTH_TIMEOUTS.DATABASE);
       });
@@ -58,6 +60,11 @@ export class PrismaHealthIndicator extends HealthIndicator {
           error: errorMessage,
         }),
       );
+    } finally {
+      // Always clear the timeout to prevent timer leaks
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 }

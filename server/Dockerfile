@@ -114,6 +114,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 
 # Copy Prisma files (needed for migrations and runtime queries)
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nestjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
 # Copy package.json for version info and npm scripts
 COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json

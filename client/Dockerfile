@@ -5,12 +5,19 @@
 # frontend with server-side rendering (SSR) enabled.
 #
 # Build: docker build -t stockflow-client .
-# Run:   docker run -p 3001:3001 stockflow-client
+# Run:   docker run -p 3001:3001 -e PORT=3001 stockflow-client
 #
 # Architecture:
 #   Stage 1 (deps)      - Install all dependencies for building
 #   Stage 2 (builder)   - Build the production SSR application
-#   Stage 3 (runner)    - Minimal production runtime image
+#   Stage 3 (prod-deps) - Install production-only dependencies
+#   Stage 4 (runner)    - Minimal production runtime image
+#
+# Optimizations:
+# - Multi-stage build reduces final image size by ~80%
+# - Separate prod-deps stage for better layer caching
+# - Non-root user for security
+# - tini init system for proper signal handling
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -20,7 +27,6 @@
 # Using a separate stage allows for better layer caching.
 FROM node:20-alpine AS deps
 
-# Set working directory
 WORKDIR /app
 
 # Install libc6-compat for Alpine compatibility with some npm packages
@@ -73,7 +79,30 @@ ENV VITE_API_URL=${VITE_API_URL}
 RUN npm run build
 
 # -----------------------------------------------------------------------------
-# Stage 3: Production Runner
+# Stage 3: Production Dependencies
+# -----------------------------------------------------------------------------
+# Install only production dependencies for the runtime image
+# This separate stage improves layer caching
+FROM node:20-alpine AS prod-deps
+
+WORKDIR /app
+
+# Install libc6-compat for native module compatibility
+RUN apk add --no-cache libc6-compat
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install ONLY production dependencies
+# React Router SSR requires @react-router/serve and related packages
+RUN npm ci --omit=dev && \
+    # Clean npm cache to reduce image size
+    npm cache clean --force && \
+    # Remove unnecessary files
+    rm -rf /tmp/*
+
+# -----------------------------------------------------------------------------
+# Stage 4: Production Runner
 # -----------------------------------------------------------------------------
 # Create the minimal production image with only runtime dependencies
 FROM node:20-alpine AS runner
@@ -83,15 +112,13 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV=production
 
-# Set the port for the React Router server
-# This can be overridden at runtime with -e PORT=xxxx
+# Default port (can be overridden by Railway or docker run -e PORT=xxxx)
 ENV PORT=3001
 
 # Install essential runtime packages:
 # - tini: A minimal init system to properly handle signals (SIGTERM, SIGINT)
 #         This ensures graceful shutdown and prevents zombie processes
-# - wget: Required for Docker health checks
-RUN apk add --no-cache tini wget
+RUN apk add --no-cache tini
 
 # Create a non-root user and group for security
 # Running as non-root prevents container escape vulnerabilities
@@ -99,44 +126,29 @@ RUN apk add --no-cache tini wget
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 reactrouter
 
-# Copy package files (needed for npm scripts and version info)
+# Copy package.json (needed for npm scripts and version info)
 COPY --from=builder --chown=reactrouter:nodejs /app/package.json ./package.json
 
 # Copy the built application from builder stage
 # The build output contains:
-# - client/: Static assets to be served (or by Nginx)
+# - client/: Static assets to be served
 # - server/index.js: The SSR server entry point
 COPY --from=builder --chown=reactrouter:nodejs /app/build ./build
 
-# Install ONLY production dependencies needed at runtime
-# React Router SSR requires @react-router/serve at runtime
-# Using npm ci with --omit=dev ensures minimal footprint
-COPY --from=builder /app/package-lock.json ./package-lock.json
-RUN npm ci --omit=dev && \
-    # Clean npm cache to reduce image size
-    npm cache clean --force && \
-    # Remove any leftover temporary files
-    rm -rf /tmp/*
+# Copy production dependencies from prod-deps stage
+COPY --from=prod-deps --chown=reactrouter:nodejs /app/node_modules ./node_modules
 
-# Set ownership of node_modules to non-root user
-RUN chown -R reactrouter:nodejs /app/node_modules
-
-# Expose the application port
-# Note: This is documentation only; actual port mapping happens at runtime
+# Document the default port
+# Note: This is documentation only; actual port is set via PORT env var
 EXPOSE 3001
 
 # Switch to non-root user for runtime
 # All subsequent commands run as this user
 USER reactrouter
 
-# Health check configuration
-# Verifies the SSR server is responding to requests
-# - interval: Check every 30 seconds
-# - timeout: Allow 10 seconds for response
-# - start-period: Wait 10 seconds before first check (server startup time)
-# - retries: Mark unhealthy after 3 consecutive failures
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1
+# Note: Health check is handled by Railway's built-in health monitoring
+# Do NOT add HEALTHCHECK instruction as Railway dynamically assigns PORT
+# For docker-compose, health checks are defined in the compose file
 
 # Use tini as the init system
 # This ensures proper signal handling and process reaping

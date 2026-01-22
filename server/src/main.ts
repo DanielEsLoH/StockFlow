@@ -35,6 +35,10 @@ async function bootstrap() {
   // Allow requests from the frontend origin
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3001',
+    // Production domains
+    'https://www.stockflow.com.co',
+    'https://stockflow.com.co',
+    // Development domains
     'http://localhost:3001',
     'http://localhost:5173', // Vite dev server
     'http://localhost',

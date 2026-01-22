@@ -612,7 +612,7 @@ describe('DashboardService', () => {
       startDate.setDate(startDate.getDate() - 6);
       startDate.setHours(0, 0, 0, 0);
 
-      const mockResults = [];
+      const mockResults: Array<{ date: Date; total: bigint }> = [];
       for (let i = 0; i < 7; i++) {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);

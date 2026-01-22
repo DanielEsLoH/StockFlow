@@ -43,7 +43,7 @@ export { CustomValidationPipe } from './pipes';
 export type { ValidationErrorDetail, ValidationErrorResponse } from './pipes';
 
 // DTOs
-export { PaginationDto, TestValidationDto } from './dto';
+export { PaginationDto } from './dto';
 
 // Services
 export { TenantContextService } from './services';

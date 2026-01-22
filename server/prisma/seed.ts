@@ -9,7 +9,18 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log('🌱 Seeding database...\n');
+  console.log('🌱 Checking database...\n');
+
+  // ============================================================================
+  // CHECK: Skip seeding if database already has data
+  // ============================================================================
+  const existingAdmin = await prisma.systemAdmin.count();
+  if (existingAdmin > 0) {
+    console.log('✅ Database already has data, skipping seed.\n');
+    return;
+  }
+
+  console.log('📭 Database is empty, starting seed...\n');
 
   // ============================================================================
   // STEP 1: Clean existing data (reverse order of foreign keys)

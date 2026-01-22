@@ -100,7 +100,9 @@ describe('AuthService', () => {
   };
 
   // Helper function to get expected user response structure
-  const getExpectedUserResponse = (user: typeof mockUser) => ({
+  const getExpectedUserResponse = (
+    user: Omit<typeof mockUser, 'role'> & { role: UserRole },
+  ) => ({
     id: user.id,
     email: user.email,
     firstName: user.firstName,
@@ -144,7 +146,7 @@ describe('AuthService', () => {
   // Helper function to create transaction mock
   const createTransactionMock = (
     tenantResult: typeof mockTenant,
-    userResult: typeof mockUser,
+    userResult: Omit<typeof mockUser, 'role'> & { role: UserRole },
   ) => {
     return (callback: (tx: unknown) => Promise<unknown>) => {
       const tx = {

@@ -32,7 +32,6 @@ describe('AuthService', () => {
   let jwtService: jest.Mocked<JwtService>;
   let configService: jest.Mocked<ConfigService>;
   let brevoService: jest.Mocked<BrevoService>;
-  let invitationsService: jest.Mocked<InvitationsService>;
 
   // Test data
   const mockTenant = {
@@ -169,7 +168,8 @@ describe('AuthService', () => {
     jwtService = module.get(JwtService);
     configService = module.get(ConfigService);
     brevoService = module.get(BrevoService);
-    invitationsService = module.get(InvitationsService);
+    // InvitationsService is provided to AuthService but not directly tested here
+    module.get(InvitationsService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'debug').mockImplementation();
@@ -507,7 +507,7 @@ describe('AuthService', () => {
       (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => Promise<unknown>) => {
           const tx = {
             tenant: {
               create: jest.fn().mockResolvedValue(newTenant),
@@ -1089,7 +1089,7 @@ describe('AuthService', () => {
       (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => Promise<unknown>) => {
           const tx = {
             tenant: {
               create: jest.fn().mockResolvedValue(newTenant),
@@ -1571,8 +1571,14 @@ describe('AuthService', () => {
       await service.resendVerification('test@example.com');
       const afterCall = Date.now();
 
-      const updateCall = (prismaService.user.update as jest.Mock).mock.calls[0];
-      const expiryDate = updateCall[0].data.verificationTokenExpiry as Date;
+      const updateCall = (prismaService.user.update as jest.Mock).mock
+        .calls[0] as [
+        {
+          where: { id: string };
+          data: { verificationToken: string; verificationTokenExpiry: Date };
+        },
+      ];
+      const expiryDate = updateCall[0].data.verificationTokenExpiry;
       const expectedMinExpiry = beforeCall + 24 * 60 * 60 * 1000;
       const expectedMaxExpiry = afterCall + 24 * 60 * 60 * 1000;
 

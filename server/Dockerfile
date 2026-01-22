@@ -119,6 +119,10 @@ COPY --from=builder --chown=nestjs:nodejs /app/prisma.config.ts ./prisma.config.
 # Copy package.json for version info and npm scripts
 COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
 
+# Copy startup script
+COPY --from=builder --chown=nestjs:nodejs /app/scripts/startup.sh ./scripts/startup.sh
+RUN chmod +x ./scripts/startup.sh
+
 # Create uploads directory with proper permissions
 # This directory is used for user-uploaded files
 RUN mkdir -p /app/uploads/products && \
@@ -140,5 +144,5 @@ USER nestjs
 ENTRYPOINT ["/sbin/tini", "--"]
 
 # Start the application
-# Run migrations then start the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Run startup script (migrations, conditional seed, then server)
+CMD ["./scripts/startup.sh"]

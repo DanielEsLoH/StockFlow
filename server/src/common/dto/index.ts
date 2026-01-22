@@ -15,4 +15,3 @@
  */
 
 export { PaginationDto } from './pagination.dto';
-export { TestValidationDto, AddressDto } from './test-validation.dto';

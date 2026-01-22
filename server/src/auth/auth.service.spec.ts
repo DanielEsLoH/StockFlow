@@ -13,7 +13,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma';
-import { InvitationsService } from '../invitations/invitations.service';
+import { InvitationsService } from '../invitations';
 import { BrevoService } from '../notifications/mail/brevo.service';
 import {
   UserRole,
@@ -97,6 +97,66 @@ describe('AuthService', () => {
   const mockTokens = {
     accessToken: 'mock-access-token',
     refreshToken: 'mock-refresh-token',
+  };
+
+  // Helper function to get expected user response structure
+  const getExpectedUserResponse = (user: typeof mockUser) => ({
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+    status: user.status,
+    tenantId: user.tenantId,
+  });
+
+  // Helper function to get expected tenant response structure
+  const getExpectedTenantResponse = (tenant: typeof mockTenant) => ({
+    id: tenant.id,
+    name: tenant.name,
+    slug: tenant.slug,
+    plan: tenant.plan,
+    status: tenant.status,
+  });
+
+  // Helper function to setup token generation mocks
+  const setupTokenMocks = (
+    jwt: jest.Mocked<JwtService>,
+    tokens: { accessToken: string; refreshToken: string } = mockTokens,
+  ) => {
+    (jwt.signAsync as jest.Mock)
+      .mockResolvedValueOnce(tokens.accessToken)
+      .mockResolvedValueOnce(tokens.refreshToken);
+  };
+
+  // Helper function to setup successful login mocks
+  const setupLoginMocks = (
+    prisma: jest.Mocked<PrismaService>,
+    jwt: jest.Mocked<JwtService>,
+    userWithTenant = mockUserWithTenant,
+  ) => {
+    (prisma.user.findFirst as jest.Mock).mockResolvedValue(userWithTenant);
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    setupTokenMocks(jwt);
+    (prisma.user.update as jest.Mock).mockResolvedValue(mockUser);
+  };
+
+  // Helper function to create transaction mock
+  const createTransactionMock = (
+    tenantResult: typeof mockTenant,
+    userResult: typeof mockUser,
+  ) => {
+    return (callback: (tx: unknown) => Promise<unknown>) => {
+      const tx = {
+        tenant: {
+          create: jest.fn().mockResolvedValue(tenantResult),
+        },
+        user: {
+          create: jest.fn().mockResolvedValue(userResult),
+        },
+      };
+      return callback(tx);
+    };
   };
 
   beforeEach(async () => {
@@ -251,36 +311,15 @@ describe('AuthService', () => {
 
   describe('login', () => {
     beforeEach(() => {
-      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
-        mockUserWithTenant,
-      );
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      (jwtService.signAsync as jest.Mock)
-        .mockResolvedValueOnce(mockTokens.accessToken)
-        .mockResolvedValueOnce(mockTokens.refreshToken);
-      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
+      setupLoginMocks(prismaService, jwtService);
     });
 
     it('should return auth response with user and tokens', async () => {
       const result = await service.login('test@example.com', 'password123');
 
       expect(result).toEqual({
-        user: {
-          id: mockUser.id,
-          email: mockUser.email,
-          firstName: mockUser.firstName,
-          lastName: mockUser.lastName,
-          role: mockUser.role,
-          status: mockUser.status,
-          tenantId: mockUser.tenantId,
-        },
-        tenant: {
-          id: mockTenant.id,
-          name: mockTenant.name,
-          slug: mockTenant.slug,
-          plan: mockTenant.plan,
-          status: mockTenant.status,
-        },
+        user: getExpectedUserResponse(mockUser),
+        tenant: getExpectedTenantResponse(mockTenant),
         accessToken: mockTokens.accessToken,
         refreshToken: mockTokens.refreshToken,
       });
@@ -507,17 +546,7 @@ describe('AuthService', () => {
       (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        (callback: (tx: unknown) => Promise<unknown>) => {
-          const tx = {
-            tenant: {
-              create: jest.fn().mockResolvedValue(newTenant),
-            },
-            user: {
-              create: jest.fn().mockResolvedValue(newUser),
-            },
-          };
-          return callback(tx);
-        },
+        createTransactionMock(newTenant, newUser),
       );
     });
 
@@ -629,39 +658,28 @@ describe('AuthService', () => {
       tenant: mockTenant,
     };
 
+    const newTokens = {
+      accessToken: 'new-access-token',
+      refreshToken: 'new-refresh-token',
+    };
+
     beforeEach(() => {
       (jwtService.verifyAsync as jest.Mock).mockResolvedValue(validPayload);
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
         userWithStoredToken,
       );
       (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
-      (jwtService.signAsync as jest.Mock)
-        .mockResolvedValueOnce('new-access-token')
-        .mockResolvedValueOnce('new-refresh-token');
+      setupTokenMocks(jwtService, newTokens);
     });
 
     it('should return new tokens when refresh token is valid', async () => {
       const result = await service.refreshTokens(validRefreshToken);
 
       expect(result).toEqual({
-        user: {
-          id: mockUser.id,
-          email: mockUser.email,
-          firstName: mockUser.firstName,
-          lastName: mockUser.lastName,
-          role: mockUser.role,
-          status: mockUser.status,
-          tenantId: mockUser.tenantId,
-        },
-        tenant: {
-          id: mockTenant.id,
-          name: mockTenant.name,
-          slug: mockTenant.slug,
-          plan: mockTenant.plan,
-          status: mockTenant.status,
-        },
-        accessToken: 'new-access-token',
-        refreshToken: 'new-refresh-token',
+        user: getExpectedUserResponse(mockUser),
+        tenant: getExpectedTenantResponse(mockTenant),
+        accessToken: newTokens.accessToken,
+        refreshToken: newTokens.refreshToken,
       });
     });
 
@@ -864,9 +882,7 @@ describe('AuthService', () => {
 
   describe('generateTokens', () => {
     beforeEach(() => {
-      (jwtService.signAsync as jest.Mock)
-        .mockResolvedValueOnce(mockTokens.accessToken)
-        .mockResolvedValueOnce(mockTokens.refreshToken);
+      setupTokenMocks(jwtService);
     });
 
     it('should generate access and refresh tokens', async () => {
@@ -1048,14 +1064,7 @@ describe('AuthService', () => {
 
     it('should log success message on login', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
-      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
-        mockUserWithTenant,
-      );
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      (jwtService.signAsync as jest.Mock)
-        .mockResolvedValueOnce(mockTokens.accessToken)
-        .mockResolvedValueOnce(mockTokens.refreshToken);
-      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
+      setupLoginMocks(prismaService, jwtService);
 
       await service.login('test@example.com', 'password123');
 
@@ -1066,7 +1075,7 @@ describe('AuthService', () => {
 
     it('should log success message on registration', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
-      const newTenant = {
+      const regTenant = {
         ...mockTenant,
         id: 'new-tenant-id',
         name: 'Test Company',
@@ -1074,7 +1083,7 @@ describe('AuthService', () => {
         email: 'new@example.com',
         status: TenantStatus.ACTIVE,
       };
-      const newUser = {
+      const regUser = {
         ...mockUser,
         id: 'new-user-id',
         email: 'new@example.com',
@@ -1089,22 +1098,10 @@ describe('AuthService', () => {
       (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        (callback: (tx: unknown) => Promise<unknown>) => {
-          const tx = {
-            tenant: {
-              create: jest.fn().mockResolvedValue(newTenant),
-            },
-            user: {
-              create: jest.fn().mockResolvedValue(newUser),
-            },
-          };
-          return callback(tx);
-        },
+        createTransactionMock(regTenant, regUser),
       );
-      (prismaService.user.update as jest.Mock).mockResolvedValue(newUser);
-      (jwtService.signAsync as jest.Mock)
-        .mockResolvedValueOnce(mockTokens.accessToken)
-        .mockResolvedValueOnce(mockTokens.refreshToken);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(regUser);
+      setupTokenMocks(jwtService);
 
       await service.register({
         email: 'new@example.com',
@@ -1202,27 +1199,28 @@ describe('AuthService', () => {
 
     it('should log success message on token refresh', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
-      const validPayload = {
+      const refreshPayload = {
         sub: 'user-123',
         email: 'test@example.com',
         role: UserRole.EMPLOYEE,
         tenantId: 'tenant-123',
         type: 'refresh' as const,
       };
-      const userWithStoredToken = {
+      const userWithToken = {
         ...mockUser,
         refreshToken: 'valid-refresh-token',
         tenant: mockTenant,
       };
 
-      (jwtService.verifyAsync as jest.Mock).mockResolvedValue(validPayload);
+      (jwtService.verifyAsync as jest.Mock).mockResolvedValue(refreshPayload);
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
-        userWithStoredToken,
+        userWithToken,
       );
       (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
-      (jwtService.signAsync as jest.Mock)
-        .mockResolvedValueOnce('new-access-token')
-        .mockResolvedValueOnce('new-refresh-token');
+      setupTokenMocks(jwtService, {
+        accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+      });
 
       await service.refreshTokens('valid-refresh-token');
 
@@ -1234,9 +1232,7 @@ describe('AuthService', () => {
 
   describe('getMe', () => {
     beforeEach(() => {
-      (jwtService.signAsync as jest.Mock)
-        .mockResolvedValueOnce(mockTokens.accessToken)
-        .mockResolvedValueOnce(mockTokens.refreshToken);
+      setupTokenMocks(jwtService);
       (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
     });
 

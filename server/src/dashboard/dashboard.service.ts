@@ -486,41 +486,51 @@ export class DashboardService {
 
   /**
    * Gets sales amounts for the last 7 days.
+   * Uses a single raw SQL query with GROUP BY instead of N queries.
    */
   async getSalesByDay(tenantId: string, days = 7): Promise<SalesByDay[]> {
     const now = new Date();
-    const result: SalesByDay[] = [];
 
-    // Generate dates for the last N days
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(now.getDate() - i);
-      date.setHours(0, 0, 0, 0);
+    // Calculate the start date (beginning of the day, N days ago)
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days + 1);
+    startDate.setHours(0, 0, 0, 0);
 
-      const nextDate = new Date(date);
-      nextDate.setDate(date.getDate() + 1);
+    // Single query with GROUP BY date
+    const result = await this.prisma.$queryRaw<
+      Array<{ date: Date; total: bigint | null }>
+    >`
+      SELECT DATE_TRUNC('day', issue_date) as date,
+             COALESCE(SUM(total), 0) as total
+      FROM invoices
+      WHERE tenant_id = ${tenantId}
+        AND status != 'CANCELLED'
+        AND issue_date >= ${startDate}
+      GROUP BY DATE_TRUNC('day', issue_date)
+      ORDER BY date ASC
+    `;
 
-      const daySales = await this.prisma.invoice.aggregate({
-        where: {
-          tenantId,
-          status: {
-            not: InvoiceStatus.CANCELLED,
-          },
-          issueDate: {
-            gte: date,
-            lt: nextDate,
-          },
-        },
-        _sum: { total: true },
-      });
+    // Create a map of date string to total for O(1) lookup
+    const salesMap = new Map(
+      result.map((r) => [
+        r.date.toISOString().split('T')[0],
+        Number(r.total ?? 0),
+      ]),
+    );
 
-      result.push({
-        date: date.toISOString().split('T')[0],
-        amount: Number(daySales._sum.total ?? 0),
+    // Fill in all days, including those with no sales (0)
+    const salesByDay: SalesByDay[] = [];
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      salesByDay.push({
+        date: dateStr,
+        amount: salesMap.get(dateStr) ?? 0,
       });
     }
 
-    return result;
+    return salesByDay;
   }
 
   /**

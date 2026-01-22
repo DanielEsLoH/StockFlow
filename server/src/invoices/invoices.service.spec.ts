@@ -171,6 +171,7 @@ describe('InvoicesService', () => {
       product: {
         findFirst: jest.fn(),
         findUnique: jest.fn(),
+        findMany: jest.fn(),
         update: jest.fn(),
       },
       customer: {
@@ -543,10 +544,10 @@ describe('InvoicesService', () => {
       (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
         mockCustomer,
       );
-      // Mock product validation
-      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(
+      // Mock product validation (batched query)
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
         mockProduct,
-      );
+      ]);
       // Mock no existing invoices for number generation
       (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
       // Mock monthly count
@@ -702,7 +703,7 @@ describe('InvoicesService', () => {
     });
 
     it('should validate product exists', async () => {
-      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([]);
 
       await expect(service.create(createDto, mockUserId)).rejects.toThrow(
         NotFoundException,
@@ -710,7 +711,7 @@ describe('InvoicesService', () => {
     });
 
     it('should throw NotFoundException with correct message for product not found', async () => {
-      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([]);
 
       await expect(service.create(createDto, mockUserId)).rejects.toThrow(
         `Producto no encontrado: ${mockProduct.id}`,
@@ -719,9 +720,9 @@ describe('InvoicesService', () => {
 
     it('should validate product has sufficient stock', async () => {
       const lowStockProduct = { ...mockProduct, stock: 1 };
-      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
         lowStockProduct,
-      );
+      ]);
 
       await expect(service.create(createDto, mockUserId)).rejects.toThrow(
         BadRequestException,
@@ -730,9 +731,9 @@ describe('InvoicesService', () => {
 
     it('should throw BadRequestException with correct message for insufficient stock', async () => {
       const lowStockProduct = { ...mockProduct, stock: 1 };
-      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
         lowStockProduct,
-      );
+      ]);
 
       await expect(service.create(createDto, mockUserId)).rejects.toThrow(
         `Stock insuficiente para el producto: ${mockProduct.name}`,
@@ -1496,9 +1497,9 @@ describe('InvoicesService', () => {
       (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
         mockCustomer,
       );
-      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
         mockProduct,
-      );
+      ]);
       (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
       (prismaService.invoice.count as jest.Mock).mockResolvedValue(0);
 
@@ -1519,8 +1520,8 @@ describe('InvoicesService', () => {
         mockUserId,
       );
 
-      expect(prismaService.product.findFirst).toHaveBeenCalledWith({
-        where: { id: mockProduct.id, tenantId: mockTenantId },
+      expect(prismaService.product.findMany).toHaveBeenCalledWith({
+        where: { id: { in: [mockProduct.id] }, tenantId: mockTenantId },
       });
     });
 
@@ -1644,9 +1645,9 @@ describe('InvoicesService', () => {
       (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
         mockCustomer,
       );
-      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
         mockProduct,
-      );
+      ]);
       (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
       (prismaService.invoice.count as jest.Mock).mockResolvedValue(0);
 

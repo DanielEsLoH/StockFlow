@@ -35,6 +35,7 @@ describe('DashboardService', () => {
         groupBy: jest.fn(),
         findMany: jest.fn(),
       },
+      $queryRaw: jest.fn(),
     };
 
     const mockTenantContextService = {
@@ -96,6 +97,7 @@ describe('DashboardService', () => {
       (prismaService.customer.count as jest.Mock).mockResolvedValue(0);
       (prismaService.invoiceItem.groupBy as jest.Mock).mockResolvedValue([]);
       (prismaService.invoiceItem.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([]);
     });
 
     it('should return complete dashboard data', async () => {
@@ -570,6 +572,7 @@ describe('DashboardService', () => {
       (prismaService.invoiceItem.groupBy as jest.Mock).mockResolvedValue([]);
       (prismaService.invoiceItem.findMany as jest.Mock).mockResolvedValue([]);
       (prismaService.product.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([]);
     });
 
     it('should return chart data structure', async () => {
@@ -583,9 +586,8 @@ describe('DashboardService', () => {
 
   describe('getSalesByDay', () => {
     beforeEach(() => {
-      (prismaService.invoice.aggregate as jest.Mock).mockResolvedValue({
-        _sum: { total: 0 },
-      });
+      // Mock $queryRaw to return empty array by default
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([]);
     });
 
     it('should return sales for last 7 days by default', async () => {
@@ -604,14 +606,23 @@ describe('DashboardService', () => {
     });
 
     it('should return amounts for each day', async () => {
-      (prismaService.invoice.aggregate as jest.Mock)
-        .mockResolvedValueOnce({ _sum: { total: 1000 } })
-        .mockResolvedValueOnce({ _sum: { total: 2000 } })
-        .mockResolvedValueOnce({ _sum: { total: 3000 } })
-        .mockResolvedValueOnce({ _sum: { total: 4000 } })
-        .mockResolvedValueOnce({ _sum: { total: 5000 } })
-        .mockResolvedValueOnce({ _sum: { total: 6000 } })
-        .mockResolvedValueOnce({ _sum: { total: 7000 } });
+      // Mock dates for the last 7 days
+      const now = new Date();
+      const startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 6);
+      startDate.setHours(0, 0, 0, 0);
+
+      const mockResults = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        mockResults.push({
+          date: date,
+          total: BigInt((i + 1) * 1000),
+        });
+      }
+
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue(mockResults);
 
       const result = await service.getSalesByDay(mockTenantId);
 
@@ -625,16 +636,36 @@ describe('DashboardService', () => {
       expect(result).toHaveLength(3);
     });
 
-    it('should exclude cancelled invoices', async () => {
+    it('should use $queryRaw for single batched query', async () => {
       await service.getSalesByDay(mockTenantId);
 
-      expect(prismaService.invoice.aggregate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            status: { not: InvoiceStatus.CANCELLED },
-          }),
-        }),
-      );
+      // Should call $queryRaw exactly once (instead of 7 aggregate calls)
+      expect(prismaService.$queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it('should fill missing days with zero amount', async () => {
+      // Only return data for one day out of 7
+      const now = new Date();
+      const middleDate = new Date(now);
+      middleDate.setDate(middleDate.getDate() - 3);
+      middleDate.setHours(0, 0, 0, 0);
+
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
+        { date: middleDate, total: BigInt(5000) },
+      ]);
+
+      const result = await service.getSalesByDay(mockTenantId);
+
+      // Should still have 7 entries
+      expect(result).toHaveLength(7);
+
+      // Days without sales should have 0 amount
+      const daysWithZero = result.filter((day) => day.amount === 0);
+      expect(daysWithZero.length).toBe(6);
+
+      // The day with data should have the correct amount
+      const dayWithData = result.find((day) => day.amount === 5000);
+      expect(dayWithData).toBeDefined();
     });
   });
 
@@ -997,6 +1028,7 @@ describe('DashboardService', () => {
       (prismaService.customer.count as jest.Mock).mockResolvedValue(0);
       (prismaService.invoiceItem.groupBy as jest.Mock).mockResolvedValue([]);
       (prismaService.invoiceItem.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([]);
 
       const result = await service.getDashboard();
 
@@ -1014,6 +1046,7 @@ describe('DashboardService', () => {
       (prismaService.customer.count as jest.Mock).mockResolvedValue(0);
       (prismaService.invoiceItem.groupBy as jest.Mock).mockResolvedValue([]);
       (prismaService.invoiceItem.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([]);
 
       const result = await service.getDashboard();
 

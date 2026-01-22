@@ -1220,10 +1220,11 @@ export class InvoicesService {
 
   /**
    * Validates all products exist and have sufficient stock.
+   * Uses a single batched query to avoid N+1 query problem.
    *
    * @param items - Invoice items to validate
    * @param tenantId - Tenant ID
-   * @returns Array of validated products
+   * @returns Array of validated products in the same order as input items
    * @throws NotFoundException if product not found
    * @throws BadRequestException if insufficient stock
    */
@@ -1231,12 +1232,24 @@ export class InvoicesService {
     items: { productId: string; quantity: number }[],
     tenantId: string,
   ): Promise<Product[]> {
-    const products: Product[] = [];
+    // Batch fetch all products in a single query
+    const productIds = items.map((i) => i.productId);
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        id: { in: productIds },
+        tenantId,
+      },
+    });
+
+    // Create a map for O(1) lookup
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    // Validate each item and build the result array in order
+    const validatedProducts: Product[] = [];
 
     for (const item of items) {
-      const product = await this.prisma.product.findFirst({
-        where: { id: item.productId, tenantId },
-      });
+      const product = productMap.get(item.productId);
 
       if (!product) {
         throw new NotFoundException(
@@ -1250,10 +1263,10 @@ export class InvoicesService {
         );
       }
 
-      products.push(product);
+      validatedProducts.push(product);
     }
 
-    return products;
+    return validatedProducts;
   }
 
   /**

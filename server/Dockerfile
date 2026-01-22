@@ -145,4 +145,5 @@ ENTRYPOINT ["/sbin/tini", "--"]
 
 # Start the application
 # Run startup script (migrations, conditional seed, then server)
+# Version: 2 - Force rebuild
 CMD ["./scripts/startup.sh"]

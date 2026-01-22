@@ -289,9 +289,8 @@ export default function DashboardPage() {
   }, []);
 
   // Chart click handler (placeholder for future drill-down)
-  const handleChartClick = useCallback((data: any) => {
-    // Future: Navigate to detailed view or show modal
-    console.log('Chart data clicked:', data);
+  const handleChartClick = useCallback((_data: unknown) => {
+    // Future: Navigate to detailed view or show modal with drill-down data
   }, []);
 
   // Calculate alerts

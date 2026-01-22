@@ -75,4 +75,5 @@ export interface RecentReport {
   params: SalesReportParams | InventoryReportParams | CustomersReportParams;
   fileSize?: number;
   fileName: string;
+  downloadUrl?: string;
 }

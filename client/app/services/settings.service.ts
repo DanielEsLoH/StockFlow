@@ -147,8 +147,9 @@ export const settingsService = {
           },
         };
       }
-    } catch (error) {
-      console.error('Error reading preferences from localStorage:', error);
+    } catch {
+      // If localStorage is corrupted or inaccessible, return defaults
+      // This can happen with quota exceeded, private browsing, or invalid JSON
     }
 
     return defaultPreferences;
@@ -162,8 +163,9 @@ export const settingsService = {
 
     try {
       localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
-    } catch (error) {
-      console.error('Error saving preferences to localStorage:', error);
+    } catch {
+      // If localStorage is unavailable (quota exceeded, private browsing, etc.)
+      // preferences are still returned but not persisted
     }
 
     return preferences;

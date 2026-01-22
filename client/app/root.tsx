@@ -24,6 +24,9 @@ export const links: Route.LinksFunction = () => [
     rel: 'stylesheet',
     href: 'https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@200..800&family=JetBrains+Mono:wght@100..800&display=swap',
   },
+  { rel: 'icon', href: '/favicon.ico', type: 'image/x-icon' },
+  { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+  { rel: 'manifest', href: '/manifest.json' },
 ];
 
 // Theme initialization script to prevent flash

@@ -556,9 +556,12 @@ function RecentReportsTable() {
                 size="icon"
                 title="Descargar"
                 onClick={() => {
-                  // TODO: Implement download from history
-                  console.log('Download report:', report.id);
+                  // Download functionality to be implemented when backend supports report history downloads
+                  if (report.downloadUrl) {
+                    window.open(report.downloadUrl, '_blank');
+                  }
                 }}
+                disabled={!report.downloadUrl}
               >
                 <Download className="h-4 w-4" />
               </Button>

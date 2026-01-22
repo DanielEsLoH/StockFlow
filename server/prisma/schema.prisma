@@ -218,6 +218,7 @@ model Category {
   products Product[]
 
   @@unique([tenantId, name])
+  @@index([tenantId])
   @@map("categories")
 }
 
@@ -252,6 +253,8 @@ model Product {
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, categoryId])
+  @@index([tenantId, barcode])
+  @@index([tenantId, name])
   @@map("products")
 }
 
@@ -273,6 +276,8 @@ model Warehouse {
   movements StockMovement[]
 
   @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([tenantId, status])
   @@map("warehouses")
 }
 
@@ -315,6 +320,9 @@ model StockMovement {
   @@index([tenantId])
   @@index([productId])
   @@index([warehouseId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, type])
+  @@index([invoiceId])
   @@map("stock_movements")
 }
 
@@ -340,7 +348,10 @@ model Customer {
   invoices Invoice[]
 
   @@unique([tenantId, documentNumber])
+  @@index([tenantId])
   @@index([tenantId, name])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
   @@map("customers")
 }
 
@@ -375,6 +386,9 @@ model Invoice {
   @@index([tenantId])
   @@index([customerId])
   @@index([tenantId, status])
+  @@index([tenantId, paymentStatus])
+  @@index([tenantId, issueDate])
+  @@index([tenantId, createdAt])
   @@map("invoices")
 }
 
@@ -414,6 +428,8 @@ model Payment {
 
   @@index([tenantId])
   @@index([invoiceId])
+  @@index([tenantId, paymentDate])
+  @@index([tenantId, method])
   @@map("payments")
 }
 

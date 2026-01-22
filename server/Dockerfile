@@ -144,6 +144,5 @@ USER nestjs
 ENTRYPOINT ["/sbin/tini", "--"]
 
 # Start the application
-# Run startup script (migrations, conditional seed, then server)
-# Version: 2 - Force rebuild
-CMD ["./scripts/startup.sh"]
+# Run migrations, seed (if empty), then start server
+CMD ["sh", "-c", "echo '🚀 Starting StockFlow...' && npx prisma migrate deploy && echo '🌱 Running seed...' && npx prisma db seed && echo '🎯 Starting server...' && node dist/main.js"]

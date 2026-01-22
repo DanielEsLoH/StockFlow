@@ -32,26 +32,36 @@ async function bootstrap() {
   }
 
   // CORS configuration
-  // Allow requests from the frontend origin
-  const allowedOrigins = [
-    process.env.FRONTEND_URL || 'http://localhost:3001',
-    // Production domains
-    'https://www.stockflow.com.co',
-    'https://stockflow.com.co',
-    // Development domains
-    'http://localhost:3001',
-    'http://localhost:5173', // Vite dev server
-    'http://localhost',
-  ].filter(Boolean);
+  // Normalize origins by removing trailing slashes for consistent matching
+  const normalizeUrl = (url: string) => url.replace(/\/+$/, '');
+
+  const allowedOrigins = new Set(
+    [
+      process.env.FRONTEND_URL,
+      'https://www.stockflow.com.co',
+      'https://stockflow.com.co',
+      'http://localhost:3001',
+      'http://localhost:5173',
+      'http://localhost',
+    ]
+      .filter((url): url is string => Boolean(url))
+      .map(normalizeUrl),
+  );
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      if (!origin) {
         return callback(null, true);
       }
-      callback(new Error('Not allowed by CORS'));
+
+      if (allowedOrigins.has(normalizeUrl(origin))) {
+        return callback(null, true);
+      }
+
+      // Log blocked origins in production for debugging
+      logger.warn(`CORS: Blocked request from origin: ${origin}`);
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -139,5 +139,5 @@ USER nestjs
 ENTRYPOINT ["/sbin/tini", "--"]
 
 # Start the application
-# Using node directly instead of npm for better signal handling
-CMD ["node", "dist/main.js"]
+# Run migrations then start the server
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]

@@ -10,7 +10,6 @@ describe('DashboardService', () => {
   let service: DashboardService;
   let prismaService: jest.Mocked<PrismaService>;
   let tenantContextService: jest.Mocked<TenantContextService>;
-  let cacheService: jest.Mocked<CacheService>;
 
   // Test data
   const mockTenantId = 'tenant-123';
@@ -612,7 +611,7 @@ describe('DashboardService', () => {
       startDate.setDate(startDate.getDate() - 6);
       startDate.setHours(0, 0, 0, 0);
 
-      const mockResults: Array<{ date: Date; total: bigint }> = [];
+      const mockResults = [] as { date: Date; total: bigint }[];
       for (let i = 0; i < 7; i++) {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);

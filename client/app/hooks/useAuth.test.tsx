@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import type { ReactNode } from "react";
 import { useAuth, useInvitation } from "./useAuth";
-import { authService } from "~/services/auth.service";
+import { authService, type InvitationDetails } from "~/services/auth.service";
 import { useAuthStore } from "~/stores/auth.store";
 import type { User, Tenant } from "~/stores/auth.store";
 
@@ -1098,21 +1098,12 @@ describe("useInvitation", () => {
     vi.resetAllMocks();
   });
 
-  const mockInvitationData = {
-    id: "invitation-123",
+  const mockInvitationData: InvitationDetails = {
     email: "invitee@example.com",
+    tenantName: "Test Company",
+    invitedByName: "Admin User",
     role: "EMPLOYEE",
-    status: "PENDING",
     expiresAt: new Date().toISOString(),
-    tenant: {
-      id: "tenant-123",
-      name: "Test Company",
-      slug: "test-company",
-    },
-    invitedBy: {
-      firstName: "Admin",
-      lastName: "User",
-    },
   };
 
   it("should fetch invitation when token is provided", async () => {

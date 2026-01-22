@@ -13,6 +13,8 @@ describe('Environment Validation', () => {
       DATABASE_URL: 'postgresql://localhost:5432/test',
       JWT_SECRET: 'test-secret',
       JWT_REFRESH_SECRET: 'test-refresh-secret',
+      SYSTEM_ADMIN_JWT_SECRET: 'test-system-admin-secret',
+      SYSTEM_ADMIN_JWT_REFRESH_SECRET: 'test-system-admin-refresh-secret',
       JWT_EXPIRATION: '15m',
       JWT_REFRESH_EXPIRATION: '7d',
       FRONTEND_URL: 'http://localhost:5173',
@@ -37,6 +39,8 @@ describe('Environment Validation', () => {
         DATABASE_URL: 'postgresql://localhost:5432/test',
         JWT_SECRET: 'test-secret',
         JWT_REFRESH_SECRET: 'test-refresh-secret',
+        SYSTEM_ADMIN_JWT_SECRET: 'test-system-admin-secret',
+        SYSTEM_ADMIN_JWT_REFRESH_SECRET: 'test-system-admin-refresh-secret',
       };
 
       const result = validateEnv(minimalEnv);

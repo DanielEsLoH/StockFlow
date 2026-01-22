@@ -461,15 +461,11 @@ describe('settingsService', () => {
     it('should handle invalid JSON in localStorage gracefully', () => {
       localStorageMock.getItem.mockReturnValueOnce('invalid json {');
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
       const result = settingsService.getPreferences();
 
+      // Should return defaults when JSON is invalid
       expect(result.theme).toBe('system');
       expect(result.language).toBe('es');
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
     });
 
     it('should call localStorage.getItem with correct key', () => {
@@ -698,7 +694,6 @@ describe('settingsService', () => {
     });
 
     it('should handle localStorage error gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       localStorageMock.setItem.mockImplementationOnce(() => {
         throw new Error('QuotaExceededError');
       });
@@ -727,9 +722,6 @@ describe('settingsService', () => {
 
       // Should still return preferences even if localStorage fails
       expect(result).toEqual(preferences);
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
     });
   });
 

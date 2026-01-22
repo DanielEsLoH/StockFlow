@@ -161,7 +161,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health/live"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/health/live"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -192,11 +192,11 @@ services:
     ports:
       # Internal port - Nginx proxies requests here
       # NOTE: Remove direct exposure in production (use nginx only)
-      - "${CLIENT_PORT:-3001}:3001"
+      - "${CLIENT_PORT:-5173}:5173"
     environment:
       # Application
       NODE_ENV: production
-      PORT: 3001
+      PORT: 5173
 
       # API URL for server-side data fetching (internal Docker network)
       API_URL: http://backend:3000
@@ -207,7 +207,7 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:5173/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -250,7 +250,7 @@ services:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/nginx-health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/nginx-health"]
       interval: 30s
       timeout: 10s
       retries: 3

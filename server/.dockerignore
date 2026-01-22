@@ -144,7 +144,5 @@ uploads
 # -----------------------------------------------------------------------------
 # Miscellaneous
 # -----------------------------------------------------------------------------
-# Local scripts that shouldn't be in the image
-scripts
-*.sh
-!docker-entrypoint.sh
+# Local scripts that shouldn't be in the image (except startup.sh)
+!scripts/startup.sh

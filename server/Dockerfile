@@ -95,6 +95,8 @@ WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV=production
+# Build version for cache invalidation
+ARG BUILD_VERSION=3
 
 # Install runtime dependencies:
 # - tini: Minimal init system for proper signal handling (SIGTERM, SIGINT)

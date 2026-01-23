@@ -389,7 +389,7 @@ describe('SystemAdminService', () => {
       expect(result.action).toBe('approve');
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        data: { status: UserStatus.ACTIVE },
+        data: { status: UserStatus.ACTIVE, emailVerified: true },
       });
     });
 
@@ -410,28 +410,28 @@ describe('SystemAdminService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException if email is not verified', async () => {
+    it('should auto-verify email when approving a user with unverified email', async () => {
       const unverifiedUser = { ...mockUser, emailVerified: false };
       prismaService.user.findUnique = jest
         .fn()
         .mockResolvedValue(unverifiedUser);
-
-      await expect(
-        service.approveUser(mockUser.id, mockSystemAdmin.id),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException with correct message if email is not verified', async () => {
-      const unverifiedUser = { ...mockUser, emailVerified: false };
-      prismaService.user.findUnique = jest
+      prismaService.user.update = jest.fn().mockResolvedValue({
+        ...unverifiedUser,
+        status: UserStatus.ACTIVE,
+        emailVerified: true,
+      });
+      prismaService.systemAdminAuditLog.create = jest
         .fn()
-        .mockResolvedValue(unverifiedUser);
+        .mockResolvedValue({});
 
-      await expect(
-        service.approveUser(mockUser.id, mockSystemAdmin.id),
-      ).rejects.toThrow(
-        'Cannot approve user: email address has not been verified. The user must verify their email before approval.',
-      );
+      const result = await service.approveUser(mockUser.id, mockSystemAdmin.id);
+
+      expect(result.success).toBe(true);
+      expect(result.action).toBe('approve');
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: mockUser.id },
+        data: { status: UserStatus.ACTIVE, emailVerified: true },
+      });
     });
   });
 

@@ -438,17 +438,14 @@ export class SystemAdminService {
       );
     }
 
-    // Check if email is verified before allowing approval
-    if (!user.emailVerified) {
-      throw new BadRequestException(
-        'Cannot approve user: email address has not been verified. The user must verify their email before approval.',
-      );
-    }
-
-    // Update user status to ACTIVE
+    // Update user status to ACTIVE and auto-verify email if not already verified
+    // When an admin manually approves a user, they're implicitly verifying their identity
     await this.prisma.user.update({
       where: { id: userId },
-      data: { status: UserStatus.ACTIVE },
+      data: {
+        status: UserStatus.ACTIVE,
+        emailVerified: true,
+      },
     });
 
     // Create audit log for this action

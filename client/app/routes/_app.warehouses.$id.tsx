@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { Link, useParams } from "react-router";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Warehouse,
@@ -17,22 +17,26 @@ import {
   Calendar,
   CheckCircle,
   XCircle,
-} from 'lucide-react';
-import type { Route } from './+types/_app.warehouses.$id';
-import { formatDate, formatCurrency } from '~/lib/utils';
-import { useWarehouse, useWarehouseStats, useDeleteWarehouse } from '~/hooks/useWarehouses';
-import { Button } from '~/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { StatCard } from '~/components/ui/StatCard';
-import { Skeleton } from '~/components/ui/Skeleton';
-import { DeleteModal } from '~/components/ui/DeleteModal';
+} from "lucide-react";
+import type { Route } from "./+types/_app.warehouses.$id";
+import { formatDate, formatCurrency } from "~/lib/utils";
+import {
+  useWarehouse,
+  useWarehouseStats,
+  useDeleteWarehouse,
+} from "~/hooks/useWarehouses";
+import { Button } from "~/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { StatCard } from "~/components/ui/StatCard";
+import { Skeleton } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/DeleteModal";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
     { title: `Bodega - StockFlow` },
-    { name: 'description', content: 'Detalles de la bodega' },
+    { name: "description", content: "Detalles de la bodega" },
   ];
 };
 
@@ -53,7 +57,6 @@ const itemVariants = {
     transition: { duration: 0.3 },
   },
 };
-
 
 // Loading skeleton
 function LoadingSkeleton() {
@@ -168,10 +171,7 @@ export default function WarehouseDetailPage() {
                 Editar
               </Button>
             </Link>
-            <Button
-              variant="danger"
-              onClick={() => setShowDeleteModal(true)}
-            >
+            <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
               <Trash2 className="h-4 w-4 mr-2" />
               Eliminar
             </Button>
@@ -207,14 +207,14 @@ export default function WarehouseDetailPage() {
             subtitle={
               warehouse.capacity
                 ? `${warehouse.currentOccupancy || 0} / ${warehouse.capacity}`
-                : 'Sin capacidad definida'
+                : "Sin capacidad definida"
             }
             color={
               (stats?.utilizationPercentage || 0) > 90
-                ? 'error'
+                ? "error"
                 : (stats?.utilizationPercentage || 0) > 70
-                ? 'warning'
-                : 'primary'
+                  ? "warning"
+                  : "primary"
             }
           />
         </div>
@@ -234,9 +234,11 @@ export default function WarehouseDetailPage() {
                   <MapPin className="h-5 w-5 text-neutral-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Direccion</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Direccion
+                  </p>
                   <p className="text-neutral-900 dark:text-white">
-                    {warehouse.address || '-'}
+                    {warehouse.address || "-"}
                   </p>
                 </div>
               </div>
@@ -245,9 +247,11 @@ export default function WarehouseDetailPage() {
                   <MapPin className="h-5 w-5 text-neutral-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Ciudad</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Ciudad
+                  </p>
                   <p className="text-neutral-900 dark:text-white">
-                    {warehouse.city || '-'}
+                    {warehouse.city || "-"}
                   </p>
                 </div>
               </div>
@@ -256,9 +260,11 @@ export default function WarehouseDetailPage() {
                   <Phone className="h-5 w-5 text-neutral-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Telefono</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Telefono
+                  </p>
                   <p className="text-neutral-900 dark:text-white">
-                    {warehouse.phone || '-'}
+                    {warehouse.phone || "-"}
                   </p>
                 </div>
               </div>
@@ -267,9 +273,11 @@ export default function WarehouseDetailPage() {
                   <Mail className="h-5 w-5 text-neutral-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Email</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Email
+                  </p>
                   <p className="text-neutral-900 dark:text-white">
-                    {warehouse.email || '-'}
+                    {warehouse.email || "-"}
                   </p>
                 </div>
               </div>
@@ -278,9 +286,11 @@ export default function WarehouseDetailPage() {
                   <User className="h-5 w-5 text-neutral-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Encargado</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Encargado
+                  </p>
                   <p className="text-neutral-900 dark:text-white">
-                    {warehouse.manager || '-'}
+                    {warehouse.manager || "-"}
                   </p>
                 </div>
               </div>
@@ -296,33 +306,45 @@ export default function WarehouseDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
-                <span className="text-neutral-500 dark:text-neutral-400">Capacidad</span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Capacidad
+                </span>
                 <span className="font-medium text-neutral-900 dark:text-white">
-                  {warehouse.capacity ? `${warehouse.capacity} unidades` : 'No definida'}
+                  {warehouse.capacity
+                    ? `${warehouse.capacity} unidades`
+                    : "No definida"}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
-                <span className="text-neutral-500 dark:text-neutral-400">Ocupacion Actual</span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Ocupacion Actual
+                </span>
                 <span className="font-medium text-neutral-900 dark:text-white">
                   {warehouse.currentOccupancy || 0} unidades
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
-                <span className="text-neutral-500 dark:text-neutral-400">Total Productos</span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Total Productos
+                </span>
                 <Badge variant="secondary">
                   <Package className="h-3 w-3 mr-1" />
                   {warehouse.productCount || 0}
                 </Badge>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
-                <span className="text-neutral-500 dark:text-neutral-400">Fecha de Creacion</span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Fecha de Creacion
+                </span>
                 <span className="text-neutral-900 dark:text-white flex items-center gap-1.5">
                   <Calendar className="h-4 w-4 text-neutral-400" />
                   {formatDate(warehouse.createdAt)}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2">
-                <span className="text-neutral-500 dark:text-neutral-400">Ultima Actualizacion</span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Ultima Actualizacion
+                </span>
                 <span className="text-neutral-900 dark:text-white flex items-center gap-1.5">
                   <Calendar className="h-4 w-4 text-neutral-400" />
                   {formatDate(warehouse.updatedAt)}

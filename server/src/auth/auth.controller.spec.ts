@@ -51,9 +51,11 @@ function createMockRequest(
  */
 function createMockOAuthResponse(): Partial<Response> & {
   redirect: jest.Mock;
+  cookie: jest.Mock;
 } {
   return {
     redirect: jest.fn(),
+    cookie: jest.fn(),
   };
 }
 
@@ -64,6 +66,146 @@ function createMockOAuthRequest(
   user?: OAuthUserDto,
 ): Partial<Request> & { user?: OAuthUserDto } {
   return user ? { user } : {};
+}
+
+/**
+ * OAuth callback test configuration
+ */
+interface OAuthCallbackTestConfig {
+  providerName: string;
+  provider: AuthProvider;
+  mockOAuthUser: OAuthUserDto;
+  callbackMethod: (
+    req: Request & { user?: OAuthUserDto },
+    res: Response,
+  ) => Promise<void>;
+  noUserDataErrorMessage: string;
+  getAuthService: () => jest.Mocked<AuthService>;
+}
+
+/**
+ * Shared OAuth callback test suite factory
+ * Creates parameterized tests for OAuth callback endpoints to eliminate duplication
+ */
+function describeOAuthCallbackTests(config: OAuthCallbackTestConfig): void {
+  const { providerName, provider, mockOAuthUser, callbackMethod, noUserDataErrorMessage, getAuthService } = config;
+
+  it('should redirect to frontend with tokens on successful OAuth', async () => {
+    const mockReq = createMockOAuthRequest(mockOAuthUser);
+    const mockRes = createMockOAuthResponse();
+    const authService = getAuthService();
+
+    authService.handleOAuthLogin.mockResolvedValue({
+      status: 'success',
+      accessToken: 'oauth-access-token',
+      refreshToken: 'oauth-refresh-token',
+    });
+
+    await callbackMethod(
+      mockReq as Request & { user?: OAuthUserDto },
+      mockRes as unknown as Response,
+    );
+
+    expect(authService.handleOAuthLogin).toHaveBeenCalledWith(
+      mockOAuthUser,
+      provider,
+    );
+    expect(mockRes.redirect).toHaveBeenCalledWith(
+      'http://localhost:5173/oauth/callback?token=oauth-access-token&refresh=oauth-refresh-token',
+    );
+  });
+
+  it('should redirect to pending page when user is pending approval', async () => {
+    const mockReq = createMockOAuthRequest(mockOAuthUser);
+    const mockRes = createMockOAuthResponse();
+    const authService = getAuthService();
+
+    authService.handleOAuthLogin.mockResolvedValue({
+      status: 'pending',
+      message: 'Account pending approval',
+    });
+
+    await callbackMethod(
+      mockReq as Request & { user?: OAuthUserDto },
+      mockRes as unknown as Response,
+    );
+
+    expect(mockRes.redirect).toHaveBeenCalledWith(
+      'http://localhost:5173/oauth/callback?pending=true',
+    );
+  });
+
+  it('should redirect with error when OAuth returns error status', async () => {
+    const mockReq = createMockOAuthRequest(mockOAuthUser);
+    const mockRes = createMockOAuthResponse();
+    const authService = getAuthService();
+
+    authService.handleOAuthLogin.mockResolvedValue({
+      status: 'error',
+      error: 'Account suspended',
+    });
+
+    await callbackMethod(
+      mockReq as Request & { user?: OAuthUserDto },
+      mockRes as unknown as Response,
+    );
+
+    expect(mockRes.redirect).toHaveBeenCalledWith(
+      'http://localhost:5173/oauth/callback?error=Account%20suspended',
+    );
+  });
+
+  it(`should redirect with error when no user data from ${providerName}`, async () => {
+    const mockReq = createMockOAuthRequest();
+    const mockRes = createMockOAuthResponse();
+    const authService = getAuthService();
+
+    await callbackMethod(
+      mockReq as Request & { user?: OAuthUserDto },
+      mockRes as unknown as Response,
+    );
+
+    expect(authService.handleOAuthLogin).not.toHaveBeenCalled();
+    expect(mockRes.redirect).toHaveBeenCalledWith(
+      `http://localhost:5173/oauth/callback?error=${encodeURIComponent(noUserDataErrorMessage)}`,
+    );
+  });
+
+  it('should redirect with error when service throws Error', async () => {
+    const mockReq = createMockOAuthRequest(mockOAuthUser);
+    const mockRes = createMockOAuthResponse();
+    const authService = getAuthService();
+
+    authService.handleOAuthLogin.mockRejectedValue(
+      new Error('OAuth processing failed'),
+    );
+
+    await callbackMethod(
+      mockReq as Request & { user?: OAuthUserDto },
+      mockRes as unknown as Response,
+    );
+
+    expect(mockRes.redirect).toHaveBeenCalledWith(
+      'http://localhost:5173/oauth/callback?error=OAuth%20processing%20failed',
+    );
+  });
+
+  it('should redirect with generic error when service throws non-Error', async () => {
+    const mockReq = createMockOAuthRequest(mockOAuthUser);
+    const mockRes = createMockOAuthResponse();
+    const authService = getAuthService();
+
+    authService.handleOAuthLogin.mockRejectedValue('Unknown error');
+
+    await callbackMethod(
+      mockReq as Request & { user?: OAuthUserDto },
+      mockRes as unknown as Response,
+    );
+
+    expect(mockRes.redirect).toHaveBeenCalledWith(
+      'http://localhost:5173/oauth/callback?error=Authentication%20failed',
+    );
+  });
 }
 
 describe('AuthController', () => {
@@ -485,19 +627,8 @@ describe('AuthController', () => {
       refreshToken: 'mock-refresh-token',
     };
 
-    /**
-     * Helper to create a mock Response object
-     */
-    function createMockResponse(): Partial<Response> & {
-      cookie: jest.Mock;
-    } {
-      return {
-        cookie: jest.fn(),
-      };
-    }
-
     it('should accept invitation, set cookie, and return auth response', async () => {
-      const mockRes = createMockResponse();
+      const mockRes = createMockOAuthResponse();
       authService.acceptInvitation.mockResolvedValue(
         mockAcceptInvitationResponse,
       );
@@ -527,7 +658,7 @@ describe('AuthController', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
 
-      const mockRes = createMockResponse();
+      const mockRes = createMockOAuthResponse();
       authService.acceptInvitation.mockResolvedValue(
         mockAcceptInvitationResponse,
       );
@@ -549,7 +680,7 @@ describe('AuthController', () => {
     });
 
     it('should propagate errors for invalid invitation', async () => {
-      const mockRes = createMockResponse();
+      const mockRes = createMockOAuthResponse();
       const error = new Error('Invalid invitation token');
       authService.acceptInvitation.mockRejectedValue(error);
 
@@ -564,7 +695,7 @@ describe('AuthController', () => {
     });
 
     it('should propagate errors for already used invitation', async () => {
-      const mockRes = createMockResponse();
+      const mockRes = createMockOAuthResponse();
       const error = new Error('Invitation has already been used');
       authService.acceptInvitation.mockRejectedValue(error);
 
@@ -585,7 +716,7 @@ describe('AuthController', () => {
   });
 
   describe('googleAuthCallback', () => {
-    const mockOAuthUser: OAuthUserDto = {
+    const mockGoogleOAuthUser: OAuthUserDto = {
       email: 'google-user@example.com',
       firstName: 'Google',
       lastName: 'User',
@@ -594,115 +725,13 @@ describe('AuthController', () => {
       avatar: 'https://example.com/avatar.jpg',
     };
 
-    it('should redirect to frontend with tokens on successful OAuth', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
-      const mockRes = createMockOAuthResponse();
-
-      authService.handleOAuthLogin.mockResolvedValue({
-        status: 'success',
-        accessToken: 'oauth-access-token',
-        refreshToken: 'oauth-refresh-token',
-      });
-
-      await controller.googleAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(authService.handleOAuthLogin).toHaveBeenCalledWith(
-        mockOAuthUser,
-        AuthProvider.GOOGLE,
-      );
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?token=oauth-access-token&refresh=oauth-refresh-token',
-      );
-    });
-
-    it('should redirect to pending page when user is pending approval', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
-      const mockRes = createMockOAuthResponse();
-
-      authService.handleOAuthLogin.mockResolvedValue({
-        status: 'pending',
-        message: 'Account pending approval',
-      });
-
-      await controller.googleAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?pending=true',
-      );
-    });
-
-    it('should redirect with error when OAuth returns error status', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
-      const mockRes = createMockOAuthResponse();
-
-      authService.handleOAuthLogin.mockResolvedValue({
-        status: 'error',
-        error: 'Account suspended',
-      });
-
-      await controller.googleAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?error=Account%20suspended',
-      );
-    });
-
-    it('should redirect with error when no user data from Google', async () => {
-      const mockReq = createMockOAuthRequest();
-      const mockRes = createMockOAuthResponse();
-
-      await controller.googleAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(authService.handleOAuthLogin).not.toHaveBeenCalled();
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?error=No%20user%20data%20from%20Google%20OAuth',
-      );
-    });
-
-    it('should redirect with error when service throws Error', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
-      const mockRes = createMockOAuthResponse();
-
-      authService.handleOAuthLogin.mockRejectedValue(
-        new Error('OAuth processing failed'),
-      );
-
-      await controller.googleAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?error=OAuth%20processing%20failed',
-      );
-    });
-
-    it('should redirect with generic error when service throws non-Error', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
-      const mockRes = createMockOAuthResponse();
-
-      authService.handleOAuthLogin.mockRejectedValue('Unknown error');
-
-      await controller.googleAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?error=Authentication%20failed',
-      );
+    describeOAuthCallbackTests({
+      providerName: 'Google',
+      provider: AuthProvider.GOOGLE,
+      mockOAuthUser: mockGoogleOAuthUser,
+      callbackMethod: (req, res) => controller.googleAuthCallback(req, res),
+      noUserDataErrorMessage: 'No user data from Google OAuth',
+      getAuthService: () => authService,
     });
   });
 
@@ -714,7 +743,7 @@ describe('AuthController', () => {
   });
 
   describe('githubAuthCallback', () => {
-    const mockOAuthUser: OAuthUserDto = {
+    const mockGitHubOAuthUser: OAuthUserDto = {
       email: 'github-user@example.com',
       firstName: 'GitHub',
       lastName: 'User',
@@ -723,124 +752,23 @@ describe('AuthController', () => {
       avatar: 'https://github.com/avatar.jpg',
     };
 
-    it('should redirect to frontend with tokens on successful OAuth', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
-      const mockRes = createMockOAuthResponse();
-
-      authService.handleOAuthLogin.mockResolvedValue({
-        status: 'success',
-        accessToken: 'oauth-access-token',
-        refreshToken: 'oauth-refresh-token',
-      });
-
-      await controller.githubAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(authService.handleOAuthLogin).toHaveBeenCalledWith(
-        mockOAuthUser,
-        AuthProvider.GITHUB,
-      );
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?token=oauth-access-token&refresh=oauth-refresh-token',
-      );
+    describeOAuthCallbackTests({
+      providerName: 'GitHub',
+      provider: AuthProvider.GITHUB,
+      mockOAuthUser: mockGitHubOAuthUser,
+      callbackMethod: (req, res) => controller.githubAuthCallback(req, res),
+      noUserDataErrorMessage: 'No user data from GitHub OAuth',
+      getAuthService: () => authService,
     });
 
-    it('should redirect to pending page when user is pending approval', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
-      const mockRes = createMockOAuthResponse();
-
-      authService.handleOAuthLogin.mockResolvedValue({
-        status: 'pending',
-        message: 'Account pending approval',
-      });
-
-      await controller.githubAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?pending=true',
-      );
-    });
-
-    it('should redirect with error when OAuth returns error status', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
-      const mockRes = createMockOAuthResponse();
-
-      authService.handleOAuthLogin.mockResolvedValue({
-        status: 'error',
-        error: 'Account suspended',
-      });
-
-      await controller.githubAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?error=Account%20suspended',
-      );
-    });
-
+    // GitHub-specific test that was only in the GitHub callback
     it('should redirect with default error message when error status has no error field', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockReq = createMockOAuthRequest(mockGitHubOAuthUser);
       const mockRes = createMockOAuthResponse();
 
       authService.handleOAuthLogin.mockResolvedValue({
         status: 'error',
       });
-
-      await controller.githubAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?error=Authentication%20failed',
-      );
-    });
-
-    it('should redirect with error when no user data from GitHub', async () => {
-      const mockReq = createMockOAuthRequest();
-      const mockRes = createMockOAuthResponse();
-
-      await controller.githubAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(authService.handleOAuthLogin).not.toHaveBeenCalled();
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?error=No%20user%20data%20from%20GitHub%20OAuth',
-      );
-    });
-
-    it('should redirect with error when service throws Error', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
-      const mockRes = createMockOAuthResponse();
-
-      authService.handleOAuthLogin.mockRejectedValue(
-        new Error('OAuth processing failed'),
-      );
-
-      await controller.githubAuthCallback(
-        mockReq as Request & { user?: OAuthUserDto },
-        mockRes as unknown as Response,
-      );
-
-      expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/oauth/callback?error=OAuth%20processing%20failed',
-      );
-    });
-
-    it('should redirect with generic error when service throws non-Error', async () => {
-      const mockReq = createMockOAuthRequest(mockOAuthUser);
-      const mockRes = createMockOAuthResponse();
-
-      authService.handleOAuthLogin.mockRejectedValue('Unknown error');
 
       await controller.githubAuthCallback(
         mockReq as Request & { user?: OAuthUserDto },

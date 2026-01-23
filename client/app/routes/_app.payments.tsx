@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Filter,
@@ -12,23 +12,23 @@ import {
   Clock,
   RefreshCcw,
   CheckCircle,
-} from 'lucide-react';
-import type { Route } from './+types/_app.payments';
-import { cn, debounce, formatCurrency, formatDate } from '~/lib/utils';
+} from "lucide-react";
+import type { Route } from "./+types/_app.payments";
+import { cn, debounce, formatCurrency, formatDate } from "~/lib/utils";
 import {
   usePayments,
   usePaymentStats,
   useDeletePayment,
-} from '~/hooks/usePayments';
-import { useCustomers } from '~/hooks/useCustomers';
-import { useUrlFilters } from '~/hooks/useUrlFilters';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { StatCard } from '~/components/ui/StatCard';
-import { Select } from '~/components/ui/Select';
-import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
+} from "~/hooks/usePayments";
+import { useCustomers } from "~/hooks/useCustomers";
+import { useUrlFilters } from "~/hooks/useUrlFilters";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { StatCard } from "~/components/ui/StatCard";
+import { Select } from "~/components/ui/Select";
+import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
 import {
   Table,
   TableHeader,
@@ -36,40 +36,37 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { SkeletonTableRow } from '~/components/ui/Skeleton';
-import { DeleteModal } from '~/components/ui/DeleteModal';
-import { EmptyState } from '~/components/ui/EmptyState';
+} from "~/components/ui/Table";
+import { SkeletonTableRow } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/DeleteModal";
+import { EmptyState } from "~/components/ui/EmptyState";
 import type {
   PaymentFilters,
   PaymentSummary,
   PaymentStatus,
   PaymentMethod,
-} from '~/types/payment';
-import {
-  PaymentMethodLabels,
-  PaymentStatusLabels,
-} from '~/types/payment';
+} from "~/types/payment";
+import { PaymentMethodLabels, PaymentStatusLabels } from "~/types/payment";
 
 // Parser config for payment filters
 const paymentFiltersParser = {
   parse: (searchParams: URLSearchParams): PaymentFilters => ({
-    search: searchParams.get('search') || undefined,
-    status: (searchParams.get('status') as PaymentStatus) || undefined,
-    method: (searchParams.get('method') as PaymentMethod) || undefined,
-    customerId: searchParams.get('customerId') || undefined,
-    startDate: searchParams.get('startDate') || undefined,
-    endDate: searchParams.get('endDate') || undefined,
-    page: Number(searchParams.get('page')) || 1,
-    limit: Number(searchParams.get('limit')) || 10,
+    search: searchParams.get("search") || undefined,
+    status: (searchParams.get("status") as PaymentStatus) || undefined,
+    method: (searchParams.get("method") as PaymentMethod) || undefined,
+    customerId: searchParams.get("customerId") || undefined,
+    startDate: searchParams.get("startDate") || undefined,
+    endDate: searchParams.get("endDate") || undefined,
+    page: Number(searchParams.get("page")) || 1,
+    limit: Number(searchParams.get("limit")) || 10,
   }),
 };
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Pagos - StockFlow' },
-    { name: 'description', content: 'Gestion de pagos' },
+    { title: "Pagos - StockFlow" },
+    { name: "description", content: "Gestion de pagos" },
   ];
 };
 
@@ -93,41 +90,53 @@ const itemVariants = {
 
 // Status options for filter
 const statusOptions = [
-  { value: '', label: 'Todos los estados' },
-  { value: 'PENDING', label: 'Pendiente' },
-  { value: 'COMPLETED', label: 'Completado' },
-  { value: 'FAILED', label: 'Fallido' },
-  { value: 'REFUNDED', label: 'Reembolsado' },
-  { value: 'CANCELLED', label: 'Cancelado' },
+  { value: "", label: "Todos los estados" },
+  { value: "PENDING", label: "Pendiente" },
+  { value: "COMPLETED", label: "Completado" },
+  { value: "FAILED", label: "Fallido" },
+  { value: "REFUNDED", label: "Reembolsado" },
+  { value: "CANCELLED", label: "Cancelado" },
 ];
 
 // Method options for filter
 const methodOptions = [
-  { value: '', label: 'Todos los metodos' },
-  { value: 'CASH', label: 'Efectivo' },
-  { value: 'CREDIT_CARD', label: 'Tarjeta de Credito' },
-  { value: 'DEBIT_CARD', label: 'Tarjeta Debito' },
-  { value: 'BANK_TRANSFER', label: 'Transferencia Bancaria' },
-  { value: 'CHECK', label: 'Cheque' },
-  { value: 'OTHER', label: 'Otro' },
+  { value: "", label: "Todos los metodos" },
+  { value: "CASH", label: "Efectivo" },
+  { value: "CREDIT_CARD", label: "Tarjeta de Credito" },
+  { value: "DEBIT_CARD", label: "Tarjeta Debito" },
+  { value: "BANK_TRANSFER", label: "Transferencia Bancaria" },
+  { value: "CHECK", label: "Cheque" },
+  { value: "OTHER", label: "Otro" },
 ];
 
 // Items per page options
 const pageSizeOptions = [
-  { value: '10', label: '10 por pagina' },
-  { value: '25', label: '25 por pagina' },
-  { value: '50', label: '50 por pagina' },
+  { value: "10", label: "10 por pagina" },
+  { value: "25", label: "25 por pagina" },
+  { value: "50", label: "50 por pagina" },
 ];
 
 // Status badge component
 function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
-  const config: Record<PaymentStatus, { label: string; variant: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' }> = {
-    PENDING: { label: PaymentStatusLabels.PENDING, variant: 'warning' },
-    PROCESSING: { label: PaymentStatusLabels.PROCESSING, variant: 'primary' },
-    COMPLETED: { label: PaymentStatusLabels.COMPLETED, variant: 'success' },
-    FAILED: { label: PaymentStatusLabels.FAILED, variant: 'error' },
-    REFUNDED: { label: PaymentStatusLabels.REFUNDED, variant: 'secondary' },
-    CANCELLED: { label: PaymentStatusLabels.CANCELLED, variant: 'secondary' },
+  const config: Record<
+    PaymentStatus,
+    {
+      label: string;
+      variant:
+        | "default"
+        | "primary"
+        | "secondary"
+        | "success"
+        | "warning"
+        | "error";
+    }
+  > = {
+    PENDING: { label: PaymentStatusLabels.PENDING, variant: "warning" },
+    PROCESSING: { label: PaymentStatusLabels.PROCESSING, variant: "primary" },
+    COMPLETED: { label: PaymentStatusLabels.COMPLETED, variant: "success" },
+    FAILED: { label: PaymentStatusLabels.FAILED, variant: "error" },
+    REFUNDED: { label: PaymentStatusLabels.REFUNDED, variant: "secondary" },
+    CANCELLED: { label: PaymentStatusLabels.CANCELLED, variant: "secondary" },
   };
 
   const { label, variant } = config[status];
@@ -140,15 +149,17 @@ function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
   return <Badge variant="default">{PaymentMethodLabels[method]}</Badge>;
 }
 
-
 export default function PaymentsPage() {
   const [showFilters, setShowFilters] = useState(false);
-  const [deletingPayment, setDeletingPayment] = useState<PaymentSummary | null>(null);
+  const [deletingPayment, setDeletingPayment] = useState<PaymentSummary | null>(
+    null,
+  );
   const [isMounted, setIsMounted] = useState(false);
 
-  const { filters, updateFilters, clearFilters } = useUrlFilters<PaymentFilters>({
-    parserConfig: paymentFiltersParser,
-  });
+  const { filters, updateFilters, clearFilters } =
+    useUrlFilters<PaymentFilters>({
+      parserConfig: paymentFiltersParser,
+    });
 
   useEffect(() => {
     setIsMounted(true);
@@ -163,16 +174,23 @@ export default function PaymentsPage() {
   // Customer options for filter
   const customerOptions = useMemo(
     () => [
-      { value: '', label: 'Todos los clientes' },
-      ...(customersData?.data || []).map((c) => ({ value: c.id, label: c.name })),
+      { value: "", label: "Todos los clientes" },
+      ...(customersData?.data || []).map((c) => ({
+        value: c.id,
+        label: c.name,
+      })),
     ],
-    [customersData]
+    [customersData],
   );
 
   // Debounced search
   const debouncedSearch = useMemo(
-    () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
-    [updateFilters]
+    () =>
+      debounce(
+        (value: string) => updateFilters({ search: value || undefined }),
+        300,
+      ),
+    [updateFilters],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,13 +207,18 @@ export default function PaymentsPage() {
 
   // Check if payment can be deleted (only pending payments)
   const canDelete = (payment: PaymentSummary) => {
-    return payment.status === 'PENDING';
+    return payment.status === "PENDING";
   };
 
   const payments = paymentsData?.data || [];
   const paginationMeta = paymentsData?.meta;
   const hasActiveFilters =
-    filters.search || filters.status || filters.method || filters.customerId || filters.startDate || filters.endDate;
+    filters.search ||
+    filters.status ||
+    filters.method ||
+    filters.customerId ||
+    filters.startDate ||
+    filters.endDate;
 
   return (
     <motion.div
@@ -205,7 +228,10 @@ export default function PaymentsPage() {
       className="space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Pagos
@@ -268,14 +294,23 @@ export default function PaymentsPage() {
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
                 className={cn(
-                  showFilters && 'bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20'
+                  showFilters &&
+                    "bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20",
                 )}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
                 {hasActiveFilters && (
                   <Badge variant="primary" className="ml-2">
-                    {[filters.status, filters.method, filters.customerId, filters.startDate, filters.endDate].filter(Boolean).length}
+                    {
+                      [
+                        filters.status,
+                        filters.method,
+                        filters.customerId,
+                        filters.startDate,
+                        filters.endDate,
+                      ].filter(Boolean).length
+                    }
                   </Badge>
                 )}
               </Button>
@@ -293,7 +328,7 @@ export default function PaymentsPage() {
               {showFilters && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
@@ -301,24 +336,30 @@ export default function PaymentsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                     <Select
                       options={statusOptions}
-                      value={filters.status || ''}
+                      value={filters.status || ""}
                       onChange={(value) =>
-                        updateFilters({ status: (value as PaymentStatus) || undefined })
+                        updateFilters({
+                          status: (value as PaymentStatus) || undefined,
+                        })
                       }
                       placeholder="Todos los estados"
                     />
                     <Select
                       options={methodOptions}
-                      value={filters.method || ''}
+                      value={filters.method || ""}
                       onChange={(value) =>
-                        updateFilters({ method: (value as PaymentMethod) || undefined })
+                        updateFilters({
+                          method: (value as PaymentMethod) || undefined,
+                        })
                       }
                       placeholder="Todos los metodos"
                     />
                     <Select
                       options={customerOptions}
-                      value={filters.customerId || ''}
-                      onChange={(value) => updateFilters({ customerId: value || undefined })}
+                      value={filters.customerId || ""}
+                      onChange={(value) =>
+                        updateFilters({ customerId: value || undefined })
+                      }
                       placeholder="Todos los clientes"
                     />
                     <div className="relative">
@@ -326,8 +367,12 @@ export default function PaymentsPage() {
                       <Input
                         type="date"
                         placeholder="Fecha desde"
-                        value={filters.startDate || ''}
-                        onChange={(e) => updateFilters({ startDate: e.target.value || undefined })}
+                        value={filters.startDate || ""}
+                        onChange={(e) =>
+                          updateFilters({
+                            startDate: e.target.value || undefined,
+                          })
+                        }
                         className="pl-10"
                       />
                     </div>
@@ -336,8 +381,12 @@ export default function PaymentsPage() {
                       <Input
                         type="date"
                         placeholder="Fecha hasta"
-                        value={filters.endDate || ''}
-                        onChange={(e) => updateFilters({ endDate: e.target.value || undefined })}
+                        value={filters.endDate || ""}
+                        onChange={(e) =>
+                          updateFilters({
+                            endDate: e.target.value || undefined,
+                          })
+                        }
                         className="pl-10"
                       />
                     </div>
@@ -358,7 +407,9 @@ export default function PaymentsPage() {
                 <TableRow>
                   <TableHead>No. Pago</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead className="hidden md:table-cell">Factura</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Factura
+                  </TableHead>
                   <TableHead className="text-right">Monto</TableHead>
                   <TableHead className="hidden sm:table-cell">Metodo</TableHead>
                   <TableHead>Estado</TableHead>
@@ -378,22 +429,22 @@ export default function PaymentsPage() {
               title="Error al cargar pagos"
               description="Hubo un problema al cargar los pagos. Por favor, intenta de nuevo."
               action={{
-                label: 'Reintentar',
+                label: "Reintentar",
                 onClick: () => window.location.reload(),
               }}
             />
           ) : payments.length === 0 ? (
             <EmptyState
               icon={<CreditCard className="h-16 w-16" />}
-              title={hasActiveFilters ? 'Sin resultados' : 'No hay pagos'}
+              title={hasActiveFilters ? "Sin resultados" : "No hay pagos"}
               description={
                 hasActiveFilters
-                  ? 'No se encontraron pagos con los filtros aplicados.'
-                  : 'Aun no hay pagos registrados en el sistema.'
+                  ? "No se encontraron pagos con los filtros aplicados."
+                  : "Aun no hay pagos registrados en el sistema."
               }
               action={
                 hasActiveFilters
-                  ? { label: 'Limpiar filtros', onClick: clearFilters }
+                  ? { label: "Limpiar filtros", onClick: clearFilters }
                   : undefined
               }
             />
@@ -404,11 +455,17 @@ export default function PaymentsPage() {
                   <TableRow>
                     <TableHead>No. Pago</TableHead>
                     <TableHead>Cliente</TableHead>
-                    <TableHead className="hidden md:table-cell">Factura</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Factura
+                    </TableHead>
                     <TableHead className="text-right">Monto</TableHead>
-                    <TableHead className="hidden sm:table-cell">Metodo</TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      Metodo
+                    </TableHead>
                     <TableHead>Estado</TableHead>
-                    <TableHead className="hidden lg:table-cell">Fecha</TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      Fecha
+                    </TableHead>
                     <TableHead className="w-25">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -432,7 +489,7 @@ export default function PaymentsPage() {
                         </TableCell>
                         <TableCell>
                           <p className="font-medium text-neutral-900 dark:text-white">
-                            {payment.customer?.name || 'Cliente desconocido'}
+                            {payment.customer?.name || "Cliente desconocido"}
                           </p>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
@@ -469,7 +526,11 @@ export default function PaymentsPage() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Link to={`/payments/${payment.id}`}>
-                              <Button variant="ghost" size="icon" title="Ver detalles">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Ver detalles"
+                              >
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
@@ -504,7 +565,9 @@ export default function PaymentsPage() {
                     <Select
                       options={pageSizeOptions}
                       value={String(filters.limit || 10)}
-                      onChange={(value) => updateFilters({ limit: Number(value), page: 1 })}
+                      onChange={(value) =>
+                        updateFilters({ limit: Number(value), page: 1 })
+                      }
                       className="w-36"
                     />
                   </div>
@@ -524,7 +587,7 @@ export default function PaymentsPage() {
       <DeleteModal
         open={!!deletingPayment}
         onOpenChange={(open) => !open && setDeletingPayment(null)}
-        itemName={deletingPayment?.paymentNumber || ''}
+        itemName={deletingPayment?.paymentNumber || ""}
         itemType="pago"
         onConfirm={handleDelete}
         isLoading={deletePayment.isPending}

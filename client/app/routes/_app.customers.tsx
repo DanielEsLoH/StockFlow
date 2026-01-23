@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Plus,
@@ -12,26 +12,25 @@ import {
   X,
   Mail,
   Phone,
-  MapPin,
   Building2,
   User,
   CheckCircle,
   XCircle,
   DollarSign,
-} from 'lucide-react';
-import type { Route } from './+types/_app.customers';
-import { cn, debounce, formatCurrency } from '~/lib/utils';
+} from "lucide-react";
+import type { Route } from "./+types/_app.customers";
+import { cn, debounce, formatCurrency } from "~/lib/utils";
 import {
   useCustomers,
   useCustomerCities,
   useDeleteCustomer,
-} from '~/hooks/useCustomers';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Select } from '~/components/ui/Select';
-import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
+} from "~/hooks/useCustomers";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Select } from "~/components/ui/Select";
+import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
 import {
   Table,
   TableHeader,
@@ -39,17 +38,17 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { Skeleton, SkeletonTableRow } from '~/components/ui/Skeleton';
-import { DeleteModal } from '~/components/ui/DeleteModal';
-import type { CustomerFilters, Customer, CustomerType } from '~/types/customer';
-import { useUrlFilters } from '~/hooks/useUrlFilters';
+} from "~/components/ui/Table";
+import { SkeletonTableRow } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/DeleteModal";
+import type { CustomerFilters, Customer, CustomerType } from "~/types/customer";
+import { useUrlFilters } from "~/hooks/useUrlFilters";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Clientes - StockFlow' },
-    { name: 'description', content: 'Gestion de clientes' },
+    { title: "Clientes - StockFlow" },
+    { name: "description", content: "Gestion de clientes" },
   ];
 };
 
@@ -73,47 +72,43 @@ const itemVariants = {
 
 // Type options
 const typeOptions = [
-  { value: '', label: 'Todos los tipos' },
-  { value: 'INDIVIDUAL', label: 'Persona Natural' },
-  { value: 'BUSINESS', label: 'Empresa' },
+  { value: "", label: "Todos los tipos" },
+  { value: "INDIVIDUAL", label: "Persona Natural" },
+  { value: "BUSINESS", label: "Empresa" },
 ];
 
 // Status options
 const statusOptions = [
-  { value: '', label: 'Todos los estados' },
-  { value: 'true', label: 'Activos' },
-  { value: 'false', label: 'Inactivos' },
-];
-
-// Items per page options
-const pageSizeOptions = [
-  { value: '10', label: '10 por pagina' },
-  { value: '25', label: '25 por pagina' },
-  { value: '50', label: '50 por pagina' },
+  { value: "", label: "Todos los estados" },
+  { value: "true", label: "Activos" },
+  { value: "false", label: "Inactivos" },
 ];
 
 // Parser config for customer filters
 const customerFiltersParser = {
   parse: (searchParams: URLSearchParams): CustomerFilters => ({
-    search: searchParams.get('search') || undefined,
-    type: (searchParams.get('type') as CustomerType) || undefined,
-    city: searchParams.get('city') || undefined,
-    isActive: searchParams.get('isActive')
-      ? searchParams.get('isActive') === 'true'
+    search: searchParams.get("search") || undefined,
+    type: (searchParams.get("type") as CustomerType) || undefined,
+    city: searchParams.get("city") || undefined,
+    isActive: searchParams.get("isActive")
+      ? searchParams.get("isActive") === "true"
       : undefined,
-    page: Number(searchParams.get('page')) || 1,
-    limit: Number(searchParams.get('limit')) || 10,
+    page: Number(searchParams.get("page")) || 1,
+    limit: Number(searchParams.get("limit")) || 10,
   }),
 };
 
 export default function CustomersPage() {
   const [showFilters, setShowFilters] = useState(false);
-  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(
+    null,
+  );
   const [isMounted, setIsMounted] = useState(false);
 
-  const { filters, updateFilters, clearFilters } = useUrlFilters<CustomerFilters>({
-    parserConfig: customerFiltersParser,
-  });
+  const { filters, updateFilters, clearFilters } =
+    useUrlFilters<CustomerFilters>({
+      parserConfig: customerFiltersParser,
+    });
 
   useEffect(() => {
     setIsMounted(true);
@@ -127,16 +122,20 @@ export default function CustomersPage() {
   // City options
   const cityOptions = useMemo(
     () => [
-      { value: '', label: 'Todas las ciudades' },
+      { value: "", label: "Todas las ciudades" },
       ...cities.map((city) => ({ value: city, label: city })),
     ],
-    [cities]
+    [cities],
   );
 
   // Debounced search
   const debouncedSearch = useMemo(
-    () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
-    [updateFilters]
+    () =>
+      debounce(
+        (value: string) => updateFilters({ search: value || undefined }),
+        300,
+      ),
+    [updateFilters],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,7 +153,10 @@ export default function CustomersPage() {
   const customers = customersData?.data || [];
   const meta = customersData?.meta;
   const hasActiveFilters =
-    filters.search || filters.type || filters.city || filters.isActive !== undefined;
+    filters.search ||
+    filters.type ||
+    filters.city ||
+    filters.isActive !== undefined;
 
   return (
     <motion.div
@@ -164,7 +166,10 @@ export default function CustomersPage() {
       className="space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Clientes
@@ -174,9 +179,7 @@ export default function CustomersPage() {
           </p>
         </div>
         <Link to="/customers/new">
-          <Button leftIcon={<Plus className="h-4 w-4" />}>
-            Nuevo Cliente
-          </Button>
+          <Button leftIcon={<Plus className="h-4 w-4" />}>Nuevo Cliente</Button>
         </Link>
       </motion.div>
 
@@ -201,14 +204,21 @@ export default function CustomersPage() {
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
                 className={cn(
-                  showFilters && 'bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20'
+                  showFilters &&
+                    "bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20",
                 )}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
                 {hasActiveFilters && (
                   <Badge variant="primary" className="ml-2">
-                    {[filters.type, filters.city, filters.isActive !== undefined].filter(Boolean).length}
+                    {
+                      [
+                        filters.type,
+                        filters.city,
+                        filters.isActive !== undefined,
+                      ].filter(Boolean).length
+                    }
                   </Badge>
                 )}
               </Button>
@@ -226,7 +236,7 @@ export default function CustomersPage() {
               {showFilters && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
@@ -234,24 +244,32 @@ export default function CustomersPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                     <Select
                       options={typeOptions}
-                      value={filters.type || ''}
+                      value={filters.type || ""}
                       onChange={(value) =>
-                        updateFilters({ type: (value as CustomerType) || undefined })
+                        updateFilters({
+                          type: (value as CustomerType) || undefined,
+                        })
                       }
                       placeholder="Todos los tipos"
                     />
                     <Select
                       options={cityOptions}
-                      value={filters.city || ''}
-                      onChange={(value) => updateFilters({ city: value || undefined })}
+                      value={filters.city || ""}
+                      onChange={(value) =>
+                        updateFilters({ city: value || undefined })
+                      }
                       placeholder="Todas las ciudades"
                     />
                     <Select
                       options={statusOptions}
-                      value={filters.isActive !== undefined ? String(filters.isActive) : ''}
+                      value={
+                        filters.isActive !== undefined
+                          ? String(filters.isActive)
+                          : ""
+                      }
                       onChange={(value) =>
                         updateFilters({
-                          isActive: value ? value === 'true' : undefined,
+                          isActive: value ? value === "true" : undefined,
                         })
                       }
                       placeholder="Todos los estados"
@@ -272,11 +290,15 @@ export default function CustomersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Cliente</TableHead>
-                  <TableHead className="hidden md:table-cell">Contacto</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Contacto
+                  </TableHead>
                   <TableHead className="hidden sm:table-cell">Tipo</TableHead>
-                  <TableHead className="hidden lg:table-cell">Total Compras</TableHead>
+                  <TableHead className="hidden lg:table-cell">
+                    Total Compras
+                  </TableHead>
                   <TableHead>Estado</TableHead>
-                  <TableHead className="w-[120px]">Acciones</TableHead>
+                  <TableHead className="w-30">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -288,7 +310,11 @@ export default function CustomersPage() {
           ) : isError ? (
             <div className="p-8 text-center">
               <p className="text-error-500">Error al cargar los clientes</p>
-              <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => window.location.reload()}
+              >
                 Reintentar
               </Button>
             </div>
@@ -298,12 +324,12 @@ export default function CustomersPage() {
                 <Users className="h-16 w-16" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-white">
-                {hasActiveFilters ? 'Sin resultados' : 'No hay clientes'}
+                {hasActiveFilters ? "Sin resultados" : "No hay clientes"}
               </h3>
               <p className="mb-6 max-w-sm text-neutral-500 dark:text-neutral-400">
                 {hasActiveFilters
-                  ? 'No se encontraron clientes con los filtros aplicados.'
-                  : 'Comienza agregando tu primer cliente.'}
+                  ? "No se encontraron clientes con los filtros aplicados."
+                  : "Comienza agregando tu primer cliente."}
               </p>
               {hasActiveFilters ? (
                 <Button variant="outline" onClick={clearFilters}>
@@ -324,11 +350,15 @@ export default function CustomersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Cliente</TableHead>
-                    <TableHead className="hidden md:table-cell">Contacto</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Contacto
+                    </TableHead>
                     <TableHead className="hidden sm:table-cell">Tipo</TableHead>
-                    <TableHead className="hidden lg:table-cell">Total Compras</TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      Total Compras
+                    </TableHead>
                     <TableHead>Estado</TableHead>
-                    <TableHead className="w-[120px]">Acciones</TableHead>
+                    <TableHead className="w-30">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -344,7 +374,7 @@ export default function CustomersPage() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/20">
-                              {customer.type === 'BUSINESS' ? (
+                              {customer.type === "BUSINESS" ? (
                                 <Building2 className="h-5 w-5 text-primary-500" />
                               ) : (
                                 <User className="h-5 w-5 text-primary-500" />
@@ -355,7 +385,7 @@ export default function CustomersPage() {
                                 {customer.name}
                               </p>
                               <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                {customer.document || 'Sin documento'}
+                                {customer.document || "Sin documento"}
                               </p>
                             </div>
                           </div>
@@ -379,8 +409,16 @@ export default function CustomersPage() {
                           </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
-                          <Badge variant={customer.type === 'BUSINESS' ? 'primary' : 'secondary'}>
-                            {customer.type === 'BUSINESS' ? 'Empresa' : 'Persona'}
+                          <Badge
+                            variant={
+                              customer.type === "BUSINESS"
+                                ? "primary"
+                                : "secondary"
+                            }
+                          >
+                            {customer.type === "BUSINESS"
+                              ? "Empresa"
+                              : "Persona"}
                           </Badge>
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
@@ -410,12 +448,20 @@ export default function CustomersPage() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Link to={`/customers/${customer.id}`}>
-                              <Button variant="ghost" size="icon" title="Ver detalles">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Ver detalles"
+                              >
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
                             <Link to={`/customers/${customer.id}/edit`}>
-                              <Button variant="ghost" size="icon" title="Editar">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Editar"
+                              >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             </Link>
@@ -460,7 +506,7 @@ export default function CustomersPage() {
       <DeleteModal
         open={!!deletingCustomer}
         onOpenChange={(open) => !open && setDeletingCustomer(null)}
-        itemName={deletingCustomer?.name || ''}
+        itemName={deletingCustomer?.name || ""}
         itemType="cliente"
         onConfirm={handleDelete}
         isLoading={deleteCustomer.isPending}

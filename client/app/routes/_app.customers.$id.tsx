@@ -11,7 +11,6 @@ import {
   MapPin,
   Building2,
   User,
-  FileText,
   Calendar,
   CheckCircle,
   XCircle,
@@ -20,7 +19,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import type { Route } from './+types/_app.customers.$id';
-import { cn, formatDate, formatCurrency } from '~/lib/utils';
+import { formatDate, formatCurrency } from '~/lib/utils';
 import { useCustomer, useCustomerStats, useDeleteCustomer } from '~/hooks/useCustomers';
 import { Button } from '~/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';

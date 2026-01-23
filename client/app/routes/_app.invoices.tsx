@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -22,7 +22,6 @@ import {
   useInvoiceStats,
   useDeleteInvoice,
 } from '~/hooks/useInvoices';
-import { useCustomers } from '~/hooks/useCustomers';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Card } from '~/components/ui/Card';
@@ -43,8 +42,9 @@ import { DeleteModal } from '~/components/ui/DeleteModal';
 import { EmptyState } from '~/components/ui/EmptyState';
 import type { InvoiceFilters, InvoiceSummary, InvoiceStatus } from '~/types/invoice';
 import { useUrlFilters } from '~/hooks/useUrlFilters';
+import { useCustomerOptions } from '~/hooks/useCustomerOptions';
 
-// Meta for SEO
+// Meta for SEO - used by React Router
 export const meta: Route.MetaFunction = () => {
   return [
     { title: 'Facturas - StockFlow' },
@@ -122,7 +122,7 @@ function InvoiceTableHeader() {
         <TableHead className="hidden sm:table-cell">Fecha Vencimiento</TableHead>
         <TableHead className="text-right">Total</TableHead>
         <TableHead>Estado</TableHead>
-        <TableHead className="w-[120px]">Acciones</TableHead>
+        <TableHead className="w-30">Acciones</TableHead>
       </TableRow>
     </TableHeader>
   );
@@ -157,6 +157,7 @@ const invoiceFiltersParser = {
   }),
 };
 
+// Default export used by React Router
 export default function InvoicesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [deletingInvoice, setDeletingInvoice] = useState<InvoiceSummary | null>(null);
@@ -173,17 +174,10 @@ export default function InvoicesPage() {
   // Queries
   const { data: invoicesData, isLoading, isError } = useInvoices(filters);
   const { data: stats } = useInvoiceStats();
-  const { data: customersData } = useCustomers({ limit: 100 });
   const deleteInvoice = useDeleteInvoice();
 
   // Customer options for filter
-  const customerOptions = useMemo(
-    () => [
-      { value: '', label: 'Todos los clientes' },
-      ...(customersData?.data || []).map((c) => ({ value: c.id, label: c.name })),
-    ],
-    [customersData]
-  );
+  const customerOptions = useCustomerOptions();
 
   // Debounced search
   const debouncedSearch = useMemo(
@@ -214,7 +208,7 @@ export default function InvoicesPage() {
   };
 
   const invoices = invoicesData?.data || [];
-  const meta = invoicesData?.meta;
+  const paginationMeta = invoicesData?.meta;
   const hasActiveFilters =
     filters.search || filters.status || filters.customerId || filters.startDate || filters.endDate;
 
@@ -487,13 +481,13 @@ export default function InvoicesPage() {
               </Table>
 
               {/* Pagination */}
-              {meta && meta.totalPages > 1 && (
+              {paginationMeta && paginationMeta.totalPages > 1 && (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 border-t border-neutral-200 dark:border-neutral-700">
                   <div className="flex items-center gap-4">
                     <PaginationInfo
-                      currentPage={meta.page}
-                      pageSize={meta.limit}
-                      totalItems={meta.total}
+                      currentPage={paginationMeta.page}
+                      pageSize={paginationMeta.limit}
+                      totalItems={paginationMeta.total}
                     />
                     <Select
                       options={pageSizeOptions}
@@ -503,8 +497,8 @@ export default function InvoicesPage() {
                     />
                   </div>
                   <Pagination
-                    currentPage={meta.page}
-                    totalPages={meta.totalPages}
+                    currentPage={paginationMeta.page}
+                    totalPages={paginationMeta.totalPages}
                     onPageChange={(page) => updateFilters({ page })}
                   />
                 </div>

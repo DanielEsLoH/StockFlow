@@ -22,7 +22,7 @@ import {
   AcceptInvitationDto,
   OAuthUserDto,
 } from './dto';
-import { UserRole, UserStatus, AuthProvider } from '@prisma/client';
+import { UserRole, UserStatus } from '@prisma/client';
 import { ArcjetService } from '../arcjet/arcjet.service';
 
 /**
@@ -73,7 +73,7 @@ function createMockOAuthRequest(
  */
 interface OAuthCallbackTestConfig {
   providerName: string;
-  provider: AuthProvider;
+  provider: 'EMAIL' | 'GOOGLE' | 'GITHUB';
   mockOAuthUser: OAuthUserDto;
   callbackMethod: (
     req: Request & { user?: OAuthUserDto },
@@ -88,7 +88,14 @@ interface OAuthCallbackTestConfig {
  * Creates parameterized tests for OAuth callback endpoints to eliminate duplication
  */
 function describeOAuthCallbackTests(config: OAuthCallbackTestConfig): void {
-  const { providerName, provider, mockOAuthUser, callbackMethod, noUserDataErrorMessage, getAuthService } = config;
+  const {
+    providerName,
+    provider,
+    mockOAuthUser,
+    callbackMethod,
+    noUserDataErrorMessage,
+    getAuthService,
+  } = config;
 
   it('should redirect to frontend with tokens on successful OAuth', async () => {
     const mockReq = createMockOAuthRequest(mockOAuthUser);
@@ -520,7 +527,9 @@ describe('AuthController', () => {
       const result = await controller.verifyEmail(verifyEmailDto);
 
       expect(result).toEqual(mockVerifyEmailResponse);
-      expect(authService.verifyEmail).toHaveBeenCalledWith(verifyEmailDto.token);
+      expect(authService.verifyEmail).toHaveBeenCalledWith(
+        verifyEmailDto.token,
+      );
       expect(authService.verifyEmail).toHaveBeenCalledTimes(1);
     });
 
@@ -540,7 +549,8 @@ describe('AuthController', () => {
     };
 
     const mockResendVerificationResponse: ResendVerificationResponse = {
-      message: 'If an account exists with this email, a verification email has been sent',
+      message:
+        'If an account exists with this email, a verification email has been sent',
     };
 
     it('should resend verification email and return success message', async () => {
@@ -574,7 +584,7 @@ describe('AuthController', () => {
       email: 'invited@example.com',
       tenantName: 'Test Company',
       invitedByName: 'John Doe',
-      role: UserRole.MEMBER,
+      role: UserRole.EMPLOYEE,
       expiresAt: new Date('2025-12-31'),
     };
 
@@ -720,14 +730,14 @@ describe('AuthController', () => {
       email: 'google-user@example.com',
       firstName: 'Google',
       lastName: 'User',
-      provider: AuthProvider.GOOGLE,
-      providerId: 'google-123456',
-      avatar: 'https://example.com/avatar.jpg',
+      provider: 'GOOGLE',
+      googleId: 'google-123456',
+      avatarUrl: 'https://example.com/avatar.jpg',
     };
 
     describeOAuthCallbackTests({
       providerName: 'Google',
-      provider: AuthProvider.GOOGLE,
+      provider: 'GOOGLE',
       mockOAuthUser: mockGoogleOAuthUser,
       callbackMethod: (req, res) => controller.googleAuthCallback(req, res),
       noUserDataErrorMessage: 'No user data from Google OAuth',
@@ -747,14 +757,14 @@ describe('AuthController', () => {
       email: 'github-user@example.com',
       firstName: 'GitHub',
       lastName: 'User',
-      provider: AuthProvider.GITHUB,
-      providerId: 'github-789012',
-      avatar: 'https://github.com/avatar.jpg',
+      provider: 'GITHUB',
+      githubId: 'github-789012',
+      avatarUrl: 'https://github.com/avatar.jpg',
     };
 
     describeOAuthCallbackTests({
       providerName: 'GitHub',
-      provider: AuthProvider.GITHUB,
+      provider: 'GITHUB',
       mockOAuthUser: mockGitHubOAuthUser,
       callbackMethod: (req, res) => controller.githubAuthCallback(req, res),
       noUserDataErrorMessage: 'No user data from GitHub OAuth',

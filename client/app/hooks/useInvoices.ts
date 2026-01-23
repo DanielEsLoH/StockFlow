@@ -130,7 +130,8 @@ export function useUpdateInvoice() {
 
       // Optimistically update the invoice detail (excluding items to avoid type issues)
       if (previousInvoice) {
-        const { items: _items, ...restData } = data;
+        const { items: _, ...restData } = data;
+        void _; // Satisfy ESLint unused variable check
         queryClient.setQueryData<Invoice>(queryKeys.invoices.detail(id), {
           ...previousInvoice,
           ...restData,

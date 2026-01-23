@@ -115,14 +115,26 @@ function InvoiceStatusBadge({ status }: { status: string }) {
 }
 
 // Custom Tooltip for charts
-function CustomTooltip({ active, payload, label }: any) {
+interface TooltipPayloadEntry {
+  color: string;
+  name: string;
+  value: number;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadEntry[];
+  label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg p-3">
         <p className="text-sm font-medium text-neutral-900 dark:text-white mb-2">
-          {formatDate(label)}
+          {formatDate(label || '')}
         </p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry: TooltipPayloadEntry, index: number) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: {entry.name === 'Ventas' || entry.name === 'Periodo Anterior' ? formatCurrency(entry.value) : entry.value}
           </p>
@@ -159,13 +171,13 @@ function ShimmerSkeleton({ className }: { className?: string }) {
 }
 
 // Export helper functions
-function exportToCSV(data: any[], filename: string) {
+function exportToCSV<T extends object>(data: T[], filename: string) {
   if (!data || data.length === 0) return;
 
   const headers = Object.keys(data[0]);
   const csvContent = [
     headers.join(','),
-    ...data.map(row => headers.map(header => JSON.stringify(row[header] ?? '')).join(','))
+    ...data.map(row => headers.map(header => JSON.stringify((row as Record<string, unknown>)[header] ?? '')).join(','))
   ].join('\n');
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -241,7 +253,7 @@ export default function DashboardPage() {
   }, []);
 
   // Chart click handler (placeholder for future drill-down)
-  const handleChartClick = useCallback((_data: unknown) => {
+  const handleChartClick = useCallback(() => {
     // Future: Navigate to detailed view or show modal with drill-down data
   }, []);
 

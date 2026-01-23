@@ -9,32 +9,31 @@ vi.mock('~/components/ui/ThemeToggle', () => ({
 }));
 
 // Mock framer-motion to avoid SSR issues in tests
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const filterMotionProps = (props: Record<string, any>) => {
+  const motionProps = ['initial', 'animate', 'transition', 'variants', 'whileHover', 'whileTap', 'whileInView', 'viewport'];
+  return Object.fromEntries(Object.entries(props).filter(([key]) => !motionProps.includes(key)));
+};
+
 vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      // Filter out framer-motion specific props
-      const { initial, animate, transition, variants, whileHover, whileTap, whileInView, viewport, ...rest } = props;
-      return <div {...rest}>{children}</div>;
+      return <div {...filterMotionProps(props)}>{children}</div>;
     },
     section: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, transition, variants, whileHover, whileTap, whileInView, viewport, ...rest } = props;
-      return <section {...rest}>{children}</section>;
+      return <section {...filterMotionProps(props)}>{children}</section>;
     },
     h2: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, transition, variants, whileHover, whileTap, whileInView, viewport, ...rest } = props;
-      return <h2 {...rest}>{children}</h2>;
+      return <h2 {...filterMotionProps(props)}>{children}</h2>;
     },
     p: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, transition, variants, whileHover, whileTap, whileInView, viewport, ...rest } = props;
-      return <p {...rest}>{children}</p>;
+      return <p {...filterMotionProps(props)}>{children}</p>;
     },
     span: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, transition, variants, whileHover, whileTap, whileInView, viewport, ...rest } = props;
-      return <span {...rest}>{children}</span>;
+      return <span {...filterMotionProps(props)}>{children}</span>;
     },
     a: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-      const { initial, animate, transition, variants, whileHover, whileTap, whileInView, viewport, ...rest } = props;
-      return <a {...rest}>{children}</a>;
+      return <a {...filterMotionProps(props)}>{children}</a>;
     },
   },
   AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
@@ -58,14 +57,14 @@ describe('Home route', () => {
 
   describe('meta function', () => {
     it('returns correct title', () => {
-      const result = meta({} as Parameters<typeof meta>[0]);
+      const result = meta();
       expect(result).toContainEqual({
         title: 'StockFlow - Sistema de Inventario y Facturación',
       });
     });
 
     it('returns correct description', () => {
-      const result = meta({} as Parameters<typeof meta>[0]);
+      const result = meta();
       expect(result).toContainEqual({
         name: 'description',
         content:
@@ -74,7 +73,7 @@ describe('Home route', () => {
     });
 
     it('returns exactly 2 meta entries', () => {
-      const result = meta({} as Parameters<typeof meta>[0]);
+      const result = meta();
       expect(result).toHaveLength(2);
     });
   });

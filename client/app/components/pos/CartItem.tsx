@@ -22,13 +22,8 @@ interface CartItemProps {
  * THE GOLDEN RULE: Prices and totals MUST NEVER truncate.
  * Only the product name can truncate (via line-clamp-2).
  */
-export const CartItem = memo(function CartItem({
-  item,
-  onUpdateQuantity,
-  onIncrement,
-  onDecrement,
-  onRemove,
-}: CartItemProps) {
+export const CartItem = memo(function CartItem(props: CartItemProps) {
+  const { item, onIncrement, onDecrement, onRemove } = props;
   // Null-safe calculation with fallback
   const lineItemTotals = calculateLineItemTotals(item);
   const total = lineItemTotals?.total ?? 0;

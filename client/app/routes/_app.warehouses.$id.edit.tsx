@@ -6,7 +6,6 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Route } from './+types/_app.warehouses.$id.edit';
-import { cn } from '~/lib/utils';
 import { useWarehouse, useUpdateWarehouse } from '~/hooks/useWarehouses';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';

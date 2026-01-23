@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -19,7 +19,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import type { Route } from './+types/_app.warehouses.$id';
-import { cn, formatDate, formatCurrency } from '~/lib/utils';
+import { formatDate, formatCurrency } from '~/lib/utils';
 import { useWarehouse, useWarehouseStats, useDeleteWarehouse } from '~/hooks/useWarehouses';
 import { Button } from '~/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
@@ -29,7 +29,7 @@ import { Skeleton } from '~/components/ui/Skeleton';
 import { DeleteModal } from '~/components/ui/DeleteModal';
 
 // Meta for SEO
-export const meta: Route.MetaFunction = ({ params }) => {
+export const meta: Route.MetaFunction = () => {
   return [
     { title: `Bodega - StockFlow` },
     { name: 'description', content: 'Detalles de la bodega' },
@@ -83,7 +83,6 @@ function LoadingSkeleton() {
 
 export default function WarehouseDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: warehouse, isLoading, isError } = useWarehouse(id!);

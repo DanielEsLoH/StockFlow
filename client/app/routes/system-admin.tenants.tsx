@@ -16,7 +16,6 @@ import { useSystemAdminTenants } from '~/hooks/useSystemAdmin';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import type { TenantStatus, SubscriptionPlan } from '~/services/system-admin.service';
-import type { Route } from './+types/system-admin.tenants';
 
 export function meta() {
   return [

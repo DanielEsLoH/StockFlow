@@ -79,7 +79,7 @@ export interface CreateProductData {
   status?: ProductStatus;
 }
 
-export interface UpdateProductData extends Partial<CreateProductData> {}
+export type UpdateProductData = Partial<CreateProductData>
 
 export interface ProductsResponse {
   data: Product[];

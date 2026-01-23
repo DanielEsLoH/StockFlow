@@ -37,7 +37,7 @@ export interface CreateWarehouseData {
   isActive?: boolean;
 }
 
-export interface UpdateWarehouseData extends Partial<CreateWarehouseData> {}
+export type UpdateWarehouseData = Partial<CreateWarehouseData>
 
 export interface WarehousesResponse {
   data: Warehouse[];

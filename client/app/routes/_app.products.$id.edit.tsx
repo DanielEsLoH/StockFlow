@@ -23,10 +23,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
 import { Select } from '~/components/ui/Select';
 import { Skeleton } from '~/components/ui/Skeleton';
 import { EmptyState } from '~/components/ui/EmptyState';
-import type { UpdateProductData, ProductStatus } from '~/types/product';
+import type { UpdateProductData } from '~/types/product';
 
 // Meta for SEO
-export const meta: Route.MetaFunction = ({ params }) => {
+export const meta: Route.MetaFunction = () => {
   return [
     { title: `Editar Producto - StockFlow` },
     { name: 'description', content: 'Editar producto' },

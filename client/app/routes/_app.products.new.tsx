@@ -12,7 +12,6 @@ import {
   Layers,
   Warehouse,
   ImagePlus,
-  X,
 } from 'lucide-react';
 import type { Route } from './+types/_app.products.new';
 import { cn } from '~/lib/utils';
@@ -22,7 +21,7 @@ import { Input } from '~/components/ui/Input';
 import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
 import { Select } from '~/components/ui/Select';
 import { Skeleton } from '~/components/ui/Skeleton';
-import type { CreateProductData, ProductStatus } from '~/types/product';
+import type { CreateProductData } from '~/types/product';
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {

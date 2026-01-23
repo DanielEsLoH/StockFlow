@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -9,7 +9,6 @@ import {
   Trash2,
   X,
   Calendar,
-  DollarSign,
   Clock,
   RefreshCcw,
   CheckCircle,
@@ -42,7 +41,6 @@ import { SkeletonTableRow } from '~/components/ui/Skeleton';
 import { DeleteModal } from '~/components/ui/DeleteModal';
 import { EmptyState } from '~/components/ui/EmptyState';
 import type {
-  Payment,
   PaymentFilters,
   PaymentSummary,
   PaymentStatus,
@@ -195,7 +193,7 @@ export default function PaymentsPage() {
   };
 
   const payments = paymentsData?.data || [];
-  const meta = paymentsData?.meta;
+  const paginationMeta = paymentsData?.meta;
   const hasActiveFilters =
     filters.search || filters.status || filters.method || filters.customerId || filters.startDate || filters.endDate;
 
@@ -365,7 +363,7 @@ export default function PaymentsPage() {
                   <TableHead className="hidden sm:table-cell">Metodo</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="hidden lg:table-cell">Fecha</TableHead>
-                  <TableHead className="w-[100px]">Acciones</TableHead>
+                  <TableHead className="w-25">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -411,7 +409,7 @@ export default function PaymentsPage() {
                     <TableHead className="hidden sm:table-cell">Metodo</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="hidden lg:table-cell">Fecha</TableHead>
-                    <TableHead className="w-[100px]">Acciones</TableHead>
+                    <TableHead className="w-25">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -495,13 +493,13 @@ export default function PaymentsPage() {
               </Table>
 
               {/* Pagination */}
-              {meta && meta.totalPages > 1 && (
+              {paginationMeta && paginationMeta.totalPages > 1 && (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 border-t border-neutral-200 dark:border-neutral-700">
                   <div className="flex items-center gap-4">
                     <PaginationInfo
-                      currentPage={meta.page}
-                      pageSize={meta.limit}
-                      totalItems={meta.total}
+                      currentPage={paginationMeta.page}
+                      pageSize={paginationMeta.limit}
+                      totalItems={paginationMeta.total}
                     />
                     <Select
                       options={pageSizeOptions}
@@ -511,8 +509,8 @@ export default function PaymentsPage() {
                     />
                   </div>
                   <Pagination
-                    currentPage={meta.page}
-                    totalPages={meta.totalPages}
+                    currentPage={paginationMeta.page}
+                    totalPages={paginationMeta.totalPages}
                     onPageChange={(page) => updateFilters({ page })}
                   />
                 </div>

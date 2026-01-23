@@ -152,7 +152,7 @@ describe('Badge', () => {
     });
 
     it('should apply dot styles', () => {
-      const { container } = render(
+      render(
         <Badge dot data-testid="badge">
           With Dot
         </Badge>
@@ -166,7 +166,7 @@ describe('Badge', () => {
     });
 
     it('should apply custom dot color', () => {
-      const { container } = render(
+      render(
         <Badge dot dotColor="bg-red-500" data-testid="badge">
           Custom Dot
         </Badge>
@@ -178,7 +178,7 @@ describe('Badge', () => {
     });
 
     it('should not render dot when dot prop is false or not provided', () => {
-      const { container } = render(
+      render(
         <Badge data-testid="badge">
           No Dot
         </Badge>

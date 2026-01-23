@@ -285,7 +285,7 @@ export const systemAdminService = {
   async getDashboardStats(): Promise<DashboardStats> {
     // Since the backend doesn't have a dashboard endpoint yet,
     // we'll aggregate data from existing endpoints
-    const [usersResponse, tenantsResponse, pendingResponse] = await Promise.all([
+    const [, tenantsResponse, pendingResponse] = await Promise.all([
       systemAdminApi.get<PaginatedResponse<UserListItem>>('/system-admin/users?limit=1'),
       systemAdminApi.get<PaginatedResponse<TenantListItem>>('/system-admin/tenants?limit=1'),
       systemAdminApi.get<PaginatedResponse<UserListItem>>('/system-admin/users/pending?limit=5'),

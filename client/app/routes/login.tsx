@@ -47,7 +47,7 @@ const statHoverTransition = {
   stiffness: 300,
 };
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: "Iniciar Sesion - StockFlow" },
     { name: "description", content: "Inicia sesion en tu cuenta de StockFlow" },

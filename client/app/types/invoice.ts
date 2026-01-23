@@ -142,3 +142,16 @@ export interface InvoiceStats {
   averageInvoiceValue: number;
   invoicesByStatus: Record<InvoiceStatus, number>;
 }
+
+// Invoice payment
+export interface InvoicePayment {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  paymentMethod: string;
+  paymentDate: string;
+  reference?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -3,7 +3,6 @@ import { authService } from './auth.service';
 import {
   api,
   setAccessToken,
-  getAccessToken,
   setRefreshToken,
   getRefreshToken,
 } from '~/lib/api';

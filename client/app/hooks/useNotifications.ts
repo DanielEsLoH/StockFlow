@@ -10,7 +10,6 @@ import type {
   NotificationsResponse,
   UnreadCountResponse,
   CreateNotificationData,
-  MarkAsReadResponse,
 } from '~/types/notification';
 
 // ============================================================================

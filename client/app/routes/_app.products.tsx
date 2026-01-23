@@ -8,7 +8,6 @@ import {
   Package,
   Eye,
   Pencil,
-  Trash2,
   ChevronDown,
   AlertTriangle,
   X,
@@ -33,7 +32,7 @@ import {
   TableRow,
   TableCell,
 } from '~/components/ui/Table';
-import { Skeleton, SkeletonProductCard, SkeletonTableRow } from '~/components/ui/Skeleton';
+import { SkeletonProductCard, SkeletonTableRow } from '~/components/ui/Skeleton';
 import type { ProductFilters, ProductStatus } from '~/types/product';
 import { useUrlFilters } from '~/hooks/useUrlFilters';
 

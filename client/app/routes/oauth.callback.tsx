@@ -9,7 +9,6 @@ import { queryKeys } from '~/lib/query-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '~/components/ui/Button';
 import { ThemeToggle } from '~/components/ui/ThemeToggle';
-import type { Route } from './+types/oauth.callback';
 
 // Animation variants
 const containerVariants = {
@@ -32,7 +31,7 @@ const itemVariants = {
   },
 };
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: 'OAuth - StockFlow' },
     { name: 'description', content: 'Procesando autenticacion OAuth' },

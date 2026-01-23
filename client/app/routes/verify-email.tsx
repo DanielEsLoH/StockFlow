@@ -15,7 +15,6 @@ import { useAuth } from '~/hooks/useAuth';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { ThemeToggle } from '~/components/ui/ThemeToggle';
-import type { Route } from './+types/verify-email';
 
 // Validation schema for resend form
 const resendSchema = z.object({
@@ -45,7 +44,7 @@ const itemVariants = {
   },
 };
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: 'Verificar Email - StockFlow' },
     { name: 'description', content: 'Verifica tu correo electronico de StockFlow' },

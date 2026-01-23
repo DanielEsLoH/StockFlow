@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams, useNavigate } from "react-router";
+import { Link, useParams } from "react-router";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -17,7 +17,6 @@ import {
   XCircle,
   Clock,
   AlertTriangle,
-  DollarSign,
   ChevronDown,
 } from "lucide-react";
 import type { Route } from "./+types/_app.invoices.$id";
@@ -245,7 +244,6 @@ function LoadingSkeleton() {
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { data: invoice, isLoading, isError } = useInvoice(id!);

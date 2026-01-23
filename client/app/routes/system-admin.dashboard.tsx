@@ -12,7 +12,6 @@ import { Link } from 'react-router';
 import { useSystemAdminDashboard, useSystemAdminPendingUsers } from '~/hooks/useSystemAdmin';
 import { Button } from '~/components/ui/Button';
 import { StatCard } from '~/components/ui/StatCard';
-import type { Route } from './+types/system-admin.dashboard';
 
 export function meta() {
   return [

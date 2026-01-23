@@ -817,7 +817,7 @@ describe('useSettings hooks', () => {
         throw error;
       });
 
-      const { wrapper, queryClient } = createWrapperWithClient();
+      const { wrapper } = createWrapperWithClient();
       // DO NOT set initial preferences - context.previousPreferences will be undefined
 
       const { result } = renderHook(() => useUpdatePreferences(), { wrapper });

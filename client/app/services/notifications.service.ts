@@ -248,7 +248,7 @@ function filterNotifications(
         aValue = a.type;
         bValue = b.type;
         break;
-      case 'priority':
+      case 'priority': {
         // Custom priority ordering
         const priorityOrder: Record<NotificationPriority, number> = {
           URGENT: 4,
@@ -259,6 +259,7 @@ function filterNotifications(
         aValue = priorityOrder[a.priority];
         bValue = priorityOrder[b.priority];
         break;
+      }
       case 'read':
         aValue = a.read ? 1 : 0;
         bValue = b.read ? 1 : 0;

@@ -5,7 +5,7 @@ import { useAuthStore } from '~/stores/auth.store';
 import { queryKeys } from '~/lib/query-client';
 import { getAccessToken } from '~/lib/api';
 import { toast } from '~/components/ui/Toast';
-import type { LoginCredentials, RegisterData, RegisterResponse, AcceptInvitationData } from '~/services/auth.service';
+import type { LoginCredentials, RegisterData, AcceptInvitationData } from '~/services/auth.service';
 
 export function useAuth() {
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ export function useAuth() {
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: (userData: RegisterData) => authService.register(userData),
-    onSuccess: (data: RegisterResponse) => {
+    onSuccess: () => {
       // Registration successful - prompt user to verify email
       toast.success(
         `Registro exitoso! Te hemos enviado un correo de verificacion. Por favor verifica tu email antes de iniciar sesion.`

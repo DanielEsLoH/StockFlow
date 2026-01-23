@@ -11,14 +11,13 @@ import {
   Trash2,
   X,
   MapPin,
-  Phone,
   User,
   Package,
   CheckCircle,
   XCircle,
 } from 'lucide-react';
 import type { Route } from './+types/_app.warehouses';
-import { cn, debounce, formatDate } from '~/lib/utils';
+import { cn, debounce } from '~/lib/utils';
 import {
   useWarehousesWithFilters,
   useWarehouseCities,
@@ -38,7 +37,7 @@ import {
   TableRow,
   TableCell,
 } from '~/components/ui/Table';
-import { Skeleton, SkeletonTableRow } from '~/components/ui/Skeleton';
+import { SkeletonTableRow } from '~/components/ui/Skeleton';
 import { DeleteModal } from '~/components/ui/DeleteModal';
 import type { WarehouseFilters, Warehouse as WarehouseType } from '~/types/warehouse';
 import { useUrlFilters } from '~/hooks/useUrlFilters';
@@ -74,13 +73,6 @@ const statusOptions = [
   { value: '', label: 'Todos los estados' },
   { value: 'true', label: 'Activas' },
   { value: 'false', label: 'Inactivas' },
-];
-
-// Items per page options
-const pageSizeOptions = [
-  { value: '10', label: '10 por pagina' },
-  { value: '25', label: '25 por pagina' },
-  { value: '50', label: '50 por pagina' },
 ];
 
 // Parser config for warehouse filters

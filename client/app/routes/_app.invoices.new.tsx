@@ -30,7 +30,6 @@ import {
 import type { InvoiceStatus } from "~/types/invoice";
 
 // Meta for SEO - used by React Router
-// eslint-disable-next-line react-refresh/only-export-components
 export const meta: Route.MetaFunction = () => {
   return [
     { title: "Punto de Venta - StockFlow" },
@@ -227,17 +226,17 @@ export default function POSPage() {
   ]);
 
   // Get data arrays
-  const products = productsData?.data ?? [];
   const customers = customersData?.data ?? [];
   const categories = categoriesData ?? [];
   const warehouses = warehousesData ?? [];
 
   // Filter products by warehouse stock (if warehouse is selected)
   const availableProducts = useMemo(() => {
+    const products = productsData?.data ?? [];
     if (!selectedWarehouseId) return products;
     // For now, return all products - in production, filter by warehouse stock
     return products;
-  }, [products, selectedWarehouseId]);
+  }, [productsData?.data, selectedWarehouseId]);
 
   return (
     <div className="flex h-[calc(100vh-4rem)] w-full max-w-full min-w-0 flex-col overflow-x-hidden lg:h-[calc(100vh-2rem)]">

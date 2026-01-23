@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save, CreditCard, FileText, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, FileText, AlertCircle } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -86,7 +86,7 @@ export default function NewPaymentPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceSummary | null>(null);
 
   // Queries
-  const { data: customersData, isLoading: isLoadingCustomers } = useCustomers({ limit: 100 });
+  const { data: customersData } = useCustomers({ limit: 100 });
   const { data: invoicesData, isLoading: isLoadingInvoices } = useInvoices({
     limit: 100,
     // Only show pending and overdue invoices that can receive payments

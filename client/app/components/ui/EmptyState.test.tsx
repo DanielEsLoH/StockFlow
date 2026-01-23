@@ -144,7 +144,7 @@ describe('EmptyState', () => {
 
     it('should render default Plus icon in action button', () => {
       const onClick = vi.fn();
-      const { container } = render(
+      render(
         <EmptyState
           action={{
             label: 'Add Product',

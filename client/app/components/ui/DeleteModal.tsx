@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
-import { cn } from '~/lib/utils';
 import { Button } from './Button';
 
 interface DeleteModalProps {

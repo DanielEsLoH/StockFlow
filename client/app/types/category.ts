@@ -27,7 +27,7 @@ export interface CreateCategoryData {
   parentId?: string;
 }
 
-export interface UpdateCategoryData extends Partial<CreateCategoryData> {}
+export type UpdateCategoryData = Partial<CreateCategoryData>
 
 export interface CategoriesResponse {
   data: Category[];

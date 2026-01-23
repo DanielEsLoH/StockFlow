@@ -1,11 +1,10 @@
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Warehouse, Save } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Route } from './+types/_app.warehouses.new';
-import { cn } from '~/lib/utils';
 import { useCreateWarehouse } from '~/hooks/useWarehouses';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';

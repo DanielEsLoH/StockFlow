@@ -1418,7 +1418,7 @@ describe('usePayments hooks', () => {
 
       vi.mocked(paymentsService.updatePaymentStatus).mockResolvedValue(updatedPayment);
 
-      const { wrapper, queryClient } = createWrapperWithClient();
+      const { wrapper } = createWrapperWithClient();
       // DO NOT set previous payment in cache - this covers the branch where previousPayment is undefined
 
       const { result } = renderHook(() => useUpdatePaymentStatus(), { wrapper });

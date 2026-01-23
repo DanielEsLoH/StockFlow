@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { motion } from 'framer-motion';
 import {
@@ -9,7 +9,6 @@ import {
   UserCheck,
   UserX,
   Trash2,
-  Loader2,
   AlertCircle,
   X,
 } from 'lucide-react';
@@ -17,7 +16,6 @@ import { useSystemAdminUsers } from '~/hooks/useSystemAdmin';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import type { UserStatus, UserRole } from '~/services/system-admin.service';
-import type { Route } from './+types/system-admin.users';
 
 export function meta() {
   return [

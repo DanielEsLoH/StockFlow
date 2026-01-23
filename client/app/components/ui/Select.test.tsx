@@ -148,7 +148,7 @@ describe('SelectField', () => {
     });
 
     it('should apply error styles when errorMessage is provided', () => {
-      const { container } = render(
+      render(
         <SelectField options={mockOptions} errorMessage="Error" />
       );
 

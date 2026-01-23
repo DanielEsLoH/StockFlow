@@ -12,9 +12,6 @@ import {
   X,
   RefreshCw,
   ShieldAlert,
-  Check,
-  XCircle,
-  AlertTriangle,
 } from 'lucide-react';
 import type { Route } from './+types/_app.team';
 import { cn } from '~/lib/utils';
@@ -223,7 +220,6 @@ export default function TeamPage() {
 
   // Filter pending invitations for display
   const pendingInvitations = invitations.filter((inv) => inv.status === 'PENDING');
-  const otherInvitations = invitations.filter((inv) => inv.status !== 'PENDING');
 
   return (
     <motion.div

@@ -6,8 +6,6 @@ import {
   Pencil,
   Trash2,
   Package,
-  DollarSign,
-  TrendingUp,
   Warehouse,
   Tag,
   Calendar,

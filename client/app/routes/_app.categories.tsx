@@ -8,7 +8,6 @@ import {
   Trash2,
   X,
   Package,
-  Calendar,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,7 +33,7 @@ import {
   TableRow,
   TableCell,
 } from '~/components/ui/Table';
-import { Skeleton, SkeletonTableRow } from '~/components/ui/Skeleton';
+import { SkeletonTableRow } from '~/components/ui/Skeleton';
 import { DeleteModal } from '~/components/ui/DeleteModal';
 import type { CategoryFilters, Category } from '~/types/category';
 import { useUrlFilters } from '~/hooks/useUrlFilters';
@@ -78,13 +77,6 @@ const categorySchema = z.object({
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
-
-// Items per page options
-const pageSizeOptions = [
-  { value: '10', label: '10 por pagina' },
-  { value: '25', label: '25 por pagina' },
-  { value: '50', label: '50 por pagina' },
-];
 
 // Parser config for category filters
 const categoryFiltersParser = {

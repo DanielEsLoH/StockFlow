@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, Save } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';

@@ -45,7 +45,7 @@ export interface CreateCustomerData {
   isActive?: boolean;
 }
 
-export interface UpdateCustomerData extends Partial<CreateCustomerData> {}
+export type UpdateCustomerData = Partial<CreateCustomerData>
 
 export interface CustomersResponse {
   data: Customer[];

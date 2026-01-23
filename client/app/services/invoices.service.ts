@@ -1,8 +1,6 @@
 import { api } from '~/lib/api';
 import type {
   Invoice,
-  InvoiceSummary,
-  InvoiceItem,
   InvoiceFilters,
   InvoicesResponse,
   CreateInvoiceData,
@@ -11,6 +9,7 @@ import type {
   UpdateInvoiceItemData,
   InvoiceStats,
   InvoiceStatus,
+  InvoicePayment,
 } from '~/types/invoice';
 
 // Service - Real API calls
@@ -109,8 +108,8 @@ export const invoicesService = {
   },
 
   // Get invoice payments
-  async getInvoicePayments(invoiceId: string): Promise<any[]> {
-    const { data } = await api.get<any[]>(`/invoices/${invoiceId}/payments`);
+  async getInvoicePayments(invoiceId: string): Promise<InvoicePayment[]> {
+    const { data } = await api.get<InvoicePayment[]>(`/invoices/${invoiceId}/payments`);
     return data;
   },
 };

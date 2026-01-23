@@ -53,7 +53,7 @@ const steps = [
   { id: 3, title: 'Empresa', icon: Building2 },
 ];
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
     { title: 'Crear Cuenta - StockFlow' },
     { name: 'description', content: 'Crea tu cuenta en StockFlow' },
@@ -154,7 +154,8 @@ export default function RegisterPage() {
   };
 
   const onSubmit = (data: RegisterForm) => {
-    const { confirmPassword: _, acceptTerms: __, ...userData } = data;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { confirmPassword, acceptTerms, ...userData } = data;
     registerUser(userData);
   };
 

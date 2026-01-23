@@ -197,7 +197,8 @@ export const settingsService = {
     // const { data } = await api.delete(`/users/${userId}/avatar`);
     // return data;
 
-    // Mock data for development
+    // Mock data for development - userId will be used in production
+    void userId;
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     return { message: 'Avatar eliminado exitosamente' };

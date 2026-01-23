@@ -712,7 +712,8 @@ describe('notificationsService', () => {
       });
       vi.advanceTimersByTime(500);
       const created = await createPromise;
-      const originalUpdatedAt = created.updatedAt;
+      // Store original updatedAt for reference (not used in assertion but documents intent)
+      void created.updatedAt;
 
       vi.advanceTimersByTime(100);
 

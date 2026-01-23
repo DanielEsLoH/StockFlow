@@ -700,7 +700,7 @@ describe('useNotifications hooks', () => {
 
       vi.mocked(notificationsService.markAsRead).mockResolvedValue(readNotification);
 
-      const { wrapper, queryClient } = createWrapperWithClient();
+      const { wrapper } = createWrapperWithClient();
       // DO NOT set previous notification in cache
 
       const { result } = renderHook(() => useMarkAsRead(), { wrapper });
@@ -1002,7 +1002,7 @@ describe('useNotifications hooks', () => {
       const error = new Error('Failed');
       vi.mocked(notificationsService.markAllAsRead).mockRejectedValue(error);
 
-      const { wrapper, queryClient } = createWrapperWithClient();
+      const { wrapper } = createWrapperWithClient();
       // DO NOT set unread count - context.previousUnreadCount will be undefined
 
       const { result } = renderHook(() => useMarkAllAsRead(), { wrapper });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -456,7 +456,6 @@ function LoadingSkeleton() {
 
 export default function PaymentDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [isMounted, setIsMounted] = useState(false);

@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import Home, { meta } from './home';
+import React from "react";
 
 // Mock ThemeToggle
 vi.mock('~/components/ui/ThemeToggle', () => ({

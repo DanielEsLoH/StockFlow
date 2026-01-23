@@ -155,7 +155,7 @@ function ShimmerSkeleton({ className }: { className?: string }) {
       )}
     >
       <div
-        className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent dark:via-white/10 animate-[shimmer_2s_infinite]"
+        className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent dark:via-white/10 animate-[shimmer_2s_infinite]"
         style={{
           animation: 'shimmer 2s infinite',
         }}
@@ -344,7 +344,7 @@ export default function DashboardPage() {
       {hasAlerts && (
         <motion.div variants={itemVariants}>
           <Alert variant="warning" className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-warning-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <AlertTriangle className="h-5 w-5 text-warning-600 shrink-0 mt-0.5" aria-hidden="true" />
             <div className="flex-1">
               <AlertTitle>Requiere atencion</AlertTitle>
               <AlertDescription>
@@ -806,7 +806,7 @@ export default function DashboardPage() {
 
                 return (
                   <div key={activity.id} className="flex items-start gap-3">
-                    <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0', config.bgColor)}>
+                    <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg shrink-0', config.bgColor)}>
                       <IconComponent className={cn('h-4 w-4', config.color)} aria-hidden="true" />
                     </div>
                     <div className="flex-1 min-w-0">

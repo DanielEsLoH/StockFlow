@@ -1,16 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger } from '@nestjs/common';
+import { Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { AuthController } from './auth.controller';
 import {
   AuthService,
   AuthResponse,
   RegisterResponse,
   LogoutResponse,
+  VerifyEmailResponse,
+  ResendVerificationResponse,
+  InvitationDetailsResponse,
+  AcceptInvitationResponse,
 } from './auth.service';
-import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
-import { UserRole, UserStatus } from '@prisma/client';
+import {
+  LoginDto,
+  RegisterDto,
+  RefreshTokenDto,
+  VerifyEmailDto,
+  ResendVerificationDto,
+  AcceptInvitationDto,
+  OAuthUserDto,
+} from './dto';
+import { UserRole, UserStatus, AuthProvider } from '@prisma/client';
 import { ArcjetService } from '../arcjet/arcjet.service';
 
 /**
@@ -76,6 +88,12 @@ describe('AuthController', () => {
       login: jest.fn(),
       refreshTokens: jest.fn(),
       logout: jest.fn(),
+      getMe: jest.fn(),
+      verifyEmail: jest.fn(),
+      resendVerification: jest.fn(),
+      getInvitationDetails: jest.fn(),
+      acceptInvitation: jest.fn(),
+      handleOAuthLogin: jest.fn(),
     };
 
     const mockArcjetService = {
@@ -296,6 +314,562 @@ describe('AuthController', () => {
           createMockRequest({ email: 'test@example.com' }),
         );
       });
+    });
+  });
+
+  describe('getMe', () => {
+    const mockCurrentUser = {
+      userId: 'user-123',
+      email: 'test@example.com',
+      role: UserRole.ADMIN,
+      tenantId: 'tenant-123',
+    };
+
+    it('should return current user information', async () => {
+      authService.getMe.mockResolvedValue(mockAuthResponse);
+
+      const result = await controller.getMe(mockCurrentUser);
+
+      expect(result).toEqual(mockAuthResponse);
+      expect(authService.getMe).toHaveBeenCalledWith('user-123');
+      expect(authService.getMe).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate errors from auth service', async () => {
+      const error = new UnauthorizedException('User not found');
+      authService.getMe.mockRejectedValue(error);
+
+      await expect(controller.getMe(mockCurrentUser)).rejects.toThrow(error);
+    });
+  });
+
+  describe('verifyEmail', () => {
+    const verifyEmailDto: VerifyEmailDto = {
+      token: 'valid-verification-token',
+    };
+
+    const mockVerifyEmailResponse: VerifyEmailResponse = {
+      message: 'Email verified successfully',
+    };
+
+    it('should verify email and return success message', async () => {
+      authService.verifyEmail.mockResolvedValue(mockVerifyEmailResponse);
+
+      const result = await controller.verifyEmail(verifyEmailDto);
+
+      expect(result).toEqual(mockVerifyEmailResponse);
+      expect(authService.verifyEmail).toHaveBeenCalledWith(verifyEmailDto.token);
+      expect(authService.verifyEmail).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate errors for invalid verification token', async () => {
+      const error = new Error('Invalid verification token');
+      authService.verifyEmail.mockRejectedValue(error);
+
+      await expect(controller.verifyEmail(verifyEmailDto)).rejects.toThrow(
+        error,
+      );
+    });
+  });
+
+  describe('resendVerification', () => {
+    const resendVerificationDto: ResendVerificationDto = {
+      email: 'test@example.com',
+    };
+
+    const mockResendVerificationResponse: ResendVerificationResponse = {
+      message: 'If an account exists with this email, a verification email has been sent',
+    };
+
+    it('should resend verification email and return success message', async () => {
+      authService.resendVerification.mockResolvedValue(
+        mockResendVerificationResponse,
+      );
+
+      const result = await controller.resendVerification(resendVerificationDto);
+
+      expect(result).toEqual(mockResendVerificationResponse);
+      expect(authService.resendVerification).toHaveBeenCalledWith(
+        resendVerificationDto.email,
+      );
+      expect(authService.resendVerification).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate errors from auth service', async () => {
+      const error = new Error('Service error');
+      authService.resendVerification.mockRejectedValue(error);
+
+      await expect(
+        controller.resendVerification(resendVerificationDto),
+      ).rejects.toThrow(error);
+    });
+  });
+
+  describe('getInvitation', () => {
+    const invitationToken = 'valid-invitation-token';
+
+    const mockInvitationDetailsResponse: InvitationDetailsResponse = {
+      email: 'invited@example.com',
+      tenantName: 'Test Company',
+      invitedByName: 'John Doe',
+      role: UserRole.MEMBER,
+      expiresAt: new Date('2025-12-31'),
+    };
+
+    it('should return invitation details', async () => {
+      authService.getInvitationDetails.mockResolvedValue(
+        mockInvitationDetailsResponse,
+      );
+
+      const result = await controller.getInvitation(invitationToken);
+
+      expect(result).toEqual(mockInvitationDetailsResponse);
+      expect(authService.getInvitationDetails).toHaveBeenCalledWith(
+        invitationToken,
+      );
+      expect(authService.getInvitationDetails).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate errors for invalid invitation token', async () => {
+      const error = new Error('Invitation not found');
+      authService.getInvitationDetails.mockRejectedValue(error);
+
+      await expect(controller.getInvitation(invitationToken)).rejects.toThrow(
+        error,
+      );
+    });
+
+    it('should propagate errors for expired invitation', async () => {
+      const error = new Error('Invitation has expired');
+      authService.getInvitationDetails.mockRejectedValue(error);
+
+      await expect(controller.getInvitation(invitationToken)).rejects.toThrow(
+        error,
+      );
+    });
+  });
+
+  describe('acceptInvitation', () => {
+    const acceptInvitationDto: AcceptInvitationDto = {
+      token: 'valid-invitation-token',
+      firstName: 'Juan',
+      lastName: 'Perez',
+      password: 'SecurePassword123',
+    };
+
+    const mockAcceptInvitationResponse: AcceptInvitationResponse = {
+      message: 'Invitation accepted successfully',
+      user: mockUser,
+      tenant: mockTenant,
+      accessToken: 'mock-access-token',
+      refreshToken: 'mock-refresh-token',
+    };
+
+    /**
+     * Helper to create a mock Response object
+     */
+    function createMockResponse(): Partial<Response> & {
+      cookie: jest.Mock;
+    } {
+      return {
+        cookie: jest.fn(),
+      };
+    }
+
+    it('should accept invitation, set cookie, and return auth response', async () => {
+      const mockRes = createMockResponse();
+      authService.acceptInvitation.mockResolvedValue(
+        mockAcceptInvitationResponse,
+      );
+
+      const result = await controller.acceptInvitation(
+        acceptInvitationDto,
+        mockRes as unknown as Response,
+      );
+
+      expect(result).toEqual(mockAcceptInvitationResponse);
+      expect(authService.acceptInvitation).toHaveBeenCalledWith(
+        acceptInvitationDto,
+      );
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'refreshToken',
+        mockAcceptInvitationResponse.refreshToken,
+        {
+          httpOnly: true,
+          secure: false, // NODE_ENV is not 'production' in tests
+          sameSite: 'strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        },
+      );
+    });
+
+    it('should set secure cookie in production environment', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+
+      const mockRes = createMockResponse();
+      authService.acceptInvitation.mockResolvedValue(
+        mockAcceptInvitationResponse,
+      );
+
+      await controller.acceptInvitation(
+        acceptInvitationDto,
+        mockRes as unknown as Response,
+      );
+
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'refreshToken',
+        mockAcceptInvitationResponse.refreshToken,
+        expect.objectContaining({
+          secure: true,
+        }),
+      );
+
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('should propagate errors for invalid invitation', async () => {
+      const mockRes = createMockResponse();
+      const error = new Error('Invalid invitation token');
+      authService.acceptInvitation.mockRejectedValue(error);
+
+      await expect(
+        controller.acceptInvitation(
+          acceptInvitationDto,
+          mockRes as unknown as Response,
+        ),
+      ).rejects.toThrow(error);
+
+      expect(mockRes.cookie).not.toHaveBeenCalled();
+    });
+
+    it('should propagate errors for already used invitation', async () => {
+      const mockRes = createMockResponse();
+      const error = new Error('Invitation has already been used');
+      authService.acceptInvitation.mockRejectedValue(error);
+
+      await expect(
+        controller.acceptInvitation(
+          acceptInvitationDto,
+          mockRes as unknown as Response,
+        ),
+      ).rejects.toThrow(error);
+    });
+  });
+
+  describe('googleAuth', () => {
+    it('should log Google OAuth initiation', () => {
+      // The method is void and just logs, guard handles redirect
+      expect(() => controller.googleAuth()).not.toThrow();
+    });
+  });
+
+  describe('googleAuthCallback', () => {
+    const mockOAuthUser: OAuthUserDto = {
+      email: 'google-user@example.com',
+      firstName: 'Google',
+      lastName: 'User',
+      provider: AuthProvider.GOOGLE,
+      providerId: 'google-123456',
+      avatar: 'https://example.com/avatar.jpg',
+    };
+
+    /**
+     * Helper to create a mock Response object for OAuth redirects
+     */
+    function createMockOAuthResponse(): Partial<Response> & {
+      redirect: jest.Mock;
+    } {
+      return {
+        redirect: jest.fn(),
+      };
+    }
+
+    /**
+     * Helper to create a mock Request with OAuth user
+     */
+    function createMockOAuthRequest(
+      user?: OAuthUserDto,
+    ): Partial<Request> & { user?: OAuthUserDto } {
+      return user ? { user } : {};
+    }
+
+    it('should redirect to frontend with tokens on successful OAuth', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockResolvedValue({
+        status: 'success',
+        accessToken: 'oauth-access-token',
+        refreshToken: 'oauth-refresh-token',
+      });
+
+      await controller.googleAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(authService.handleOAuthLogin).toHaveBeenCalledWith(
+        mockOAuthUser,
+        AuthProvider.GOOGLE,
+      );
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?token=oauth-access-token&refresh=oauth-refresh-token',
+      );
+    });
+
+    it('should redirect to pending page when user is pending approval', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockResolvedValue({
+        status: 'pending',
+        message: 'Account pending approval',
+      });
+
+      await controller.googleAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?pending=true',
+      );
+    });
+
+    it('should redirect with error when OAuth returns error status', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockResolvedValue({
+        status: 'error',
+        error: 'Account suspended',
+      });
+
+      await controller.googleAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?error=Account%20suspended',
+      );
+    });
+
+    it('should redirect with error when no user data from Google', async () => {
+      const mockReq = createMockOAuthRequest();
+      const mockRes = createMockOAuthResponse();
+
+      await controller.googleAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(authService.handleOAuthLogin).not.toHaveBeenCalled();
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?error=No%20user%20data%20from%20Google%20OAuth',
+      );
+    });
+
+    it('should redirect with error when service throws Error', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockRejectedValue(
+        new Error('OAuth processing failed'),
+      );
+
+      await controller.googleAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?error=OAuth%20processing%20failed',
+      );
+    });
+
+    it('should redirect with generic error when service throws non-Error', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockRejectedValue('Unknown error');
+
+      await controller.googleAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?error=Authentication%20failed',
+      );
+    });
+  });
+
+  describe('githubAuth', () => {
+    it('should log GitHub OAuth initiation', () => {
+      // The method is void and just logs, guard handles redirect
+      expect(() => controller.githubAuth()).not.toThrow();
+    });
+  });
+
+  describe('githubAuthCallback', () => {
+    const mockOAuthUser: OAuthUserDto = {
+      email: 'github-user@example.com',
+      firstName: 'GitHub',
+      lastName: 'User',
+      provider: AuthProvider.GITHUB,
+      providerId: 'github-789012',
+      avatar: 'https://github.com/avatar.jpg',
+    };
+
+    /**
+     * Helper to create a mock Response object for OAuth redirects
+     */
+    function createMockOAuthResponse(): Partial<Response> & {
+      redirect: jest.Mock;
+    } {
+      return {
+        redirect: jest.fn(),
+      };
+    }
+
+    /**
+     * Helper to create a mock Request with OAuth user
+     */
+    function createMockOAuthRequest(
+      user?: OAuthUserDto,
+    ): Partial<Request> & { user?: OAuthUserDto } {
+      return user ? { user } : {};
+    }
+
+    it('should redirect to frontend with tokens on successful OAuth', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockResolvedValue({
+        status: 'success',
+        accessToken: 'oauth-access-token',
+        refreshToken: 'oauth-refresh-token',
+      });
+
+      await controller.githubAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(authService.handleOAuthLogin).toHaveBeenCalledWith(
+        mockOAuthUser,
+        AuthProvider.GITHUB,
+      );
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?token=oauth-access-token&refresh=oauth-refresh-token',
+      );
+    });
+
+    it('should redirect to pending page when user is pending approval', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockResolvedValue({
+        status: 'pending',
+        message: 'Account pending approval',
+      });
+
+      await controller.githubAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?pending=true',
+      );
+    });
+
+    it('should redirect with error when OAuth returns error status', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockResolvedValue({
+        status: 'error',
+        error: 'Account suspended',
+      });
+
+      await controller.githubAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?error=Account%20suspended',
+      );
+    });
+
+    it('should redirect with default error message when error status has no error field', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockResolvedValue({
+        status: 'error',
+      });
+
+      await controller.githubAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?error=Authentication%20failed',
+      );
+    });
+
+    it('should redirect with error when no user data from GitHub', async () => {
+      const mockReq = createMockOAuthRequest();
+      const mockRes = createMockOAuthResponse();
+
+      await controller.githubAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(authService.handleOAuthLogin).not.toHaveBeenCalled();
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?error=No%20user%20data%20from%20GitHub%20OAuth',
+      );
+    });
+
+    it('should redirect with error when service throws Error', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockRejectedValue(
+        new Error('OAuth processing failed'),
+      );
+
+      await controller.githubAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?error=OAuth%20processing%20failed',
+      );
+    });
+
+    it('should redirect with generic error when service throws non-Error', async () => {
+      const mockReq = createMockOAuthRequest(mockOAuthUser);
+      const mockRes = createMockOAuthResponse();
+
+      authService.handleOAuthLogin.mockRejectedValue('Unknown error');
+
+      await controller.githubAuthCallback(
+        mockReq as Request & { user?: OAuthUserDto },
+        mockRes as unknown as Response,
+      );
+
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?error=Authentication%20failed',
+      );
     });
   });
 });

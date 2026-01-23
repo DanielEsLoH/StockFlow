@@ -20,8 +20,10 @@ import {
   UserStatus,
   TenantStatus,
   SubscriptionPlan,
+  InvitationStatus,
+  AuthProvider,
 } from '@prisma/client';
-import { RegisterDto } from './dto';
+import { RegisterDto, AcceptInvitationDto, OAuthUserDto } from './dto';
 
 // Mock bcrypt
 jest.mock('bcrypt');
@@ -32,6 +34,7 @@ describe('AuthService', () => {
   let jwtService: jest.Mocked<JwtService>;
   let configService: jest.Mocked<ConfigService>;
   let brevoService: jest.Mocked<BrevoService>;
+  let invitationsService: jest.Mocked<InvitationsService>;
 
   // Test data
   const mockTenant = {
@@ -175,6 +178,10 @@ describe('AuthService', () => {
       },
       tenant: {
         findUnique: jest.fn(),
+        create: jest.fn(),
+      },
+      invitation: {
+        update: jest.fn(),
       },
       $transaction: jest.fn(),
     };
@@ -230,8 +237,7 @@ describe('AuthService', () => {
     jwtService = module.get(JwtService);
     configService = module.get(ConfigService);
     brevoService = module.get(BrevoService);
-    // InvitationsService is provided to AuthService but not directly tested here
-    module.get(InvitationsService);
+    invitationsService = module.get(InvitationsService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'debug').mockImplementation();
@@ -1371,6 +1377,160 @@ describe('AuthService', () => {
     });
   });
 
+  describe('sendRegistrationEmails error handling', () => {
+    const registerDto: RegisterDto = {
+      email: 'newuser@example.com',
+      password: 'securePassword123',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      tenantName: 'Test Company',
+    };
+
+    const newTenant = {
+      ...mockTenant,
+      id: 'new-tenant-id',
+      name: 'Test Company',
+      slug: 'test-company',
+      email: 'newuser@example.com',
+      status: TenantStatus.TRIAL,
+    };
+
+    const newUser = {
+      ...mockUser,
+      id: 'new-user-id',
+      email: 'newuser@example.com',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      tenantId: 'new-tenant-id',
+      status: UserStatus.PENDING,
+      role: UserRole.ADMIN,
+      emailVerified: false,
+      verificationToken: 'test-token',
+      verificationTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    };
+
+    const createRegisterTransactionMock = () => {
+      return (callback: (tx: unknown) => Promise<unknown>) => {
+        const tx = {
+          tenant: {
+            create: jest.fn().mockResolvedValue(newTenant),
+          },
+          user: {
+            create: jest.fn().mockResolvedValue(newUser),
+          },
+        };
+        return callback(tx);
+      };
+    };
+
+    beforeEach(() => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        createRegisterTransactionMock(),
+      );
+    });
+
+    it('should log error when sendRegistrationEmails catch block is triggered', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      // Make brevoService methods reject to trigger the catch block
+      const testError = new Error('Unexpected email failure');
+      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockRejectedValue(testError);
+      (brevoService.sendVerificationEmail as jest.Mock).mockRejectedValue(testError);
+
+      await service.register(registerDto);
+
+      // Wait for async email operations
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalled();
+    });
+
+    it('should log warning when admin notification email result has error', async () => {
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn');
+
+      // Return success:false to trigger the warning log for admin notification
+      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockResolvedValue({
+        success: false,
+        error: 'Admin email delivery failed',
+      });
+      (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+
+      await service.register(registerDto);
+
+      // Wait for async email operations
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Registration admin notification email failed'),
+      );
+    });
+
+    it('should log warning when verification email result has error', async () => {
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn');
+
+      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+      // Return success:false to trigger the warning log for verification email
+      (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
+        success: false,
+        error: 'Verification email delivery failed',
+      });
+
+      await service.register(registerDto);
+
+      // Wait for async email operations
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Registration verification email failed'),
+      );
+    });
+
+    it('should log error when email promise is rejected', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      // Make Promise.allSettled report a rejection
+      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockRejectedValue(
+        new Error('Network failure'),
+      );
+      (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+
+      await service.register(registerDto);
+
+      // Wait for async email operations
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Registration admin notification email threw error'),
+        expect.any(String),
+      );
+    });
+
+    it('should not block registration when emails fail', async () => {
+      // Both email sends fail
+      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockRejectedValue(
+        new Error('Email service down'),
+      );
+      (brevoService.sendVerificationEmail as jest.Mock).mockRejectedValue(
+        new Error('Email service down'),
+      );
+
+      // Registration should still succeed
+      const result = await service.register(registerDto);
+
+      expect(result.message).toContain('Registration successful');
+      expect(result.user.email).toBe(registerDto.email.toLowerCase());
+    });
+  });
+
   describe('verifyEmail', () => {
     const validToken = 'valid-verification-token-123';
     const mockUserWithToken = {
@@ -1582,6 +1742,1171 @@ describe('AuthService', () => {
 
       expect(expiryDate.getTime()).toBeGreaterThanOrEqual(expectedMinExpiry);
       expect(expiryDate.getTime()).toBeLessThanOrEqual(expectedMaxExpiry);
+    });
+
+    describe('error handling', () => {
+      const unverifiedUserForError = {
+        ...mockUser,
+        emailVerified: false,
+        verificationToken: 'old-token',
+        verificationTokenExpiry: new Date(),
+      };
+
+      it('should log warning when verification email returns success:false', async () => {
+        const warnSpy = jest.spyOn(Logger.prototype, 'warn');
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          unverifiedUserForError,
+        );
+        (prismaService.user.update as jest.Mock).mockResolvedValue(
+          unverifiedUserForError,
+        );
+        (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
+          success: false,
+          error: 'Email delivery failed',
+        });
+
+        await service.resendVerification('test@example.com');
+
+        // Wait for async email operation
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Verification email resend failed'),
+        );
+      });
+
+      it('should log error when sendVerificationEmail throws error', async () => {
+        const errorSpy = jest.spyOn(Logger.prototype, 'error');
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          unverifiedUserForError,
+        );
+        (prismaService.user.update as jest.Mock).mockResolvedValue(
+          unverifiedUserForError,
+        );
+        (brevoService.sendVerificationEmail as jest.Mock).mockRejectedValue(
+          new Error('Network error'),
+        );
+
+        await service.resendVerification('test@example.com');
+
+        // Wait for async email operation
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Verification email resend threw error'),
+          expect.any(String),
+        );
+      });
+
+      it('should still return generic message when email send fails', async () => {
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          unverifiedUserForError,
+        );
+        (prismaService.user.update as jest.Mock).mockResolvedValue(
+          unverifiedUserForError,
+        );
+        (brevoService.sendVerificationEmail as jest.Mock).mockRejectedValue(
+          new Error('Service unavailable'),
+        );
+
+        const result = await service.resendVerification('test@example.com');
+
+        expect(result.message).toBe(
+          'If an account exists with this email and has not been verified, a new verification email has been sent.',
+        );
+      });
+    });
+  });
+
+  describe('getInvitationDetails', () => {
+    const mockInvitation = {
+      id: 'invitation-123',
+      email: 'invited@example.com',
+      tenantId: 'tenant-123',
+      role: UserRole.EMPLOYEE,
+      status: InvitationStatus.PENDING,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      tenant: {
+        id: 'tenant-123',
+        name: 'Test Tenant',
+        slug: 'test-tenant',
+      },
+      invitedBy: {
+        id: 'user-admin-123',
+        firstName: 'Admin',
+        lastName: 'User',
+      },
+    };
+
+    it('should return invitation details for valid token', async () => {
+      (invitationsService.findByToken as jest.Mock).mockResolvedValue(
+        mockInvitation,
+      );
+
+      const result = await service.getInvitationDetails('valid-token');
+
+      expect(result).toEqual({
+        email: 'invited@example.com',
+        tenantName: 'Test Tenant',
+        invitedByName: 'Admin User',
+        role: UserRole.EMPLOYEE,
+        expiresAt: mockInvitation.expiresAt,
+      });
+    });
+
+    it('should call invitationsService.findByToken with the token', async () => {
+      (invitationsService.findByToken as jest.Mock).mockResolvedValue(
+        mockInvitation,
+      );
+
+      await service.getInvitationDetails('test-token-123');
+
+      expect(invitationsService.findByToken).toHaveBeenCalledWith(
+        'test-token-123',
+      );
+    });
+
+    it('should propagate error when invitation is not found', async () => {
+      (invitationsService.findByToken as jest.Mock).mockRejectedValue(
+        new BadRequestException('Invitation not found'),
+      );
+
+      await expect(
+        service.getInvitationDetails('invalid-token'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate error when invitation is expired', async () => {
+      (invitationsService.findByToken as jest.Mock).mockRejectedValue(
+        new GoneException('Invitation has expired'),
+      );
+
+      await expect(
+        service.getInvitationDetails('expired-token'),
+      ).rejects.toThrow(GoneException);
+    });
+  });
+
+  describe('acceptInvitation', () => {
+    const mockInvitation = {
+      id: 'invitation-123',
+      email: 'invited@example.com',
+      tenantId: 'tenant-123',
+      role: UserRole.EMPLOYEE,
+      status: InvitationStatus.PENDING,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      tenant: mockTenant,
+      invitedBy: {
+        id: 'user-admin-123',
+        firstName: 'Admin',
+        lastName: 'User',
+      },
+    };
+
+    const acceptDto: AcceptInvitationDto = {
+      token: 'valid-invitation-token',
+      firstName: 'New',
+      lastName: 'Employee',
+      password: 'SecurePass123',
+    };
+
+    const createdUser = {
+      ...mockUser,
+      id: 'new-invited-user-id',
+      email: 'invited@example.com',
+      firstName: 'New',
+      lastName: 'Employee',
+      role: UserRole.EMPLOYEE,
+      status: UserStatus.ACTIVE,
+      emailVerified: true,
+      tenant: mockTenant,
+    };
+
+    beforeEach(() => {
+      (invitationsService.findByToken as jest.Mock).mockResolvedValue(
+        mockInvitation,
+      );
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+      setupTokenMocks(jwtService);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(createdUser);
+    });
+
+    it('should create user and return auth response for valid invitation', async () => {
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            user: {
+              create: jest.fn().mockResolvedValue(createdUser),
+            },
+            invitation: {
+              update: jest.fn().mockResolvedValue(mockInvitation),
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      const result = await service.acceptInvitation(acceptDto);
+
+      expect(result.message).toBe('Cuenta creada exitosamente');
+      expect(result.user.email).toBe('invited@example.com');
+      expect(result.user.role).toBe(UserRole.EMPLOYEE);
+      expect(result.user.status).toBe(UserStatus.ACTIVE);
+      expect(result.accessToken).toBe(mockTokens.accessToken);
+      expect(result.refreshToken).toBe(mockTokens.refreshToken);
+    });
+
+    it('should throw BadRequestException when invitation is not PENDING', async () => {
+      const acceptedInvitation = {
+        ...mockInvitation,
+        status: InvitationStatus.ACCEPTED,
+      };
+      (invitationsService.findByToken as jest.Mock).mockResolvedValue(
+        acceptedInvitation,
+      );
+
+      await expect(service.acceptInvitation(acceptDto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException with Spanish message for non-pending invitation', async () => {
+      const expiredInvitation = {
+        ...mockInvitation,
+        status: InvitationStatus.EXPIRED,
+      };
+      (invitationsService.findByToken as jest.Mock).mockResolvedValue(
+        expiredInvitation,
+      );
+
+      await expect(service.acceptInvitation(acceptDto)).rejects.toThrow(
+        'Esta invitacion ya no es valida',
+      );
+    });
+
+    it('should throw ConflictException when user already exists with invitation email', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+
+      await expect(service.acceptInvitation(acceptDto)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('should throw ConflictException with Spanish message for existing user', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+
+      await expect(service.acceptInvitation(acceptDto)).rejects.toThrow(
+        'Ya existe un usuario con este email',
+      );
+    });
+
+    it('should create user with invitation role and tenantId', async () => {
+      const createUserMock = jest.fn().mockResolvedValue(createdUser);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            user: {
+              create: createUserMock,
+            },
+            invitation: {
+              update: jest.fn().mockResolvedValue(mockInvitation),
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.acceptInvitation(acceptDto);
+
+      expect(createUserMock).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          email: 'invited@example.com',
+          tenantId: mockInvitation.tenantId,
+          role: mockInvitation.role,
+          status: UserStatus.ACTIVE,
+          emailVerified: true,
+        }),
+        include: { tenant: true },
+      });
+    });
+
+    it('should update invitation status to ACCEPTED', async () => {
+      const updateInvitationMock = jest.fn().mockResolvedValue(mockInvitation);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            user: {
+              create: jest.fn().mockResolvedValue(createdUser),
+            },
+            invitation: {
+              update: updateInvitationMock,
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.acceptInvitation(acceptDto);
+
+      expect(updateInvitationMock).toHaveBeenCalledWith({
+        where: { id: mockInvitation.id },
+        data: {
+          status: InvitationStatus.ACCEPTED,
+          acceptedAt: expect.any(Date),
+        },
+      });
+    });
+
+    it('should store refresh token and update lastLoginAt', async () => {
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            user: {
+              create: jest.fn().mockResolvedValue(createdUser),
+            },
+            invitation: {
+              update: jest.fn().mockResolvedValue(mockInvitation),
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.acceptInvitation(acceptDto);
+
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: createdUser.id },
+        data: {
+          refreshToken: mockTokens.refreshToken,
+          lastLoginAt: expect.any(Date),
+        },
+      });
+    });
+
+    it('should hash password with 12 salt rounds', async () => {
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            user: {
+              create: jest.fn().mockResolvedValue(createdUser),
+            },
+            invitation: {
+              update: jest.fn().mockResolvedValue(mockInvitation),
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.acceptInvitation(acceptDto);
+
+      expect(bcrypt.hash).toHaveBeenCalledWith(acceptDto.password, 12);
+    });
+  });
+
+  describe('handleOAuthLogin', () => {
+    const googleOAuthUser: OAuthUserDto = {
+      email: 'oauth@example.com',
+      firstName: 'OAuth',
+      lastName: 'User',
+      avatarUrl: 'https://example.com/avatar.jpg',
+      googleId: 'google-123456',
+      provider: 'GOOGLE',
+    };
+
+    const githubOAuthUser: OAuthUserDto = {
+      email: 'github@example.com',
+      firstName: 'GitHub',
+      lastName: 'User',
+      avatarUrl: 'https://github.com/avatar.jpg',
+      githubId: 'github-789012',
+      provider: 'GITHUB',
+    };
+
+    describe('existing user by OAuth ID', () => {
+      const existingGoogleUser = {
+        ...mockUser,
+        email: 'oauth@example.com',
+        googleId: 'google-123456',
+        status: UserStatus.ACTIVE,
+        authProvider: AuthProvider.GOOGLE,
+        tenant: mockTenant,
+      };
+
+      it('should return success for active user found by Google ID', async () => {
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          existingGoogleUser,
+        );
+        setupTokenMocks(jwtService);
+        (prismaService.user.update as jest.Mock).mockResolvedValue(
+          existingGoogleUser,
+        );
+
+        const result = await service.handleOAuthLogin(
+          googleOAuthUser,
+          AuthProvider.GOOGLE,
+        );
+
+        expect(result.status).toBe('success');
+        expect(result.accessToken).toBe(mockTokens.accessToken);
+        expect(result.refreshToken).toBe(mockTokens.refreshToken);
+      });
+
+      it('should return success for active user found by GitHub ID', async () => {
+        const existingGithubUser = {
+          ...mockUser,
+          email: 'github@example.com',
+          githubId: 'github-789012',
+          status: UserStatus.ACTIVE,
+          authProvider: AuthProvider.GITHUB,
+          tenant: mockTenant,
+        };
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          existingGithubUser,
+        );
+        setupTokenMocks(jwtService);
+        (prismaService.user.update as jest.Mock).mockResolvedValue(
+          existingGithubUser,
+        );
+
+        const result = await service.handleOAuthLogin(
+          githubOAuthUser,
+          AuthProvider.GITHUB,
+        );
+
+        expect(result.status).toBe('success');
+        expect(result.accessToken).toBe(mockTokens.accessToken);
+      });
+    });
+
+    describe('existing user by email (not OAuth ID)', () => {
+      it('should find user by email when not found by OAuth ID', async () => {
+        const userByEmail = {
+          ...mockUser,
+          email: 'oauth@example.com',
+          googleId: null,
+          status: UserStatus.ACTIVE,
+          authProvider: AuthProvider.EMAIL,
+          tenant: mockTenant,
+        };
+        (prismaService.user.findFirst as jest.Mock)
+          .mockResolvedValueOnce(null) // Not found by OAuth ID
+          .mockResolvedValueOnce(userByEmail); // Found by email
+        setupTokenMocks(jwtService);
+        (prismaService.user.update as jest.Mock).mockResolvedValue(userByEmail);
+
+        const result = await service.handleOAuthLogin(
+          googleOAuthUser,
+          AuthProvider.GOOGLE,
+        );
+
+        expect(result.status).toBe('success');
+        expect(prismaService.user.findFirst).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    describe('new OAuth user', () => {
+      const newOAuthUser = {
+        ...mockUser,
+        id: 'new-oauth-user-id',
+        email: 'newoauth@example.com',
+        googleId: 'google-new-123',
+        status: UserStatus.PENDING,
+        authProvider: AuthProvider.GOOGLE,
+      };
+
+      const newOAuthTenant = {
+        ...mockTenant,
+        id: 'new-oauth-tenant-id',
+        name: "OAuth's Company",
+        slug: 'oauths-company',
+      };
+
+      it('should create new user and tenant for new OAuth user', async () => {
+        (prismaService.user.findFirst as jest.Mock)
+          .mockResolvedValueOnce(null) // Not found by OAuth ID
+          .mockResolvedValueOnce(null); // Not found by email
+        (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
+        (bcrypt.hash as jest.Mock).mockResolvedValue('hashedRandomPassword');
+        (prismaService.$transaction as jest.Mock).mockImplementation(
+          async (callback) => {
+            const tx = {
+              tenant: {
+                create: jest.fn().mockResolvedValue(newOAuthTenant),
+              },
+              user: {
+                create: jest.fn().mockResolvedValue(newOAuthUser),
+              },
+            };
+            return callback(tx);
+          },
+        );
+
+        const result = await service.handleOAuthLogin(
+          googleOAuthUser,
+          AuthProvider.GOOGLE,
+        );
+
+        expect(result.status).toBe('pending');
+        expect(result.message).toContain('pending approval');
+      });
+
+      it('should return pending status for new GitHub OAuth user', async () => {
+        (prismaService.user.findFirst as jest.Mock)
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(null);
+        (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
+        (bcrypt.hash as jest.Mock).mockResolvedValue('hashedRandomPassword');
+        (prismaService.$transaction as jest.Mock).mockImplementation(
+          async (callback) => {
+            const tx = {
+              tenant: {
+                create: jest.fn().mockResolvedValue({
+                  ...newOAuthTenant,
+                  name: "GitHub's Company",
+                }),
+              },
+              user: {
+                create: jest.fn().mockResolvedValue({
+                  ...newOAuthUser,
+                  githubId: 'github-789012',
+                  authProvider: AuthProvider.GITHUB,
+                }),
+              },
+            };
+            return callback(tx);
+          },
+        );
+
+        const result = await service.handleOAuthLogin(
+          githubOAuthUser,
+          AuthProvider.GITHUB,
+        );
+
+        expect(result.status).toBe('pending');
+      });
+    });
+
+    describe('error handling', () => {
+      it('should return error status when OAuth login throws', async () => {
+        (prismaService.user.findFirst as jest.Mock).mockRejectedValue(
+          new Error('Database connection failed'),
+        );
+
+        const result = await service.handleOAuthLogin(
+          googleOAuthUser,
+          AuthProvider.GOOGLE,
+        );
+
+        expect(result.status).toBe('error');
+        expect(result.error).toBe('Database connection failed');
+      });
+
+      it('should return generic error message for non-Error throws', async () => {
+        (prismaService.user.findFirst as jest.Mock).mockRejectedValue(
+          'Unknown error',
+        );
+
+        const result = await service.handleOAuthLogin(
+          googleOAuthUser,
+          AuthProvider.GOOGLE,
+        );
+
+        expect(result.status).toBe('error');
+        expect(result.error).toBe('OAuth authentication failed');
+      });
+
+      it('should log error when OAuth login fails', async () => {
+        const errorSpy = jest.spyOn(Logger.prototype, 'error');
+        (prismaService.user.findFirst as jest.Mock).mockRejectedValue(
+          new Error('Test error'),
+        );
+
+        await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.stringContaining('OAuth login error'),
+          expect.any(String),
+        );
+      });
+    });
+  });
+
+  describe('handleExistingOAuthUser', () => {
+    const baseExistingUser = {
+      ...mockUser,
+      email: 'existing@example.com',
+      status: UserStatus.ACTIVE,
+      authProvider: AuthProvider.EMAIL,
+      googleId: null,
+      githubId: null,
+      avatar: null,
+      tenant: mockTenant,
+    };
+
+    const googleOAuthUser: OAuthUserDto = {
+      email: 'existing@example.com',
+      firstName: 'Existing',
+      lastName: 'User',
+      avatarUrl: 'https://example.com/avatar.jpg',
+      googleId: 'google-link-123',
+      provider: 'GOOGLE',
+    };
+
+    beforeEach(() => {
+      setupTokenMocks(jwtService);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(
+        baseExistingUser,
+      );
+    });
+
+    describe('linking OAuth accounts', () => {
+      it('should link Google account when user has no googleId', async () => {
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          baseExistingUser,
+        );
+
+        await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+        expect(prismaService.user.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { id: baseExistingUser.id },
+            data: expect.objectContaining({
+              googleId: 'google-link-123',
+            }),
+          }),
+        );
+      });
+
+      it('should link GitHub account when user has no githubId', async () => {
+        const githubOAuthUser: OAuthUserDto = {
+          email: 'existing@example.com',
+          firstName: 'Existing',
+          lastName: 'User',
+          githubId: 'github-link-456',
+          provider: 'GITHUB',
+        };
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          baseExistingUser,
+        );
+
+        await service.handleOAuthLogin(githubOAuthUser, AuthProvider.GITHUB);
+
+        expect(prismaService.user.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              githubId: 'github-link-456',
+            }),
+          }),
+        );
+      });
+
+      it('should not link Google account when user already has googleId', async () => {
+        const userWithGoogle = {
+          ...baseExistingUser,
+          googleId: 'existing-google-id',
+        };
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          userWithGoogle,
+        );
+
+        await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+        // The update should not contain googleId since it's already set
+        const updateCalls = (prismaService.user.update as jest.Mock).mock.calls;
+        const lastUpdateCall = updateCalls[updateCalls.length - 1];
+        expect(lastUpdateCall[0].data.googleId).toBeUndefined();
+      });
+
+      it('should update avatar when user has no avatar', async () => {
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          baseExistingUser,
+        );
+
+        await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+        expect(prismaService.user.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              avatar: 'https://example.com/avatar.jpg',
+            }),
+          }),
+        );
+      });
+
+      it('should update authProvider when user registered with EMAIL', async () => {
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          baseExistingUser,
+        );
+
+        await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+        expect(prismaService.user.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              authProvider: AuthProvider.GOOGLE,
+            }),
+          }),
+        );
+      });
+    });
+
+    describe('user status handling', () => {
+      it('should return pending status for PENDING user', async () => {
+        const pendingUser = {
+          ...baseExistingUser,
+          status: UserStatus.PENDING,
+        };
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          pendingUser,
+        );
+
+        const result = await service.handleOAuthLogin(
+          googleOAuthUser,
+          AuthProvider.GOOGLE,
+        );
+
+        expect(result.status).toBe('pending');
+        expect(result.message).toContain('pending approval');
+      });
+
+      it('should return error for SUSPENDED user', async () => {
+        const suspendedUser = {
+          ...baseExistingUser,
+          status: UserStatus.SUSPENDED,
+        };
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          suspendedUser,
+        );
+
+        const result = await service.handleOAuthLogin(
+          googleOAuthUser,
+          AuthProvider.GOOGLE,
+        );
+
+        expect(result.status).toBe('error');
+        expect(result.error).toContain('not active');
+      });
+
+      it('should return error for INACTIVE user', async () => {
+        const inactiveUser = {
+          ...baseExistingUser,
+          status: UserStatus.INACTIVE,
+        };
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          inactiveUser,
+        );
+
+        const result = await service.handleOAuthLogin(
+          googleOAuthUser,
+          AuthProvider.GOOGLE,
+        );
+
+        expect(result.status).toBe('error');
+        expect(result.error).toContain('not active');
+      });
+    });
+
+    describe('tenant status handling', () => {
+      it('should return error for SUSPENDED tenant', async () => {
+        const userWithSuspendedTenant = {
+          ...baseExistingUser,
+          tenant: mockSuspendedTenant,
+        };
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          userWithSuspendedTenant,
+        );
+
+        const result = await service.handleOAuthLogin(
+          googleOAuthUser,
+          AuthProvider.GOOGLE,
+        );
+
+        expect(result.status).toBe('error');
+        expect(result.error).toContain('organization account is not active');
+      });
+
+      it('should return error for INACTIVE tenant', async () => {
+        const userWithInactiveTenant = {
+          ...baseExistingUser,
+          tenant: mockInactiveTenant,
+        };
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          userWithInactiveTenant,
+        );
+
+        const result = await service.handleOAuthLogin(
+          googleOAuthUser,
+          AuthProvider.GOOGLE,
+        );
+
+        expect(result.status).toBe('error');
+        expect(result.error).toContain('organization account is not active');
+      });
+    });
+
+    describe('successful login', () => {
+      it('should update refresh token and lastLoginAt on successful login', async () => {
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          baseExistingUser,
+        );
+
+        await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+        // Check that the last update call includes refreshToken and lastLoginAt
+        const updateCalls = (prismaService.user.update as jest.Mock).mock.calls;
+        const lastCall = updateCalls[updateCalls.length - 1];
+        expect(lastCall[0].data.refreshToken).toBe(mockTokens.refreshToken);
+        expect(lastCall[0].data.lastLoginAt).toBeInstanceOf(Date);
+      });
+    });
+  });
+
+  describe('handleNewOAuthUser', () => {
+    const googleOAuthUser: OAuthUserDto = {
+      email: 'newuser@example.com',
+      firstName: 'New',
+      lastName: 'User',
+      avatarUrl: 'https://example.com/new-avatar.jpg',
+      googleId: 'google-new-user-123',
+      provider: 'GOOGLE',
+    };
+
+    const createdTenant = {
+      ...mockTenant,
+      id: 'new-oauth-tenant-id',
+      name: "New's Company",
+      slug: 'news-company',
+      email: 'newuser@example.com',
+      status: TenantStatus.TRIAL,
+    };
+
+    const createdUser = {
+      ...mockUser,
+      id: 'new-oauth-user-id',
+      email: 'newuser@example.com',
+      firstName: 'New',
+      lastName: 'User',
+      googleId: 'google-new-user-123',
+      status: UserStatus.PENDING,
+      role: UserRole.ADMIN,
+      emailVerified: true,
+      authProvider: AuthProvider.GOOGLE,
+      tenantId: createdTenant.id,
+    };
+
+    beforeEach(() => {
+      (prismaService.user.findFirst as jest.Mock)
+        .mockResolvedValueOnce(null) // Not found by OAuth ID
+        .mockResolvedValueOnce(null); // Not found by email
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedRandomPassword');
+    });
+
+    it('should create tenant with user firstName Company name', async () => {
+      const tenantCreateMock = jest.fn().mockResolvedValue(createdTenant);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            tenant: {
+              create: tenantCreateMock,
+            },
+            user: {
+              create: jest.fn().mockResolvedValue(createdUser),
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+      expect(tenantCreateMock).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          name: "New's Company",
+          email: 'newuser@example.com',
+          status: TenantStatus.TRIAL,
+        }),
+      });
+    });
+
+    it('should create user with PENDING status and ADMIN role', async () => {
+      const userCreateMock = jest.fn().mockResolvedValue(createdUser);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            tenant: {
+              create: jest.fn().mockResolvedValue(createdTenant),
+            },
+            user: {
+              create: userCreateMock,
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+      expect(userCreateMock).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          status: UserStatus.PENDING,
+          role: UserRole.ADMIN,
+          emailVerified: true,
+          authProvider: AuthProvider.GOOGLE,
+          googleId: 'google-new-user-123',
+        }),
+      });
+    });
+
+    it('should create user with GitHub ID for GitHub provider', async () => {
+      const githubOAuthUser: OAuthUserDto = {
+        email: 'github-new@example.com',
+        firstName: 'GitHub',
+        lastName: 'NewUser',
+        githubId: 'github-new-456',
+        provider: 'GITHUB',
+      };
+
+      const userCreateMock = jest.fn().mockResolvedValue({
+        ...createdUser,
+        githubId: 'github-new-456',
+        authProvider: AuthProvider.GITHUB,
+      });
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            tenant: {
+              create: jest.fn().mockResolvedValue(createdTenant),
+            },
+            user: {
+              create: userCreateMock,
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(githubOAuthUser, AuthProvider.GITHUB);
+
+      expect(userCreateMock).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          authProvider: AuthProvider.GITHUB,
+          githubId: 'github-new-456',
+        }),
+      });
+    });
+
+    it('should generate unique slug when base slug exists', async () => {
+      (prismaService.tenant.findUnique as jest.Mock)
+        .mockResolvedValueOnce({ id: 'existing' }) // First slug exists
+        .mockResolvedValueOnce(null); // Second slug is unique
+
+      const tenantCreateMock = jest.fn().mockResolvedValue({
+        ...createdTenant,
+        slug: 'news-company-1',
+      });
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            tenant: {
+              create: tenantCreateMock,
+            },
+            user: {
+              create: jest.fn().mockResolvedValue(createdUser),
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+      expect(tenantCreateMock).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          slug: 'news-company-1',
+        }),
+      });
+    });
+
+    it('should return pending status with appropriate message', async () => {
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            tenant: {
+              create: jest.fn().mockResolvedValue(createdTenant),
+            },
+            user: {
+              create: jest.fn().mockResolvedValue(createdUser),
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      const result = await service.handleOAuthLogin(
+        googleOAuthUser,
+        AuthProvider.GOOGLE,
+      );
+
+      expect(result.status).toBe('pending');
+      expect(result.message).toContain('created and is pending approval');
+    });
+
+    it('should send admin notification email asynchronously', async () => {
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            tenant: {
+              create: jest.fn().mockResolvedValue(createdTenant),
+            },
+            user: {
+              create: jest.fn().mockResolvedValue(createdUser),
+            },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+      // Wait for async notification
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(
+        brevoService.sendAdminNewRegistrationNotification,
+      ).toHaveBeenCalledWith({
+        userEmail: 'newuser@example.com',
+        userName: 'New User',
+        tenantName: createdTenant.name,
+        registrationDate: expect.any(Date),
+      });
+    });
+  });
+
+  describe('sendOAuthRegistrationNotification', () => {
+    const googleOAuthUser: OAuthUserDto = {
+      email: 'notify@example.com',
+      firstName: 'Notify',
+      lastName: 'User',
+      googleId: 'google-notify-123',
+      provider: 'GOOGLE',
+    };
+
+    const createdTenant = {
+      ...mockTenant,
+      id: 'notify-tenant-id',
+      name: "Notify's Company",
+    };
+
+    const createdUser = {
+      ...mockUser,
+      email: 'notify@example.com',
+      firstName: 'Notify',
+      lastName: 'User',
+    };
+
+    beforeEach(() => {
+      (prismaService.user.findFirst as jest.Mock)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+    });
+
+    it('should log success when admin notification is sent successfully', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
+            user: { create: jest.fn().mockResolvedValue(createdUser) },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('OAuth registration admin notification sent'),
+      );
+    });
+
+    it('should log warning when admin notification returns success:false', async () => {
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn');
+      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockResolvedValue({
+        success: false,
+        error: 'Email service unavailable',
+      });
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
+            user: { create: jest.fn().mockResolvedValue(createdUser) },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('OAuth registration admin notification failed'),
+      );
+    });
+
+    it('should log error when admin notification throws', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockRejectedValue(
+        new Error('Network error'),
+      );
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
+            user: { create: jest.fn().mockResolvedValue(createdUser) },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('OAuth registration admin notification error'),
+        expect.any(String),
+      );
+    });
+
+    it('should not block OAuth registration when notification fails', async () => {
+      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockRejectedValue(
+        new Error('Email service down'),
+      );
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const tx = {
+            tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
+            user: { create: jest.fn().mockResolvedValue(createdUser) },
+          };
+          return callback(tx);
+        },
+      );
+
+      const result = await service.handleOAuthLogin(
+        googleOAuthUser,
+        AuthProvider.GOOGLE,
+      );
+
+      // Registration should still succeed with pending status
+      expect(result.status).toBe('pending');
     });
   });
 });

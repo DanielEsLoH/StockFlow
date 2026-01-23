@@ -25,6 +25,7 @@ import { useCustomer, useCustomerStats, useDeleteCustomer } from '~/hooks/useCus
 import { Button } from '~/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
 import { Badge } from '~/components/ui/Badge';
+import { StatCard } from '~/components/ui/StatCard';
 import { Skeleton } from '~/components/ui/Skeleton';
 import { DeleteModal } from '~/components/ui/DeleteModal';
 
@@ -54,46 +55,6 @@ const itemVariants = {
   },
 };
 
-// Stat card component
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  subtitle,
-  color = 'primary',
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string | number;
-  subtitle?: string;
-  color?: 'primary' | 'success' | 'warning' | 'error';
-}) {
-  const colorClasses = {
-    primary: 'bg-primary-50 text-primary-500 dark:bg-primary-900/20',
-    success: 'bg-success-50 text-success-500 dark:bg-success-900/20',
-    warning: 'bg-warning-50 text-warning-500 dark:bg-warning-900/20',
-    error: 'bg-error-50 text-error-500 dark:bg-error-900/20',
-  };
-
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4">
-          <div className={cn('p-3 rounded-lg', colorClasses[color])}>
-            <Icon className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
-            <p className="text-xl font-semibold text-neutral-900 dark:text-white">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{subtitle}</p>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 // Loading skeleton
 function LoadingSkeleton() {

@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -11,11 +11,9 @@ import {
   Trash2,
   X,
   Calendar,
-  DollarSign,
   Clock,
   AlertTriangle,
   CheckCircle,
-  ChevronDown,
 } from 'lucide-react';
 import type { Route } from './+types/_app.invoices';
 import { cn, debounce, formatCurrency, formatDate } from '~/lib/utils';
@@ -29,6 +27,7 @@ import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Card } from '~/components/ui/Card';
 import { Badge } from '~/components/ui/Badge';
+import { StatCard } from '~/components/ui/StatCard';
 import { Select } from '~/components/ui/Select';
 import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
 import {
@@ -42,7 +41,8 @@ import {
 import { SkeletonTableRow } from '~/components/ui/Skeleton';
 import { DeleteModal } from '~/components/ui/DeleteModal';
 import { EmptyState } from '~/components/ui/EmptyState';
-import type { Invoice, InvoiceFilters, InvoiceSummary, InvoiceStatus } from '~/types/invoice';
+import type { InvoiceFilters, InvoiceSummary, InvoiceStatus } from '~/types/invoice';
+import { useUrlFilters } from '~/hooks/useUrlFilters';
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -87,6 +87,47 @@ const pageSizeOptions = [
   { value: '50', label: '50 por pagina' },
 ];
 
+// Date filter input component - extracted to avoid duplication
+function DateFilterInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string | undefined;
+  onChange: (value: string | undefined) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="relative">
+      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
+      <Input
+        type="date"
+        placeholder={placeholder}
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value || undefined)}
+        className="pl-10"
+      />
+    </div>
+  );
+}
+
+// Invoice table header component - extracted to avoid duplication
+function InvoiceTableHeader() {
+  return (
+    <TableHeader>
+      <TableRow>
+        <TableHead>No. Factura</TableHead>
+        <TableHead>Cliente</TableHead>
+        <TableHead className="hidden md:table-cell">Fecha Emision</TableHead>
+        <TableHead className="hidden sm:table-cell">Fecha Vencimiento</TableHead>
+        <TableHead className="text-right">Total</TableHead>
+        <TableHead>Estado</TableHead>
+        <TableHead className="w-[120px]">Acciones</TableHead>
+      </TableRow>
+    </TableHeader>
+  );
+}
+
 // Status badge component
 function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
   const config: Record<InvoiceStatus, { label: string; variant: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' }> = {
@@ -102,70 +143,32 @@ function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
   return <Badge variant={variant}>{label}</Badge>;
 }
 
-// Stat card component
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  subtitle,
-  color = 'primary',
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string | number;
-  subtitle?: string;
-  color?: 'primary' | 'success' | 'warning' | 'error';
-}) {
-  const colorClasses = {
-    primary: 'bg-primary-50 text-primary-500 dark:bg-primary-900/20',
-    success: 'bg-success-50 text-success-500 dark:bg-success-900/20',
-    warning: 'bg-warning-50 text-warning-500 dark:bg-warning-900/20',
-    error: 'bg-error-50 text-error-500 dark:bg-error-900/20',
-  };
 
-  return (
-    <Card>
-      <div className="p-4">
-        <div className="flex items-center gap-4">
-          <div className={cn('p-3 rounded-lg', colorClasses[color])}>
-            <Icon className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
-            <p className="text-xl font-semibold text-neutral-900 dark:text-white">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{subtitle}</p>
-            )}
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
+// Parser config for invoice filters
+const invoiceFiltersParser = {
+  parse: (searchParams: URLSearchParams): InvoiceFilters => ({
+    search: searchParams.get('search') || undefined,
+    status: (searchParams.get('status') as InvoiceStatus) || undefined,
+    customerId: searchParams.get('customerId') || undefined,
+    startDate: searchParams.get('startDate') || undefined,
+    endDate: searchParams.get('endDate') || undefined,
+    page: Number(searchParams.get('page')) || 1,
+    limit: Number(searchParams.get('limit')) || 10,
+  }),
+};
 
 export default function InvoicesPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingInvoice, setDeletingInvoice] = useState<InvoiceSummary | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
+  const { filters, updateFilters, clearFilters } = useUrlFilters<InvoiceFilters>({
+    parserConfig: invoiceFiltersParser,
+  });
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  // Get current filters from URL
-  const filters: InvoiceFilters = useMemo(
-    () => ({
-      search: searchParams.get('search') || undefined,
-      status: (searchParams.get('status') as InvoiceStatus) || undefined,
-      customerId: searchParams.get('customerId') || undefined,
-      startDate: searchParams.get('startDate') || undefined,
-      endDate: searchParams.get('endDate') || undefined,
-      page: Number(searchParams.get('page')) || 1,
-      limit: Number(searchParams.get('limit')) || 10,
-    }),
-    [searchParams]
-  );
 
   // Queries
   const { data: invoicesData, isLoading, isError } = useInvoices(filters);
@@ -182,28 +185,6 @@ export default function InvoicesPage() {
     [customersData]
   );
 
-  // Update URL params
-  const updateFilters = useCallback(
-    (newFilters: Partial<InvoiceFilters>) => {
-      const params = new URLSearchParams(searchParams);
-
-      Object.entries(newFilters).forEach(([key, value]) => {
-        if (value === undefined || value === '') {
-          params.delete(key);
-        } else {
-          params.set(key, String(value));
-        }
-      });
-
-      if (!('page' in newFilters)) {
-        params.set('page', '1');
-      }
-
-      setSearchParams(params);
-    },
-    [searchParams, setSearchParams]
-  );
-
   // Debounced search
   const debouncedSearch = useMemo(
     () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
@@ -212,11 +193,6 @@ export default function InvoicesPage() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);
-  };
-
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchParams(new URLSearchParams());
   };
 
   // Handle delete
@@ -363,26 +339,16 @@ export default function InvoicesPage() {
                       onChange={(value) => updateFilters({ customerId: value || undefined })}
                       placeholder="Todos los clientes"
                     />
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
-                      <Input
-                        type="date"
-                        placeholder="Fecha desde"
-                        value={filters.startDate || ''}
-                        onChange={(e) => updateFilters({ startDate: e.target.value || undefined })}
-                        className="pl-10"
-                      />
-                    </div>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
-                      <Input
-                        type="date"
-                        placeholder="Fecha hasta"
-                        value={filters.endDate || ''}
-                        onChange={(e) => updateFilters({ endDate: e.target.value || undefined })}
-                        className="pl-10"
-                      />
-                    </div>
+                    <DateFilterInput
+                      value={filters.startDate}
+                      onChange={(value) => updateFilters({ startDate: value })}
+                      placeholder="Fecha desde"
+                    />
+                    <DateFilterInput
+                      value={filters.endDate}
+                      onChange={(value) => updateFilters({ endDate: value })}
+                      placeholder="Fecha hasta"
+                    />
                   </div>
                 </motion.div>
               )}
@@ -396,17 +362,7 @@ export default function InvoicesPage() {
         <Card>
           {isLoading ? (
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No. Factura</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead className="hidden md:table-cell">Fecha Emision</TableHead>
-                  <TableHead className="hidden sm:table-cell">Fecha Vencimiento</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="w-[120px]">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
+              <InvoiceTableHeader />
               <TableBody>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <SkeletonTableRow key={i} columns={7} />
@@ -441,17 +397,7 @@ export default function InvoicesPage() {
           ) : (
             <>
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>No. Factura</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead className="hidden md:table-cell">Fecha Emision</TableHead>
-                    <TableHead className="hidden sm:table-cell">Fecha Vencimiento</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="w-[120px]">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
+                <InvoiceTableHeader />
                 <TableBody>
                   <AnimatePresence mode="popLayout">
                     {invoices.map((invoice) => (

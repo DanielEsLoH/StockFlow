@@ -1,5 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useSearchParams } from 'react-router';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -38,6 +37,7 @@ import {
 import { Skeleton, SkeletonTableRow } from '~/components/ui/Skeleton';
 import { DeleteModal } from '~/components/ui/DeleteModal';
 import type { CategoryFilters, Category } from '~/types/category';
+import { useUrlFilters } from '~/hooks/useUrlFilters';
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -86,26 +86,28 @@ const pageSizeOptions = [
   { value: '50', label: '50 por pagina' },
 ];
 
+// Parser config for category filters
+const categoryFiltersParser = {
+  parse: (searchParams: URLSearchParams): CategoryFilters => ({
+    search: searchParams.get('search') || undefined,
+    page: Number(searchParams.get('page')) || 1,
+    limit: Number(searchParams.get('limit')) || 10,
+  }),
+};
+
 export default function CategoriesPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
+  const { filters, updateFilters, clearFilters } = useUrlFilters<CategoryFilters>({
+    parserConfig: categoryFiltersParser,
+  });
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  // Get current filters from URL
-  const filters: CategoryFilters = useMemo(
-    () => ({
-      search: searchParams.get('search') || undefined,
-      page: Number(searchParams.get('page')) || 1,
-      limit: Number(searchParams.get('limit')) || 10,
-    }),
-    [searchParams]
-  );
 
   // Queries
   const { data: categoriesData, isLoading, isError } = useCategoriesWithFilters(filters);
@@ -141,28 +143,6 @@ export default function CategoriesPage() {
     }
   }, [editingCategory, reset]);
 
-  // Update URL params
-  const updateFilters = useCallback(
-    (newFilters: Partial<CategoryFilters>) => {
-      const params = new URLSearchParams(searchParams);
-
-      Object.entries(newFilters).forEach(([key, value]) => {
-        if (value === undefined || value === '') {
-          params.delete(key);
-        } else {
-          params.set(key, String(value));
-        }
-      });
-
-      if (!('page' in newFilters)) {
-        params.set('page', '1');
-      }
-
-      setSearchParams(params);
-    },
-    [searchParams, setSearchParams]
-  );
-
   // Debounced search
   const debouncedSearch = useMemo(
     () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
@@ -171,11 +151,6 @@ export default function CategoriesPage() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);
-  };
-
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchParams(new URLSearchParams());
   };
 
   // Open modal for create

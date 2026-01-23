@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -41,6 +41,7 @@ import {
 import { Skeleton, SkeletonTableRow } from '~/components/ui/Skeleton';
 import { DeleteModal } from '~/components/ui/DeleteModal';
 import type { WarehouseFilters, Warehouse as WarehouseType } from '~/types/warehouse';
+import { useUrlFilters } from '~/hooks/useUrlFilters';
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -82,29 +83,31 @@ const pageSizeOptions = [
   { value: '50', label: '50 por pagina' },
 ];
 
+// Parser config for warehouse filters
+const warehouseFiltersParser = {
+  parse: (searchParams: URLSearchParams): WarehouseFilters => ({
+    search: searchParams.get('search') || undefined,
+    city: searchParams.get('city') || undefined,
+    isActive: searchParams.get('isActive')
+      ? searchParams.get('isActive') === 'true'
+      : undefined,
+    page: Number(searchParams.get('page')) || 1,
+    limit: Number(searchParams.get('limit')) || 10,
+  }),
+};
+
 export default function WarehousesPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingWarehouse, setDeletingWarehouse] = useState<WarehouseType | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
+  const { filters, updateFilters, clearFilters } = useUrlFilters<WarehouseFilters>({
+    parserConfig: warehouseFiltersParser,
+  });
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  // Get current filters from URL
-  const filters: WarehouseFilters = useMemo(
-    () => ({
-      search: searchParams.get('search') || undefined,
-      city: searchParams.get('city') || undefined,
-      isActive: searchParams.get('isActive')
-        ? searchParams.get('isActive') === 'true'
-        : undefined,
-      page: Number(searchParams.get('page')) || 1,
-      limit: Number(searchParams.get('limit')) || 10,
-    }),
-    [searchParams]
-  );
 
   // Queries
   const { data: warehousesData, isLoading, isError } = useWarehousesWithFilters(filters);
@@ -120,28 +123,6 @@ export default function WarehousesPage() {
     [cities]
   );
 
-  // Update URL params
-  const updateFilters = useCallback(
-    (newFilters: Partial<WarehouseFilters>) => {
-      const params = new URLSearchParams(searchParams);
-
-      Object.entries(newFilters).forEach(([key, value]) => {
-        if (value === undefined || value === '') {
-          params.delete(key);
-        } else {
-          params.set(key, String(value));
-        }
-      });
-
-      if (!('page' in newFilters)) {
-        params.set('page', '1');
-      }
-
-      setSearchParams(params);
-    },
-    [searchParams, setSearchParams]
-  );
-
   // Debounced search
   const debouncedSearch = useMemo(
     () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
@@ -150,11 +131,6 @@ export default function WarehousesPage() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);
-  };
-
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchParams(new URLSearchParams());
   };
 
   // Handle delete

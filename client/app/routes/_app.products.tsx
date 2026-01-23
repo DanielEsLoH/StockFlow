@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -35,6 +35,7 @@ import {
 } from '~/components/ui/Table';
 import { Skeleton, SkeletonProductCard, SkeletonTableRow } from '~/components/ui/Skeleton';
 import type { ProductFilters, ProductStatus } from '~/types/product';
+import { useUrlFilters } from '~/hooks/useUrlFilters';
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -79,29 +80,31 @@ const pageSizeOptions = [
   { value: '50', label: '50 por pagina' },
 ];
 
+// Parser config for product filters
+const productFiltersParser = {
+  parse: (searchParams: URLSearchParams): ProductFilters => ({
+    search: searchParams.get('search') || undefined,
+    categoryId: searchParams.get('categoryId') || undefined,
+    warehouseId: searchParams.get('warehouseId') || undefined,
+    status: (searchParams.get('status') as ProductStatus) || undefined,
+    lowStock: searchParams.get('lowStock') === 'true',
+    page: Number(searchParams.get('page')) || 1,
+    limit: Number(searchParams.get('limit')) || 10,
+  }),
+};
+
 export default function ProductsPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [showFilters, setShowFilters] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
+  const { filters, updateFilters, clearFilters } = useUrlFilters<ProductFilters>({
+    parserConfig: productFiltersParser,
+  });
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  // Get current filters from URL
-  const filters: ProductFilters = useMemo(
-    () => ({
-      search: searchParams.get('search') || undefined,
-      categoryId: searchParams.get('categoryId') || undefined,
-      warehouseId: searchParams.get('warehouseId') || undefined,
-      status: (searchParams.get('status') as ProductStatus) || undefined,
-      lowStock: searchParams.get('lowStock') === 'true',
-      page: Number(searchParams.get('page')) || 1,
-      limit: Number(searchParams.get('limit')) || 10,
-    }),
-    [searchParams]
-  );
 
   // Queries
   const { data: productsData, isLoading, isError, error } = useProducts(filters);
@@ -125,29 +128,6 @@ export default function ProductsPage() {
     [warehouses]
   );
 
-  // Update URL params
-  const updateFilters = useCallback(
-    (newFilters: Partial<ProductFilters>) => {
-      const params = new URLSearchParams(searchParams);
-
-      Object.entries(newFilters).forEach(([key, value]) => {
-        if (value === undefined || value === '' || value === false) {
-          params.delete(key);
-        } else {
-          params.set(key, String(value));
-        }
-      });
-
-      // Reset to page 1 when filters change (except page itself)
-      if (!('page' in newFilters)) {
-        params.set('page', '1');
-      }
-
-      setSearchParams(params);
-    },
-    [searchParams, setSearchParams]
-  );
-
   // Debounced search
   const debouncedSearch = useMemo(
     () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
@@ -157,11 +137,6 @@ export default function ProductsPage() {
   // Handle search input
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);
-  };
-
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchParams(new URLSearchParams());
   };
 
   // Check if any filters are active

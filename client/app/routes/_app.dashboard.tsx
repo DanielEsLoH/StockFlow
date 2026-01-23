@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp,
-  TrendingDown,
   Package,
   FileText,
   Users,
@@ -42,6 +40,7 @@ import { cn, formatCurrency, formatCompactNumber, formatDate, formatRelativeTime
 import { useDashboard } from '~/hooks/useDashboard';
 import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
 import { Button } from '~/components/ui/Button';
+import { StatCard } from '~/components/ui/StatCard';
 import { Alert, AlertTitle, AlertDescription } from '~/components/ui/Alert';
 import { useAuthStore } from '~/stores/auth.store';
 import type { ActivityType } from '~/services/dashboard.service';
@@ -91,53 +90,6 @@ const activityTypeConfig: Record<ActivityType, { icon: typeof ShoppingCart; colo
   stock: { icon: AlertTriangle, color: 'text-error-600', bgColor: 'bg-error-100 dark:bg-error-900/30' },
 };
 
-// Stat Card Component
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  change: number;
-  icon: React.ComponentType<{ className?: string }>;
-  iconColor: string;
-  iconBg: string;
-}
-
-function StatCard({ title, value, change, icon: Icon, iconColor, iconBg }: StatCardProps) {
-  const isPositive = change >= 0;
-
-  return (
-    <Card variant="default" padding="md" hover="lift">
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-            {title}
-          </p>
-          <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-            {value}
-          </p>
-          <div className="flex items-center gap-1">
-            {isPositive ? (
-              <TrendingUp className="h-4 w-4 text-success-500" aria-hidden="true" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-error-500" aria-hidden="true" />
-            )}
-            <span
-              className={cn(
-                'text-sm font-medium',
-                isPositive ? 'text-success-600' : 'text-error-600'
-              )}
-            >
-              {isPositive ? '+' : ''}{change}%
-            </span>
-            <span className="text-sm text-neutral-400">vs mes anterior</span>
-          </div>
-        </div>
-        <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl', iconBg)}>
-          <Icon className={cn('h-6 w-6', iconColor)} aria-hidden="true" />
-        </div>
-      </div>
-    </Card>
-  );
-}
 
 // Invoice Status Badge
 function InvoiceStatusBadge({ status }: { status: string }) {
@@ -434,36 +386,40 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Ventas Totales"
+          label="Ventas Totales"
           value={formatCurrency(stats?.totalSales || 0)}
           change={stats?.salesGrowth || 0}
           icon={DollarSign}
           iconColor="text-primary-600"
           iconBg="bg-primary-100 dark:bg-primary-900/30"
+          variant="dashboard"
         />
         <StatCard
-          title="Productos"
+          label="Productos"
           value={formatCompactNumber(stats?.totalProducts || 0)}
           change={stats?.productsGrowth || 0}
           icon={Package}
           iconColor="text-success-600"
           iconBg="bg-success-100 dark:bg-success-900/30"
+          variant="dashboard"
         />
         <StatCard
-          title="Facturas"
+          label="Facturas"
           value={formatCompactNumber(stats?.totalInvoices || 0)}
           change={stats?.invoicesGrowth || 0}
           icon={FileText}
           iconColor="text-warning-600"
           iconBg="bg-warning-100 dark:bg-warning-900/30"
+          variant="dashboard"
         />
         <StatCard
-          title="Clientes"
+          label="Clientes"
           value={formatCompactNumber(stats?.totalCustomers || 0)}
           change={stats?.customersGrowth || 0}
           icon={Users}
           iconColor="text-purple-600"
           iconBg="bg-purple-100 dark:bg-purple-900/30"
+          variant="dashboard"
         />
       </motion.div>
 

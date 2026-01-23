@@ -22,10 +22,12 @@ import {
   useDeletePayment,
 } from '~/hooks/usePayments';
 import { useCustomers } from '~/hooks/useCustomers';
+import { useUrlFilters } from '~/hooks/useUrlFilters';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Card } from '~/components/ui/Card';
 import { Badge } from '~/components/ui/Badge';
+import { StatCard } from '~/components/ui/StatCard';
 import { Select } from '~/components/ui/Select';
 import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
 import {
@@ -50,6 +52,20 @@ import {
   PaymentMethodLabels,
   PaymentStatusLabels,
 } from '~/types/payment';
+
+// Parser config for payment filters
+const paymentFiltersParser = {
+  parse: (searchParams: URLSearchParams): PaymentFilters => ({
+    search: searchParams.get('search') || undefined,
+    status: (searchParams.get('status') as PaymentStatus) || undefined,
+    method: (searchParams.get('method') as PaymentMethod) || undefined,
+    customerId: searchParams.get('customerId') || undefined,
+    startDate: searchParams.get('startDate') || undefined,
+    endDate: searchParams.get('endDate') || undefined,
+    page: Number(searchParams.get('page')) || 1,
+    limit: Number(searchParams.get('limit')) || 10,
+  }),
+};
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -126,71 +142,19 @@ function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
   return <Badge variant="default">{PaymentMethodLabels[method]}</Badge>;
 }
 
-// Stat card component
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  subtitle,
-  color = 'primary',
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: string | number;
-  subtitle?: string;
-  color?: 'primary' | 'success' | 'warning' | 'error';
-}) {
-  const colorClasses = {
-    primary: 'bg-primary-50 text-primary-500 dark:bg-primary-900/20',
-    success: 'bg-success-50 text-success-500 dark:bg-success-900/20',
-    warning: 'bg-warning-50 text-warning-500 dark:bg-warning-900/20',
-    error: 'bg-error-50 text-error-500 dark:bg-error-900/20',
-  };
-
-  return (
-    <Card>
-      <div className="p-4">
-        <div className="flex items-center gap-4">
-          <div className={cn('p-3 rounded-lg', colorClasses[color])}>
-            <Icon className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
-            <p className="text-xl font-semibold text-neutral-900 dark:text-white">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{subtitle}</p>
-            )}
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
 
 export default function PaymentsPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingPayment, setDeletingPayment] = useState<PaymentSummary | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
+  const { filters, updateFilters, clearFilters } = useUrlFilters<PaymentFilters>({
+    parserConfig: paymentFiltersParser,
+  });
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  // Get current filters from URL
-  const filters: PaymentFilters = useMemo(
-    () => ({
-      search: searchParams.get('search') || undefined,
-      status: (searchParams.get('status') as PaymentStatus) || undefined,
-      method: (searchParams.get('method') as PaymentMethod) || undefined,
-      customerId: searchParams.get('customerId') || undefined,
-      startDate: searchParams.get('startDate') || undefined,
-      endDate: searchParams.get('endDate') || undefined,
-      page: Number(searchParams.get('page')) || 1,
-      limit: Number(searchParams.get('limit')) || 10,
-    }),
-    [searchParams]
-  );
 
   // Queries
   const { data: paymentsData, isLoading, isError } = usePayments(filters);
@@ -207,28 +171,6 @@ export default function PaymentsPage() {
     [customersData]
   );
 
-  // Update URL params
-  const updateFilters = useCallback(
-    (newFilters: Partial<PaymentFilters>) => {
-      const params = new URLSearchParams(searchParams);
-
-      Object.entries(newFilters).forEach(([key, value]) => {
-        if (value === undefined || value === '') {
-          params.delete(key);
-        } else {
-          params.set(key, String(value));
-        }
-      });
-
-      if (!('page' in newFilters)) {
-        params.set('page', '1');
-      }
-
-      setSearchParams(params);
-    },
-    [searchParams, setSearchParams]
-  );
-
   // Debounced search
   const debouncedSearch = useMemo(
     () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
@@ -237,11 +179,6 @@ export default function PaymentsPage() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);
-  };
-
-  // Clear all filters
-  const clearFilters = () => {
-    setSearchParams(new URLSearchParams());
   };
 
   // Handle delete

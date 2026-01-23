@@ -11,6 +11,7 @@ import {
 import { Link } from 'react-router';
 import { useSystemAdminDashboard, useSystemAdminPendingUsers } from '~/hooks/useSystemAdmin';
 import { Button } from '~/components/ui/Button';
+import { StatCard } from '~/components/ui/StatCard';
 import type { Route } from './+types/system-admin.dashboard';
 
 export function meta() {
@@ -20,53 +21,6 @@ export function meta() {
   ];
 }
 
-// Stat card component
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  color,
-  isLoading,
-}: {
-  title: string;
-  value: number | string;
-  icon: React.ElementType;
-  color: 'amber' | 'green' | 'blue' | 'purple';
-  isLoading?: boolean;
-}) {
-  const colorClasses = {
-    amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    green: 'bg-green-500/10 text-green-600 dark:text-green-400',
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    purple: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900"
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-            {title}
-          </p>
-          {isLoading ? (
-            <div className="mt-2 h-8 w-16 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
-          ) : (
-            <p className="mt-2 text-3xl font-bold text-neutral-900 dark:text-white">
-              {value}
-            </p>
-          )}
-        </div>
-        <div className={`rounded-xl p-3 ${colorClasses[color]}`}>
-          <Icon className="h-6 w-6" />
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 // Status badge component
 function StatusBadge({ status }: { status: string }) {
@@ -110,32 +64,36 @@ export default function SystemAdminDashboard() {
       {/* Stats Grid */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Tenants"
+          label="Total Tenants"
           value={dashboardData?.totalTenants ?? 0}
           icon={Building2}
           color="blue"
           isLoading={isLoading}
+          animate
         />
         <StatCard
-          title="Aprobaciones Pendientes"
+          label="Aprobaciones Pendientes"
           value={dashboardData?.pendingApprovals ?? 0}
           icon={Clock}
           color="amber"
           isLoading={isLoading}
+          animate
         />
         <StatCard
-          title="Usuarios Activos"
+          label="Usuarios Activos"
           value={dashboardData?.activeUsers ?? 0}
           icon={UserCheck}
           color="green"
           isLoading={isLoading}
+          animate
         />
         <StatCard
-          title="Registros Recientes"
+          label="Registros Recientes"
           value={dashboardData?.recentRegistrations?.length ?? 0}
           icon={Users}
           color="purple"
           isLoading={isLoading}
+          animate
         />
       </div>
 

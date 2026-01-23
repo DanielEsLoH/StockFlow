@@ -146,5 +146,5 @@ USER nestjs
 ENTRYPOINT ["/sbin/tini", "--"]
 
 # Start the application
-# Run migrations, seed (if empty), then start server
-CMD ["sh", "-c", "echo '🚀 Starting StockFlow...' && npx prisma migrate deploy && echo '🌱 Running seed...' && npx prisma db seed && echo '🎯 Starting server...' && node dist/main.js"]
+# Run migrations then start server (seed is run manually when needed)
+CMD ["sh", "-c", "echo '🚀 Starting StockFlow...' && npx prisma migrate deploy && echo '🎯 Starting server...' && node dist/main.js"]

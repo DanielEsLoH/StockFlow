@@ -27,6 +27,9 @@ WORKDIR /app
 # libc6-compat is needed for Alpine compatibility with some npm packages
 RUN apk add --no-cache libc6-compat python3 make g++
 
+# Upgrade npm to specific version for consistency across builds
+RUN npm install -g npm@11.8.0
+
 # Copy package files first for optimal layer caching
 # Changes to source code won't invalidate the npm install cache
 COPY package*.json ./
@@ -45,6 +48,9 @@ RUN npm ci && \
 FROM node:20-alpine AS builder
 
 WORKDIR /app
+
+# Upgrade npm to specific version for consistency across builds
+RUN npm install -g npm@11.8.0
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
@@ -70,6 +76,9 @@ WORKDIR /app
 
 # Install build dependencies for native modules
 RUN apk add --no-cache libc6-compat python3 make g++
+
+# Upgrade npm to specific version for consistency across builds
+RUN npm install -g npm@11.8.0
 
 # Copy package files and Prisma schema
 COPY package*.json ./

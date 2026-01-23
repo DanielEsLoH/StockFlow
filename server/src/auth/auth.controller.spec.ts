@@ -46,6 +46,26 @@ function createMockRequest(
   return user ? { user } : {};
 }
 
+/**
+ * Helper to create a mock Response object for OAuth redirects
+ */
+function createMockOAuthResponse(): Partial<Response> & {
+  redirect: jest.Mock;
+} {
+  return {
+    redirect: jest.fn(),
+  };
+}
+
+/**
+ * Helper to create a mock Request with OAuth user
+ */
+function createMockOAuthRequest(
+  user?: OAuthUserDto,
+): Partial<Request> & { user?: OAuthUserDto } {
+  return user ? { user } : {};
+}
+
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: jest.Mocked<AuthService>;
@@ -574,26 +594,6 @@ describe('AuthController', () => {
       avatar: 'https://example.com/avatar.jpg',
     };
 
-    /**
-     * Helper to create a mock Response object for OAuth redirects
-     */
-    function createMockOAuthResponse(): Partial<Response> & {
-      redirect: jest.Mock;
-    } {
-      return {
-        redirect: jest.fn(),
-      };
-    }
-
-    /**
-     * Helper to create a mock Request with OAuth user
-     */
-    function createMockOAuthRequest(
-      user?: OAuthUserDto,
-    ): Partial<Request> & { user?: OAuthUserDto } {
-      return user ? { user } : {};
-    }
-
     it('should redirect to frontend with tokens on successful OAuth', async () => {
       const mockReq = createMockOAuthRequest(mockOAuthUser);
       const mockRes = createMockOAuthResponse();
@@ -722,26 +722,6 @@ describe('AuthController', () => {
       providerId: 'github-789012',
       avatar: 'https://github.com/avatar.jpg',
     };
-
-    /**
-     * Helper to create a mock Response object for OAuth redirects
-     */
-    function createMockOAuthResponse(): Partial<Response> & {
-      redirect: jest.Mock;
-    } {
-      return {
-        redirect: jest.fn(),
-      };
-    }
-
-    /**
-     * Helper to create a mock Request with OAuth user
-     */
-    function createMockOAuthRequest(
-      user?: OAuthUserDto,
-    ): Partial<Request> & { user?: OAuthUserDto } {
-      return user ? { user } : {};
-    }
 
     it('should redirect to frontend with tokens on successful OAuth', async () => {
       const mockReq = createMockOAuthRequest(mockOAuthUser);

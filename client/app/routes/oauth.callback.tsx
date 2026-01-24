@@ -1,14 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
-import { toast } from 'sonner';
-import { setAccessToken, setRefreshToken, api } from '~/lib/api';
-import { useAuthStore } from '~/stores/auth.store';
-import { queryKeys } from '~/lib/query-client';
-import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '~/components/ui/Button';
-import { ThemeToggle } from '~/components/ui/ThemeToggle';
+import { useState, useEffect, useRef } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router";
+import { motion } from "framer-motion";
+import { CheckCircle2, XCircle, Loader2, Clock } from "lucide-react";
+import { toast } from "sonner";
+import { setAccessToken, setRefreshToken, api } from "~/lib/api";
+import { useAuthStore } from "~/stores/auth.store";
+import { queryKeys } from "~/lib/query-client";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "~/components/ui/Button";
+import { ThemeToggle } from "~/components/ui/ThemeToggle";
 
 // Animation variants
 const containerVariants = {
@@ -27,34 +27,34 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: 'easeOut' as const },
+    transition: { duration: 0.5, ease: "easeOut" as const },
   },
 };
 
 export function meta() {
   return [
-    { title: 'OAuth - StockFlow' },
-    { name: 'description', content: 'Procesando autenticacion OAuth' },
+    { title: "OAuth - StockFlow" },
+    { name: "description", content: "Procesando autenticacion OAuth" },
   ];
 }
 
-type CallbackStatus = 'loading' | 'success' | 'pending' | 'error';
+type CallbackStatus = "loading" | "success" | "pending" | "error";
 
 export default function OAuthCallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { setUser, setTenant } = useAuthStore();
-  const [status, setStatus] = useState<CallbackStatus>('loading');
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [status, setStatus] = useState<CallbackStatus>("loading");
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const processedRef = useRef(false);
 
-  const token = searchParams.get('token');
-  const refresh = searchParams.get('refresh');
-  const pending = searchParams.get('pending');
-  const error = searchParams.get('error');
+  const token = searchParams.get("token");
+  const refresh = searchParams.get("refresh");
+  const pending = searchParams.get("pending");
+  const error = searchParams.get("error");
 
   useEffect(() => {
     setIsMounted(true);
@@ -71,15 +71,15 @@ export default function OAuthCallbackPage() {
     const processCallback = async () => {
       // Check for error first
       if (error) {
-        setStatus('error');
+        setStatus("error");
         setErrorMessage(decodeURIComponent(error));
         toast.error(decodeURIComponent(error));
         return;
       }
 
       // Check for pending approval
-      if (pending === 'true') {
-        setStatus('pending');
+      if (pending === "true") {
+        setStatus("pending");
         return;
       }
 
@@ -91,7 +91,7 @@ export default function OAuthCallbackPage() {
           setRefreshToken(refresh);
 
           // Fetch user info
-          const { data } = await api.get('/auth/me');
+          const { data } = await api.get("/auth/me");
 
           // Update auth store
           setUser(data.user);
@@ -100,11 +100,12 @@ export default function OAuthCallbackPage() {
           // Update query cache
           queryClient.setQueryData(queryKeys.auth.me(), data);
 
-          setStatus('success');
+          setStatus("success");
           toast.success(`Bienvenido, ${data.user.firstName}!`);
         } catch (err) {
-          setStatus('error');
-          const message = err instanceof Error ? err.message : 'Error al autenticar';
+          setStatus("error");
+          const message =
+            err instanceof Error ? err.message : "Error al autenticar";
           setErrorMessage(message);
           toast.error(message);
           // Clear tokens on error
@@ -112,9 +113,9 @@ export default function OAuthCallbackPage() {
           setRefreshToken(null);
         }
       } else {
-        setStatus('error');
-        setErrorMessage('No se recibieron los tokens de autenticacion');
-        toast.error('Error en la autenticacion OAuth');
+        setStatus("error");
+        setErrorMessage("No se recibieron los tokens de autenticacion");
+        toast.error("Error en la autenticacion OAuth");
       }
     };
 
@@ -123,9 +124,9 @@ export default function OAuthCallbackPage() {
 
   // Countdown and redirect
   useEffect(() => {
-    if (status !== 'success' && status !== 'pending') return;
+    if (status !== "success" && status !== "pending") return;
 
-    const targetPath = status === 'success' ? '/dashboard' : '/login';
+    const targetPath = status === "success" ? "/dashboard" : "/login";
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -142,7 +143,7 @@ export default function OAuthCallbackPage() {
   }, [status, navigate]);
 
   const renderContent = () => {
-    if (status === 'loading') {
+    if (status === "loading") {
       return (
         <motion.div
           variants={itemVariants}
@@ -161,7 +162,7 @@ export default function OAuthCallbackPage() {
       );
     }
 
-    if (status === 'success') {
+    if (status === "success") {
       return (
         <motion.div
           variants={itemVariants}
@@ -170,7 +171,7 @@ export default function OAuthCallbackPage() {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
             className="flex h-20 w-20 items-center justify-center rounded-full bg-success-100 dark:bg-success-900/30"
           >
             <CheckCircle2 className="h-10 w-10 text-success-600 dark:text-success-400" />
@@ -181,22 +182,20 @@ export default function OAuthCallbackPage() {
           <p className="text-center text-neutral-600 dark:text-neutral-400">
             Has iniciado sesion correctamente.
             <br />
-            Seras redirigido al dashboard en{' '}
+            Seras redirigido al dashboard en{" "}
             <span className="font-semibold text-primary-600 dark:text-primary-400">
               {countdown}
-            </span>{' '}
+            </span>{" "}
             segundos.
           </p>
           <Link to="/dashboard">
-            <Button className="mt-4">
-              Ir al dashboard
-            </Button>
+            <Button className="mt-4">Ir al dashboard</Button>
           </Link>
         </motion.div>
       );
     }
 
-    if (status === 'pending') {
+    if (status === "pending") {
       return (
         <motion.div
           variants={itemVariants}
@@ -205,7 +204,7 @@ export default function OAuthCallbackPage() {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
             className="flex h-20 w-20 items-center justify-center rounded-full bg-warning-100 dark:bg-warning-900/30"
           >
             <Clock className="h-10 w-10 text-warning-600 dark:text-warning-400" />
@@ -219,10 +218,10 @@ export default function OAuthCallbackPage() {
             Te notificaremos cuando tu cuenta sea activada.
           </p>
           <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
-            Seras redirigido al inicio de sesion en{' '}
+            Seras redirigido al inicio de sesion en{" "}
             <span className="font-semibold text-primary-600 dark:text-primary-400">
               {countdown}
-            </span>{' '}
+            </span>{" "}
             segundos.
           </p>
           <Link to="/login">
@@ -243,7 +242,7 @@ export default function OAuthCallbackPage() {
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15 }}
           className="flex h-20 w-20 items-center justify-center rounded-full bg-error-100 dark:bg-error-900/30"
         >
           <XCircle className="h-10 w-10 text-error-600 dark:text-error-400" />
@@ -252,7 +251,7 @@ export default function OAuthCallbackPage() {
           Error de autenticacion
         </h2>
         <p className="text-center text-neutral-600 dark:text-neutral-400">
-          {errorMessage || 'Ocurrio un error durante la autenticacion OAuth.'}
+          {errorMessage || "Ocurrio un error durante la autenticacion OAuth."}
         </p>
         <Link to="/login">
           <Button variant="outline" className="mt-4">
@@ -267,7 +266,7 @@ export default function OAuthCallbackPage() {
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-8 dark:bg-neutral-950">
       <motion.div
         variants={containerVariants}
-        initial={isMounted ? 'hidden' : false}
+        initial={isMounted ? "hidden" : false}
         animate="visible"
         className="w-full max-w-md"
       >
@@ -304,7 +303,7 @@ export default function OAuthCallbackPage() {
           variants={itemVariants}
           className="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400"
         >
-          Necesitas ayuda?{' '}
+          Necesitas ayuda?{" "}
           <Link
             to="/contact"
             className="font-medium text-primary-600 hover:underline dark:text-primary-400"

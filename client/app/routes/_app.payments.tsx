@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   Search,
   Filter,
@@ -68,24 +69,6 @@ export const meta: Route.MetaFunction = () => {
     { title: "Pagos - StockFlow" },
     { name: "description", content: "Gestion de pagos" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Status options for filter

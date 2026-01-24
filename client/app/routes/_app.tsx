@@ -1,12 +1,15 @@
-import type { Route } from './+types/_app';
-import { AppLayout } from '~/components/layout';
-import { requireAuth } from '~/lib/auth.server';
+import type { Route } from "./+types/_app";
+import { AppLayout } from "~/components/layout";
+import { requireAuth } from "~/lib/auth.server";
 
 // Meta function for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'StockFlow - Panel de Control' },
-    { name: 'description', content: 'Gestiona tu inventario de forma inteligente' },
+    { title: "StockFlow - Panel de Control" },
+    {
+      name: "description",
+      content: "Gestiona tu inventario de forma inteligente",
+    },
   ];
 };
 

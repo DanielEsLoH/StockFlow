@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useSearchParams } from 'react-router';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { useSearchParams } from "react-router";
+import { motion } from "framer-motion";
 import {
   Search,
   Filter,
@@ -11,32 +11,56 @@ import {
   AlertCircle,
   X,
   ArrowUpRight,
-} from 'lucide-react';
-import { useSystemAdminTenants } from '~/hooks/useSystemAdmin';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import type { TenantStatus, SubscriptionPlan } from '~/services/system-admin.service';
+} from "lucide-react";
+import { useSystemAdminTenants } from "~/hooks/useSystemAdmin";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import type {
+  TenantStatus,
+  SubscriptionPlan,
+} from "~/services/system-admin.service";
 
 export function meta() {
   return [
-    { title: 'Tenants - System Admin - StockFlow' },
-    { name: 'description', content: 'Gestion de tenants del sistema' },
+    { title: "Tenants - System Admin - StockFlow" },
+    { name: "description", content: "Gestion de tenants del sistema" },
   ];
 }
 
 // Status badge component
 function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-    TRIAL: { bg: 'bg-blue-100 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-400', label: 'Prueba' },
-    ACTIVE: { bg: 'bg-green-100 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-400', label: 'Activo' },
-    SUSPENDED: { bg: 'bg-red-100 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', label: 'Suspendido' },
-    INACTIVE: { bg: 'bg-neutral-100 dark:bg-neutral-800', text: 'text-neutral-700 dark:text-neutral-400', label: 'Inactivo' },
+  const statusConfig: Record<
+    string,
+    { bg: string; text: string; label: string }
+  > = {
+    TRIAL: {
+      bg: "bg-blue-100 dark:bg-blue-900/20",
+      text: "text-blue-700 dark:text-blue-400",
+      label: "Prueba",
+    },
+    ACTIVE: {
+      bg: "bg-green-100 dark:bg-green-900/20",
+      text: "text-green-700 dark:text-green-400",
+      label: "Activo",
+    },
+    SUSPENDED: {
+      bg: "bg-red-100 dark:bg-red-900/20",
+      text: "text-red-700 dark:text-red-400",
+      label: "Suspendido",
+    },
+    INACTIVE: {
+      bg: "bg-neutral-100 dark:bg-neutral-800",
+      text: "text-neutral-700 dark:text-neutral-400",
+      label: "Inactivo",
+    },
   };
 
   const config = statusConfig[status] || statusConfig.INACTIVE;
 
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}>
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}
+    >
       {config.label}
     </span>
   );
@@ -45,16 +69,30 @@ function StatusBadge({ status }: { status: string }) {
 // Plan badge component
 function PlanBadge({ plan }: { plan: string }) {
   const planConfig: Record<string, { bg: string; text: string }> = {
-    FREE: { bg: 'bg-neutral-100 dark:bg-neutral-800', text: 'text-neutral-700 dark:text-neutral-400' },
-    BASIC: { bg: 'bg-blue-100 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-400' },
-    PRO: { bg: 'bg-purple-100 dark:bg-purple-900/20', text: 'text-purple-700 dark:text-purple-400' },
-    ENTERPRISE: { bg: 'bg-amber-100 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400' },
+    FREE: {
+      bg: "bg-neutral-100 dark:bg-neutral-800",
+      text: "text-neutral-700 dark:text-neutral-400",
+    },
+    BASIC: {
+      bg: "bg-blue-100 dark:bg-blue-900/20",
+      text: "text-blue-700 dark:text-blue-400",
+    },
+    PRO: {
+      bg: "bg-purple-100 dark:bg-purple-900/20",
+      text: "text-purple-700 dark:text-purple-400",
+    },
+    ENTERPRISE: {
+      bg: "bg-amber-100 dark:bg-amber-900/20",
+      text: "text-amber-700 dark:text-amber-400",
+    },
   };
 
   const config = planConfig[plan] || planConfig.FREE;
 
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}>
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}
+    >
       {plan}
     </span>
   );
@@ -76,15 +114,42 @@ function ChangePlanDialog({
   onCancel: () => void;
   isLoading?: boolean;
 }) {
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(
+    null,
+  );
 
   if (!isOpen) return null;
 
-  const plans: { value: SubscriptionPlan; name: string; description: string; price: string }[] = [
-    { value: 'FREE', name: 'Free', description: '2 usuarios, 50 productos', price: 'Gratis' },
-    { value: 'BASIC', name: 'Basic', description: '5 usuarios, 500 productos', price: '$29/mes' },
-    { value: 'PRO', name: 'Pro', description: '20 usuarios, 5000 productos', price: '$79/mes' },
-    { value: 'ENTERPRISE', name: 'Enterprise', description: 'Usuarios ilimitados', price: '$199/mes' },
+  const plans: {
+    value: SubscriptionPlan;
+    name: string;
+    description: string;
+    price: string;
+  }[] = [
+    {
+      value: "FREE",
+      name: "Free",
+      description: "2 usuarios, 50 productos",
+      price: "Gratis",
+    },
+    {
+      value: "BASIC",
+      name: "Basic",
+      description: "5 usuarios, 500 productos",
+      price: "$29/mes",
+    },
+    {
+      value: "PRO",
+      name: "Pro",
+      description: "20 usuarios, 5000 productos",
+      price: "$79/mes",
+    },
+    {
+      value: "ENTERPRISE",
+      name: "Enterprise",
+      description: "Usuarios ilimitados",
+      price: "$199/mes",
+    },
   ];
 
   return (
@@ -116,19 +181,25 @@ function ChangePlanDialog({
               disabled={plan.value === currentPlan}
               className={`w-full rounded-lg border p-4 text-left transition-colors ${
                 plan.value === currentPlan
-                  ? 'cursor-not-allowed border-neutral-200 bg-neutral-50 opacity-50 dark:border-neutral-700 dark:bg-neutral-800'
+                  ? "cursor-not-allowed border-neutral-200 bg-neutral-50 opacity-50 dark:border-neutral-700 dark:bg-neutral-800"
                   : selectedPlan === plan.value
-                  ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/10'
-                  : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-700 dark:hover:border-neutral-600'
+                    ? "border-amber-500 bg-amber-50 dark:bg-amber-900/10"
+                    : "border-neutral-200 hover:border-neutral-300 dark:border-neutral-700 dark:hover:border-neutral-600"
               }`}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-neutral-900 dark:text-white">{plan.name}</p>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">{plan.description}</p>
+                  <p className="font-medium text-neutral-900 dark:text-white">
+                    {plan.name}
+                  </p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    {plan.description}
+                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-neutral-900 dark:text-white">{plan.price}</p>
+                  <p className="font-semibold text-neutral-900 dark:text-white">
+                    {plan.price}
+                  </p>
                   {plan.value === currentPlan && (
                     <span className="text-xs text-neutral-500">Actual</span>
                   )}
@@ -158,7 +229,9 @@ function ChangePlanDialog({
 
 export default function SystemAdminTenantsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || "",
+  );
   const [changePlanDialog, setChangePlanDialog] = useState<{
     tenantId: string;
     tenantName: string;
@@ -166,33 +239,27 @@ export default function SystemAdminTenantsPage() {
   } | null>(null);
 
   // Get query params
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const status = searchParams.get('status') as TenantStatus | undefined;
-  const plan = searchParams.get('plan') as SubscriptionPlan | undefined;
-  const search = searchParams.get('search') || undefined;
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const status = searchParams.get("status") as TenantStatus | undefined;
+  const plan = searchParams.get("plan") as SubscriptionPlan | undefined;
+  const search = searchParams.get("search") || undefined;
 
-  const {
-    tenants,
-    meta,
-    isLoading,
-    error,
-    changePlan,
-    isChangingPlan,
-  } = useSystemAdminTenants({ page, status, plan, search, limit: 20 });
+  const { tenants, meta, isLoading, error, changePlan, isChangingPlan } =
+    useSystemAdminTenants({ page, status, plan, search, limit: 20 });
 
   // Update search params
   const updateParams = (updates: Record<string, string | undefined>) => {
     const newParams = new URLSearchParams(searchParams);
     Object.entries(updates).forEach(([key, value]) => {
-      if (value === undefined || value === '') {
+      if (value === undefined || value === "") {
         newParams.delete(key);
       } else {
         newParams.set(key, value);
       }
     });
     // Reset to page 1 when filters change (except when changing page)
-    if (!('page' in updates)) {
-      newParams.delete('page');
+    if (!("page" in updates)) {
+      newParams.delete("page");
     }
     setSearchParams(newParams);
   };
@@ -212,21 +279,21 @@ export default function SystemAdminTenantsPage() {
   };
 
   // Status filter options
-  const statusOptions: { value: TenantStatus | ''; label: string }[] = [
-    { value: '', label: 'Todos los estados' },
-    { value: 'TRIAL', label: 'Prueba' },
-    { value: 'ACTIVE', label: 'Activo' },
-    { value: 'SUSPENDED', label: 'Suspendido' },
-    { value: 'INACTIVE', label: 'Inactivo' },
+  const statusOptions: { value: TenantStatus | ""; label: string }[] = [
+    { value: "", label: "Todos los estados" },
+    { value: "TRIAL", label: "Prueba" },
+    { value: "ACTIVE", label: "Activo" },
+    { value: "SUSPENDED", label: "Suspendido" },
+    { value: "INACTIVE", label: "Inactivo" },
   ];
 
   // Plan filter options
-  const planOptions: { value: SubscriptionPlan | ''; label: string }[] = [
-    { value: '', label: 'Todos los planes' },
-    { value: 'FREE', label: 'Free' },
-    { value: 'BASIC', label: 'Basic' },
-    { value: 'PRO', label: 'Pro' },
-    { value: 'ENTERPRISE', label: 'Enterprise' },
+  const planOptions: { value: SubscriptionPlan | ""; label: string }[] = [
+    { value: "", label: "Todos los planes" },
+    { value: "FREE", label: "Free" },
+    { value: "BASIC", label: "Basic" },
+    { value: "PRO", label: "Pro" },
+    { value: "ENTERPRISE", label: "Enterprise" },
   ];
 
   if (error) {
@@ -265,8 +332,10 @@ export default function SystemAdminTenantsPage() {
 
         <div className="flex gap-2">
           <select
-            value={status || ''}
-            onChange={(e) => updateParams({ status: e.target.value || undefined })}
+            value={status || ""}
+            onChange={(e) =>
+              updateParams({ status: e.target.value || undefined })
+            }
             className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
           >
             {statusOptions.map((option) => (
@@ -277,8 +346,10 @@ export default function SystemAdminTenantsPage() {
           </select>
 
           <select
-            value={plan || ''}
-            onChange={(e) => updateParams({ plan: e.target.value || undefined })}
+            value={plan || ""}
+            onChange={(e) =>
+              updateParams({ plan: e.target.value || undefined })
+            }
             className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
           >
             {planOptions.map((option) => (
@@ -312,7 +383,12 @@ export default function SystemAdminTenantsPage() {
           {search && (
             <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-3 py-1 text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
               Busqueda: {search}
-              <button onClick={() => { setSearchInput(''); updateParams({ search: undefined }); }}>
+              <button
+                onClick={() => {
+                  setSearchInput("");
+                  updateParams({ search: undefined });
+                }}
+              >
                 <X className="h-4 w-4" />
               </button>
             </span>
@@ -392,7 +468,10 @@ export default function SystemAdminTenantsPage() {
                 </tr>
               ) : (
                 tenants.map((tenant) => (
-                  <tr key={tenant.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                  <tr
+                    key={tenant.id}
+                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/20">
@@ -421,21 +500,25 @@ export default function SystemAdminTenantsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                      {new Date(tenant.createdAt).toLocaleDateString('es-ES')}
+                      {new Date(tenant.createdAt).toLocaleDateString("es-ES")}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
                         <Button
                           size="sm"
                           variant="secondary"
-                          onClick={() => setChangePlanDialog({
-                            tenantId: tenant.id,
-                            tenantName: tenant.name,
-                            currentPlan: tenant.plan,
-                          })}
+                          onClick={() =>
+                            setChangePlanDialog({
+                              tenantId: tenant.id,
+                              tenantName: tenant.name,
+                              currentPlan: tenant.plan,
+                            })
+                          }
                         >
                           <ArrowUpRight className="h-4 w-4" />
-                          <span className="hidden sm:inline ml-1">Cambiar Plan</span>
+                          <span className="hidden sm:inline ml-1">
+                            Cambiar Plan
+                          </span>
                         </Button>
                       </div>
                     </td>
@@ -450,7 +533,9 @@ export default function SystemAdminTenantsPage() {
         {meta && meta.totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-neutral-200 px-6 py-4 dark:border-neutral-800">
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Mostrando {((meta.page - 1) * meta.limit) + 1} a {Math.min(meta.page * meta.limit, meta.total)} de {meta.total} tenants
+              Mostrando {(meta.page - 1) * meta.limit + 1} a{" "}
+              {Math.min(meta.page * meta.limit, meta.total)} de {meta.total}{" "}
+              tenants
             </p>
             <div className="flex gap-2">
               <Button
@@ -479,8 +564,8 @@ export default function SystemAdminTenantsPage() {
       {/* Change Plan Dialog */}
       <ChangePlanDialog
         isOpen={!!changePlanDialog}
-        tenantName={changePlanDialog?.tenantName || ''}
-        currentPlan={changePlanDialog?.currentPlan || ''}
+        tenantName={changePlanDialog?.tenantName || ""}
+        currentPlan={changePlanDialog?.currentPlan || ""}
         onConfirm={handleChangePlan}
         onCancel={() => setChangePlanDialog(null)}
         isLoading={isChangingPlan}

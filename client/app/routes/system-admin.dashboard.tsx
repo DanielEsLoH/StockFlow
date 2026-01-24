@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 import {
   Building2,
   Users,
@@ -7,34 +7,64 @@ import {
   ArrowRight,
   Loader2,
   AlertCircle,
-} from 'lucide-react';
-import { Link } from 'react-router';
-import { useSystemAdminDashboard, useSystemAdminPendingUsers } from '~/hooks/useSystemAdmin';
-import { Button } from '~/components/ui/Button';
-import { StatCard } from '~/components/ui/StatCard';
+} from "lucide-react";
+import { Link } from "react-router";
+import {
+  useSystemAdminDashboard,
+  useSystemAdminPendingUsers,
+} from "~/hooks/useSystemAdmin";
+import { Button } from "~/components/ui/Button";
+import { StatCard } from "~/components/ui/StatCard";
 
 export function meta() {
   return [
-    { title: 'Dashboard - System Admin - StockFlow' },
-    { name: 'description', content: 'Panel de control del administrador del sistema' },
+    { title: "Dashboard - System Admin - StockFlow" },
+    {
+      name: "description",
+      content: "Panel de control del administrador del sistema",
+    },
   ];
 }
 
-
 // Status badge component
 function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-    PENDING: { bg: 'bg-yellow-100 dark:bg-yellow-900/20', text: 'text-yellow-700 dark:text-yellow-400', label: 'Pendiente' },
-    ACTIVE: { bg: 'bg-green-100 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-400', label: 'Activo' },
-    SUSPENDED: { bg: 'bg-red-100 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', label: 'Suspendido' },
-    INACTIVE: { bg: 'bg-neutral-100 dark:bg-neutral-800', text: 'text-neutral-700 dark:text-neutral-400', label: 'Inactivo' },
-    TRIAL: { bg: 'bg-blue-100 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-400', label: 'Prueba' },
+  const statusConfig: Record<
+    string,
+    { bg: string; text: string; label: string }
+  > = {
+    PENDING: {
+      bg: "bg-yellow-100 dark:bg-yellow-900/20",
+      text: "text-yellow-700 dark:text-yellow-400",
+      label: "Pendiente",
+    },
+    ACTIVE: {
+      bg: "bg-green-100 dark:bg-green-900/20",
+      text: "text-green-700 dark:text-green-400",
+      label: "Activo",
+    },
+    SUSPENDED: {
+      bg: "bg-red-100 dark:bg-red-900/20",
+      text: "text-red-700 dark:text-red-400",
+      label: "Suspendido",
+    },
+    INACTIVE: {
+      bg: "bg-neutral-100 dark:bg-neutral-800",
+      text: "text-neutral-700 dark:text-neutral-400",
+      label: "Inactivo",
+    },
+    TRIAL: {
+      bg: "bg-blue-100 dark:bg-blue-900/20",
+      text: "text-blue-700 dark:text-blue-400",
+      label: "Prueba",
+    },
   };
 
   const config = statusConfig[status] || statusConfig.INACTIVE;
 
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}>
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}
+    >
       {config.label}
     </span>
   );
@@ -42,7 +72,9 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function SystemAdminDashboard() {
   const { data: dashboardData, isLoading, error } = useSystemAdminDashboard();
-  const { pendingUsers, approveUser, isApproving } = useSystemAdminPendingUsers({ limit: 5 });
+  const { pendingUsers, approveUser, isApproving } = useSystemAdminPendingUsers(
+    { limit: 5 },
+  );
 
   if (error) {
     return (
@@ -124,7 +156,10 @@ export default function SystemAdminDashboard() {
           {isLoading ? (
             // Loading skeleton
             Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between px-6 py-4">
+              <div
+                key={i}
+                className="flex items-center justify-between px-6 py-4"
+              >
                 <div className="flex items-center gap-4">
                   <div className="h-10 w-10 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-700" />
                   <div>
@@ -144,11 +179,15 @@ export default function SystemAdminDashboard() {
             </div>
           ) : (
             pendingUsers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between px-6 py-4">
+              <div
+                key={user.id}
+                className="flex items-center justify-between px-6 py-4"
+              >
                 <div className="flex items-center gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/20">
                     <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                      {user.firstName[0]}{user.lastName[0]}
+                      {user.firstName[0]}
+                      {user.lastName[0]}
                     </span>
                   </div>
                   <div>
@@ -166,7 +205,7 @@ export default function SystemAdminDashboard() {
                       {user.tenantName}
                     </p>
                     <p className="text-xs text-neutral-400">
-                      {new Date(user.createdAt).toLocaleDateString('es-ES')}
+                      {new Date(user.createdAt).toLocaleDateString("es-ES")}
                     </p>
                   </div>
                   <StatusBadge status={user.status} />
@@ -179,7 +218,7 @@ export default function SystemAdminDashboard() {
                     {isApproving ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      'Aprobar'
+                      "Aprobar"
                     )}
                   </Button>
                 </div>

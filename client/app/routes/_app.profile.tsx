@@ -1,6 +1,6 @@
-import { useRef, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion } from 'framer-motion';
+import { useRef, useEffect } from "react";
+import { Link } from "react-router";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   User,
@@ -14,29 +14,29 @@ import {
   Calendar,
   Shield,
   Hash,
-} from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import type { Route } from './+types/_app.profile';
-import { cn, formatDate, getInitials } from '~/lib/utils';
-import { useAuthStore } from '~/stores/auth.store';
+} from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import type { Route } from "./+types/_app.profile";
+import { cn, formatDate, getInitials } from "~/lib/utils";
+import { useAuthStore } from "~/stores/auth.store";
 import {
   useUpdateProfile,
   useUploadAvatar,
   useDeleteAvatar,
-} from '~/hooks/useSettings';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Skeleton } from '~/components/ui/Skeleton';
+} from "~/hooks/useSettings";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Skeleton } from "~/components/ui/Skeleton";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Mi Perfil - StockFlow' },
-    { name: 'description', content: 'Gestiona tu informacion personal' },
+    { title: "Mi Perfil - StockFlow" },
+    { name: "description", content: "Gestiona tu informacion personal" },
   ];
 };
 
@@ -62,53 +62,53 @@ const itemVariants = {
 const profileSchema = z.object({
   firstName: z
     .string()
-    .min(1, 'El nombre es requerido')
-    .max(50, 'Maximo 50 caracteres'),
+    .min(1, "El nombre es requerido")
+    .max(50, "Maximo 50 caracteres"),
   lastName: z
     .string()
-    .min(1, 'El apellido es requerido')
-    .max(50, 'Maximo 50 caracteres'),
-  email: z
-    .string()
-    .min(1, 'El email es requerido')
-    .email('Email invalido'),
+    .min(1, "El apellido es requerido")
+    .max(50, "Maximo 50 caracteres"),
+  email: z.string().min(1, "El email es requerido").email("Email invalido"),
   phone: z
     .string()
-    .max(20, 'Maximo 20 caracteres')
+    .max(20, "Maximo 20 caracteres")
     .optional()
-    .or(z.literal('')),
+    .or(z.literal("")),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 // Role labels
 const RoleLabels: Record<string, string> = {
-  SUPER_ADMIN: 'Super Administrador',
-  ADMIN: 'Administrador',
-  MANAGER: 'Gerente',
-  EMPLOYEE: 'Empleado',
+  SUPER_ADMIN: "Super Administrador",
+  ADMIN: "Administrador",
+  MANAGER: "Gerente",
+  EMPLOYEE: "Empleado",
 };
 
 // Role badge variants
-const RoleBadgeVariants: Record<string, 'primary' | 'success' | 'warning' | 'default'> = {
-  SUPER_ADMIN: 'primary',
-  ADMIN: 'success',
-  MANAGER: 'warning',
-  EMPLOYEE: 'default',
+const RoleBadgeVariants: Record<
+  string,
+  "primary" | "success" | "warning" | "default"
+> = {
+  SUPER_ADMIN: "primary",
+  ADMIN: "success",
+  MANAGER: "warning",
+  EMPLOYEE: "default",
 };
 
 // Status labels
 const StatusLabels: Record<string, string> = {
-  ACTIVE: 'Activo',
-  PENDING: 'Pendiente',
-  SUSPENDED: 'Suspendido',
+  ACTIVE: "Activo",
+  PENDING: "Pendiente",
+  SUSPENDED: "Suspendido",
 };
 
 // Status badge variants
-const StatusBadgeVariants: Record<string, 'success' | 'warning' | 'error'> = {
-  ACTIVE: 'success',
-  PENDING: 'warning',
-  SUSPENDED: 'error',
+const StatusBadgeVariants: Record<string, "success" | "warning" | "error"> = {
+  ACTIVE: "success",
+  PENDING: "warning",
+  SUSPENDED: "error",
 };
 
 // Loading skeleton
@@ -155,10 +155,10 @@ export default function ProfilePage() {
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      email: user?.email || '',
-      phone: '',
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      phone: "",
     },
   });
 
@@ -166,10 +166,10 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       reset({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phone: '',
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phone: "",
       });
     }
   }, [user, reset]);
@@ -186,10 +186,10 @@ export default function ProfilePage() {
   const handleCancel = () => {
     if (user) {
       reset({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phone: '',
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phone: "",
       });
     }
   };
@@ -202,7 +202,7 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         return;
       }
       // Validate file size (max 5MB)
@@ -213,7 +213,7 @@ export default function ProfilePage() {
     }
     // Reset input
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -282,9 +282,9 @@ export default function ProfilePage() {
                     onClick={handleAvatarClick}
                     disabled={uploadAvatar.isPending}
                     className={cn(
-                      'absolute inset-0 rounded-full bg-black/50 flex items-center justify-center',
-                      'opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer',
-                      uploadAvatar.isPending && 'opacity-100'
+                      "absolute inset-0 rounded-full bg-black/50 flex items-center justify-center",
+                      "opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer",
+                      uploadAvatar.isPending && "opacity-100",
                     )}
                   >
                     {uploadAvatar.isPending ? (
@@ -318,14 +318,14 @@ export default function ProfilePage() {
                 {/* Badges */}
                 <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
                   <Badge
-                    variant={RoleBadgeVariants[user.role] || 'default'}
+                    variant={RoleBadgeVariants[user.role] || "default"}
                     size="lg"
                   >
                     <Shield className="h-3.5 w-3.5 mr-1" />
                     {RoleLabels[user.role] || user.role}
                   </Badge>
                   <Badge
-                    variant={StatusBadgeVariants[user.status] || 'default'}
+                    variant={StatusBadgeVariants[user.status] || "default"}
                     size="lg"
                   >
                     {StatusLabels[user.status] || user.status}
@@ -341,7 +341,7 @@ export default function ProfilePage() {
                     disabled={uploadAvatar.isPending}
                   >
                     <Camera className="h-4 w-4 mr-2" />
-                    {user.avatarUrl ? 'Cambiar foto' : 'Subir foto'}
+                    {user.avatarUrl ? "Cambiar foto" : "Subir foto"}
                   </Button>
                   {user.avatarUrl && (
                     <Button
@@ -383,9 +383,11 @@ export default function ProfilePage() {
                       Nombre *
                     </label>
                     <Input
-                      {...register('firstName')}
+                      {...register("firstName")}
                       placeholder="Tu nombre"
-                      leftElement={<User className="h-4 w-4 text-neutral-400" />}
+                      leftElement={
+                        <User className="h-4 w-4 text-neutral-400" />
+                      }
                       error={!!errors.firstName}
                     />
                     {errors.firstName && (
@@ -401,9 +403,11 @@ export default function ProfilePage() {
                       Apellido *
                     </label>
                     <Input
-                      {...register('lastName')}
+                      {...register("lastName")}
                       placeholder="Tu apellido"
-                      leftElement={<User className="h-4 w-4 text-neutral-400" />}
+                      leftElement={
+                        <User className="h-4 w-4 text-neutral-400" />
+                      }
                       error={!!errors.lastName}
                     />
                     {errors.lastName && (
@@ -421,10 +425,12 @@ export default function ProfilePage() {
                       Email *
                     </label>
                     <Input
-                      {...register('email')}
+                      {...register("email")}
                       type="email"
                       placeholder="tu@email.com"
-                      leftElement={<Mail className="h-4 w-4 text-neutral-400" />}
+                      leftElement={
+                        <Mail className="h-4 w-4 text-neutral-400" />
+                      }
                       error={!!errors.email}
                     />
                     {errors.email && (
@@ -440,9 +446,11 @@ export default function ProfilePage() {
                       Telefono
                     </label>
                     <Input
-                      {...register('phone')}
+                      {...register("phone")}
                       placeholder="+57 300 123 4567"
-                      leftElement={<Phone className="h-4 w-4 text-neutral-400" />}
+                      leftElement={
+                        <Phone className="h-4 w-4 text-neutral-400" />
+                      }
                       error={!!errors.phone}
                     />
                     {errors.phone && (
@@ -508,7 +516,7 @@ export default function ProfilePage() {
                   Organizacion
                 </p>
                 <p className="mt-1 font-medium text-neutral-900 dark:text-white">
-                  {tenant?.name || 'Sin organizacion'}
+                  {tenant?.name || "Sin organizacion"}
                 </p>
               </div>
 

@@ -1,21 +1,21 @@
-import { Link } from 'react-router';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Save } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import type { Route } from './+types/_app.warehouses.new';
-import { useCreateWarehouse } from '~/hooks/useWarehouses';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
-import { Select } from '~/components/ui/Select';
+import { Link } from "react-router";
+import { motion } from "framer-motion";
+import { ArrowLeft, Save } from "lucide-react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import type { Route } from "./+types/_app.warehouses.new";
+import { useCreateWarehouse } from "~/hooks/useWarehouses";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
+import { Select } from "~/components/ui/Select";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Nueva Bodega - StockFlow' },
-    { name: 'description', content: 'Crear una nueva bodega' },
+    { title: "Nueva Bodega - StockFlow" },
+    { name: "description", content: "Crear una nueva bodega" },
   ];
 };
 
@@ -39,13 +39,16 @@ const itemVariants = {
 
 // Form schema
 const warehouseSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido').max(100, 'Maximo 100 caracteres'),
-  address: z.string().max(200, 'Maximo 200 caracteres').optional(),
-  city: z.string().max(100, 'Maximo 100 caracteres').optional(),
-  phone: z.string().max(20, 'Maximo 20 caracteres').optional(),
-  email: z.string().email('Email invalido').optional().or(z.literal('')),
-  manager: z.string().max(100, 'Maximo 100 caracteres').optional(),
-  capacity: z.number().min(0, 'La capacidad no puede ser negativa').optional(),
+  name: z
+    .string()
+    .min(1, "El nombre es requerido")
+    .max(100, "Maximo 100 caracteres"),
+  address: z.string().max(200, "Maximo 200 caracteres").optional(),
+  city: z.string().max(100, "Maximo 100 caracteres").optional(),
+  phone: z.string().max(20, "Maximo 20 caracteres").optional(),
+  email: z.string().email("Email invalido").optional().or(z.literal("")),
+  manager: z.string().max(100, "Maximo 100 caracteres").optional(),
+  capacity: z.number().min(0, "La capacidad no puede ser negativa").optional(),
   isActive: z.boolean(),
 });
 
@@ -53,8 +56,8 @@ type WarehouseFormData = z.infer<typeof warehouseSchema>;
 
 // Status options
 const statusOptions = [
-  { value: 'true', label: 'Activa' },
-  { value: 'false', label: 'Inactiva' },
+  { value: "true", label: "Activa" },
+  { value: "false", label: "Inactiva" },
 ];
 
 export default function NewWarehousePage() {
@@ -68,12 +71,12 @@ export default function NewWarehousePage() {
   } = useForm<WarehouseFormData>({
     resolver: zodResolver(warehouseSchema),
     defaultValues: {
-      name: '',
-      address: '',
-      city: '',
-      phone: '',
-      email: '',
-      manager: '',
+      name: "",
+      address: "",
+      city: "",
+      phone: "",
+      email: "",
+      manager: "",
       capacity: undefined,
       isActive: true,
     },
@@ -129,12 +132,14 @@ export default function NewWarehousePage() {
                       Nombre *
                     </label>
                     <Input
-                      {...register('name')}
+                      {...register("name")}
                       placeholder="Nombre de la bodega"
                       error={!!errors.name}
                     />
                     {errors.name?.message && (
-                      <p className="mt-1 text-sm text-error-500">{errors.name.message}</p>
+                      <p className="mt-1 text-sm text-error-500">
+                        {errors.name.message}
+                      </p>
                     )}
                   </div>
 
@@ -144,12 +149,14 @@ export default function NewWarehousePage() {
                         Direccion
                       </label>
                       <Input
-                        {...register('address')}
+                        {...register("address")}
                         placeholder="Direccion de la bodega"
                         error={!!errors.address}
                       />
                       {errors.address?.message && (
-                        <p className="mt-1 text-sm text-error-500">{errors.address.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.address.message}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -157,12 +164,14 @@ export default function NewWarehousePage() {
                         Ciudad
                       </label>
                       <Input
-                        {...register('city')}
+                        {...register("city")}
                         placeholder="Ciudad"
                         error={!!errors.city}
                       />
                       {errors.city?.message && (
-                        <p className="mt-1 text-sm text-error-500">{errors.city.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.city.message}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -183,12 +192,14 @@ export default function NewWarehousePage() {
                         Telefono
                       </label>
                       <Input
-                        {...register('phone')}
+                        {...register("phone")}
                         placeholder="+57 1 234 5678"
                         error={!!errors.phone}
                       />
                       {errors.phone?.message && (
-                        <p className="mt-1 text-sm text-error-500">{errors.phone.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.phone.message}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -196,13 +207,15 @@ export default function NewWarehousePage() {
                         Email
                       </label>
                       <Input
-                        {...register('email')}
+                        {...register("email")}
                         type="email"
                         placeholder="bodega@empresa.com"
                         error={!!errors.email}
                       />
                       {errors.email?.message && (
-                        <p className="mt-1 text-sm text-error-500">{errors.email.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.email.message}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -212,12 +225,14 @@ export default function NewWarehousePage() {
                       Encargado
                     </label>
                     <Input
-                      {...register('manager')}
+                      {...register("manager")}
                       placeholder="Nombre del encargado"
                       error={!!errors.manager}
                     />
                     {errors.manager?.message && (
-                      <p className="mt-1 text-sm text-error-500">{errors.manager.message}</p>
+                      <p className="mt-1 text-sm text-error-500">
+                        {errors.manager.message}
+                      </p>
                     )}
                   </div>
                 </CardContent>
@@ -236,14 +251,16 @@ export default function NewWarehousePage() {
                       Capacidad Maxima (unidades)
                     </label>
                     <Input
-                      {...register('capacity')}
+                      {...register("capacity")}
                       type="number"
                       min="0"
                       placeholder="10000"
                       error={!!errors.capacity}
                     />
                     {errors.capacity?.message && (
-                      <p className="mt-1 text-sm text-error-500">{errors.capacity.message}</p>
+                      <p className="mt-1 text-sm text-error-500">
+                        {errors.capacity.message}
+                      </p>
                     )}
                     <p className="text-sm text-neutral-500 mt-1">
                       Deja vacio si no hay limite de capacidad
@@ -270,7 +287,7 @@ export default function NewWarehousePage() {
                       <Select
                         options={statusOptions}
                         value={String(field.value)}
-                        onChange={(value) => field.onChange(value === 'true')}
+                        onChange={(value) => field.onChange(value === "true")}
                       />
                     )}
                   />

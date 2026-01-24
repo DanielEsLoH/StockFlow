@@ -2,15 +2,15 @@ import axios, {
   type AxiosInstance,
   type AxiosError,
   type InternalAxiosRequestConfig,
-} from 'axios';
+} from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 // Create axios instance
 export const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   withCredentials: true,
 });
@@ -18,7 +18,7 @@ export const api: AxiosInstance = axios.create({
 // Token storage
 let accessToken: string | null = null;
 
-const REFRESH_TOKEN_KEY = 'refreshToken';
+const REFRESH_TOKEN_KEY = "refreshToken";
 
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
@@ -49,7 +49,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response interceptor - Handle token refresh
@@ -68,14 +68,14 @@ api.interceptors.response.use(
         // Get stored refresh token
         const refreshToken = getRefreshToken();
         if (!refreshToken) {
-          throw new Error('No refresh token available');
+          throw new Error("No refresh token available");
         }
 
         // Try to refresh token
         const response = await axios.post(
           `${API_URL}/auth/refresh`,
           { refreshToken },
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         const { accessToken: newToken, refreshToken: newRefreshToken } =
@@ -94,15 +94,15 @@ api.interceptors.response.use(
         setRefreshToken(null);
         // Only redirect if not already on login/register pages to avoid infinite loop
         const currentPath = window.location.pathname;
-        if (currentPath !== '/login' && currentPath !== '/register') {
-          window.location.href = '/login';
+        if (currentPath !== "/login" && currentPath !== "/register") {
+          window.location.href = "/login";
         }
         return Promise.reject(refreshError);
       }
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 // API error type

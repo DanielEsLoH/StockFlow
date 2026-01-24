@@ -178,13 +178,20 @@ export function MultiSelect({
                 className="inline-flex items-center gap-1 rounded-md bg-primary-100 px-2 py-0.5 text-xs text-primary-800 dark:bg-primary-900/30 dark:text-primary-300"
               >
                 {label}
-                <button
-                  type="button"
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => removeOption(value[index], e)}
-                  className="hover:text-primary-600"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      removeOption(value[index], e as unknown as React.MouseEvent);
+                    }
+                  }}
+                  className="hover:text-primary-600 cursor-pointer"
                 >
                   <X className="h-3 w-3" />
-                </button>
+                </span>
               </span>
             ))
           ) : (

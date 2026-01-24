@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { Link, useParams } from "react-router";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Users,
@@ -17,22 +17,26 @@ import {
   DollarSign,
   ShoppingCart,
   TrendingUp,
-} from 'lucide-react';
-import type { Route } from './+types/_app.customers.$id';
-import { formatDate, formatCurrency } from '~/lib/utils';
-import { useCustomer, useCustomerStats, useDeleteCustomer } from '~/hooks/useCustomers';
-import { Button } from '~/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { StatCard } from '~/components/ui/StatCard';
-import { Skeleton } from '~/components/ui/Skeleton';
-import { DeleteModal } from '~/components/ui/DeleteModal';
+} from "lucide-react";
+import type { Route } from "./+types/_app.customers.$id";
+import { formatDate, formatCurrency } from "~/lib/utils";
+import {
+  useCustomer,
+  useCustomerStats,
+  useDeleteCustomer,
+} from "~/hooks/useCustomers";
+import { Button } from "~/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { StatCard } from "~/components/ui/StatCard";
+import { Skeleton } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/DeleteModal";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Cliente - StockFlow' },
-    { name: 'description', content: 'Detalles del cliente' },
+    { title: "Cliente - StockFlow" },
+    { name: "description", content: "Detalles del cliente" },
   ];
 };
 
@@ -53,7 +57,6 @@ const itemVariants = {
     transition: { duration: 0.3 },
   },
 };
-
 
 // Loading skeleton
 function LoadingSkeleton() {
@@ -119,10 +122,10 @@ export default function CustomerDetailPage() {
   }
 
   const documentTypeLabels = {
-    CC: 'Cedula de Ciudadania',
-    NIT: 'NIT',
-    CE: 'Cedula de Extranjeria',
-    PASSPORT: 'Pasaporte',
+    CC: "Cedula de Ciudadania",
+    NIT: "NIT",
+    CE: "Cedula de Extranjeria",
+    PASSPORT: "Pasaporte",
   };
 
   return (
@@ -143,7 +146,7 @@ export default function CustomerDetailPage() {
             </Link>
             <div className="flex items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/20">
-                {customer.type === 'BUSINESS' ? (
+                {customer.type === "BUSINESS" ? (
                   <Building2 className="h-7 w-7 text-primary-500" />
                 ) : (
                   <User className="h-7 w-7 text-primary-500" />
@@ -167,8 +170,14 @@ export default function CustomerDetailPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge variant={customer.type === 'BUSINESS' ? 'primary' : 'secondary'}>
-                    {customer.type === 'BUSINESS' ? 'Empresa' : 'Persona Natural'}
+                  <Badge
+                    variant={
+                      customer.type === "BUSINESS" ? "primary" : "secondary"
+                    }
+                  >
+                    {customer.type === "BUSINESS"
+                      ? "Empresa"
+                      : "Persona Natural"}
                   </Badge>
                   {customer.city && (
                     <span className="text-neutral-500 dark:text-neutral-400">
@@ -186,10 +195,7 @@ export default function CustomerDetailPage() {
                 Editar
               </Button>
             </Link>
-            <Button
-              variant="danger"
-              onClick={() => setShowDeleteModal(true)}
-            >
+            <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
               <Trash2 className="h-4 w-4 mr-2" />
               Eliminar
             </Button>
@@ -222,7 +228,11 @@ export default function CustomerDetailPage() {
           <StatCard
             icon={Calendar}
             label="Ultima Compra"
-            value={stats?.lastPurchaseDate ? formatDate(stats.lastPurchaseDate) : 'Sin compras'}
+            value={
+              stats?.lastPurchaseDate
+                ? formatDate(stats.lastPurchaseDate)
+                : "Sin compras"
+            }
             color="primary"
           />
         </div>
@@ -242,8 +252,12 @@ export default function CustomerDetailPage() {
                   <Mail className="h-5 w-5 text-neutral-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Email</p>
-                  <p className="text-neutral-900 dark:text-white">{customer.email}</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Email
+                  </p>
+                  <p className="text-neutral-900 dark:text-white">
+                    {customer.email}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -251,9 +265,11 @@ export default function CustomerDetailPage() {
                   <Phone className="h-5 w-5 text-neutral-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Telefono</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Telefono
+                  </p>
                   <p className="text-neutral-900 dark:text-white">
-                    {customer.phone || '-'}
+                    {customer.phone || "-"}
                   </p>
                 </div>
               </div>
@@ -262,9 +278,11 @@ export default function CustomerDetailPage() {
                   <MapPin className="h-5 w-5 text-neutral-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Direccion</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Direccion
+                  </p>
                   <p className="text-neutral-900 dark:text-white">
-                    {customer.address || '-'}
+                    {customer.address || "-"}
                   </p>
                 </div>
               </div>
@@ -273,9 +291,11 @@ export default function CustomerDetailPage() {
                   <MapPin className="h-5 w-5 text-neutral-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Ciudad</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Ciudad
+                  </p>
                   <p className="text-neutral-900 dark:text-white">
-                    {customer.city || '-'}
+                    {customer.city || "-"}
                   </p>
                 </div>
               </div>
@@ -291,34 +311,48 @@ export default function CustomerDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
-                <span className="text-neutral-500 dark:text-neutral-400">Tipo de Documento</span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Tipo de Documento
+                </span>
                 <span className="font-medium text-neutral-900 dark:text-white">
                   {customer.documentType
                     ? documentTypeLabels[customer.documentType]
-                    : '-'}
+                    : "-"}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
-                <span className="text-neutral-500 dark:text-neutral-400">Numero de Documento</span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Numero de Documento
+                </span>
                 <span className="font-medium text-neutral-900 dark:text-white">
-                  {customer.document || '-'}
+                  {customer.document || "-"}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
-                <span className="text-neutral-500 dark:text-neutral-400">Tipo de Cliente</span>
-                <Badge variant={customer.type === 'BUSINESS' ? 'primary' : 'secondary'}>
-                  {customer.type === 'BUSINESS' ? 'Empresa' : 'Persona Natural'}
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Tipo de Cliente
+                </span>
+                <Badge
+                  variant={
+                    customer.type === "BUSINESS" ? "primary" : "secondary"
+                  }
+                >
+                  {customer.type === "BUSINESS" ? "Empresa" : "Persona Natural"}
                 </Badge>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
-                <span className="text-neutral-500 dark:text-neutral-400">Fecha de Registro</span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Fecha de Registro
+                </span>
                 <span className="text-neutral-900 dark:text-white flex items-center gap-1.5">
                   <Calendar className="h-4 w-4 text-neutral-400" />
                   {formatDate(customer.createdAt)}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2">
-                <span className="text-neutral-500 dark:text-neutral-400">Ultima Actualizacion</span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Ultima Actualizacion
+                </span>
                 <span className="text-neutral-900 dark:text-white flex items-center gap-1.5">
                   <Calendar className="h-4 w-4 text-neutral-400" />
                   {formatDate(customer.updatedAt)}

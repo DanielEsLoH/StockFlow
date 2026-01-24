@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router';
-import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Eye,
   EyeOff,
@@ -14,29 +14,29 @@ import {
   Loader2,
   XCircle,
   AlertTriangle,
-} from 'lucide-react';
-import { useAuth, useInvitation } from '~/hooks/useAuth';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { ThemeToggle } from '~/components/ui/ThemeToggle';
-import { requireGuest } from '~/lib/auth.server';
-import type { Route } from './+types/accept-invitation';
+} from "lucide-react";
+import { useAuth, useInvitation } from "~/hooks/useAuth";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { ThemeToggle } from "~/components/ui/ThemeToggle";
+import { requireGuest } from "~/lib/auth.server";
+import type { Route } from "./+types/accept-invitation";
 
 // Validation schema
 const acceptInvitationSchema = z
   .object({
-    firstName: z.string().min(2, 'Minimo 2 caracteres'),
-    lastName: z.string().min(2, 'Minimo 2 caracteres'),
+    firstName: z.string().min(2, "Minimo 2 caracteres"),
+    lastName: z.string().min(2, "Minimo 2 caracteres"),
     password: z
       .string()
-      .min(8, 'Minimo 8 caracteres')
-      .regex(/[A-Z]/, 'Debe contener una mayuscula')
-      .regex(/[0-9]/, 'Debe contener un numero'),
+      .min(8, "Minimo 8 caracteres")
+      .regex(/[A-Z]/, "Debe contener una mayuscula")
+      .regex(/[0-9]/, "Debe contener un numero"),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Las contrasenas no coinciden',
-    path: ['confirmPassword'],
+    message: "Las contrasenas no coinciden",
+    path: ["confirmPassword"],
   });
 
 type AcceptInvitationForm = z.infer<typeof acceptInvitationSchema>;
@@ -58,15 +58,18 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: 'easeOut' as const },
+    transition: { duration: 0.5, ease: "easeOut" as const },
   },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function meta(_args: Route.MetaArgs) {
   return [
-    { title: 'Aceptar Invitacion - StockFlow' },
-    { name: 'description', content: 'Acepta tu invitacion para unirte a StockFlow' },
+    { title: "Aceptar Invitacion - StockFlow" },
+    {
+      name: "description",
+      content: "Acepta tu invitacion para unirte a StockFlow",
+    },
   ];
 }
 
@@ -81,9 +84,13 @@ export default function AcceptInvitationPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  const token = searchParams.get('token');
+  const token = searchParams.get("token");
   const { acceptInvitation, isAcceptingInvitation } = useAuth();
-  const { data: invitation, isLoading: isLoadingInvitation, error: invitationError } = useInvitation(token);
+  const {
+    data: invitation,
+    isLoading: isLoadingInvitation,
+    error: invitationError,
+  } = useInvitation(token);
 
   useEffect(() => {
     setIsMounted(true);
@@ -96,10 +103,10 @@ export default function AcceptInvitationPage() {
     formState: { errors },
   } = useForm<AcceptInvitationForm>({
     resolver: zodResolver(acceptInvitationSchema),
-    mode: 'onChange',
+    mode: "onChange",
   });
 
-  const password = watch('password', '');
+  const password = watch("password", "");
 
   // Password strength calculation
   const getPasswordStrength = (pwd: string) => {
@@ -115,19 +122,19 @@ export default function AcceptInvitationPage() {
   const passwordStrength = getPasswordStrength(password);
 
   const strengthColors = [
-    'bg-error-500',
-    'bg-error-400',
-    'bg-warning-500',
-    'bg-success-400',
-    'bg-success-500',
+    "bg-error-500",
+    "bg-error-400",
+    "bg-warning-500",
+    "bg-success-400",
+    "bg-success-500",
   ];
 
   const strengthLabels = [
-    'Muy debil',
-    'Debil',
-    'Regular',
-    'Buena',
-    'Excelente',
+    "Muy debil",
+    "Debil",
+    "Regular",
+    "Buena",
+    "Excelente",
   ];
 
   const onSubmit = (data: AcceptInvitationForm) => {
@@ -144,11 +151,11 @@ export default function AcceptInvitationPage() {
   // Format role name for display
   const formatRole = (role: string) => {
     const roleMap: Record<string, string> = {
-      OWNER: 'Propietario',
-      ADMIN: 'Administrador',
-      MANAGER: 'Gerente',
-      EMPLOYEE: 'Empleado',
-      VIEWER: 'Visualizador',
+      OWNER: "Propietario",
+      ADMIN: "Administrador",
+      MANAGER: "Gerente",
+      EMPLOYEE: "Empleado",
+      VIEWER: "Visualizador",
     };
     return roleMap[role] || role;
   };
@@ -159,7 +166,7 @@ export default function AcceptInvitationPage() {
       <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-8 dark:bg-neutral-950">
         <motion.div
           variants={containerVariants}
-          initial={isMounted ? 'hidden' : false}
+          initial={isMounted ? "hidden" : false}
           animate="visible"
           className="w-full max-w-md"
         >
@@ -173,7 +180,11 @@ export default function AcceptInvitationPage() {
               className="flex items-center gap-3 text-neutral-900 dark:text-white"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white">
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
                   <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM10 4h4v3h-4V4zm10 16H4V9h16v11z" />
                   <path d="M13 12h-2v3H8v2h3v3h2v-3h3v-2h-3z" />
                 </svg>
@@ -192,7 +203,7 @@ export default function AcceptInvitationPage() {
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15 }}
                 className="flex h-20 w-20 items-center justify-center rounded-full bg-warning-100 dark:bg-warning-900/30"
               >
                 <AlertTriangle className="h-10 w-10 text-warning-600 dark:text-warning-400" />
@@ -223,7 +234,7 @@ export default function AcceptInvitationPage() {
       <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-8 dark:bg-neutral-950">
         <motion.div
           variants={containerVariants}
-          initial={isMounted ? 'hidden' : false}
+          initial={isMounted ? "hidden" : false}
           animate="visible"
           className="w-full max-w-md"
         >
@@ -237,7 +248,11 @@ export default function AcceptInvitationPage() {
               className="flex items-center gap-3 text-neutral-900 dark:text-white"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white">
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
                   <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM10 4h4v3h-4V4zm10 16H4V9h16v11z" />
                   <path d="M13 12h-2v3H8v2h3v3h2v-3h3v-2h-3z" />
                 </svg>
@@ -271,15 +286,16 @@ export default function AcceptInvitationPage() {
 
   // Error loading invitation (invalid/expired)
   if (invitationError || !invitation) {
-    const errorMessage = invitationError instanceof Error
-      ? invitationError.message
-      : 'La invitacion no es valida o ha expirado.';
+    const errorMessage =
+      invitationError instanceof Error
+        ? invitationError.message
+        : "La invitacion no es valida o ha expirado.";
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-8 dark:bg-neutral-950">
         <motion.div
           variants={containerVariants}
-          initial={isMounted ? 'hidden' : false}
+          initial={isMounted ? "hidden" : false}
           animate="visible"
           className="w-full max-w-md"
         >
@@ -293,7 +309,11 @@ export default function AcceptInvitationPage() {
               className="flex items-center gap-3 text-neutral-900 dark:text-white"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white">
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
                   <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM10 4h4v3h-4V4zm10 16H4V9h16v11z" />
                   <path d="M13 12h-2v3H8v2h3v3h2v-3h3v-2h-3z" />
                 </svg>
@@ -312,7 +332,7 @@ export default function AcceptInvitationPage() {
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15 }}
                 className="flex h-20 w-20 items-center justify-center rounded-full bg-error-100 dark:bg-error-900/30"
               >
                 <XCircle className="h-10 w-10 text-error-600 dark:text-error-400" />
@@ -346,7 +366,7 @@ export default function AcceptInvitationPage() {
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-8 dark:bg-neutral-950">
       <motion.div
         variants={containerVariants}
-        initial={isMounted ? 'hidden' : false}
+        initial={isMounted ? "hidden" : false}
         animate="visible"
         className="w-full max-w-lg"
       >
@@ -380,7 +400,7 @@ export default function AcceptInvitationPage() {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
               className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30"
             >
               <Users className="h-8 w-8 text-primary-600 dark:text-primary-400" />
@@ -389,7 +409,8 @@ export default function AcceptInvitationPage() {
               Unete a {invitation.tenantName}
             </h1>
             <p className="mt-2 text-neutral-600 dark:text-neutral-400">
-              <span className="font-medium">{invitation.invitedByName}</span> te ha invitado a unirse como{' '}
+              <span className="font-medium">{invitation.invitedByName}</span> te
+              ha invitado a unirse como{" "}
               <span className="font-medium text-primary-600 dark:text-primary-400">
                 {formatRole(invitation.role)}
               </span>
@@ -426,7 +447,7 @@ export default function AcceptInvitationPage() {
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                   <Input
-                    {...register('firstName')}
+                    {...register("firstName")}
                     placeholder="Juan"
                     className="pl-10"
                     error={!!errors.firstName}
@@ -443,7 +464,7 @@ export default function AcceptInvitationPage() {
                   Apellido
                 </label>
                 <Input
-                  {...register('lastName')}
+                  {...register("lastName")}
                   placeholder="Perez"
                   error={!!errors.lastName}
                 />
@@ -463,8 +484,8 @@ export default function AcceptInvitationPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                 <Input
-                  {...register('password')}
-                  type={showPassword ? 'text' : 'password'}
+                  {...register("password")}
+                  type={showPassword ? "text" : "password"}
                   placeholder="********"
                   className="pl-10 pr-10"
                   error={!!errors.password}
@@ -473,7 +494,9 @@ export default function AcceptInvitationPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
-                  aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                  aria-label={
+                    showPassword ? "Ocultar contrasena" : "Mostrar contrasena"
+                  }
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -493,14 +516,14 @@ export default function AcceptInvitationPage() {
                         className={`h-1.5 flex-1 rounded-full transition-colors ${
                           i < passwordStrength
                             ? strengthColors[passwordStrength - 1]
-                            : 'bg-neutral-200 dark:bg-neutral-700'
+                            : "bg-neutral-200 dark:bg-neutral-700"
                         }`}
                       />
                     ))}
                   </div>
                   <p className="text-xs text-neutral-500">
-                    Fortaleza:{' '}
-                    {strengthLabels[passwordStrength - 1] || 'Muy debil'}
+                    Fortaleza:{" "}
+                    {strengthLabels[passwordStrength - 1] || "Muy debil"}
                   </p>
                 </div>
               )}
@@ -520,7 +543,7 @@ export default function AcceptInvitationPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                 <Input
-                  {...register('confirmPassword')}
+                  {...register("confirmPassword")}
                   type="password"
                   placeholder="********"
                   className="pl-10"
@@ -552,7 +575,7 @@ export default function AcceptInvitationPage() {
                     Creando cuenta...
                   </>
                 ) : (
-                  'Crear cuenta y unirme'
+                  "Crear cuenta y unirme"
                 )}
               </Button>
             </motion.div>
@@ -560,11 +583,11 @@ export default function AcceptInvitationPage() {
 
           {/* Terms */}
           <p className="mt-6 text-center text-xs text-neutral-500 dark:text-neutral-400">
-            Al crear tu cuenta, aceptas nuestros{' '}
+            Al crear tu cuenta, aceptas nuestros{" "}
             <Link to="/terms" className="text-primary-600 hover:underline">
               Terminos de servicio
-            </Link>{' '}
-            y{' '}
+            </Link>{" "}
+            y{" "}
             <Link to="/privacy" className="text-primary-600 hover:underline">
               Politica de privacidad
             </Link>
@@ -576,7 +599,7 @@ export default function AcceptInvitationPage() {
           variants={itemVariants}
           className="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400"
         >
-          Ya tienes cuenta?{' '}
+          Ya tienes cuenta?{" "}
           <Link
             to="/login"
             className="font-medium text-primary-600 hover:underline"

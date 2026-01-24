@@ -1,30 +1,22 @@
-import { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search,
-  Plus,
-  Tags,
-  Pencil,
-  Trash2,
-  X,
-  Package,
-} from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import type { Route } from './+types/_app.categories';
-import { cn, debounce, formatDate } from '~/lib/utils';
+import { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Plus, Tags, Pencil, Trash2, X, Package } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import type { Route } from "./+types/_app.categories";
+import { cn, debounce, formatDate } from "~/lib/utils";
 import {
   useCategoriesWithFilters,
   useCreateCategory,
   useUpdateCategory,
   useDeleteCategory,
-} from '~/hooks/useCategories';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
+} from "~/hooks/useCategories";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
 import {
   Table,
   TableHeader,
@@ -32,17 +24,17 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { SkeletonTableRow } from '~/components/ui/Skeleton';
-import { DeleteModal } from '~/components/ui/DeleteModal';
-import type { CategoryFilters, Category } from '~/types/category';
-import { useUrlFilters } from '~/hooks/useUrlFilters';
+} from "~/components/ui/Table";
+import { SkeletonTableRow } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/DeleteModal";
+import type { CategoryFilters, Category } from "~/types/category";
+import { useUrlFilters } from "~/hooks/useUrlFilters";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Categorias - StockFlow' },
-    { name: 'description', content: 'Gestion de categorias de productos' },
+    { title: "Categorias - StockFlow" },
+    { name: "description", content: "Gestion de categorias de productos" },
   ];
 };
 
@@ -72,8 +64,11 @@ const modalVariants = {
 
 // Form schema
 const categorySchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido').max(100, 'Maximo 100 caracteres'),
-  description: z.string().max(500, 'Maximo 500 caracteres').optional(),
+  name: z
+    .string()
+    .min(1, "El nombre es requerido")
+    .max(100, "Maximo 100 caracteres"),
+  description: z.string().max(500, "Maximo 500 caracteres").optional(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -81,28 +76,35 @@ type CategoryFormData = z.infer<typeof categorySchema>;
 // Parser config for category filters
 const categoryFiltersParser = {
   parse: (searchParams: URLSearchParams): CategoryFilters => ({
-    search: searchParams.get('search') || undefined,
-    page: Number(searchParams.get('page')) || 1,
-    limit: Number(searchParams.get('limit')) || 10,
+    search: searchParams.get("search") || undefined,
+    page: Number(searchParams.get("page")) || 1,
+    limit: Number(searchParams.get("limit")) || 10,
   }),
 };
 
 export default function CategoriesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(
+    null,
+  );
   const [isMounted, setIsMounted] = useState(false);
 
-  const { filters, updateFilters, clearFilters } = useUrlFilters<CategoryFilters>({
-    parserConfig: categoryFiltersParser,
-  });
+  const { filters, updateFilters, clearFilters } =
+    useUrlFilters<CategoryFilters>({
+      parserConfig: categoryFiltersParser,
+    });
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   // Queries
-  const { data: categoriesData, isLoading, isError } = useCategoriesWithFilters(filters);
+  const {
+    data: categoriesData,
+    isLoading,
+    isError,
+  } = useCategoriesWithFilters(filters);
 
   // Mutations
   const createCategory = useCreateCategory();
@@ -118,8 +120,8 @@ export default function CategoriesPage() {
   } = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
-      name: '',
-      description: '',
+      name: "",
+      description: "",
     },
   });
 
@@ -128,17 +130,21 @@ export default function CategoriesPage() {
     if (editingCategory) {
       reset({
         name: editingCategory.name,
-        description: editingCategory.description || '',
+        description: editingCategory.description || "",
       });
     } else {
-      reset({ name: '', description: '' });
+      reset({ name: "", description: "" });
     }
   }, [editingCategory, reset]);
 
   // Debounced search
   const debouncedSearch = useMemo(
-    () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
-    [updateFilters]
+    () =>
+      debounce(
+        (value: string) => updateFilters({ search: value || undefined }),
+        300,
+      ),
+    [updateFilters],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,7 +167,7 @@ export default function CategoriesPage() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingCategory(null);
-    reset({ name: '', description: '' });
+    reset({ name: "", description: "" });
   };
 
   // Submit form
@@ -194,7 +200,10 @@ export default function CategoriesPage() {
       className="space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Categorias
@@ -239,9 +248,15 @@ export default function CategoriesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre</TableHead>
-                  <TableHead className="hidden md:table-cell">Descripcion</TableHead>
-                  <TableHead className="hidden sm:table-cell">Productos</TableHead>
-                  <TableHead className="hidden lg:table-cell">Actualizado</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Descripcion
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Productos
+                  </TableHead>
+                  <TableHead className="hidden lg:table-cell">
+                    Actualizado
+                  </TableHead>
                   <TableHead className="w-[100px]">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -254,7 +269,11 @@ export default function CategoriesPage() {
           ) : isError ? (
             <div className="p-8 text-center">
               <p className="text-error-500">Error al cargar las categorias</p>
-              <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => window.location.reload()}
+              >
                 Reintentar
               </Button>
             </div>
@@ -264,12 +283,12 @@ export default function CategoriesPage() {
                 <Tags className="h-16 w-16" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-white">
-                {hasActiveFilters ? 'Sin resultados' : 'No hay categorias'}
+                {hasActiveFilters ? "Sin resultados" : "No hay categorias"}
               </h3>
               <p className="mb-6 max-w-sm text-neutral-500 dark:text-neutral-400">
                 {hasActiveFilters
-                  ? 'No se encontraron categorias con los filtros aplicados.'
-                  : 'Comienza creando tu primera categoria.'}
+                  ? "No se encontraron categorias con los filtros aplicados."
+                  : "Comienza creando tu primera categoria."}
               </p>
               {hasActiveFilters ? (
                 <Button variant="outline" onClick={clearFilters}>
@@ -288,9 +307,15 @@ export default function CategoriesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nombre</TableHead>
-                    <TableHead className="hidden md:table-cell">Descripcion</TableHead>
-                    <TableHead className="hidden sm:table-cell">Productos</TableHead>
-                    <TableHead className="hidden lg:table-cell">Actualizado</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Descripcion
+                    </TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      Productos
+                    </TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      Actualizado
+                    </TableHead>
                     <TableHead className="w-[100px]">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -316,7 +341,7 @@ export default function CategoriesPage() {
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <span className="text-neutral-500 dark:text-neutral-400 line-clamp-1">
-                            {category.description || '-'}
+                            {category.description || "-"}
                           </span>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
@@ -401,7 +426,7 @@ export default function CategoriesPage() {
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
                 <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                  {editingCategory ? 'Editar Categoria' : 'Nueva Categoria'}
+                  {editingCategory ? "Editar Categoria" : "Nueva Categoria"}
                 </h2>
                 <Button variant="ghost" size="icon" onClick={handleCloseModal}>
                   <X className="h-5 w-5" />
@@ -415,12 +440,14 @@ export default function CategoriesPage() {
                     Nombre *
                   </label>
                   <Input
-                    {...register('name')}
+                    {...register("name")}
                     placeholder="Nombre de la categoria"
                     error={!!errors.name}
                   />
                   {errors.name?.message && (
-                    <p className="mt-1 text-sm text-error-500">{errors.name.message}</p>
+                    <p className="mt-1 text-sm text-error-500">
+                      {errors.name.message}
+                    </p>
                   )}
                 </div>
 
@@ -429,32 +456,42 @@ export default function CategoriesPage() {
                     Descripcion
                   </label>
                   <textarea
-                    {...register('description')}
+                    {...register("description")}
                     placeholder="Descripcion de la categoria (opcional)"
                     rows={3}
                     className={cn(
-                      'w-full rounded-lg border border-neutral-300 dark:border-neutral-600',
-                      'bg-white dark:bg-neutral-900 px-4 py-2.5',
-                      'text-neutral-900 dark:text-white placeholder:text-neutral-400',
-                      'focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none',
-                      'transition-colors resize-none'
+                      "w-full rounded-lg border border-neutral-300 dark:border-neutral-600",
+                      "bg-white dark:bg-neutral-900 px-4 py-2.5",
+                      "text-neutral-900 dark:text-white placeholder:text-neutral-400",
+                      "focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none",
+                      "transition-colors resize-none",
                     )}
                   />
                   {errors.description && (
-                    <p className="mt-1 text-sm text-error-500">{errors.description.message}</p>
+                    <p className="mt-1 text-sm text-error-500">
+                      {errors.description.message}
+                    </p>
                   )}
                 </div>
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={handleCloseModal}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCloseModal}
+                  >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
-                    isLoading={isSubmitting || createCategory.isPending || updateCategory.isPending}
+                    isLoading={
+                      isSubmitting ||
+                      createCategory.isPending ||
+                      updateCategory.isPending
+                    }
                   >
-                    {editingCategory ? 'Guardar cambios' : 'Crear categoria'}
+                    {editingCategory ? "Guardar cambios" : "Crear categoria"}
                   </Button>
                 </div>
               </form>
@@ -467,7 +504,7 @@ export default function CategoriesPage() {
       <DeleteModal
         open={!!deletingCategory}
         onOpenChange={(open) => !open && setDeletingCategory(null)}
-        itemName={deletingCategory?.name || ''}
+        itemName={deletingCategory?.name || ""}
         itemType="categoria"
         onConfirm={handleDelete}
         isLoading={deleteCategory.isPending}

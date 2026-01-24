@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect } from "react";
+import { Link, useParams, useNavigate } from "react-router";
+import { motion } from "framer-motion";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   ArrowLeft,
   Save,
@@ -13,40 +13,54 @@ import {
   Layers,
   Warehouse,
   ImagePlus,
-} from 'lucide-react';
-import type { Route } from './+types/_app.products.$id.edit';
-import { cn } from '~/lib/utils';
-import { useProduct, useUpdateProduct, useProductFormData } from '~/hooks/useProducts';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
-import { Select } from '~/components/ui/Select';
-import { Skeleton } from '~/components/ui/Skeleton';
-import { EmptyState } from '~/components/ui/EmptyState';
-import type { UpdateProductData } from '~/types/product';
+} from "lucide-react";
+import type { Route } from "./+types/_app.products.$id.edit";
+import { cn } from "~/lib/utils";
+import {
+  useProduct,
+  useUpdateProduct,
+  useProductFormData,
+} from "~/hooks/useProducts";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
+import { Select } from "~/components/ui/Select";
+import { Skeleton } from "~/components/ui/Skeleton";
+import { EmptyState } from "~/components/ui/EmptyState";
+import type { UpdateProductData } from "~/types/product";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
     { title: `Editar Producto - StockFlow` },
-    { name: 'description', content: 'Editar producto' },
+    { name: "description", content: "Editar producto" },
   ];
 };
 
 // Validation schema
 const productSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido').max(100, 'Maximo 100 caracteres'),
-  description: z.string().max(500, 'Maximo 500 caracteres').optional(),
-  sku: z.string().min(1, 'El SKU es requerido').max(50, 'Maximo 50 caracteres'),
-  barcode: z.string().max(50, 'Maximo 50 caracteres').optional(),
-  price: z.number().min(0, 'El precio debe ser mayor o igual a 0'),
-  cost: z.number().min(0, 'El costo debe ser mayor o igual a 0'),
-  quantity: z.number().int().min(0, 'La cantidad debe ser mayor o igual a 0'),
-  minStock: z.number().int().min(0, 'El stock minimo debe ser mayor o igual a 0'),
-  maxStock: z.number().int().min(0, 'El stock maximo debe ser mayor o igual a 0').optional(),
-  categoryId: z.string().min(1, 'La categoria es requerida'),
-  warehouseId: z.string().min(1, 'La bodega es requerida'),
-  status: z.enum(['ACTIVE', 'INACTIVE', 'DISCONTINUED']),
+  name: z
+    .string()
+    .min(1, "El nombre es requerido")
+    .max(100, "Maximo 100 caracteres"),
+  description: z.string().max(500, "Maximo 500 caracteres").optional(),
+  sku: z.string().min(1, "El SKU es requerido").max(50, "Maximo 50 caracteres"),
+  barcode: z.string().max(50, "Maximo 50 caracteres").optional(),
+  price: z.number().min(0, "El precio debe ser mayor o igual a 0"),
+  cost: z.number().min(0, "El costo debe ser mayor o igual a 0"),
+  quantity: z.number().int().min(0, "La cantidad debe ser mayor o igual a 0"),
+  minStock: z
+    .number()
+    .int()
+    .min(0, "El stock minimo debe ser mayor o igual a 0"),
+  maxStock: z
+    .number()
+    .int()
+    .min(0, "El stock maximo debe ser mayor o igual a 0")
+    .optional(),
+  categoryId: z.string().min(1, "La categoria es requerida"),
+  warehouseId: z.string().min(1, "La bodega es requerida"),
+  status: z.enum(["ACTIVE", "INACTIVE", "DISCONTINUED"]),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -73,17 +87,26 @@ const itemVariants = {
 
 // Status options
 const statusOptions = [
-  { value: 'ACTIVE', label: 'Activo' },
-  { value: 'INACTIVE', label: 'Inactivo' },
-  { value: 'DISCONTINUED', label: 'Descontinuado' },
+  { value: "ACTIVE", label: "Activo" },
+  { value: "INACTIVE", label: "Inactivo" },
+  { value: "DISCONTINUED", label: "Descontinuado" },
 ];
 
 export default function EditProductPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: product, isLoading: isLoadingProduct, isError, error } = useProduct(id!);
-  const { categories, warehouses, isLoading: isLoadingFormData } = useProductFormData();
+  const {
+    data: product,
+    isLoading: isLoadingProduct,
+    isError,
+    error,
+  } = useProduct(id!);
+  const {
+    categories,
+    warehouses,
+    isLoading: isLoadingFormData,
+  } = useProductFormData();
   const updateProduct = useUpdateProduct();
 
   const {
@@ -102,9 +125,9 @@ export default function EditProductPage() {
     if (product) {
       reset({
         name: product.name,
-        description: product.description || '',
+        description: product.description || "",
         sku: product.sku,
-        barcode: product.barcode || '',
+        barcode: product.barcode || "",
         price: product.price,
         cost: product.cost,
         quantity: product.quantity,
@@ -131,12 +154,18 @@ export default function EditProductPage() {
   };
 
   // Category and warehouse options
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
-  const warehouseOptions = warehouses.map((w) => ({ value: w.id, label: w.name }));
+  const categoryOptions = categories.map((c) => ({
+    value: c.id,
+    label: c.name,
+  }));
+  const warehouseOptions = warehouses.map((w) => ({
+    value: w.id,
+    label: w.name,
+  }));
 
   // Calculate margin for preview
-  const price = watch('price') || 0;
-  const cost = watch('cost') || 0;
+  const price = watch("price") || 0;
+  const cost = watch("cost") || 0;
   const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
 
   const isLoading = isLoadingProduct || isLoadingFormData;
@@ -172,7 +201,7 @@ export default function EditProductPage() {
       <div className="space-y-6">
         <Button
           variant="ghost"
-          onClick={() => navigate('/products')}
+          onClick={() => navigate("/products")}
           leftIcon={<ArrowLeft className="h-4 w-4" />}
         >
           Volver a productos
@@ -181,10 +210,13 @@ export default function EditProductPage() {
           <EmptyState
             type="error"
             title="Producto no encontrado"
-            description={error?.message || 'El producto que buscas no existe o fue eliminado.'}
+            description={
+              error?.message ||
+              "El producto que buscas no existe o fue eliminado."
+            }
             action={{
-              label: 'Ver productos',
-              onClick: () => navigate('/products'),
+              label: "Ver productos",
+              onClick: () => navigate("/products"),
             }}
           />
         </Card>
@@ -232,7 +264,10 @@ export default function EditProductPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main form */}
-          <motion.div variants={itemVariants} className="space-y-6 lg:col-span-2">
+          <motion.div
+            variants={itemVariants}
+            className="space-y-6 lg:col-span-2"
+          >
             {/* Basic info */}
             <Card>
               <CardHeader>
@@ -248,12 +283,14 @@ export default function EditProductPage() {
                     Nombre del producto *
                   </label>
                   <Input
-                    {...register('name')}
+                    {...register("name")}
                     placeholder="Ej: iPhone 15 Pro Max"
                     error={!!errors.name}
                   />
                   {errors.name && (
-                    <p className="text-sm text-error-500">{errors.name.message}</p>
+                    <p className="text-sm text-error-500">
+                      {errors.name.message}
+                    </p>
                   )}
                 </div>
 
@@ -263,22 +300,24 @@ export default function EditProductPage() {
                     Descripcion
                   </label>
                   <textarea
-                    {...register('description')}
+                    {...register("description")}
                     placeholder="Descripcion del producto..."
                     rows={3}
                     className={cn(
-                      'flex w-full rounded-xl border bg-white px-4 py-3 text-sm',
-                      'transition-colors duration-200 resize-none',
-                      'placeholder:text-neutral-400',
-                      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
-                      'dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-500',
+                      "flex w-full rounded-xl border bg-white px-4 py-3 text-sm",
+                      "transition-colors duration-200 resize-none",
+                      "placeholder:text-neutral-400",
+                      "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500",
+                      "dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-500",
                       errors.description
-                        ? 'border-error-500 focus:ring-error-500 focus:border-error-500'
-                        : 'border-neutral-200 dark:border-neutral-700'
+                        ? "border-error-500 focus:ring-error-500 focus:border-error-500"
+                        : "border-neutral-200 dark:border-neutral-700",
                     )}
                   />
                   {errors.description && (
-                    <p className="text-sm text-error-500">{errors.description.message}</p>
+                    <p className="text-sm text-error-500">
+                      {errors.description.message}
+                    </p>
                   )}
                 </div>
 
@@ -289,13 +328,17 @@ export default function EditProductPage() {
                       SKU *
                     </label>
                     <Input
-                      {...register('sku')}
+                      {...register("sku")}
                       placeholder="Ej: APL-IP15PM-256"
                       error={!!errors.sku}
-                      leftElement={<Barcode className="h-4 w-4 text-neutral-400" />}
+                      leftElement={
+                        <Barcode className="h-4 w-4 text-neutral-400" />
+                      }
                     />
                     {errors.sku && (
-                      <p className="text-sm text-error-500">{errors.sku.message}</p>
+                      <p className="text-sm text-error-500">
+                        {errors.sku.message}
+                      </p>
                     )}
                   </div>
 
@@ -304,12 +347,14 @@ export default function EditProductPage() {
                       Codigo de Barras
                     </label>
                     <Input
-                      {...register('barcode')}
+                      {...register("barcode")}
                       placeholder="Ej: 194253121234"
                       error={!!errors.barcode}
                     />
                     {errors.barcode && (
-                      <p className="text-sm text-error-500">{errors.barcode.message}</p>
+                      <p className="text-sm text-error-500">
+                        {errors.barcode.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -335,13 +380,15 @@ export default function EditProductPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register('price', { valueAsNumber: true })}
+                      {...register("price", { valueAsNumber: true })}
                       placeholder="0"
                       error={!!errors.price}
                       leftElement={<span className="text-neutral-400">$</span>}
                     />
                     {errors.price && (
-                      <p className="text-sm text-error-500">{errors.price.message}</p>
+                      <p className="text-sm text-error-500">
+                        {errors.price.message}
+                      </p>
                     )}
                   </div>
 
@@ -354,13 +401,15 @@ export default function EditProductPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register('cost', { valueAsNumber: true })}
+                      {...register("cost", { valueAsNumber: true })}
                       placeholder="0"
                       error={!!errors.cost}
                       leftElement={<span className="text-neutral-400">$</span>}
                     />
                     {errors.cost && (
-                      <p className="text-sm text-error-500">{errors.cost.message}</p>
+                      <p className="text-sm text-error-500">
+                        {errors.cost.message}
+                      </p>
                     )}
                   </div>
 
@@ -371,12 +420,12 @@ export default function EditProductPage() {
                     </label>
                     <div
                       className={cn(
-                        'flex h-11 items-center justify-center rounded-xl px-4 font-semibold',
+                        "flex h-11 items-center justify-center rounded-xl px-4 font-semibold",
                         margin >= 30
-                          ? 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300'
+                          ? "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300"
                           : margin >= 15
-                            ? 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300'
-                            : 'bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-300'
+                            ? "bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300"
+                            : "bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-300",
                       )}
                     >
                       {margin.toFixed(1)}%
@@ -405,12 +454,14 @@ export default function EditProductPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register('quantity', { valueAsNumber: true })}
+                      {...register("quantity", { valueAsNumber: true })}
                       placeholder="0"
                       error={!!errors.quantity}
                     />
                     {errors.quantity && (
-                      <p className="text-sm text-error-500">{errors.quantity.message}</p>
+                      <p className="text-sm text-error-500">
+                        {errors.quantity.message}
+                      </p>
                     )}
                   </div>
 
@@ -423,12 +474,14 @@ export default function EditProductPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register('minStock', { valueAsNumber: true })}
+                      {...register("minStock", { valueAsNumber: true })}
                       placeholder="10"
                       error={!!errors.minStock}
                     />
                     {errors.minStock && (
-                      <p className="text-sm text-error-500">{errors.minStock.message}</p>
+                      <p className="text-sm text-error-500">
+                        {errors.minStock.message}
+                      </p>
                     )}
                   </div>
 
@@ -441,12 +494,14 @@ export default function EditProductPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register('maxStock', { valueAsNumber: true })}
+                      {...register("maxStock", { valueAsNumber: true })}
                       placeholder="100"
                       error={!!errors.maxStock}
                     />
                     {errors.maxStock && (
-                      <p className="text-sm text-error-500">{errors.maxStock.message}</p>
+                      <p className="text-sm text-error-500">
+                        {errors.maxStock.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -482,7 +537,9 @@ export default function EditProductPage() {
                       )}
                     />
                     {errors.categoryId && (
-                      <p className="text-sm text-error-500">{errors.categoryId.message}</p>
+                      <p className="text-sm text-error-500">
+                        {errors.categoryId.message}
+                      </p>
                     )}
                   </div>
 
@@ -505,7 +562,9 @@ export default function EditProductPage() {
                       )}
                     />
                     {errors.warehouseId && (
-                      <p className="text-sm text-error-500">{errors.warehouseId.message}</p>
+                      <p className="text-sm text-error-500">
+                        {errors.warehouseId.message}
+                      </p>
                     )}
                   </div>
                 </div>

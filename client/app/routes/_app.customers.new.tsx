@@ -1,22 +1,22 @@
-import { Link } from 'react-router';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Save } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import type { Route } from './+types/_app.customers.new';
-import { cn } from '~/lib/utils';
-import { useCreateCustomer } from '~/hooks/useCustomers';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
-import { Select } from '~/components/ui/Select';
+import { Link } from "react-router";
+import { motion } from "framer-motion";
+import { ArrowLeft, Save } from "lucide-react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import type { Route } from "./+types/_app.customers.new";
+import { cn } from "~/lib/utils";
+import { useCreateCustomer } from "~/hooks/useCustomers";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
+import { Select } from "~/components/ui/Select";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Nuevo Cliente - StockFlow' },
-    { name: 'description', content: 'Crear un nuevo cliente' },
+    { title: "Nuevo Cliente - StockFlow" },
+    { name: "description", content: "Crear un nuevo cliente" },
   ];
 };
 
@@ -40,15 +40,18 @@ const itemVariants = {
 
 // Form schema
 const customerSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido').max(100, 'Maximo 100 caracteres'),
-  email: z.string().min(1, 'El email es requerido').email('Email invalido'),
-  phone: z.string().max(20, 'Maximo 20 caracteres').optional(),
-  document: z.string().max(20, 'Maximo 20 caracteres').optional(),
-  documentType: z.enum(['CC', 'NIT', 'CE', 'PASSPORT']).optional(),
-  type: z.enum(['INDIVIDUAL', 'BUSINESS']),
-  address: z.string().max(200, 'Maximo 200 caracteres').optional(),
-  city: z.string().max(100, 'Maximo 100 caracteres').optional(),
-  notes: z.string().max(500, 'Maximo 500 caracteres').optional(),
+  name: z
+    .string()
+    .min(1, "El nombre es requerido")
+    .max(100, "Maximo 100 caracteres"),
+  email: z.string().min(1, "El email es requerido").email("Email invalido"),
+  phone: z.string().max(20, "Maximo 20 caracteres").optional(),
+  document: z.string().max(20, "Maximo 20 caracteres").optional(),
+  documentType: z.enum(["CC", "NIT", "CE", "PASSPORT"]).optional(),
+  type: z.enum(["INDIVIDUAL", "BUSINESS"]),
+  address: z.string().max(200, "Maximo 200 caracteres").optional(),
+  city: z.string().max(100, "Maximo 100 caracteres").optional(),
+  notes: z.string().max(500, "Maximo 500 caracteres").optional(),
   isActive: z.boolean(),
 });
 
@@ -56,23 +59,23 @@ type CustomerFormData = z.infer<typeof customerSchema>;
 
 // Type options
 const typeOptions = [
-  { value: 'INDIVIDUAL', label: 'Persona Natural' },
-  { value: 'BUSINESS', label: 'Empresa' },
+  { value: "INDIVIDUAL", label: "Persona Natural" },
+  { value: "BUSINESS", label: "Empresa" },
 ];
 
 // Document type options
 const documentTypeOptions = [
-  { value: '', label: 'Seleccionar tipo' },
-  { value: 'CC', label: 'Cedula de Ciudadania' },
-  { value: 'NIT', label: 'NIT' },
-  { value: 'CE', label: 'Cedula de Extranjeria' },
-  { value: 'PASSPORT', label: 'Pasaporte' },
+  { value: "", label: "Seleccionar tipo" },
+  { value: "CC", label: "Cedula de Ciudadania" },
+  { value: "NIT", label: "NIT" },
+  { value: "CE", label: "Cedula de Extranjeria" },
+  { value: "PASSPORT", label: "Pasaporte" },
 ];
 
 // Status options
 const statusOptions = [
-  { value: 'true', label: 'Activo' },
-  { value: 'false', label: 'Inactivo' },
+  { value: "true", label: "Activo" },
+  { value: "false", label: "Inactivo" },
 ];
 
 export default function NewCustomerPage() {
@@ -87,20 +90,20 @@ export default function NewCustomerPage() {
   } = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      document: '',
+      name: "",
+      email: "",
+      phone: "",
+      document: "",
       documentType: undefined,
-      type: 'INDIVIDUAL',
-      address: '',
-      city: '',
-      notes: '',
+      type: "INDIVIDUAL",
+      address: "",
+      city: "",
+      notes: "",
       isActive: true,
     },
   });
 
-  const customerType = watch('type');
+  const customerType = watch("type");
 
   const onSubmit = (data: CustomerFormData) => {
     createCustomer.mutate({
@@ -152,16 +155,18 @@ export default function NewCustomerPage() {
                       Nombre Completo *
                     </label>
                     <Input
-                      {...register('name')}
+                      {...register("name")}
                       placeholder={
-                        customerType === 'BUSINESS'
-                          ? 'Razon social de la empresa'
-                          : 'Nombre completo del cliente'
+                        customerType === "BUSINESS"
+                          ? "Razon social de la empresa"
+                          : "Nombre completo del cliente"
                       }
                       error={!!errors.name}
                     />
                     {errors.name && (
-                      <p className="mt-1 text-sm text-error-500">{errors.name.message}</p>
+                      <p className="mt-1 text-sm text-error-500">
+                        {errors.name.message}
+                      </p>
                     )}
                   </div>
 
@@ -176,7 +181,7 @@ export default function NewCustomerPage() {
                         render={({ field }) => (
                           <Select
                             options={documentTypeOptions}
-                            value={field.value || ''}
+                            value={field.value || ""}
                             onChange={(value) =>
                               field.onChange(value || undefined)
                             }
@@ -189,14 +194,18 @@ export default function NewCustomerPage() {
                         Numero de Documento
                       </label>
                       <Input
-                        {...register('document')}
+                        {...register("document")}
                         placeholder={
-                          customerType === 'BUSINESS' ? '900123456-7' : '12345678'
+                          customerType === "BUSINESS"
+                            ? "900123456-7"
+                            : "12345678"
                         }
                         error={!!errors.document}
                       />
                       {errors.document && (
-                        <p className="mt-1 text-sm text-error-500">{errors.document.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.document.message}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -217,13 +226,15 @@ export default function NewCustomerPage() {
                         Email *
                       </label>
                       <Input
-                        {...register('email')}
+                        {...register("email")}
                         type="email"
                         placeholder="cliente@email.com"
                         error={!!errors.email}
                       />
                       {errors.email && (
-                        <p className="mt-1 text-sm text-error-500">{errors.email.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.email.message}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -231,12 +242,14 @@ export default function NewCustomerPage() {
                         Telefono
                       </label>
                       <Input
-                        {...register('phone')}
+                        {...register("phone")}
                         placeholder="+57 300 123 4567"
                         error={!!errors.phone}
                       />
                       {errors.phone && (
-                        <p className="mt-1 text-sm text-error-500">{errors.phone.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.phone.message}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -247,12 +260,14 @@ export default function NewCustomerPage() {
                         Direccion
                       </label>
                       <Input
-                        {...register('address')}
+                        {...register("address")}
                         placeholder="Calle 123 #45-67"
                         error={!!errors.address}
                       />
                       {errors.address && (
-                        <p className="mt-1 text-sm text-error-500">{errors.address.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.address.message}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -260,12 +275,14 @@ export default function NewCustomerPage() {
                         Ciudad
                       </label>
                       <Input
-                        {...register('city')}
+                        {...register("city")}
                         placeholder="Bogota"
                         error={!!errors.city}
                       />
                       {errors.city && (
-                        <p className="mt-1 text-sm text-error-500">{errors.city.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.city.message}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -281,19 +298,21 @@ export default function NewCustomerPage() {
                 </CardHeader>
                 <CardContent>
                   <textarea
-                    {...register('notes')}
+                    {...register("notes")}
                     placeholder="Notas sobre el cliente (opcional)"
                     rows={4}
                     className={cn(
-                      'w-full rounded-lg border border-neutral-300 dark:border-neutral-600',
-                      'bg-white dark:bg-neutral-900 px-4 py-2.5',
-                      'text-neutral-900 dark:text-white placeholder:text-neutral-400',
-                      'focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none',
-                      'transition-colors resize-none'
+                      "w-full rounded-lg border border-neutral-300 dark:border-neutral-600",
+                      "bg-white dark:bg-neutral-900 px-4 py-2.5",
+                      "text-neutral-900 dark:text-white placeholder:text-neutral-400",
+                      "focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none",
+                      "transition-colors resize-none",
                     )}
                   />
                   {errors.notes && (
-                    <p className="mt-1 text-sm text-error-500">{errors.notes.message}</p>
+                    <p className="mt-1 text-sm text-error-500">
+                      {errors.notes.message}
+                    </p>
                   )}
                 </CardContent>
               </Card>
@@ -321,9 +340,9 @@ export default function NewCustomerPage() {
                     )}
                   />
                   <p className="text-sm text-neutral-500 mt-2">
-                    {customerType === 'BUSINESS'
-                      ? 'Para empresas y negocios'
-                      : 'Para personas naturales'}
+                    {customerType === "BUSINESS"
+                      ? "Para empresas y negocios"
+                      : "Para personas naturales"}
                   </p>
                 </CardContent>
               </Card>
@@ -343,7 +362,7 @@ export default function NewCustomerPage() {
                       <Select
                         options={statusOptions}
                         value={String(field.value)}
-                        onChange={(value) => field.onChange(value === 'true')}
+                        onChange={(value) => field.onChange(value === "true")}
                       />
                     )}
                   />

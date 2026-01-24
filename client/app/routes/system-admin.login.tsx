@@ -1,21 +1,32 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2, Shield } from 'lucide-react';
-import { useSystemAdminAuth } from '~/hooks/useSystemAdmin';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { ThemeToggle } from '~/components/ui/ThemeToggle';
-import { requireSystemAdminGuest, getSystemAdminRedirectTo } from '~/lib/system-admin-auth.server';
-import type { Route } from './+types/system-admin.login';
+import { useState, useEffect } from "react";
+import { Link } from "react-router";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  ArrowRight,
+  Loader2,
+  Shield,
+} from "lucide-react";
+import { useSystemAdminAuth } from "~/hooks/useSystemAdmin";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { ThemeToggle } from "~/components/ui/ThemeToggle";
+import {
+  requireSystemAdminGuest,
+  getSystemAdminRedirectTo,
+} from "~/lib/system-admin-auth.server";
+import type { Route } from "./+types/system-admin.login";
 
 // Validation schema
 const loginSchema = z.object({
-  email: z.string().email('Email invalido'),
-  password: z.string().min(8, 'Minimo 8 caracteres'),
+  email: z.string().email("Email invalido"),
+  password: z.string().min(8, "Minimo 8 caracteres"),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -37,14 +48,17 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: 'easeOut' as const },
+    transition: { duration: 0.5, ease: "easeOut" as const },
   },
 };
 
 export function meta() {
   return [
-    { title: 'Administracion del Sistema - StockFlow' },
-    { name: 'description', content: 'Panel de administracion del sistema StockFlow' },
+    { title: "Administracion del Sistema - StockFlow" },
+    {
+      name: "description",
+      content: "Panel de administracion del sistema StockFlow",
+    },
   ];
 }
 
@@ -112,7 +126,9 @@ export default function SystemAdminLoginPage() {
                 <Shield className="h-7 w-7 text-amber-400" />
               </div>
               <div>
-                <span className="font-display text-2xl font-bold">StockFlow</span>
+                <span className="font-display text-2xl font-bold">
+                  StockFlow
+                </span>
                 <p className="text-sm text-neutral-400">System Admin</p>
               </div>
             </Link>
@@ -131,8 +147,8 @@ export default function SystemAdminLoginPage() {
               <span className="text-amber-400">Administracion</span>
             </h1>
             <p className="max-w-md text-lg text-neutral-300">
-              Acceso exclusivo para administradores del sistema. Gestiona usuarios,
-              tenants y configuraciones globales.
+              Acceso exclusivo para administradores del sistema. Gestiona
+              usuarios, tenants y configuraciones globales.
             </p>
           </motion.div>
 
@@ -158,7 +174,7 @@ export default function SystemAdminLoginPage() {
       <div className="flex flex-1 items-center justify-center bg-neutral-50 p-8 dark:bg-neutral-950">
         <motion.div
           variants={containerVariants}
-          initial={isMounted ? 'hidden' : false}
+          initial={isMounted ? "hidden" : false}
           animate="visible"
           className="w-full max-w-md space-y-8"
         >
@@ -198,7 +214,7 @@ export default function SystemAdminLoginPage() {
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                   <Input
-                    {...register('email')}
+                    {...register("email")}
                     type="email"
                     placeholder="admin@stockflow.com"
                     className="pl-10 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
@@ -220,8 +236,8 @@ export default function SystemAdminLoginPage() {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                   <Input
-                    {...register('password')}
-                    type={showPassword ? 'text' : 'password'}
+                    {...register("password")}
+                    type={showPassword ? "text" : "password"}
                     placeholder="********"
                     className="pl-10 pr-10 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                     error={!!errors.password}
@@ -230,7 +246,9 @@ export default function SystemAdminLoginPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
-                    aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+                    aria-label={
+                      showPassword ? "Ocultar contrasena" : "Mostrar contrasena"
+                    }
                   >
                     {showPassword ? (
                       <EyeOff className="h-5 w-5" />
@@ -247,7 +265,10 @@ export default function SystemAdminLoginPage() {
               </div>
 
               {/* Submit */}
-              <motion.div whileTap={{ scale: 0.98 }} whileHover={{ scale: 1.02 }}>
+              <motion.div
+                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.02 }}
+              >
                 <Button
                   type="submit"
                   className="w-full bg-amber-600 hover:bg-amber-700 shadow-amber-500/25 hover:shadow-amber-500/40"

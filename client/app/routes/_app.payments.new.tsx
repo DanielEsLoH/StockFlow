@@ -1,28 +1,28 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion } from 'framer-motion';
-import { ArrowLeft, CreditCard, FileText, AlertCircle } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import type { Route } from './+types/_app.payments.new';
-import { cn, formatCurrency } from '~/lib/utils';
-import { useCreatePayment } from '~/hooks/usePayments';
-import { useCustomers } from '~/hooks/useCustomers';
-import { useInvoices } from '~/hooks/useInvoices';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
-import { Select } from '~/components/ui/Select';
-import type { PaymentMethod } from '~/types/payment';
-import { PaymentMethodLabels } from '~/types/payment';
-import type { InvoiceSummary } from '~/types/invoice';
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
+import { motion } from "framer-motion";
+import { ArrowLeft, CreditCard, FileText, AlertCircle } from "lucide-react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import type { Route } from "./+types/_app.payments.new";
+import { cn, formatCurrency } from "~/lib/utils";
+import { useCreatePayment } from "~/hooks/usePayments";
+import { useCustomers } from "~/hooks/useCustomers";
+import { useInvoices } from "~/hooks/useInvoices";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
+import { Select } from "~/components/ui/Select";
+import type { PaymentMethod } from "~/types/payment";
+import { PaymentMethodLabels } from "~/types/payment";
+import type { InvoiceSummary } from "~/types/invoice";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Nuevo Pago - StockFlow' },
-    { name: 'description', content: 'Registrar un nuevo pago' },
+    { title: "Nuevo Pago - StockFlow" },
+    { name: "description", content: "Registrar un nuevo pago" },
   ];
 };
 
@@ -46,23 +46,26 @@ const itemVariants = {
 
 // Form schema
 const paymentSchema = z.object({
-  invoiceId: z.string().min(1, 'Seleccione una factura'),
-  customerId: z.string().min(1, 'El cliente es requerido'),
-  amount: z.number().min(1, 'El monto debe ser mayor a 0'),
+  invoiceId: z.string().min(1, "Seleccione una factura"),
+  customerId: z.string().min(1, "El cliente es requerido"),
+  amount: z.number().min(1, "El monto debe ser mayor a 0"),
 
-  method: z.enum(['CASH', 'CREDIT_CARD', 'DEBIT_CARD', 'BANK_TRANSFER', 'CHECK', 'OTHER'], {
-    message: 'Seleccione un metodo de pago',
-  }),
-  paymentDate: z.string().min(1, 'La fecha de pago es requerida'),
+  method: z.enum(
+    ["CASH", "CREDIT_CARD", "DEBIT_CARD", "BANK_TRANSFER", "CHECK", "OTHER"],
+    {
+      message: "Seleccione un metodo de pago",
+    },
+  ),
+  paymentDate: z.string().min(1, "La fecha de pago es requerida"),
   reference: z.string().optional(),
-  notes: z.string().max(500, 'Maximo 500 caracteres').optional(),
+  notes: z.string().max(500, "Maximo 500 caracteres").optional(),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
 
 // Get today's date in YYYY-MM-DD format
 function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toISOString().split("T")[0];
 }
 
 // Calculate invoice balance
@@ -75,7 +78,7 @@ function calculateInvoiceBalance(invoice: InvoiceSummary): {
   // If not available, we use total as remaining for pending/overdue invoices
   const total = invoice.total;
   // If invoice is PAID, remaining is 0
-  if (invoice.status === 'PAID') {
+  if (invoice.status === "PAID") {
     return { total, paid: total, remaining: 0 };
   }
   // For PENDING/OVERDUE, assume nothing paid yet (this would be improved with actual paid tracking)
@@ -83,7 +86,9 @@ function calculateInvoiceBalance(invoice: InvoiceSummary): {
 }
 
 export default function NewPaymentPage() {
-  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceSummary | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceSummary | null>(
+    null,
+  );
 
   // Queries
   const { data: customersData } = useCustomers({ limit: 100 });
@@ -104,47 +109,47 @@ export default function NewPaymentPage() {
   } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      invoiceId: '',
-      customerId: '',
+      invoiceId: "",
+      customerId: "",
       amount: 0,
       method: undefined,
       paymentDate: getTodayDate(),
-      reference: '',
-      notes: '',
+      reference: "",
+      notes: "",
     },
   });
 
-  const watchedInvoiceId = watch('invoiceId');
+  const watchedInvoiceId = watch("invoiceId");
 
   // Filter invoices to only show pending and overdue
   const payableInvoices = useMemo(() => {
     return (invoicesData?.data || []).filter(
-      (invoice) => invoice.status === 'PENDING' || invoice.status === 'OVERDUE'
+      (invoice) => invoice.status === "PENDING" || invoice.status === "OVERDUE",
     );
   }, [invoicesData]);
 
   // Memoized options for invoice dropdown
   const invoiceOptions = useMemo(
     () => [
-      { value: '', label: 'Seleccionar factura...' },
+      { value: "", label: "Seleccionar factura..." },
       ...payableInvoices.map((invoice) => ({
         value: invoice.id,
-        label: `${invoice.invoiceNumber} - ${invoice.customer?.name || 'Sin cliente'} - ${formatCurrency(invoice.total)}`,
+        label: `${invoice.invoiceNumber} - ${invoice.customer?.name || "Sin cliente"} - ${formatCurrency(invoice.total)}`,
       })),
     ],
-    [payableInvoices]
+    [payableInvoices],
   );
 
   // Memoized options for payment method dropdown
   const paymentMethodOptions = useMemo(
     () => [
-      { value: '', label: 'Seleccionar metodo...' },
+      { value: "", label: "Seleccionar metodo..." },
       ...Object.entries(PaymentMethodLabels).map(([value, label]) => ({
         value,
         label,
       })),
     ],
-    []
+    [],
   );
 
   // Invoice lookup map
@@ -171,14 +176,14 @@ export default function NewPaymentPage() {
       const invoice = invoicesMap.get(watchedInvoiceId);
       if (invoice) {
         setSelectedInvoice(invoice);
-        setValue('customerId', invoice.customerId);
+        setValue("customerId", invoice.customerId);
         const balance = calculateInvoiceBalance(invoice);
-        setValue('amount', balance.remaining);
+        setValue("amount", balance.remaining);
       }
     } else {
       setSelectedInvoice(null);
-      setValue('customerId', '');
-      setValue('amount', 0);
+      setValue("customerId", "");
+      setValue("amount", 0);
     }
   }, [watchedInvoiceId, invoicesMap, setValue]);
 
@@ -190,13 +195,15 @@ export default function NewPaymentPage() {
       amount: data.amount,
       method: data.method as PaymentMethod,
       paymentDate: data.paymentDate,
-      reference: data.reference || '',
+      reference: data.reference || "",
       notes: data.notes,
     });
   };
 
   // Calculate selected invoice balance
-  const invoiceBalance = selectedInvoice ? calculateInvoiceBalance(selectedInvoice) : null;
+  const invoiceBalance = selectedInvoice
+    ? calculateInvoiceBalance(selectedInvoice)
+    : null;
 
   return (
     <motion.div
@@ -254,7 +261,9 @@ export default function NewPaymentPage() {
                       )}
                     />
                     {errors.invoiceId && (
-                      <p className="mt-1 text-sm text-error-500">{errors.invoiceId.message}</p>
+                      <p className="mt-1 text-sm text-error-500">
+                        {errors.invoiceId.message}
+                      </p>
                     )}
                   </div>
 
@@ -264,13 +273,19 @@ export default function NewPaymentPage() {
                       Cliente
                     </label>
                     <Input
-                      value={selectedInvoice?.customer?.name || customersMap.get(watch('customerId')) || ''}
+                      value={
+                        selectedInvoice?.customer?.name ||
+                        customersMap.get(watch("customerId")) ||
+                        ""
+                      }
                       disabled
                       placeholder="Se llenara automaticamente al seleccionar factura"
                     />
-                    <input type="hidden" {...register('customerId')} />
+                    <input type="hidden" {...register("customerId")} />
                     {errors.customerId && (
-                      <p className="mt-1 text-sm text-error-500">{errors.customerId.message}</p>
+                      <p className="mt-1 text-sm text-error-500">
+                        {errors.customerId.message}
+                      </p>
                     )}
                   </div>
                 </CardContent>
@@ -290,34 +305,44 @@ export default function NewPaymentPage() {
                   <CardContent>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       <div>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Numero</p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Numero
+                        </p>
                         <p className="font-semibold text-neutral-900 dark:text-white">
                           {selectedInvoice.invoiceNumber}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Total Factura</p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Total Factura
+                        </p>
                         <p className="font-semibold text-neutral-900 dark:text-white">
                           {formatCurrency(invoiceBalance.total)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Pagado</p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Pagado
+                        </p>
                         <p className="font-semibold text-success-600">
                           {formatCurrency(invoiceBalance.paid)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Pendiente</p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Pendiente
+                        </p>
                         <p className="font-semibold text-warning-600">
                           {formatCurrency(invoiceBalance.remaining)}
                         </p>
                       </div>
                     </div>
-                    {selectedInvoice.status === 'OVERDUE' && (
+                    {selectedInvoice.status === "OVERDUE" && (
                       <div className="mt-4 flex items-center gap-2 text-error-600 dark:text-error-400">
                         <AlertCircle className="h-4 w-4" />
-                        <span className="text-sm font-medium">Esta factura esta vencida</span>
+                        <span className="text-sm font-medium">
+                          Esta factura esta vencida
+                        </span>
                       </div>
                     )}
                   </CardContent>
@@ -338,7 +363,7 @@ export default function NewPaymentPage() {
                         Monto a Pagar *
                       </label>
                       <Input
-                        {...register('amount', { valueAsNumber: true })}
+                        {...register("amount", { valueAsNumber: true })}
                         type="number"
                         min="1"
                         step="100"
@@ -346,13 +371,16 @@ export default function NewPaymentPage() {
                         error={!!errors.amount}
                       />
                       {errors.amount && (
-                        <p className="mt-1 text-sm text-error-500">{errors.amount.message}</p>
-                      )}
-                      {invoiceBalance && watch('amount') > invoiceBalance.remaining && (
-                        <p className="mt-1 text-sm text-warning-500">
-                          El monto excede el saldo pendiente
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.amount.message}
                         </p>
                       )}
+                      {invoiceBalance &&
+                        watch("amount") > invoiceBalance.remaining && (
+                          <p className="mt-1 text-sm text-warning-500">
+                            El monto excede el saldo pendiente
+                          </p>
+                        )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
@@ -364,14 +392,16 @@ export default function NewPaymentPage() {
                         render={({ field }) => (
                           <Select
                             options={paymentMethodOptions}
-                            value={field.value || ''}
+                            value={field.value || ""}
                             onChange={field.onChange}
                             error={!!errors.method}
                           />
                         )}
                       />
                       {errors.method && (
-                        <p className="mt-1 text-sm text-error-500">{errors.method.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.method.message}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -382,12 +412,14 @@ export default function NewPaymentPage() {
                         Fecha de Pago *
                       </label>
                       <Input
-                        {...register('paymentDate')}
+                        {...register("paymentDate")}
                         type="date"
                         error={!!errors.paymentDate}
                       />
                       {errors.paymentDate && (
-                        <p className="mt-1 text-sm text-error-500">{errors.paymentDate.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.paymentDate.message}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -395,12 +427,14 @@ export default function NewPaymentPage() {
                         Numero de Referencia
                       </label>
                       <Input
-                        {...register('reference')}
+                        {...register("reference")}
                         placeholder="Ej: Numero de transaccion, cheque, etc."
                         error={!!errors.reference}
                       />
                       {errors.reference && (
-                        <p className="mt-1 text-sm text-error-500">{errors.reference.message}</p>
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.reference.message}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -416,19 +450,21 @@ export default function NewPaymentPage() {
                 </CardHeader>
                 <CardContent>
                   <textarea
-                    {...register('notes')}
+                    {...register("notes")}
                     placeholder="Notas adicionales para el pago (opcional)"
                     rows={3}
                     className={cn(
-                      'w-full rounded-lg border border-neutral-300 dark:border-neutral-600',
-                      'bg-white dark:bg-neutral-900 px-4 py-2.5',
-                      'text-neutral-900 dark:text-white placeholder:text-neutral-400',
-                      'focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none',
-                      'transition-colors resize-none'
+                      "w-full rounded-lg border border-neutral-300 dark:border-neutral-600",
+                      "bg-white dark:bg-neutral-900 px-4 py-2.5",
+                      "text-neutral-900 dark:text-white placeholder:text-neutral-400",
+                      "focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none",
+                      "transition-colors resize-none",
                     )}
                   />
                   {errors.notes && (
-                    <p className="mt-1 text-sm text-error-500">{errors.notes.message}</p>
+                    <p className="mt-1 text-sm text-error-500">
+                      {errors.notes.message}
+                    </p>
                   )}
                 </CardContent>
               </Card>
@@ -445,28 +481,38 @@ export default function NewPaymentPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500 dark:text-neutral-400">Factura</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Factura
+                    </span>
                     <span className="text-neutral-900 dark:text-white">
-                      {selectedInvoice?.invoiceNumber || '-'}
+                      {selectedInvoice?.invoiceNumber || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500 dark:text-neutral-400">Cliente</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Cliente
+                    </span>
                     <span className="text-neutral-900 dark:text-white truncate max-w-[150px]">
-                      {selectedInvoice?.customer?.name || '-'}
+                      {selectedInvoice?.customer?.name || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500 dark:text-neutral-400">Metodo</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      Metodo
+                    </span>
                     <span className="text-neutral-900 dark:text-white">
-                      {watch('method') ? PaymentMethodLabels[watch('method') as PaymentMethod] : '-'}
+                      {watch("method")
+                        ? PaymentMethodLabels[watch("method") as PaymentMethod]
+                        : "-"}
                     </span>
                   </div>
                   <div className="pt-3 border-t border-neutral-200 dark:border-neutral-700">
                     <div className="flex justify-between">
-                      <span className="font-semibold text-neutral-900 dark:text-white">Monto</span>
+                      <span className="font-semibold text-neutral-900 dark:text-white">
+                        Monto
+                      </span>
                       <span className="text-xl font-bold text-neutral-900 dark:text-white">
-                        {formatCurrency(watch('amount') || 0)}
+                        {formatCurrency(watch("amount") || 0)}
                       </span>
                     </div>
                   </div>
@@ -504,9 +550,13 @@ export default function NewPaymentPage() {
                     Informacion
                   </h4>
                   <ul className="text-sm text-neutral-500 dark:text-neutral-400 space-y-1">
-                    <li>- Solo facturas pendientes o vencidas pueden recibir pagos</li>
+                    <li>
+                      - Solo facturas pendientes o vencidas pueden recibir pagos
+                    </li>
                     <li>- El monto puede ser menor al saldo (pago parcial)</li>
-                    <li>- La referencia es util para rastrear transferencias</li>
+                    <li>
+                      - La referencia es util para rastrear transferencias
+                    </li>
                   </ul>
                 </CardContent>
               </Card>

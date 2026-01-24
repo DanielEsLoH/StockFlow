@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { Link, useParams } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   CreditCard,
@@ -22,36 +22,29 @@ import {
   X,
   Banknote,
   Hash,
-} from 'lucide-react';
-import type { Route } from './+types/_app.payments.$id';
-import { cn, formatDate, formatCurrency } from '~/lib/utils';
+} from "lucide-react";
+import type { Route } from "./+types/_app.payments.$id";
+import { cn, formatDate, formatCurrency } from "~/lib/utils";
 import {
   usePayment,
   useDeletePayment,
   useUpdatePaymentStatus,
   useRefundPayment,
-} from '~/hooks/usePayments';
-import { Button } from '~/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Skeleton } from '~/components/ui/Skeleton';
-import { DeleteModal } from '~/components/ui/DeleteModal';
-import { Input } from '~/components/ui/Input';
-import type {
-  Payment,
-  PaymentStatus,
-  PaymentMethod,
-} from '~/types/payment';
-import {
-  PaymentMethodLabels,
-  PaymentStatusLabels,
-} from '~/types/payment';
+} from "~/hooks/usePayments";
+import { Button } from "~/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Skeleton } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/DeleteModal";
+import { Input } from "~/components/ui/Input";
+import type { Payment, PaymentStatus, PaymentMethod } from "~/types/payment";
+import { PaymentMethodLabels, PaymentStatusLabels } from "~/types/payment";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Pago - StockFlow' },
-    { name: 'description', content: 'Detalles del pago' },
+    { title: "Pago - StockFlow" },
+    { name: "description", content: "Detalles del pago" },
   ];
 };
 
@@ -80,40 +73,55 @@ const modalVariants = {
 };
 
 // Status badge component with icon
-function PaymentStatusBadge({ status, size = 'md' }: { status: PaymentStatus; size?: 'sm' | 'md' | 'lg' }) {
-  const config: Record<PaymentStatus, {
-    label: string;
-    variant: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error';
-    icon: React.ReactNode;
-  }> = {
+function PaymentStatusBadge({
+  status,
+  size = "md",
+}: {
+  status: PaymentStatus;
+  size?: "sm" | "md" | "lg";
+}) {
+  const config: Record<
+    PaymentStatus,
+    {
+      label: string;
+      variant:
+        | "default"
+        | "primary"
+        | "secondary"
+        | "success"
+        | "warning"
+        | "error";
+      icon: React.ReactNode;
+    }
+  > = {
     PENDING: {
       label: PaymentStatusLabels.PENDING,
-      variant: 'warning',
+      variant: "warning",
       icon: <Clock className="h-3 w-3" />,
     },
     PROCESSING: {
       label: PaymentStatusLabels.PROCESSING,
-      variant: 'primary',
+      variant: "primary",
       icon: <Clock className="h-3 w-3" />,
     },
     COMPLETED: {
       label: PaymentStatusLabels.COMPLETED,
-      variant: 'success',
+      variant: "success",
       icon: <CheckCircle className="h-3 w-3" />,
     },
     FAILED: {
       label: PaymentStatusLabels.FAILED,
-      variant: 'error',
+      variant: "error",
       icon: <AlertTriangle className="h-3 w-3" />,
     },
     REFUNDED: {
       label: PaymentStatusLabels.REFUNDED,
-      variant: 'secondary',
+      variant: "secondary",
       icon: <RotateCcw className="h-3 w-3" />,
     },
     CANCELLED: {
       label: PaymentStatusLabels.CANCELLED,
-      variant: 'secondary',
+      variant: "secondary",
       icon: <XCircle className="h-3 w-3" />,
     },
   };
@@ -130,10 +138,13 @@ function PaymentStatusBadge({ status, size = 'md' }: { status: PaymentStatus; si
 
 // Payment method badge component
 function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
-  const config: Record<PaymentMethod, {
-    label: string;
-    icon: React.ReactNode;
-  }> = {
+  const config: Record<
+    PaymentMethod,
+    {
+      label: string;
+      icon: React.ReactNode;
+    }
+  > = {
     CASH: {
       label: PaymentMethodLabels.CASH,
       icon: <Banknote className="h-3 w-3" />,
@@ -191,18 +202,20 @@ function StatusActions({
   const [isOpen, setIsOpen] = useState(false);
 
   // Define available status transitions
-  const getAvailableTransitions = (status: PaymentStatus): { status: PaymentStatus; label: string }[] => {
+  const getAvailableTransitions = (
+    status: PaymentStatus,
+  ): { status: PaymentStatus; label: string }[] => {
     switch (status) {
-      case 'PENDING':
+      case "PENDING":
         return [
-          { status: 'COMPLETED', label: 'Marcar como completado' },
-          { status: 'FAILED', label: 'Marcar como fallido' },
-          { status: 'CANCELLED', label: 'Cancelar pago' },
+          { status: "COMPLETED", label: "Marcar como completado" },
+          { status: "FAILED", label: "Marcar como fallido" },
+          { status: "CANCELLED", label: "Cancelar pago" },
         ];
-      case 'FAILED':
+      case "FAILED":
         return [
-          { status: 'PENDING', label: 'Reintentar pago' },
-          { status: 'CANCELLED', label: 'Cancelar pago' },
+          { status: "PENDING", label: "Reintentar pago" },
+          { status: "CANCELLED", label: "Cancelar pago" },
         ];
       default:
         return [];
@@ -221,7 +234,14 @@ function StatusActions({
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading}
-        rightIcon={<ChevronDown className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')} />}
+        rightIcon={
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 transition-transform",
+              isOpen && "rotate-180",
+            )}
+          />
+        }
       >
         Cambiar Estado
       </Button>
@@ -266,7 +286,9 @@ function RefundModal({
   onConfirm: (amount?: number) => void;
   isLoading: boolean;
 }) {
-  const [refundAmount, setRefundAmount] = useState<string>(payment.amount.toString());
+  const [refundAmount, setRefundAmount] = useState<string>(
+    payment.amount.toString(),
+  );
   const [isPartialRefund, setIsPartialRefund] = useState(false);
 
   const handleConfirm = () => {
@@ -330,7 +352,7 @@ function RefundModal({
 
               {/* Description */}
               <p className="mb-6 text-neutral-500 dark:text-neutral-400 text-center">
-                Monto original del pago:{' '}
+                Monto original del pago:{" "}
                 <span className="font-medium text-neutral-900 dark:text-white">
                   {formatCurrency(payment.amount)}
                 </span>
@@ -388,12 +410,15 @@ function RefundModal({
                     min={0}
                     max={payment.amount}
                     step={0.01}
-                    leftElement={<DollarSign className="h-4 w-4 text-neutral-400" />}
-                    error={!isValidAmount() && refundAmount !== ''}
+                    leftElement={
+                      <DollarSign className="h-4 w-4 text-neutral-400" />
+                    }
+                    error={!isValidAmount() && refundAmount !== ""}
                   />
-                  {!isValidAmount() && refundAmount !== '' && (
+                  {!isValidAmount() && refundAmount !== "" && (
                     <p className="text-sm text-error-500">
-                      El monto debe ser entre 0 y {formatCurrency(payment.amount)}
+                      El monto debe ser entre 0 y{" "}
+                      {formatCurrency(payment.amount)}
                     </p>
                   )}
                 </div>
@@ -485,13 +510,13 @@ export default function PaymentDetailPage() {
         onSuccess: () => {
           setShowRefundModal(false);
         },
-      }
+      },
     );
   };
 
   // Check permissions based on status
-  const canDelete = payment && payment.status === 'PENDING';
-  const canRefund = payment && payment.status === 'COMPLETED';
+  const canDelete = payment && payment.status === "PENDING";
+  const canRefund = payment && payment.status === "COMPLETED";
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -561,10 +586,7 @@ export default function PaymentDetailPage() {
               </Button>
             )}
             {canDelete && (
-              <Button
-                variant="danger"
-                onClick={() => setShowDeleteModal(true)}
-              >
+              <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
                 <Trash2 className="h-4 w-4 mr-2" />
                 Eliminar
               </Button>
@@ -584,28 +606,36 @@ export default function PaymentDetailPage() {
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Monto</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Monto
+                  </p>
                   <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
                     {formatCurrency(payment.amount)}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Metodo de Pago</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Metodo de Pago
+                  </p>
                   <div className="mt-1.5">
                     <PaymentMethodBadge method={payment.method} />
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Estado</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Estado
+                  </p>
                   <div className="mt-1.5">
                     <PaymentStatusBadge status={payment.status} />
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Fecha de Pago</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Fecha de Pago
+                  </p>
                   <div className="flex items-center gap-1.5 mt-1">
                     <Calendar className="h-4 w-4 text-neutral-400" />
                     <p className="font-medium text-neutral-900 dark:text-white">
@@ -616,7 +646,9 @@ export default function PaymentDetailPage() {
 
                 {payment.processedAt && (
                   <div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Procesado</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Procesado
+                    </p>
                     <div className="flex items-center gap-1.5 mt-1">
                       <CheckCircle className="h-4 w-4 text-success-500" />
                       <p className="font-medium text-success-600 dark:text-success-400">
@@ -627,11 +659,13 @@ export default function PaymentDetailPage() {
                 )}
 
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Referencia</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Referencia
+                  </p>
                   <div className="flex items-center gap-1.5 mt-1">
                     <Hash className="h-4 w-4 text-neutral-400" />
                     <p className="font-medium text-neutral-900 dark:text-white font-mono">
-                      {payment.reference || '-'}
+                      {payment.reference || "-"}
                     </p>
                   </div>
                 </div>
@@ -645,7 +679,7 @@ export default function PaymentDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {payment.customer?.type === 'BUSINESS' ? (
+                {payment.customer?.type === "BUSINESS" ? (
                   <Building2 className="h-5 w-5 text-primary-500" />
                 ) : (
                   <User className="h-5 w-5 text-primary-500" />
@@ -656,7 +690,7 @@ export default function PaymentDetailPage() {
             <CardContent className="space-y-4">
               <div>
                 <p className="font-semibold text-neutral-900 dark:text-white">
-                  {payment.customer?.name || 'Cliente desconocido'}
+                  {payment.customer?.name || "Cliente desconocido"}
                 </p>
                 {payment.customer?.document && (
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">

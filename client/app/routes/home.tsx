@@ -221,7 +221,7 @@ export default function Home() {
         }
       }
     },
-    []
+    [],
   );
 
   return (
@@ -470,10 +470,7 @@ export default function Home() {
       </section>
 
       {/* Tech Stack Section */}
-      <section
-        id="tech"
-        className="bg-neutral-50 py-24 dark:bg-neutral-900/50"
-      >
+      <section id="tech" className="bg-neutral-50 py-24 dark:bg-neutral-900/50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={isMounted ? "hidden" : false}

@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { Link, useParams, useNavigate } from "react-router";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Pencil,
@@ -13,22 +13,22 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-react';
-import type { Route } from './+types/_app.products.$id';
-import { cn, formatCurrency, formatDate } from '~/lib/utils';
-import { useProduct, useDeleteProduct } from '~/hooks/useProducts';
-import { Button } from '~/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '~/components/ui/Card';
-import { Badge, StatusBadge } from '~/components/ui/Badge';
-import { Skeleton } from '~/components/ui/Skeleton';
-import { DeleteModal } from '~/components/ui/Modal';
-import { EmptyState } from '~/components/ui/EmptyState';
+} from "lucide-react";
+import type { Route } from "./+types/_app.products.$id";
+import { cn, formatCurrency, formatDate } from "~/lib/utils";
+import { useProduct, useDeleteProduct } from "~/hooks/useProducts";
+import { Button } from "~/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
+import { Badge, StatusBadge } from "~/components/ui/Badge";
+import { Skeleton } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/Modal";
+import { EmptyState } from "~/components/ui/EmptyState";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = ({ params }) => {
   return [
     { title: `Producto ${params.id} - StockFlow` },
-    { name: 'description', content: 'Detalles del producto' },
+    { name: "description", content: "Detalles del producto" },
   ];
 };
 
@@ -65,12 +65,14 @@ function InfoRow({
   className?: string;
 }) {
   return (
-    <div className={cn('flex items-start gap-3', className)}>
+    <div className={cn("flex items-start gap-3", className)}>
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800">
         <Icon className="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          {label}
+        </p>
         <p className="font-medium text-neutral-900 dark:text-white">{value}</p>
       </div>
     </div>
@@ -104,12 +106,16 @@ export default function ProductDetailPage() {
 
   const prevImage = () => {
     if (hasMultipleImages) {
-      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+      setCurrentImageIndex(
+        (prev) => (prev - 1 + images.length) % images.length,
+      );
     }
   };
 
   // Calculate margin
-  const margin = product ? ((product.price - product.cost) / product.price) * 100 : 0;
+  const margin = product
+    ? ((product.price - product.cost) / product.price) * 100
+    : 0;
 
   // Loading state
   if (isLoading) {
@@ -141,7 +147,7 @@ export default function ProductDetailPage() {
       <div className="space-y-6">
         <Button
           variant="ghost"
-          onClick={() => navigate('/products')}
+          onClick={() => navigate("/products")}
           leftIcon={<ArrowLeft className="h-4 w-4" />}
         >
           Volver a productos
@@ -150,10 +156,13 @@ export default function ProductDetailPage() {
           <EmptyState
             type="error"
             title="Producto no encontrado"
-            description={error?.message || 'El producto que buscas no existe o fue eliminado.'}
+            description={
+              error?.message ||
+              "El producto que buscas no existe o fue eliminado."
+            }
             action={{
-              label: 'Ver productos',
-              onClick: () => navigate('/products'),
+              label: "Ver productos",
+              onClick: () => navigate("/products"),
             }}
           />
         </Card>
@@ -250,10 +259,10 @@ export default function ProductDetailPage() {
                             type="button"
                             onClick={() => setCurrentImageIndex(index)}
                             className={cn(
-                              'h-2 w-2 rounded-full transition-colors',
+                              "h-2 w-2 rounded-full transition-colors",
                               index === currentImageIndex
-                                ? 'bg-white'
-                                : 'bg-white/50 hover:bg-white/75'
+                                ? "bg-white"
+                                : "bg-white/50 hover:bg-white/75",
                             )}
                             aria-label={`Ver imagen ${index + 1}`}
                           />
@@ -278,10 +287,10 @@ export default function ProductDetailPage() {
                     type="button"
                     onClick={() => setCurrentImageIndex(index)}
                     className={cn(
-                      'h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors',
+                      "h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors",
                       index === currentImageIndex
-                        ? 'border-primary-500'
-                        : 'border-transparent hover:border-neutral-300 dark:hover:border-neutral-600'
+                        ? "border-primary-500"
+                        : "border-transparent hover:border-neutral-300 dark:hover:border-neutral-600",
                     )}
                   >
                     <img
@@ -356,30 +365,30 @@ export default function ProductDetailPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div
                   className={cn(
-                    'rounded-xl p-4',
+                    "rounded-xl p-4",
                     product.quantity <= product.minStock
-                      ? 'bg-error-50 dark:bg-error-900/20'
-                      : 'bg-success-50 dark:bg-success-900/20'
+                      ? "bg-error-50 dark:bg-error-900/20"
+                      : "bg-success-50 dark:bg-success-900/20",
                   )}
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <p
                         className={cn(
-                          'text-sm font-medium',
+                          "text-sm font-medium",
                           product.quantity <= product.minStock
-                            ? 'text-error-600 dark:text-error-400'
-                            : 'text-success-600 dark:text-success-400'
+                            ? "text-error-600 dark:text-error-400"
+                            : "text-success-600 dark:text-success-400",
                         )}
                       >
                         Stock Actual
                       </p>
                       <p
                         className={cn(
-                          'mt-1 text-3xl font-bold',
+                          "mt-1 text-3xl font-bold",
                           product.quantity <= product.minStock
-                            ? 'text-error-700 dark:text-error-300'
-                            : 'text-success-700 dark:text-success-300'
+                            ? "text-error-700 dark:text-error-300"
+                            : "text-success-700 dark:text-success-300",
                         )}
                       >
                         {product.quantity} uds
@@ -403,7 +412,9 @@ export default function ProductDetailPage() {
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">
                         Stock Maximo
                       </span>
-                      <span className="font-medium">{product.maxStock} uds</span>
+                      <span className="font-medium">
+                        {product.maxStock} uds
+                      </span>
                     </div>
                   )}
                 </div>
@@ -421,17 +432,17 @@ export default function ProductDetailPage() {
                 <InfoRow
                   icon={Tag}
                   label="Categoria"
-                  value={product.category?.name || '-'}
+                  value={product.category?.name || "-"}
                 />
                 <InfoRow
                   icon={Warehouse}
                   label="Bodega"
-                  value={product.warehouse?.name || '-'}
+                  value={product.warehouse?.name || "-"}
                 />
                 <InfoRow
                   icon={Barcode}
                   label="Codigo de Barras"
-                  value={product.barcode || '-'}
+                  value={product.barcode || "-"}
                 />
                 <InfoRow
                   icon={Calendar}

@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useSearchParams } from 'react-router';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { useSearchParams } from "react-router";
+import { motion } from "framer-motion";
 import {
   Search,
   Filter,
@@ -11,32 +11,53 @@ import {
   Trash2,
   AlertCircle,
   X,
-} from 'lucide-react';
-import { useSystemAdminUsers } from '~/hooks/useSystemAdmin';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import type { UserStatus, UserRole } from '~/services/system-admin.service';
+} from "lucide-react";
+import { useSystemAdminUsers } from "~/hooks/useSystemAdmin";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import type { UserStatus, UserRole } from "~/services/system-admin.service";
 
 export function meta() {
   return [
-    { title: 'Usuarios - System Admin - StockFlow' },
-    { name: 'description', content: 'Gestion de usuarios del sistema' },
+    { title: "Usuarios - System Admin - StockFlow" },
+    { name: "description", content: "Gestion de usuarios del sistema" },
   ];
 }
 
 // Status badge component
 function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-    PENDING: { bg: 'bg-yellow-100 dark:bg-yellow-900/20', text: 'text-yellow-700 dark:text-yellow-400', label: 'Pendiente' },
-    ACTIVE: { bg: 'bg-green-100 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-400', label: 'Activo' },
-    SUSPENDED: { bg: 'bg-red-100 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', label: 'Suspendido' },
-    INACTIVE: { bg: 'bg-neutral-100 dark:bg-neutral-800', text: 'text-neutral-700 dark:text-neutral-400', label: 'Inactivo' },
+  const statusConfig: Record<
+    string,
+    { bg: string; text: string; label: string }
+  > = {
+    PENDING: {
+      bg: "bg-yellow-100 dark:bg-yellow-900/20",
+      text: "text-yellow-700 dark:text-yellow-400",
+      label: "Pendiente",
+    },
+    ACTIVE: {
+      bg: "bg-green-100 dark:bg-green-900/20",
+      text: "text-green-700 dark:text-green-400",
+      label: "Activo",
+    },
+    SUSPENDED: {
+      bg: "bg-red-100 dark:bg-red-900/20",
+      text: "text-red-700 dark:text-red-400",
+      label: "Suspendido",
+    },
+    INACTIVE: {
+      bg: "bg-neutral-100 dark:bg-neutral-800",
+      text: "text-neutral-700 dark:text-neutral-400",
+      label: "Inactivo",
+    },
   };
 
   const config = statusConfig[status] || statusConfig.INACTIVE;
 
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}>
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}
+    >
       {config.label}
     </span>
   );
@@ -45,16 +66,30 @@ function StatusBadge({ status }: { status: string }) {
 // Role badge component
 function RoleBadge({ role }: { role: string }) {
   const roleConfig: Record<string, { bg: string; text: string }> = {
-    SUPER_ADMIN: { bg: 'bg-purple-100 dark:bg-purple-900/20', text: 'text-purple-700 dark:text-purple-400' },
-    ADMIN: { bg: 'bg-blue-100 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-400' },
-    MANAGER: { bg: 'bg-cyan-100 dark:bg-cyan-900/20', text: 'text-cyan-700 dark:text-cyan-400' },
-    EMPLOYEE: { bg: 'bg-neutral-100 dark:bg-neutral-800', text: 'text-neutral-700 dark:text-neutral-400' },
+    SUPER_ADMIN: {
+      bg: "bg-purple-100 dark:bg-purple-900/20",
+      text: "text-purple-700 dark:text-purple-400",
+    },
+    ADMIN: {
+      bg: "bg-blue-100 dark:bg-blue-900/20",
+      text: "text-blue-700 dark:text-blue-400",
+    },
+    MANAGER: {
+      bg: "bg-cyan-100 dark:bg-cyan-900/20",
+      text: "text-cyan-700 dark:text-cyan-400",
+    },
+    EMPLOYEE: {
+      bg: "bg-neutral-100 dark:bg-neutral-800",
+      text: "text-neutral-700 dark:text-neutral-400",
+    },
   };
 
   const config = roleConfig[role] || roleConfig.EMPLOYEE;
 
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}>
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}
+    >
       {role}
     </span>
   );
@@ -66,7 +101,7 @@ function ConfirmDialog({
   title,
   message,
   confirmLabel,
-  confirmVariant = 'danger',
+  confirmVariant = "danger",
   onConfirm,
   onCancel,
   isLoading,
@@ -75,7 +110,7 @@ function ConfirmDialog({
   title: string;
   message: string;
   confirmLabel: string;
-  confirmVariant?: 'danger' | 'success';
+  confirmVariant?: "danger" | "success";
   onConfirm: () => void;
   onCancel: () => void;
   isLoading?: boolean;
@@ -96,7 +131,9 @@ function ConfirmDialog({
         >
           <X className="h-5 w-5" />
         </button>
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">{title}</h3>
+        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+          {title}
+        </h3>
         <p className="mt-2 text-neutral-600 dark:text-neutral-400">{message}</p>
         <div className="mt-6 flex justify-end gap-3">
           <Button variant="secondary" onClick={onCancel} disabled={isLoading}>
@@ -118,18 +155,20 @@ function ConfirmDialog({
 
 export default function SystemAdminUsersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || "",
+  );
   const [confirmDialog, setConfirmDialog] = useState<{
-    type: 'approve' | 'suspend' | 'delete';
+    type: "approve" | "suspend" | "delete";
     userId: string;
     userName: string;
   } | null>(null);
 
   // Get query params
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const status = searchParams.get('status') as UserStatus | undefined;
-  const role = searchParams.get('role') as UserRole | undefined;
-  const search = searchParams.get('search') || undefined;
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const status = searchParams.get("status") as UserStatus | undefined;
+  const role = searchParams.get("role") as UserRole | undefined;
+  const search = searchParams.get("search") || undefined;
 
   const {
     users,
@@ -148,15 +187,15 @@ export default function SystemAdminUsersPage() {
   const updateParams = (updates: Record<string, string | undefined>) => {
     const newParams = new URLSearchParams(searchParams);
     Object.entries(updates).forEach(([key, value]) => {
-      if (value === undefined || value === '') {
+      if (value === undefined || value === "") {
         newParams.delete(key);
       } else {
         newParams.set(key, value);
       }
     });
     // Reset to page 1 when filters change (except when changing page)
-    if (!('page' in updates)) {
-      newParams.delete('page');
+    if (!("page" in updates)) {
+      newParams.delete("page");
     }
     setSearchParams(newParams);
   };
@@ -172,13 +211,13 @@ export default function SystemAdminUsersPage() {
     if (!confirmDialog) return;
 
     switch (confirmDialog.type) {
-      case 'approve':
+      case "approve":
         approveUser(confirmDialog.userId);
         break;
-      case 'suspend':
+      case "suspend":
         suspendUser({ userId: confirmDialog.userId });
         break;
-      case 'delete':
+      case "delete":
         deleteUser({ userId: confirmDialog.userId });
         break;
     }
@@ -186,21 +225,21 @@ export default function SystemAdminUsersPage() {
   };
 
   // Status filter options
-  const statusOptions: { value: UserStatus | ''; label: string }[] = [
-    { value: '', label: 'Todos los estados' },
-    { value: 'PENDING', label: 'Pendiente' },
-    { value: 'ACTIVE', label: 'Activo' },
-    { value: 'SUSPENDED', label: 'Suspendido' },
-    { value: 'INACTIVE', label: 'Inactivo' },
+  const statusOptions: { value: UserStatus | ""; label: string }[] = [
+    { value: "", label: "Todos los estados" },
+    { value: "PENDING", label: "Pendiente" },
+    { value: "ACTIVE", label: "Activo" },
+    { value: "SUSPENDED", label: "Suspendido" },
+    { value: "INACTIVE", label: "Inactivo" },
   ];
 
   // Role filter options
-  const roleOptions: { value: UserRole | ''; label: string }[] = [
-    { value: '', label: 'Todos los roles' },
-    { value: 'SUPER_ADMIN', label: 'Super Admin' },
-    { value: 'ADMIN', label: 'Admin' },
-    { value: 'MANAGER', label: 'Manager' },
-    { value: 'EMPLOYEE', label: 'Employee' },
+  const roleOptions: { value: UserRole | ""; label: string }[] = [
+    { value: "", label: "Todos los roles" },
+    { value: "SUPER_ADMIN", label: "Super Admin" },
+    { value: "ADMIN", label: "Admin" },
+    { value: "MANAGER", label: "Manager" },
+    { value: "EMPLOYEE", label: "Employee" },
   ];
 
   if (error) {
@@ -239,8 +278,10 @@ export default function SystemAdminUsersPage() {
 
         <div className="flex gap-2">
           <select
-            value={status || ''}
-            onChange={(e) => updateParams({ status: e.target.value || undefined })}
+            value={status || ""}
+            onChange={(e) =>
+              updateParams({ status: e.target.value || undefined })
+            }
             className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
           >
             {statusOptions.map((option) => (
@@ -251,8 +292,10 @@ export default function SystemAdminUsersPage() {
           </select>
 
           <select
-            value={role || ''}
-            onChange={(e) => updateParams({ role: e.target.value || undefined })}
+            value={role || ""}
+            onChange={(e) =>
+              updateParams({ role: e.target.value || undefined })
+            }
             className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
           >
             {roleOptions.map((option) => (
@@ -286,7 +329,12 @@ export default function SystemAdminUsersPage() {
           {search && (
             <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-3 py-1 text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
               Busqueda: {search}
-              <button onClick={() => { setSearchInput(''); updateParams({ search: undefined }); }}>
+              <button
+                onClick={() => {
+                  setSearchInput("");
+                  updateParams({ search: undefined });
+                }}
+              >
                 <X className="h-4 w-4" />
               </button>
             </span>
@@ -366,12 +414,16 @@ export default function SystemAdminUsersPage() {
                 </tr>
               ) : (
                 users.map((user) => (
-                  <tr key={user.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                  <tr
+                    key={user.id}
+                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/20">
                           <span className="text-sm font-medium text-primary-700 dark:text-primary-400">
-                            {user.firstName[0]}{user.lastName[0]}
+                            {user.firstName[0]}
+                            {user.lastName[0]}
                           </span>
                         </div>
                         <div>
@@ -385,7 +437,9 @@ export default function SystemAdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-neutral-900 dark:text-white">{user.tenantName}</p>
+                      <p className="text-neutral-900 dark:text-white">
+                        {user.tenantName}
+                      </p>
                     </td>
                     <td className="px-6 py-4">
                       <RoleBadge role={user.role} />
@@ -394,60 +448,74 @@ export default function SystemAdminUsersPage() {
                       <StatusBadge status={user.status} />
                     </td>
                     <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                      {new Date(user.createdAt).toLocaleDateString('es-ES')}
+                      {new Date(user.createdAt).toLocaleDateString("es-ES")}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
-                        {user.status === 'PENDING' && (
+                        {user.status === "PENDING" && (
                           <Button
                             size="sm"
                             variant="success"
-                            onClick={() => setConfirmDialog({
-                              type: 'approve',
-                              userId: user.id,
-                              userName: `${user.firstName} ${user.lastName}`,
-                            })}
+                            onClick={() =>
+                              setConfirmDialog({
+                                type: "approve",
+                                userId: user.id,
+                                userName: `${user.firstName} ${user.lastName}`,
+                              })
+                            }
                           >
                             <UserCheck className="h-4 w-4" />
-                            <span className="hidden sm:inline ml-1">Aprobar</span>
+                            <span className="hidden sm:inline ml-1">
+                              Aprobar
+                            </span>
                           </Button>
                         )}
-                        {user.status === 'ACTIVE' && (
+                        {user.status === "ACTIVE" && (
                           <Button
                             size="sm"
                             variant="secondary"
-                            onClick={() => setConfirmDialog({
-                              type: 'suspend',
-                              userId: user.id,
-                              userName: `${user.firstName} ${user.lastName}`,
-                            })}
+                            onClick={() =>
+                              setConfirmDialog({
+                                type: "suspend",
+                                userId: user.id,
+                                userName: `${user.firstName} ${user.lastName}`,
+                              })
+                            }
                           >
                             <UserX className="h-4 w-4" />
-                            <span className="hidden sm:inline ml-1">Suspender</span>
+                            <span className="hidden sm:inline ml-1">
+                              Suspender
+                            </span>
                           </Button>
                         )}
-                        {user.status === 'SUSPENDED' && (
+                        {user.status === "SUSPENDED" && (
                           <Button
                             size="sm"
                             variant="success"
-                            onClick={() => setConfirmDialog({
-                              type: 'approve',
-                              userId: user.id,
-                              userName: `${user.firstName} ${user.lastName}`,
-                            })}
+                            onClick={() =>
+                              setConfirmDialog({
+                                type: "approve",
+                                userId: user.id,
+                                userName: `${user.firstName} ${user.lastName}`,
+                              })
+                            }
                           >
                             <UserCheck className="h-4 w-4" />
-                            <span className="hidden sm:inline ml-1">Activar</span>
+                            <span className="hidden sm:inline ml-1">
+                              Activar
+                            </span>
                           </Button>
                         )}
                         <Button
                           size="sm"
                           variant="danger"
-                          onClick={() => setConfirmDialog({
-                            type: 'delete',
-                            userId: user.id,
-                            userName: `${user.firstName} ${user.lastName}`,
-                          })}
+                          onClick={() =>
+                            setConfirmDialog({
+                              type: "delete",
+                              userId: user.id,
+                              userName: `${user.firstName} ${user.lastName}`,
+                            })
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -464,7 +532,9 @@ export default function SystemAdminUsersPage() {
         {meta && meta.totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-neutral-200 px-6 py-4 dark:border-neutral-800">
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Mostrando {((meta.page - 1) * meta.limit) + 1} a {Math.min(meta.page * meta.limit, meta.total)} de {meta.total} usuarios
+              Mostrando {(meta.page - 1) * meta.limit + 1} a{" "}
+              {Math.min(meta.page * meta.limit, meta.total)} de {meta.total}{" "}
+              usuarios
             </p>
             <div className="flex gap-2">
               <Button
@@ -494,27 +564,29 @@ export default function SystemAdminUsersPage() {
       <ConfirmDialog
         isOpen={!!confirmDialog}
         title={
-          confirmDialog?.type === 'approve'
-            ? 'Aprobar Usuario'
-            : confirmDialog?.type === 'suspend'
-            ? 'Suspender Usuario'
-            : 'Eliminar Usuario'
+          confirmDialog?.type === "approve"
+            ? "Aprobar Usuario"
+            : confirmDialog?.type === "suspend"
+              ? "Suspender Usuario"
+              : "Eliminar Usuario"
         }
         message={
-          confirmDialog?.type === 'approve'
+          confirmDialog?.type === "approve"
             ? `Esta seguro de aprobar al usuario ${confirmDialog?.userName}? Podra acceder al sistema.`
-            : confirmDialog?.type === 'suspend'
-            ? `Esta seguro de suspender al usuario ${confirmDialog?.userName}? No podra acceder al sistema.`
-            : `Esta seguro de eliminar al usuario ${confirmDialog?.userName}? Esta accion no se puede deshacer.`
+            : confirmDialog?.type === "suspend"
+              ? `Esta seguro de suspender al usuario ${confirmDialog?.userName}? No podra acceder al sistema.`
+              : `Esta seguro de eliminar al usuario ${confirmDialog?.userName}? Esta accion no se puede deshacer.`
         }
         confirmLabel={
-          confirmDialog?.type === 'approve'
-            ? 'Aprobar'
-            : confirmDialog?.type === 'suspend'
-            ? 'Suspender'
-            : 'Eliminar'
+          confirmDialog?.type === "approve"
+            ? "Aprobar"
+            : confirmDialog?.type === "suspend"
+              ? "Suspender"
+              : "Eliminar"
         }
-        confirmVariant={confirmDialog?.type === 'approve' ? 'success' : 'danger'}
+        confirmVariant={
+          confirmDialog?.type === "approve" ? "success" : "danger"
+        }
         onConfirm={handleConfirmAction}
         onCancel={() => setConfirmDialog(null)}
         isLoading={isApproving || isSuspending || isDeleting}

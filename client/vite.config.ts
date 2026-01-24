@@ -6,6 +6,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import compression from "vite-plugin-compression";
 
 const isAnalyze = process.env.ANALYZE === "true";
+const isProduction = process.env.NODE_ENV === "production";
 
 export default defineConfig({
   plugins: [
@@ -38,10 +39,21 @@ export default defineConfig({
   ].filter(Boolean),
 
   build: {
-    // Hidden source maps for production debugging without exposing to users
-    sourcemap: "hidden",
+    // Disable source maps in production to prevent exposing server code
+    // Enable source maps in development for debugging
+    sourcemap: isProduction ? false : true,
 
     rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress sourcemap warnings from node_modules (harmless third-party package warnings)
+        if (
+          warning.code === "SOURCEMAP_ERROR" &&
+          warning.loc?.file?.includes("node_modules")
+        ) {
+          return;
+        }
+        warn(warning);
+      },
       output: {
         // Manual chunk splitting for optimal caching
         // Note: Libraries with React peer dependencies must be in the same chunk

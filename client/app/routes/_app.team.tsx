@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { motion } from "framer-motion";
 import {
   Users,
   UserPlus,
@@ -12,22 +12,28 @@ import {
   X,
   RefreshCw,
   ShieldAlert,
-} from 'lucide-react';
-import type { Route } from './+types/_app.team';
-import { cn } from '~/lib/utils';
-import { useAuth } from '~/hooks/useAuth';
-import { useTeamMembers } from '~/hooks/useTeamMembers';
+} from "lucide-react";
+import type { Route } from "./+types/_app.team";
+import { cn } from "~/lib/utils";
+import { useAuth } from "~/hooks/useAuth";
+import { useTeamMembers } from "~/hooks/useTeamMembers";
 import {
   useInvitations,
   useCreateInvitation,
   useCancelInvitation,
   useResendInvitation,
-} from '~/hooks/useInvitations';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Select } from '~/components/ui/Select';
+} from "~/hooks/useInvitations";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Select } from "~/components/ui/Select";
 import {
   Table,
   TableHeader,
@@ -35,8 +41,8 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { SkeletonTableRow } from '~/components/ui/Skeleton';
+} from "~/components/ui/Table";
+import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import {
   Dialog,
   DialogContent,
@@ -44,14 +50,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '~/components/ui/Modal';
-import { ConfirmModal } from '~/components/ui/Modal';
+} from "~/components/ui/Modal";
+import { ConfirmModal } from "~/components/ui/Modal";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Equipo - StockFlow' },
-    { name: 'description', content: 'Gestion de usuarios e invitaciones del equipo' },
+    { title: "Equipo - StockFlow" },
+    {
+      name: "description",
+      content: "Gestion de usuarios e invitaciones del equipo",
+    },
   ];
 };
 
@@ -77,67 +86,78 @@ const itemVariants = {
 const invitationSchema = z.object({
   email: z
     .string()
-    .min(1, 'El email es requerido')
-    .email('Ingresa un email valido'),
-  role: z.enum(['EMPLOYEE', 'MANAGER', 'ADMIN']),
+    .min(1, "El email es requerido")
+    .email("Ingresa un email valido"),
+  role: z.enum(["EMPLOYEE", "MANAGER", "ADMIN"]),
 });
 
 type InvitationFormData = z.infer<typeof invitationSchema>;
 
 // Role options for select
 const roleOptions = [
-  { value: 'EMPLOYEE', label: 'Empleado' },
-  { value: 'MANAGER', label: 'Gerente' },
-  { value: 'ADMIN', label: 'Administrador' },
+  { value: "EMPLOYEE", label: "Empleado" },
+  { value: "MANAGER", label: "Gerente" },
+  { value: "ADMIN", label: "Administrador" },
 ];
 
 // Role badge colors
-const roleBadgeVariants: Record<string, 'primary' | 'secondary' | 'warning' | 'success'> = {
-  SUPER_ADMIN: 'warning',
-  ADMIN: 'primary',
-  MANAGER: 'secondary',
-  EMPLOYEE: 'secondary',
+const roleBadgeVariants: Record<
+  string,
+  "primary" | "secondary" | "warning" | "success"
+> = {
+  SUPER_ADMIN: "warning",
+  ADMIN: "primary",
+  MANAGER: "secondary",
+  EMPLOYEE: "secondary",
 };
 
 // Status badge configurations
-const userStatusConfig: Record<string, { variant: 'success' | 'warning' | 'error'; label: string }> = {
-  ACTIVE: { variant: 'success', label: 'Activo' },
-  PENDING: { variant: 'warning', label: 'Pendiente' },
-  SUSPENDED: { variant: 'error', label: 'Suspendido' },
+const userStatusConfig: Record<
+  string,
+  { variant: "success" | "warning" | "error"; label: string }
+> = {
+  ACTIVE: { variant: "success", label: "Activo" },
+  PENDING: { variant: "warning", label: "Pendiente" },
+  SUSPENDED: { variant: "error", label: "Suspendido" },
 };
 
-const invitationStatusConfig: Record<string, { variant: 'success' | 'warning' | 'error' | 'secondary'; label: string }> = {
-  PENDING: { variant: 'warning', label: 'Pendiente' },
-  ACCEPTED: { variant: 'success', label: 'Aceptada' },
-  EXPIRED: { variant: 'secondary', label: 'Expirada' },
-  CANCELLED: { variant: 'error', label: 'Cancelada' },
+const invitationStatusConfig: Record<
+  string,
+  { variant: "success" | "warning" | "error" | "secondary"; label: string }
+> = {
+  PENDING: { variant: "warning", label: "Pendiente" },
+  ACCEPTED: { variant: "success", label: "Aceptada" },
+  EXPIRED: { variant: "secondary", label: "Expirada" },
+  CANCELLED: { variant: "error", label: "Cancelada" },
 };
 
 // Role display names
 const roleLabels: Record<string, string> = {
-  SUPER_ADMIN: 'Super Admin',
-  ADMIN: 'Administrador',
-  MANAGER: 'Gerente',
-  EMPLOYEE: 'Empleado',
+  SUPER_ADMIN: "Super Admin",
+  ADMIN: "Administrador",
+  MANAGER: "Gerente",
+  EMPLOYEE: "Empleado",
 };
 
 // Format date helper
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+  return new Date(dateString).toLocaleDateString("es-ES", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   });
 }
 
 // Tab type
-type TabType = 'members' | 'invitations';
+type TabType = "members" | "invitations";
 
 export default function TeamPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>('members');
+  const [activeTab, setActiveTab] = useState<TabType>("members");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [cancellingInvitationId, setCancellingInvitationId] = useState<string | null>(null);
+  const [cancellingInvitationId, setCancellingInvitationId] = useState<
+    string | null
+  >(null);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -145,11 +165,19 @@ export default function TeamPage() {
   }, []);
 
   // Check if user has permission to access this page
-  const hasPermission = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+  const hasPermission = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   // Queries
-  const { data: members = [], isLoading: isLoadingMembers, isError: isErrorMembers } = useTeamMembers();
-  const { data: invitations = [], isLoading: isLoadingInvitations, isError: isErrorInvitations } = useInvitations();
+  const {
+    data: members = [],
+    isLoading: isLoadingMembers,
+    isError: isErrorMembers,
+  } = useTeamMembers();
+  const {
+    data: invitations = [],
+    isLoading: isLoadingInvitations,
+    isError: isErrorInvitations,
+  } = useInvitations();
 
   // Mutations
   const createInvitation = useCreateInvitation();
@@ -167,12 +195,12 @@ export default function TeamPage() {
   } = useForm<InvitationFormData>({
     resolver: zodResolver(invitationSchema),
     defaultValues: {
-      email: '',
-      role: 'EMPLOYEE',
+      email: "",
+      role: "EMPLOYEE",
     },
   });
 
-  const selectedRole = watch('role');
+  const selectedRole = watch("role");
 
   // Handle invitation submit
   const onSubmitInvitation = (data: InvitationFormData) => {
@@ -183,7 +211,7 @@ export default function TeamPage() {
           setIsInviteModalOpen(false);
           reset();
         },
-      }
+      },
     );
   };
 
@@ -212,24 +240,30 @@ export default function TeamPage() {
           Acceso Denegado
         </h1>
         <p className="text-neutral-500 dark:text-neutral-400 max-w-md">
-          No tienes permisos para acceder a esta pagina. Solo los administradores pueden gestionar el equipo.
+          No tienes permisos para acceder a esta pagina. Solo los
+          administradores pueden gestionar el equipo.
         </p>
       </div>
     );
   }
 
   // Filter pending invitations for display
-  const pendingInvitations = invitations.filter((inv) => inv.status === 'PENDING');
+  const pendingInvitations = invitations.filter(
+    (inv) => inv.status === "PENDING",
+  );
 
   return (
     <motion.div
       variants={containerVariants}
-      initial={isMounted ? 'hidden' : false}
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Equipo
@@ -238,7 +272,10 @@ export default function TeamPage() {
             Gestiona los usuarios e invitaciones de tu organizacion
           </p>
         </div>
-        <Button leftIcon={<UserPlus className="h-4 w-4" />} onClick={() => setIsInviteModalOpen(true)}>
+        <Button
+          leftIcon={<UserPlus className="h-4 w-4" />}
+          onClick={() => setIsInviteModalOpen(true)}
+        >
           Invitar Usuario
         </Button>
       </motion.div>
@@ -247,12 +284,12 @@ export default function TeamPage() {
       <motion.div variants={itemVariants}>
         <div className="flex gap-2 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl w-fit">
           <button
-            onClick={() => setActiveTab('members')}
+            onClick={() => setActiveTab("members")}
             className={cn(
-              'flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200',
-              activeTab === 'members'
-                ? 'bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-400 shadow-sm'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              "flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200",
+              activeTab === "members"
+                ? "bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-400 shadow-sm"
+                : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white",
             )}
           >
             <Users className="h-4 w-4" />
@@ -262,12 +299,12 @@ export default function TeamPage() {
             </Badge>
           </button>
           <button
-            onClick={() => setActiveTab('invitations')}
+            onClick={() => setActiveTab("invitations")}
             className={cn(
-              'flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200',
-              activeTab === 'invitations'
-                ? 'bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-400 shadow-sm'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              "flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200",
+              activeTab === "invitations"
+                ? "bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-400 shadow-sm"
+                : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white",
             )}
           >
             <Mail className="h-4 w-4" />
@@ -288,7 +325,7 @@ export default function TeamPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        {activeTab === 'members' ? (
+        {activeTab === "members" ? (
           <Card>
             {isLoadingMembers ? (
               <Table>
@@ -298,7 +335,9 @@ export default function TeamPage() {
                     <TableHead>Email</TableHead>
                     <TableHead>Rol</TableHead>
                     <TableHead>Estado</TableHead>
-                    <TableHead className="hidden sm:table-cell">Fecha de ingreso</TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      Fecha de ingreso
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -309,8 +348,14 @@ export default function TeamPage() {
               </Table>
             ) : isErrorMembers ? (
               <div className="p-8 text-center">
-                <p className="text-error-500">Error al cargar los miembros del equipo</p>
-                <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+                <p className="text-error-500">
+                  Error al cargar los miembros del equipo
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => window.location.reload()}
+                >
                   Reintentar
                 </Button>
               </div>
@@ -335,15 +380,21 @@ export default function TeamPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nombre</TableHead>
-                    <TableHead className="hidden md:table-cell">Email</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Email
+                    </TableHead>
                     <TableHead>Rol</TableHead>
                     <TableHead>Estado</TableHead>
-                    <TableHead className="hidden sm:table-cell">Fecha de ingreso</TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      Fecha de ingreso
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {members.map((member) => {
-                    const statusInfo = userStatusConfig[member.status] || userStatusConfig.ACTIVE;
+                    const statusInfo =
+                      userStatusConfig[member.status] ||
+                      userStatusConfig.ACTIVE;
                     return (
                       <TableRow key={member.id}>
                         <TableCell>
@@ -368,7 +419,11 @@ export default function TeamPage() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={roleBadgeVariants[member.role] || 'secondary'}>
+                          <Badge
+                            variant={
+                              roleBadgeVariants[member.role] || "secondary"
+                            }
+                          >
                             {roleLabels[member.role] || member.role}
                           </Badge>
                         </TableCell>
@@ -379,7 +434,9 @@ export default function TeamPage() {
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                            {member.createdAt ? formatDate(member.createdAt) : '-'}
+                            {member.createdAt
+                              ? formatDate(member.createdAt)
+                              : "-"}
                           </span>
                         </TableCell>
                       </TableRow>
@@ -408,9 +465,15 @@ export default function TeamPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Email</TableHead>
-                        <TableHead className="hidden sm:table-cell">Rol</TableHead>
-                        <TableHead className="hidden md:table-cell">Invitado por</TableHead>
-                        <TableHead className="hidden lg:table-cell">Expira</TableHead>
+                        <TableHead className="hidden sm:table-cell">
+                          Rol
+                        </TableHead>
+                        <TableHead className="hidden md:table-cell">
+                          Invitado por
+                        </TableHead>
+                        <TableHead className="hidden lg:table-cell">
+                          Expira
+                        </TableHead>
                         <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -426,13 +489,19 @@ export default function TeamPage() {
                             </div>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
-                            <Badge variant={roleBadgeVariants[invitation.role] || 'secondary'}>
+                            <Badge
+                              variant={
+                                roleBadgeVariants[invitation.role] ||
+                                "secondary"
+                              }
+                            >
                               {roleLabels[invitation.role] || invitation.role}
                             </Badge>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                             <span className="text-neutral-700 dark:text-neutral-300">
-                              {invitation.invitedBy.firstName} {invitation.invitedBy.lastName}
+                              {invitation.invitedBy.firstName}{" "}
+                              {invitation.invitedBy.lastName}
                             </span>
                           </TableCell>
                           <TableCell className="hidden lg:table-cell">
@@ -445,22 +514,36 @@ export default function TeamPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleResendInvitation(invitation.id)}
+                                onClick={() =>
+                                  handleResendInvitation(invitation.id)
+                                }
                                 disabled={resendInvitation.isPending}
                                 title="Reenviar invitacion"
                               >
-                                <RefreshCw className={cn('h-4 w-4', resendInvitation.isPending && 'animate-spin')} />
-                                <span className="hidden sm:inline ml-1">Reenviar</span>
+                                <RefreshCw
+                                  className={cn(
+                                    "h-4 w-4",
+                                    resendInvitation.isPending &&
+                                      "animate-spin",
+                                  )}
+                                />
+                                <span className="hidden sm:inline ml-1">
+                                  Reenviar
+                                </span>
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setCancellingInvitationId(invitation.id)}
+                                onClick={() =>
+                                  setCancellingInvitationId(invitation.id)
+                                }
                                 className="text-error-500 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20"
                                 title="Cancelar invitacion"
                               >
                                 <X className="h-4 w-4" />
-                                <span className="hidden sm:inline ml-1">Cancelar</span>
+                                <span className="hidden sm:inline ml-1">
+                                  Cancelar
+                                </span>
                               </Button>
                             </div>
                           </TableCell>
@@ -488,8 +571,12 @@ export default function TeamPage() {
                         <TableHead>Email</TableHead>
                         <TableHead>Rol</TableHead>
                         <TableHead>Estado</TableHead>
-                        <TableHead className="hidden sm:table-cell">Invitado por</TableHead>
-                        <TableHead className="hidden md:table-cell">Fecha</TableHead>
+                        <TableHead className="hidden sm:table-cell">
+                          Invitado por
+                        </TableHead>
+                        <TableHead className="hidden md:table-cell">
+                          Fecha
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -500,8 +587,14 @@ export default function TeamPage() {
                   </Table>
                 ) : isErrorInvitations ? (
                   <div className="p-8 text-center">
-                    <p className="text-error-500">Error al cargar las invitaciones</p>
-                    <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+                    <p className="text-error-500">
+                      Error al cargar las invitaciones
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => window.location.reload()}
+                    >
                       Reintentar
                     </Button>
                   </div>
@@ -526,17 +619,25 @@ export default function TeamPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Email</TableHead>
-                        <TableHead className="hidden sm:table-cell">Rol</TableHead>
+                        <TableHead className="hidden sm:table-cell">
+                          Rol
+                        </TableHead>
                         <TableHead>Estado</TableHead>
-                        <TableHead className="hidden md:table-cell">Invitado por</TableHead>
-                        <TableHead className="hidden lg:table-cell">Fecha</TableHead>
+                        <TableHead className="hidden md:table-cell">
+                          Invitado por
+                        </TableHead>
+                        <TableHead className="hidden lg:table-cell">
+                          Fecha
+                        </TableHead>
                         <TableHead className="w-[100px]">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {invitations.map((invitation) => {
-                        const statusInfo = invitationStatusConfig[invitation.status] || invitationStatusConfig.PENDING;
-                        const isPending = invitation.status === 'PENDING';
+                        const statusInfo =
+                          invitationStatusConfig[invitation.status] ||
+                          invitationStatusConfig.PENDING;
+                        const isPending = invitation.status === "PENDING";
                         return (
                           <TableRow key={invitation.id}>
                             <TableCell>
@@ -548,7 +649,12 @@ export default function TeamPage() {
                               </div>
                             </TableCell>
                             <TableCell className="hidden sm:table-cell">
-                              <Badge variant={roleBadgeVariants[invitation.role] || 'secondary'}>
+                              <Badge
+                                variant={
+                                  roleBadgeVariants[invitation.role] ||
+                                  "secondary"
+                                }
+                              >
                                 {roleLabels[invitation.role] || invitation.role}
                               </Badge>
                             </TableCell>
@@ -559,7 +665,8 @@ export default function TeamPage() {
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
                               <span className="text-neutral-700 dark:text-neutral-300">
-                                {invitation.invitedBy.firstName} {invitation.invitedBy.lastName}
+                                {invitation.invitedBy.firstName}{" "}
+                                {invitation.invitedBy.lastName}
                               </span>
                             </TableCell>
                             <TableCell className="hidden lg:table-cell">
@@ -573,16 +680,26 @@ export default function TeamPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon-sm"
-                                    onClick={() => handleResendInvitation(invitation.id)}
+                                    onClick={() =>
+                                      handleResendInvitation(invitation.id)
+                                    }
                                     disabled={resendInvitation.isPending}
                                     title="Reenviar"
                                   >
-                                    <RefreshCw className={cn('h-4 w-4', resendInvitation.isPending && 'animate-spin')} />
+                                    <RefreshCw
+                                      className={cn(
+                                        "h-4 w-4",
+                                        resendInvitation.isPending &&
+                                          "animate-spin",
+                                      )}
+                                    />
                                   </Button>
                                   <Button
                                     variant="ghost"
                                     size="icon-sm"
-                                    onClick={() => setCancellingInvitationId(invitation.id)}
+                                    onClick={() =>
+                                      setCancellingInvitationId(invitation.id)
+                                    }
                                     className="text-error-500 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20"
                                     title="Cancelar"
                                   >
@@ -609,11 +726,15 @@ export default function TeamPage() {
           <DialogHeader>
             <DialogTitle>Invitar Usuario</DialogTitle>
             <DialogDescription>
-              Envia una invitacion por correo electronico para que un nuevo usuario se una a tu equipo.
+              Envia una invitacion por correo electronico para que un nuevo
+              usuario se una a tu equipo.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit(onSubmitInvitation)} className="space-y-4">
+          <form
+            onSubmit={handleSubmit(onSubmitInvitation)}
+            className="space-y-4"
+          >
             {/* Email field */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -624,7 +745,7 @@ export default function TeamPage() {
                 placeholder="usuario@ejemplo.com"
                 error={!!errors.email}
                 leftElement={<Mail className="h-4 w-4 text-neutral-400" />}
-                {...register('email')}
+                {...register("email")}
               />
               {errors.email && (
                 <p className="text-sm text-error-500">{errors.email.message}</p>
@@ -639,13 +760,18 @@ export default function TeamPage() {
               <Select
                 options={roleOptions}
                 value={selectedRole}
-                onChange={(value) => setValue('role', value as 'EMPLOYEE' | 'MANAGER' | 'ADMIN')}
+                onChange={(value) =>
+                  setValue("role", value as "EMPLOYEE" | "MANAGER" | "ADMIN")
+                }
                 placeholder="Selecciona un rol"
               />
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                {selectedRole === 'ADMIN' && 'Los administradores pueden gestionar usuarios e invitaciones.'}
-                {selectedRole === 'MANAGER' && 'Los gerentes pueden gestionar inventario y reportes.'}
-                {selectedRole === 'EMPLOYEE' && 'Los empleados tienen acceso basico al sistema.'}
+                {selectedRole === "ADMIN" &&
+                  "Los administradores pueden gestionar usuarios e invitaciones."}
+                {selectedRole === "MANAGER" &&
+                  "Los gerentes pueden gestionar inventario y reportes."}
+                {selectedRole === "EMPLOYEE" &&
+                  "Los empleados tienen acceso basico al sistema."}
               </p>
             </div>
 

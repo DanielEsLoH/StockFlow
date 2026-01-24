@@ -2,7 +2,7 @@
  * POS-specific utility functions
  */
 
-import type { Product } from '~/types/product';
+import type { Product } from "~/types/product";
 
 // Colombia VAT rate
 export const COLOMBIA_VAT_RATE = 19;
@@ -57,7 +57,8 @@ export function calculateLineItemTotals(item: POSCartItem): {
 export function calculateCartTotals(items: POSCartItem[]): CartTotals {
   const result = items.reduce(
     (acc, item) => {
-      const { subtotal, discountAmount, taxAmount, total } = calculateLineItemTotals(item);
+      const { subtotal, discountAmount, taxAmount, total } =
+        calculateLineItemTotals(item);
       return {
         itemCount: acc.itemCount + item.quantity,
         subtotal: acc.subtotal + subtotal,
@@ -66,7 +67,7 @@ export function calculateCartTotals(items: POSCartItem[]): CartTotals {
         total: acc.total + total,
       };
     },
-    { itemCount: 0, subtotal: 0, discountAmount: 0, taxAmount: 0, total: 0 }
+    { itemCount: 0, subtotal: 0, discountAmount: 0, taxAmount: 0, total: 0 },
   );
   return result;
 }
@@ -74,17 +75,20 @@ export function calculateCartTotals(items: POSCartItem[]): CartTotals {
 /**
  * Get stock status color
  */
-export function getStockStatusColor(quantity: number, minStock: number): {
-  color: 'green' | 'yellow' | 'red';
+export function getStockStatusColor(
+  quantity: number,
+  minStock: number,
+): {
+  color: "green" | "yellow" | "red";
   label: string;
 } {
   if (quantity <= 0) {
-    return { color: 'red', label: 'Sin stock' };
+    return { color: "red", label: "Sin stock" };
   }
   if (quantity <= minStock || quantity <= LOW_STOCK_THRESHOLD) {
-    return { color: 'yellow', label: 'Stock bajo' };
+    return { color: "yellow", label: "Stock bajo" };
   }
-  return { color: 'green', label: 'Disponible' };
+  return { color: "green", label: "Disponible" };
 }
 
 /**
@@ -93,17 +97,17 @@ export function getStockStatusColor(quantity: number, minStock: number): {
 export function canAddToCart(
   product: Product,
   currentCartQuantity: number = 0,
-  requestedQuantity: number = 1
+  requestedQuantity: number = 1,
 ): { canAdd: boolean; reason?: string } {
-  if (product.status !== 'ACTIVE') {
-    return { canAdd: false, reason: 'Producto no disponible' };
+  if (product.status !== "ACTIVE") {
+    return { canAdd: false, reason: "Producto no disponible" };
   }
 
   const totalRequested = currentCartQuantity + requestedQuantity;
   if (totalRequested > product.quantity) {
     return {
       canAdd: false,
-      reason: `Solo hay ${product.quantity} unidades disponibles`
+      reason: `Solo hay ${product.quantity} unidades disponibles`,
     };
   }
 
@@ -113,7 +117,10 @@ export function canAddToCart(
 /**
  * Create a new cart item from product
  */
-export function createCartItem(product: Product, quantity: number = 1): POSCartItem {
+export function createCartItem(
+  product: Product,
+  quantity: number = 1,
+): POSCartItem {
   return {
     id: `cart-${product.id}-${Date.now()}`,
     productId: product.id,
@@ -129,7 +136,7 @@ export function createCartItem(product: Product, quantity: number = 1): POSCartI
  * Get today's date in YYYY-MM-DD format
  */
 export function getTodayDate(): string {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toISOString().split("T")[0];
 }
 
 /**
@@ -138,13 +145,16 @@ export function getTodayDate(): string {
 export function getDateFromNow(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() + days);
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 /**
  * Filter products by search query
  */
-export function filterProductsBySearch(products: Product[], query: string): Product[] {
+export function filterProductsBySearch(
+  products: Product[],
+  query: string,
+): Product[] {
   if (!query.trim()) return products;
 
   const lowerQuery = query.toLowerCase().trim();
@@ -152,7 +162,7 @@ export function filterProductsBySearch(products: Product[], query: string): Prod
     (p) =>
       p.name.toLowerCase().includes(lowerQuery) ||
       p.sku.toLowerCase().includes(lowerQuery) ||
-      p.barcode?.toLowerCase().includes(lowerQuery)
+      p.barcode?.toLowerCase().includes(lowerQuery),
   );
 }
 
@@ -161,7 +171,7 @@ export function filterProductsBySearch(products: Product[], query: string): Prod
  */
 export function filterProductsByCategory(
   products: Product[],
-  categoryId: string | null
+  categoryId: string | null,
 ): Product[] {
   if (!categoryId) return products;
   return products.filter((p) => p.categoryId === categoryId);
@@ -174,10 +184,10 @@ export function sortProductsForPOS(products: Product[]): Product[] {
   return [...products].sort((a, b) => {
     // Active products first
     if (a.status !== b.status) {
-      return a.status === 'ACTIVE' ? -1 : 1;
+      return a.status === "ACTIVE" ? -1 : 1;
     }
     // In stock first
-    if ((a.quantity > 0) !== (b.quantity > 0)) {
+    if (a.quantity > 0 !== b.quantity > 0) {
       return a.quantity > 0 ? -1 : 1;
     }
     // Then by name

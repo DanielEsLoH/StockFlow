@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import {
   TrendingUp,
   Package,
@@ -8,27 +8,27 @@ import {
   Download,
   FileText,
   Clock,
-} from 'lucide-react';
-import type { Route } from './+types/_app.reports';
-import { cn, formatDate, formatFileSize } from '~/lib/utils';
+} from "lucide-react";
+import type { Route } from "./+types/_app.reports";
+import { cn, formatDate, formatFileSize } from "~/lib/utils";
 import {
   useGenerateSalesReport,
   useGenerateInventoryReport,
   useGenerateCustomersReport,
   useRecentReports,
-} from '~/hooks/useReports';
-import { useCategories } from '~/hooks/useCategories';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
+} from "~/hooks/useReports";
+import { useCategories } from "~/hooks/useCategories";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
 import {
   Card,
   CardHeader,
   CardTitle,
   CardContent,
   CardDescription,
-} from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Select } from '~/components/ui/Select';
+} from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Select } from "~/components/ui/Select";
 import {
   Table,
   TableHeader,
@@ -36,25 +36,24 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { SkeletonTableRow } from '~/components/ui/Skeleton';
-import { EmptyState } from '~/components/ui/EmptyState';
-import type {
-  ReportFormat,
-  ReportType,
-  DateRangePreset,
-} from '~/types/report';
+} from "~/components/ui/Table";
+import { SkeletonTableRow } from "~/components/ui/Skeleton";
+import { EmptyState } from "~/components/ui/EmptyState";
+import type { ReportFormat, ReportType, DateRangePreset } from "~/types/report";
 import {
   DateRangePresetLabels,
   ReportFormatLabels,
   ReportTypeLabels,
-} from '~/types/report';
+} from "~/types/report";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Reportes - StockFlow' },
-    { name: 'description', content: 'Genera y descarga reportes de tu negocio' },
+    { title: "Reportes - StockFlow" },
+    {
+      name: "description",
+      content: "Genera y descarga reportes de tu negocio",
+    },
   ];
 };
 
@@ -78,62 +77,77 @@ const itemVariants = {
 
 // Date range preset options for select
 const dateRangePresetOptions = [
-  { value: 'today', label: DateRangePresetLabels.today },
-  { value: 'last7days', label: DateRangePresetLabels.last7days },
-  { value: 'last30days', label: DateRangePresetLabels.last30days },
-  { value: 'thisMonth', label: DateRangePresetLabels.thisMonth },
-  { value: 'thisYear', label: DateRangePresetLabels.thisYear },
-  { value: 'custom', label: DateRangePresetLabels.custom },
+  { value: "today", label: DateRangePresetLabels.today },
+  { value: "last7days", label: DateRangePresetLabels.last7days },
+  { value: "last30days", label: DateRangePresetLabels.last30days },
+  { value: "thisMonth", label: DateRangePresetLabels.thisMonth },
+  { value: "thisYear", label: DateRangePresetLabels.thisYear },
+  { value: "custom", label: DateRangePresetLabels.custom },
 ];
 
 // Format options for radio buttons
 const formatOptions: { value: ReportFormat; label: string }[] = [
-  { value: 'pdf', label: ReportFormatLabels.pdf },
-  { value: 'excel', label: ReportFormatLabels.excel },
+  { value: "pdf", label: ReportFormatLabels.pdf },
+  { value: "excel", label: ReportFormatLabels.excel },
 ];
 
 // Helper to calculate date range from preset
-function getDateRangeFromPreset(preset: DateRangePreset): { fromDate: string; toDate: string } {
+function getDateRangeFromPreset(preset: DateRangePreset): {
+  fromDate: string;
+  toDate: string;
+} {
   const today = new Date();
-  const toDate = today.toISOString().split('T')[0];
+  const toDate = today.toISOString().split("T")[0];
 
   switch (preset) {
-    case 'today':
+    case "today":
       return { fromDate: toDate, toDate };
-    case 'yesterday': {
+    case "yesterday": {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
       return { fromDate: yesterdayStr, toDate: yesterdayStr };
     }
-    case 'last7days': {
+    case "last7days": {
       const last7days = new Date(today);
       last7days.setDate(last7days.getDate() - 7);
-      return { fromDate: last7days.toISOString().split('T')[0], toDate };
+      return { fromDate: last7days.toISOString().split("T")[0], toDate };
     }
-    case 'last30days': {
+    case "last30days": {
       const last30days = new Date(today);
       last30days.setDate(last30days.getDate() - 30);
-      return { fromDate: last30days.toISOString().split('T')[0], toDate };
+      return { fromDate: last30days.toISOString().split("T")[0], toDate };
     }
-    case 'thisMonth': {
-      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      return { fromDate: firstDayOfMonth.toISOString().split('T')[0], toDate };
+    case "thisMonth": {
+      const firstDayOfMonth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        1,
+      );
+      return { fromDate: firstDayOfMonth.toISOString().split("T")[0], toDate };
     }
-    case 'lastMonth': {
-      const firstDayOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      const lastDayOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    case "lastMonth": {
+      const firstDayOfLastMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() - 1,
+        1,
+      );
+      const lastDayOfLastMonth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        0,
+      );
       return {
-        fromDate: firstDayOfLastMonth.toISOString().split('T')[0],
-        toDate: lastDayOfLastMonth.toISOString().split('T')[0],
+        fromDate: firstDayOfLastMonth.toISOString().split("T")[0],
+        toDate: lastDayOfLastMonth.toISOString().split("T")[0],
       };
     }
-    case 'thisYear': {
+    case "thisYear": {
       const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
-      return { fromDate: firstDayOfYear.toISOString().split('T')[0], toDate };
+      return { fromDate: firstDayOfYear.toISOString().split("T")[0], toDate };
     }
     default:
-      return { fromDate: '', toDate: '' };
+      return { fromDate: "", toDate: "" };
   }
 }
 
@@ -151,10 +165,10 @@ function FormatSelector({
         <label
           key={option.value}
           className={cn(
-            'flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border transition-colors',
+            "flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border transition-colors",
             value === option.value
-              ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
-              : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800'
+              ? "border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300"
+              : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800",
           )}
         >
           <input
@@ -175,10 +189,13 @@ function FormatSelector({
 
 // Report type badge
 function ReportTypeBadge({ type }: { type: ReportType }) {
-  const config: Record<ReportType, { label: string; variant: 'primary' | 'success' | 'warning' }> = {
-    sales: { label: ReportTypeLabels.sales, variant: 'success' },
-    inventory: { label: ReportTypeLabels.inventory, variant: 'primary' },
-    customers: { label: ReportTypeLabels.customers, variant: 'warning' },
+  const config: Record<
+    ReportType,
+    { label: string; variant: "primary" | "success" | "warning" }
+  > = {
+    sales: { label: ReportTypeLabels.sales, variant: "success" },
+    inventory: { label: ReportTypeLabels.inventory, variant: "primary" },
+    customers: { label: ReportTypeLabels.customers, variant: "warning" },
   };
 
   const { label, variant } = config[type];
@@ -189,7 +206,7 @@ function ReportTypeBadge({ type }: { type: ReportType }) {
 // Format badge
 function FormatBadge({ format }: { format: ReportFormat }) {
   return (
-    <Badge variant={format === 'pdf' ? 'error' : 'success'}>
+    <Badge variant={format === "pdf" ? "error" : "success"}>
       {ReportFormatLabels[format].toUpperCase()}
     </Badge>
   );
@@ -197,28 +214,29 @@ function FormatBadge({ format }: { format: ReportFormat }) {
 
 // Sales Report Card Component
 function SalesReportCard() {
-  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('thisMonth');
-  const [customFromDate, setCustomFromDate] = useState('');
-  const [customToDate, setCustomToDate] = useState('');
-  const [categoryId, setCategoryId] = useState<string>('');
-  const [format, setFormat] = useState<ReportFormat>('pdf');
+  const [dateRangePreset, setDateRangePreset] =
+    useState<DateRangePreset>("thisMonth");
+  const [customFromDate, setCustomFromDate] = useState("");
+  const [customToDate, setCustomToDate] = useState("");
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [format, setFormat] = useState<ReportFormat>("pdf");
 
   const { data: categories } = useCategories();
   const generateReport = useGenerateSalesReport();
 
   const categoryOptions = useMemo(
     () => [
-      { value: '', label: 'Todas las categorias' },
+      { value: "", label: "Todas las categorias" },
       ...(categories || []).map((c) => ({ value: c.id, label: c.name })),
     ],
-    [categories]
+    [categories],
   );
 
   const handleGenerate = () => {
     let fromDate: string;
     let toDate: string;
 
-    if (dateRangePreset === 'custom') {
+    if (dateRangePreset === "custom") {
       fromDate = customFromDate;
       toDate = customToDate;
     } else {
@@ -239,8 +257,8 @@ function SalesReportCard() {
     });
   };
 
-  const isCustom = dateRangePreset === 'custom';
-  const canGenerate = isCustom ? (customFromDate && customToDate) : true;
+  const isCustom = dateRangePreset === "custom";
+  const canGenerate = isCustom ? customFromDate && customToDate : true;
 
   return (
     <Card padding="none" className="flex flex-col">
@@ -344,18 +362,18 @@ function SalesReportCard() {
 
 // Inventory Report Card Component
 function InventoryReportCard() {
-  const [categoryId, setCategoryId] = useState<string>('');
-  const [format, setFormat] = useState<ReportFormat>('pdf');
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [format, setFormat] = useState<ReportFormat>("pdf");
 
   const { data: categories } = useCategories();
   const generateReport = useGenerateInventoryReport();
 
   const categoryOptions = useMemo(
     () => [
-      { value: '', label: 'Todas las categorias' },
+      { value: "", label: "Todas las categorias" },
       ...(categories || []).map((c) => ({ value: c.id, label: c.name })),
     ],
-    [categories]
+    [categories],
   );
 
   const handleGenerate = () => {
@@ -420,7 +438,7 @@ function InventoryReportCard() {
 
 // Customers Report Card Component
 function CustomersReportCard() {
-  const [format, setFormat] = useState<ReportFormat>('pdf');
+  const [format, setFormat] = useState<ReportFormat>("pdf");
 
   const generateReport = useGenerateCustomersReport();
 
@@ -502,7 +520,7 @@ function RecentReportsTable() {
         title="Error al cargar reportes recientes"
         description="Hubo un problema al cargar los reportes recientes. Por favor, intenta de nuevo."
         action={{
-          label: 'Reintentar',
+          label: "Reintentar",
           onClick: () => window.location.reload(),
         }}
       />
@@ -547,7 +565,7 @@ function RecentReportsTable() {
             </TableCell>
             <TableCell className="hidden md:table-cell">
               <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                {report.fileSize ? formatFileSize(report.fileSize) : '-'}
+                {report.fileSize ? formatFileSize(report.fileSize) : "-"}
               </span>
             </TableCell>
             <TableCell>
@@ -558,7 +576,7 @@ function RecentReportsTable() {
                 onClick={() => {
                   // Download functionality to be implemented when backend supports report history downloads
                   if (report.downloadUrl) {
-                    window.open(report.downloadUrl, '_blank');
+                    window.open(report.downloadUrl, "_blank");
                   }
                 }}
                 disabled={!report.downloadUrl}
@@ -582,7 +600,10 @@ export default function ReportsPage() {
       className="space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Reportes

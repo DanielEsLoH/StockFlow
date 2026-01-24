@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { Outlet, Link, useLocation } from "react-router";
+import { motion } from "framer-motion";
 import {
   Shield,
   LayoutDashboard,
@@ -10,20 +10,23 @@ import {
   Menu,
   X,
   ChevronRight,
-} from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { Button } from '~/components/ui/Button';
-import { ThemeToggle } from '~/components/ui/ThemeToggle';
-import { useSystemAdminAuth } from '~/hooks/useSystemAdmin';
-import { useSystemAdminStore } from '~/stores/system-admin.store';
-import { requireSystemAdminAuth } from '~/lib/system-admin-auth.server';
-import type { Route } from './+types/system-admin';
+} from "lucide-react";
+import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/Button";
+import { ThemeToggle } from "~/components/ui/ThemeToggle";
+import { useSystemAdminAuth } from "~/hooks/useSystemAdmin";
+import { useSystemAdminStore } from "~/stores/system-admin.store";
+import { requireSystemAdminAuth } from "~/lib/system-admin-auth.server";
+import type { Route } from "./+types/system-admin";
 
 // Meta function for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'System Admin - StockFlow' },
-    { name: 'description', content: 'Panel de administracion del sistema StockFlow' },
+    { title: "System Admin - StockFlow" },
+    {
+      name: "description",
+      content: "Panel de administracion del sistema StockFlow",
+    },
   ];
 };
 
@@ -36,18 +39,18 @@ export function loader({ request }: Route.LoaderArgs) {
 // Navigation items
 const navItems = [
   {
-    name: 'Dashboard',
-    href: '/system-admin/dashboard',
+    name: "Dashboard",
+    href: "/system-admin/dashboard",
     icon: LayoutDashboard,
   },
   {
-    name: 'Usuarios',
-    href: '/system-admin/users',
+    name: "Usuarios",
+    href: "/system-admin/users",
     icon: Users,
   },
   {
-    name: 'Tenants',
-    href: '/system-admin/tenants',
+    name: "Tenants",
+    href: "/system-admin/tenants",
     icon: Building2,
   },
 ];
@@ -85,19 +88,24 @@ export default function SystemAdminLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 transform bg-neutral-900 transition-transform duration-300 lg:static lg:translate-x-0',
-          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          "fixed inset-y-0 left-0 z-50 w-64 transform bg-neutral-900 transition-transform duration-300 lg:static lg:translate-x-0",
+          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center justify-between border-b border-neutral-800 px-4">
-            <Link to="/system-admin/dashboard" className="flex items-center gap-3">
+            <Link
+              to="/system-admin/dashboard"
+              className="flex items-center gap-3"
+            >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/20">
                 <Shield className="h-6 w-6 text-amber-400" />
               </div>
               <div>
-                <span className="font-display text-lg font-bold text-white">StockFlow</span>
+                <span className="font-display text-lg font-bold text-white">
+                  StockFlow
+                </span>
                 <p className="text-xs text-neutral-400">System Admin</p>
               </div>
             </Link>
@@ -118,10 +126,10 @@ export default function SystemAdminLayout() {
                   key={item.href}
                   to={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
-                      ? 'bg-amber-500/20 text-amber-400'
-                      : 'text-neutral-400 hover:bg-neutral-800 hover:text-white'
+                      ? "bg-amber-500/20 text-amber-400"
+                      : "text-neutral-400 hover:bg-neutral-800 hover:text-white",
                   )}
                 >
                   <item.icon className="h-5 w-5" />
@@ -171,7 +179,8 @@ export default function SystemAdminLayout() {
               <Menu className="h-6 w-6" />
             </button>
             <h1 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              {navItems.find((item) => item.href === location.pathname)?.name || 'System Admin'}
+              {navItems.find((item) => item.href === location.pathname)?.name ||
+                "System Admin"}
             </h1>
           </div>
           <div className="flex items-center gap-4">

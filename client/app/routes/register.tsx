@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Eye,
   EyeOff,
@@ -15,48 +15,48 @@ import {
   ArrowLeft,
   Check,
   Loader2,
-} from 'lucide-react';
-import { useAuth } from '~/hooks/useAuth';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { ThemeToggle } from '~/components/ui/ThemeToggle';
-import { requireGuest } from '~/lib/auth.server';
-import type { Route } from './+types/register';
+} from "lucide-react";
+import { useAuth } from "~/hooks/useAuth";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { ThemeToggle } from "~/components/ui/ThemeToggle";
+import { requireGuest } from "~/lib/auth.server";
+import type { Route } from "./+types/register";
 
 // Validation schema
 const registerSchema = z
   .object({
-    firstName: z.string().min(2, 'Minimo 2 caracteres'),
-    lastName: z.string().min(2, 'Minimo 2 caracteres'),
-    email: z.string().email('Email invalido'),
+    firstName: z.string().min(2, "Minimo 2 caracteres"),
+    lastName: z.string().min(2, "Minimo 2 caracteres"),
+    email: z.string().email("Email invalido"),
     password: z
       .string()
-      .min(8, 'Minimo 8 caracteres')
-      .regex(/[A-Z]/, 'Debe contener una mayuscula')
-      .regex(/[0-9]/, 'Debe contener un numero'),
+      .min(8, "Minimo 8 caracteres")
+      .regex(/[A-Z]/, "Debe contener una mayuscula")
+      .regex(/[0-9]/, "Debe contener un numero"),
     confirmPassword: z.string(),
-    tenantName: z.string().min(2, 'Minimo 2 caracteres'),
+    tenantName: z.string().min(2, "Minimo 2 caracteres"),
     acceptTerms: z.boolean().refine((val) => val === true, {
-      message: 'Debes aceptar los terminos',
+      message: "Debes aceptar los terminos",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Las contrasenas no coinciden',
-    path: ['confirmPassword'],
+    message: "Las contrasenas no coinciden",
+    path: ["confirmPassword"],
   });
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
 const steps = [
-  { id: 1, title: 'Datos personales', icon: User },
-  { id: 2, title: 'Seguridad', icon: Lock },
-  { id: 3, title: 'Empresa', icon: Building2 },
+  { id: 1, title: "Datos personales", icon: User },
+  { id: 2, title: "Seguridad", icon: Lock },
+  { id: 3, title: "Empresa", icon: Building2 },
 ];
 
 export function meta() {
   return [
-    { title: 'Crear Cuenta - StockFlow' },
-    { name: 'description', content: 'Crea tu cuenta en StockFlow' },
+    { title: "Crear Cuenta - StockFlow" },
+    { name: "description", content: "Crea tu cuenta en StockFlow" },
   ];
 }
 
@@ -85,10 +85,10 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    mode: 'onChange',
+    mode: "onChange",
   });
 
-  const password = watch('password', '');
+  const password = watch("password", "");
 
   // Password strength calculation
   const getPasswordStrength = (pwd: string) => {
@@ -104,26 +104,26 @@ export default function RegisterPage() {
   const passwordStrength = getPasswordStrength(password);
 
   const strengthColors = [
-    'bg-error-500',
-    'bg-error-400',
-    'bg-warning-500',
-    'bg-success-400',
-    'bg-success-500',
+    "bg-error-500",
+    "bg-error-400",
+    "bg-warning-500",
+    "bg-success-400",
+    "bg-success-500",
   ];
 
   const strengthLabels = [
-    'Muy debil',
-    'Debil',
-    'Regular',
-    'Buena',
-    'Excelente',
+    "Muy debil",
+    "Debil",
+    "Regular",
+    "Buena",
+    "Excelente",
   ];
 
   const nextStep = async () => {
     const fieldsToValidate: (keyof RegisterForm)[][] = [
-      ['firstName', 'lastName', 'email'],
-      ['password', 'confirmPassword'],
-      ['tenantName', 'acceptTerms'],
+      ["firstName", "lastName", "email"],
+      ["password", "confirmPassword"],
+      ["tenantName", "acceptTerms"],
     ];
 
     // Validate current step fields
@@ -131,12 +131,12 @@ export default function RegisterPage() {
 
     // For step 2, also validate password matching (cross-field validation)
     if (currentStep === 2 && isValid) {
-      const passwordValue = watch('password');
-      const confirmValue = watch('confirmPassword');
+      const passwordValue = watch("password");
+      const confirmValue = watch("confirmPassword");
       if (passwordValue !== confirmValue) {
-        setError('confirmPassword', {
-          type: 'manual',
-          message: 'Las contrasenas no coinciden',
+        setError("confirmPassword", {
+          type: "manual",
+          message: "Las contrasenas no coinciden",
         });
         return; // Don't proceed
       }
@@ -161,8 +161,8 @@ export default function RegisterPage() {
 
   // Handle validation errors - navigate to the step with errors
   const onError = (errors: Record<string, unknown>) => {
-    const step1Fields = ['firstName', 'lastName', 'email'];
-    const step2Fields = ['password', 'confirmPassword'];
+    const step1Fields = ["firstName", "lastName", "email"];
+    const step2Fields = ["password", "confirmPassword"];
 
     // Check which step has errors
     for (const field of step1Fields) {
@@ -297,15 +297,15 @@ export default function RegisterPage() {
                     animate={{
                       scale: isCurrent ? 1.1 : 1,
                       backgroundColor: isCompleted
-                        ? 'rgb(16 185 129)'
+                        ? "rgb(16 185 129)"
                         : isCurrent
-                          ? 'rgb(59 130 246)'
-                          : 'rgb(229 231 235)',
+                          ? "rgb(59 130 246)"
+                          : "rgb(229 231 235)",
                     }}
                     className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
                       isCompleted || isCurrent
-                        ? 'text-white'
-                        : 'text-neutral-400 dark:text-neutral-600'
+                        ? "text-white"
+                        : "text-neutral-400 dark:text-neutral-600"
                     }`}
                   >
                     {isCompleted ? (
@@ -319,8 +319,8 @@ export default function RegisterPage() {
                     <div
                       className={`mx-2 h-1 w-16 rounded-full transition-colors ${
                         isCompleted
-                          ? 'bg-success-500'
-                          : 'bg-neutral-200 dark:bg-neutral-700'
+                          ? "bg-success-500"
+                          : "bg-neutral-200 dark:bg-neutral-700"
                       }`}
                     />
                   )}
@@ -347,7 +347,7 @@ export default function RegisterPage() {
                         Nombre
                       </label>
                       <Input
-                        {...register('firstName')}
+                        {...register("firstName")}
                         placeholder="Juan"
                         error={!!errors.firstName}
                       />
@@ -362,7 +362,7 @@ export default function RegisterPage() {
                         Apellido
                       </label>
                       <Input
-                        {...register('lastName')}
+                        {...register("lastName")}
                         placeholder="Perez"
                         error={!!errors.lastName}
                       />
@@ -381,7 +381,7 @@ export default function RegisterPage() {
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                       <Input
-                        {...register('email')}
+                        {...register("email")}
                         type="email"
                         placeholder="tu@email.com"
                         className="pl-10"
@@ -413,8 +413,8 @@ export default function RegisterPage() {
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                       <Input
-                        {...register('password')}
-                        type={showPassword ? 'text' : 'password'}
+                        {...register("password")}
+                        type={showPassword ? "text" : "password"}
                         placeholder="********"
                         className="pl-10 pr-10"
                         error={!!errors.password}
@@ -442,14 +442,14 @@ export default function RegisterPage() {
                               className={`h-1.5 flex-1 rounded-full transition-colors ${
                                 i < passwordStrength
                                   ? strengthColors[passwordStrength - 1]
-                                  : 'bg-neutral-200 dark:bg-neutral-700'
+                                  : "bg-neutral-200 dark:bg-neutral-700"
                               }`}
                             />
                           ))}
                         </div>
                         <p className="text-xs text-neutral-500">
-                          Fortaleza:{' '}
-                          {strengthLabels[passwordStrength - 1] || 'Muy debil'}
+                          Fortaleza:{" "}
+                          {strengthLabels[passwordStrength - 1] || "Muy debil"}
                         </p>
                       </div>
                     )}
@@ -468,7 +468,7 @@ export default function RegisterPage() {
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                       <Input
-                        {...register('confirmPassword')}
+                        {...register("confirmPassword")}
                         type="password"
                         placeholder="********"
                         className="pl-10"
@@ -500,7 +500,7 @@ export default function RegisterPage() {
                     <div className="relative">
                       <Building2 className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                       <Input
-                        {...register('tenantName')}
+                        {...register("tenantName")}
                         placeholder="Mi Empresa S.A.S"
                         className="pl-10"
                         error={!!errors.tenantName}
@@ -516,18 +516,18 @@ export default function RegisterPage() {
                   <label className="flex cursor-pointer items-start gap-3">
                     <input
                       type="checkbox"
-                      {...register('acceptTerms')}
+                      {...register("acceptTerms")}
                       className="mt-1 h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
                     />
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Acepto los{' '}
+                      Acepto los{" "}
                       <Link
                         to="/terms"
                         className="text-primary-600 hover:underline"
                       >
                         Terminos de servicio
-                      </Link>{' '}
-                      y la{' '}
+                      </Link>{" "}
+                      y la{" "}
                       <Link
                         to="/privacy"
                         className="text-primary-600 hover:underline"
@@ -569,11 +569,7 @@ export default function RegisterPage() {
               )}
 
               {currentStep < 3 ? (
-                <Button
-                  type="button"
-                  onClick={nextStep}
-                  className="flex-1"
-                >
+                <Button type="button" onClick={nextStep} className="flex-1">
                   Siguiente
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -602,7 +598,7 @@ export default function RegisterPage() {
 
         {/* Footer */}
         <p className="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
-          Ya tienes cuenta?{' '}
+          Ya tienes cuenta?{" "}
           <Link
             to="/login"
             className="font-medium text-primary-600 hover:underline"

@@ -429,7 +429,7 @@ export default function POSPage() {
                     // Smaller padding on mobile (p-2), normal on sm+ (p-4)
                     "p-2 sm:p-4",
                     // Space for floating cart bar - pb-28 ensures content not hidden
-                    cart.length > 0 && "pb-28 sm:pb-24"
+                    cart.length > 0 && "pb-28 sm:pb-24",
                   )}
                 >
                   <ProductCatalog
@@ -482,7 +482,9 @@ export default function POSPage() {
               initial={{ y: 100 }}
               animate={{ y: 0 }}
               className="fixed bottom-0 left-0 right-0 z-40 border-t border-neutral-200 bg-white p-2 sm:p-3 shadow-2xl dark:border-neutral-700 dark:bg-neutral-800"
-              style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+              style={{
+                paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+              }}
             >
               <button
                 type="button"
@@ -496,7 +498,9 @@ export default function POSPage() {
                       {totals.itemCount}
                     </span>
                   </div>
-                  <span className="text-sm sm:text-base font-medium">Ver carrito</span>
+                  <span className="text-sm sm:text-base font-medium">
+                    Ver carrito
+                  </span>
                 </div>
                 <span className="text-base sm:text-lg font-bold">
                   {formatCurrency(totals.total)}

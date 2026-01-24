@@ -1,24 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Mail,
-  ArrowRight,
-} from 'lucide-react';
-import { useAuth } from '~/hooks/useAuth';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { ThemeToggle } from '~/components/ui/ThemeToggle';
+import { useState, useEffect, useRef } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { CheckCircle2, XCircle, Loader2, Mail, ArrowRight } from "lucide-react";
+import { useAuth } from "~/hooks/useAuth";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { ThemeToggle } from "~/components/ui/ThemeToggle";
 
 // Validation schema for resend form
 const resendSchema = z.object({
-  email: z.string().email('Email invalido'),
+  email: z.string().email("Email invalido"),
 });
 
 type ResendForm = z.infer<typeof resendSchema>;
@@ -40,32 +34,40 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: 'easeOut' as const },
+    transition: { duration: 0.5, ease: "easeOut" as const },
   },
 };
 
 export function meta() {
   return [
-    { title: 'Verificar Email - StockFlow' },
-    { name: 'description', content: 'Verifica tu correo electronico de StockFlow' },
+    { title: "Verificar Email - StockFlow" },
+    {
+      name: "description",
+      content: "Verifica tu correo electronico de StockFlow",
+    },
   ];
 }
 
-type VerificationStatus = 'loading' | 'success' | 'error' | 'no-token';
+type VerificationStatus = "loading" | "success" | "error" | "no-token";
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState<VerificationStatus>('loading');
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [status, setStatus] = useState<VerificationStatus>("loading");
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [showResendForm, setShowResendForm] = useState(false);
   const verificationAttempted = useRef(false);
 
-  const { verifyEmail, isVerifyingEmail, resendVerification, isResendingVerification } = useAuth();
+  const {
+    verifyEmail,
+    isVerifyingEmail,
+    resendVerification,
+    isResendingVerification,
+  } = useAuth();
 
-  const token = searchParams.get('token');
+  const token = searchParams.get("token");
 
   const {
     register,
@@ -82,7 +84,7 @@ export default function VerifyEmailPage() {
   // Verify email on mount
   useEffect(() => {
     if (!token) {
-      setStatus('no-token');
+      setStatus("no-token");
       return;
     }
 
@@ -94,24 +96,24 @@ export default function VerifyEmailPage() {
 
     verifyEmail(token, {
       onSuccess: () => {
-        setStatus('success');
+        setStatus("success");
       },
       onError: (error: Error) => {
-        setStatus('error');
-        setErrorMessage(error.message || 'Error al verificar el email');
+        setStatus("error");
+        setErrorMessage(error.message || "Error al verificar el email");
       },
     });
   }, [token, verifyEmail]);
 
   // Countdown and redirect on success
   useEffect(() => {
-    if (status !== 'success') return;
+    if (status !== "success") return;
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          navigate('/login');
+          navigate("/login");
           return 0;
         }
         return prev - 1;
@@ -130,7 +132,7 @@ export default function VerifyEmailPage() {
   };
 
   const renderContent = () => {
-    if (status === 'loading' || isVerifyingEmail) {
+    if (status === "loading" || isVerifyingEmail) {
       return (
         <motion.div
           variants={itemVariants}
@@ -149,7 +151,7 @@ export default function VerifyEmailPage() {
       );
     }
 
-    if (status === 'success') {
+    if (status === "success") {
       return (
         <motion.div
           variants={itemVariants}
@@ -158,7 +160,7 @@ export default function VerifyEmailPage() {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
             className="flex h-20 w-20 items-center justify-center rounded-full bg-success-100 dark:bg-success-900/30"
           >
             <CheckCircle2 className="h-10 w-10 text-success-600 dark:text-success-400" />
@@ -169,10 +171,10 @@ export default function VerifyEmailPage() {
           <p className="text-center text-neutral-600 dark:text-neutral-400">
             Tu correo electronico ha sido verificado correctamente.
             <br />
-            Seras redirigido al inicio de sesion en{' '}
+            Seras redirigido al inicio de sesion en{" "}
             <span className="font-semibold text-primary-600 dark:text-primary-400">
               {countdown}
-            </span>{' '}
+            </span>{" "}
             segundos.
           </p>
           <Link to="/login">
@@ -185,7 +187,7 @@ export default function VerifyEmailPage() {
       );
     }
 
-    if (status === 'error') {
+    if (status === "error") {
       return (
         <motion.div
           variants={itemVariants}
@@ -194,7 +196,7 @@ export default function VerifyEmailPage() {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
             className="flex h-20 w-20 items-center justify-center rounded-full bg-error-100 dark:bg-error-900/30"
           >
             <XCircle className="h-10 w-10 text-error-600 dark:text-error-400" />
@@ -203,7 +205,7 @@ export default function VerifyEmailPage() {
             Error de verificacion
           </h2>
           <p className="text-center text-neutral-600 dark:text-neutral-400">
-            {errorMessage || 'No pudimos verificar tu correo electronico.'}
+            {errorMessage || "No pudimos verificar tu correo electronico."}
           </p>
 
           {!showResendForm ? (
@@ -237,7 +239,7 @@ export default function VerifyEmailPage() {
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                   <Input
-                    {...register('email')}
+                    {...register("email")}
                     type="email"
                     placeholder="tu@email.com"
                     className="pl-10"
@@ -245,7 +247,9 @@ export default function VerifyEmailPage() {
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-sm text-error-500">{errors.email.message}</p>
+                  <p className="text-sm text-error-500">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
               <div className="flex gap-3">
@@ -268,7 +272,7 @@ export default function VerifyEmailPage() {
                       Enviando...
                     </>
                   ) : (
-                    'Reenviar'
+                    "Reenviar"
                   )}
                 </Button>
               </div>
@@ -287,7 +291,7 @@ export default function VerifyEmailPage() {
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15 }}
           className="flex h-20 w-20 items-center justify-center rounded-full bg-warning-100 dark:bg-warning-900/30"
         >
           <Mail className="h-10 w-10 text-warning-600 dark:text-warning-400" />
@@ -298,7 +302,8 @@ export default function VerifyEmailPage() {
         <p className="text-center text-neutral-600 dark:text-neutral-400">
           No se encontro un token de verificacion en la URL.
           <br />
-          Si necesitas verificar tu email, solicita un nuevo correo de verificacion.
+          Si necesitas verificar tu email, solicita un nuevo correo de
+          verificacion.
         </p>
 
         {!showResendForm ? (
@@ -332,7 +337,7 @@ export default function VerifyEmailPage() {
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                 <Input
-                  {...register('email')}
+                  {...register("email")}
                   type="email"
                   placeholder="tu@email.com"
                   className="pl-10"
@@ -363,7 +368,7 @@ export default function VerifyEmailPage() {
                     Enviando...
                   </>
                 ) : (
-                  'Enviar'
+                  "Enviar"
                 )}
               </Button>
             </div>
@@ -377,7 +382,7 @@ export default function VerifyEmailPage() {
     <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-8 dark:bg-neutral-950">
       <motion.div
         variants={containerVariants}
-        initial={isMounted ? 'hidden' : false}
+        initial={isMounted ? "hidden" : false}
         animate="visible"
         className="w-full max-w-md"
       >
@@ -414,7 +419,7 @@ export default function VerifyEmailPage() {
           variants={itemVariants}
           className="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400"
         >
-          Necesitas ayuda?{' '}
+          Necesitas ayuda?{" "}
           <Link
             to="/contact"
             className="font-medium text-primary-600 hover:underline dark:text-primary-400"

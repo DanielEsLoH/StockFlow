@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router';
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { motion } from "framer-motion";
+import { Link } from "react-router";
 import {
   User,
   Shield,
@@ -23,45 +23,45 @@ import {
   FileText,
   BarChart3,
   ChevronRight,
-} from 'lucide-react';
-import type { Route } from './+types/_app.settings';
-import { cn, getInitials } from '~/lib/utils';
-import { useAuth } from '~/hooks/useAuth';
-import { useTheme } from '~/hooks/useTheme';
+} from "lucide-react";
+import type { Route } from "./+types/_app.settings";
+import { cn, getInitials } from "~/lib/utils";
+import { useAuth } from "~/hooks/useAuth";
+import { useTheme } from "~/hooks/useTheme";
 import {
   useChangePassword,
   useUpdatePreferences,
   useUserPreferences,
   usePasswordStrength,
-} from '~/hooks/useSettings';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
+} from "~/hooks/useSettings";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
 import {
   Card,
   CardHeader,
   CardTitle,
   CardContent,
   CardDescription,
-} from '~/components/ui/Card';
-import { Select } from '~/components/ui/Select';
-import { Badge } from '~/components/ui/Badge';
+} from "~/components/ui/Card";
+import { Select } from "~/components/ui/Select";
+import { Badge } from "~/components/ui/Badge";
 import type {
   SettingsTab,
   PasswordStrength as PasswordStrengthType,
-} from '~/types/settings';
+} from "~/types/settings";
 import {
   SettingsTabLabels,
   PasswordStrengthLabels,
   PasswordStrengthColors,
   ThemeOptionLabels,
   LanguageOptionLabels,
-} from '~/types/settings';
+} from "~/types/settings";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Configuracion - StockFlow' },
-    { name: 'description', content: 'Personaliza tu experiencia en StockFlow' },
+    { title: "Configuracion - StockFlow" },
+    { name: "description", content: "Personaliza tu experiencia en StockFlow" },
   ];
 };
 
@@ -85,36 +85,36 @@ const itemVariants = {
 
 // Tab configuration
 const tabs: { id: SettingsTab; icon: React.ReactNode }[] = [
-  { id: 'profile', icon: <User className="h-4 w-4" /> },
-  { id: 'security', icon: <Shield className="h-4 w-4" /> },
-  { id: 'preferences', icon: <Settings className="h-4 w-4" /> },
-  { id: 'account', icon: <Building2 className="h-4 w-4" /> },
+  { id: "profile", icon: <User className="h-4 w-4" /> },
+  { id: "security", icon: <Shield className="h-4 w-4" /> },
+  { id: "preferences", icon: <Settings className="h-4 w-4" /> },
+  { id: "account", icon: <Building2 className="h-4 w-4" /> },
 ];
 
 // Password change schema
 const passwordChangeSchema = z
   .object({
-    currentPassword: z.string().min(1, 'La contrasena actual es requerida'),
+    currentPassword: z.string().min(1, "La contrasena actual es requerida"),
     newPassword: z
       .string()
-      .min(8, 'La contrasena debe tener al menos 8 caracteres')
-      .regex(/[a-z]/, 'Debe contener al menos una letra minuscula')
-      .regex(/[A-Z]/, 'Debe contener al menos una letra mayuscula')
-      .regex(/[0-9]/, 'Debe contener al menos un numero')
-      .regex(/[^a-zA-Z0-9]/, 'Debe contener al menos un caracter especial'),
-    confirmPassword: z.string().min(1, 'La confirmacion es requerida'),
+      .min(8, "La contrasena debe tener al menos 8 caracteres")
+      .regex(/[a-z]/, "Debe contener al menos una letra minuscula")
+      .regex(/[A-Z]/, "Debe contener al menos una letra mayuscula")
+      .regex(/[0-9]/, "Debe contener al menos un numero")
+      .regex(/[^a-zA-Z0-9]/, "Debe contener al menos un caracter especial"),
+    confirmPassword: z.string().min(1, "La confirmacion es requerida"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Las contrasenas no coinciden',
-    path: ['confirmPassword'],
+    message: "Las contrasenas no coinciden",
+    path: ["confirmPassword"],
   });
 
 type PasswordChangeFormData = z.infer<typeof passwordChangeSchema>;
 
 // Language options for select
 const languageOptions = [
-  { value: 'es', label: LanguageOptionLabels.es },
-  { value: 'en', label: LanguageOptionLabels.en },
+  { value: "es", label: LanguageOptionLabels.es },
+  { value: "en", label: LanguageOptionLabels.en },
 ];
 
 // Theme option component
@@ -125,7 +125,7 @@ function ThemeOption({
   isSelected,
   onSelect,
 }: {
-  value: 'light' | 'dark' | 'system';
+  value: "light" | "dark" | "system";
   label: string;
   icon: React.ReactNode;
   isSelected: boolean;
@@ -134,10 +134,10 @@ function ThemeOption({
   return (
     <label
       className={cn(
-        'flex items-center gap-3 cursor-pointer px-4 py-3 rounded-xl border transition-all duration-200',
+        "flex items-center gap-3 cursor-pointer px-4 py-3 rounded-xl border transition-all duration-200",
         isSelected
-          ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300 ring-2 ring-primary-500/20'
-          : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800'
+          ? "border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300 ring-2 ring-primary-500/20"
+          : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800",
       )}
     >
       <input
@@ -150,18 +150,16 @@ function ThemeOption({
       />
       <div
         className={cn(
-          'p-2 rounded-lg',
+          "p-2 rounded-lg",
           isSelected
-            ? 'bg-primary-100 dark:bg-primary-900/40'
-            : 'bg-neutral-100 dark:bg-neutral-800'
+            ? "bg-primary-100 dark:bg-primary-900/40"
+            : "bg-neutral-100 dark:bg-neutral-800",
         )}
       >
         {icon}
       </div>
       <span className="font-medium">{label}</span>
-      {isSelected && (
-        <Check className="h-4 w-4 ml-auto text-primary-500" />
-      )}
+      {isSelected && <Check className="h-4 w-4 ml-auto text-primary-500" />}
     </label>
   );
 }
@@ -186,7 +184,9 @@ function NotificationCheckbox({
         {icon}
       </div>
       <div className="flex-1">
-        <div className="font-medium text-neutral-900 dark:text-white">{label}</div>
+        <div className="font-medium text-neutral-900 dark:text-white">
+          {label}
+        </div>
         {description && (
           <div className="text-sm text-neutral-500 dark:text-neutral-400">
             {description}
@@ -202,14 +202,14 @@ function NotificationCheckbox({
         />
         <div
           className={cn(
-            'w-11 h-6 rounded-full transition-colors duration-200',
-            checked ? 'bg-primary-500' : 'bg-neutral-200 dark:bg-neutral-700'
+            "w-11 h-6 rounded-full transition-colors duration-200",
+            checked ? "bg-primary-500" : "bg-neutral-200 dark:bg-neutral-700",
           )}
         />
         <div
           className={cn(
-            'absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
-            checked ? 'translate-x-5' : 'translate-x-0'
+            "absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200",
+            checked ? "translate-x-5" : "translate-x-0",
           )}
         />
       </div>
@@ -227,7 +227,12 @@ function PasswordStrengthIndicator({
 }) {
   if (!password) return null;
 
-  const strengthLevels: PasswordStrengthType[] = ['weak', 'fair', 'good', 'strong'];
+  const strengthLevels: PasswordStrengthType[] = [
+    "weak",
+    "fair",
+    "good",
+    "strong",
+  ];
   const currentIndex = strengthLevels.indexOf(strength);
 
   return (
@@ -237,21 +242,21 @@ function PasswordStrengthIndicator({
           <div
             key={level}
             className={cn(
-              'h-1.5 flex-1 rounded-full transition-colors duration-200',
+              "h-1.5 flex-1 rounded-full transition-colors duration-200",
               index <= currentIndex
                 ? PasswordStrengthColors[strength]
-                : 'bg-neutral-200 dark:bg-neutral-700'
+                : "bg-neutral-200 dark:bg-neutral-700",
             )}
           />
         ))}
       </div>
       <p
         className={cn(
-          'text-sm font-medium',
-          strength === 'weak' && 'text-error-500',
-          strength === 'fair' && 'text-warning-500',
-          strength === 'good' && 'text-primary-500',
-          strength === 'strong' && 'text-success-500'
+          "text-sm font-medium",
+          strength === "weak" && "text-error-500",
+          strength === "fair" && "text-warning-500",
+          strength === "good" && "text-primary-500",
+          strength === "strong" && "text-success-500",
         )}
       >
         Fortaleza: {PasswordStrengthLabels[strength]}
@@ -263,11 +268,11 @@ function PasswordStrengthIndicator({
 // Password requirements component
 function PasswordRequirements({ password }: { password: string }) {
   const requirements = [
-    { label: 'Al menos 8 caracteres', test: password.length >= 8 },
-    { label: 'Una letra mayuscula', test: /[A-Z]/.test(password) },
-    { label: 'Una letra minuscula', test: /[a-z]/.test(password) },
-    { label: 'Un numero', test: /[0-9]/.test(password) },
-    { label: 'Un caracter especial', test: /[^a-zA-Z0-9]/.test(password) },
+    { label: "Al menos 8 caracteres", test: password.length >= 8 },
+    { label: "Una letra mayuscula", test: /[A-Z]/.test(password) },
+    { label: "Una letra minuscula", test: /[a-z]/.test(password) },
+    { label: "Un numero", test: /[0-9]/.test(password) },
+    { label: "Un caracter especial", test: /[^a-zA-Z0-9]/.test(password) },
   ];
 
   return (
@@ -276,18 +281,18 @@ function PasswordRequirements({ password }: { password: string }) {
         <li
           key={req.label}
           className={cn(
-            'flex items-center gap-2',
+            "flex items-center gap-2",
             req.test
-              ? 'text-success-600 dark:text-success-400'
-              : 'text-neutral-500 dark:text-neutral-400'
+              ? "text-success-600 dark:text-success-400"
+              : "text-neutral-500 dark:text-neutral-400",
           )}
         >
           <div
             className={cn(
-              'w-4 h-4 rounded-full flex items-center justify-center',
+              "w-4 h-4 rounded-full flex items-center justify-center",
               req.test
-                ? 'bg-success-100 dark:bg-success-900/30'
-                : 'bg-neutral-100 dark:bg-neutral-800'
+                ? "bg-success-100 dark:bg-success-900/30"
+                : "bg-neutral-100 dark:bg-neutral-800",
             )}
           >
             {req.test && <Check className="h-2.5 w-2.5" />}
@@ -303,16 +308,14 @@ function PasswordRequirements({ password }: { password: string }) {
 function ProfileTabContent() {
   const { user } = useAuth();
 
-  const fullName = user ? `${user.firstName} ${user.lastName}` : '';
+  const fullName = user ? `${user.firstName} ${user.lastName}` : "";
 
   return (
     <motion.div variants={itemVariants} className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Resumen del Perfil</CardTitle>
-          <CardDescription>
-            Informacion basica de tu cuenta
-          </CardDescription>
+          <CardDescription>Informacion basica de tu cuenta</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="flex flex-col sm:flex-row items-center gap-6">
@@ -342,16 +345,19 @@ function ProfileTabContent() {
               <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-3">
                 <Badge variant="primary">{user?.role}</Badge>
                 <Badge
-                  variant={user?.status === 'ACTIVE' ? 'success' : 'warning'}
+                  variant={user?.status === "ACTIVE" ? "success" : "warning"}
                 >
-                  {user?.status === 'ACTIVE' ? 'Activo' : user?.status}
+                  {user?.status === "ACTIVE" ? "Activo" : user?.status}
                 </Badge>
               </div>
             </div>
 
             {/* Edit Button */}
             <Link to="/profile">
-              <Button variant="outline" rightIcon={<ChevronRight className="h-4 w-4" />}>
+              <Button
+                variant="outline"
+                rightIcon={<ChevronRight className="h-4 w-4" />}
+              >
                 Editar Perfil
               </Button>
             </Link>
@@ -379,14 +385,14 @@ function SecurityTabContent() {
   } = useForm<PasswordChangeFormData>({
     resolver: zodResolver(passwordChangeSchema),
     defaultValues: {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
     },
   });
 
-  const newPassword = watch('newPassword');
-  const passwordStrength = usePasswordStrength(newPassword || '');
+  const newPassword = watch("newPassword");
+  const passwordStrength = usePasswordStrength(newPassword || "");
 
   const onSubmit = (data: PasswordChangeFormData) => {
     changePassword.mutate(
@@ -399,7 +405,7 @@ function SecurityTabContent() {
         onSuccess: () => {
           reset();
         },
-      }
+      },
     );
   };
 
@@ -427,7 +433,7 @@ function SecurityTabContent() {
                 Contrasena Actual
               </label>
               <Input
-                type={showCurrentPassword ? 'text' : 'password'}
+                type={showCurrentPassword ? "text" : "password"}
                 placeholder="Ingresa tu contrasena actual"
                 error={!!errors.currentPassword}
                 rightElement={
@@ -443,7 +449,7 @@ function SecurityTabContent() {
                     )}
                   </button>
                 }
-                {...register('currentPassword')}
+                {...register("currentPassword")}
               />
               {errors.currentPassword && (
                 <p className="text-sm text-error-500">
@@ -458,7 +464,7 @@ function SecurityTabContent() {
                 Nueva Contrasena
               </label>
               <Input
-                type={showNewPassword ? 'text' : 'password'}
+                type={showNewPassword ? "text" : "password"}
                 placeholder="Ingresa tu nueva contrasena"
                 error={!!errors.newPassword}
                 rightElement={
@@ -474,7 +480,7 @@ function SecurityTabContent() {
                     )}
                   </button>
                 }
-                {...register('newPassword')}
+                {...register("newPassword")}
               />
               {errors.newPassword && (
                 <p className="text-sm text-error-500">
@@ -484,7 +490,7 @@ function SecurityTabContent() {
 
               {/* Password Strength Indicator */}
               <PasswordStrengthIndicator
-                password={newPassword || ''}
+                password={newPassword || ""}
                 strength={passwordStrength}
               />
             </div>
@@ -495,7 +501,7 @@ function SecurityTabContent() {
                 Confirmar Contrasena
               </label>
               <Input
-                type={showConfirmPassword ? 'text' : 'password'}
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirma tu nueva contrasena"
                 error={!!errors.confirmPassword}
                 rightElement={
@@ -511,7 +517,7 @@ function SecurityTabContent() {
                     )}
                   </button>
                 }
-                {...register('confirmPassword')}
+                {...register("confirmPassword")}
               />
               {errors.confirmPassword && (
                 <p className="text-sm text-error-500">
@@ -525,7 +531,7 @@ function SecurityTabContent() {
               <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-3">
                 Requisitos de contrasena
               </h4>
-              <PasswordRequirements password={newPassword || ''} />
+              <PasswordRequirements password={newPassword || ""} />
             </div>
 
             {/* Submit Button */}
@@ -546,7 +552,8 @@ function SecurityTabContent() {
 // Preferences Tab Content
 function PreferencesTabContent() {
   const { theme, setTheme } = useTheme();
-  const { data: preferences, isLoading: isLoadingPreferences } = useUserPreferences();
+  const { data: preferences, isLoading: isLoadingPreferences } =
+    useUserPreferences();
   const updatePreferences = useUpdatePreferences();
 
   const [localPreferences, setLocalPreferences] = useState(preferences);
@@ -559,8 +566,8 @@ function PreferencesTabContent() {
   }, [preferences]);
 
   const handleNotificationChange = (
-    key: 'email' | 'push' | 'lowStock' | 'invoices' | 'reports',
-    value: boolean
+    key: "email" | "push" | "lowStock" | "invoices" | "reports",
+    value: boolean,
   ) => {
     if (!localPreferences) return;
 
@@ -578,7 +585,7 @@ function PreferencesTabContent() {
 
     setLocalPreferences({
       ...localPreferences,
-      language: language as 'es' | 'en',
+      language: language as "es" | "en",
     });
   };
 
@@ -626,22 +633,22 @@ function PreferencesTabContent() {
               value="light"
               label={ThemeOptionLabels.light}
               icon={<Sun className="h-5 w-5" />}
-              isSelected={theme === 'light'}
-              onSelect={() => setTheme('light')}
+              isSelected={theme === "light"}
+              onSelect={() => setTheme("light")}
             />
             <ThemeOption
               value="dark"
               label={ThemeOptionLabels.dark}
               icon={<Moon className="h-5 w-5" />}
-              isSelected={theme === 'dark'}
-              onSelect={() => setTheme('dark')}
+              isSelected={theme === "dark"}
+              onSelect={() => setTheme("dark")}
             />
             <ThemeOption
               value="system"
               label={ThemeOptionLabels.system}
               icon={<Monitor className="h-5 w-5" />}
-              isSelected={theme === 'system'}
-              onSelect={() => setTheme('system')}
+              isSelected={theme === "system"}
+              onSelect={() => setTheme("system")}
             />
           </div>
         </CardContent>
@@ -688,42 +695,50 @@ function PreferencesTabContent() {
               description="Recibe actualizaciones importantes en tu correo"
               icon={<Mail className="h-4 w-4" />}
               checked={localPreferences.notifications.email}
-              onChange={(checked) => handleNotificationChange('email', checked)}
+              onChange={(checked) => handleNotificationChange("email", checked)}
             />
             <NotificationCheckbox
               label="Notificaciones push"
               description="Recibe notificaciones en tu navegador"
               icon={<Bell className="h-4 w-4" />}
               checked={localPreferences.notifications.push}
-              onChange={(checked) => handleNotificationChange('push', checked)}
+              onChange={(checked) => handleNotificationChange("push", checked)}
             />
             <NotificationCheckbox
               label="Alertas de stock bajo"
               description="Te avisamos cuando el inventario esta bajo"
               icon={<Package className="h-4 w-4" />}
               checked={localPreferences.notifications.lowStock}
-              onChange={(checked) => handleNotificationChange('lowStock', checked)}
+              onChange={(checked) =>
+                handleNotificationChange("lowStock", checked)
+              }
             />
             <NotificationCheckbox
               label="Alertas de pagos"
               description="Notificaciones sobre pagos pendientes y recibidos"
               icon={<CreditCard className="h-4 w-4" />}
               checked={localPreferences.notifications.invoices}
-              onChange={(checked) => handleNotificationChange('invoices', checked)}
+              onChange={(checked) =>
+                handleNotificationChange("invoices", checked)
+              }
             />
             <NotificationCheckbox
               label="Actualizaciones de facturas"
               description="Cambios en el estado de tus facturas"
               icon={<FileText className="h-4 w-4" />}
               checked={localPreferences.notifications.invoices}
-              onChange={(checked) => handleNotificationChange('invoices', checked)}
+              onChange={(checked) =>
+                handleNotificationChange("invoices", checked)
+              }
             />
             <NotificationCheckbox
               label="Reportes semanales"
               description="Resumen semanal de tu negocio"
               icon={<BarChart3 className="h-4 w-4" />}
               checked={localPreferences.notifications.reports}
-              onChange={(checked) => handleNotificationChange('reports', checked)}
+              onChange={(checked) =>
+                handleNotificationChange("reports", checked)
+              }
             />
           </div>
         </CardContent>
@@ -747,10 +762,12 @@ function AccountTabContent() {
   const { user, tenant, logout, isLoggingOut } = useAuth();
 
   const planColors: Record<string, string> = {
-    FREE: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300',
-    BASIC: 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300',
-    PRO: 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300',
-    ENTERPRISE: 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300',
+    FREE: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
+    BASIC:
+      "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300",
+    PRO: "bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300",
+    ENTERPRISE:
+      "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300",
   };
 
   return (
@@ -777,7 +794,7 @@ function AccountTabContent() {
                 ID de Usuario
               </p>
               <p className="font-mono text-sm text-neutral-900 dark:text-white bg-neutral-50 dark:bg-neutral-800 px-3 py-2 rounded-lg">
-                {user?.id || '-'}
+                {user?.id || "-"}
               </p>
             </div>
             <div className="space-y-1">
@@ -785,7 +802,7 @@ function AccountTabContent() {
                 ID de Cuenta
               </p>
               <p className="font-mono text-sm text-neutral-900 dark:text-white bg-neutral-50 dark:bg-neutral-800 px-3 py-2 rounded-lg">
-                {tenant?.id || '-'}
+                {tenant?.id || "-"}
               </p>
             </div>
             <div className="space-y-1">
@@ -793,7 +810,7 @@ function AccountTabContent() {
                 Nombre de Organizacion
               </p>
               <p className="font-medium text-neutral-900 dark:text-white">
-                {tenant?.name || '-'}
+                {tenant?.name || "-"}
               </p>
             </div>
             <div className="space-y-1">
@@ -802,11 +819,11 @@ function AccountTabContent() {
               </p>
               <span
                 className={cn(
-                  'inline-flex px-3 py-1 rounded-full text-sm font-medium',
-                  planColors[tenant?.plan || 'FREE']
+                  "inline-flex px-3 py-1 rounded-full text-sm font-medium",
+                  planColors[tenant?.plan || "FREE"],
                 )}
               >
-                {tenant?.plan || 'FREE'}
+                {tenant?.plan || "FREE"}
               </span>
             </div>
             <div className="space-y-1">
@@ -814,9 +831,9 @@ function AccountTabContent() {
                 Estado de la Cuenta
               </p>
               <Badge
-                variant={tenant?.status === 'ACTIVE' ? 'success' : 'warning'}
+                variant={tenant?.status === "ACTIVE" ? "success" : "warning"}
               >
-                {tenant?.status === 'ACTIVE' ? 'Activa' : tenant?.status}
+                {tenant?.status === "ACTIVE" ? "Activa" : tenant?.status}
               </Badge>
             </div>
           </div>
@@ -827,9 +844,7 @@ function AccountTabContent() {
       <Card>
         <CardHeader>
           <CardTitle>Informacion de Sesion</CardTitle>
-          <CardDescription>
-            Gestiona tu sesion actual
-          </CardDescription>
+          <CardDescription>Gestiona tu sesion actual</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
@@ -863,7 +878,7 @@ function AccountTabContent() {
 
 // Main Settings Page
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -872,13 +887,13 @@ export default function SettingsPage() {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'profile':
+      case "profile":
         return <ProfileTabContent />;
-      case 'security':
+      case "security":
         return <SecurityTabContent />;
-      case 'preferences':
+      case "preferences":
         return <PreferencesTabContent />;
-      case 'account':
+      case "account":
         return <AccountTabContent />;
       default:
         return null;
@@ -912,14 +927,16 @@ export default function SettingsPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200',
+                "flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200",
                 activeTab === tab.id
-                  ? 'bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-400 shadow-sm'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  ? "bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-400 shadow-sm"
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white",
               )}
             >
               {tab.icon}
-              <span className="hidden sm:inline">{SettingsTabLabels[tab.id]}</span>
+              <span className="hidden sm:inline">
+                {SettingsTabLabels[tab.id]}
+              </span>
             </button>
           ))}
         </div>

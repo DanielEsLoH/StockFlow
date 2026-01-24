@@ -68,8 +68,10 @@ export class SystemAdminRoleGuard implements CanActivate {
     }
 
     // Get the authenticated system admin from the request
-    const request = context.switchToHttp().getRequest();
-    const admin: SystemAdminRequestUser = request.user;
+    const request = context
+      .switchToHttp()
+      .getRequest<{ user?: SystemAdminRequestUser }>();
+    const admin = request.user;
 
     if (!admin) {
       throw new ForbiddenException(

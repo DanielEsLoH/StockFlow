@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { CACHE_TTL, getCacheKey, hashQueryParams } from './cache.constants';
+import { getErrorMessage } from '../common/utils/error.utils';
 
 /**
  * CacheService provides a centralized interface for cache operations.
@@ -36,8 +37,10 @@ export class CacheService {
       }
       this.logger.debug(`Cache MISS: ${key}`);
       return undefined;
-    } catch (error) {
-      this.logger.warn(`Cache GET error for key ${key}: ${error}`);
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Cache GET error for key ${key}: ${getErrorMessage(error)}`,
+      );
       return undefined;
     }
   }
@@ -61,8 +64,10 @@ export class CacheService {
       // Convert TTL to milliseconds for cache-manager v5+
       await this.cacheManager.set(key, value, ttl * 1000);
       this.logger.debug(`Cache SET: ${key} (TTL: ${ttl}s)`);
-    } catch (error) {
-      this.logger.warn(`Cache SET error for key ${key}: ${error}`);
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Cache SET error for key ${key}: ${getErrorMessage(error)}`,
+      );
     }
   }
 
@@ -78,8 +83,10 @@ export class CacheService {
     try {
       await this.cacheManager.del(key);
       this.logger.debug(`Cache DEL: ${key}`);
-    } catch (error) {
-      this.logger.warn(`Cache DEL error for key ${key}: ${error}`);
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Cache DEL error for key ${key}: ${getErrorMessage(error)}`,
+      );
     }
   }
 
@@ -122,8 +129,10 @@ export class CacheService {
           `Cache DEL pattern: ${pattern} (${keys.length} keys)`,
         );
       }
-    } catch (error) {
-      this.logger.warn(`Cache DEL pattern error for ${pattern}: ${error}`);
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Cache DEL pattern error for ${pattern}: ${getErrorMessage(error)}`,
+      );
     }
   }
 
@@ -135,8 +144,8 @@ export class CacheService {
     try {
       await this.cacheManager.clear();
       this.logger.debug('Cache RESET: All entries cleared');
-    } catch (error) {
-      this.logger.warn(`Cache RESET error: ${error}`);
+    } catch (error: unknown) {
+      this.logger.warn(`Cache RESET error: ${getErrorMessage(error)}`);
     }
   }
 

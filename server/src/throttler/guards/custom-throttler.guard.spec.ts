@@ -243,7 +243,7 @@ describe('CustomThrottlerGuard', () => {
         getClass: () => ({}),
       }) as unknown as ExecutionContext;
 
-    it('should throw ThrottlerException with retry information', async () => {
+    it('should throw ThrottlerException with retry information', () => {
       const context = createMockContext();
       const throttlerDetail = {
         limit: 10,
@@ -256,19 +256,19 @@ describe('CustomThrottlerGuard', () => {
         timeToBlockExpire: 0,
       };
 
-      await expect(
+      expect(() =>
         (
           guard as unknown as {
             throwThrottlingException: (
               ctx: ExecutionContext,
               detail: typeof throttlerDetail,
-            ) => Promise<void>;
+            ) => never;
           }
         ).throwThrottlingException(context, throttlerDetail),
-      ).rejects.toThrow(ThrottlerException);
+      ).toThrow(ThrottlerException);
     });
 
-    it('should include retry time in error message', async () => {
+    it('should include retry time in error message', () => {
       const context = createMockContext();
       const throttlerDetail = {
         limit: 10,
@@ -282,12 +282,12 @@ describe('CustomThrottlerGuard', () => {
       };
 
       try {
-        await (
+        (
           guard as unknown as {
             throwThrottlingException: (
               ctx: ExecutionContext,
               detail: typeof throttlerDetail,
-            ) => Promise<void>;
+            ) => never;
           }
         ).throwThrottlingException(context, throttlerDetail);
         fail('Expected ThrottlerException to be thrown');

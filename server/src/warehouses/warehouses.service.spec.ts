@@ -1066,6 +1066,72 @@ describe('WarehousesService', () => {
     });
   });
 
+  describe('getCities', () => {
+    it('should return unique cities sorted alphabetically', async () => {
+      (prismaService.warehouse.findMany as jest.Mock).mockResolvedValue([
+        { city: 'Cali' },
+        { city: 'Bogota' },
+        { city: 'Medellin' },
+      ]);
+
+      const result = await service.getCities();
+
+      expect(result).toEqual(['Bogota', 'Cali', 'Medellin']);
+      expect(tenantContextService.requireTenantId).toHaveBeenCalled();
+      expect(prismaService.warehouse.findMany).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        select: { city: true },
+        distinct: ['city'],
+      });
+    });
+
+    it('should filter out null cities', async () => {
+      (prismaService.warehouse.findMany as jest.Mock).mockResolvedValue([
+        { city: 'Bogota' },
+        { city: null },
+        { city: 'Cali' },
+        { city: null },
+      ]);
+
+      const result = await service.getCities();
+
+      expect(result).toEqual(['Bogota', 'Cali']);
+      expect(result).not.toContain(null);
+    });
+
+    it('should return empty array when no warehouses exist', async () => {
+      (prismaService.warehouse.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.getCities();
+
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array when all cities are null', async () => {
+      (prismaService.warehouse.findMany as jest.Mock).mockResolvedValue([
+        { city: null },
+        { city: null },
+      ]);
+
+      const result = await service.getCities();
+
+      expect(result).toEqual([]);
+    });
+
+    it('should log debug message when getting cities', async () => {
+      const debugSpy = jest.spyOn(Logger.prototype, 'debug');
+      (prismaService.warehouse.findMany as jest.Mock).mockResolvedValue([
+        { city: 'Bogota' },
+      ]);
+
+      await service.getCities();
+
+      expect(debugSpy).toHaveBeenCalledWith(
+        `Getting unique cities for tenant ${mockTenantId}`,
+      );
+    });
+  });
+
   describe('tenant isolation', () => {
     it('should scope findAll to tenant', async () => {
       (prismaService.warehouse.findMany as jest.Mock).mockResolvedValue([]);

@@ -100,7 +100,16 @@ export function hashQueryParams(params: Record<string, unknown>): string {
   for (const key of sortedKeys) {
     const value = params[key];
     if (value !== undefined && value !== null && value !== '') {
-      parts.push(`${key}:${JSON.stringify(value)}`);
+      let stringValue: string;
+      if (typeof value === 'string') {
+        stringValue = value;
+      } else if (typeof value === 'object') {
+        stringValue = JSON.stringify(value);
+      } else {
+        // For primitives (number, boolean, bigint, symbol)
+        stringValue = String(value as string | number | boolean | bigint);
+      }
+      parts.push(`${key}:${stringValue}`);
     }
   }
 

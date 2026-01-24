@@ -7,6 +7,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { SystemAdminService } from './system-admin.service';
 import { PrismaService } from '../prisma';
 import { SystemAdminRole, SystemAdminStatus } from './types';
@@ -132,7 +133,6 @@ describe('SystemAdminService', () => {
     it('should successfully login a system admin', async () => {
       // Create an admin with a pre-hashed password that bcrypt.compare will validate
       // We use a real bcrypt hash for testing
-      const bcrypt = await import('bcrypt');
       const hashedPassword = await bcrypt.hash('password123', 10);
       const adminWithRealHash = {
         ...mockSystemAdmin,
@@ -167,7 +167,6 @@ describe('SystemAdminService', () => {
     });
 
     it('should throw UnauthorizedException if admin is not active', async () => {
-      const bcrypt = await import('bcrypt');
       const hashedPassword = await bcrypt.hash('password123', 10);
       const inactiveAdmin = {
         ...mockSystemAdmin,
@@ -184,7 +183,6 @@ describe('SystemAdminService', () => {
     });
 
     it('should throw UnauthorizedException if password is invalid', async () => {
-      const bcrypt = await import('bcrypt');
       const hashedPassword = await bcrypt.hash('correctPassword', 10);
       const adminWithHash = { ...mockSystemAdmin, password: hashedPassword };
       prismaService.systemAdmin.findUnique = jest

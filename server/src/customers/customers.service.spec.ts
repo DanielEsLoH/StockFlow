@@ -1094,6 +1094,70 @@ describe('CustomersService', () => {
     });
   });
 
+  describe('getCities', () => {
+    it('should return unique cities sorted alphabetically', async () => {
+      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([
+        { city: 'Bogota' },
+        { city: 'Cali' },
+        { city: 'Medellin' },
+      ]);
+
+      const result = await service.getCities();
+
+      expect(result).toEqual(['Bogota', 'Cali', 'Medellin']);
+    });
+
+    it('should filter out null cities', async () => {
+      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([
+        { city: 'Bogota' },
+        { city: null },
+      ]);
+
+      const result = await service.getCities();
+
+      expect(result).toEqual(['Bogota']);
+    });
+
+    it('should return empty array when no customers', async () => {
+      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.getCities();
+
+      expect(result).toEqual([]);
+    });
+
+    it('should require tenant context', async () => {
+      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([]);
+
+      await service.getCities();
+
+      expect(tenantContextService.requireTenantId).toHaveBeenCalled();
+    });
+
+    it('should scope query to tenant', async () => {
+      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([]);
+
+      await service.getCities();
+
+      expect(prismaService.customer.findMany).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        select: { city: true },
+        distinct: ['city'],
+      });
+    });
+
+    it('should log debug when getting cities', async () => {
+      const debugSpy = jest.spyOn(Logger.prototype, 'debug');
+      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([]);
+
+      await service.getCities();
+
+      expect(debugSpy).toHaveBeenCalledWith(
+        `Getting unique cities for tenant ${mockTenantId}`,
+      );
+    });
+  });
+
   describe('tenant isolation', () => {
     it('should scope findAll to tenant', async () => {
       (prismaService.customer.findMany as jest.Mock).mockResolvedValue([]);

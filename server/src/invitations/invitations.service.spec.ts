@@ -376,8 +376,9 @@ describe('InvitationsService', () => {
       const now = new Date();
       await service.create(createDto, mockAdminUser as any);
 
-      const createCall = (prismaService.invitation.create as jest.Mock).mock
-        .calls[0][0];
+      const createCalls = (prismaService.invitation.create as jest.Mock).mock
+        .calls as Array<[{ data: { expiresAt: string } }]>;
+      const createCall = createCalls[0][0];
       const expiresAt = new Date(createCall.data.expiresAt);
       const expectedExpiry = new Date(now);
       expectedExpiry.setDate(expectedExpiry.getDate() + 7);
@@ -703,8 +704,9 @@ describe('InvitationsService', () => {
 
       await service.resend(mockInvitation.id, mockTenantId);
 
-      const updateCall = (prismaService.invitation.update as jest.Mock).mock
-        .calls[0][0];
+      const updateCalls = (prismaService.invitation.update as jest.Mock).mock
+        .calls as Array<[{ data: { expiresAt: string } }]>;
+      const updateCall = updateCalls[0][0];
       const newExpiresAt = new Date(updateCall.data.expiresAt);
       const expectedExpiry = new Date(now);
       expectedExpiry.setDate(expectedExpiry.getDate() + 7);

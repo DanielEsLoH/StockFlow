@@ -200,7 +200,9 @@ describe('Rate Limiting E2E Tests', () => {
       // Should either succeed or have proper error structure
       if (response.status === 429) {
         expect(response.body).toHaveProperty('message');
-        expect(response.body.message).toContain('Too many requests');
+        expect((response.body as { message: string }).message).toContain(
+          'Too many requests',
+        );
       } else {
         expect(response.status).toBe(200);
       }

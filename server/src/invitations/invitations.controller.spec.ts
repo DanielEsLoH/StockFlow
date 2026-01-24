@@ -343,7 +343,10 @@ describe('InvitationsController', () => {
 
   describe('authorization', () => {
     it('should be decorated with JwtAuthGuard and RolesGuard', () => {
-      const guards = Reflect.getMetadata('__guards__', InvitationsController);
+      const guards = Reflect.getMetadata(
+        '__guards__',
+        InvitationsController,
+      ) as unknown[];
       expect(guards).toBeDefined();
       expect(guards.length).toBe(2);
     });

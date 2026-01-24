@@ -86,6 +86,7 @@ describe('WarehousesController', () => {
       findAll: jest.fn(),
       findOne: jest.fn(),
       getStock: jest.fn(),
+      getCities: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -451,6 +452,42 @@ describe('WarehousesController', () => {
       warehousesService.getStock.mockRejectedValue(error);
 
       await expect(controller.getStock('warehouse-123')).rejects.toThrow(error);
+    });
+  });
+
+  describe('getCities', () => {
+    it('should return cities from service', async () => {
+      const mockCities = ['Bogota', 'Cali', 'Medellin'];
+      warehousesService.getCities.mockResolvedValue(mockCities);
+
+      const result = await controller.getCities();
+
+      expect(result).toEqual(mockCities);
+      expect(warehousesService.getCities).toHaveBeenCalled();
+    });
+
+    it('should return empty array when no cities exist', async () => {
+      warehousesService.getCities.mockResolvedValue([]);
+
+      const result = await controller.getCities();
+
+      expect(result).toEqual([]);
+    });
+
+    it('should propagate service errors', async () => {
+      const error = new Error('Database error');
+      warehousesService.getCities.mockRejectedValue(error);
+
+      await expect(controller.getCities()).rejects.toThrow(error);
+    });
+
+    it('should log when getting cities', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+      warehousesService.getCities.mockResolvedValue(['Bogota']);
+
+      await controller.getCities();
+
+      expect(logSpy).toHaveBeenCalledWith('Getting unique warehouse cities');
     });
   });
 

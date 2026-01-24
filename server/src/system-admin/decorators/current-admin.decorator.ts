@@ -20,8 +20,10 @@ import { SystemAdminRequestUser } from '../types';
  */
 export const CurrentAdmin = createParamDecorator(
   (data: keyof SystemAdminRequestUser | undefined, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    const admin: SystemAdminRequestUser = request.user;
+    const request = ctx
+      .switchToHttp()
+      .getRequest<{ user?: SystemAdminRequestUser }>();
+    const admin = request.user;
 
     if (!admin) {
       return null;

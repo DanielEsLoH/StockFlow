@@ -1539,6 +1539,30 @@ describe('AuthService', () => {
       expect(result.message).toContain('Registration successful');
       expect(result.user.email).toBe(registerDto.email.toLowerCase());
     });
+
+    it('should log error with undefined stack when email promise rejects with non-Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      // Make Promise.allSettled report a rejection with non-Error value
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockRejectedValue('string rejection');
+      (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+
+      await service.register(registerDto);
+
+      // Wait for async email operations
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Registration admin notification email threw error',
+        ),
+        undefined,
+      );
+    });
   });
 
   describe('verifyEmail', () => {
@@ -1825,6 +1849,29 @@ describe('AuthService', () => {
           'If an account exists with this email and has not been verified, a new verification email has been sent.',
         );
       });
+
+      it('should log error with undefined stack when sendVerificationEmail throws non-Error', async () => {
+        const errorSpy = jest.spyOn(Logger.prototype, 'error');
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          unverifiedUserForError,
+        );
+        (prismaService.user.update as jest.Mock).mockResolvedValue(
+          unverifiedUserForError,
+        );
+        (brevoService.sendVerificationEmail as jest.Mock).mockRejectedValue(
+          'string error',
+        );
+
+        await service.resendVerification('test@example.com');
+
+        // Wait for async email operation
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Verification email resend threw error'),
+          undefined,
+        );
+      });
     });
   });
 
@@ -1944,7 +1991,7 @@ describe('AuthService', () => {
 
     it('should create user and return auth response for valid invitation', async () => {
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             user: {
               create: jest.fn().mockResolvedValue(createdUser),
@@ -2014,7 +2061,7 @@ describe('AuthService', () => {
     it('should create user with invitation role and tenantId', async () => {
       const createUserMock = jest.fn().mockResolvedValue(createdUser);
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             user: {
               create: createUserMock,
@@ -2044,7 +2091,7 @@ describe('AuthService', () => {
     it('should update invitation status to ACCEPTED', async () => {
       const updateInvitationMock = jest.fn().mockResolvedValue(mockInvitation);
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             user: {
               create: jest.fn().mockResolvedValue(createdUser),
@@ -2070,7 +2117,7 @@ describe('AuthService', () => {
 
     it('should store refresh token and update lastLoginAt', async () => {
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             user: {
               create: jest.fn().mockResolvedValue(createdUser),
@@ -2096,7 +2143,7 @@ describe('AuthService', () => {
 
     it('should hash password with 12 salt rounds', async () => {
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             user: {
               create: jest.fn().mockResolvedValue(createdUser),
@@ -2240,7 +2287,7 @@ describe('AuthService', () => {
         (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
         (bcrypt.hash as jest.Mock).mockResolvedValue('hashedRandomPassword');
         (prismaService.$transaction as jest.Mock).mockImplementation(
-          async (callback) => {
+          (callback: (tx: unknown) => unknown) => {
             const tx = {
               tenant: {
                 create: jest.fn().mockResolvedValue(newOAuthTenant),
@@ -2269,7 +2316,7 @@ describe('AuthService', () => {
         (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
         (bcrypt.hash as jest.Mock).mockResolvedValue('hashedRandomPassword');
         (prismaService.$transaction as jest.Mock).mockImplementation(
-          async (callback) => {
+          (callback: (tx: unknown) => unknown) => {
             const tx = {
               tenant: {
                 create: jest.fn().mockResolvedValue({
@@ -2424,7 +2471,8 @@ describe('AuthService', () => {
         await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
 
         // The update should not contain googleId since it's already set
-        const updateCalls = (prismaService.user.update as jest.Mock).mock.calls;
+        const updateCalls = (prismaService.user.update as jest.Mock).mock
+          .calls as Array<[{ data: Record<string, unknown> }]>;
         const lastUpdateCall = updateCalls[updateCalls.length - 1];
         expect(lastUpdateCall[0].data.googleId).toBeUndefined();
       });
@@ -2459,6 +2507,32 @@ describe('AuthService', () => {
             }),
           }),
         );
+      });
+
+      it('should not call update when no account changes are needed', async () => {
+        // User already has everything set correctly
+        const fullyLinkedUser = {
+          ...baseExistingUser,
+          googleId: 'google-link-123', // Already has the Google ID
+          avatar: 'https://existing-avatar.jpg', // Already has avatar
+          authProvider: AuthProvider.GOOGLE, // Already set to Google
+        };
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          fullyLinkedUser,
+        );
+
+        await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+
+        // Should only update refresh token and lastLoginAt, not the linking update
+        const updateCalls = (prismaService.user.update as jest.Mock).mock
+          .calls as Array<[{ data: Record<string, unknown> }]>;
+        // The first update (if any) for account linking should not happen
+        // Only the refresh token update happens
+        expect(updateCalls.length).toBe(1);
+        expect(updateCalls[0][0].data).toEqual({
+          refreshToken: expect.any(String),
+          lastLoginAt: expect.any(Date),
+        });
       });
     });
 
@@ -2565,7 +2639,8 @@ describe('AuthService', () => {
         await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
 
         // Check that the last update call includes refreshToken and lastLoginAt
-        const updateCalls = (prismaService.user.update as jest.Mock).mock.calls;
+        const updateCalls = (prismaService.user.update as jest.Mock).mock
+          .calls as Array<[{ data: Record<string, unknown> }]>;
         const lastCall = updateCalls[updateCalls.length - 1];
         expect(lastCall[0].data.refreshToken).toBe(mockTokens.refreshToken);
         expect(lastCall[0].data.lastLoginAt).toBeInstanceOf(Date);
@@ -2617,7 +2692,7 @@ describe('AuthService', () => {
     it('should create tenant with user firstName Company name', async () => {
       const tenantCreateMock = jest.fn().mockResolvedValue(createdTenant);
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             tenant: {
               create: tenantCreateMock,
@@ -2644,7 +2719,7 @@ describe('AuthService', () => {
     it('should create user with PENDING status and ADMIN role', async () => {
       const userCreateMock = jest.fn().mockResolvedValue(createdUser);
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             tenant: {
               create: jest.fn().mockResolvedValue(createdTenant),
@@ -2685,7 +2760,7 @@ describe('AuthService', () => {
         authProvider: AuthProvider.GITHUB,
       });
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             tenant: {
               create: jest.fn().mockResolvedValue(createdTenant),
@@ -2718,7 +2793,7 @@ describe('AuthService', () => {
         slug: 'news-company-1',
       });
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             tenant: {
               create: tenantCreateMock,
@@ -2742,7 +2817,7 @@ describe('AuthService', () => {
 
     it('should return pending status with appropriate message', async () => {
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             tenant: {
               create: jest.fn().mockResolvedValue(createdTenant),
@@ -2766,7 +2841,7 @@ describe('AuthService', () => {
 
     it('should send admin notification email asynchronously', async () => {
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             tenant: {
               create: jest.fn().mockResolvedValue(createdTenant),
@@ -2833,7 +2908,7 @@ describe('AuthService', () => {
         success: true,
       });
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
             user: { create: jest.fn().mockResolvedValue(createdUser) },
@@ -2859,7 +2934,7 @@ describe('AuthService', () => {
         error: 'Email service unavailable',
       });
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
             user: { create: jest.fn().mockResolvedValue(createdUser) },
@@ -2882,7 +2957,7 @@ describe('AuthService', () => {
         brevoService.sendAdminNewRegistrationNotification as jest.Mock
       ).mockRejectedValue(new Error('Network error'));
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
             user: { create: jest.fn().mockResolvedValue(createdUser) },
@@ -2900,12 +2975,37 @@ describe('AuthService', () => {
       );
     });
 
+    it('should log error with undefined stack when internal catch receives non-Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+      // Reject with a non-Error value to trigger the else branch of error instanceof Error
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockRejectedValue('string error');
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        (callback: (tx: unknown) => unknown) => {
+          const tx = {
+            tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
+            user: { create: jest.fn().mockResolvedValue(createdUser) },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('OAuth registration admin notification error'),
+        undefined,
+      );
+    });
+
     it('should not block OAuth registration when notification fails', async () => {
       (
         brevoService.sendAdminNewRegistrationNotification as jest.Mock
       ).mockRejectedValue(new Error('Email service down'));
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        async (callback) => {
+        (callback: (tx: unknown) => unknown) => {
           const tx = {
             tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
             user: { create: jest.fn().mockResolvedValue(createdUser) },
@@ -2921,6 +3021,224 @@ describe('AuthService', () => {
 
       // Registration should still succeed with pending status
       expect(result.status).toBe('pending');
+    });
+
+    it('should log error with undefined stack when catch block receives non-Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      // Create a spy on the private method that throws a non-Error value
+      const sendOAuthNotificationSpy = jest.spyOn(
+        service as unknown as {
+          sendOAuthRegistrationNotification: () => Promise<void>;
+        },
+        'sendOAuthRegistrationNotification',
+      );
+      sendOAuthNotificationSpy.mockRejectedValue('string error');
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        (callback: (tx: unknown) => unknown) => {
+          const tx = {
+            tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
+            user: { create: jest.fn().mockResolvedValue(createdUser) },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Failed to send OAuth registration notification',
+        undefined,
+      );
+
+      sendOAuthNotificationSpy.mockRestore();
+    });
+  });
+
+  describe('sendRegistrationEmails outer catch block', () => {
+    const registerDto: RegisterDto = {
+      email: 'catchtest@example.com',
+      password: 'securePassword123',
+      firstName: 'Catch',
+      lastName: 'Test',
+      tenantName: 'Catch Test Company',
+    };
+
+    const testTenant = {
+      ...mockTenant,
+      id: 'catch-tenant-id',
+      name: 'Catch Test Company',
+      slug: 'catch-test-company',
+      email: 'catchtest@example.com',
+      status: TenantStatus.TRIAL,
+    };
+
+    const testUser = {
+      ...mockUser,
+      id: 'catch-user-id',
+      email: 'catchtest@example.com',
+      firstName: 'Catch',
+      lastName: 'Test',
+      tenantId: 'catch-tenant-id',
+      status: UserStatus.PENDING,
+      role: UserRole.ADMIN,
+      emailVerified: false,
+      verificationToken: 'test-token',
+      verificationTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    };
+
+    beforeEach(() => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        (callback: (tx: unknown) => unknown) => {
+          const tx = {
+            tenant: { create: jest.fn().mockResolvedValue(testTenant) },
+            user: { create: jest.fn().mockResolvedValue(testUser) },
+          };
+          return callback(tx);
+        },
+      );
+    });
+
+    it('should trigger outer catch and log error with stack when sendRegistrationEmails rejects with Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      // Spy on sendRegistrationEmails and make it throw
+      const sendEmailsSpy = jest.spyOn(
+        service as unknown as { sendRegistrationEmails: () => Promise<void> },
+        'sendRegistrationEmails',
+      );
+      sendEmailsSpy.mockRejectedValue(new Error('Unexpected failure'));
+
+      await service.register(registerDto);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Unexpected error in sendRegistrationEmails',
+        expect.any(String),
+      );
+
+      sendEmailsSpy.mockRestore();
+    });
+
+    it('should trigger outer catch and log error with undefined when sendRegistrationEmails rejects with non-Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      // Spy on sendRegistrationEmails and make it throw a non-Error
+      const sendEmailsSpy = jest.spyOn(
+        service as unknown as { sendRegistrationEmails: () => Promise<void> },
+        'sendRegistrationEmails',
+      );
+      sendEmailsSpy.mockRejectedValue('string error');
+
+      await service.register(registerDto);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Unexpected error in sendRegistrationEmails',
+        undefined,
+      );
+
+      sendEmailsSpy.mockRestore();
+    });
+  });
+
+  describe('sendOAuthRegistrationNotification outer catch block', () => {
+    const googleOAuthUser: OAuthUserDto = {
+      email: 'outertest@example.com',
+      firstName: 'Outer',
+      lastName: 'Test',
+      googleId: 'google-outer-123',
+      provider: 'GOOGLE',
+    };
+
+    const createdTenant = {
+      ...mockTenant,
+      id: 'outer-tenant-id',
+      name: "Outer's Company",
+    };
+
+    const createdUser = {
+      ...mockUser,
+      email: 'outertest@example.com',
+      firstName: 'Outer',
+      lastName: 'Test',
+    };
+
+    beforeEach(() => {
+      (prismaService.user.findFirst as jest.Mock)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+    });
+
+    it('should log error with stack when outer catch receives Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      const sendNotificationSpy = jest.spyOn(
+        service as unknown as {
+          sendOAuthRegistrationNotification: () => Promise<void>;
+        },
+        'sendOAuthRegistrationNotification',
+      );
+      sendNotificationSpy.mockRejectedValue(new Error('Notification failed'));
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        (callback: (tx: unknown) => unknown) => {
+          const tx = {
+            tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
+            user: { create: jest.fn().mockResolvedValue(createdUser) },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Failed to send OAuth registration notification',
+        expect.any(String),
+      );
+
+      sendNotificationSpy.mockRestore();
+    });
+
+    it('should log error with undefined when outer catch receives non-Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      const sendNotificationSpy = jest.spyOn(
+        service as unknown as {
+          sendOAuthRegistrationNotification: () => Promise<void>;
+        },
+        'sendOAuthRegistrationNotification',
+      );
+      sendNotificationSpy.mockRejectedValue('non-error rejection');
+
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        (callback: (tx: unknown) => unknown) => {
+          const tx = {
+            tenant: { create: jest.fn().mockResolvedValue(createdTenant) },
+            user: { create: jest.fn().mockResolvedValue(createdUser) },
+          };
+          return callback(tx);
+        },
+      );
+
+      await service.handleOAuthLogin(googleOAuthUser, AuthProvider.GOOGLE);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Failed to send OAuth registration notification',
+        undefined,
+      );
+
+      sendNotificationSpy.mockRestore();
     });
   });
 });

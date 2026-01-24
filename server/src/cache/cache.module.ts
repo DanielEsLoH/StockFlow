@@ -3,6 +3,7 @@ import { CacheModule as NestCacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { redisStore } from 'cache-manager-redis-yet';
 import { CacheService } from './cache.service';
+import { getErrorMessage } from '../common/utils/error.utils';
 
 /**
  * CacheModule provides application-wide caching functionality.
@@ -68,9 +69,9 @@ import { CacheService } from './cache.service';
               store,
               ttl: ttl * 1000,
             };
-          } catch (error) {
+          } catch (error: unknown) {
             logger.warn(
-              `Failed to connect to Redis: ${error}. Falling back to in-memory cache.`,
+              `Failed to connect to Redis: ${getErrorMessage(error)}. Falling back to in-memory cache.`,
             );
             return {
               ttl: 300 * 1000, // 5 minutes in milliseconds

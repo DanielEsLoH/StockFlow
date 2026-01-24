@@ -13,15 +13,15 @@ import { ConfigModule } from '@nestjs/config';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { PrismaModule, PrismaService } from '../src/prisma';
-import { AuthModule } from '../src/auth/auth.module';
+import { AuthModule } from '../src/auth';
 import { CommonModule } from '../src/common';
 import { ArcjetModule, ArcjetService } from '../src/arcjet';
 import { configuration, validateEnv } from '../src/config';
-import { TenantMiddleware } from '../src/common/middleware';
-import { InvoicesModule } from '../src/invoices/invoices.module';
-import { PaymentsModule } from '../src/payments/payments.module';
-import { ProductsModule } from '../src/products/products.module';
-import { CustomersModule } from '../src/customers/customers.module';
+import { TenantMiddleware } from '../src/common';
+import { InvoicesModule } from '../src/invoices';
+import { PaymentsModule } from '../src/payments';
+import { ProductsModule } from '../src/products';
+import { CustomersModule } from '../src/customers';
 import {
   UserRole,
   ProductStatus,
@@ -615,7 +615,7 @@ describe('Invoices E2E Tests', () => {
         .send(createDto)
         .expect(400);
 
-      expect(response.body.message).toContain(
+      expect((response.body as { message: string }).message).toContain(
         'La factura debe tener al menos un item',
       );
     });
@@ -637,7 +637,7 @@ describe('Invoices E2E Tests', () => {
         .send(createDto)
         .expect(400);
 
-      expect(response.body.message).toBeDefined();
+      expect((response.body as { message: string }).message).toBeDefined();
     });
 
     it('should return validation error for quantity less than 1', async () => {
@@ -657,12 +657,12 @@ describe('Invoices E2E Tests', () => {
         .send(createDto)
         .expect(400);
 
-      expect(response.body.message).toBeDefined();
+      expect((response.body as { message: string }).message).toBeDefined();
     });
 
     it('should return 404 for non-existent product', async () => {
       // Use a valid CUID format that doesn't exist in the database
-      const nonExistentProductId = 'cnonexistent00000product00';
+      const nonExistentProductId = 'cm0nonexistent0product000';
       const createDto = {
         items: [
           {
@@ -682,7 +682,7 @@ describe('Invoices E2E Tests', () => {
 
     it('should return 404 for non-existent customer', async () => {
       // Use a valid CUID format that doesn't exist in the database
-      const nonExistentCustomerId = 'cnonexistent000customer000';
+      const nonExistentCustomerId = 'cm0nonexistent0customer00';
       const createDto = {
         customerId: nonExistentCustomerId,
         items: [
@@ -1004,7 +1004,9 @@ describe('Invoices E2E Tests', () => {
         .send(updateDto)
         .expect(400);
 
-      expect(response.body.message).toContain('borrador');
+      expect((response.body as { message: string }).message).toContain(
+        'borrador',
+      );
     });
   });
 

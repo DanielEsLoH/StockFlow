@@ -1033,6 +1033,124 @@ describe('BrevoService', () => {
         expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
       });
     });
+
+    describe('sendVerificationEmail', () => {
+      it('should send verification email successfully', async () => {
+        const result = await brevoServiceConfigured.sendVerificationEmail({
+          to: 'newuser@example.com',
+          firstName: 'John',
+          verificationUrl: 'https://app.stockflow.com/verify?token=abc123',
+        });
+
+        expect(result.success).toBe(true);
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include verification URL in email content', async () => {
+        await brevoServiceConfigured.sendVerificationEmail({
+          to: 'newuser@example.com',
+          firstName: 'Maria',
+          verificationUrl: 'https://app.stockflow.com/verify?token=xyz789',
+        });
+
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include user first name in greeting', async () => {
+        await brevoServiceConfigured.sendVerificationEmail({
+          to: 'user@example.com',
+          firstName: 'Carlos',
+          verificationUrl: 'https://app.stockflow.com/verify?token=test',
+        });
+
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should have correct Spanish subject line', async () => {
+        await brevoServiceConfigured.sendVerificationEmail({
+          to: 'user@example.com',
+          firstName: 'Ana',
+          verificationUrl: 'https://app.stockflow.com/verify?token=test',
+        });
+
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+    });
+
+    describe('sendInvitationEmail', () => {
+      it('should send invitation email successfully', async () => {
+        const result = await brevoServiceConfigured.sendInvitationEmail({
+          to: 'invited@example.com',
+          tenantName: 'Acme Corp',
+          invitedByName: 'John Admin',
+          role: 'Manager',
+          invitationUrl: 'https://app.stockflow.com/invite?token=abc123',
+        });
+
+        expect(result.success).toBe(true);
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include tenant name in email content', async () => {
+        await brevoServiceConfigured.sendInvitationEmail({
+          to: 'invited@example.com',
+          tenantName: 'Tech Solutions Inc',
+          invitedByName: 'Maria Lopez',
+          role: 'Employee',
+          invitationUrl: 'https://app.stockflow.com/invite?token=xyz789',
+        });
+
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include inviter name in email content', async () => {
+        await brevoServiceConfigured.sendInvitationEmail({
+          to: 'newteammate@example.com',
+          tenantName: 'Startup XYZ',
+          invitedByName: 'Carlos Perez',
+          role: 'Admin',
+          invitationUrl: 'https://app.stockflow.com/invite?token=test',
+        });
+
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include role in email content', async () => {
+        await brevoServiceConfigured.sendInvitationEmail({
+          to: 'employee@example.com',
+          tenantName: 'Company ABC',
+          invitedByName: 'Ana Garcia',
+          role: 'Supervisor',
+          invitationUrl: 'https://app.stockflow.com/invite?token=role-test',
+        });
+
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include invitation URL in email content', async () => {
+        await brevoServiceConfigured.sendInvitationEmail({
+          to: 'user@example.com',
+          tenantName: 'My Company',
+          invitedByName: 'Admin User',
+          role: 'Employee',
+          invitationUrl: 'https://app.stockflow.com/invite?token=unique-token',
+        });
+
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should have correct Spanish subject line with tenant name', async () => {
+        await brevoServiceConfigured.sendInvitationEmail({
+          to: 'user@example.com',
+          tenantName: 'Empresa Test',
+          invitedByName: 'Inviter Name',
+          role: 'Manager',
+          invitationUrl: 'https://app.stockflow.com/invite?token=subject-test',
+        });
+
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+    });
   });
 
   describe('HTML template generation', () => {

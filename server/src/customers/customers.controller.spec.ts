@@ -61,6 +61,7 @@ describe('CustomersController', () => {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      getCities: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -539,6 +540,42 @@ describe('CustomersController', () => {
       await controller.delete('customer-123');
 
       expect(logSpy).toHaveBeenCalledWith('Deleting customer: customer-123');
+    });
+  });
+
+  describe('getCities', () => {
+    it('should return cities from service', async () => {
+      const mockCities = ['Bogota', 'Cali'];
+      customersService.getCities.mockResolvedValue(mockCities);
+
+      const result = await controller.getCities();
+
+      expect(result).toEqual(mockCities);
+      expect(customersService.getCities).toHaveBeenCalled();
+    });
+
+    it('should return empty array when no cities', async () => {
+      customersService.getCities.mockResolvedValue([]);
+
+      const result = await controller.getCities();
+
+      expect(result).toEqual([]);
+    });
+
+    it('should propagate service errors', async () => {
+      const error = new Error('Database error');
+      customersService.getCities.mockRejectedValue(error);
+
+      await expect(controller.getCities()).rejects.toThrow(error);
+    });
+
+    it('should log the operation', async () => {
+      customersService.getCities.mockResolvedValue(['Bogota']);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.getCities();
+
+      expect(logSpy).toHaveBeenCalledWith('Getting unique customer cities');
     });
   });
 });

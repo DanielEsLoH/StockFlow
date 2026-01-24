@@ -13,14 +13,14 @@ import { ConfigModule } from '@nestjs/config';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { PrismaModule, PrismaService } from '../src/prisma';
-import { AuthModule } from '../src/auth/auth.module';
+import { AuthModule } from '../src/auth';
 import { CommonModule } from '../src/common';
 import { ProductsModule } from '../src/products';
 import { CategoriesModule } from '../src/categories';
 import { ArcjetModule, ArcjetService } from '../src/arcjet';
 import { configuration, validateEnv } from '../src/config';
 import { UserRole, ProductStatus } from '@prisma/client';
-import { TenantMiddleware } from '../src/common/middleware';
+import { TenantMiddleware } from '../src/common';
 import * as bcrypt from 'bcrypt';
 
 // Mock ArcjetService to disable rate limiting and bot protection in tests

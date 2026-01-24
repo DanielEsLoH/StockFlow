@@ -653,16 +653,17 @@ export class ReportsService {
       });
 
     // Top customers by purchase amount
-    const topCustomers = [...customerData]
+    const topCustomersSorted = [...customerData]
       .filter((c) => c.totalPurchases > 0)
       .sort((a, b) => b.totalPurchases - a.totalPurchases)
-      .slice(0, 10)
-      .map((c) => ({
-        name: c.name,
-        documentNumber: c.documentNumber,
-        totalPurchases: c.totalPurchases,
-        invoiceCount: c.invoiceCount,
-      }));
+      .slice(0, 10);
+
+    const topCustomers = topCustomersSorted.map((c) => ({
+      name: c.name,
+      documentNumber: c.documentNumber,
+      totalPurchases: c.totalPurchases,
+      invoiceCount: c.invoiceCount,
+    }));
 
     const reportData: CustomersReportTemplateData = {
       tenant: { name: tenant.name },

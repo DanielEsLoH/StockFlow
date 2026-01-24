@@ -131,7 +131,6 @@ describe('Products E2E Tests', () => {
 
   // Test categories
   let categoryA: { id: string; name: string };
-  let categoryB: { id: string; name: string };
 
   // Test products for various scenarios
   let existingProductA: { id: string; sku: string; name: string };
@@ -259,8 +258,8 @@ describe('Products E2E Tests', () => {
       },
     });
 
-    // Create Category B for Tenant B
-    categoryB = await prisma.category.create({
+    // Create Category B for Tenant B (kept for data completeness)
+    await prisma.category.create({
       data: {
         tenantId: tenantB.id,
         name: `Furniture ${testIdentifier}`,

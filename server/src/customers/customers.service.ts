@@ -62,6 +62,28 @@ export class CustomersService {
   ) {}
 
   /**
+   * Gets all unique cities from customers in the current tenant.
+   *
+   * @returns Array of unique city names, sorted alphabetically
+   */
+  async getCities(): Promise<string[]> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(`Getting unique cities for tenant ${tenantId}`);
+
+    const customers = await this.prisma.customer.findMany({
+      where: { tenantId },
+      select: { city: true },
+      distinct: ['city'],
+    });
+
+    return customers
+      .map((c) => c.city)
+      .filter((city): city is string => city !== null)
+      .sort();
+  }
+
+  /**
    * Lists all customers within the current tenant with pagination.
    *
    * @param page - Page number (1-indexed)

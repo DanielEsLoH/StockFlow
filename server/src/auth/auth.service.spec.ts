@@ -1437,8 +1437,12 @@ describe('AuthService', () => {
 
       // Make brevoService methods reject to trigger the catch block
       const testError = new Error('Unexpected email failure');
-      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockRejectedValue(testError);
-      (brevoService.sendVerificationEmail as jest.Mock).mockRejectedValue(testError);
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockRejectedValue(testError);
+      (brevoService.sendVerificationEmail as jest.Mock).mockRejectedValue(
+        testError,
+      );
 
       await service.register(registerDto);
 
@@ -1452,7 +1456,9 @@ describe('AuthService', () => {
       const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
       // Return success:false to trigger the warning log for admin notification
-      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockResolvedValue({
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockResolvedValue({
         success: false,
         error: 'Admin email delivery failed',
       });
@@ -1473,7 +1479,9 @@ describe('AuthService', () => {
     it('should log warning when verification email result has error', async () => {
       const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
-      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockResolvedValue({
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockResolvedValue({
         success: true,
       });
       // Return success:false to trigger the warning log for verification email
@@ -1496,9 +1504,9 @@ describe('AuthService', () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
 
       // Make Promise.allSettled report a rejection
-      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockRejectedValue(
-        new Error('Network failure'),
-      );
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockRejectedValue(new Error('Network failure'));
       (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
         success: true,
       });
@@ -1509,16 +1517,18 @@ describe('AuthService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Registration admin notification email threw error'),
+        expect.stringContaining(
+          'Registration admin notification email threw error',
+        ),
         expect.any(String),
       );
     });
 
     it('should not block registration when emails fail', async () => {
       // Both email sends fail
-      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockRejectedValue(
-        new Error('Email service down'),
-      );
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockRejectedValue(new Error('Email service down'));
       (brevoService.sendVerificationEmail as jest.Mock).mockRejectedValue(
         new Error('Email service down'),
       );
@@ -2817,7 +2827,9 @@ describe('AuthService', () => {
 
     it('should log success when admin notification is sent successfully', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
-      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockResolvedValue({
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockResolvedValue({
         success: true,
       });
       (prismaService.$transaction as jest.Mock).mockImplementation(
@@ -2840,7 +2852,9 @@ describe('AuthService', () => {
 
     it('should log warning when admin notification returns success:false', async () => {
       const warnSpy = jest.spyOn(Logger.prototype, 'warn');
-      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockResolvedValue({
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockResolvedValue({
         success: false,
         error: 'Email service unavailable',
       });
@@ -2864,9 +2878,9 @@ describe('AuthService', () => {
 
     it('should log error when admin notification throws', async () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
-      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockRejectedValue(
-        new Error('Network error'),
-      );
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockRejectedValue(new Error('Network error'));
       (prismaService.$transaction as jest.Mock).mockImplementation(
         async (callback) => {
           const tx = {
@@ -2887,9 +2901,9 @@ describe('AuthService', () => {
     });
 
     it('should not block OAuth registration when notification fails', async () => {
-      (brevoService.sendAdminNewRegistrationNotification as jest.Mock).mockRejectedValue(
-        new Error('Email service down'),
-      );
+      (
+        brevoService.sendAdminNewRegistrationNotification as jest.Mock
+      ).mockRejectedValue(new Error('Email service down'));
       (prismaService.$transaction as jest.Mock).mockImplementation(
         async (callback) => {
           const tx = {

@@ -18,7 +18,7 @@ import {
   ApiBody,
   ApiParam,
 } from '@nestjs/swagger';
-import { User, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { InvitationsService, InvitationResponse } from './invitations.service';
 import { CreateInvitationDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';

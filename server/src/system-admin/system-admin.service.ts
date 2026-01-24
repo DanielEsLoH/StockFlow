@@ -83,7 +83,7 @@ export class SystemAdminService {
     }
 
     // Verify admin is active
-    if (admin.status !== SystemAdminStatus.ACTIVE) {
+    if ((admin.status as SystemAdminStatus) !== SystemAdminStatus.ACTIVE) {
       this.logger.warn(
         `System admin login failed - not active: ${email}, status: ${admin.status}`,
       );
@@ -205,7 +205,7 @@ export class SystemAdminService {
     }
 
     // Verify admin is active
-    if (admin.status !== SystemAdminStatus.ACTIVE) {
+    if ((admin.status as SystemAdminStatus) !== SystemAdminStatus.ACTIVE) {
       this.logger.warn(
         `System admin refresh failed - not active: ${admin.email}, status: ${admin.status}`,
       );

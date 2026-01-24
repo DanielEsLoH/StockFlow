@@ -176,6 +176,39 @@ export class CustomersController {
   }
 
   /**
+   * Gets all unique cities from customers in the current tenant.
+   *
+   * @returns Array of unique city names, sorted alphabetically
+   *
+   * @example
+   * GET /customers/cities
+   * Response: ["Bogota", "Cali", "Medellin"]
+   */
+  @Get('cities')
+  @ApiOperation({
+    summary: 'Get unique customer cities',
+    description:
+      'Returns a list of all unique cities from customers in the current tenant, sorted alphabetically.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of unique cities retrieved successfully',
+    schema: {
+      type: 'array',
+      items: { type: 'string' },
+      example: ['Bogota', 'Cali', 'Medellin'],
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async getCities(): Promise<string[]> {
+    this.logger.log('Getting unique customer cities');
+    return this.customersService.getCities();
+  }
+
+  /**
    * Gets a customer by ID.
    *
    * @param id - Customer ID

@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { CacheService } from './cache.service';
 import { CACHE_TTL } from './cache.constants';
 
 describe('CacheService', () => {
   let service: CacheService;
-  let cacheManager: jest.Mocked<Cache>;
 
   const mockStoreKeys = jest.fn();
   const mockCacheManager = {
@@ -32,7 +31,6 @@ describe('CacheService', () => {
     }).compile();
 
     service = module.get<CacheService>(CacheService);
-    cacheManager = module.get(CACHE_MANAGER);
 
     // Reset all mocks before each test
     jest.clearAllMocks();

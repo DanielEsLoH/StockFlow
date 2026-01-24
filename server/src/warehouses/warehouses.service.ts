@@ -90,6 +90,28 @@ export class WarehousesService {
   ) {}
 
   /**
+   * Returns all unique cities from warehouses within the current tenant.
+   *
+   * @returns Array of unique city names, sorted alphabetically
+   */
+  async getCities(): Promise<string[]> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(`Getting unique cities for tenant ${tenantId}`);
+
+    const warehouses = await this.prisma.warehouse.findMany({
+      where: { tenantId },
+      select: { city: true },
+      distinct: ['city'],
+    });
+
+    return warehouses
+      .map((w) => w.city)
+      .filter((city): city is string => city !== null)
+      .sort();
+  }
+
+  /**
    * Lists all warehouses within the current tenant with pagination.
    *
    * @param page - Page number (1-indexed)

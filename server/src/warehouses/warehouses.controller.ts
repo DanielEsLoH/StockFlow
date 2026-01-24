@@ -116,6 +116,41 @@ export class WarehousesController {
   }
 
   /**
+   * Returns all unique cities from warehouses within the current tenant.
+   * Static route - must be declared before dynamic :id route.
+   *
+   * @returns Array of unique city names, sorted alphabetically
+   *
+   * @example
+   * GET /warehouses/cities
+   * Response: ["Bogota", "Cali", "Medellin"]
+   */
+  @Get('cities')
+  @ApiOperation({
+    summary: 'Get unique warehouse cities',
+    description:
+      'Returns a list of unique cities from all warehouses in the current tenant. Useful for filtering and dropdowns.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of unique cities retrieved successfully',
+    schema: {
+      type: 'array',
+      items: { type: 'string' },
+      example: ['Bogota', 'Cali', 'Medellin'],
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async getCities(): Promise<string[]> {
+    this.logger.log('Getting unique warehouse cities');
+
+    return this.warehousesService.getCities();
+  }
+
+  /**
    * Gets a warehouse by ID with stock summary.
    *
    * @param id - Warehouse ID

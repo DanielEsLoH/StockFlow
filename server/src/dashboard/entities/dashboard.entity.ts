@@ -1,6 +1,294 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
+ * Dashboard stats for the frontend stats cards
+ */
+export class DashboardStatsEntity {
+  @ApiProperty({
+    description: 'Total sales amount',
+    example: 125000,
+  })
+  totalSales: number;
+
+  @ApiProperty({
+    description: 'Sales growth percentage compared to previous period',
+    example: 12.5,
+  })
+  salesGrowth: number;
+
+  @ApiProperty({
+    description: 'Total number of products',
+    example: 234,
+  })
+  totalProducts: number;
+
+  @ApiProperty({
+    description: 'Products growth percentage',
+    example: 5.2,
+  })
+  productsGrowth: number;
+
+  @ApiProperty({
+    description: 'Total number of invoices',
+    example: 156,
+  })
+  totalInvoices: number;
+
+  @ApiProperty({
+    description: 'Invoices growth percentage',
+    example: 8.3,
+  })
+  invoicesGrowth: number;
+
+  @ApiProperty({
+    description: 'Total number of customers',
+    example: 89,
+  })
+  totalCustomers: number;
+
+  @ApiProperty({
+    description: 'Customers growth percentage',
+    example: 15.0,
+  })
+  customersGrowth: number;
+
+  @ApiProperty({
+    description: 'Number of overdue invoices',
+    example: 3,
+  })
+  overdueInvoicesCount: number;
+}
+
+/**
+ * Sales chart data point
+ */
+export class SalesChartDataEntity {
+  @ApiProperty({
+    description: 'Date in ISO format',
+    example: '2024-01-15',
+  })
+  date: string;
+
+  @ApiProperty({
+    description: 'Sales amount for the day',
+    example: 15000,
+  })
+  sales: number;
+
+  @ApiProperty({
+    description: 'Number of orders for the day',
+    example: 25,
+  })
+  orders: number;
+
+  @ApiProperty({
+    description: 'Sales from the previous period for comparison',
+    example: 12000,
+  })
+  previousPeriod: number;
+}
+
+/**
+ * Category distribution for pie chart
+ */
+export class CategoryDistributionEntity {
+  @ApiProperty({
+    description: 'Category name',
+    example: 'Electronics',
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Sales value for this category',
+    example: 50000,
+  })
+  value: number;
+
+  @ApiProperty({
+    description: 'Color for the chart segment',
+    example: '#3B82F6',
+  })
+  color: string;
+}
+
+/**
+ * Top product for charts
+ */
+export class TopProductEntity {
+  @ApiProperty({
+    description: 'Product ID',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  id: string;
+
+  @ApiProperty({
+    description: 'Product name',
+    example: 'Laptop Dell XPS 15',
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Category name',
+    example: 'Electronics',
+  })
+  category: string;
+
+  @ApiProperty({
+    description: 'Total sales amount',
+    example: 194850,
+  })
+  sales: number;
+
+  @ApiProperty({
+    description: 'Total quantity sold',
+    example: 150,
+  })
+  quantity: number;
+}
+
+/**
+ * Dashboard charts data
+ */
+export class DashboardChartsEntity {
+  @ApiProperty({
+    description: 'Sales chart data points',
+    type: [SalesChartDataEntity],
+  })
+  salesChart: SalesChartDataEntity[];
+
+  @ApiProperty({
+    description: 'Category distribution for pie chart',
+    type: [CategoryDistributionEntity],
+  })
+  categoryDistribution: CategoryDistributionEntity[];
+
+  @ApiProperty({
+    description: 'Top selling products',
+    type: [TopProductEntity],
+  })
+  topProducts: TopProductEntity[];
+}
+
+/**
+ * Recent invoice for dashboard
+ */
+export class RecentInvoiceEntity {
+  @ApiProperty({
+    description: 'Invoice ID',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  id: string;
+
+  @ApiProperty({
+    description: 'Invoice number',
+    example: 'INV-2024-001',
+  })
+  number: string;
+
+  @ApiProperty({
+    description: 'Customer name',
+    example: 'Acme Corporation',
+  })
+  customer: string;
+
+  @ApiProperty({
+    description: 'Invoice total amount',
+    example: 2500.0,
+  })
+  amount: number;
+
+  @ApiProperty({
+    description: 'Invoice status',
+    enum: ['PAID', 'PENDING', 'OVERDUE', 'CANCELLED'],
+    example: 'PENDING',
+  })
+  status: 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED';
+
+  @ApiProperty({
+    description: 'Invoice date in ISO format',
+    example: '2024-01-15',
+  })
+  date: string;
+}
+
+/**
+ * Low stock alert for dashboard
+ */
+export class LowStockAlertEntity {
+  @ApiProperty({
+    description: 'Product ID',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  id: string;
+
+  @ApiProperty({
+    description: 'Product name',
+    example: 'Laptop Dell XPS 15',
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Product SKU',
+    example: 'DELL-XPS-15',
+  })
+  sku: string;
+
+  @ApiProperty({
+    description: 'Current stock quantity',
+    example: 5,
+  })
+  currentStock: number;
+
+  @ApiProperty({
+    description: 'Minimum stock threshold',
+    example: 10,
+  })
+  minStock: number;
+
+  @ApiProperty({
+    description: 'Warehouse name',
+    example: 'Main Warehouse',
+  })
+  warehouse: string;
+}
+
+/**
+ * Recent activity for dashboard
+ */
+export class RecentActivityEntity {
+  @ApiProperty({
+    description: 'Activity ID',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  id: string;
+
+  @ApiProperty({
+    description: 'Activity type',
+    enum: ['sale', 'product', 'customer', 'invoice', 'stock'],
+    example: 'sale',
+  })
+  type: 'sale' | 'product' | 'customer' | 'invoice' | 'stock';
+
+  @ApiProperty({
+    description: 'Activity title',
+    example: 'New sale completed',
+  })
+  title: string;
+
+  @ApiProperty({
+    description: 'Activity description',
+    example: 'Invoice INV-2024-001 was paid by Acme Corporation',
+  })
+  description: string;
+
+  @ApiProperty({
+    description: 'Activity timestamp in ISO format',
+    example: '2024-01-15T10:30:00Z',
+  })
+  timestamp: string;
+}
+
+/**
  * Sales metrics entity for dashboard
  */
 export class SalesMetricsEntity {
@@ -44,6 +332,12 @@ export class TopSellingProductEntity {
     example: 'Laptop Dell XPS 15',
   })
   name: string;
+
+  @ApiProperty({
+    description: 'Product SKU',
+    example: 'DELL-XPS-15',
+  })
+  sku: string;
 
   @ApiProperty({
     description: 'Total quantity sold',

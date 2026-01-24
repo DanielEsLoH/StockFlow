@@ -89,7 +89,7 @@ export class SystemAdminJwtRefreshStrategy extends PassportStrategy(
     }
 
     // Verify admin is active
-    if (admin.status !== SystemAdminStatus.ACTIVE) {
+    if ((admin.status as SystemAdminStatus) !== SystemAdminStatus.ACTIVE) {
       this.logger.warn(
         `System admin is not active: ${admin.email}, status: ${admin.status}`,
       );

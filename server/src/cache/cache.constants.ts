@@ -100,7 +100,7 @@ export function hashQueryParams(params: Record<string, unknown>): string {
   for (const key of sortedKeys) {
     const value = params[key];
     if (value !== undefined && value !== null && value !== '') {
-      parts.push(`${key}:${String(value)}`);
+      parts.push(`${key}:${JSON.stringify(value)}`);
     }
   }
 

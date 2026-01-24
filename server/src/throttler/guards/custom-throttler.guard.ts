@@ -33,22 +33,22 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
    * 2. Tenant ID + IP (for tenant-scoped limiting)
    * 3. IP address (fallback for anonymous requests)
    */
-  protected async getTracker(req: Request): Promise<string> {
+  protected getTracker(req: Request): Promise<string> {
     const ip = this.extractIp(req);
     const user = req['user'] as JwtUser | undefined;
 
     // For authenticated users, use userId as the primary identifier
     if (user?.userId) {
-      return `user:${user.userId}`;
+      return Promise.resolve(`user:${user.userId}`);
     }
 
     // For requests with tenant context, combine tenant + IP
     if (user?.tenantId) {
-      return `tenant:${user.tenantId}:${ip}`;
+      return Promise.resolve(`tenant:${user.tenantId}:${ip}`);
     }
 
     // Fallback to IP for anonymous requests
-    return `ip:${ip}`;
+    return Promise.resolve(`ip:${ip}`);
   }
 
   /**
@@ -102,7 +102,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
    * Logs the violation and throws a throttler exception with
    * helpful error message and retry information.
    */
-  protected async throwThrottlingException(
+  protected throwThrottlingException(
     context: ExecutionContext,
     throttlerLimitDetail: {
       limit: number;
@@ -114,7 +114,7 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
       isBlocked: boolean;
       timeToBlockExpire: number;
     },
-  ): Promise<void> {
+  ): never {
     const req = context.switchToHttp().getRequest<Request>();
     const ip = this.extractIp(req);
     const path = req.path;
@@ -140,15 +140,15 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
    * - Health check endpoints
    * - Swagger documentation endpoints
    */
-  protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
+  protected shouldSkip(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
     const path = req.path;
 
     // Skip health check and documentation endpoints
     if (path === '/health' || path.startsWith('/api/docs')) {
-      return true;
+      return Promise.resolve(true);
     }
 
-    return false;
+    return Promise.resolve(false);
   }
 }

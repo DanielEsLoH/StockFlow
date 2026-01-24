@@ -16,7 +16,6 @@ describe('SystemAdminService', () => {
   let service: SystemAdminService;
   let prismaService: jest.Mocked<PrismaService>;
   let jwtService: jest.Mocked<JwtService>;
-  let configService: jest.Mocked<ConfigService>;
 
   const mockSystemAdmin = {
     id: 'admin-1',
@@ -123,7 +122,6 @@ describe('SystemAdminService', () => {
     service = module.get<SystemAdminService>(SystemAdminService);
     prismaService = module.get(PrismaService);
     jwtService = module.get(JwtService);
-    configService = module.get(ConfigService);
   });
 
   afterEach(() => {
@@ -134,7 +132,7 @@ describe('SystemAdminService', () => {
     it('should successfully login a system admin', async () => {
       // Create an admin with a pre-hashed password that bcrypt.compare will validate
       // We use a real bcrypt hash for testing
-      const bcrypt = require('bcrypt');
+      const bcrypt = await import('bcrypt');
       const hashedPassword = await bcrypt.hash('password123', 10);
       const adminWithRealHash = {
         ...mockSystemAdmin,
@@ -169,7 +167,7 @@ describe('SystemAdminService', () => {
     });
 
     it('should throw UnauthorizedException if admin is not active', async () => {
-      const bcrypt = require('bcrypt');
+      const bcrypt = await import('bcrypt');
       const hashedPassword = await bcrypt.hash('password123', 10);
       const inactiveAdmin = {
         ...mockSystemAdmin,
@@ -186,7 +184,7 @@ describe('SystemAdminService', () => {
     });
 
     it('should throw UnauthorizedException if password is invalid', async () => {
-      const bcrypt = require('bcrypt');
+      const bcrypt = await import('bcrypt');
       const hashedPassword = await bcrypt.hash('correctPassword', 10);
       const adminWithHash = { ...mockSystemAdmin, password: hashedPassword };
       prismaService.systemAdmin.findUnique = jest

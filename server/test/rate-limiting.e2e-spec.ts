@@ -10,7 +10,7 @@ import {
   Post,
   Body,
 } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { ThrottlerModule } from '../src/throttler';

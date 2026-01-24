@@ -158,7 +158,6 @@ describe('Invoices E2E Tests', () => {
 
   // Test customer
   let customer: { id: string; name: string };
-  let customer2: { id: string; name: string };
 
   // Test products
   let product1: { id: string; name: string; sku: string; stock: number };
@@ -280,8 +279,8 @@ describe('Invoices E2E Tests', () => {
     });
     customer = { id: createdCustomer.id, name: createdCustomer.name };
 
-    // Create Test Customer 2
-    const createdCustomer2 = await prisma.customer.create({
+    // Create Test Customer 2 (kept for data completeness)
+    await prisma.customer.create({
       data: {
         tenantId: tenant.id,
         name: `Test Customer Two ${testIdentifier}`,
@@ -291,7 +290,6 @@ describe('Invoices E2E Tests', () => {
         documentNumber: `987654321-${testIdentifier}`,
       },
     });
-    customer2 = { id: createdCustomer2.id, name: createdCustomer2.name };
 
     // Create Test Product 1
     const createdProduct1 = await prisma.product.create({

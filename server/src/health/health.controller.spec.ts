@@ -13,7 +13,6 @@ describe('HealthController', () => {
   let healthCheckService: jest.Mocked<HealthCheckService>;
   let prismaHealth: jest.Mocked<PrismaHealthIndicator>;
   let memoryHealth: jest.Mocked<MemoryHealthIndicator>;
-  let diskHealth: jest.Mocked<DiskHealthIndicator>;
 
   const mockHealthResult: HealthCheckResult = {
     status: 'ok',
@@ -58,7 +57,6 @@ describe('HealthController', () => {
     healthCheckService = module.get(HealthCheckService);
     prismaHealth = module.get(PrismaHealthIndicator);
     memoryHealth = module.get(MemoryHealthIndicator);
-    diskHealth = module.get(DiskHealthIndicator);
 
     // Setup default mock implementations
     // This mock executes all callback functions to improve coverage

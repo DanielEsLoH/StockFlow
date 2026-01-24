@@ -110,6 +110,107 @@ export interface SalesByCategory {
   percentage: number;
 }
 
+// Frontend-facing interfaces
+
+/**
+ * Dashboard stats for frontend stats cards
+ */
+export interface DashboardStats {
+  totalSales: number;
+  salesGrowth: number;
+  totalProducts: number;
+  productsGrowth: number;
+  totalInvoices: number;
+  invoicesGrowth: number;
+  totalCustomers: number;
+  customersGrowth: number;
+  overdueInvoicesCount: number;
+}
+
+/**
+ * Sales chart data point for frontend
+ */
+export interface SalesChartData {
+  date: string;
+  sales: number;
+  orders: number;
+  previousPeriod: number;
+}
+
+/**
+ * Category distribution for frontend pie chart
+ */
+export interface CategoryDistribution {
+  name: string;
+  value: number;
+  color: string;
+}
+
+/**
+ * Top product for frontend charts
+ */
+export interface TopProduct {
+  id: string;
+  name: string;
+  category: string;
+  sales: number;
+  quantity: number;
+}
+
+/**
+ * Dashboard charts data for frontend
+ */
+export interface DashboardCharts {
+  salesChart: SalesChartData[];
+  categoryDistribution: CategoryDistribution[];
+  topProducts: TopProduct[];
+}
+
+/**
+ * Recent invoice for dashboard
+ */
+export interface RecentInvoice {
+  id: string;
+  number: string;
+  customer: string;
+  amount: number;
+  status: 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED';
+  date: string;
+}
+
+/**
+ * Low stock alert for dashboard
+ */
+export interface LowStockAlert {
+  id: string;
+  name: string;
+  sku: string;
+  currentStock: number;
+  minStock: number;
+  warehouse: string;
+}
+
+/**
+ * Activity type for recent activity
+ */
+export type ActivityType =
+  | 'sale'
+  | 'product'
+  | 'customer'
+  | 'invoice'
+  | 'stock';
+
+/**
+ * Recent activity for dashboard
+ */
+export interface RecentActivity {
+  id: string;
+  type: ActivityType;
+  title: string;
+  description: string;
+  timestamp: string;
+}
+
 /**
  * Chart data for the dashboard
  */
@@ -673,5 +774,611 @@ export class DashboardService {
     result.sort((a, b) => b.amount - a.amount);
 
     return result;
+  }
+
+  // ============================================
+  // Frontend-facing endpoint methods
+  // ============================================
+
+  /**
+   * Gets dashboard stats for the frontend stats cards.
+   * Aggregates sales, products, invoices, and customers metrics.
+   */
+  async getStats(): Promise<DashboardStats> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    // Base where clause excluding cancelled invoices
+    const baseInvoiceWhere = {
+      tenantId,
+      status: {
+        not: InvoiceStatus.CANCELLED,
+      },
+    };
+
+    // Execute all queries in parallel
+    const [
+      thisMonthSales,
+      lastMonthSales,
+      totalProducts,
+      lastMonthProducts,
+      totalInvoices,
+      lastMonthInvoices,
+      overdueInvoices,
+      totalCustomers,
+      lastMonthCustomers,
+    ] = await Promise.all([
+      // This month sales
+      this.prisma.invoice.aggregate({
+        where: {
+          ...baseInvoiceWhere,
+          issueDate: { gte: startOfMonth },
+        },
+        _sum: { total: true },
+      }),
+      // Last month sales
+      this.prisma.invoice.aggregate({
+        where: {
+          ...baseInvoiceWhere,
+          issueDate: {
+            gte: startOfLastMonth,
+            lte: endOfLastMonth,
+          },
+        },
+        _sum: { total: true },
+      }),
+      // Total products
+      this.prisma.product.count({
+        where: { tenantId },
+      }),
+      // Products created last month (for growth calculation)
+      this.prisma.product.count({
+        where: {
+          tenantId,
+          createdAt: {
+            gte: startOfLastMonth,
+            lte: endOfLastMonth,
+          },
+        },
+      }),
+      // Total invoices (non-cancelled)
+      this.prisma.invoice.count({
+        where: baseInvoiceWhere,
+      }),
+      // Invoices last month
+      this.prisma.invoice.count({
+        where: {
+          ...baseInvoiceWhere,
+          issueDate: {
+            gte: startOfLastMonth,
+            lte: endOfLastMonth,
+          },
+        },
+      }),
+      // Overdue invoices count
+      this.prisma.invoice.count({
+        where: {
+          tenantId,
+          status: InvoiceStatus.OVERDUE,
+        },
+      }),
+      // Total customers
+      this.prisma.customer.count({
+        where: { tenantId },
+      }),
+      // Customers created last month
+      this.prisma.customer.count({
+        where: {
+          tenantId,
+          createdAt: {
+            gte: startOfLastMonth,
+            lte: endOfLastMonth,
+          },
+        },
+      }),
+    ]);
+
+    // Calculate totals and growth percentages
+    const thisMonthSalesTotal = Number(thisMonthSales._sum.total ?? 0);
+    const lastMonthSalesTotal = Number(lastMonthSales._sum.total ?? 0);
+    const salesGrowth = this.calculateGrowth(
+      thisMonthSalesTotal,
+      lastMonthSalesTotal,
+    );
+
+    // Products this month
+    const thisMonthProducts = await this.prisma.product.count({
+      where: {
+        tenantId,
+        createdAt: { gte: startOfMonth },
+      },
+    });
+    const productsGrowth = this.calculateGrowth(
+      thisMonthProducts,
+      lastMonthProducts,
+    );
+
+    // Invoices this month
+    const thisMonthInvoices = await this.prisma.invoice.count({
+      where: {
+        ...baseInvoiceWhere,
+        issueDate: { gte: startOfMonth },
+      },
+    });
+    const invoicesGrowth = this.calculateGrowth(
+      thisMonthInvoices,
+      lastMonthInvoices,
+    );
+
+    // Customers this month
+    const thisMonthCustomers = await this.prisma.customer.count({
+      where: {
+        tenantId,
+        createdAt: { gte: startOfMonth },
+      },
+    });
+    const customersGrowth = this.calculateGrowth(
+      thisMonthCustomers,
+      lastMonthCustomers,
+    );
+
+    return {
+      totalSales: thisMonthSalesTotal,
+      salesGrowth,
+      totalProducts,
+      productsGrowth,
+      totalInvoices,
+      invoicesGrowth,
+      totalCustomers,
+      customersGrowth,
+      overdueInvoicesCount: overdueInvoices,
+    };
+  }
+
+  /**
+   * Gets chart data for the frontend dashboard charts.
+   */
+  async getCharts(): Promise<DashboardCharts> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const [salesChart, categoryDistribution, topProducts] = await Promise.all([
+      this.getSalesChartData(tenantId),
+      this.getCategoryDistribution(tenantId),
+      this.getTopProductsForCharts(tenantId),
+    ]);
+
+    return {
+      salesChart,
+      categoryDistribution,
+      topProducts,
+    };
+  }
+
+  /**
+   * Gets sales chart data with previous period comparison.
+   */
+  private async getSalesChartData(
+    tenantId: string,
+    days = 7,
+  ): Promise<SalesChartData[]> {
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days + 1);
+    startDate.setHours(0, 0, 0, 0);
+
+    // Previous period start (for comparison)
+    const previousStartDate = new Date(startDate);
+    previousStartDate.setDate(previousStartDate.getDate() - days);
+
+    // Get current period data
+    const currentPeriodData = await this.prisma.$queryRaw<
+      Array<{ date: Date; total: bigint | null; count: bigint }>
+    >`
+      SELECT DATE_TRUNC('day', issue_date) as date,
+             COALESCE(SUM(total), 0) as total,
+             COUNT(*) as count
+      FROM invoices
+      WHERE tenant_id = ${tenantId}
+        AND status != 'CANCELLED'
+        AND issue_date >= ${startDate}
+      GROUP BY DATE_TRUNC('day', issue_date)
+      ORDER BY date ASC
+    `;
+
+    // Get previous period data
+    const previousPeriodData = await this.prisma.$queryRaw<
+      Array<{ date: Date; total: bigint | null }>
+    >`
+      SELECT DATE_TRUNC('day', issue_date) as date,
+             COALESCE(SUM(total), 0) as total
+      FROM invoices
+      WHERE tenant_id = ${tenantId}
+        AND status != 'CANCELLED'
+        AND issue_date >= ${previousStartDate}
+        AND issue_date < ${startDate}
+      GROUP BY DATE_TRUNC('day', issue_date)
+      ORDER BY date ASC
+    `;
+
+    // Create maps for O(1) lookup
+    const currentMap = new Map(
+      currentPeriodData.map((r) => [
+        r.date.toISOString().split('T')[0],
+        { total: Number(r.total ?? 0), count: Number(r.count) },
+      ]),
+    );
+
+    const previousMap = new Map(
+      previousPeriodData.map((r) => [
+        r.date.toISOString().split('T')[0],
+        Number(r.total ?? 0),
+      ]),
+    );
+
+    // Build result with all days filled
+    const salesChart: SalesChartData[] = [];
+    for (let i = 0; i < days; i++) {
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + i);
+      const currentDateStr = currentDate.toISOString().split('T')[0];
+
+      const previousDate = new Date(previousStartDate);
+      previousDate.setDate(previousStartDate.getDate() + i);
+      const previousDateStr = previousDate.toISOString().split('T')[0];
+
+      const current = currentMap.get(currentDateStr) ?? { total: 0, count: 0 };
+      const previous = previousMap.get(previousDateStr) ?? 0;
+
+      salesChart.push({
+        date: currentDateStr,
+        sales: current.total,
+        orders: current.count,
+        previousPeriod: previous,
+      });
+    }
+
+    return salesChart;
+  }
+
+  /**
+   * Gets category distribution for pie chart.
+   */
+  private async getCategoryDistribution(
+    tenantId: string,
+  ): Promise<CategoryDistribution[]> {
+    const salesByCategory = await this.getSalesByCategory(tenantId);
+
+    // Color palette for categories
+    const colors = [
+      '#3B82F6', // blue
+      '#10B981', // green
+      '#F59E0B', // amber
+      '#EF4444', // red
+      '#8B5CF6', // purple
+      '#EC4899', // pink
+      '#06B6D4', // cyan
+      '#84CC16', // lime
+    ];
+
+    return salesByCategory.map((category, index) => ({
+      name: category.categoryName,
+      value: category.amount,
+      color: colors[index % colors.length],
+    }));
+  }
+
+  /**
+   * Gets top products for charts with category info.
+   */
+  private async getTopProductsForCharts(
+    tenantId: string,
+    limit = 5,
+  ): Promise<TopProduct[]> {
+    const topProducts = await this.prisma.invoiceItem.groupBy({
+      by: ['productId'],
+      where: {
+        invoice: {
+          tenantId,
+          status: {
+            not: InvoiceStatus.CANCELLED,
+          },
+        },
+        productId: {
+          not: null,
+        },
+      },
+      _sum: {
+        quantity: true,
+        total: true,
+      },
+      orderBy: {
+        _sum: {
+          total: 'desc',
+        },
+      },
+      take: limit,
+    });
+
+    const productIds = topProducts
+      .map((p) => p.productId)
+      .filter((id): id is string => id !== null);
+
+    if (productIds.length === 0) {
+      return [];
+    }
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        id: { in: productIds },
+      },
+      select: {
+        id: true,
+        name: true,
+        category: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    return topProducts
+      .map((tp) => {
+        const product = productMap.get(tp.productId!);
+        if (!product) return null;
+
+        return {
+          id: product.id,
+          name: product.name,
+          category: product.category?.name ?? 'Sin categoria',
+          sales: Number(tp._sum.total ?? 0),
+          quantity: tp._sum.quantity ?? 0,
+        };
+      })
+      .filter((p): p is TopProduct => p !== null);
+  }
+
+  /**
+   * Gets recent invoices for the dashboard.
+   */
+  async getRecentInvoices(limit = 5): Promise<RecentInvoice[]> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        status: {
+          not: InvoiceStatus.CANCELLED,
+        },
+      },
+      orderBy: {
+        issueDate: 'desc',
+      },
+      take: limit,
+      select: {
+        id: true,
+        invoiceNumber: true,
+        total: true,
+        status: true,
+        paymentStatus: true,
+        issueDate: true,
+        customer: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return invoices.map((invoice) => {
+      // Map status to frontend format
+      let status: 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED';
+      if (invoice.paymentStatus === 'PAID') {
+        status = 'PAID';
+      } else if (invoice.status === InvoiceStatus.OVERDUE) {
+        status = 'OVERDUE';
+      } else if (invoice.status === InvoiceStatus.CANCELLED) {
+        status = 'CANCELLED';
+      } else {
+        status = 'PENDING';
+      }
+
+      return {
+        id: invoice.id,
+        number: invoice.invoiceNumber,
+        customer: invoice.customer?.name ?? 'Cliente desconocido',
+        amount: Number(invoice.total),
+        status,
+        date: invoice.issueDate.toISOString().split('T')[0],
+      };
+    });
+  }
+
+  /**
+   * Gets low stock alerts for the dashboard.
+   */
+  async getLowStockAlerts(limit = 10): Promise<LowStockAlert[]> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    // Get products where stock < minStock
+    const lowStockProducts = await this.prisma.product.findMany({
+      where: {
+        tenantId,
+        stock: { gt: 0 },
+      },
+      select: {
+        id: true,
+        name: true,
+        sku: true,
+        stock: true,
+        minStock: true,
+        warehouseStock: {
+          select: {
+            warehouse: {
+              select: {
+                name: true,
+              },
+            },
+            quantity: true,
+          },
+          orderBy: {
+            quantity: 'asc',
+          },
+          take: 1,
+        },
+      },
+    });
+
+    // Filter products where stock < minStock and map to response format
+    return lowStockProducts
+      .filter((p) => p.stock < p.minStock)
+      .slice(0, limit)
+      .map((product) => ({
+        id: product.id,
+        name: product.name,
+        sku: product.sku,
+        currentStock: product.stock,
+        minStock: product.minStock,
+        warehouse: product.warehouseStock[0]?.warehouse?.name ?? 'Sin almacen',
+      }));
+  }
+
+  /**
+   * Gets recent activity for the dashboard.
+   * Aggregates recent invoices, stock movements, and new customers.
+   */
+  async getRecentActivity(limit = 10): Promise<RecentActivity[]> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    // Fetch recent activities from different sources in parallel
+    const [recentInvoices, recentStockMovements, recentCustomers] =
+      await Promise.all([
+        // Recent invoices (for sales and invoice activity)
+        this.prisma.invoice.findMany({
+          where: { tenantId },
+          orderBy: { createdAt: 'desc' },
+          take: limit,
+          select: {
+            id: true,
+            invoiceNumber: true,
+            total: true,
+            status: true,
+            paymentStatus: true,
+            createdAt: true,
+            customer: {
+              select: { name: true },
+            },
+          },
+        }),
+        // Recent stock movements
+        this.prisma.stockMovement.findMany({
+          where: { tenantId },
+          orderBy: { createdAt: 'desc' },
+          take: limit,
+          select: {
+            id: true,
+            type: true,
+            quantity: true,
+            createdAt: true,
+            product: {
+              select: { name: true },
+            },
+            warehouse: {
+              select: { name: true },
+            },
+          },
+        }),
+        // Recent customers
+        this.prisma.customer.findMany({
+          where: { tenantId },
+          orderBy: { createdAt: 'desc' },
+          take: limit,
+          select: {
+            id: true,
+            name: true,
+            createdAt: true,
+          },
+        }),
+      ]);
+
+    // Transform to RecentActivity format
+    const activities: RecentActivity[] = [];
+
+    // Add invoice activities
+    for (const invoice of recentInvoices) {
+      if (invoice.paymentStatus === 'PAID') {
+        activities.push({
+          id: `sale-${invoice.id}`,
+          type: 'sale',
+          title: 'Venta completada',
+          description: `Factura ${invoice.invoiceNumber} pagada por ${invoice.customer?.name ?? 'Cliente'} - $${Number(invoice.total).toLocaleString()}`,
+          timestamp: invoice.createdAt.toISOString(),
+        });
+      } else {
+        activities.push({
+          id: `invoice-${invoice.id}`,
+          type: 'invoice',
+          title: 'Nueva factura creada',
+          description: `Factura ${invoice.invoiceNumber} para ${invoice.customer?.name ?? 'Cliente'} - $${Number(invoice.total).toLocaleString()}`,
+          timestamp: invoice.createdAt.toISOString(),
+        });
+      }
+    }
+
+    // Add stock movement activities
+    for (const movement of recentStockMovements) {
+      const typeLabels: Record<string, string> = {
+        PURCHASE: 'compra',
+        SALE: 'venta',
+        ADJUSTMENT: 'ajuste',
+        TRANSFER: 'transferencia',
+        RETURN: 'devolucion',
+        DAMAGED: 'danado',
+      };
+      const typeLabel = typeLabels[movement.type] || 'movimiento';
+      activities.push({
+        id: `stock-${movement.id}`,
+        type: 'stock',
+        title: `Movimiento de stock (${typeLabel})`,
+        description: `${movement.quantity} unidades de ${movement.product?.name ?? 'Producto'} en ${movement.warehouse?.name ?? 'Almacen'}`,
+        timestamp: movement.createdAt.toISOString(),
+      });
+    }
+
+    // Add customer activities
+    for (const customer of recentCustomers) {
+      activities.push({
+        id: `customer-${customer.id}`,
+        type: 'customer',
+        title: 'Nuevo cliente registrado',
+        description: customer.name,
+        timestamp: customer.createdAt.toISOString(),
+      });
+    }
+
+    // Sort by timestamp descending and take the most recent
+    activities.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    );
+
+    return activities.slice(0, limit);
+  }
+
+  /**
+   * Helper to calculate growth percentage.
+   */
+  private calculateGrowth(current: number, previous: number): number {
+    if (previous === 0) {
+      return current > 0 ? 100 : 0;
+    }
+    const growth = ((current - previous) / previous) * 100;
+    return Math.round(growth * 100) / 100;
   }
 }

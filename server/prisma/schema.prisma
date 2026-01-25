@@ -172,7 +172,7 @@ model Tenant {
 model User {
   id                       String     @id @default(cuid())
   tenantId                 String     @map("tenant_id")
-  email                    String
+  email                    String     @unique
   password                 String
   firstName                String     @map("first_name")
   lastName                 String     @map("last_name")
@@ -199,9 +199,7 @@ model User {
   auditLogs   AuditLog[]
   invitations Invitation[]
 
-  @@unique([tenantId, email])
   @@index([tenantId])
-  @@index([email])
   @@map("users")
 }
 

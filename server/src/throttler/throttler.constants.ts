@@ -24,10 +24,10 @@ export const THROTTLE_CONFIG = {
    * Prevents brute force and credential stuffing attacks.
    */
   AUTH: {
-    /** Login: 5 attempts per 15 minutes */
+    /** Login: 15 attempts per 5 minutes */
     LOGIN: {
-      ttl: 900,
-      limit: 5,
+      ttl: 300,
+      limit: 15,
     },
     /** Register: 3 attempts per hour */
     REGISTER: {

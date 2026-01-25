@@ -180,7 +180,8 @@ export class AuthController {
   /**
    * Authenticates a user and returns access tokens
    *
-   * Rate limit: 5 requests per 15 minutes per IP (prevents brute force)
+   * Rate limit: 15 requests per 5 minutes per IP (prevents brute force while
+   * allowing legitimate retry attempts for typos and forgotten passwords)
    * Bot protection: LIVE mode to block credential stuffing attacks
    *
    * @param loginDto - User login credentials
@@ -196,12 +197,12 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(RateLimitGuard, BotProtectionGuard)
-  @RateLimit({ requests: 5, window: '15m' })
+  @RateLimit({ requests: 15, window: '5m' })
   @BotProtect({ mode: 'LIVE' })
   @ApiOperation({
     summary: 'User login',
     description:
-      'Authenticates a user with email and password, returning JWT access and refresh tokens. Rate limited to 5 requests per 15 minutes per IP.',
+      'Authenticates a user with email and password, returning JWT access and refresh tokens. Rate limited to 15 requests per 5 minutes per IP.',
   })
   @ApiBody({ type: LoginDto })
   @ApiResponse({

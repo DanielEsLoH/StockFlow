@@ -13,9 +13,9 @@ describe('Throttler Constants', () => {
     });
 
     describe('AUTH', () => {
-      it('should have strict login limits (5 per 15 minutes)', () => {
-        expect(THROTTLE_CONFIG.AUTH.LOGIN.ttl).toBe(900);
-        expect(THROTTLE_CONFIG.AUTH.LOGIN.limit).toBe(5);
+      it('should have strict login limits (15 per 5 minutes)', () => {
+        expect(THROTTLE_CONFIG.AUTH.LOGIN.ttl).toBe(300);
+        expect(THROTTLE_CONFIG.AUTH.LOGIN.limit).toBe(15);
       });
 
       it('should have strict register limits (3 per hour)', () => {

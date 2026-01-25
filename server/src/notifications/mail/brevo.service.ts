@@ -1122,4 +1122,69 @@ export class BrevoService {
       textContent: `Hola, ${invitedByName} te ha invitado a unirte a ${tenantName} en StockFlow. Tu rol sera: ${role}. Acepta la invitacion visitando: ${invitationUrl}. Este enlace expira en 7 dias. Si no esperabas esta invitacion, puedes ignorar este mensaje.`,
     });
   }
+
+  /**
+   * Sends an account approved email to the user.
+   * This email notifies the user that their account has been approved by an admin
+   * and they can now log in to the platform.
+   *
+   * @param data - User data including email, name, and tenant name
+   * @returns Send result
+   */
+  async sendAccountApprovedEmail(data: {
+    to: string;
+    firstName: string;
+    tenantName: string;
+  }): Promise<SendMailResult> {
+    const { to, firstName, tenantName } = data;
+
+    const content = `
+      <div style="padding: 12px 16px; background-color: #dcfce7; border-left: 4px solid #22c55e; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #166534; font-size: 14px; font-weight: 500;">
+          ¡Tu cuenta ha sido aprobada!
+        </p>
+      </div>
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        ¡Bienvenido a StockFlow, ${firstName}!
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Nos complace informarte que tu cuenta para <strong>${tenantName}</strong> ha sido aprobada por nuestro equipo de administracion.
+      </p>
+      <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Ahora puedes iniciar sesion y comenzar a usar todas las funcionalidades de StockFlow para gestionar tu inventario y facturacion.
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px 0;">
+        <tr>
+          <td style="border-radius: 6px; background-color: #2563eb;">
+            <a href="${this.frontendUrl}/login" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
+              Iniciar sesion
+            </a>
+          </td>
+        </tr>
+      </table>
+      <h3 style="margin: 24px 0 12px 0; color: #111827; font-size: 16px; font-weight: 600;">
+        ¿Que puedes hacer ahora?
+      </h3>
+      <ul style="margin: 0 0 24px 0; padding-left: 20px; color: #374151; font-size: 16px; line-height: 1.8;">
+        <li>Configurar tu perfil y preferencias</li>
+        <li>Agregar tus productos e inventario</li>
+        <li>Crear y gestionar facturas</li>
+        <li>Invitar a miembros de tu equipo</li>
+      </ul>
+      <p style="margin: 0; color: #6b7280; font-size: 14px;">
+        Si tienes alguna pregunta, no dudes en contactarnos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a>
+      </p>`;
+
+    const htmlContent = this.getEmailTemplate(
+      content,
+      '¡Tu cuenta ha sido aprobada! - StockFlow',
+    );
+
+    return this.sendEmail({
+      to,
+      subject: '¡Bienvenido a StockFlow! Tu cuenta ha sido aprobada',
+      htmlContent,
+      textContent: `¡Bienvenido a StockFlow, ${firstName}! Tu cuenta para ${tenantName} ha sido aprobada. Ahora puedes iniciar sesion en ${this.frontendUrl}/login y comenzar a usar todas las funcionalidades de StockFlow.`,
+    });
+  }
 }

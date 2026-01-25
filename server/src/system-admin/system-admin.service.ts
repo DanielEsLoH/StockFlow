@@ -25,6 +25,7 @@ import {
   TenantActionResult,
 } from './types';
 import { UsersQueryDto, PendingUsersQueryDto, TenantsQueryDto } from './dto';
+import { BrevoService } from '../notifications/mail/brevo.service';
 
 /**
  * SystemAdminService handles all system admin operations including:
@@ -44,6 +45,7 @@ export class SystemAdminService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly brevoService: BrevoService,
   ) {}
 
   // ============================================================================
@@ -461,6 +463,31 @@ export class SystemAdminService {
         tenantName: user.tenant.name,
       },
     );
+
+    // Send account approved email to user asynchronously
+    this.brevoService
+      .sendAccountApprovedEmail({
+        to: user.email,
+        firstName: user.firstName,
+        tenantName: user.tenant.name,
+      })
+      .then((result) => {
+        if (result.success) {
+          this.logger.log(
+            `Account approved email sent successfully to: ${user.email}`,
+          );
+        } else {
+          this.logger.warn(
+            `Failed to send account approved email to: ${user.email} - ${result.error}`,
+          );
+        }
+      })
+      .catch((error) => {
+        this.logger.error(
+          `Error sending account approved email to: ${user.email}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      });
 
     this.logger.log(
       `User approved successfully: ${user.email} by admin: ${adminId}`,

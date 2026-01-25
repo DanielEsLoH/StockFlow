@@ -9,6 +9,7 @@ import {
   SystemAdminJwtRefreshStrategy,
 } from './strategies';
 import { SystemAdminAuthGuard, SystemAdminRoleGuard } from './guards';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 /**
  * SystemAdminModule provides system administration functionality including:
@@ -47,6 +48,7 @@ import { SystemAdminAuthGuard, SystemAdminRoleGuard } from './guards';
       },
     }),
     ConfigModule,
+    NotificationsModule,
   ],
   controllers: [SystemAdminController],
   providers: [

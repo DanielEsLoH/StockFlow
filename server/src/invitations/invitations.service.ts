@@ -81,22 +81,19 @@ export class InvitationsService {
       );
     }
 
-    // Check if user already exists in this tenant
+    // Check if user already exists (email is now globally unique)
     const existingUser = await this.prisma.user.findUnique({
       where: {
-        tenantId_email: {
-          tenantId,
-          email: normalizedEmail,
-        },
+        email: normalizedEmail,
       },
     });
 
     if (existingUser) {
       this.logger.warn(
-        `User already exists in tenant: ${normalizedEmail} (tenant: ${tenantId})`,
+        `User already exists with email: ${normalizedEmail}`,
       );
       throw new ConflictException(
-        'Ya existe un usuario con este email en tu organizacion',
+        'Ya existe un usuario con este email en la plataforma',
       );
     }
 

@@ -138,20 +138,17 @@ export class UsersService {
     // Check user limit
     await this.tenantContext.enforceLimit('users');
 
-    // Check for existing user with same email in tenant
+    // Check for existing user with same email (globally unique)
     const existingUser = await this.prisma.user.findUnique({
       where: {
-        tenantId_email: {
-          tenantId,
-          email: normalizedEmail,
-        },
+        email: normalizedEmail,
       },
     });
 
     if (existingUser) {
       this.logger.warn(`User already exists: ${normalizedEmail}`);
       throw new ConflictException(
-        'A user with this email already exists in your organization',
+        'A user with this email already exists in the platform',
       );
     }
 
@@ -225,22 +222,19 @@ export class UsersService {
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.avatar !== undefined) updateData.avatar = dto.avatar;
 
-    // Email requires uniqueness check
+    // Email requires uniqueness check (globally unique)
     if (dto.email !== undefined) {
       const normalizedEmail = dto.email.toLowerCase();
       if (normalizedEmail !== user.email) {
         const existingUser = await this.prisma.user.findUnique({
           where: {
-            tenantId_email: {
-              tenantId,
-              email: normalizedEmail,
-            },
+            email: normalizedEmail,
           },
         });
 
         if (existingUser) {
           throw new ConflictException(
-            'A user with this email already exists in your organization',
+            'A user with this email already exists in the platform',
           );
         }
 

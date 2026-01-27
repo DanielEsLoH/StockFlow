@@ -59,6 +59,7 @@ export default function VerifyEmailPage() {
   const [countdown, setCountdown] = useState(3);
   const [showResendForm, setShowResendForm] = useState(false);
   const verificationAttempted = useRef(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const {
     verifyEmail,
@@ -89,21 +90,32 @@ export default function VerifyEmailPage() {
     }
 
     // Prevent double verification in React strict mode
-    if (verificationAttempted.current) {
+    if (verificationAttempted.current || isVerifying) {
       return;
     }
     verificationAttempted.current = true;
+    setIsVerifying(true);
 
     verifyEmail(token, {
       onSuccess: () => {
         setStatus("success");
+        setIsVerifying(false);
       },
       onError: (error: Error) => {
-        setStatus("error");
-        setErrorMessage(error.message || "Error al verificar el email");
+        setIsVerifying(false);
+        // If the error is about invalid token, it might have been verified already
+        // Check if the message indicates it was already verified
+        const errorMsg = error.message || "Error al verificar el email";
+        if (errorMsg.toLowerCase().includes("already been verified") ||
+            errorMsg.toLowerCase().includes("ya ha sido verificado")) {
+          setStatus("success");
+        } else {
+          setStatus("error");
+          setErrorMessage(errorMsg);
+        }
       },
     });
-  }, [token, verifyEmail]);
+  }, [token, verifyEmail, isVerifying]);
 
   // Countdown and redirect on success
   useEffect(() => {

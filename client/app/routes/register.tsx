@@ -28,7 +28,7 @@ const registerSchema = z
   .object({
     firstName: z.string().min(2, "Minimo 2 caracteres"),
     lastName: z.string().min(2, "Minimo 2 caracteres"),
-    email: z.string().email("Email invalido"),
+    email: z.email({ message: "Email invalido" }),
     password: z
       .string()
       .min(8, "Minimo 8 caracteres")

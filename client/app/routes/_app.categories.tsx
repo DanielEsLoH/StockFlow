@@ -257,7 +257,7 @@ export default function CategoriesPage() {
                   <TableHead className="hidden lg:table-cell">
                     Actualizado
                   </TableHead>
-                  <TableHead className="w-[100px]">Acciones</TableHead>
+                  <TableHead className="w-25">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -316,7 +316,7 @@ export default function CategoriesPage() {
                     <TableHead className="hidden lg:table-cell">
                       Actualizado
                     </TableHead>
-                    <TableHead className="w-[100px]">Acciones</TableHead>
+                    <TableHead className="w-25">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

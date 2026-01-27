@@ -68,7 +68,7 @@ const profileSchema = z.object({
     .string()
     .min(1, "El apellido es requerido")
     .max(50, "Maximo 50 caracteres"),
-  email: z.string().min(1, "El email es requerido").email("Email invalido"),
+  email: z.email({ message: "Email invalido" }),
   phone: z
     .string()
     .max(20, "Maximo 20 caracteres")

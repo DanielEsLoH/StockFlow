@@ -12,7 +12,7 @@ import { ThemeToggle } from "~/components/ui/ThemeToggle";
 
 // Validation schema for resend form
 const resendSchema = z.object({
-  email: z.string().email("Email invalido"),
+  email: z.email({ message: "Email invalido" }),
 });
 
 type ResendForm = z.infer<typeof resendSchema>;

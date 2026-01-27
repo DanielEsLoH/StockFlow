@@ -84,10 +84,7 @@ const itemVariants = {
 
 // Invitation form schema
 const invitationSchema = z.object({
-  email: z
-    .string()
-    .min(1, "El email es requerido")
-    .email("Ingresa un email valido"),
+  email: z.email({ message: "Ingresa un email valido" }),
   role: z.enum(["EMPLOYEE", "MANAGER", "ADMIN"]),
 });
 

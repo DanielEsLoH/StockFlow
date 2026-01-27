@@ -25,7 +25,7 @@ import type { Route } from "./+types/system-admin.login";
 
 // Validation schema
 const loginSchema = z.object({
-  email: z.string().email("Email invalido"),
+  email: z.email({ message: "Email invalido" }),
   password: z.string().min(8, "Minimo 8 caracteres"),
 });
 

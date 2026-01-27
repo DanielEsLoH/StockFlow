@@ -48,7 +48,7 @@ const warehouseSchema = z.object({
   address: z.string().max(200, "Maximo 200 caracteres").optional(),
   city: z.string().max(100, "Maximo 100 caracteres").optional(),
   phone: z.string().max(20, "Maximo 20 caracteres").optional(),
-  email: z.string().email("Email invalido").optional().or(z.literal("")),
+  email: z.email({ message: "Email invalido" }).optional().or(z.literal("")),
   manager: z.string().max(100, "Maximo 100 caracteres").optional(),
   capacity: z.number().min(0, "La capacidad no puede ser negativa").optional(),
   isActive: z.boolean(),

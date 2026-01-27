@@ -359,19 +359,16 @@ describe('UsersService', () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
 
       await expect(service.create(createDto)).rejects.toThrow(
-        'A user with this email already exists in your organization',
+        'A user with this email already exists in the platform',
       );
     });
 
-    it('should check for existing user with compound key', async () => {
+    it('should check for existing user with globally unique email', async () => {
       await service.create(createDto);
 
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: {
-          tenantId_email: {
-            tenantId: mockTenantId,
-            email: 'newuser@example.com',
-          },
+          email: 'newuser@example.com',
         },
       });
     });
@@ -436,10 +433,7 @@ describe('UsersService', () => {
 
         expect(prismaService.user.findUnique).toHaveBeenCalledWith({
           where: {
-            tenantId_email: {
-              tenantId: mockTenantId,
-              email: 'newemail@example.com',
-            },
+            email: 'newemail@example.com',
           },
         });
       });

@@ -202,10 +202,7 @@ describe('InvitationsService', () => {
 
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: {
-          tenantId_email: {
-            tenantId: mockTenantId,
-            email: 'invitee@example.com',
-          },
+          email: 'invitee@example.com',
         },
       });
     });
@@ -243,7 +240,7 @@ describe('InvitationsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw ConflictException if user already exists in tenant', async () => {
+    it('should throw ConflictException if user already exists in platform', async () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue({
         id: 'existing-user',
         email: 'invitee@example.com',

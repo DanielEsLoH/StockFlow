@@ -10,6 +10,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { SystemAdminService } from './system-admin.service';
 import { PrismaService } from '../prisma';
+import { BrevoService } from '../notifications/mail/brevo.service';
 import { SystemAdminRole, SystemAdminStatus } from './types';
 import { UserStatus, SubscriptionPlan, TenantStatus } from '@prisma/client';
 
@@ -111,12 +112,17 @@ describe('SystemAdminService', () => {
       }),
     };
 
+    const mockBrevoService = {
+      sendAccountApprovedEmail: jest.fn().mockResolvedValue({ success: true }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SystemAdminService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: BrevoService, useValue: mockBrevoService },
       ],
     }).compile();
 

@@ -259,7 +259,10 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Invalid credentials");
+        // getErrorMessage maps "Invalid credentials" to Spanish
+        expect(toast.error).toHaveBeenCalledWith(
+          "El correo o la contrasena son incorrectos. Por favor verifica tus datos.",
+        );
       });
     });
 
@@ -277,7 +280,9 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Credenciales invalidas");
+        expect(toast.error).toHaveBeenCalledWith(
+          "El correo o la contrasena son incorrectos",
+        );
       });
     });
   });
@@ -394,7 +399,7 @@ describe("useAuth", () => {
       const { toast } = await import("~/components/ui/Toast");
       vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
       vi.mocked(authService.register).mockRejectedValue(
-        new Error("Email already exists"),
+        new Error("A user with this email already exists"),
       );
 
       const { result } = renderHook(() => useAuth(), {
@@ -411,7 +416,10 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Email already exists");
+        // getErrorMessage maps "user with this email already exists" to Spanish
+        expect(toast.error).toHaveBeenCalledWith(
+          "Ya existe una cuenta con este correo electronico. Intenta iniciar sesion o usa otro correo.",
+        );
       });
     });
 
@@ -434,7 +442,9 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Error al registrarse");
+        expect(toast.error).toHaveBeenCalledWith(
+          "No se pudo completar el registro. Intenta de nuevo.",
+        );
       });
     });
   });
@@ -551,7 +561,10 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("User not found");
+        // getErrorMessage maps "not found" to Spanish
+        expect(toast.error).toHaveBeenCalledWith(
+          "No se encontro el recurso solicitado.",
+        );
       });
     });
 
@@ -569,7 +582,9 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Error al enviar correo");
+        expect(toast.error).toHaveBeenCalledWith(
+          "No se pudo enviar el correo. Intenta de nuevo.",
+        );
       });
     });
   });
@@ -626,7 +641,7 @@ describe("useAuth", () => {
       const { toast } = await import("~/components/ui/Toast");
       vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
       vi.mocked(authService.resetPassword).mockRejectedValue(
-        new Error("Token expired"),
+        new Error("Verification token expired"),
       );
 
       const { result } = renderHook(() => useAuth(), {
@@ -641,7 +656,10 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Token expired");
+        // getErrorMessage maps "verification.*token.*expired" to Spanish
+        expect(toast.error).toHaveBeenCalledWith(
+          "El enlace de verificacion ha expirado. Solicita uno nuevo.",
+        );
       });
     });
 
@@ -663,7 +681,7 @@ describe("useAuth", () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          "Error al restablecer contrasena",
+          "No se pudo restablecer la contrasena. Intenta de nuevo.",
         );
       });
     });
@@ -753,7 +771,9 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.success).toHaveBeenCalledWith("Email verificado correctamente");
+        expect(toast.success).toHaveBeenCalledWith(
+          "Tu correo ha sido verificado correctamente",
+        );
       });
     });
 
@@ -761,7 +781,7 @@ describe("useAuth", () => {
       const { toast } = await import("~/components/ui/Toast");
       vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
       vi.mocked(authService.verifyEmail).mockRejectedValue(
-        new Error("Invalid token"),
+        new Error("Invalid verification token"),
       );
 
       const { result } = renderHook(() => useAuth(), {
@@ -773,7 +793,10 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Invalid token");
+        // getErrorMessage maps "invalid.*verification.*token" to Spanish
+        expect(toast.error).toHaveBeenCalledWith(
+          "El enlace de verificacion no es valido o ya fue utilizado. Solicita uno nuevo.",
+        );
       });
     });
 
@@ -791,7 +814,9 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Error al verificar email");
+        expect(toast.error).toHaveBeenCalledWith(
+          "No se pudo verificar tu correo. Solicita un nuevo enlace.",
+        );
       });
     });
 
@@ -863,7 +888,9 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.success).toHaveBeenCalledWith("Correo de verificacion enviado");
+        expect(toast.success).toHaveBeenCalledWith(
+          "Te hemos enviado un nuevo correo de verificacion. Revisa tu bandeja de entrada.",
+        );
       });
     });
 
@@ -883,7 +910,10 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Too many requests");
+        // getErrorMessage maps "too many requests" to Spanish
+        expect(toast.error).toHaveBeenCalledWith(
+          "Has realizado demasiados intentos. Espera unos minutos antes de intentar de nuevo.",
+        );
       });
     });
 
@@ -902,7 +932,7 @@ describe("useAuth", () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          "Error al enviar correo de verificacion",
+          "No se pudo enviar el correo de verificacion. Intenta de nuevo.",
         );
       });
     });
@@ -1034,7 +1064,10 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Invitation expired");
+        // getErrorMessage maps "invitation.*expired" to Spanish
+        expect(toast.error).toHaveBeenCalledWith(
+          "Esta invitacion ha expirado. Solicita una nueva invitacion al administrador.",
+        );
       });
     });
 
@@ -1053,7 +1086,7 @@ describe("useAuth", () => {
 
       await waitFor(() => {
         expect(toast.error).toHaveBeenCalledWith(
-          "Error al aceptar la invitacion",
+          "No se pudo aceptar la invitacion. Intenta de nuevo.",
         );
       });
     });

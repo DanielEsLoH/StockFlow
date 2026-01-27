@@ -4,6 +4,7 @@ import { authService } from '~/services/auth.service';
 import { useAuthStore } from '~/stores/auth.store';
 import { queryKeys } from '~/lib/query-client';
 import { getAccessToken } from '~/lib/api';
+import { getErrorMessage } from '~/lib/error-messages';
 import { toast } from '~/components/ui/Toast';
 import type { LoginCredentials, RegisterData, AcceptInvitationData } from '~/services/auth.service';
 
@@ -37,7 +38,7 @@ export function useAuth() {
       navigate('/dashboard');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Credenciales invalidas');
+      toast.error(getErrorMessage(error, 'El correo o la contrasena son incorrectos'));
     },
   });
 
@@ -52,7 +53,7 @@ export function useAuth() {
       navigate('/login');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al registrarse');
+      toast.error(getErrorMessage(error, 'No se pudo completar el registro. Intenta de nuevo.'));
     },
   });
 
@@ -71,10 +72,10 @@ export function useAuth() {
   const forgotPasswordMutation = useMutation({
     mutationFn: (email: string) => authService.forgotPassword(email),
     onSuccess: () => {
-      toast.success('Se ha enviado un correo con instrucciones');
+      toast.success('Se ha enviado un correo con instrucciones para restablecer tu contrasena');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al enviar correo');
+      toast.error(getErrorMessage(error, 'No se pudo enviar el correo. Intenta de nuevo.'));
     },
   });
 
@@ -83,11 +84,11 @@ export function useAuth() {
     mutationFn: ({ token, password }: { token: string; password: string }) =>
       authService.resetPassword(token, password),
     onSuccess: () => {
-      toast.success('Contrasena actualizada correctamente');
+      toast.success('Tu contrasena ha sido actualizada. Ya puedes iniciar sesion.');
       navigate('/login');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al restablecer contrasena');
+      toast.error(getErrorMessage(error, 'No se pudo restablecer la contrasena. Intenta de nuevo.'));
     },
   });
 
@@ -95,10 +96,10 @@ export function useAuth() {
   const verifyEmailMutation = useMutation({
     mutationFn: (token: string) => authService.verifyEmail(token),
     onSuccess: () => {
-      toast.success('Email verificado correctamente');
+      toast.success('Tu correo ha sido verificado correctamente');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al verificar email');
+      toast.error(getErrorMessage(error, 'No se pudo verificar tu correo. Solicita un nuevo enlace.'));
     },
   });
 
@@ -106,10 +107,10 @@ export function useAuth() {
   const resendVerificationMutation = useMutation({
     mutationFn: (email: string) => authService.resendVerification(email),
     onSuccess: () => {
-      toast.success('Correo de verificacion enviado');
+      toast.success('Te hemos enviado un nuevo correo de verificacion. Revisa tu bandeja de entrada.');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al enviar correo de verificacion');
+      toast.error(getErrorMessage(error, 'No se pudo enviar el correo de verificacion. Intenta de nuevo.'));
     },
   });
 
@@ -124,7 +125,7 @@ export function useAuth() {
       navigate('/dashboard');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al aceptar la invitacion');
+      toast.error(getErrorMessage(error, 'No se pudo aceptar la invitacion. Intenta de nuevo.'));
     },
   });
 

@@ -6,13 +6,10 @@ import {
   Pencil,
   Trash2,
   Package,
-  Warehouse,
   Tag,
   Calendar,
   Barcode,
   AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import type { Route } from "./+types/_app.products.$id";
 import { cn, formatCurrency, formatDate } from "~/lib/utils";
@@ -83,7 +80,6 @@ export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { data: product, isLoading, isError, error } = useProduct(id!);
   const deleteProduct = useDeleteProduct();
@@ -94,27 +90,9 @@ export default function ProductDetailPage() {
     }
   };
 
-  // Image gallery navigation
-  const images = product?.images || [];
-  const hasMultipleImages = images.length > 1;
-
-  const nextImage = () => {
-    if (hasMultipleImages) {
-      setCurrentImageIndex((prev) => (prev + 1) % images.length);
-    }
-  };
-
-  const prevImage = () => {
-    if (hasMultipleImages) {
-      setCurrentImageIndex(
-        (prev) => (prev - 1 + images.length) % images.length,
-      );
-    }
-  };
-
   // Calculate margin
   const margin = product
-    ? ((product.price - product.cost) / product.price) * 100
+    ? ((product.salePrice - product.costPrice) / product.salePrice) * 100
     : 0;
 
   // Loading state
@@ -219,89 +197,22 @@ export default function ProductDetailPage() {
 
       {/* Content grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Image gallery */}
+        {/* Product image */}
         <motion.div variants={itemVariants} className="lg:col-span-1">
           <Card padding="none" className="overflow-hidden">
             <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-800">
-              {images.length > 0 ? (
-                <>
-                  <img
-                    src={images[currentImageIndex]}
-                    alt={product.name}
-                    className="h-full w-full object-cover"
-                  />
-
-                  {/* Navigation arrows */}
-                  {hasMultipleImages && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={prevImage}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-lg transition-colors hover:bg-white dark:bg-neutral-900/90 dark:hover:bg-neutral-900"
-                        aria-label="Imagen anterior"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={nextImage}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-lg transition-colors hover:bg-white dark:bg-neutral-900/90 dark:hover:bg-neutral-900"
-                        aria-label="Imagen siguiente"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-
-                      {/* Image indicators */}
-                      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
-                        {images.map((_, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => setCurrentImageIndex(index)}
-                            className={cn(
-                              "h-2 w-2 rounded-full transition-colors",
-                              index === currentImageIndex
-                                ? "bg-white"
-                                : "bg-white/50 hover:bg-white/75",
-                            )}
-                            aria-label={`Ver imagen ${index + 1}`}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </>
+              {product.imageUrl ? (
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <div className="flex h-full w-full items-center justify-center">
                   <Package className="h-24 w-24 text-neutral-300 dark:text-neutral-600" />
                 </div>
               )}
             </div>
-
-            {/* Thumbnail strip */}
-            {hasMultipleImages && (
-              <div className="flex gap-2 overflow-x-auto p-3">
-                {images.map((image, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={cn(
-                      "h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors",
-                      index === currentImageIndex
-                        ? "border-primary-500"
-                        : "border-transparent hover:border-neutral-300 dark:hover:border-neutral-600",
-                    )}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.name} ${index + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
           </Card>
         </motion.div>
 
@@ -333,7 +244,7 @@ export default function ProductDetailPage() {
                     Precio de Venta
                   </p>
                   <p className="mt-1 text-2xl font-bold text-primary-700 dark:text-primary-300">
-                    {formatCurrency(product.price)}
+                    {formatCurrency(product.salePrice)}
                   </p>
                 </div>
                 <div className="rounded-xl bg-neutral-100 p-4 dark:bg-neutral-800">
@@ -341,7 +252,7 @@ export default function ProductDetailPage() {
                     Costo
                   </p>
                   <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">
-                    {formatCurrency(product.cost)}
+                    {formatCurrency(product.costPrice)}
                   </p>
                 </div>
                 <div className="rounded-xl bg-success-50 p-4 dark:bg-success-900/20">
@@ -366,7 +277,7 @@ export default function ProductDetailPage() {
                 <div
                   className={cn(
                     "rounded-xl p-4",
-                    product.quantity <= product.minStock
+                    product.stock <= product.minStock
                       ? "bg-error-50 dark:bg-error-900/20"
                       : "bg-success-50 dark:bg-success-900/20",
                   )}
@@ -376,7 +287,7 @@ export default function ProductDetailPage() {
                       <p
                         className={cn(
                           "text-sm font-medium",
-                          product.quantity <= product.minStock
+                          product.stock <= product.minStock
                             ? "text-error-600 dark:text-error-400"
                             : "text-success-600 dark:text-success-400",
                         )}
@@ -386,15 +297,15 @@ export default function ProductDetailPage() {
                       <p
                         className={cn(
                           "mt-1 text-3xl font-bold",
-                          product.quantity <= product.minStock
+                          product.stock <= product.minStock
                             ? "text-error-700 dark:text-error-300"
                             : "text-success-700 dark:text-success-300",
                         )}
                       >
-                        {product.quantity} uds
+                        {product.stock} uds
                       </p>
                     </div>
-                    {product.quantity <= product.minStock && (
+                    {product.stock <= product.minStock && (
                       <AlertTriangle className="h-8 w-8 text-error-500" />
                     )}
                   </div>
@@ -435,14 +346,19 @@ export default function ProductDetailPage() {
                   value={product.category?.name || "-"}
                 />
                 <InfoRow
-                  icon={Warehouse}
-                  label="Bodega"
-                  value={product.warehouse?.name || "-"}
+                  icon={Package}
+                  label="Marca"
+                  value={product.brand || "-"}
                 />
                 <InfoRow
                   icon={Barcode}
                   label="Codigo de Barras"
                   value={product.barcode || "-"}
+                />
+                <InfoRow
+                  icon={Package}
+                  label="Unidad"
+                  value={product.unit}
                 />
                 <InfoRow
                   icon={Calendar}

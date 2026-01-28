@@ -432,12 +432,12 @@ export default function EditInvoicePage() {
   const productsMap = useMemo(() => {
     const map = new Map<
       string,
-      { name: string; price: number; description?: string }
+      { name: string; price: number; description?: string | null }
     >();
     (productsData?.data || []).forEach((p) => {
       map.set(p.id, {
         name: p.name,
-        price: p.price,
+        price: p.salePrice,
         description: p.description,
       });
     });

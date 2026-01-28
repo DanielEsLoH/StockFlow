@@ -23,15 +23,17 @@ export const warehousesService = {
   },
 
   // Get active warehouses (for dropdowns)
+  // Backend returns paginated response, extract the data array
   async getWarehouses(): Promise<Warehouse[]> {
-    const { data } = await api.get<Warehouse[]>('/warehouses');
-    return data;
+    const { data } = await api.get<WarehousesResponse>('/warehouses?limit=1000');
+    return data.data;
   },
 
   // Get all warehouses including inactive
+  // Backend returns paginated response, extract the data array
   async getAllWarehouses(): Promise<Warehouse[]> {
-    const { data } = await api.get<Warehouse[]>('/warehouses?all=true');
-    return data;
+    const { data } = await api.get<WarehousesResponse>('/warehouses?all=true&limit=1000');
+    return data.data;
   },
 
   async getWarehouse(id: string): Promise<Warehouse> {

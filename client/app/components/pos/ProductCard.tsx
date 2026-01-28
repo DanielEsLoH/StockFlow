@@ -18,8 +18,8 @@ export const ProductCard = memo(function ProductCard({
   onAddToCart,
   disabled = false,
 }: ProductCardProps) {
-  const stockStatus = getStockStatusColor(product.quantity, product.minStock);
-  const isOutOfStock = product.quantity <= 0;
+  const stockStatus = getStockStatusColor(product.stock, product.minStock);
+  const isOutOfStock = product.stock <= 0;
   const isInactive = product.status !== 'ACTIVE';
   const isDisabled = disabled || isOutOfStock || isInactive;
 
@@ -71,9 +71,9 @@ export const ProductCard = memo(function ProductCard({
             : 'bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20'
         )}
       >
-        {product.images && product.images.length > 0 ? (
+        {product.imageUrl ? (
           <img
-            src={product.images[0]}
+            src={product.imageUrl}
             alt={product.name}
             className="h-8 w-8 sm:h-10 sm:w-10 rounded-md sm:rounded-lg object-cover"
           />
@@ -120,7 +120,7 @@ export const ProductCard = memo(function ProductCard({
               : 'text-neutral-900 dark:text-white'
           )}
         >
-          {formatCurrency(product.price)}
+          {formatCurrency(product.salePrice)}
         </p>
 
         {/* Stock Indicator - compact on mobile */}
@@ -146,7 +146,7 @@ export const ProductCard = memo(function ProductCard({
           >
             {isOutOfStock
               ? 'Sin stock'
-              : `${product.quantity} disp.`}
+              : `${product.stock} disp.`}
           </span>
         </div>
       </div>

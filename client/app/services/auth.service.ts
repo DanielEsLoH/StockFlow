@@ -3,6 +3,7 @@ import {
   setAccessToken,
   setRefreshToken,
   getRefreshToken,
+  clearAllAuthData,
 } from '~/lib/api';
 import type { User, Tenant } from '~/stores/auth.store';
 
@@ -72,10 +73,17 @@ export const authService = {
   async logout(): Promise<void> {
     try {
       const refreshToken = getRefreshToken();
-      await api.post('/auth/logout', { refreshToken });
+      if (refreshToken) {
+        // Notify the server to invalidate the refresh token
+        await api.post('/auth/logout', { refreshToken });
+      }
+    } catch {
+      // Swallow errors - we want to log out regardless of server availability
+      // The server token will eventually expire on its own
     } finally {
-      setAccessToken(null);
-      setRefreshToken(null);
+      // Clear ALL auth data regardless of server response
+      // This ensures tokens are removed even if the server call fails
+      clearAllAuthData();
     }
   },
 

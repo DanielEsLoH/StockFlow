@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { clearAllAuthData } from '~/lib/api';
 
 export interface User {
   id: string;
@@ -40,7 +41,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       tenant: null,
       isAuthenticated: false,
-      isLoading: true,
+      isLoading: false, // Start as false - AuthInitializer will set loading state if needed
 
       setUser: (user) =>
         set({
@@ -53,13 +54,18 @@ export const useAuthStore = create<AuthState>()(
 
       setLoading: (isLoading) => set({ isLoading }),
 
-      logout: () =>
+      logout: () => {
+        // Clear ALL auth data (tokens, localStorage, sessionStorage, cookies)
+        clearAllAuthData();
+
+        // Reset Zustand state
         set({
           user: null,
           tenant: null,
           isAuthenticated: false,
           isLoading: false,
-        }),
+        });
+      },
     }),
     {
       name: 'auth-storage',

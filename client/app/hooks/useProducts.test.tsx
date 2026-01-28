@@ -74,17 +74,19 @@ const mockProduct: Product = {
   description: 'A test product',
   sku: 'TEST-001',
   barcode: '123456789',
-  price: 100000,
-  cost: 80000,
-  quantity: 50,
+  salePrice: 100000,
+  costPrice: 80000,
+  taxRate: 19,
+  stock: 50,
   minStock: 10,
   maxStock: 100,
   categoryId: '1',
   category: { id: '1', name: 'Electronics', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  warehouseId: '1',
-  warehouse: { id: '1', name: 'Main Warehouse', isActive: true, createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-  images: [],
+  brand: 'TestBrand',
+  unit: 'UND',
+  imageUrl: null,
   status: 'ACTIVE',
+  tenantId: 'tenant-1',
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',
 };
@@ -279,12 +281,11 @@ describe('useProducts hooks', () => {
         result.current.mutate({
           name: 'New Product',
           sku: 'NEW-001',
-          price: 50000,
-          cost: 40000,
-          quantity: 20,
+          salePrice: 50000,
+          costPrice: 40000,
+          stock: 20,
           minStock: 5,
           categoryId: '1',
-          warehouseId: '1',
         });
       });
 
@@ -311,12 +312,11 @@ describe('useProducts hooks', () => {
         result.current.mutate({
           name: 'New Product',
           sku: 'NEW-001',
-          price: 50000,
-          cost: 40000,
-          quantity: 20,
+          salePrice: 50000,
+          costPrice: 40000,
+          stock: 20,
           minStock: 5,
           categoryId: '1',
-          warehouseId: '1',
         });
       });
 
@@ -339,12 +339,11 @@ describe('useProducts hooks', () => {
         result.current.mutate({
           name: 'New Product',
           sku: 'NEW-001',
-          price: 50000,
-          cost: 40000,
-          quantity: 20,
+          salePrice: 50000,
+          costPrice: 40000,
+          stock: 20,
           minStock: 5,
           categoryId: '1',
-          warehouseId: '1',
         });
       });
 

@@ -110,7 +110,7 @@ function posReducer(state: POSState, action: POSAction): POSState {
       if (!item) return state;
 
       // Validate against stock
-      if (quantity > item.product.quantity) return state;
+      if (quantity > item.product.stock) return state;
 
       return {
         ...state,
@@ -125,7 +125,7 @@ function posReducer(state: POSState, action: POSAction): POSState {
       if (!item) return state;
 
       const newQuantity = item.quantity + 1;
-      if (newQuantity > item.product.quantity) return state;
+      if (newQuantity > item.product.stock) return state;
 
       return {
         ...state,

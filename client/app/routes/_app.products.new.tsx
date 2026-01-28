@@ -10,7 +10,6 @@ import {
   DollarSign,
   Barcode,
   Layers,
-  Warehouse,
   ImagePlus,
 } from "lucide-react";
 import type { Route } from "./+types/_app.products.new";
@@ -40,9 +39,10 @@ const productSchema = z.object({
   description: z.string().max(500, "Maximo 500 caracteres").optional(),
   sku: z.string().min(1, "El SKU es requerido").max(50, "Maximo 50 caracteres"),
   barcode: z.string().max(50, "Maximo 50 caracteres").optional(),
-  price: z.number().min(0, "El precio debe ser mayor o igual a 0"),
-  cost: z.number().min(0, "El costo debe ser mayor o igual a 0"),
-  quantity: z.number().int().min(0, "La cantidad debe ser mayor o igual a 0"),
+  salePrice: z.number().min(0, "El precio debe ser mayor o igual a 0"),
+  costPrice: z.number().min(0, "El costo debe ser mayor o igual a 0"),
+  taxRate: z.number().min(0).max(100).optional(),
+  stock: z.number().int().min(0, "La cantidad debe ser mayor o igual a 0"),
   minStock: z
     .number()
     .int()
@@ -52,8 +52,9 @@ const productSchema = z.object({
     .int()
     .min(0, "El stock maximo debe ser mayor o igual a 0")
     .optional(),
-  categoryId: z.string().min(1, "La categoria es requerida"),
-  warehouseId: z.string().min(1, "La bodega es requerida"),
+  categoryId: z.string().optional(),
+  brand: z.string().max(100).optional(),
+  unit: z.string().max(20).optional(),
   status: z.enum(["ACTIVE", "INACTIVE", "DISCONTINUED"]),
 });
 
@@ -90,7 +91,6 @@ export default function NewProductPage() {
   const navigate = useNavigate();
   const {
     categories,
-    warehouses,
     isLoading: isLoadingFormData,
   } = useProductFormData();
   const createProduct = useCreateProduct();
@@ -108,13 +108,15 @@ export default function NewProductPage() {
       description: "",
       sku: "",
       barcode: "",
-      price: 0,
-      cost: 0,
-      quantity: 0,
+      salePrice: 0,
+      costPrice: 0,
+      taxRate: 19,
+      stock: 0,
       minStock: 10,
       maxStock: undefined,
       categoryId: "",
-      warehouseId: "",
+      brand: "",
+      unit: "UND",
       status: "ACTIVE",
     },
   });
@@ -134,15 +136,11 @@ export default function NewProductPage() {
     value: c.id,
     label: c.name,
   }));
-  const warehouseOptions = warehouses.map((w) => ({
-    value: w.id,
-    label: w.name,
-  }));
 
   // Calculate margin for preview
-  const price = watch("price");
-  const cost = watch("cost");
-  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const salePrice = watch("salePrice");
+  const costPrice = watch("costPrice");
+  const margin = salePrice > 0 ? ((salePrice - costPrice) / salePrice) * 100 : 0;
 
   if (isLoadingFormData) {
     return (
@@ -296,7 +294,7 @@ export default function NewProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  {/* Price */}
+                  {/* Sale Price */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                       Precio de Venta *
@@ -305,19 +303,19 @@ export default function NewProductPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register("price", { valueAsNumber: true })}
+                      {...register("salePrice", { valueAsNumber: true })}
                       placeholder="0"
-                      error={!!errors.price}
+                      error={!!errors.salePrice}
                       leftElement={<span className="text-neutral-400">$</span>}
                     />
-                    {errors.price && (
+                    {errors.salePrice && (
                       <p className="text-sm text-error-500">
-                        {errors.price.message}
+                        {errors.salePrice.message}
                       </p>
                     )}
                   </div>
 
-                  {/* Cost */}
+                  {/* Cost Price */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                       Costo *
@@ -326,14 +324,14 @@ export default function NewProductPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register("cost", { valueAsNumber: true })}
+                      {...register("costPrice", { valueAsNumber: true })}
                       placeholder="0"
-                      error={!!errors.cost}
+                      error={!!errors.costPrice}
                       leftElement={<span className="text-neutral-400">$</span>}
                     />
-                    {errors.cost && (
+                    {errors.costPrice && (
                       <p className="text-sm text-error-500">
-                        {errors.cost.message}
+                        {errors.costPrice.message}
                       </p>
                     )}
                   </div>
@@ -370,7 +368,7 @@ export default function NewProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  {/* Quantity */}
+                  {/* Stock */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                       Cantidad Inicial *
@@ -379,13 +377,13 @@ export default function NewProductPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register("quantity", { valueAsNumber: true })}
+                      {...register("stock", { valueAsNumber: true })}
                       placeholder="0"
-                      error={!!errors.quantity}
+                      error={!!errors.stock}
                     />
-                    {errors.quantity && (
+                    {errors.stock && (
                       <p className="text-sm text-error-500">
-                        {errors.quantity.message}
+                        {errors.stock.message}
                       </p>
                     )}
                   </div>
@@ -437,7 +435,7 @@ export default function NewProductPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Warehouse className="h-5 w-5 text-purple-500" />
+                  <Package className="h-5 w-5 text-purple-500" />
                   Clasificacion
                 </CardTitle>
               </CardHeader>
@@ -446,7 +444,7 @@ export default function NewProductPage() {
                   {/* Category */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Categoria *
+                      Categoria
                     </label>
                     <Controller
                       name="categoryId"
@@ -468,27 +466,36 @@ export default function NewProductPage() {
                     )}
                   </div>
 
-                  {/* Warehouse */}
+                  {/* Brand */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Bodega *
+                      Marca
                     </label>
-                    <Controller
-                      name="warehouseId"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          options={warehouseOptions}
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Seleccionar bodega"
-                          error={!!errors.warehouseId}
-                        />
-                      )}
+                    <Input
+                      {...register("brand")}
+                      placeholder="Marca del producto"
+                      error={!!errors.brand}
                     />
-                    {errors.warehouseId && (
+                    {errors.brand && (
                       <p className="text-sm text-error-500">
-                        {errors.warehouseId.message}
+                        {errors.brand.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Unit */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Unidad
+                    </label>
+                    <Input
+                      {...register("unit")}
+                      placeholder="UND, KG, L, etc."
+                      error={!!errors.unit}
+                    />
+                    {errors.unit && (
+                      <p className="text-sm text-error-500">
+                        {errors.unit.message}
                       </p>
                     )}
                   </div>

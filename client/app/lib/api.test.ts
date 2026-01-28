@@ -10,7 +10,7 @@ const {
 } = vi.hoisted(() => {
   const handlers = {
     requestSuccess: null as
-      | ((config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig)
+      | ((config: InternalAxiosRequestConfig) => Promise<InternalAxiosRequestConfig>)
       | null,
     requestError: null as ((error: unknown) => Promise<never>) | null,
     responseSuccess: null as ((response: unknown) => unknown) | null,
@@ -81,6 +81,11 @@ import {
   getAccessToken,
   setRefreshToken,
   getRefreshToken,
+  clearAllAuthData,
+  _resetRedirectFlag,
+  _resetRefreshState,
+  startAuthInit,
+  completeAuthInit,
 } from "./api";
 
 describe("API client", () => {
@@ -88,9 +93,19 @@ describe("API client", () => {
     vi.clearAllMocks();
     setAccessToken(null);
     setRefreshToken(null);
-    // Reset window.location mock
+    // Reset the redirect flag between tests
+    _resetRedirectFlag();
+    // Reset the refresh state (isRefreshing flag and queue)
+    _resetRefreshState();
+    // Ensure no pending auth init
+    completeAuthInit();
+    // Reset window.location mock with replace function
     Object.defineProperty(window, "location", {
-      value: { href: "" },
+      value: {
+        href: "",
+        pathname: "/dashboard",
+        replace: vi.fn(),
+      },
       writable: true,
     });
   });
@@ -137,6 +152,58 @@ describe("API client", () => {
     });
   });
 
+  describe("clearAllAuthData", () => {
+    it("clears access token", () => {
+      setAccessToken("test-token");
+      expect(getAccessToken()).toBe("test-token");
+
+      clearAllAuthData();
+
+      expect(getAccessToken()).toBeNull();
+    });
+
+    it("clears refresh token from localStorage", () => {
+      setRefreshToken("refresh-token");
+      expect(getRefreshToken()).toBe("refresh-token");
+
+      clearAllAuthData();
+
+      expect(getRefreshToken()).toBeNull();
+    });
+
+    it("clears auth-storage from localStorage (Zustand persist)", () => {
+      localStorage.setItem("auth-storage", JSON.stringify({ user: { id: 1 } }));
+
+      clearAllAuthData();
+
+      expect(localStorage.getItem("auth-storage")).toBeNull();
+    });
+
+    it("clears auth cookies", () => {
+      // Set a cookie
+      document.cookie = "refreshToken=true; path=/";
+
+      clearAllAuthData();
+
+      // Cookie should be cleared (expired)
+      expect(document.cookie).not.toContain("refreshToken=true");
+    });
+
+    it("handles errors gracefully when localStorage is not available", () => {
+      // Temporarily make localStorage throw
+      const originalRemoveItem = localStorage.removeItem;
+      localStorage.removeItem = () => {
+        throw new Error("localStorage not available");
+      };
+
+      // Should not throw
+      expect(() => clearAllAuthData()).not.toThrow();
+
+      // Restore
+      localStorage.removeItem = originalRemoveItem;
+    });
+  });
+
   describe("axios instance creation", () => {
     it("creates axios instance with correct configuration", () => {
       // The api instance should be the mock we created
@@ -157,31 +224,31 @@ describe("API client", () => {
   });
 
   describe("request interceptor", () => {
-    it("adds Authorization header when token is set", () => {
+    it("adds Authorization header when token is set", async () => {
       setAccessToken("my-auth-token");
 
       const config = {
         headers: {},
       } as InternalAxiosRequestConfig;
 
-      const result = interceptorHandlers.requestSuccess!(config);
+      const result = await interceptorHandlers.requestSuccess!(config);
 
       expect(result.headers.Authorization).toBe("Bearer my-auth-token");
     });
 
-    it("does not add Authorization header when no token", () => {
+    it("does not add Authorization header when no token", async () => {
       setAccessToken(null);
 
       const config = {
         headers: {},
       } as InternalAxiosRequestConfig;
 
-      const result = interceptorHandlers.requestSuccess!(config);
+      const result = await interceptorHandlers.requestSuccess!(config);
 
       expect(result.headers.Authorization).toBeUndefined();
     });
 
-    it("returns config unchanged except for auth header", () => {
+    it("returns config unchanged except for auth header", async () => {
       setAccessToken("token");
 
       const config = {
@@ -190,7 +257,7 @@ describe("API client", () => {
         url: "/test",
       } as unknown as InternalAxiosRequestConfig;
 
-      const result = interceptorHandlers.requestSuccess!(config);
+      const result = await interceptorHandlers.requestSuccess!(config);
 
       expect(result.method).toBe("GET");
       expect(result.url).toBe("/test");
@@ -203,6 +270,25 @@ describe("API client", () => {
       await expect(interceptorHandlers.requestError!(error)).rejects.toThrow(
         "Request error",
       );
+    });
+
+    it("waits for auth init before proceeding", async () => {
+      setAccessToken(null);
+      startAuthInit();
+
+      const config = {
+        headers: {},
+      } as InternalAxiosRequestConfig;
+
+      // Start the request (it will wait)
+      const requestPromise = interceptorHandlers.requestSuccess!(config);
+
+      // Set token and complete init
+      setAccessToken("delayed-token");
+      completeAuthInit();
+
+      const result = await requestPromise;
+      expect(result.headers.Authorization).toBe("Bearer delayed-token");
     });
   });
 
@@ -365,7 +451,65 @@ describe("API client", () => {
         "Refresh failed",
       );
 
-      expect(window.location.href).toBe("/login");
+      expect(window.location.replace).toHaveBeenCalledWith("/login");
+    });
+
+    it("does not redirect when already on login page", async () => {
+      setRefreshToken("stored-refresh-token");
+      mockAxiosPost.mockRejectedValueOnce(new Error("Refresh failed"));
+
+      // Set current path to login
+      Object.defineProperty(window, "location", {
+        value: {
+          pathname: "/login",
+          replace: vi.fn(),
+        },
+        writable: true,
+      });
+
+      const error = {
+        response: { status: 401 },
+        config: { headers: {} },
+        isAxiosError: true,
+        message: "Unauthorized",
+        name: "AxiosError",
+        toJSON: () => ({}),
+      } as AxiosError;
+
+      await expect(interceptorHandlers.responseError!(error)).rejects.toThrow(
+        "Refresh failed",
+      );
+
+      expect(window.location.replace).not.toHaveBeenCalled();
+    });
+
+    it("does not redirect when on auth-related pages", async () => {
+      setRefreshToken("stored-refresh-token");
+      mockAxiosPost.mockRejectedValueOnce(new Error("Refresh failed"));
+
+      // Set current path to forgot-password
+      Object.defineProperty(window, "location", {
+        value: {
+          pathname: "/forgot-password",
+          replace: vi.fn(),
+        },
+        writable: true,
+      });
+
+      const error = {
+        response: { status: 401 },
+        config: { headers: {} },
+        isAxiosError: true,
+        message: "Unauthorized",
+        name: "AxiosError",
+        toJSON: () => ({}),
+      } as AxiosError;
+
+      await expect(interceptorHandlers.responseError!(error)).rejects.toThrow(
+        "Refresh failed",
+      );
+
+      expect(window.location.replace).not.toHaveBeenCalled();
     });
 
     it("clears tokens when refresh fails", async () => {

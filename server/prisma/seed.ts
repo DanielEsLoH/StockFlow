@@ -94,6 +94,7 @@ async function main() {
       phone: '+57 300 111 1111',
       role: 'ADMIN',
       status: 'ACTIVE',
+      emailVerified: true,
     },
   });
 
@@ -107,6 +108,7 @@ async function main() {
       phone: '+57 300 222 2222',
       role: 'EMPLOYEE',
       status: 'ACTIVE',
+      emailVerified: true,
     },
   });
 

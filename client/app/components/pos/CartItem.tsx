@@ -27,7 +27,7 @@ export const CartItem = memo(function CartItem(props: CartItemProps) {
   // Null-safe calculation with fallback
   const lineItemTotals = calculateLineItemTotals(item);
   const total = lineItemTotals?.total ?? 0;
-  const maxQuantity = item.product?.quantity ?? 0;
+  const maxQuantity = item.product?.stock ?? 0;
   const canIncrement = item.quantity < maxQuantity;
   const productName = item.product?.name ?? 'Producto';
   const unitPrice = item.unitPrice ?? 0;

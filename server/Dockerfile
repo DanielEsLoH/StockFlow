@@ -120,7 +120,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Copy production dependencies with correct ownership
 COPY --from=prod-deps --chown=nestjs:nodejs /app/node_modules ./node_modules
 
-# Copy built application
+# Copy built application (includes compiled seed at dist/prisma/seed.js)
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 
 # Copy Prisma files (needed for migrations and runtime queries)
@@ -154,6 +154,7 @@ USER nestjs
 # This ensures Node.js receives SIGTERM for graceful shutdown
 ENTRYPOINT ["/sbin/tini", "--"]
 
-# Start the application
-# Run migrations then start server (seed is run manually when needed)
-CMD ["sh", "-c", "echo '🚀 Starting StockFlow...' && npx prisma migrate deploy && echo '🎯 Starting server...' && node dist/main.js"]
+# Start the application using startup script
+# The script runs: migrations -> seed (if needed) -> server
+# Seed is compiled to JavaScript and runs without ts-node
+CMD ["./scripts/startup.sh"]

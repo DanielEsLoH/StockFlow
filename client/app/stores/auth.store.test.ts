@@ -1,5 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useAuthStore, type User, type Tenant } from './auth.store';
+
+// Mock the api module to prevent actual localStorage/cookie operations
+vi.mock('~/lib/api', () => ({
+  clearAllAuthData: vi.fn(),
+}));
 
 const mockUser: User = {
   id: '1',
@@ -123,7 +128,8 @@ describe('useAuthStore', () => {
   });
 
   describe('logout', () => {
-    it('should clear all auth state', () => {
+    it('should clear all auth state', async () => {
+      const { clearAllAuthData } = await import('~/lib/api');
       const { setUser, setTenant, logout } = useAuthStore.getState();
 
       // Set up authenticated state
@@ -143,6 +149,24 @@ describe('useAuthStore', () => {
       expect(stateAfterLogout.tenant).toBeNull();
       expect(stateAfterLogout.isAuthenticated).toBe(false);
       expect(stateAfterLogout.isLoading).toBe(false);
+    });
+
+    it('should call clearAllAuthData to clean up tokens and storage', async () => {
+      const { clearAllAuthData } = await import('~/lib/api');
+      const { setUser, setTenant, logout } = useAuthStore.getState();
+
+      // Set up authenticated state
+      setUser(mockUser);
+      setTenant(mockTenant);
+
+      // Clear any previous calls
+      vi.mocked(clearAllAuthData).mockClear();
+
+      // Logout
+      logout();
+
+      // Verify clearAllAuthData was called
+      expect(clearAllAuthData).toHaveBeenCalledTimes(1);
     });
   });
 

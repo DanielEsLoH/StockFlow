@@ -61,12 +61,13 @@ Badge.displayName = 'Badge';
 export { Badge, badgeVariants };
 
 // Status-specific badge component
-type StatusType = 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED' | 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED';
+type StatusType = 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED' | 'OUT_OF_STOCK' | 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED';
 
 const statusConfig: Record<StatusType, { label: string; variant: VariantProps<typeof badgeVariants>['variant'] }> = {
   ACTIVE: { label: 'Activo', variant: 'success' },
   INACTIVE: { label: 'Inactivo', variant: 'secondary' },
   DISCONTINUED: { label: 'Descontinuado', variant: 'error' },
+  OUT_OF_STOCK: { label: 'Sin stock', variant: 'warning' },
   PAID: { label: 'Pagada', variant: 'success' },
   PENDING: { label: 'Pendiente', variant: 'warning' },
   OVERDUE: { label: 'Vencida', variant: 'error' },

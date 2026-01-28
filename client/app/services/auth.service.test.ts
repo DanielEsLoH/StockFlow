@@ -5,6 +5,7 @@ import {
   setAccessToken,
   setRefreshToken,
   getRefreshToken,
+  clearAllAuthData,
 } from '~/lib/api';
 import type { User, Tenant } from '~/stores/auth.store';
 
@@ -18,6 +19,7 @@ vi.mock('~/lib/api', () => ({
   getAccessToken: vi.fn(),
   setRefreshToken: vi.fn(),
   getRefreshToken: vi.fn(),
+  clearAllAuthData: vi.fn(),
 }));
 
 const mockUser: User = {
@@ -158,30 +160,39 @@ describe('authService', () => {
       });
     });
 
-    it('should clear access token on successful logout', async () => {
+    it('should not call api.post if no refresh token exists', async () => {
+      vi.mocked(getRefreshToken).mockReturnValue(null);
+
+      await authService.logout();
+
+      expect(api.post).not.toHaveBeenCalled();
+    });
+
+    it('should call clearAllAuthData on successful logout', async () => {
+      vi.mocked(getRefreshToken).mockReturnValue('stored-refresh-token');
       vi.mocked(api.post).mockResolvedValueOnce({ data: {} });
 
       await authService.logout();
 
-      expect(setAccessToken).toHaveBeenCalledWith(null);
+      expect(clearAllAuthData).toHaveBeenCalledTimes(1);
     });
 
-    it('should clear refresh token on successful logout', async () => {
-      vi.mocked(api.post).mockResolvedValueOnce({ data: {} });
-
-      await authService.logout();
-
-      expect(setRefreshToken).toHaveBeenCalledWith(null);
-    });
-
-    it('should clear tokens even if api call fails', async () => {
+    it('should call clearAllAuthData even if api call fails', async () => {
+      vi.mocked(getRefreshToken).mockReturnValue('stored-refresh-token');
       vi.mocked(api.post).mockRejectedValueOnce(new Error('Network error'));
 
-      // The error is still thrown after finally runs, but tokens should be cleared
-      await expect(authService.logout()).rejects.toThrow('Network error');
+      // Should not throw - errors are caught in finally block
+      await authService.logout();
 
-      expect(setAccessToken).toHaveBeenCalledWith(null);
-      expect(setRefreshToken).toHaveBeenCalledWith(null);
+      expect(clearAllAuthData).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call clearAllAuthData even if no refresh token exists', async () => {
+      vi.mocked(getRefreshToken).mockReturnValue(null);
+
+      await authService.logout();
+
+      expect(clearAllAuthData).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -22,9 +22,10 @@ export const categoriesService = {
   },
 
   // Get all categories (for dropdowns)
+  // Backend returns paginated response, extract the data array
   async getCategories(): Promise<Category[]> {
-    const { data } = await api.get<Category[]>('/categories');
-    return data;
+    const { data } = await api.get<CategoriesResponse>('/categories?limit=1000');
+    return data.data;
   },
 
   async getCategory(id: string): Promise<Category> {

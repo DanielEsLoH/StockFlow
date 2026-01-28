@@ -14,14 +14,24 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5 minutes
       gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
       retry: (failureCount, error) => {
-        // Don't retry on 4xx errors
+        // For 401 errors: axios interceptor handles token refresh and retries the request
+        // We allow ONE retry here to give time for the refresh to complete
         if (error instanceof Error && "status" in error) {
           const status = (error as { status: number }).status;
+          if (status === 401) {
+            // Allow 1 retry for 401 to give axios interceptor time to refresh
+            return failureCount < 1;
+          }
+          // Other 4xx errors should not be retried
           if (status >= 400 && status < 500) return false;
         }
         return failureCount < 3;
       },
+      // Add a small delay between retries to allow token refresh to complete
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
       refetchOnWindowFocus: false,
+      // Don't throw errors to error boundary - let components handle them via isError
+      throwOnError: false,
     },
     mutations: {
       onError: handleError,

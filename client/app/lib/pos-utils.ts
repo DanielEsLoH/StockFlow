@@ -104,10 +104,10 @@ export function canAddToCart(
   }
 
   const totalRequested = currentCartQuantity + requestedQuantity;
-  if (totalRequested > product.quantity) {
+  if (totalRequested > product.stock) {
     return {
       canAdd: false,
-      reason: `Solo hay ${product.quantity} unidades disponibles`,
+      reason: `Solo hay ${product.stock} unidades disponibles`,
     };
   }
 
@@ -126,7 +126,7 @@ export function createCartItem(
     productId: product.id,
     product,
     quantity,
-    unitPrice: product.price,
+    unitPrice: product.salePrice,
     discount: 0,
     tax: COLOMBIA_VAT_RATE,
   };
@@ -187,8 +187,8 @@ export function sortProductsForPOS(products: Product[]): Product[] {
       return a.status === "ACTIVE" ? -1 : 1;
     }
     // In stock first
-    if (a.quantity > 0 !== b.quantity > 0) {
-      return a.quantity > 0 ? -1 : 1;
+    if (a.stock > 0 !== b.stock > 0) {
+      return a.stock > 0 ? -1 : 1;
     }
     // Then by name
     return a.name.localeCompare(b.name);

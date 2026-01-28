@@ -3,25 +3,27 @@
 export interface Product {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   sku: string;
-  barcode?: string;
-  price: number;
-  cost: number;
-  quantity: number;
+  barcode?: string | null;
+  salePrice: number;
+  costPrice: number;
+  taxRate: number;
+  stock: number;
   minStock: number;
-  maxStock?: number;
-  categoryId: string;
+  maxStock?: number | null;
+  categoryId: string | null;
   category?: Category;
-  warehouseId: string;
-  warehouse?: Warehouse;
-  images?: string[];
+  brand?: string | null;
+  unit: string;
+  imageUrl?: string | null;
   status: ProductStatus;
+  tenantId: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED';
+export type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED' | 'OUT_OF_STOCK';
 
 export interface Category {
   id: string;
@@ -68,14 +70,15 @@ export interface CreateProductData {
   description?: string;
   sku: string;
   barcode?: string;
-  price: number;
-  cost: number;
-  quantity: number;
-  minStock: number;
+  salePrice: number;
+  costPrice: number;
+  taxRate?: number;
+  stock?: number;
+  minStock?: number;
   maxStock?: number;
-  categoryId: string;
-  warehouseId: string;
-  images?: string[];
+  categoryId?: string;
+  brand?: string;
+  unit?: string;
   status?: ProductStatus;
 }
 

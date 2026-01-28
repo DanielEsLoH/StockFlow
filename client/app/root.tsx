@@ -11,6 +11,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import type { Route } from './+types/root';
 import { queryClient } from '~/lib/query-client';
 import { ToastProvider } from '~/components/ui/Toast';
+import { AuthInitializer } from '~/components/auth';
 import './styles/tailwind.css';
 
 export const links: Route.LinksFunction = () => [
@@ -61,14 +62,50 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <Outlet />
-      </ToastProvider>
+      <AuthInitializer>
+        <ToastProvider>
+          <Outlet />
+        </ToastProvider>
+      </AuthInitializer>
     </QueryClientProvider>
   );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  // Log the error for debugging
+  console.error("[Root ErrorBoundary] Caught error:", error);
+  if (error instanceof Error) {
+    console.error("[Root ErrorBoundary] Error message:", error.message);
+    console.error("[Root ErrorBoundary] Error stack:", error.stack);
+  }
+  if (isRouteErrorResponse(error)) {
+    console.error("[Root ErrorBoundary] Route error status:", error.status);
+  }
+
+  // Check if it's an auth error - redirect to login instead of showing error
+  const isAuthError =
+    (error instanceof Error &&
+      (error.message.includes("401") ||
+        error.message.includes("Unauthorized") ||
+        error.message.includes("Authentication") ||
+        error.message.includes("No refresh token") ||
+        error.message.includes("Request failed with status code 401"))) ||
+    (isRouteErrorResponse(error) && error.status === 401);
+
+  // Redirect to login for auth errors (client-side only)
+  if (isAuthError && typeof window !== "undefined") {
+    console.log("[Root ErrorBoundary] Auth error detected, redirecting to login");
+    // Clear any stale auth data
+    try {
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("auth-storage");
+    } catch {
+      // Ignore storage errors
+    }
+    window.location.replace("/login");
+    return null;
+  }
+
   let message = 'Oops!';
   let details = 'An unexpected error occurred.';
   let stack: string | undefined;

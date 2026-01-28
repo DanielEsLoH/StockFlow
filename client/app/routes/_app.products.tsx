@@ -395,9 +395,9 @@ export default function ProductsPage() {
                           {/* Image */}
                           <TableCell>
                             <div className="h-12 w-12 overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-800">
-                              {product.images?.[0] ? (
+                              {product.imageUrl ? (
                                 <img
-                                  src={product.images[0]}
+                                  src={product.imageUrl}
                                   alt={product.name}
                                   className="h-full w-full object-cover"
                                 />
@@ -431,9 +431,9 @@ export default function ProductsPage() {
 
                           {/* Price */}
                           <TableCell className="text-right">
-                            <p className="font-medium">{formatCurrency(product.price)}</p>
+                            <p className="font-medium">{formatCurrency(product.salePrice)}</p>
                             <p className="text-xs text-neutral-400">
-                              Costo: {formatCurrency(product.cost)}
+                              Costo: {formatCurrency(product.costPrice)}
                             </p>
                           </TableCell>
 
@@ -442,15 +442,15 @@ export default function ProductsPage() {
                             <div
                               className={cn(
                                 'inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-medium',
-                                product.quantity <= product.minStock
+                                product.stock <= product.minStock
                                   ? 'bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-400'
                                   : 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400'
                               )}
                             >
-                              {product.quantity <= product.minStock && (
+                              {product.stock <= product.minStock && (
                                 <AlertTriangle className="h-3.5 w-3.5" />
                               )}
-                              {product.quantity}
+                              {product.stock}
                             </div>
                           </TableCell>
 
@@ -499,9 +499,9 @@ export default function ProductsPage() {
                     <Card padding="none" hover="lift" className="overflow-hidden">
                       {/* Image */}
                       <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-800">
-                        {product.images?.[0] ? (
+                        {product.imageUrl ? (
                           <img
-                            src={product.images[0]}
+                            src={product.imageUrl}
                             alt={product.name}
                             className="h-full w-full object-cover"
                           />
@@ -517,7 +517,7 @@ export default function ProductsPage() {
                         </div>
 
                         {/* Low stock warning */}
-                        {product.quantity <= product.minStock && (
+                        {product.stock <= product.minStock && (
                           <div className="absolute left-2 top-2">
                             <Badge variant="error" dot>
                               Stock bajo
@@ -542,17 +542,17 @@ export default function ProductsPage() {
 
                         <div className="mt-3 flex items-center justify-between">
                           <p className="text-lg font-semibold text-neutral-900 dark:text-white">
-                            {formatCurrency(product.price)}
+                            {formatCurrency(product.salePrice)}
                           </p>
                           <div
                             className={cn(
                               'rounded-full px-2 py-1 text-sm font-medium',
-                              product.quantity <= product.minStock
+                              product.stock <= product.minStock
                                 ? 'bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-400'
                                 : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'
                             )}
                           >
-                            {product.quantity} uds
+                            {product.stock} uds
                           </div>
                         </div>
 

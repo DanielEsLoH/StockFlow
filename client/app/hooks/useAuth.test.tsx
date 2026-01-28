@@ -26,6 +26,7 @@ vi.mock("~/services/auth.service", () => ({
 
 vi.mock("~/lib/api", () => ({
   getAccessToken: vi.fn(),
+  clearAllAuthData: vi.fn(),
 }));
 
 import { getAccessToken } from "~/lib/api";

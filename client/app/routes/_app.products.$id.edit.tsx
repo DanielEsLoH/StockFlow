@@ -11,7 +11,6 @@ import {
   DollarSign,
   Barcode,
   Layers,
-  Warehouse,
   ImagePlus,
 } from "lucide-react";
 import type { Route } from "./+types/_app.products.$id.edit";
@@ -46,9 +45,9 @@ const productSchema = z.object({
   description: z.string().max(500, "Maximo 500 caracteres").optional(),
   sku: z.string().min(1, "El SKU es requerido").max(50, "Maximo 50 caracteres"),
   barcode: z.string().max(50, "Maximo 50 caracteres").optional(),
-  price: z.number().min(0, "El precio debe ser mayor o igual a 0"),
-  cost: z.number().min(0, "El costo debe ser mayor o igual a 0"),
-  quantity: z.number().int().min(0, "La cantidad debe ser mayor o igual a 0"),
+  salePrice: z.number().min(0, "El precio debe ser mayor o igual a 0"),
+  costPrice: z.number().min(0, "El costo debe ser mayor o igual a 0"),
+  taxRate: z.number().min(0).max(100).optional(),
   minStock: z
     .number()
     .int()
@@ -58,9 +57,10 @@ const productSchema = z.object({
     .int()
     .min(0, "El stock maximo debe ser mayor o igual a 0")
     .optional(),
-  categoryId: z.string().min(1, "La categoria es requerida"),
-  warehouseId: z.string().min(1, "La bodega es requerida"),
-  status: z.enum(["ACTIVE", "INACTIVE", "DISCONTINUED"]),
+  categoryId: z.string().optional(),
+  brand: z.string().max(100).optional(),
+  unit: z.string().max(20).optional(),
+  status: z.enum(["ACTIVE", "INACTIVE", "DISCONTINUED", "OUT_OF_STOCK"]),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -104,7 +104,6 @@ export default function EditProductPage() {
   } = useProduct(id!);
   const {
     categories,
-    warehouses,
     isLoading: isLoadingFormData,
   } = useProductFormData();
   const updateProduct = useUpdateProduct();
@@ -128,13 +127,14 @@ export default function EditProductPage() {
         description: product.description || "",
         sku: product.sku,
         barcode: product.barcode || "",
-        price: product.price,
-        cost: product.cost,
-        quantity: product.quantity,
+        salePrice: product.salePrice,
+        costPrice: product.costPrice,
+        taxRate: product.taxRate,
         minStock: product.minStock,
         maxStock: product.maxStock || undefined,
-        categoryId: product.categoryId,
-        warehouseId: product.warehouseId,
+        categoryId: product.categoryId || undefined,
+        brand: product.brand || "",
+        unit: product.unit,
         status: product.status,
       });
     }
@@ -153,20 +153,16 @@ export default function EditProductPage() {
     updateProduct.mutate({ id, data: productData });
   };
 
-  // Category and warehouse options
+  // Category options
   const categoryOptions = categories.map((c) => ({
     value: c.id,
     label: c.name,
   }));
-  const warehouseOptions = warehouses.map((w) => ({
-    value: w.id,
-    label: w.name,
-  }));
 
   // Calculate margin for preview
-  const price = watch("price") || 0;
-  const cost = watch("cost") || 0;
-  const margin = price > 0 ? ((price - cost) / price) * 100 : 0;
+  const salePrice = watch("salePrice") || 0;
+  const costPrice = watch("costPrice") || 0;
+  const margin = salePrice > 0 ? ((salePrice - costPrice) / salePrice) * 100 : 0;
 
   const isLoading = isLoadingProduct || isLoadingFormData;
 
@@ -371,7 +367,7 @@ export default function EditProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  {/* Price */}
+                  {/* Sale Price */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                       Precio de Venta *
@@ -380,19 +376,19 @@ export default function EditProductPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register("price", { valueAsNumber: true })}
+                      {...register("salePrice", { valueAsNumber: true })}
                       placeholder="0"
-                      error={!!errors.price}
+                      error={!!errors.salePrice}
                       leftElement={<span className="text-neutral-400">$</span>}
                     />
-                    {errors.price && (
+                    {errors.salePrice && (
                       <p className="text-sm text-error-500">
-                        {errors.price.message}
+                        {errors.salePrice.message}
                       </p>
                     )}
                   </div>
 
-                  {/* Cost */}
+                  {/* Cost Price */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                       Costo *
@@ -401,14 +397,14 @@ export default function EditProductPage() {
                       type="number"
                       step="1"
                       min="0"
-                      {...register("cost", { valueAsNumber: true })}
+                      {...register("costPrice", { valueAsNumber: true })}
                       placeholder="0"
-                      error={!!errors.cost}
+                      error={!!errors.costPrice}
                       leftElement={<span className="text-neutral-400">$</span>}
                     />
-                    {errors.cost && (
+                    {errors.costPrice && (
                       <p className="text-sm text-error-500">
-                        {errors.cost.message}
+                        {errors.costPrice.message}
                       </p>
                     )}
                   </div>
@@ -445,24 +441,17 @@ export default function EditProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  {/* Quantity */}
+                  {/* Stock info - read only */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Cantidad en Stock *
+                      Stock Actual
                     </label>
-                    <Input
-                      type="number"
-                      step="1"
-                      min="0"
-                      {...register("quantity", { valueAsNumber: true })}
-                      placeholder="0"
-                      error={!!errors.quantity}
-                    />
-                    {errors.quantity && (
-                      <p className="text-sm text-error-500">
-                        {errors.quantity.message}
-                      </p>
-                    )}
+                    <div className="flex h-11 items-center rounded-xl bg-neutral-100 px-4 font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                      {product?.stock ?? 0} unidades
+                    </div>
+                    <p className="text-xs text-neutral-500">
+                      El stock se ajusta desde movimientos de inventario
+                    </p>
                   </div>
 
                   {/* Min Stock */}
@@ -512,16 +501,16 @@ export default function EditProductPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Warehouse className="h-5 w-5 text-purple-500" />
+                  <Package className="h-5 w-5 text-purple-500" />
                   Clasificacion
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   {/* Category */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Categoria *
+                      Categoria
                     </label>
                     <Controller
                       name="categoryId"
@@ -543,27 +532,36 @@ export default function EditProductPage() {
                     )}
                   </div>
 
-                  {/* Warehouse */}
+                  {/* Brand */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Bodega *
+                      Marca
                     </label>
-                    <Controller
-                      name="warehouseId"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          options={warehouseOptions}
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Seleccionar bodega"
-                          error={!!errors.warehouseId}
-                        />
-                      )}
+                    <Input
+                      {...register("brand")}
+                      placeholder="Marca del producto"
+                      error={!!errors.brand}
                     />
-                    {errors.warehouseId && (
+                    {errors.brand && (
                       <p className="text-sm text-error-500">
-                        {errors.warehouseId.message}
+                        {errors.brand.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Unit */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Unidad
+                    </label>
+                    <Input
+                      {...register("unit")}
+                      placeholder="UND, KG, L, etc."
+                      error={!!errors.unit}
+                    />
+                    {errors.unit && (
+                      <p className="text-sm text-error-500">
+                        {errors.unit.message}
                       </p>
                     )}
                   </div>
@@ -594,32 +592,25 @@ export default function EditProductPage() {
               </CardContent>
             </Card>
 
-            {/* Current Images */}
+            {/* Current Image */}
             <Card>
               <CardHeader>
-                <CardTitle>Imagenes</CardTitle>
+                <CardTitle>Imagen</CardTitle>
               </CardHeader>
               <CardContent>
-                {product.images && product.images.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {product.images.map((image, index) => (
-                      <div
-                        key={index}
-                        className="relative aspect-square overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800"
-                      >
-                        <img
-                          src={image}
-                          alt={`${product.name} ${index + 1}`}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    ))}
+                {product?.imageUrl ? (
+                  <div className="relative aspect-square overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-neutral-200 bg-neutral-50 p-8 dark:border-neutral-700 dark:bg-neutral-800/50">
                     <ImagePlus className="mb-3 h-10 w-10 text-neutral-400" />
                     <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                      Sin imagenes
+                      Sin imagen
                     </p>
                     <p className="mt-1 text-xs text-neutral-400">
                       Subida proximamente

@@ -83,6 +83,20 @@ const itemVariants = {
   },
 };
 
+// Tab content container variants - propagates to children
+const tabContentVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.2,
+      when: "beforeChildren",
+      staggerChildren: 0.05,
+    },
+  },
+};
+
 // Tab configuration
 const tabs: { id: SettingsTab; icon: React.ReactNode }[] = [
   { id: "profile", icon: <User className="h-4 w-4" /> },
@@ -311,7 +325,7 @@ function ProfileTabContent() {
   const fullName = user ? `${user.firstName} ${user.lastName}` : "";
 
   return (
-    <motion.div variants={itemVariants} className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Resumen del Perfil</CardTitle>
@@ -410,7 +424,7 @@ function SecurityTabContent() {
   };
 
   return (
-    <motion.div variants={itemVariants} className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -611,7 +625,7 @@ function PreferencesTabContent() {
   }
 
   return (
-    <motion.div variants={itemVariants} className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-6">
       {/* Theme Selection */}
       <Card>
         <CardHeader>
@@ -771,7 +785,7 @@ function AccountTabContent() {
   };
 
   return (
-    <motion.div variants={itemVariants} className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="space-y-6">
       {/* Account Information */}
       <Card>
         <CardHeader>
@@ -908,7 +922,7 @@ export default function SettingsPage() {
       className="space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Configuracion
@@ -920,7 +934,7 @@ export default function SettingsPage() {
       </motion.div>
 
       {/* Tab Navigation */}
-      <motion.div variants={itemVariants}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <div className="flex flex-wrap gap-2 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
           {tabs.map((tab) => (
             <button
@@ -943,14 +957,9 @@ export default function SettingsPage() {
       </motion.div>
 
       {/* Tab Content */}
-      <motion.div
-        key={activeTab}
-        initial={isMounted ? { opacity: 0, y: 10 } : false}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
+      <div key={activeTab}>
         {renderTabContent()}
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

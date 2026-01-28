@@ -134,6 +134,27 @@ enum AuthProvider {
   GITHUB
 }
 
+enum NotificationType {
+  LOW_STOCK
+  OUT_OF_STOCK
+  NEW_INVOICE
+  INVOICE_PAID
+  INVOICE_OVERDUE
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  NEW_CUSTOMER
+  REPORT_READY
+  SYSTEM
+  INFO
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -155,16 +176,17 @@ model Tenant {
   createdAt              DateTime         @default(now()) @map("created_at")
   updatedAt              DateTime         @updatedAt @map("updated_at")
 
-  users       User[]
-  products    Product[]
-  customers   Customer[]
-  invoices    Invoice[]
-  warehouses  Warehouse[]
-  categories  Category[]
-  movements   StockMovement[]
-  payments    Payment[]
-  auditLogs   AuditLog[]
-  invitations Invitation[]
+  users         User[]
+  products      Product[]
+  customers     Customer[]
+  invoices      Invoice[]
+  warehouses    Warehouse[]
+  categories    Category[]
+  movements     StockMovement[]
+  payments      Payment[]
+  auditLogs     AuditLog[]
+  invitations   Invitation[]
+  notifications Notification[]
 
   @@map("tenants")
 }
@@ -193,11 +215,12 @@ model User {
   updatedAt                DateTime   @updatedAt @map("updated_at")
   lastLoginAt              DateTime?  @map("last_login_at")
 
-  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoices    Invoice[]
-  movements   StockMovement[]
-  auditLogs   AuditLog[]
-  invitations Invitation[]
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoices      Invoice[]
+  movements     StockMovement[]
+  auditLogs     AuditLog[]
+  invitations   Invitation[]
+  notifications Notification[]
 
   @@index([tenantId])
   @@map("users")
@@ -475,6 +498,32 @@ model Invitation {
   @@index([token])
   @@index([status])
   @@map("invitations")
+}
+
+model Notification {
+  id        String               @id @default(cuid())
+  tenantId  String               @map("tenant_id")
+  userId    String?              @map("user_id")
+  type      NotificationType
+  title     String
+  message   String
+  priority  NotificationPriority @default(MEDIUM)
+  read      Boolean              @default(false)
+  readAt    DateTime?            @map("read_at")
+  link      String?
+  metadata  Json?
+  createdAt DateTime             @default(now()) @map("created_at")
+  updatedAt DateTime             @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, read])
+  @@index([tenantId, userId])
+  @@index([tenantId, type])
+  @@index([tenantId, createdAt])
+  @@map("notifications")
 }
 
 // ============================================================================

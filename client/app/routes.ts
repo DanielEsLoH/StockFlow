@@ -62,6 +62,9 @@ export default [
     // Team management
     route("team", "routes/_app.team.tsx"),
 
+    // Notifications
+    route("notifications", "routes/_app.notifications.tsx"),
+
     // Settings and Profile
     route("settings", "routes/_app.settings.tsx"),
     route("profile", "routes/_app.profile.tsx"),

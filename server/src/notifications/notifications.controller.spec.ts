@@ -3,12 +3,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService, LowStockProduct } from './notifications.service';
+import { InAppNotificationsService } from './in-app-notifications.service';
 import { TenantContextService } from '../common';
 import { SendMailResult } from './mail/brevo.service';
 
 describe('NotificationsController', () => {
   let controller: NotificationsController;
   let notificationsService: jest.Mocked<NotificationsService>;
+  let inAppNotificationsService: jest.Mocked<InAppNotificationsService>;
   let tenantContextService: jest.Mocked<TenantContextService>;
 
   // Test data
@@ -50,6 +52,21 @@ describe('NotificationsController', () => {
       triggerOverdueReminders: jest.fn(),
     };
 
+    const mockInAppNotificationsService = {
+      findAll: jest.fn(),
+      findRecent: jest.fn(),
+      getUnreadCount: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+      markAsRead: jest.fn(),
+      markAsUnread: jest.fn(),
+      markManyAsRead: jest.fn(),
+      markAllAsRead: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+      clearRead: jest.fn(),
+    };
+
     const mockTenantContextService = {
       getTenantId: jest.fn().mockReturnValue(mockTenantId),
       requireTenantId: jest.fn().mockReturnValue(mockTenantId),
@@ -59,12 +76,14 @@ describe('NotificationsController', () => {
       controllers: [NotificationsController],
       providers: [
         { provide: NotificationsService, useValue: mockNotificationsService },
+        { provide: InAppNotificationsService, useValue: mockInAppNotificationsService },
         { provide: TenantContextService, useValue: mockTenantContextService },
       ],
     }).compile();
 
     controller = module.get<NotificationsController>(NotificationsController);
     notificationsService = module.get(NotificationsService);
+    inAppNotificationsService = module.get(InAppNotificationsService);
     tenantContextService = module.get(TenantContextService);
 
     // Suppress logger output during tests

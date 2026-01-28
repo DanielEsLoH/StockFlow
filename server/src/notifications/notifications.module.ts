@@ -2,21 +2,27 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { NotificationsService } from './notifications.service';
+import { InAppNotificationsService } from './in-app-notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { BrevoService } from './mail/brevo.service';
 
 /**
  * NotificationsModule
  *
- * Provides email notification functionality for the StockFlow application
- * using Brevo (formerly Sendinblue) for transactional emails.
+ * Provides notification functionality for the StockFlow application:
  *
- * Features:
- * - Transactional email sending via Brevo API
- * - Professional HTML email templates with inline CSS
- * - Scheduled cron jobs for automated notifications
- * - Manual trigger endpoints for admin users
- * - Graceful degradation when API key not configured
+ * 1. Email Notifications (via Brevo):
+ *    - Transactional email sending via Brevo API
+ *    - Professional HTML email templates with inline CSS
+ *    - Scheduled cron jobs for automated notifications
+ *    - Manual trigger endpoints for admin users
+ *    - Graceful degradation when API key not configured
+ *
+ * 2. In-App Notifications:
+ *    - CRUD operations for in-app notification management
+ *    - Paginated listing with filtering by type, priority, and read status
+ *    - Bulk operations for marking as read/deleting
+ *    - Unread count with breakdown by type and priority
  *
  * Configuration:
  * The module reads email configuration from environment variables:
@@ -45,7 +51,7 @@ import { BrevoService } from './mail/brevo.service';
     ScheduleModule.forRoot(),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService, BrevoService],
-  exports: [NotificationsService, BrevoService],
+  providers: [NotificationsService, InAppNotificationsService, BrevoService],
+  exports: [NotificationsService, InAppNotificationsService, BrevoService],
 })
 export class NotificationsModule {}

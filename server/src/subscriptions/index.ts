@@ -1,5 +1,8 @@
 export { SubscriptionsModule } from './subscriptions.module';
-export { SubscriptionsService, PLAN_LIMITS } from './subscriptions.service';
+export {
+  SubscriptionsService,
+  STRIPE_PLAN_LIMITS,
+} from './subscriptions.service';
 export type {
   SubscriptionStatus,
   CheckoutSessionResponse,
@@ -8,3 +11,6 @@ export type {
 export { SubscriptionsController } from './subscriptions.controller';
 export { WebhooksController } from './webhooks.controller';
 export { CreateCheckoutDto, CreatePortalDto } from './dto';
+export { PLAN_LIMITS } from './plan-limits';
+export { SubscriptionManagementService } from './subscription-management.service';
+export { SubscriptionExpiryService } from './subscription-expiry.service';

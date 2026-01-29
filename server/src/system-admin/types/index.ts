@@ -91,10 +91,12 @@ export interface UserListItem {
   lastName: string;
   role: string;
   status: string;
+  emailVerified: boolean;
   tenantId: string;
   tenantName: string;
   createdAt: Date;
   lastLoginAt: Date | null;
+  approvedAt: Date | null;
 }
 
 /**
@@ -107,7 +109,7 @@ export interface TenantListItem {
   email: string;
   phone: string | null;
   status: string;
-  plan: string;
+  plan: string | null;
   userCount: number;
   createdAt: Date;
   updatedAt: Date;
@@ -145,9 +147,10 @@ export interface TenantActionResult {
   success: boolean;
   message: string;
   tenantId: string;
-  action: 'change_plan';
+  action: 'activate_plan' | 'suspend_plan' | 'reactivate_plan' | 'change_plan';
   previousPlan?: string;
   newPlan?: string;
+  endDate?: Date;
 }
 
 /**

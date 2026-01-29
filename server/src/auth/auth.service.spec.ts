@@ -44,7 +44,7 @@ describe('AuthService', () => {
     email: 'tenant@example.com',
     phone: null,
     status: TenantStatus.ACTIVE,
-    plan: SubscriptionPlan.FREE,
+    plan: SubscriptionPlan.EMPRENDEDOR,
     stripeCustomerId: null,
     stripeSubscriptionId: null,
     maxUsers: 5,
@@ -502,20 +502,40 @@ describe('AuthService', () => {
         );
       });
 
-      it('should allow login when user status is PENDING', async () => {
+      it('should throw ForbiddenException when user status is PENDING and email not verified', async () => {
         const pendingUser = {
           ...mockUser,
           status: UserStatus.PENDING,
+          emailVerified: false,
           tenant: mockTenant,
         };
         (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
           pendingUser,
         );
 
-        const result = await service.login('test@example.com', 'password123');
+        await expect(
+          service.login('test@example.com', 'password123'),
+        ).rejects.toThrow(
+          'Por favor verifica tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.',
+        );
+      });
 
-        expect(result.accessToken).toBe(mockTokens.accessToken);
-        expect(result.user.status).toBe(UserStatus.PENDING);
+      it('should throw ForbiddenException when user status is PENDING and awaiting approval', async () => {
+        const pendingUser = {
+          ...mockUser,
+          status: UserStatus.PENDING,
+          emailVerified: true,
+          tenant: mockTenant,
+        };
+        (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+          pendingUser,
+        );
+
+        await expect(
+          service.login('test@example.com', 'password123'),
+        ).rejects.toThrow(
+          'Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos por correo cuando sea aprobada.',
+        );
       });
     });
   });
@@ -831,18 +851,34 @@ describe('AuthService', () => {
         );
       });
 
-      it('should allow refresh when user is PENDING', async () => {
+      it('should throw ForbiddenException when user is PENDING and email not verified', async () => {
         const pendingUserWithToken = {
           ...userWithStoredToken,
           status: UserStatus.PENDING,
+          emailVerified: false,
         };
         (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
           pendingUserWithToken,
         );
 
-        const result = await service.refreshTokens(validRefreshToken);
+        await expect(service.refreshTokens(validRefreshToken)).rejects.toThrow(
+          'Por favor verifica tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.',
+        );
+      });
 
-        expect(result.accessToken).toBe('new-access-token');
+      it('should throw ForbiddenException when user is PENDING and awaiting approval', async () => {
+        const pendingUserWithToken = {
+          ...userWithStoredToken,
+          status: UserStatus.PENDING,
+          emailVerified: true,
+        };
+        (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+          pendingUserWithToken,
+        );
+
+        await expect(service.refreshTokens(validRefreshToken)).rejects.toThrow(
+          'Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos por correo cuando sea aprobada.',
+        );
       });
     });
   });
@@ -1452,38 +1488,9 @@ describe('AuthService', () => {
       expect(errorSpy).toHaveBeenCalled();
     });
 
-    it('should log warning when admin notification email result has error', async () => {
-      const warnSpy = jest.spyOn(Logger.prototype, 'warn');
-
-      // Return success:false to trigger the warning log for admin notification
-      (
-        brevoService.sendAdminNewRegistrationNotification as jest.Mock
-      ).mockResolvedValue({
-        success: false,
-        error: 'Admin email delivery failed',
-      });
-      (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
-        success: true,
-      });
-
-      await service.register(registerDto);
-
-      // Wait for async email operations
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Registration admin notification email failed'),
-      );
-    });
-
     it('should log warning when verification email result has error', async () => {
       const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
-      (
-        brevoService.sendAdminNewRegistrationNotification as jest.Mock
-      ).mockResolvedValue({
-        success: true,
-      });
       // Return success:false to trigger the warning log for verification email
       (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
         success: false,
@@ -1496,20 +1503,17 @@ describe('AuthService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Registration verification email failed'),
+        expect.stringContaining('Verification email failed for user'),
       );
     });
 
-    it('should log error when email promise is rejected', async () => {
+    it('should log error when verification email promise is rejected', async () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
 
-      // Make Promise.allSettled report a rejection
-      (
-        brevoService.sendAdminNewRegistrationNotification as jest.Mock
-      ).mockRejectedValue(new Error('Network failure'));
-      (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
-        success: true,
-      });
+      // Make verification email reject
+      (brevoService.sendVerificationEmail as jest.Mock).mockRejectedValue(
+        new Error('Network failure'),
+      );
 
       await service.register(registerDto);
 
@@ -1517,9 +1521,7 @@ describe('AuthService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'Registration admin notification email threw error',
-        ),
+        expect.stringContaining('Verification email threw error for user'),
         expect.any(String),
       );
     });
@@ -1544,12 +1546,9 @@ describe('AuthService', () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
 
       // Make Promise.allSettled report a rejection with non-Error value
-      (
-        brevoService.sendAdminNewRegistrationNotification as jest.Mock
-      ).mockRejectedValue('string rejection');
-      (brevoService.sendVerificationEmail as jest.Mock).mockResolvedValue({
-        success: true,
-      });
+      (brevoService.sendVerificationEmail as jest.Mock).mockRejectedValue(
+        'string rejection',
+      );
 
       await service.register(registerDto);
 
@@ -1557,9 +1556,7 @@ describe('AuthService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'Registration admin notification email threw error',
-        ),
+        expect.stringContaining('Verification email threw error for user'),
         undefined,
       );
     });
@@ -1572,6 +1569,7 @@ describe('AuthService', () => {
       emailVerified: false,
       verificationToken: validToken,
       verificationTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h in future
+      tenant: { name: 'Test Company', email: 'admin@test.com' },
     };
 
     it('should verify email and clear token when valid token provided', async () => {
@@ -1588,7 +1586,7 @@ describe('AuthService', () => {
       const result = await service.verifyEmail(validToken);
 
       expect(result.message).toBe(
-        'Email verified successfully. Your account is now pending approval by an administrator.',
+        'Correo verificado exitosamente. Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos por correo cuando sea aprobada.',
       );
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
@@ -1655,7 +1653,7 @@ describe('AuthService', () => {
 
       const result = await service.verifyEmail(validToken);
 
-      expect(result.message).toBe('Your email has already been verified.');
+      expect(result.message).toBe('Tu correo ya ha sido verificado.');
       expect(prismaService.user.update).not.toHaveBeenCalled();
     });
 
@@ -1672,6 +1670,7 @@ describe('AuthService', () => {
 
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { verificationToken: validToken },
+        include: { tenant: true },
       });
     });
   });

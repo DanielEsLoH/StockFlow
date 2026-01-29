@@ -23,7 +23,7 @@ describe('JwtStrategy', () => {
     email: 'tenant@example.com',
     phone: null,
     status: TenantStatus.ACTIVE,
-    plan: SubscriptionPlan.FREE,
+    plan: SubscriptionPlan.EMPRENDEDOR,
     stripeCustomerId: null,
     stripeSubscriptionId: null,
     maxUsers: 5,
@@ -233,18 +233,34 @@ describe('JwtStrategy', () => {
         expect(result.userId).toBe(mockUser.id);
       });
 
-      it('should allow PENDING user status', async () => {
+      it('should throw UnauthorizedException for PENDING user without email verification', async () => {
         const pendingUser = {
           ...mockUserWithTenant,
           status: UserStatus.PENDING,
+          emailVerified: false,
         };
         (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
           pendingUser,
         );
 
-        const result = await strategy.validate(validAccessPayload);
+        await expect(strategy.validate(validAccessPayload)).rejects.toThrow(
+          'Por favor verifica tu correo electrónico antes de acceder a la aplicación.',
+        );
+      });
 
-        expect(result.userId).toBe(mockUser.id);
+      it('should throw UnauthorizedException for PENDING user with email verified but not approved', async () => {
+        const pendingUser = {
+          ...mockUserWithTenant,
+          status: UserStatus.PENDING,
+          emailVerified: true,
+        };
+        (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+          pendingUser,
+        );
+
+        await expect(strategy.validate(validAccessPayload)).rejects.toThrow(
+          'Tu cuenta está pendiente de aprobación. Por favor espera la confirmación del administrador.',
+        );
       });
 
       it('should throw UnauthorizedException for SUSPENDED user', async () => {
@@ -271,7 +287,7 @@ describe('JwtStrategy', () => {
         );
 
         await expect(strategy.validate(validAccessPayload)).rejects.toThrow(
-          'User account is not active',
+          'Tu cuenta no está activa.',
         );
       });
 
@@ -299,7 +315,7 @@ describe('JwtStrategy', () => {
         );
 
         await expect(strategy.validate(validAccessPayload)).rejects.toThrow(
-          'User account is not active',
+          'Tu cuenta no está activa.',
         );
       });
     });

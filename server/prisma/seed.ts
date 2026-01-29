@@ -119,8 +119,8 @@ async function main() {
       phone: '+57 300 123 4567',
       status: 'ACTIVE',
       plan: 'PRO',
-      maxUsers: 20,
-      maxProducts: -1,
+      maxUsers: 3,
+      maxProducts: 2000,
       maxInvoices: -1,
       maxWarehouses: 10,
     },
@@ -134,15 +134,15 @@ async function main() {
       email: 'contacto@distribuidoranacional.com',
       phone: '+57 1 234 5678',
       status: 'ACTIVE',
-      plan: 'ENTERPRISE',
-      maxUsers: -1,
+      plan: 'PLUS',
+      maxUsers: 8,
       maxProducts: -1,
       maxInvoices: -1,
-      maxWarehouses: -1,
+      maxWarehouses: 100,
     },
   });
 
-  // Tenant 3: TRIAL Plan
+  // Tenant 3: TRIAL Plan (with EMPRENDEDOR as base)
   const tenantTrial = await prisma.tenant.create({
     data: {
       name: 'Nuevo Negocio',
@@ -150,15 +150,15 @@ async function main() {
       email: 'nuevo@negocio.com',
       phone: '+57 311 555 4444',
       status: 'TRIAL',
-      plan: 'FREE',
-      maxUsers: 3,
-      maxProducts: 50,
-      maxInvoices: 100,
+      plan: 'EMPRENDEDOR',
+      maxUsers: 1,
+      maxProducts: 100,
+      maxInvoices: 50,
       maxWarehouses: 1,
     },
   });
 
-  // Tenant 4: BASIC Plan
+  // Tenant 4: PYME Plan
   const tenantBasic = await prisma.tenant.create({
     data: {
       name: 'Papelería Central',
@@ -166,10 +166,10 @@ async function main() {
       email: 'info@papeleriacentral.com',
       phone: '+57 4 987 6543',
       status: 'ACTIVE',
-      plan: 'BASIC',
-      maxUsers: 5,
+      plan: 'PYME',
+      maxUsers: 2,
       maxProducts: 500,
-      maxInvoices: 500,
+      maxInvoices: -1,
       maxWarehouses: 2,
     },
   });
@@ -1771,7 +1771,7 @@ async function main() {
         action: 'CREATE_TENANT',
         entityType: 'Tenant',
         entityId: tenantEnterprise.id,
-        details: { tenantName: 'Distribuidora Nacional', plan: 'ENTERPRISE' },
+        details: { tenantName: 'Distribuidora Nacional', plan: 'PLUS' },
         createdAt: daysAgo(45),
       },
       {
@@ -1787,7 +1787,7 @@ async function main() {
         action: 'UPDATE_PLAN',
         entityType: 'Tenant',
         entityId: tenantBasic.id,
-        details: { oldPlan: 'FREE', newPlan: 'BASIC' },
+        details: { oldPlan: 'EMPRENDEDOR', newPlan: 'PYME' },
         createdAt: daysAgo(20),
       },
     ],

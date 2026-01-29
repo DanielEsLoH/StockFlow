@@ -407,4 +407,129 @@ describe('MultiSelect', () => {
       expect(screen.getAllByText('Option 1').length).toBeGreaterThan(0);
     });
   });
+
+  describe('keyboard interactions', () => {
+    it('should remove tag on Enter key press', () => {
+      const mockOnChange = vi.fn();
+      render(
+        <MultiSelect
+          options={mockOptions}
+          value={['1', '2']}
+          onChange={mockOnChange}
+        />
+      );
+
+      // Find the X buttons (role="button" with tabIndex)
+      const removeButtons = screen.getAllByRole('button').slice(1); // Skip main button
+      const firstRemoveButton = removeButtons[0];
+
+      // Press Enter on the remove button
+      fireEvent.keyDown(firstRemoveButton, { key: 'Enter' });
+
+      // onChange should be called with '1' removed
+      expect(mockOnChange).toHaveBeenCalledWith(['2']);
+    });
+
+    it('should remove tag on Space key press', () => {
+      const mockOnChange = vi.fn();
+      render(
+        <MultiSelect
+          options={mockOptions}
+          value={['1', '2']}
+          onChange={mockOnChange}
+        />
+      );
+
+      // Find the X buttons
+      const removeButtons = screen.getAllByRole('button').slice(1);
+      const firstRemoveButton = removeButtons[0];
+
+      // Press Space on the remove button
+      fireEvent.keyDown(firstRemoveButton, { key: ' ' });
+
+      // onChange should be called with '1' removed
+      expect(mockOnChange).toHaveBeenCalledWith(['2']);
+    });
+
+    it('should not remove tag on other key press', () => {
+      const mockOnChange = vi.fn();
+      render(
+        <MultiSelect
+          options={mockOptions}
+          value={['1', '2']}
+          onChange={mockOnChange}
+        />
+      );
+
+      // Find the X buttons
+      const removeButtons = screen.getAllByRole('button').slice(1);
+      const firstRemoveButton = removeButtons[0];
+
+      // Press Tab on the remove button (should not trigger removal)
+      fireEvent.keyDown(firstRemoveButton, { key: 'Tab' });
+
+      // onChange should not be called
+      expect(mockOnChange).not.toHaveBeenCalled();
+    });
+
+    it('should call preventDefault on Enter key', () => {
+      const mockOnChange = vi.fn();
+      render(
+        <MultiSelect
+          options={mockOptions}
+          value={['1']}
+          onChange={mockOnChange}
+        />
+      );
+
+      const removeButtons = screen.getAllByRole('button').slice(1);
+      const removeButton = removeButtons[0];
+
+      // Create event with preventDefault spy
+      const preventDefaultSpy = vi.fn();
+      const event = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+      });
+      Object.defineProperty(event, 'preventDefault', {
+        value: preventDefaultSpy,
+        writable: true,
+      });
+
+      removeButton.dispatchEvent(event);
+
+      // preventDefault should be called
+      expect(preventDefaultSpy).toHaveBeenCalled();
+    });
+
+    it('should call preventDefault on Space key', () => {
+      const mockOnChange = vi.fn();
+      render(
+        <MultiSelect
+          options={mockOptions}
+          value={['1']}
+          onChange={mockOnChange}
+        />
+      );
+
+      const removeButtons = screen.getAllByRole('button').slice(1);
+      const removeButton = removeButtons[0];
+
+      // Create event with preventDefault spy
+      const preventDefaultSpy = vi.fn();
+      const event = new KeyboardEvent('keydown', {
+        key: ' ',
+        bubbles: true,
+      });
+      Object.defineProperty(event, 'preventDefault', {
+        value: preventDefaultSpy,
+        writable: true,
+      });
+
+      removeButton.dispatchEvent(event);
+
+      // preventDefault should be called
+      expect(preventDefaultSpy).toHaveBeenCalled();
+    });
+  });
 });

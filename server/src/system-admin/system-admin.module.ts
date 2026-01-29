@@ -10,12 +10,14 @@ import {
 } from './strategies';
 import { SystemAdminAuthGuard, SystemAdminRoleGuard } from './guards';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 /**
  * SystemAdminModule provides system administration functionality including:
  * - System admin authentication (separate from tenant user auth)
  * - User management across all tenants (approve, suspend, delete)
  * - Tenant management (subscription plan changes)
+ * - Subscription management (activate, suspend, reactivate plans)
  *
  * Security considerations:
  * - Uses separate JWT secrets (SYSTEM_ADMIN_JWT_SECRET) from tenant users
@@ -49,6 +51,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     }),
     ConfigModule,
     NotificationsModule,
+    SubscriptionsModule,
   ],
   controllers: [SystemAdminController],
   providers: [

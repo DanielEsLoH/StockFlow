@@ -7,6 +7,7 @@ import {
   type UsersQueryParams,
   type TenantsQueryParams,
   type SubscriptionPlan,
+  type SubscriptionPeriod,
 } from '~/services/system-admin.service';
 import { useSystemAdminStore } from '~/stores/system-admin.store';
 import { toast } from '~/components/ui/Toast';
@@ -235,6 +236,51 @@ export function useSystemAdminTenants(params: TenantsQueryParams = {}) {
     },
   });
 
+  const activatePlanMutation = useMutation({
+    mutationFn: ({
+      tenantId,
+      plan,
+      period,
+    }: {
+      tenantId: string;
+      plan: SubscriptionPlan;
+      period: SubscriptionPeriod;
+    }) => systemAdminService.activateTenantPlan(tenantId, plan, period),
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.tenants.all });
+      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Error al activar plan');
+    },
+  });
+
+  const suspendPlanMutation = useMutation({
+    mutationFn: ({ tenantId, reason }: { tenantId: string; reason: string }) =>
+      systemAdminService.suspendTenantPlan(tenantId, reason),
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.tenants.all });
+      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Error al suspender plan');
+    },
+  });
+
+  const reactivatePlanMutation = useMutation({
+    mutationFn: (tenantId: string) => systemAdminService.reactivateTenantPlan(tenantId),
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.tenants.all });
+      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Error al reactivar plan');
+    },
+  });
+
   return {
     tenants: tenantsQuery.data?.data ?? [],
     meta: tenantsQuery.data?.meta,
@@ -244,5 +290,25 @@ export function useSystemAdminTenants(params: TenantsQueryParams = {}) {
 
     changePlan: changePlanMutation.mutate,
     isChangingPlan: changePlanMutation.isPending,
+
+    activatePlan: activatePlanMutation.mutate,
+    isActivatingPlan: activatePlanMutation.isPending,
+
+    suspendPlan: suspendPlanMutation.mutate,
+    isSuspendingPlan: suspendPlanMutation.isPending,
+
+    reactivatePlan: reactivatePlanMutation.mutate,
+    isReactivatingPlan: reactivatePlanMutation.isPending,
   };
+}
+
+/**
+ * Hook for fetching plan limits
+ */
+export function useSystemAdminPlanLimits() {
+  return useQuery({
+    queryKey: [...systemAdminQueryKeys.all, 'plans'] as const,
+    queryFn: systemAdminService.getAllPlanLimits,
+    staleTime: 1000 * 60 * 60, // 1 hour - plan limits rarely change
+  });
 }

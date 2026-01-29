@@ -306,4 +306,114 @@ describe('Sidebar', () => {
       expect(dashboardLink).toHaveAttribute('title', 'Dashboard');
     });
   });
+
+  describe('mobile sidebar interactions', () => {
+    it('should close mobile sidebar when clicking backdrop', async () => {
+      const user = userEvent.setup();
+      useUIStore.setState({ mobileSidebarOpen: true });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      // Find the backdrop
+      const backdrop = document.querySelector('.lg\\:hidden.fixed.inset-0.z-40.bg-black\\/50');
+      expect(backdrop).toBeInTheDocument();
+
+      // Click the backdrop
+      await user.click(backdrop as Element);
+
+      // Mobile sidebar should be closed
+      expect(useUIStore.getState().mobileSidebarOpen).toBe(false);
+    });
+
+    it('should render close button in mobile sidebar', () => {
+      useUIStore.setState({ mobileSidebarOpen: true });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      // Close button should be present (aria-label "Cerrar menu")
+      expect(screen.getByLabelText('Cerrar menu')).toBeInTheDocument();
+    });
+
+    it('should close mobile sidebar when clicking close button', async () => {
+      const user = userEvent.setup();
+      useUIStore.setState({ mobileSidebarOpen: true });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      // Click the close button
+      const closeButton = screen.getByLabelText('Cerrar menu');
+      await user.click(closeButton);
+
+      // Mobile sidebar should be closed
+      expect(useUIStore.getState().mobileSidebarOpen).toBe(false);
+    });
+
+    it('should close mobile sidebar when clicking a navigation link', async () => {
+      const user = userEvent.setup();
+      useUIStore.setState({ mobileSidebarOpen: true });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      // Find a nav link and click it - there are multiple nav sections (desktop + mobile)
+      // so we need to get all links and click one from the mobile sidebar
+      const productsLinks = screen.getAllByRole('link', { name: /productos/i });
+      // The mobile sidebar link will be the second one (after desktop)
+      await user.click(productsLinks[productsLinks.length - 1]);
+
+      // Mobile sidebar should be closed after navigation
+      expect(useUIStore.getState().mobileSidebarOpen).toBe(false);
+    });
+
+    it('should render mobile sidebar drawer with correct initial position', () => {
+      useUIStore.setState({ mobileSidebarOpen: true });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      // Mobile sidebar drawer should be present
+      const mobileSidebar = document.querySelector('.lg\\:hidden.fixed.inset-y-0.left-0.z-50');
+      expect(mobileSidebar).toBeInTheDocument();
+    });
+  });
+
+  describe('admin-only navigation items', () => {
+    it('should show Team item for admin users', () => {
+      useAuthStore.setState({
+        user: { ...mockUser, role: 'ADMIN' },
+      });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      expect(screen.getByRole('link', { name: /equipo/i })).toBeInTheDocument();
+    });
+
+    it('should show Team item for super admin users', () => {
+      useAuthStore.setState({
+        user: { ...mockUser, role: 'SUPER_ADMIN' },
+      });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      expect(screen.getByRole('link', { name: /equipo/i })).toBeInTheDocument();
+    });
+
+    it('should hide Team item for non-admin users', () => {
+      useAuthStore.setState({
+        user: { ...mockUser, role: 'EMPLOYEE' },
+      });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      expect(screen.queryByRole('link', { name: /equipo/i })).not.toBeInTheDocument();
+    });
+
+    it('should hide Team item for manager users', () => {
+      useAuthStore.setState({
+        user: { ...mockUser, role: 'MANAGER' },
+      });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      expect(screen.queryByRole('link', { name: /equipo/i })).not.toBeInTheDocument();
+    });
+  });
 });

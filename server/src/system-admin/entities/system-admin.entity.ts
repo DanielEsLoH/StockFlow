@@ -192,10 +192,11 @@ export class TenantListItemEntity {
 
   @ApiProperty({
     description: 'Tenant subscription plan',
-    enum: ['FREE', 'BASIC', 'PRO', 'ENTERPRISE'],
+    enum: ['EMPRENDEDOR', 'PYME', 'PRO', 'PLUS'],
     example: 'PRO',
+    nullable: true,
   })
-  plan: string;
+  plan: string | null;
 
   @ApiProperty({
     description: 'Number of users in the tenant',
@@ -352,14 +353,14 @@ export class TenantActionResultEntity {
 
   @ApiPropertyOptional({
     description: 'Previous subscription plan',
-    enum: ['FREE', 'BASIC', 'PRO', 'ENTERPRISE'],
-    example: 'BASIC',
+    enum: ['EMPRENDEDOR', 'PYME', 'PRO', 'PLUS'],
+    example: 'PYME',
   })
   previousPlan?: string;
 
   @ApiPropertyOptional({
     description: 'New subscription plan',
-    enum: ['FREE', 'BASIC', 'PRO', 'ENTERPRISE'],
+    enum: ['EMPRENDEDOR', 'PYME', 'PRO', 'PLUS'],
     example: 'PRO',
   })
   newPlan?: string;

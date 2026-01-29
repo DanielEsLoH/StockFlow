@@ -13,8 +13,10 @@ import { PrismaService } from '../prisma';
 /**
  * Plan limits configuration for each subscription tier.
  * -1 indicates unlimited.
+ * Note: The primary plan limits configuration is in plan-limits.ts.
+ * This is kept for backward compatibility with Stripe webhook handlers.
  */
-export const PLAN_LIMITS: Record<
+export const STRIPE_PLAN_LIMITS: Record<
   SubscriptionPlan,
   {
     maxUsers: number;
@@ -23,14 +25,14 @@ export const PLAN_LIMITS: Record<
     maxWarehouses: number;
   }
 > = {
-  FREE: { maxUsers: 2, maxProducts: 100, maxInvoices: 50, maxWarehouses: 1 },
-  BASIC: { maxUsers: 5, maxProducts: 1000, maxInvoices: -1, maxWarehouses: 3 },
-  PRO: { maxUsers: 20, maxProducts: -1, maxInvoices: -1, maxWarehouses: 10 },
-  ENTERPRISE: {
-    maxUsers: -1,
+  EMPRENDEDOR: { maxUsers: 1, maxProducts: 100, maxInvoices: 50, maxWarehouses: 1 },
+  PYME: { maxUsers: 2, maxProducts: 500, maxInvoices: -1, maxWarehouses: 2 },
+  PRO: { maxUsers: 3, maxProducts: 2000, maxInvoices: -1, maxWarehouses: 10 },
+  PLUS: {
+    maxUsers: 8,
     maxProducts: -1,
     maxInvoices: -1,
-    maxWarehouses: -1,
+    maxWarehouses: 100,
   },
 };
 
@@ -96,7 +98,7 @@ export class SubscriptionsService {
   private readonly stripeEnabled: boolean;
   private readonly frontendUrl: string;
   private readonly webhookSecret: string;
-  private readonly priceIds: Record<Exclude<SubscriptionPlan, 'FREE'>, string>;
+  private readonly priceIds: Record<Exclude<SubscriptionPlan, 'EMPRENDEDOR'>, string>;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -126,10 +128,9 @@ export class SubscriptionsService {
 
     // Map plans to Stripe price IDs
     this.priceIds = {
-      BASIC: this.configService.get<string>('STRIPE_PRICE_BASIC') || '',
+      PYME: this.configService.get<string>('STRIPE_PRICE_PYME') || '',
       PRO: this.configService.get<string>('STRIPE_PRICE_PRO') || '',
-      ENTERPRISE:
-        this.configService.get<string>('STRIPE_PRICE_ENTERPRISE') || '',
+      PLUS: this.configService.get<string>('STRIPE_PRICE_PLUS') || '',
     };
   }
 
@@ -170,9 +171,9 @@ export class SubscriptionsService {
     const stripe = this.getStripeClient();
     this.logger.log(`Creating checkout session for tenant ${tenantId}`);
 
-    if (plan === 'FREE') {
+    if (plan === 'EMPRENDEDOR') {
       throw new BadRequestException(
-        'Cannot create checkout session for FREE plan',
+        'Cannot create checkout session for EMPRENDEDOR plan - it is the base plan',
       );
     }
 
@@ -312,9 +313,9 @@ export class SubscriptionsService {
       throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
     }
 
-    const status: SubscriptionStatus = {
+      const status: SubscriptionStatus = {
       tenantId: tenant.id,
-      plan: tenant.plan,
+      plan: tenant.plan || 'EMPRENDEDOR',
       stripeCustomerId: tenant.stripeCustomerId,
       stripeSubscriptionId: tenant.stripeSubscriptionId,
       limits: {
@@ -502,7 +503,7 @@ export class SubscriptionsService {
     }
 
     // Determine plan from metadata or subscription
-    let plan: SubscriptionPlan = planFromMetadata || 'BASIC';
+    let plan: SubscriptionPlan = planFromMetadata || 'PYME';
 
     if (!planFromMetadata && this.stripe) {
       // Try to get plan from subscription metadata
@@ -511,7 +512,7 @@ export class SubscriptionsService {
           await this.stripe.subscriptions.retrieve(subscriptionId);
         const subscriptionPlan = subscription.metadata
           ?.plan as SubscriptionPlan;
-        if (subscriptionPlan && PLAN_LIMITS[subscriptionPlan]) {
+        if (subscriptionPlan && STRIPE_PLAN_LIMITS[subscriptionPlan]) {
           plan = subscriptionPlan;
         }
       } catch (error) {
@@ -521,7 +522,7 @@ export class SubscriptionsService {
       }
     }
 
-    const limits = PLAN_LIMITS[plan];
+    const limits = STRIPE_PLAN_LIMITS[plan];
 
     await this.prisma.executeInTransaction(async (tx) => {
       await tx.tenant.update({
@@ -598,8 +599,8 @@ export class SubscriptionsService {
     const plan = (subscription.metadata?.plan as SubscriptionPlan) || undefined;
 
     // If subscription is active, and we have a plan, update the tenant
-    if (subscription.status === 'active' && plan && PLAN_LIMITS[plan]) {
-      const limits = PLAN_LIMITS[plan];
+    if (subscription.status === 'active' && plan && STRIPE_PLAN_LIMITS[plan]) {
+      const limits = STRIPE_PLAN_LIMITS[plan];
 
       await this.prisma.tenant.update({
         where: { id: tenantId },
@@ -662,24 +663,20 @@ export class SubscriptionsService {
       targetTenantId = tenant.id;
     }
 
-    const freeLimits = PLAN_LIMITS['FREE'];
-
+    // When subscription is cancelled, set plan to null (no active subscription)
+    // The tenant will need to be suspended or have a new plan activated by admin
     await this.prisma.executeInTransaction(async (tx) => {
       await tx.tenant.update({
         where: { id: targetTenantId },
         data: {
-          plan: 'FREE',
+          plan: null,
           stripeSubscriptionId: null,
-          maxUsers: freeLimits.maxUsers,
-          maxProducts: freeLimits.maxProducts,
-          maxInvoices: freeLimits.maxInvoices,
-          maxWarehouses: freeLimits.maxWarehouses,
         },
       });
     });
 
     this.logger.log(
-      `Tenant ${targetTenantId} subscription cancelled - downgraded to FREE`,
+      `Tenant ${targetTenantId} subscription cancelled - plan set to null`,
     );
   }
 

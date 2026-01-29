@@ -143,9 +143,9 @@ describe("Home route", () => {
       expect(links[0]).toHaveAttribute("href", "/login");
     });
 
-    it("renders Comenzar Gratis link", () => {
+    it("renders Comenzar Ahora link", () => {
       renderHome();
-      const links = screen.getAllByRole("link", { name: /Comenzar Gratis/i });
+      const links = screen.getAllByRole("link", { name: /Comenzar Ahora/i });
       expect(links.length).toBeGreaterThan(0);
       expect(links[0]).toHaveAttribute("href", "/register");
     });
@@ -215,7 +215,7 @@ describe("Home route", () => {
         name: /Iniciar Sesión/i,
       });
       const registerLinks = screen.getAllByRole("link", {
-        name: /Comenzar Gratis/i,
+        name: /Comenzar Ahora/i,
       });
 
       expect(loginLinks[0]).toHaveAccessibleName();

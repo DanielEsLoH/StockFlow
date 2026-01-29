@@ -43,13 +43,13 @@ export interface RateLimitTier {
 
 /**
  * Rate limit tiers for subscription-based rate limiting.
- * Enterprise tier has unlimited requests (Infinity).
+ * PLUS tier has unlimited requests (Infinity).
  */
 export const SUBSCRIPTION_RATE_LIMITS: RateLimitTier[] = [
-  { plan: 'FREE', requestsPerHour: 500 },
-  { plan: 'BASIC', requestsPerHour: 2000 },
+  { plan: 'EMPRENDEDOR', requestsPerHour: 500 },
+  { plan: 'PYME', requestsPerHour: 2000 },
   { plan: 'PRO', requestsPerHour: 10000 },
-  { plan: 'ENTERPRISE', requestsPerHour: Infinity },
+  { plan: 'PLUS', requestsPerHour: Infinity },
 ];
 
 /**

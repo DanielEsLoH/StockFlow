@@ -16,10 +16,10 @@ import { RequestUser } from '../../auth/types';
  * Higher numbers indicate higher-tier plans.
  */
 const PLAN_HIERARCHY: Record<SubscriptionPlan, number> = {
-  [SubscriptionPlan.FREE]: 0,
-  [SubscriptionPlan.BASIC]: 1,
+  [SubscriptionPlan.EMPRENDEDOR]: 0,
+  [SubscriptionPlan.PYME]: 1,
   [SubscriptionPlan.PRO]: 2,
-  [SubscriptionPlan.ENTERPRISE]: 3,
+  [SubscriptionPlan.PLUS]: 3,
 };
 
 /**
@@ -30,10 +30,10 @@ const PLAN_HIERARCHY: Record<SubscriptionPlan, number> = {
  * to ensure the user is authenticated and tenant information is available.
  *
  * Plan Hierarchy (from lowest to highest):
- * - FREE (0)
- * - BASIC (1)
+ * - EMPRENDEDOR (0)
+ * - PYME (1)
  * - PRO (2)
- * - ENTERPRISE (3)
+ * - PLUS (3)
  *
  * A tenant with a higher-tier plan can access routes requiring lower-tier plans.
  *
@@ -103,6 +103,16 @@ export class SubscriptionGuard implements CanActivate {
     }
 
     // Compare plan levels using the hierarchy
+    // Handle null plan (no active subscription)
+    if (!tenant.plan) {
+      this.logger.debug(
+        `Access denied for tenant ${tenant.name}: no active subscription plan`,
+      );
+      throw new ForbiddenException(
+        `This feature requires a ${requiredPlan} plan or higher. You don't have an active subscription.`,
+      );
+    }
+
     const tenantPlanLevel = PLAN_HIERARCHY[tenant.plan];
     const requiredPlanLevel = PLAN_HIERARCHY[requiredPlan];
 

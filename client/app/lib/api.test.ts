@@ -635,6 +635,227 @@ describe("API client", () => {
     });
   });
 
+  describe("request queuing during token refresh", () => {
+    it("queues requests when token refresh is in progress", async () => {
+      setRefreshToken("stored-refresh-token");
+      const newToken = "new-token-from-refresh";
+
+      // Create a delayed promise for the refresh call
+      let resolveRefresh: (value: unknown) => void;
+      const refreshPromise = new Promise((resolve) => {
+        resolveRefresh = resolve;
+      });
+      mockAxiosPost.mockReturnValueOnce(refreshPromise);
+
+      // First request config
+      const firstConfig = {
+        headers: {},
+        url: "/first-request",
+      } as InternalAxiosRequestConfig & { _retry?: boolean };
+
+      const firstError = {
+        response: { status: 401 },
+        config: firstConfig,
+        isAxiosError: true,
+        message: "Unauthorized",
+        name: "AxiosError",
+        toJSON: () => ({}),
+      } as AxiosError;
+
+      // Second request config
+      const secondConfig = {
+        headers: {},
+        url: "/second-request",
+      } as InternalAxiosRequestConfig & { _retry?: boolean };
+
+      const secondError = {
+        response: { status: 401 },
+        config: secondConfig,
+        isAxiosError: true,
+        message: "Unauthorized",
+        name: "AxiosError",
+        toJSON: () => ({}),
+      } as AxiosError;
+
+      // Start first request (triggers refresh)
+      const firstPromise = interceptorHandlers.responseError!(firstError);
+
+      // Start second request while refresh is in progress (should be queued)
+      const secondPromise = interceptorHandlers.responseError!(secondError);
+
+      // Mock the retry responses - both will get resolved
+      mockAxiosInstance
+        .mockResolvedValueOnce({ data: { success: 1 } })
+        .mockResolvedValueOnce({ data: { success: 2 } });
+
+      // Now resolve the refresh
+      resolveRefresh!({ data: { accessToken: newToken } });
+
+      // Both requests should complete successfully
+      const results = await Promise.all([firstPromise, secondPromise]);
+
+      // Both should complete (order doesn't matter)
+      expect(results).toHaveLength(2);
+      results.forEach((result) => {
+        expect((result as { data: { success: number } }).data.success).toBeGreaterThan(0);
+      });
+
+      // Only one refresh call should have been made
+      expect(mockAxiosPost).toHaveBeenCalledTimes(1);
+
+      // Both requests should have the new token
+      expect(firstConfig.headers.Authorization).toBe(`Bearer ${newToken}`);
+      expect(secondConfig.headers.Authorization).toBe(`Bearer ${newToken}`);
+    });
+
+    it("rejects queued requests when token refresh fails", async () => {
+      setRefreshToken("stored-refresh-token");
+
+      // Create a delayed promise for the refresh call
+      let rejectRefresh: (reason: unknown) => void;
+      const refreshPromise = new Promise((_, reject) => {
+        rejectRefresh = reject;
+      });
+      mockAxiosPost.mockReturnValueOnce(refreshPromise);
+
+      // First request config
+      const firstConfig = {
+        headers: {},
+        url: "/first-request",
+      } as InternalAxiosRequestConfig & { _retry?: boolean };
+
+      const firstError = {
+        response: { status: 401 },
+        config: firstConfig,
+        isAxiosError: true,
+        message: "Unauthorized",
+        name: "AxiosError",
+        toJSON: () => ({}),
+      } as AxiosError;
+
+      // Second request config (will be queued)
+      const secondConfig = {
+        headers: {},
+        url: "/second-request",
+      } as InternalAxiosRequestConfig & { _retry?: boolean };
+
+      const secondError = {
+        response: { status: 401 },
+        config: secondConfig,
+        isAxiosError: true,
+        message: "Unauthorized",
+        name: "AxiosError",
+        toJSON: () => ({}),
+      } as AxiosError;
+
+      // Start first request (triggers refresh)
+      const firstPromise = interceptorHandlers.responseError!(firstError);
+
+      // Start second request while refresh is in progress (should be queued)
+      const secondPromise = interceptorHandlers.responseError!(secondError);
+
+      // Now reject the refresh
+      const refreshError = new Error("Refresh token expired");
+      rejectRefresh!(refreshError);
+
+      // Both requests should be rejected with the same error
+      await expect(firstPromise).rejects.toThrow("Refresh token expired");
+      await expect(secondPromise).rejects.toBe(refreshError);
+    });
+
+    it("sets new refresh token when provided in response", async () => {
+      setRefreshToken("old-refresh-token");
+      const newAccessToken = "new-access-token";
+      const newRefreshToken = "new-refresh-token";
+
+      mockAxiosPost.mockResolvedValueOnce({
+        data: {
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken,
+        },
+      });
+
+      mockAxiosInstance.mockResolvedValueOnce({ data: { success: true } });
+
+      const config = {
+        headers: {},
+        url: "/protected",
+      } as InternalAxiosRequestConfig & { _retry?: boolean };
+
+      const error = {
+        response: { status: 401 },
+        config,
+        isAxiosError: true,
+        message: "Unauthorized",
+        name: "AxiosError",
+        toJSON: () => ({}),
+      } as AxiosError;
+
+      await interceptorHandlers.responseError!(error);
+
+      expect(getAccessToken()).toBe(newAccessToken);
+      expect(getRefreshToken()).toBe(newRefreshToken);
+    });
+
+    it("processes queue with new token after successful refresh", async () => {
+      setRefreshToken("stored-refresh-token");
+      const newToken = "queue-processed-token";
+
+      // Create a delayed promise for the refresh call
+      let resolveRefresh: (value: unknown) => void;
+      const refreshPromise = new Promise((resolve) => {
+        resolveRefresh = resolve;
+      });
+      mockAxiosPost.mockReturnValueOnce(refreshPromise);
+
+      // Start three simultaneous 401 requests
+      const configs = [1, 2, 3].map((i) => ({
+        headers: {},
+        url: `/request-${i}`,
+      })) as (InternalAxiosRequestConfig & { _retry?: boolean })[];
+
+      const errors = configs.map((config) => ({
+        response: { status: 401 },
+        config,
+        isAxiosError: true,
+        message: "Unauthorized",
+        name: "AxiosError",
+        toJSON: () => ({}),
+      })) as AxiosError[];
+
+      // Start all requests
+      const promises = errors.map((error) =>
+        interceptorHandlers.responseError!(error),
+      );
+
+      // Mock responses for all three retries
+      mockAxiosInstance
+        .mockResolvedValueOnce({ data: { success: true } })
+        .mockResolvedValueOnce({ data: { success: true } })
+        .mockResolvedValueOnce({ data: { success: true } });
+
+      // Resolve refresh
+      resolveRefresh!({ data: { accessToken: newToken } });
+
+      // Wait for all to complete
+      const results = await Promise.all(promises);
+
+      // Verify all completed successfully
+      expect(results).toHaveLength(3);
+      results.forEach((result) => {
+        expect((result as { data: { success: boolean } }).data.success).toBe(true);
+      });
+
+      // Verify all configs have the new token
+      configs.forEach((config) => {
+        expect(config.headers.Authorization).toBe(`Bearer ${newToken}`);
+      });
+
+      // Only one refresh call
+      expect(mockAxiosPost).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("API types", () => {
     it("exports ApiError interface", () => {
       // Type check - this is mainly for TypeScript compilation

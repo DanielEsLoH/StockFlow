@@ -70,8 +70,8 @@ export class SubscriptionsController {
    * Response:
    * {
    *   "tenantId": "clu...",
-   *   "plan": "BASIC",
-   *   "limits": { "maxUsers": 5, "maxProducts": 1000, ... },
+   *   "plan": "PYME",
+   *   "limits": { "maxUsers": 2, "maxProducts": 500, ... },
    *   "stripeSubscriptionStatus": "active",
    *   "currentPeriodEnd": "2024-02-15T00:00:00.000Z"
    * }

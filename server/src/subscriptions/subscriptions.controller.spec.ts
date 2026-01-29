@@ -18,7 +18,7 @@ describe('SubscriptionsController', () => {
 
   const mockSubscriptionStatus: SubscriptionStatus = {
     tenantId: mockTenantId,
-    plan: 'BASIC' as SubscriptionPlan,
+    plan: 'PYME' as SubscriptionPlan,
     stripeCustomerId: 'cus_test123',
     stripeSubscriptionId: 'sub_test123',
     limits: {
@@ -115,14 +115,14 @@ describe('SubscriptionsController', () => {
 
   describe('createCheckout', () => {
     it('should create checkout session for BASIC plan', async () => {
-      const dto = { plan: 'BASIC' as SubscriptionPlan };
+      const dto = { plan: 'PYME' as SubscriptionPlan };
 
       const result = await controller.createCheckout(mockTenantId, dto);
 
       expect(result).toEqual(mockCheckoutResponse);
       expect(service.createCheckoutSession).toHaveBeenCalledWith(
         mockTenantId,
-        'BASIC',
+        'PYME',
       );
     });
 
@@ -139,14 +139,14 @@ describe('SubscriptionsController', () => {
     });
 
     it('should create checkout session for ENTERPRISE plan', async () => {
-      const dto = { plan: 'ENTERPRISE' as SubscriptionPlan };
+      const dto = { plan: 'PLUS' as SubscriptionPlan };
 
       const result = await controller.createCheckout(mockTenantId, dto);
 
       expect(result).toEqual(mockCheckoutResponse);
       expect(service.createCheckoutSession).toHaveBeenCalledWith(
         mockTenantId,
-        'ENTERPRISE',
+        'PLUS',
       );
     });
 
@@ -162,7 +162,7 @@ describe('SubscriptionsController', () => {
     it('should pass through service errors', async () => {
       const error = new Error('Service error');
       service.createCheckoutSession.mockRejectedValue(error);
-      const dto = { plan: 'BASIC' as SubscriptionPlan };
+      const dto = { plan: 'PYME' as SubscriptionPlan };
 
       await expect(
         controller.createCheckout(mockTenantId, dto),

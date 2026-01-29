@@ -130,6 +130,95 @@ describe('Dialog Components', () => {
       });
     });
   });
+
+  describe('DialogContent hideDescription prop', () => {
+    it('should render sr-only description when hideDescription is true', async () => {
+      render(
+        <Dialog defaultOpen>
+          <DialogContent hideDescription>
+            <DialogTitle>Title without visible description</DialogTitle>
+          </DialogContent>
+        </Dialog>
+      );
+
+      await waitFor(() => {
+        // Should render the sr-only description with default text
+        const srOnlyDescription = screen.getByText('Contenido del dialogo');
+        expect(srOnlyDescription).toBeInTheDocument();
+        expect(srOnlyDescription).toHaveClass('sr-only');
+      });
+    });
+
+    it('should not render sr-only description when hideDescription is false', async () => {
+      render(
+        <Dialog defaultOpen>
+          <DialogContent hideDescription={false}>
+            <DialogTitle>Title</DialogTitle>
+            <DialogDescription>Visible description</DialogDescription>
+          </DialogContent>
+        </Dialog>
+      );
+
+      await waitFor(() => {
+        // Should have the visible description
+        expect(screen.getByText('Visible description')).toBeInTheDocument();
+        // Should NOT have the sr-only fallback description
+        expect(screen.queryByText('Contenido del dialogo')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should not render sr-only description when hideDescription is not provided', async () => {
+      render(
+        <Dialog defaultOpen>
+          <DialogContent>
+            <DialogTitle>Title</DialogTitle>
+            <DialogDescription>Regular description</DialogDescription>
+          </DialogContent>
+        </Dialog>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Regular description')).toBeInTheDocument();
+        expect(screen.queryByText('Contenido del dialogo')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should have dialog with aria-describedby when hideDescription is true', async () => {
+      render(
+        <Dialog defaultOpen>
+          <DialogContent hideDescription>
+            <DialogTitle>Title</DialogTitle>
+          </DialogContent>
+        </Dialog>
+      );
+
+      await waitFor(() => {
+        const dialog = screen.getByRole('dialog');
+        // The dialog should exist and have the sr-only description
+        expect(dialog).toBeInTheDocument();
+        // The sr-only description should be rendered
+        expect(screen.getByText('Contenido del dialogo')).toHaveClass('sr-only');
+      });
+    });
+
+    it('should have dialog accessible when hideDescription is false', async () => {
+      render(
+        <Dialog defaultOpen>
+          <DialogContent hideDescription={false}>
+            <DialogTitle>Title</DialogTitle>
+            <DialogDescription>Visible description text</DialogDescription>
+          </DialogContent>
+        </Dialog>
+      );
+
+      await waitFor(() => {
+        const dialog = screen.getByRole('dialog');
+        expect(dialog).toBeInTheDocument();
+        // Should have the visible description
+        expect(screen.getByText('Visible description text')).toBeInTheDocument();
+      });
+    });
+  });
 });
 
 describe('ConfirmModal', () => {

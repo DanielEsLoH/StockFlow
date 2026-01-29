@@ -111,9 +111,9 @@ describe('SubscriptionGuard', () => {
       describe('plan hierarchy - exact match', () => {
         it('should allow FREE plan when FREE is required', async () => {
           const context = createMockContext(testUser);
-          reflector.get.mockReturnValue(SubscriptionPlan.FREE);
+          reflector.get.mockReturnValue(SubscriptionPlan.EMPRENDEDOR);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.FREE),
+            createMockTenant(SubscriptionPlan.EMPRENDEDOR),
           );
 
           const result = await guard.canActivate(context);
@@ -123,9 +123,9 @@ describe('SubscriptionGuard', () => {
 
         it('should allow BASIC plan when BASIC is required', async () => {
           const context = createMockContext(testUser);
-          reflector.get.mockReturnValue(SubscriptionPlan.BASIC);
+          reflector.get.mockReturnValue(SubscriptionPlan.PYME);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.BASIC),
+            createMockTenant(SubscriptionPlan.PYME),
           );
 
           const result = await guard.canActivate(context);
@@ -147,9 +147,9 @@ describe('SubscriptionGuard', () => {
 
         it('should allow ENTERPRISE plan when ENTERPRISE is required', async () => {
           const context = createMockContext(testUser);
-          reflector.get.mockReturnValue(SubscriptionPlan.ENTERPRISE);
+          reflector.get.mockReturnValue(SubscriptionPlan.PLUS);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.ENTERPRISE),
+            createMockTenant(SubscriptionPlan.PLUS),
           );
 
           const result = await guard.canActivate(context);
@@ -163,7 +163,7 @@ describe('SubscriptionGuard', () => {
           const context = createMockContext(testUser);
           reflector.get.mockReturnValue(SubscriptionPlan.PRO);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.ENTERPRISE),
+            createMockTenant(SubscriptionPlan.PLUS),
           );
 
           const result = await guard.canActivate(context);
@@ -173,7 +173,7 @@ describe('SubscriptionGuard', () => {
 
         it('should allow PRO to access BASIC features', async () => {
           const context = createMockContext(testUser);
-          reflector.get.mockReturnValue(SubscriptionPlan.BASIC);
+          reflector.get.mockReturnValue(SubscriptionPlan.PYME);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
             createMockTenant(SubscriptionPlan.PRO),
           );
@@ -185,9 +185,9 @@ describe('SubscriptionGuard', () => {
 
         it('should allow BASIC to access FREE features', async () => {
           const context = createMockContext(testUser);
-          reflector.get.mockReturnValue(SubscriptionPlan.FREE);
+          reflector.get.mockReturnValue(SubscriptionPlan.EMPRENDEDOR);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.BASIC),
+            createMockTenant(SubscriptionPlan.PYME),
           );
 
           const result = await guard.canActivate(context);
@@ -197,9 +197,9 @@ describe('SubscriptionGuard', () => {
 
         it('should allow ENTERPRISE to access FREE features', async () => {
           const context = createMockContext(testUser);
-          reflector.get.mockReturnValue(SubscriptionPlan.FREE);
+          reflector.get.mockReturnValue(SubscriptionPlan.EMPRENDEDOR);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.ENTERPRISE),
+            createMockTenant(SubscriptionPlan.PLUS),
           );
 
           const result = await guard.canActivate(context);
@@ -211,9 +211,9 @@ describe('SubscriptionGuard', () => {
       describe('plan hierarchy - lower plans cannot access higher requirements', () => {
         it('should deny FREE access to BASIC features', async () => {
           const context = createMockContext(testUser);
-          reflector.get.mockReturnValue(SubscriptionPlan.BASIC);
+          reflector.get.mockReturnValue(SubscriptionPlan.PYME);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.FREE),
+            createMockTenant(SubscriptionPlan.EMPRENDEDOR),
           );
 
           await expect(guard.canActivate(context)).rejects.toThrow(
@@ -225,7 +225,7 @@ describe('SubscriptionGuard', () => {
           const context = createMockContext(testUser);
           reflector.get.mockReturnValue(SubscriptionPlan.PRO);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.FREE),
+            createMockTenant(SubscriptionPlan.EMPRENDEDOR),
           );
 
           await expect(guard.canActivate(context)).rejects.toThrow(
@@ -235,9 +235,9 @@ describe('SubscriptionGuard', () => {
 
         it('should deny BASIC access to ENTERPRISE features', async () => {
           const context = createMockContext(testUser);
-          reflector.get.mockReturnValue(SubscriptionPlan.ENTERPRISE);
+          reflector.get.mockReturnValue(SubscriptionPlan.PLUS);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.BASIC),
+            createMockTenant(SubscriptionPlan.PYME),
           );
 
           await expect(guard.canActivate(context)).rejects.toThrow(
@@ -247,7 +247,7 @@ describe('SubscriptionGuard', () => {
 
         it('should deny PRO access to ENTERPRISE features', async () => {
           const context = createMockContext(testUser);
-          reflector.get.mockReturnValue(SubscriptionPlan.ENTERPRISE);
+          reflector.get.mockReturnValue(SubscriptionPlan.PLUS);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
             createMockTenant(SubscriptionPlan.PRO),
           );
@@ -263,23 +263,23 @@ describe('SubscriptionGuard', () => {
           const context = createMockContext(testUser);
           reflector.get.mockReturnValue(SubscriptionPlan.PRO);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.FREE),
+            createMockTenant(SubscriptionPlan.EMPRENDEDOR),
           );
 
           await expect(guard.canActivate(context)).rejects.toThrow(
-            'This feature requires a PRO plan or higher. Your current plan is FREE.',
+            'This feature requires a PRO plan or higher. Your current plan is EMPRENDEDOR.',
           );
         });
 
-        it('should throw ForbiddenException with correct message for ENTERPRISE requirement', async () => {
+        it('should throw ForbiddenException with correct message for PLUS requirement', async () => {
           const context = createMockContext(testUser);
-          reflector.get.mockReturnValue(SubscriptionPlan.ENTERPRISE);
+          reflector.get.mockReturnValue(SubscriptionPlan.PLUS);
           (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-            createMockTenant(SubscriptionPlan.BASIC),
+            createMockTenant(SubscriptionPlan.PYME),
           );
 
           await expect(guard.canActivate(context)).rejects.toThrow(
-            'This feature requires a ENTERPRISE plan or higher. Your current plan is BASIC.',
+            'This feature requires a PLUS plan or higher. Your current plan is PYME.',
           );
         });
       });
@@ -288,7 +288,7 @@ describe('SubscriptionGuard', () => {
     describe('error handling', () => {
       it('should return false when user is undefined', async () => {
         const context = createMockContext(undefined);
-        reflector.get.mockReturnValue(SubscriptionPlan.BASIC);
+        reflector.get.mockReturnValue(SubscriptionPlan.PYME);
 
         const result = await guard.canActivate(context);
 
@@ -297,7 +297,7 @@ describe('SubscriptionGuard', () => {
 
       it('should throw ForbiddenException when tenant is not found', async () => {
         const context = createMockContext(testUser);
-        reflector.get.mockReturnValue(SubscriptionPlan.BASIC);
+        reflector.get.mockReturnValue(SubscriptionPlan.PYME);
         (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
 
         await expect(guard.canActivate(context)).rejects.toThrow(
@@ -307,7 +307,7 @@ describe('SubscriptionGuard', () => {
 
       it('should throw ForbiddenException with "Tenant not found" message', async () => {
         const context = createMockContext(testUser);
-        reflector.get.mockReturnValue(SubscriptionPlan.BASIC);
+        reflector.get.mockReturnValue(SubscriptionPlan.PYME);
         (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
 
         await expect(guard.canActivate(context)).rejects.toThrow(
@@ -319,9 +319,9 @@ describe('SubscriptionGuard', () => {
     describe('database queries', () => {
       it('should query tenant with correct where clause', async () => {
         const context = createMockContext(testUser);
-        reflector.get.mockReturnValue(SubscriptionPlan.BASIC);
+        reflector.get.mockReturnValue(SubscriptionPlan.PYME);
         (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-          createMockTenant(SubscriptionPlan.BASIC),
+          createMockTenant(SubscriptionPlan.PYME),
         );
 
         await guard.canActivate(context);
@@ -334,13 +334,13 @@ describe('SubscriptionGuard', () => {
 
       it('should only select necessary fields from tenant', async () => {
         const context = createMockContext(testUser);
-        reflector.get.mockReturnValue(SubscriptionPlan.FREE);
+        reflector.get.mockReturnValue(SubscriptionPlan.EMPRENDEDOR);
         const findUniqueMock = prismaService.tenant
           .findUnique as jest.MockedFunction<
           typeof prismaService.tenant.findUnique
         >;
         findUniqueMock.mockResolvedValue(
-          createMockTenant(SubscriptionPlan.FREE) as Awaited<
+          createMockTenant(SubscriptionPlan.EMPRENDEDOR) as Awaited<
             ReturnType<typeof prismaService.tenant.findUnique>
           >,
         );
@@ -376,7 +376,7 @@ describe('SubscriptionGuard', () => {
       it('should log warning when called without authenticated user', async () => {
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
         const context = createMockContext(undefined);
-        reflector.get.mockReturnValue(SubscriptionPlan.BASIC);
+        reflector.get.mockReturnValue(SubscriptionPlan.PYME);
 
         await guard.canActivate(context);
 
@@ -388,7 +388,7 @@ describe('SubscriptionGuard', () => {
       it('should log error when tenant is not found', async () => {
         const errorSpy = jest.spyOn(Logger.prototype, 'error');
         const context = createMockContext(testUser);
-        reflector.get.mockReturnValue(SubscriptionPlan.BASIC);
+        reflector.get.mockReturnValue(SubscriptionPlan.PYME);
         (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(null);
 
         try {
@@ -407,7 +407,7 @@ describe('SubscriptionGuard', () => {
         const context = createMockContext(testUser);
         reflector.get.mockReturnValue(SubscriptionPlan.PRO);
         (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
-          createMockTenant(SubscriptionPlan.FREE),
+          createMockTenant(SubscriptionPlan.EMPRENDEDOR),
         );
 
         try {
@@ -417,14 +417,14 @@ describe('SubscriptionGuard', () => {
         }
 
         expect(debugSpy).toHaveBeenCalledWith(
-          'Access denied for tenant Test Tenant: has FREE (level 0), requires PRO (level 2)',
+          'Access denied for tenant Test Tenant: has EMPRENDEDOR (level 0), requires PRO (level 2)',
         );
       });
 
       it('should log debug message on access granted', async () => {
         const debugSpy = jest.spyOn(Logger.prototype, 'debug');
         const context = createMockContext(testUser);
-        reflector.get.mockReturnValue(SubscriptionPlan.BASIC);
+        reflector.get.mockReturnValue(SubscriptionPlan.PYME);
         (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
           createMockTenant(SubscriptionPlan.PRO),
         );
@@ -432,7 +432,7 @@ describe('SubscriptionGuard', () => {
         await guard.canActivate(context);
 
         expect(debugSpy).toHaveBeenCalledWith(
-          'Access granted for tenant Test Tenant: has PRO, requires BASIC',
+          'Access granted for tenant Test Tenant: has PRO, requires PYME',
         );
       });
     });

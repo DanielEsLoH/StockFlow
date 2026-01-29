@@ -86,7 +86,9 @@ export interface UserListItem {
 
 // Tenant types
 export type TenantStatus = 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
-export type SubscriptionPlan = 'FREE' | 'BASIC' | 'PRO' | 'ENTERPRISE';
+export type SubscriptionPlan = 'EMPRENDEDOR' | 'PYME' | 'PRO' | 'PLUS';
+export type SubscriptionPeriod = 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
+export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'SUSPENDED' | 'CANCELLED';
 
 export interface TenantListItem {
   id: string;
@@ -95,10 +97,36 @@ export interface TenantListItem {
   email: string;
   phone: string | null;
   status: TenantStatus;
-  plan: SubscriptionPlan;
+  plan: SubscriptionPlan | null;
   userCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TenantSubscription {
+  id: string;
+  tenantId: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  startDate: string;
+  endDate: string;
+  periodType: SubscriptionPeriod;
+  activatedById: string | null;
+  suspendedAt: string | null;
+  suspendedReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlanLimits {
+  plan: SubscriptionPlan;
+  maxUsers: number;
+  maxWarehouses: number;
+  maxProducts: number;
+  maxInvoices: number;
+  priceMonthly: number;
+  priceQuarterly: number;
+  priceAnnual: number;
 }
 
 // Paginated response
@@ -126,9 +154,10 @@ export interface TenantActionResult {
   success: boolean;
   message: string;
   tenantId: string;
-  action: 'change_plan';
+  action: 'activate_plan' | 'suspend_plan' | 'reactivate_plan' | 'change_plan';
   previousPlan?: string;
   newPlan?: string;
+  endDate?: string;
 }
 
 // Dashboard stats
@@ -365,6 +394,50 @@ export const systemAdminService = {
       `/system-admin/tenants/${tenantId}/plan`,
       { plan }
     );
+    return data;
+  },
+
+  // New subscription management endpoints
+  async activateTenantPlan(
+    tenantId: string,
+    plan: SubscriptionPlan,
+    period: SubscriptionPeriod
+  ): Promise<TenantActionResult> {
+    const { data } = await systemAdminApi.post<TenantActionResult>(
+      `/system-admin/tenants/${tenantId}/activate-plan`,
+      { plan, period }
+    );
+    return data;
+  },
+
+  async suspendTenantPlan(tenantId: string, reason: string): Promise<TenantActionResult> {
+    const { data } = await systemAdminApi.post<TenantActionResult>(
+      `/system-admin/tenants/${tenantId}/suspend-plan`,
+      { reason }
+    );
+    return data;
+  },
+
+  async reactivateTenantPlan(tenantId: string): Promise<TenantActionResult> {
+    const { data } = await systemAdminApi.post<TenantActionResult>(
+      `/system-admin/tenants/${tenantId}/reactivate-plan`
+    );
+    return data;
+  },
+
+  async getTenantSubscription(tenantId: string): Promise<TenantSubscription | null> {
+    try {
+      const { data } = await systemAdminApi.get<TenantSubscription>(
+        `/system-admin/tenants/${tenantId}/subscription`
+      );
+      return data;
+    } catch {
+      return null;
+    }
+  },
+
+  async getAllPlanLimits(): Promise<PlanLimits[]> {
+    const { data } = await systemAdminApi.get<PlanLimits[]>('/system-admin/plans');
     return data;
   },
 };

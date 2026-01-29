@@ -641,4 +641,435 @@ describe('NotificationsController', () => {
       expect(Array.isArray(result.scheduledJobs)).toBe(true);
     });
   });
+
+  // ============================================================================
+  // IN-APP NOTIFICATION ENDPOINT TESTS
+  // ============================================================================
+
+  describe('In-App Notification Endpoints', () => {
+    const mockNotification = {
+      id: 'notif-123',
+      tenantId: mockTenantId,
+      userId: 'user-123',
+      type: 'SYSTEM' as const,
+      priority: 'MEDIUM' as const,
+      title: 'Test Notification',
+      message: 'This is a test notification',
+      read: false,
+      readAt: null,
+      link: null,
+      metadata: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockPaginatedResponse = {
+      data: [mockNotification],
+      meta: {
+        total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        unreadCount: 1,
+      },
+    };
+
+    const mockUnreadCountResponse = {
+      count: 5,
+      byType: { SYSTEM: 2, LOW_STOCK: 3 },
+      byPriority: { HIGH: 1, MEDIUM: 2, LOW: 2 },
+    };
+
+    const mockBulkOperationResult = {
+      count: 3,
+      message: 'Operation completed successfully',
+    };
+
+    describe('findAll', () => {
+      it('should return paginated notifications', async () => {
+        inAppNotificationsService.findAll.mockResolvedValue(mockPaginatedResponse);
+
+        const filters = { page: 1, limit: 10 };
+        const result = await controller.findAll(filters);
+
+        expect(result).toEqual(mockPaginatedResponse);
+        expect(inAppNotificationsService.findAll).toHaveBeenCalledWith(filters);
+      });
+
+      it('should pass filters to service', async () => {
+        inAppNotificationsService.findAll.mockResolvedValue(mockPaginatedResponse);
+
+        const filters = { page: 2, limit: 20, type: 'SYSTEM' as const, isRead: false };
+        await controller.findAll(filters);
+
+        expect(inAppNotificationsService.findAll).toHaveBeenCalledWith(filters);
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.findAll.mockResolvedValue(mockPaginatedResponse);
+
+        await controller.findAll({ page: 1, limit: 10 });
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Listing notifications'),
+        );
+      });
+
+      it('should use default pagination values in log', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.findAll.mockResolvedValue(mockPaginatedResponse);
+
+        await controller.findAll({});
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('page: 1'),
+        );
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('limit: 10'),
+        );
+      });
+    });
+
+    describe('findRecent', () => {
+      it('should return recent notifications with default limit', async () => {
+        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+
+        const result = await controller.findRecent();
+
+        expect(result).toEqual([mockNotification]);
+        expect(inAppNotificationsService.findRecent).toHaveBeenCalledWith(5);
+      });
+
+      it('should parse limit parameter', async () => {
+        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+
+        await controller.findRecent('10');
+
+        expect(inAppNotificationsService.findRecent).toHaveBeenCalledWith(10);
+      });
+
+      it('should cap limit at 20', async () => {
+        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+
+        await controller.findRecent('50');
+
+        expect(inAppNotificationsService.findRecent).toHaveBeenCalledWith(20);
+      });
+
+      it('should use default of 5 when limit is 0 (falsy)', async () => {
+        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+
+        // When limit is '0', parseInt returns 0 which is falsy, so || 5 kicks in
+        await controller.findRecent('0');
+
+        expect(inAppNotificationsService.findRecent).toHaveBeenCalledWith(5);
+      });
+
+      it('should enforce minimum of 1 with Math.max', async () => {
+        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+
+        // Negative values would get clamped to 1 by Math.max, but || 5 catches them first
+        await controller.findRecent('-5');
+
+        // -5 parses to -5, || 5 doesn't apply since -5 is truthy
+        // Math.max(1, -5) = 1, Math.min(20, 1) = 1
+        expect(inAppNotificationsService.findRecent).toHaveBeenCalledWith(1);
+      });
+
+      it('should handle invalid limit values', async () => {
+        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+
+        await controller.findRecent('invalid');
+
+        expect(inAppNotificationsService.findRecent).toHaveBeenCalledWith(5);
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+
+        await controller.findRecent('10');
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Getting 10 recent notifications'),
+        );
+      });
+    });
+
+    describe('getUnreadCount', () => {
+      it('should return unread count', async () => {
+        inAppNotificationsService.getUnreadCount.mockResolvedValue(mockUnreadCountResponse);
+
+        const result = await controller.getUnreadCount();
+
+        expect(result).toEqual(mockUnreadCountResponse);
+        expect(inAppNotificationsService.getUnreadCount).toHaveBeenCalled();
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.getUnreadCount.mockResolvedValue(mockUnreadCountResponse);
+
+        await controller.getUnreadCount();
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Getting unread notification count'),
+        );
+      });
+    });
+
+    describe('findOne', () => {
+      it('should return notification by id', async () => {
+        inAppNotificationsService.findOne.mockResolvedValue(mockNotification);
+
+        const result = await controller.findOne('notif-123');
+
+        expect(result).toEqual(mockNotification);
+        expect(inAppNotificationsService.findOne).toHaveBeenCalledWith('notif-123');
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.findOne.mockResolvedValue(mockNotification);
+
+        await controller.findOne('notif-123');
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Getting notification: notif-123'),
+        );
+      });
+
+      it('should propagate service errors', async () => {
+        const error = new Error('Notification not found');
+        inAppNotificationsService.findOne.mockRejectedValue(error);
+
+        await expect(controller.findOne('invalid-id')).rejects.toThrow(error);
+      });
+    });
+
+    describe('create', () => {
+      const createDto = {
+        type: 'SYSTEM' as const,
+        priority: 'MEDIUM' as const,
+        title: 'New Notification',
+        message: 'This is a new notification',
+      };
+
+      it('should create notification', async () => {
+        inAppNotificationsService.create.mockResolvedValue(mockNotification);
+
+        const result = await controller.create(createDto);
+
+        expect(result).toEqual(mockNotification);
+        expect(inAppNotificationsService.create).toHaveBeenCalledWith(createDto);
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.create.mockResolvedValue(mockNotification);
+
+        await controller.create(createDto);
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Creating notification: New Notification'),
+        );
+      });
+
+      it('should propagate service errors', async () => {
+        const error = new Error('Validation failed');
+        inAppNotificationsService.create.mockRejectedValue(error);
+
+        await expect(controller.create(createDto)).rejects.toThrow(error);
+      });
+    });
+
+    describe('markManyAsRead', () => {
+      const bulkDto = { ids: ['notif-1', 'notif-2', 'notif-3'] };
+
+      it('should mark multiple notifications as read', async () => {
+        inAppNotificationsService.markManyAsRead.mockResolvedValue(mockBulkOperationResult);
+
+        const result = await controller.markManyAsRead(bulkDto);
+
+        expect(result).toEqual(mockBulkOperationResult);
+        expect(inAppNotificationsService.markManyAsRead).toHaveBeenCalledWith(bulkDto);
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.markManyAsRead.mockResolvedValue(mockBulkOperationResult);
+
+        await controller.markManyAsRead(bulkDto);
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Marking 3 notifications as read'),
+        );
+      });
+    });
+
+    describe('markAllAsRead', () => {
+      it('should mark all notifications as read', async () => {
+        inAppNotificationsService.markAllAsRead.mockResolvedValue(mockBulkOperationResult);
+
+        const result = await controller.markAllAsRead();
+
+        expect(result).toEqual(mockBulkOperationResult);
+        expect(inAppNotificationsService.markAllAsRead).toHaveBeenCalled();
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.markAllAsRead.mockResolvedValue(mockBulkOperationResult);
+
+        await controller.markAllAsRead();
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Marking all notifications as read'),
+        );
+      });
+    });
+
+    describe('markAsRead', () => {
+      it('should mark single notification as read', async () => {
+        const readNotification = { ...mockNotification, read: true, readAt: new Date() };
+        inAppNotificationsService.markAsRead.mockResolvedValue(readNotification);
+
+        const result = await controller.markAsRead('notif-123');
+
+        expect(result).toEqual(readNotification);
+        expect(inAppNotificationsService.markAsRead).toHaveBeenCalledWith('notif-123');
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.markAsRead.mockResolvedValue(mockNotification);
+
+        await controller.markAsRead('notif-123');
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Marking notification notif-123 as read'),
+        );
+      });
+
+      it('should propagate service errors', async () => {
+        const error = new Error('Notification not found');
+        inAppNotificationsService.markAsRead.mockRejectedValue(error);
+
+        await expect(controller.markAsRead('invalid-id')).rejects.toThrow(error);
+      });
+    });
+
+    describe('markAsUnread', () => {
+      it('should mark single notification as unread', async () => {
+        const unreadNotification = { ...mockNotification, read: false, readAt: null };
+        inAppNotificationsService.markAsUnread.mockResolvedValue(unreadNotification);
+
+        const result = await controller.markAsUnread('notif-123');
+
+        expect(result).toEqual(unreadNotification);
+        expect(inAppNotificationsService.markAsUnread).toHaveBeenCalledWith('notif-123');
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.markAsUnread.mockResolvedValue(mockNotification);
+
+        await controller.markAsUnread('notif-123');
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Marking notification notif-123 as unread'),
+        );
+      });
+
+      it('should propagate service errors', async () => {
+        const error = new Error('Notification not found');
+        inAppNotificationsService.markAsUnread.mockRejectedValue(error);
+
+        await expect(controller.markAsUnread('invalid-id')).rejects.toThrow(error);
+      });
+    });
+
+    describe('clearRead', () => {
+      it('should clear read notifications', async () => {
+        inAppNotificationsService.clearRead.mockResolvedValue(mockBulkOperationResult);
+
+        const result = await controller.clearRead();
+
+        expect(result).toEqual(mockBulkOperationResult);
+        expect(inAppNotificationsService.clearRead).toHaveBeenCalled();
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.clearRead.mockResolvedValue(mockBulkOperationResult);
+
+        await controller.clearRead();
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Clearing read notifications'),
+        );
+      });
+    });
+
+    describe('deleteMany', () => {
+      const bulkDto = { ids: ['notif-1', 'notif-2', 'notif-3'] };
+
+      it('should delete multiple notifications', async () => {
+        inAppNotificationsService.deleteMany.mockResolvedValue(mockBulkOperationResult);
+
+        const result = await controller.deleteMany(bulkDto);
+
+        expect(result).toEqual(mockBulkOperationResult);
+        expect(inAppNotificationsService.deleteMany).toHaveBeenCalledWith(bulkDto);
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.deleteMany.mockResolvedValue(mockBulkOperationResult);
+
+        await controller.deleteMany(bulkDto);
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Deleting 3 notifications'),
+        );
+      });
+    });
+
+    describe('delete', () => {
+      it('should delete single notification', async () => {
+        inAppNotificationsService.delete.mockResolvedValue(undefined);
+
+        await controller.delete('notif-123');
+
+        expect(inAppNotificationsService.delete).toHaveBeenCalledWith('notif-123');
+      });
+
+      it('should log the operation', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        inAppNotificationsService.delete.mockResolvedValue(undefined);
+
+        await controller.delete('notif-123');
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Deleting notification: notif-123'),
+        );
+      });
+
+      it('should propagate service errors', async () => {
+        const error = new Error('Notification not found');
+        inAppNotificationsService.delete.mockRejectedValue(error);
+
+        await expect(controller.delete('invalid-id')).rejects.toThrow(error);
+      });
+
+      it('should return void', async () => {
+        inAppNotificationsService.delete.mockResolvedValue(undefined);
+
+        const result = await controller.delete('notif-123');
+
+        expect(result).toBeUndefined();
+      });
+    });
+  });
 });

@@ -173,7 +173,7 @@ export class AuthService {
    * Validates user status and throws appropriate error if not allowed
    *
    * @param user - The user to validate
-   * @throws ForbiddenException if user is SUSPENDED or INACTIVE
+   * @throws ForbiddenException if user is SUSPENDED, INACTIVE, or PENDING
    */
   private validateUserStatus(user: User): void {
     if (user.status === UserStatus.SUSPENDED) {
@@ -189,7 +189,25 @@ export class AuthService {
         'Your account is inactive. Please contact your administrator.',
       );
     }
-    // PENDING status is allowed for login - user can access limited features
+
+    // PENDING status - check email verification first
+    if (user.status === UserStatus.PENDING) {
+      if (!user.emailVerified) {
+        this.logger.warn(
+          `Access denied - email not verified: ${user.email}`,
+        );
+        throw new ForbiddenException(
+          'Por favor verifica tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.',
+        );
+      }
+      // Email verified but not approved by admin
+      this.logger.warn(
+        `Access denied - pending admin approval: ${user.email}`,
+      );
+      throw new ForbiddenException(
+        'Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos por correo cuando sea aprobada.',
+      );
+    }
   }
 
   /**
@@ -408,8 +426,8 @@ export class AuthService {
   }
 
   /**
-   * Sends registration notification emails: verification email to user and notification to admin
-   * Uses Promise.allSettled to ensure both emails are attempted independently
+   * Sends registration notification emails: only verification email to user
+   * Admin notification is NOT sent here - it's sent only when user verifies their email
    * Logs errors but does not throw - registration should succeed even if emails fail
    *
    * @param user - The newly registered user
@@ -421,55 +439,43 @@ export class AuthService {
     tenant: { name: string },
     verificationToken: string,
   ): Promise<void> {
-    const userName = `${user.firstName} ${user.lastName}`;
-    const registrationDate = new Date();
+    // Note: tenant parameter kept for backwards compatibility but not used
+    void tenant;
+
     const frontendUrl =
       this.configService.get<string>('app.frontendUrl') ||
       'http://localhost:5173';
     const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
-    const emailPromises = [
-      // Admin notification email
-      this.brevoService.sendAdminNewRegistrationNotification({
-        userEmail: user.email,
-        userName,
-        tenantName: tenant.name,
-        registrationDate,
-      }),
-      // User verification email (NOT confirmation - they need to verify first)
-      this.brevoService.sendVerificationEmail({
+    try {
+      // Only send verification email to user
+      // Admin notification will be sent when user verifies their email
+      const result = await this.brevoService.sendVerificationEmail({
         to: user.email,
         firstName: user.firstName,
         verificationUrl,
-      }),
-    ];
+      });
 
-    const results = await Promise.allSettled(emailPromises);
-
-    // Log results for monitoring
-    results.forEach((result, index) => {
-      const emailType = index === 0 ? 'admin notification' : 'verification';
-      if (result.status === 'fulfilled') {
-        if (result.value.success) {
-          this.logger.log(
-            `Registration ${emailType} email sent successfully for user: ${user.email}`,
-          );
-        } else {
-          this.logger.warn(
-            `Registration ${emailType} email failed for user: ${user.email} - ${result.value.error}`,
-          );
-        }
+      if (result.success) {
+        this.logger.log(
+          `Verification email sent successfully for user: ${user.email}`,
+        );
       } else {
-        this.logger.error(
-          `Registration ${emailType} email threw error for user: ${user.email}`,
-          result.reason instanceof Error ? result.reason.stack : undefined,
+        this.logger.warn(
+          `Verification email failed for user: ${user.email} - ${result.error}`,
         );
       }
-    });
+    } catch (error) {
+      this.logger.error(
+        `Verification email threw error for user: ${user.email}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   /**
    * Verifies a user's email address using the verification token
+   * After verification, notifies the admin that the user is ready for approval
    *
    * @param token - The verification token sent to the user's email
    * @returns Success message
@@ -481,9 +487,10 @@ export class AuthService {
       `Verifying email with token: ${token.substring(0, 8)}...`,
     );
 
-    // Find user by verification token
+    // Find user by verification token with tenant info
     const user = await this.prisma.user.findUnique({
       where: { verificationToken: token },
+      include: { tenant: true },
     });
 
     if (!user) {
@@ -510,7 +517,7 @@ export class AuthService {
     if (user.emailVerified) {
       this.logger.debug(`Email already verified for user: ${user.email}`);
       return {
-        message: 'Your email has already been verified.',
+        message: 'Tu correo ya ha sido verificado.',
       };
     }
 
@@ -526,10 +533,53 @@ export class AuthService {
 
     this.logger.log(`Email verified successfully for user: ${user.email}`);
 
+    // Send admin notification that user is ready for approval (only now, not at registration)
+    this.sendAdminUserVerifiedNotification(user).catch((error) => {
+      this.logger.error(
+        'Failed to send admin user verified notification',
+        error instanceof Error ? error.stack : undefined,
+      );
+    });
+
     return {
       message:
-        'Email verified successfully. Your account is now pending approval by an administrator.',
+        'Correo verificado exitosamente. Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos por correo cuando sea aprobada.',
     };
+  }
+
+  /**
+   * Sends notification to admin that a user has verified their email and is ready for approval
+   *
+   * @param user - The user who verified their email
+   */
+  private async sendAdminUserVerifiedNotification(
+    user: User & { tenant: Tenant },
+  ): Promise<void> {
+    const userName = `${user.firstName} ${user.lastName}`;
+
+    try {
+      const result = await this.brevoService.sendAdminUserVerifiedEmail({
+        userEmail: user.email,
+        userName,
+        tenantName: user.tenant.name,
+        verificationDate: new Date(),
+      });
+
+      if (result.success) {
+        this.logger.log(
+          `Admin notification sent for verified user: ${user.email}`,
+        );
+      } else {
+        this.logger.warn(
+          `Admin notification failed for verified user: ${user.email} - ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Admin notification error for verified user: ${user.email}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   /**
@@ -859,7 +909,7 @@ export class AuthService {
       id: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
-      plan: tenant.plan,
+      plan: tenant.plan ?? 'TRIAL', // Return 'TRIAL' if no plan is set
       status: tenant.status,
     };
   }

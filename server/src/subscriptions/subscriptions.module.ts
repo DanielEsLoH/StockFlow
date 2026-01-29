@@ -1,15 +1,22 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SubscriptionsController } from './subscriptions.controller';
 import { WebhooksController } from './webhooks.controller';
 import { SubscriptionsService } from './subscriptions.service';
+import { SubscriptionManagementService } from './subscription-management.service';
+import { SubscriptionExpiryService } from './subscription-expiry.service';
 import { PrismaModule } from '../prisma';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 /**
- * SubscriptionsModule provides Stripe subscription management capabilities.
+ * SubscriptionsModule provides subscription management capabilities.
  *
  * Features:
- * - Checkout session creation for plan upgrades
+ * - Plan activation and management (EMPRENDEDOR, PYME, PRO, PLUS)
+ * - Subscription periods (MONTHLY, QUARTERLY, ANNUAL)
+ * - Subscription expiry handling via cron jobs
+ * - Checkout session creation for plan upgrades (Stripe)
  * - Customer portal for subscription management
  * - Webhook handling for Stripe events
  * - Plan limit enforcement
@@ -32,9 +39,13 @@ import { PrismaModule } from '../prisma';
  * ```
  */
 @Module({
-  imports: [ConfigModule, PrismaModule],
+  imports: [ConfigModule, PrismaModule, NotificationsModule, ScheduleModule.forRoot()],
   controllers: [SubscriptionsController, WebhooksController],
-  providers: [SubscriptionsService],
-  exports: [SubscriptionsService],
+  providers: [
+    SubscriptionsService,
+    SubscriptionManagementService,
+    SubscriptionExpiryService,
+  ],
+  exports: [SubscriptionsService, SubscriptionManagementService],
 })
 export class SubscriptionsModule {}

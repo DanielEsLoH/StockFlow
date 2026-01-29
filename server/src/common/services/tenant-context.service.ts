@@ -380,9 +380,9 @@ export class TenantContextService {
   /**
    * Gets the tenant's current subscription plan.
    *
-   * @returns The subscription plan name
+   * @returns The subscription plan name or null if no plan is active
    */
-  async getPlan(): Promise<string> {
+  async getPlan(): Promise<string | null> {
     const tenant = await this.getTenant();
     return tenant.plan;
   }

@@ -25,7 +25,7 @@ describe('LimitCheckInterceptor', () => {
     email: 'test@example.com',
     phone: '+1234567890',
     status: 'ACTIVE',
-    plan: 'BASIC',
+    plan: 'PYME',
     stripeCustomerId: null,
     stripeSubscriptionId: null,
     maxUsers: 5,
@@ -38,7 +38,7 @@ describe('LimitCheckInterceptor', () => {
 
   const mockUnlimitedTenant = {
     ...mockTenant,
-    plan: 'ENTERPRISE',
+    plan: 'PLUS',
     maxUsers: -1,
     maxProducts: -1,
     maxInvoices: -1,

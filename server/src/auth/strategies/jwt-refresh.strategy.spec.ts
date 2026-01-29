@@ -26,7 +26,7 @@ describe('JwtRefreshStrategy', () => {
     email: 'tenant@example.com',
     phone: null,
     status: TenantStatus.ACTIVE,
-    plan: SubscriptionPlan.FREE,
+    plan: SubscriptionPlan.EMPRENDEDOR,
     stripeCustomerId: null,
     stripeSubscriptionId: null,
     maxUsers: 5,
@@ -362,10 +362,11 @@ describe('JwtRefreshStrategy', () => {
         expect(result.userId).toBe(mockUser.id);
       });
 
-      it('should allow PENDING user status', async () => {
+      it('should throw UnauthorizedException for PENDING user without email verification', async () => {
         const pendingUser = {
           ...mockUserWithTenant,
           status: UserStatus.PENDING,
+          emailVerified: false,
         };
         (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
           pendingUser,
@@ -373,12 +374,30 @@ describe('JwtRefreshStrategy', () => {
 
         const mockRequest = createMockRequest(validRefreshToken);
 
-        const result = await strategy.validate(
-          mockRequest as Request,
-          validRefreshPayload,
+        await expect(
+          strategy.validate(mockRequest as Request, validRefreshPayload),
+        ).rejects.toThrow(
+          'Por favor verifica tu correo electrónico antes de acceder a la aplicación.',
+        );
+      });
+
+      it('should throw UnauthorizedException for PENDING user with email verified but not approved', async () => {
+        const pendingUser = {
+          ...mockUserWithTenant,
+          status: UserStatus.PENDING,
+          emailVerified: true,
+        };
+        (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+          pendingUser,
         );
 
-        expect(result.userId).toBe(mockUser.id);
+        const mockRequest = createMockRequest(validRefreshToken);
+
+        await expect(
+          strategy.validate(mockRequest as Request, validRefreshPayload),
+        ).rejects.toThrow(
+          'Tu cuenta está pendiente de aprobación. Por favor espera la confirmación del administrador.',
+        );
       });
 
       it('should throw UnauthorizedException for SUSPENDED user', async () => {
@@ -410,7 +429,7 @@ describe('JwtRefreshStrategy', () => {
 
         await expect(
           strategy.validate(mockRequest as Request, validRefreshPayload),
-        ).rejects.toThrow('User account is not active');
+        ).rejects.toThrow('Tu cuenta no está activa.');
       });
 
       it('should throw UnauthorizedException for INACTIVE user', async () => {
@@ -442,7 +461,7 @@ describe('JwtRefreshStrategy', () => {
 
         await expect(
           strategy.validate(mockRequest as Request, validRefreshPayload),
-        ).rejects.toThrow('User account is not active');
+        ).rejects.toThrow('Tu cuenta no está activa.');
       });
     });
 

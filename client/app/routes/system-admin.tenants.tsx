@@ -10,14 +10,20 @@ import {
   Users,
   AlertCircle,
   X,
-  ArrowUpRight,
+  Calendar,
+  Ban,
+  Play,
 } from "lucide-react";
-import { useSystemAdminTenants } from "~/hooks/useSystemAdmin";
+import {
+  useSystemAdminTenants,
+  useSystemAdminPlanLimits,
+} from "~/hooks/useSystemAdmin";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/Input";
 import type {
   TenantStatus,
   SubscriptionPlan,
+  SubscriptionPeriod,
 } from "~/services/system-admin.service";
 
 export function meta() {
@@ -66,40 +72,57 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// Plan badge component
-function PlanBadge({ plan }: { plan: string }) {
-  const planConfig: Record<string, { bg: string; text: string }> = {
-    FREE: {
-      bg: "bg-neutral-100 dark:bg-neutral-800",
-      text: "text-neutral-700 dark:text-neutral-400",
-    },
-    BASIC: {
-      bg: "bg-blue-100 dark:bg-blue-900/20",
-      text: "text-blue-700 dark:text-blue-400",
-    },
-    PRO: {
-      bg: "bg-purple-100 dark:bg-purple-900/20",
-      text: "text-purple-700 dark:text-purple-400",
-    },
-    ENTERPRISE: {
-      bg: "bg-amber-100 dark:bg-amber-900/20",
-      text: "text-amber-700 dark:text-amber-400",
-    },
-  };
+// Plan badge component - updated with new plans
+function PlanBadge({ plan }: { plan: string | null }) {
+  if (!plan) {
+    return (
+      <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
+        Sin plan
+      </span>
+    );
+  }
 
-  const config = planConfig[plan] || planConfig.FREE;
+  const planConfig: Record<string, { bg: string; text: string; label: string }> =
+    {
+      EMPRENDEDOR: {
+        bg: "bg-slate-100 dark:bg-slate-900/20",
+        text: "text-slate-700 dark:text-slate-400",
+        label: "Emprendedor",
+      },
+      PYME: {
+        bg: "bg-blue-100 dark:bg-blue-900/20",
+        text: "text-blue-700 dark:text-blue-400",
+        label: "PYME",
+      },
+      PRO: {
+        bg: "bg-purple-100 dark:bg-purple-900/20",
+        text: "text-purple-700 dark:text-purple-400",
+        label: "PRO",
+      },
+      PLUS: {
+        bg: "bg-amber-100 dark:bg-amber-900/20",
+        text: "text-amber-700 dark:text-amber-400",
+        label: "PLUS",
+      },
+    };
+
+  const config = planConfig[plan] || {
+    bg: "bg-neutral-100 dark:bg-neutral-800",
+    text: "text-neutral-700 dark:text-neutral-400",
+    label: plan,
+  };
 
   return (
     <span
       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}
     >
-      {plan}
+      {config.label}
     </span>
   );
 }
 
-// Change plan dialog
-function ChangePlanDialog({
+// Activate plan dialog
+function ActivatePlanDialog({
   isOpen,
   tenantName,
   currentPlan,
@@ -109,14 +132,18 @@ function ChangePlanDialog({
 }: {
   isOpen: boolean;
   tenantName: string;
-  currentPlan: string;
-  onConfirm: (plan: SubscriptionPlan) => void;
+  currentPlan: string | null;
+  onConfirm: (plan: SubscriptionPlan, period: SubscriptionPeriod) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }) {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(
-    null,
+    null
   );
+  const [selectedPeriod, setSelectedPeriod] =
+    useState<SubscriptionPeriod>("MONTHLY");
+
+  const { data: planLimits } = useSystemAdminPlanLimits();
 
   if (!isOpen) return null;
 
@@ -124,33 +151,64 @@ function ChangePlanDialog({
     value: SubscriptionPlan;
     name: string;
     description: string;
-    price: string;
+    priceMonthly: string;
+    priceQuarterly: string;
+    priceAnnual: string;
   }[] = [
     {
-      value: "FREE",
-      name: "Free",
-      description: "2 usuarios, 50 productos",
-      price: "Gratis",
+      value: "EMPRENDEDOR",
+      name: "Emprendedor",
+      description: "1 usuario, 1 bodega, 100 productos",
+      priceMonthly: "$69,900/mes",
+      priceQuarterly: "$188,730/trim",
+      priceAnnual: "$699,000/ano",
     },
     {
-      value: "BASIC",
-      name: "Basic",
-      description: "5 usuarios, 500 productos",
-      price: "$29/mes",
+      value: "PYME",
+      name: "PYME",
+      description: "2 usuarios, 2 bodegas, 500 productos",
+      priceMonthly: "$149,900/mes",
+      priceQuarterly: "$404,730/trim",
+      priceAnnual: "$1,498,800/ano",
     },
     {
       value: "PRO",
-      name: "Pro",
-      description: "20 usuarios, 5000 productos",
-      price: "$79/mes",
+      name: "PRO",
+      description: "3 usuarios, 10 bodegas, 2000 productos",
+      priceMonthly: "$219,900/mes",
+      priceQuarterly: "$593,730/trim",
+      priceAnnual: "$2,198,800/ano",
     },
     {
-      value: "ENTERPRISE",
-      name: "Enterprise",
-      description: "Usuarios ilimitados",
-      price: "$199/mes",
+      value: "PLUS",
+      name: "PLUS",
+      description: "8 usuarios, 100 bodegas, productos ilimitados",
+      priceMonthly: "$279,900/mes",
+      priceQuarterly: "$755,730/trim",
+      priceAnnual: "$2,798,800/ano",
     },
   ];
+
+  const periods: { value: SubscriptionPeriod; label: string; days: number }[] =
+    [
+      { value: "MONTHLY", label: "Mensual (30 dias)", days: 30 },
+      { value: "QUARTERLY", label: "Trimestral (90 dias)", days: 90 },
+      { value: "ANNUAL", label: "Anual (365 dias)", days: 365 },
+    ];
+
+  const getPrice = (
+    plan: (typeof plans)[0],
+    period: SubscriptionPeriod
+  ): string => {
+    switch (period) {
+      case "MONTHLY":
+        return plan.priceMonthly;
+      case "QUARTERLY":
+        return plan.priceQuarterly;
+      case "ANNUAL":
+        return plan.priceAnnual;
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -158,7 +216,7 @@ function ChangePlanDialog({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative z-10 w-full max-w-lg rounded-xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+        className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
       >
         <button
           onClick={onCancel}
@@ -167,13 +225,43 @@ function ChangePlanDialog({
           <X className="h-5 w-5" />
         </button>
         <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-          Cambiar Plan - {tenantName}
+          Activar Plan - {tenantName}
         </h3>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Plan actual: <PlanBadge plan={currentPlan} />
-        </p>
+        {currentPlan && (
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            Plan actual: <PlanBadge plan={currentPlan} />
+          </p>
+        )}
 
+        {/* Period Selection */}
+        <div className="mt-6">
+          <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+            Periodo de suscripcion
+          </h4>
+          <div className="grid grid-cols-3 gap-3">
+            {periods.map((period) => (
+              <button
+                key={period.value}
+                onClick={() => setSelectedPeriod(period.value)}
+                className={`rounded-lg border p-3 text-center transition-colors ${
+                  selectedPeriod === period.value
+                    ? "border-primary-500 bg-primary-50 dark:bg-primary-900/10"
+                    : "border-neutral-200 hover:border-neutral-300 dark:border-neutral-700 dark:hover:border-neutral-600"
+                }`}
+              >
+                <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                  {period.label}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Plan Selection */}
         <div className="mt-6 space-y-3">
+          <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Selecciona un plan
+          </h4>
           {plans.map((plan) => (
             <button
               key={plan.value}
@@ -183,7 +271,7 @@ function ChangePlanDialog({
                 plan.value === currentPlan
                   ? "cursor-not-allowed border-neutral-200 bg-neutral-50 opacity-50 dark:border-neutral-700 dark:bg-neutral-800"
                   : selectedPlan === plan.value
-                    ? "border-amber-500 bg-amber-50 dark:bg-amber-900/10"
+                    ? "border-primary-500 bg-primary-50 dark:bg-primary-900/10"
                     : "border-neutral-200 hover:border-neutral-300 dark:border-neutral-700 dark:hover:border-neutral-600"
               }`}
             >
@@ -198,7 +286,7 @@ function ChangePlanDialog({
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-neutral-900 dark:text-white">
-                    {plan.price}
+                    {getPrice(plan, selectedPeriod)}
                   </p>
                   {plan.value === currentPlan && (
                     <span className="text-xs text-neutral-500">Actual</span>
@@ -214,12 +302,87 @@ function ChangePlanDialog({
             Cancelar
           </Button>
           <Button
-            className="bg-amber-600 hover:bg-amber-700"
-            onClick={() => selectedPlan && onConfirm(selectedPlan)}
+            className="bg-primary-600 hover:bg-primary-700"
+            onClick={() =>
+              selectedPlan && onConfirm(selectedPlan, selectedPeriod)
+            }
             disabled={isLoading || !selectedPlan}
             isLoading={isLoading}
           >
-            Cambiar Plan
+            <Calendar className="h-4 w-4 mr-2" />
+            Activar Plan
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// Suspend plan dialog
+function SuspendPlanDialog({
+  isOpen,
+  tenantName,
+  onConfirm,
+  onCancel,
+  isLoading,
+}: {
+  isOpen: boolean;
+  tenantName: string;
+  onConfirm: (reason: string) => void;
+  onCancel: () => void;
+  isLoading?: boolean;
+}) {
+  const [reason, setReason] = useState("");
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50" onClick={onCancel} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative z-10 w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <button
+          onClick={onCancel}
+          className="absolute right-4 top-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+          Suspender Plan - {tenantName}
+        </h3>
+        <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+          Esta accion suspende inmediatamente el plan del tenant. El tenant no
+          podra acceder a la plataforma hasta que se reactive.
+        </p>
+
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            Razon de la suspension *
+          </label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Ej: Violacion de terminos de servicio..."
+            className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+            rows={3}
+          />
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <Button variant="secondary" onClick={onCancel} disabled={isLoading}>
+            Cancelar
+          </Button>
+          <Button
+            className="bg-red-600 hover:bg-red-700"
+            onClick={() => onConfirm(reason)}
+            disabled={isLoading || !reason.trim()}
+            isLoading={isLoading}
+          >
+            <Ban className="h-4 w-4 mr-2" />
+            Suspender
           </Button>
         </div>
       </motion.div>
@@ -230,12 +393,16 @@ function ChangePlanDialog({
 export default function SystemAdminTenantsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(
-    searchParams.get("search") || "",
+    searchParams.get("search") || ""
   );
-  const [changePlanDialog, setChangePlanDialog] = useState<{
+  const [activatePlanDialog, setActivatePlanDialog] = useState<{
     tenantId: string;
     tenantName: string;
-    currentPlan: string;
+    currentPlan: string | null;
+  } | null>(null);
+  const [suspendPlanDialog, setSuspendPlanDialog] = useState<{
+    tenantId: string;
+    tenantName: string;
   } | null>(null);
 
   // Get query params
@@ -244,8 +411,18 @@ export default function SystemAdminTenantsPage() {
   const plan = searchParams.get("plan") as SubscriptionPlan | undefined;
   const search = searchParams.get("search") || undefined;
 
-  const { tenants, meta, isLoading, error, changePlan, isChangingPlan } =
-    useSystemAdminTenants({ page, status, plan, search, limit: 20 });
+  const {
+    tenants,
+    meta,
+    isLoading,
+    error,
+    activatePlan,
+    isActivatingPlan,
+    suspendPlan,
+    isSuspendingPlan,
+    reactivatePlan,
+    isReactivatingPlan,
+  } = useSystemAdminTenants({ page, status, plan, search, limit: 20 });
 
   // Update search params
   const updateParams = (updates: Record<string, string | undefined>) => {
@@ -270,12 +447,32 @@ export default function SystemAdminTenantsPage() {
     updateParams({ search: searchInput || undefined });
   };
 
-  // Handle change plan
-  const handleChangePlan = (newPlan: SubscriptionPlan) => {
-    if (changePlanDialog) {
-      changePlan({ tenantId: changePlanDialog.tenantId, plan: newPlan });
-      setChangePlanDialog(null);
+  // Handle activate plan
+  const handleActivatePlan = (
+    newPlan: SubscriptionPlan,
+    period: SubscriptionPeriod
+  ) => {
+    if (activatePlanDialog) {
+      activatePlan({
+        tenantId: activatePlanDialog.tenantId,
+        plan: newPlan,
+        period,
+      });
+      setActivatePlanDialog(null);
     }
+  };
+
+  // Handle suspend plan
+  const handleSuspendPlan = (reason: string) => {
+    if (suspendPlanDialog) {
+      suspendPlan({ tenantId: suspendPlanDialog.tenantId, reason });
+      setSuspendPlanDialog(null);
+    }
+  };
+
+  // Handle reactivate plan
+  const handleReactivatePlan = (tenantId: string) => {
+    reactivatePlan(tenantId);
   };
 
   // Status filter options
@@ -287,13 +484,13 @@ export default function SystemAdminTenantsPage() {
     { value: "INACTIVE", label: "Inactivo" },
   ];
 
-  // Plan filter options
+  // Plan filter options - updated with new plans
   const planOptions: { value: SubscriptionPlan | ""; label: string }[] = [
     { value: "", label: "Todos los planes" },
-    { value: "FREE", label: "Free" },
-    { value: "BASIC", label: "Basic" },
-    { value: "PRO", label: "Pro" },
-    { value: "ENTERPRISE", label: "Enterprise" },
+    { value: "EMPRENDEDOR", label: "Emprendedor" },
+    { value: "PYME", label: "PYME" },
+    { value: "PRO", label: "PRO" },
+    { value: "PLUS", label: "PLUS" },
   ];
 
   if (error) {
@@ -374,7 +571,7 @@ export default function SystemAdminTenantsPage() {
           )}
           {plan && (
             <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-3 py-1 text-sm text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
-              Plan: {plan}
+              Plan: {planOptions.find((o) => o.value === plan)?.label}
               <button onClick={() => updateParams({ plan: undefined })}>
                 <X className="h-4 w-4" />
               </button>
@@ -504,22 +701,57 @@ export default function SystemAdminTenantsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
+                        {/* Activate/Change Plan Button */}
                         <Button
                           size="sm"
                           variant="secondary"
                           onClick={() =>
-                            setChangePlanDialog({
+                            setActivatePlanDialog({
                               tenantId: tenant.id,
                               tenantName: tenant.name,
                               currentPlan: tenant.plan,
                             })
                           }
+                          disabled={tenant.status === "SUSPENDED"}
                         >
-                          <ArrowUpRight className="h-4 w-4" />
+                          <Calendar className="h-4 w-4" />
                           <span className="hidden sm:inline ml-1">
-                            Cambiar Plan
+                            {tenant.plan ? "Cambiar" : "Activar"} Plan
                           </span>
                         </Button>
+
+                        {/* Suspend/Reactivate Button */}
+                        {tenant.status === "SUSPENDED" ? (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="text-green-600 hover:text-green-700"
+                            onClick={() => handleReactivatePlan(tenant.id)}
+                            disabled={isReactivatingPlan}
+                          >
+                            <Play className="h-4 w-4" />
+                            <span className="hidden sm:inline ml-1">
+                              Reactivar
+                            </span>
+                          </Button>
+                        ) : tenant.plan ? (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() =>
+                              setSuspendPlanDialog({
+                                tenantId: tenant.id,
+                                tenantName: tenant.name,
+                              })
+                            }
+                          >
+                            <Ban className="h-4 w-4" />
+                            <span className="hidden sm:inline ml-1">
+                              Suspender
+                            </span>
+                          </Button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -561,14 +793,23 @@ export default function SystemAdminTenantsPage() {
         )}
       </motion.div>
 
-      {/* Change Plan Dialog */}
-      <ChangePlanDialog
-        isOpen={!!changePlanDialog}
-        tenantName={changePlanDialog?.tenantName || ""}
-        currentPlan={changePlanDialog?.currentPlan || ""}
-        onConfirm={handleChangePlan}
-        onCancel={() => setChangePlanDialog(null)}
-        isLoading={isChangingPlan}
+      {/* Activate Plan Dialog */}
+      <ActivatePlanDialog
+        isOpen={!!activatePlanDialog}
+        tenantName={activatePlanDialog?.tenantName || ""}
+        currentPlan={activatePlanDialog?.currentPlan || null}
+        onConfirm={handleActivatePlan}
+        onCancel={() => setActivatePlanDialog(null)}
+        isLoading={isActivatingPlan}
+      />
+
+      {/* Suspend Plan Dialog */}
+      <SuspendPlanDialog
+        isOpen={!!suspendPlanDialog}
+        tenantName={suspendPlanDialog?.tenantName || ""}
+        onConfirm={handleSuspendPlan}
+        onCancel={() => setSuspendPlanDialog(null)}
+        isLoading={isSuspendingPlan}
       />
     </div>
   );

@@ -10,7 +10,12 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma';
-import { UserStatus, SubscriptionPlan, TenantStatus } from '@prisma/client';
+import {
+  UserStatus,
+  SubscriptionPlan,
+  SubscriptionPeriod,
+  TenantStatus,
+} from '@prisma/client';
 import {
   SystemAdminRole,
   SystemAdminStatus,
@@ -26,6 +31,8 @@ import {
 } from './types';
 import { UsersQueryDto, PendingUsersQueryDto, TenantsQueryDto } from './dto';
 import { BrevoService } from '../notifications/mail/brevo.service';
+import { SubscriptionManagementService } from '../subscriptions/subscription-management.service';
+import { PLAN_LIMITS } from '../subscriptions/plan-limits';
 
 /**
  * SystemAdminService handles all system admin operations including:
@@ -46,6 +53,7 @@ export class SystemAdminService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly brevoService: BrevoService,
+    private readonly subscriptionManagementService: SubscriptionManagementService,
   ) {}
 
   // ============================================================================
@@ -323,10 +331,12 @@ export class SystemAdminService {
         lastName: user.lastName,
         role: user.role,
         status: user.status,
+        emailVerified: user.emailVerified,
         tenantId: user.tenantId,
         tenantName: user.tenant.name,
         createdAt: user.createdAt,
         lastLoginAt: user.lastLoginAt,
+        approvedAt: user.approvedAt,
       })),
       meta: {
         total,
@@ -394,10 +404,12 @@ export class SystemAdminService {
         lastName: user.lastName,
         role: user.role,
         status: user.status,
+        emailVerified: user.emailVerified,
         tenantId: user.tenantId,
         tenantName: user.tenant.name,
         createdAt: user.createdAt,
         lastLoginAt: user.lastLoginAt,
+        approvedAt: user.approvedAt,
       })),
       meta: {
         total,
@@ -440,13 +452,21 @@ export class SystemAdminService {
       );
     }
 
-    // Update user status to ACTIVE and auto-verify email if not already verified
-    // When an admin manually approves a user, they're implicitly verifying their identity
+    // Require email verification before approval
+    if (!user.emailVerified) {
+      throw new BadRequestException(
+        'No se puede aprobar un usuario que no ha verificado su correo electrónico. ' +
+          'El usuario debe verificar su email primero.',
+      );
+    }
+
+    // Update user status to ACTIVE with approval tracking
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         status: UserStatus.ACTIVE,
-        emailVerified: true,
+        approvedAt: new Date(),
+        approvedById: adminId,
       },
     });
 
@@ -766,14 +786,16 @@ export class SystemAdminService {
     const planLimits = this.getPlanLimits(plan);
 
     // Update tenant plan and limits
+    // Note: For full plan management, use the SubscriptionManagementService.
+    // This method is kept for backward compatibility but updates only the tenant directly.
     await this.prisma.tenant.update({
       where: { id: tenantId },
       data: {
         plan,
         ...planLimits,
-        // If upgrading from TRIAL or setting to paid plan, ensure tenant is ACTIVE
+        // If upgrading from TRIAL, ensure tenant is ACTIVE
         status:
-          tenant.status === TenantStatus.TRIAL && plan !== SubscriptionPlan.FREE
+          tenant.status === TenantStatus.TRIAL
             ? TenantStatus.ACTIVE
             : tenant.status,
       },
@@ -802,9 +824,183 @@ export class SystemAdminService {
       message: `Tenant ${tenant.name} plan changed from ${previousPlan} to ${plan}`,
       tenantId,
       action: 'change_plan',
-      previousPlan,
+      previousPlan: previousPlan ?? undefined,
       newPlan: plan,
     };
+  }
+
+  // ============================================================================
+  // SUBSCRIPTION MANAGEMENT METHODS (New System)
+  // ============================================================================
+
+  /**
+   * Activates a subscription plan for a tenant with a specified period.
+   *
+   * @param tenantId - The ID of the tenant
+   * @param plan - The subscription plan to activate
+   * @param period - The subscription period (MONTHLY, QUARTERLY, ANNUAL)
+   * @param adminId - The ID of the admin performing the action
+   * @returns Action result with subscription details
+   * @throws NotFoundException if tenant is not found
+   */
+  async activateTenantPlan(
+    tenantId: string,
+    plan: SubscriptionPlan,
+    period: SubscriptionPeriod,
+    adminId: string,
+  ): Promise<TenantActionResult> {
+    this.logger.debug(
+      `Activating plan ${plan} for tenant ${tenantId} with period ${period} by admin: ${adminId}`,
+    );
+
+    const result = await this.subscriptionManagementService.activatePlan(
+      tenantId,
+      plan,
+      period,
+      adminId,
+    );
+
+    // Create audit log
+    await this.createSystemAdminAuditLog(
+      adminId,
+      'ACTIVATE_TENANT_PLAN',
+      'Tenant',
+      tenantId,
+      {
+        tenantName: result.tenant.name,
+        plan,
+        period,
+        endDate: result.subscription.endDate,
+      },
+    );
+
+    this.logger.log(
+      `Plan ${plan} activated for tenant ${tenantId} until ${result.subscription.endDate.toISOString()} by admin: ${adminId}`,
+    );
+
+    return {
+      success: true,
+      message: result.message,
+      tenantId,
+      action: 'activate_plan',
+      newPlan: plan,
+      endDate: result.subscription.endDate,
+    };
+  }
+
+  /**
+   * Suspends a tenant's subscription.
+   *
+   * @param tenantId - The ID of the tenant
+   * @param reason - The reason for suspension
+   * @param adminId - The ID of the admin performing the action
+   * @returns Action result
+   * @throws NotFoundException if subscription is not found
+   * @throws BadRequestException if subscription is already suspended
+   */
+  async suspendTenantPlan(
+    tenantId: string,
+    reason: string,
+    adminId: string,
+  ): Promise<TenantActionResult> {
+    this.logger.debug(
+      `Suspending plan for tenant ${tenantId} by admin: ${adminId}`,
+    );
+
+    const result = await this.subscriptionManagementService.suspendPlan(
+      tenantId,
+      reason,
+      adminId,
+    );
+
+    // Create audit log
+    await this.createSystemAdminAuditLog(
+      adminId,
+      'SUSPEND_TENANT_PLAN',
+      'Tenant',
+      tenantId,
+      {
+        tenantName: result.tenant.name,
+        reason,
+        previousPlan: result.subscription.plan,
+      },
+    );
+
+    this.logger.log(
+      `Plan suspended for tenant ${tenantId} by admin: ${adminId}. Reason: ${reason}`,
+    );
+
+    return {
+      success: true,
+      message: result.message,
+      tenantId,
+      action: 'suspend_plan',
+    };
+  }
+
+  /**
+   * Reactivates a suspended tenant's subscription.
+   *
+   * @param tenantId - The ID of the tenant
+   * @param adminId - The ID of the admin performing the action
+   * @returns Action result
+   * @throws NotFoundException if subscription is not found
+   * @throws BadRequestException if subscription is not suspended or has expired
+   */
+  async reactivateTenantPlan(
+    tenantId: string,
+    adminId: string,
+  ): Promise<TenantActionResult> {
+    this.logger.debug(
+      `Reactivating plan for tenant ${tenantId} by admin: ${adminId}`,
+    );
+
+    const result = await this.subscriptionManagementService.reactivatePlan(
+      tenantId,
+      adminId,
+    );
+
+    // Create audit log
+    await this.createSystemAdminAuditLog(
+      adminId,
+      'REACTIVATE_TENANT_PLAN',
+      'Tenant',
+      tenantId,
+      {
+        tenantName: result.tenant.name,
+        plan: result.subscription.plan,
+      },
+    );
+
+    this.logger.log(
+      `Plan reactivated for tenant ${tenantId} by admin: ${adminId}`,
+    );
+
+    return {
+      success: true,
+      message: result.message,
+      tenantId,
+      action: 'reactivate_plan',
+    };
+  }
+
+  /**
+   * Gets subscription details for a tenant.
+   *
+   * @param tenantId - The ID of the tenant
+   * @returns Subscription details or null if not found
+   */
+  async getTenantSubscription(tenantId: string) {
+    return this.subscriptionManagementService.getSubscription(tenantId);
+  }
+
+  /**
+   * Gets all plan limits configuration.
+   *
+   * @returns All plan limits
+   */
+  getAllPlanLimits() {
+    return PLAN_LIMITS;
   }
 
   // ============================================================================
@@ -893,43 +1089,13 @@ export class SystemAdminService {
     maxInvoices: number;
     maxWarehouses: number;
   } {
-    switch (plan) {
-      case SubscriptionPlan.FREE:
-        return {
-          maxUsers: 2,
-          maxProducts: 50,
-          maxInvoices: 100,
-          maxWarehouses: 1,
-        };
-      case SubscriptionPlan.BASIC:
-        return {
-          maxUsers: 5,
-          maxProducts: 500,
-          maxInvoices: 1000,
-          maxWarehouses: 2,
-        };
-      case SubscriptionPlan.PRO:
-        return {
-          maxUsers: 20,
-          maxProducts: 5000,
-          maxInvoices: 10000,
-          maxWarehouses: 5,
-        };
-      case SubscriptionPlan.ENTERPRISE:
-        return {
-          maxUsers: -1, // Unlimited
-          maxProducts: -1,
-          maxInvoices: -1,
-          maxWarehouses: -1,
-        };
-      default:
-        return {
-          maxUsers: 5,
-          maxProducts: -1,
-          maxInvoices: -1,
-          maxWarehouses: 1,
-        };
-    }
+    const limits = PLAN_LIMITS[plan];
+    return {
+      maxUsers: limits.maxUsers,
+      maxProducts: limits.maxProducts,
+      maxInvoices: limits.maxInvoices,
+      maxWarehouses: limits.maxWarehouses,
+    };
   }
 
   /**

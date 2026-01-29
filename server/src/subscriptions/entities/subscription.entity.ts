@@ -43,7 +43,7 @@ export class SubscriptionStatusEntity {
   @ApiProperty({
     description: 'Current subscription plan',
     enum: SubscriptionPlan,
-    example: 'BASIC',
+    example: 'PYME',
   })
   plan: SubscriptionPlan;
 

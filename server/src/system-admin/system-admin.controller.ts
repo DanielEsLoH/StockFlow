@@ -26,6 +26,8 @@ import {
   UserIdParamDto,
   TenantIdParamDto,
   ChangePlanDto,
+  ActivatePlanDto,
+  SuspendPlanDto,
   SuspendUserDto,
   DeleteUserDto,
   UsersQueryDto,
@@ -536,5 +538,254 @@ export class SystemAdminController {
       body.plan,
       admin.adminId,
     );
+  }
+
+  /**
+   * Activates a subscription plan for a tenant with a specified period.
+   *
+   * Accessible by: SUPER_ADMIN, BILLING
+   *
+   * @param params - URL parameters containing tenant ID
+   * @param body - Plan and period details
+   * @param admin - Current admin context from JWT
+   * @returns Action result with subscription details
+   */
+  @Post('tenants/:id/activate-plan')
+  @UseGuards(SystemAdminAuthGuard, SystemAdminRoleGuard)
+  @SystemAdminRoles(SystemAdminRole.SUPER_ADMIN, SystemAdminRole.BILLING)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Activate a subscription plan',
+    description:
+      'Activates a subscription plan for a tenant with a specified period (MONTHLY, QUARTERLY, or ANNUAL). Creates or replaces the existing subscription.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Tenant ID',
+    example: 'clx1234567890tenant',
+  })
+  @ApiBody({ type: ActivatePlanDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Plan activated successfully',
+    type: TenantActionResultEntity,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid plan or period',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Tenant not found',
+  })
+  async activateTenantPlan(
+    @Param() params: TenantIdParamDto,
+    @Body() body: ActivatePlanDto,
+    @CurrentAdmin() admin: SystemAdminRequestUser,
+  ): Promise<TenantActionResult> {
+    this.logger.log(
+      `Activate tenant plan request: ${params.id} - ${body.plan} for ${body.period} by admin: ${admin.email}`,
+    );
+    return this.systemAdminService.activateTenantPlan(
+      params.id,
+      body.plan,
+      body.period,
+      admin.adminId,
+    );
+  }
+
+  /**
+   * Suspends a tenant's subscription.
+   *
+   * Accessible by: SUPER_ADMIN, BILLING
+   *
+   * @param params - URL parameters containing tenant ID
+   * @param body - Suspension reason
+   * @param admin - Current admin context from JWT
+   * @returns Action result
+   */
+  @Post('tenants/:id/suspend-plan')
+  @UseGuards(SystemAdminAuthGuard, SystemAdminRoleGuard)
+  @SystemAdminRoles(SystemAdminRole.SUPER_ADMIN, SystemAdminRole.BILLING)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Suspend a subscription plan',
+    description:
+      "Suspends a tenant's active subscription. The tenant will lose access to the application until reactivated.",
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Tenant ID',
+    example: 'clx1234567890tenant',
+  })
+  @ApiBody({ type: SuspendPlanDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Plan suspended successfully',
+    type: TenantActionResultEntity,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Subscription is already suspended or reason not provided',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Subscription not found',
+  })
+  async suspendTenantPlan(
+    @Param() params: TenantIdParamDto,
+    @Body() body: SuspendPlanDto,
+    @CurrentAdmin() admin: SystemAdminRequestUser,
+  ): Promise<TenantActionResult> {
+    this.logger.log(
+      `Suspend tenant plan request: ${params.id} by admin: ${admin.email}`,
+    );
+    return this.systemAdminService.suspendTenantPlan(
+      params.id,
+      body.reason,
+      admin.adminId,
+    );
+  }
+
+  /**
+   * Reactivates a suspended tenant's subscription.
+   *
+   * Accessible by: SUPER_ADMIN, BILLING
+   *
+   * @param params - URL parameters containing tenant ID
+   * @param admin - Current admin context from JWT
+   * @returns Action result
+   */
+  @Post('tenants/:id/reactivate-plan')
+  @UseGuards(SystemAdminAuthGuard, SystemAdminRoleGuard)
+  @SystemAdminRoles(SystemAdminRole.SUPER_ADMIN, SystemAdminRole.BILLING)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Reactivate a suspended subscription',
+    description:
+      "Reactivates a suspended tenant's subscription if it hasn't expired yet.",
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Tenant ID',
+    example: 'clx1234567890tenant',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Plan reactivated successfully',
+    type: TenantActionResultEntity,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Subscription is not suspended or has expired',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Subscription not found',
+  })
+  async reactivateTenantPlan(
+    @Param() params: TenantIdParamDto,
+    @CurrentAdmin() admin: SystemAdminRequestUser,
+  ): Promise<TenantActionResult> {
+    this.logger.log(
+      `Reactivate tenant plan request: ${params.id} by admin: ${admin.email}`,
+    );
+    return this.systemAdminService.reactivateTenantPlan(
+      params.id,
+      admin.adminId,
+    );
+  }
+
+  /**
+   * Gets subscription details for a tenant.
+   *
+   * Accessible by: SUPER_ADMIN, BILLING
+   *
+   * @param params - URL parameters containing tenant ID
+   * @returns Subscription details
+   */
+  @Get('tenants/:id/subscription')
+  @UseGuards(SystemAdminAuthGuard, SystemAdminRoleGuard)
+  @SystemAdminRoles(SystemAdminRole.SUPER_ADMIN, SystemAdminRole.BILLING)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Get tenant subscription',
+    description: "Gets the subscription details for a specific tenant.",
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Tenant ID',
+    example: 'clx1234567890tenant',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Subscription details',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
+  async getTenantSubscription(@Param() params: TenantIdParamDto) {
+    this.logger.log(`Get tenant subscription request: ${params.id}`);
+    return this.systemAdminService.getTenantSubscription(params.id);
+  }
+
+  /**
+   * Gets all plan limits configuration.
+   *
+   * Accessible by: All authenticated system admins
+   *
+   * @returns Plan limits for all plans
+   */
+  @Get('plans')
+  @UseGuards(SystemAdminAuthGuard)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Get all plan limits',
+    description:
+      'Returns the limits configuration for all subscription plans (EMPRENDEDOR, PYME, PRO, PLUS).',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Plan limits configuration',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  getAllPlanLimits() {
+    this.logger.log('Get all plan limits request');
+    return this.systemAdminService.getAllPlanLimits();
   }
 }

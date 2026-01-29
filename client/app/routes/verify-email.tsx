@@ -182,7 +182,14 @@ export default function VerifyEmailPage() {
           </h2>
           <p className="text-center text-neutral-600 dark:text-neutral-400">
             Tu correo electronico ha sido verificado correctamente.
-            <br />
+          </p>
+          <div className="rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-800 dark:bg-primary-900/20">
+            <p className="text-center text-sm text-primary-700 dark:text-primary-300">
+              <strong>Tu cuenta esta pendiente de aprobacion</strong> por un
+              administrador. Te notificaremos por correo cuando sea aprobada.
+            </p>
+          </div>
+          <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
             Seras redirigido al inicio de sesion en{" "}
             <span className="font-semibold text-primary-600 dark:text-primary-400">
               {countdown}

@@ -1187,4 +1187,483 @@ export class BrevoService {
       textContent: `¡Bienvenido a StockFlow, ${firstName}! Tu cuenta para ${tenantName} ha sido aprobada. Ahora puedes iniciar sesion en ${this.frontendUrl}/login y comenzar a usar todas las funcionalidades de StockFlow.`,
     });
   }
+
+  // ============================================================================
+  // SUBSCRIPTION EMAIL METHODS
+  // ============================================================================
+
+  /**
+   * Sends a notification to admin when a user verifies their email.
+   * This notifies the admin that a user is ready to be approved.
+   *
+   * @param data - User data including email, name, and tenant name
+   * @returns Send result
+   */
+  async sendAdminUserVerifiedEmail(data: {
+    userEmail: string;
+    userName: string;
+    tenantName: string;
+    verificationDate: Date;
+  }): Promise<SendMailResult> {
+    const { userEmail, userName, tenantName, verificationDate } = data;
+    const adminPanelUrl = `${this.appUrl}/admin/users`;
+
+    const content = `
+      <div style="padding: 12px 16px; background-color: #dcfce7; border-left: 4px solid #22c55e; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #166534; font-size: 14px; font-weight: 500;">
+          Usuario listo para aprobacion
+        </p>
+      </div>
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Email verificado - Pendiente de aprobacion
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Un usuario ha verificado su correo electronico y esta listo para ser aprobado.
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Nombre del usuario</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${userName}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Email</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${userEmail}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Empresa</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${tenantName}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Fecha de verificacion</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${this.formatDate(verificationDate)}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="border-radius: 6px; background-color: #2563eb;">
+            <a href="${adminPanelUrl}" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
+              Aprobar usuario
+            </a>
+          </td>
+        </tr>
+      </table>`;
+
+    const htmlContent = this.getEmailTemplate(content, 'Usuario listo para aprobacion');
+
+    return this.sendEmail({
+      to: this.adminEmail,
+      subject: '[StockFlow] Usuario verificado - Pendiente de aprobacion',
+      htmlContent,
+      textContent: `Un usuario ha verificado su email y esta listo para ser aprobado. Usuario: ${userName} (${userEmail}). Empresa: ${tenantName}. Accede al panel de administracion para aprobar: ${adminPanelUrl}`,
+    });
+  }
+
+  /**
+   * Sends a subscription expiring warning email.
+   *
+   * @param data - Subscription data including plan name, expiry date, and days remaining
+   * @returns Send result
+   */
+  async sendSubscriptionExpiringEmail(data: {
+    to: string;
+    firstName: string;
+    planName: string;
+    expiryDate: Date;
+    daysRemaining: number;
+    tenantName: string;
+  }): Promise<SendMailResult> {
+    const { to, firstName, planName, expiryDate, daysRemaining, tenantName } = data;
+
+    const urgencyColor = daysRemaining <= 3 ? '#dc2626' : '#f59e0b';
+    const urgencyBgColor = daysRemaining <= 3 ? '#fef2f2' : '#fef3c7';
+
+    const content = `
+      <div style="padding: 12px 16px; background-color: ${urgencyBgColor}; border-left: 4px solid ${urgencyColor}; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: ${urgencyColor}; font-size: 14px; font-weight: 500;">
+          Tu suscripcion expira en ${daysRemaining} dia${daysRemaining > 1 ? 's' : ''}
+        </p>
+      </div>
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Aviso de expiracion de suscripcion
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Hola ${firstName},
+      </p>
+      <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Te informamos que la suscripcion de <strong>${tenantName}</strong> al plan <strong>${planName}</strong> expirara pronto.
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Plan actual</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${planName}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Fecha de expiracion</span><br>
+                  <span style="color: ${urgencyColor}; font-size: 20px; font-weight: 600;">${expiryDate.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Dias restantes</span><br>
+                  <span style="color: ${urgencyColor}; font-size: 24px; font-weight: 600;">${daysRemaining}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Para continuar disfrutando de todos los beneficios de StockFlow sin interrupcion, contacta a nuestro equipo para renovar tu suscripcion.
+      </p>
+      <p style="margin: 0; color: #6b7280; font-size: 14px;">
+        Si tienes alguna pregunta, contactanos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a>
+      </p>`;
+
+    const htmlContent = this.getEmailTemplate(content, 'Tu suscripcion esta por expirar');
+
+    return this.sendEmail({
+      to,
+      subject: `[StockFlow] Tu suscripcion expira en ${daysRemaining} dia${daysRemaining > 1 ? 's' : ''}`,
+      htmlContent,
+      textContent: `Hola ${firstName}, tu suscripcion al plan ${planName} para ${tenantName} expirara el ${this.formatDate(expiryDate)} (${daysRemaining} dias restantes). Contactanos para renovar tu suscripcion.`,
+    });
+  }
+
+  /**
+   * Sends a subscription expired notification email.
+   *
+   * @param data - Subscription data including plan name and expiry date
+   * @returns Send result
+   */
+  async sendSubscriptionExpiredEmail(data: {
+    to: string;
+    firstName: string;
+    planName: string;
+    expiryDate: Date;
+    tenantName: string;
+  }): Promise<SendMailResult> {
+    const { to, firstName, planName, expiryDate, tenantName } = data;
+
+    const content = `
+      <div style="padding: 12px 16px; background-color: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 500;">
+          Tu suscripcion ha expirado
+        </p>
+      </div>
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Suscripcion expirada
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Hola ${firstName},
+      </p>
+      <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Te informamos que la suscripcion de <strong>${tenantName}</strong> al plan <strong>${planName}</strong> ha expirado.
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Plan</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${planName}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Fecha de expiracion</span><br>
+                  <span style="color: #dc2626; font-size: 16px; font-weight: 600;">${expiryDate.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Estado</span><br>
+                  <span style="display: inline-block; padding: 4px 12px; background-color: #fef2f2; color: #dc2626; font-size: 12px; font-weight: 600; border-radius: 9999px;">SUSPENDIDO</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Tu acceso a StockFlow ha sido suspendido. Para reactivar tu cuenta y continuar usando la plataforma, contacta a nuestro equipo para renovar tu suscripcion.
+      </p>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        <strong>Nota:</strong> Tus datos se mantendran seguros durante 30 dias. Despues de este periodo, podrian ser eliminados.
+      </p>
+      <p style="margin: 0; color: #6b7280; font-size: 14px;">
+        Contactanos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a> para renovar tu suscripcion.
+      </p>`;
+
+    const htmlContent = this.getEmailTemplate(content, 'Tu suscripcion ha expirado');
+
+    return this.sendEmail({
+      to,
+      subject: '[StockFlow] Tu suscripcion ha expirado',
+      htmlContent,
+      textContent: `Hola ${firstName}, la suscripcion al plan ${planName} para ${tenantName} ha expirado el ${this.formatDate(expiryDate)}. Tu acceso ha sido suspendido. Contactanos en support@stockflow.com para renovar tu suscripcion. Tus datos se mantendran durante 30 dias.`,
+    });
+  }
+
+  /**
+   * Sends a subscription activated notification email.
+   *
+   * @param data - Subscription data including plan name, period, and features
+   * @returns Send result
+   */
+  async sendSubscriptionActivatedEmail(data: {
+    to: string;
+    firstName: string;
+    planName: string;
+    period: string;
+    endDate: Date;
+    features: string[];
+  }): Promise<SendMailResult> {
+    const { to, firstName, planName, period, endDate, features } = data;
+
+    const periodDisplay: Record<string, string> = {
+      MONTHLY: 'Mensual',
+      QUARTERLY: 'Trimestral',
+      ANNUAL: 'Anual',
+    };
+
+    const featuresHtml = features
+      .map(
+        (f) => `<li style="margin-bottom: 8px;">${f}</li>`,
+      )
+      .join('');
+
+    const content = `
+      <div style="padding: 12px 16px; background-color: #dcfce7; border-left: 4px solid #22c55e; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #166534; font-size: 14px; font-weight: 500;">
+          ¡Tu plan ha sido activado!
+        </p>
+      </div>
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Plan ${planName} activado
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Hola ${firstName},
+      </p>
+      <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Tu suscripcion al plan <strong>${planName}</strong> ha sido activada exitosamente.
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Plan</span><br>
+                  <span style="color: #111827; font-size: 20px; font-weight: 600;">${planName}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Periodo</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${periodDisplay[period] || period}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Valido hasta</span><br>
+                  <span style="color: #22c55e; font-size: 16px; font-weight: 600;">${endDate.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <h3 style="margin: 0 0 12px 0; color: #111827; font-size: 16px; font-weight: 600;">
+        Tu plan incluye:
+      </h3>
+      <ul style="margin: 0 0 24px 0; padding-left: 20px; color: #374151; font-size: 16px; line-height: 1.8;">
+        ${featuresHtml}
+      </ul>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="border-radius: 6px; background-color: #2563eb;">
+            <a href="${this.frontendUrl}/dashboard" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
+              Ir al dashboard
+            </a>
+          </td>
+        </tr>
+      </table>`;
+
+    const htmlContent = this.getEmailTemplate(content, 'Plan activado - StockFlow');
+
+    return this.sendEmail({
+      to,
+      subject: `[StockFlow] Tu plan ${planName} ha sido activado`,
+      htmlContent,
+      textContent: `Hola ${firstName}, tu suscripcion al plan ${planName} (${periodDisplay[period] || period}) ha sido activada. Valido hasta: ${this.formatDate(endDate)}. Accede a tu dashboard en ${this.frontendUrl}/dashboard`,
+    });
+  }
+
+  /**
+   * Sends a subscription suspended notification email.
+   *
+   * @param data - Suspension data including reason
+   * @returns Send result
+   */
+  async sendSubscriptionSuspendedEmail(data: {
+    to: string;
+    firstName: string;
+    reason: string;
+  }): Promise<SendMailResult> {
+    const { to, firstName, reason } = data;
+
+    const content = `
+      <div style="padding: 12px 16px; background-color: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #991b1b; font-size: 14px; font-weight: 500;">
+          Tu suscripcion ha sido suspendida
+        </p>
+      </div>
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Cuenta suspendida
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Hola ${firstName},
+      </p>
+      <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Te informamos que tu suscripcion a StockFlow ha sido suspendida.
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Razon de suspension</span><br>
+                  <span style="color: #dc2626; font-size: 16px; font-weight: 500;">${reason}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Estado</span><br>
+                  <span style="display: inline-block; padding: 4px 12px; background-color: #fef2f2; color: #dc2626; font-size: 12px; font-weight: 600; border-radius: 9999px;">SUSPENDIDO</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Tu acceso a StockFlow ha sido suspendido. Si crees que esto es un error o deseas resolver esta situacion, contacta a nuestro equipo de soporte.
+      </p>
+      <p style="margin: 0; color: #6b7280; font-size: 14px;">
+        Contactanos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a>
+      </p>`;
+
+    const htmlContent = this.getEmailTemplate(content, 'Cuenta suspendida - StockFlow');
+
+    return this.sendEmail({
+      to,
+      subject: '[StockFlow] Tu cuenta ha sido suspendida',
+      htmlContent,
+      textContent: `Hola ${firstName}, tu suscripcion a StockFlow ha sido suspendida. Razon: ${reason}. Contactanos en support@stockflow.com si tienes preguntas.`,
+    });
+  }
+
+  /**
+   * Sends a subscription plan changed notification email.
+   *
+   * @param data - Plan change data including old and new plan names
+   * @returns Send result
+   */
+  async sendSubscriptionChangedEmail(data: {
+    to: string;
+    firstName: string;
+    oldPlanName: string;
+    newPlanName: string;
+    newFeatures: string[];
+  }): Promise<SendMailResult> {
+    const { to, firstName, oldPlanName, newPlanName, newFeatures } = data;
+
+    const featuresHtml = newFeatures
+      .map(
+        (f) => `<li style="margin-bottom: 8px;">${f}</li>`,
+      )
+      .join('');
+
+    const content = `
+      <div style="padding: 12px 16px; background-color: #dbeafe; border-left: 4px solid #2563eb; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #1d4ed8; font-size: 14px; font-weight: 500;">
+          Tu plan ha sido actualizado
+        </p>
+      </div>
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Cambio de plan
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Hola ${firstName},
+      </p>
+      <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Tu plan ha sido cambiado de <strong>${oldPlanName}</strong> a <strong>${newPlanName}</strong>.
+      </p>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Plan anterior</span><br>
+                  <span style="color: #9ca3af; font-size: 16px; text-decoration: line-through;">${oldPlanName}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Nuevo plan</span><br>
+                  <span style="color: #2563eb; font-size: 20px; font-weight: 600;">${newPlanName}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <h3 style="margin: 0 0 12px 0; color: #111827; font-size: 16px; font-weight: 600;">
+        Tu nuevo plan incluye:
+      </h3>
+      <ul style="margin: 0 0 24px 0; padding-left: 20px; color: #374151; font-size: 16px; line-height: 1.8;">
+        ${featuresHtml}
+      </ul>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="border-radius: 6px; background-color: #2563eb;">
+            <a href="${this.frontendUrl}/dashboard" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
+              Ir al dashboard
+            </a>
+          </td>
+        </tr>
+      </table>`;
+
+    const htmlContent = this.getEmailTemplate(content, 'Cambio de plan - StockFlow');
+
+    return this.sendEmail({
+      to,
+      subject: `[StockFlow] Tu plan ha sido cambiado a ${newPlanName}`,
+      htmlContent,
+      textContent: `Hola ${firstName}, tu plan ha sido cambiado de ${oldPlanName} a ${newPlanName}. Accede a tu dashboard en ${this.frontendUrl}/dashboard para ver los nuevos beneficios.`,
+    });
+  }
 }

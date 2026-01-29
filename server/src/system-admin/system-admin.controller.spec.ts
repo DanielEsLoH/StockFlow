@@ -49,10 +49,12 @@ describe('SystemAdminController', () => {
     lastName: 'Doe',
     role: 'EMPLOYEE',
     status: 'PENDING',
+    emailVerified: false,
     tenantId: 'tenant-1',
     tenantName: 'Acme Corp',
     createdAt: new Date(),
     lastLoginAt: null,
+    approvedAt: null,
   };
 
   const mockTenantListItem: TenantListItem = {
@@ -62,7 +64,7 @@ describe('SystemAdminController', () => {
     email: 'contact@acme.com',
     phone: null,
     status: 'ACTIVE',
-    plan: 'BASIC',
+    plan: 'PYME',
     userCount: 5,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -540,7 +542,7 @@ describe('SystemAdminController', () => {
         message: 'Plan changed from BASIC to PRO',
         tenantId: 'tenant-1',
         action: 'change_plan',
-        previousPlan: 'BASIC',
+        previousPlan: 'PYME',
         newPlan: 'PRO',
       };
       service.changeTenantPlan.mockResolvedValue(actionResult);

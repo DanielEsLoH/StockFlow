@@ -453,7 +453,7 @@ describe('ArcjetService', () => {
 
       const result = await newService.checkSubscriptionRateLimit(
         req,
-        SubscriptionPlan.FREE,
+        SubscriptionPlan.EMPRENDEDOR,
         'user-123',
         'tenant-123',
       );
@@ -466,7 +466,7 @@ describe('ArcjetService', () => {
       const req = createMockRequest();
       const result = await service.checkSubscriptionRateLimit(
         req,
-        SubscriptionPlan.ENTERPRISE,
+        SubscriptionPlan.PLUS,
         'user-123',
         'tenant-123',
       );
@@ -485,7 +485,7 @@ describe('ArcjetService', () => {
       const req = createMockRequest();
       const result = await service.checkSubscriptionRateLimit(
         req,
-        SubscriptionPlan.FREE,
+        SubscriptionPlan.EMPRENDEDOR,
         'user-123',
         'tenant-123',
       );
@@ -508,7 +508,7 @@ describe('ArcjetService', () => {
       const req = createMockRequest();
       await service.checkSubscriptionRateLimit(
         req,
-        SubscriptionPlan.BASIC,
+        SubscriptionPlan.PYME,
         'user-123',
         'tenant-123',
       );
@@ -547,7 +547,7 @@ describe('ArcjetService', () => {
       const req = createMockRequest();
       const result = await service.checkSubscriptionRateLimit(
         req,
-        SubscriptionPlan.FREE,
+        SubscriptionPlan.EMPRENDEDOR,
         'user-123',
         'tenant-123',
       );

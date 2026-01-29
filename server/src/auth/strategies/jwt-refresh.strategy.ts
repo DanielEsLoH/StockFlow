@@ -111,15 +111,24 @@ export class JwtRefreshStrategy extends PassportStrategy(
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    // Verify user is active (ACTIVE or PENDING status allowed)
-    if (
-      user.status !== UserStatus.ACTIVE &&
-      user.status !== UserStatus.PENDING
-    ) {
+    // Verify user is active (only ACTIVE status allowed)
+    if (user.status !== UserStatus.ACTIVE) {
+      if (user.status === UserStatus.PENDING) {
+        if (!user.emailVerified) {
+          this.logger.warn(`User email not verified: ${user.email}`);
+          throw new UnauthorizedException(
+            'Por favor verifica tu correo electrónico antes de acceder a la aplicación.',
+          );
+        }
+        this.logger.warn(`User pending approval: ${user.email}`);
+        throw new UnauthorizedException(
+          'Tu cuenta está pendiente de aprobación. Por favor espera la confirmación del administrador.',
+        );
+      }
       this.logger.warn(
         `User is not active: ${user.email}, status: ${user.status}`,
       );
-      throw new UnauthorizedException('User account is not active');
+      throw new UnauthorizedException('Tu cuenta no está activa.');
     }
 
     // Verify tenant is active

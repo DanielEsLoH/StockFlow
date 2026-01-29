@@ -8,7 +8,8 @@ import {
 } from '@nestjs/common';
 import { SubscriptionPlan } from '@prisma/client';
 import Stripe from 'stripe';
-import { SubscriptionsService, PLAN_LIMITS } from './subscriptions.service';
+import { SubscriptionsService, STRIPE_PLAN_LIMITS } from './subscriptions.service';
+import { PLAN_LIMITS } from './plan-limits';
 import { PrismaService } from '../prisma';
 
 // Type for mocked Stripe client
@@ -79,7 +80,7 @@ describe('SubscriptionsService', () => {
     email: 'acme@example.com',
     phone: '+57 300 123 4567',
     status: 'ACTIVE',
-    plan: 'FREE' as SubscriptionPlan,
+    plan: 'EMPRENDEDOR' as SubscriptionPlan,
     stripeCustomerId: null as string | null,
     stripeSubscriptionId: null as string | null,
     maxUsers: 2,
@@ -94,7 +95,7 @@ describe('SubscriptionsService', () => {
     ...mockTenant,
     stripeCustomerId: mockStripeCustomerId,
     stripeSubscriptionId: mockStripeSubscriptionId,
-    plan: 'BASIC' as SubscriptionPlan,
+    plan: 'PYME' as SubscriptionPlan,
   };
 
   const mockCheckoutSession = {
@@ -113,7 +114,7 @@ describe('SubscriptionsService', () => {
     cancel_at_period_end: false,
     metadata: {
       tenantId: mockTenantId,
-      plan: 'BASIC',
+      plan: 'PYME',
     },
     customer: mockStripeCustomerId,
     // In Clover API (2025-12-15), current_period_end is on subscription items
@@ -149,9 +150,9 @@ describe('SubscriptionsService', () => {
         const config: Record<string, string> = {
           STRIPE_SECRET_KEY: 'sk_test_123',
           STRIPE_WEBHOOK_SECRET: 'whsec_test123',
-          STRIPE_PRICE_BASIC: 'price_basic123',
+          STRIPE_PRICE_PYME: 'price_pyme123',
           STRIPE_PRICE_PRO: 'price_pro123',
-          STRIPE_PRICE_ENTERPRISE: 'price_enterprise123',
+          STRIPE_PRICE_PLUS: 'price_plus123',
           FRONTEND_URL: 'https://app.stockflow.com',
         };
         return config[key];
@@ -225,39 +226,39 @@ describe('SubscriptionsService', () => {
   });
 
   describe('PLAN_LIMITS', () => {
-    it('should have correct FREE plan limits', () => {
-      expect(PLAN_LIMITS.FREE).toEqual({
-        maxUsers: 2,
-        maxProducts: 100,
-        maxInvoices: 50,
+    it('should have correct EMPRENDEDOR plan limits', () => {
+      expect(PLAN_LIMITS.EMPRENDEDOR).toMatchObject({
+        maxUsers: 2, // 1 usuario + 1 contador
+        maxProducts: -1, // Ilimitados
+        maxInvoices: -1, // Ilimitadas
         maxWarehouses: 1,
       });
     });
 
-    it('should have correct BASIC plan limits', () => {
-      expect(PLAN_LIMITS.BASIC).toEqual({
-        maxUsers: 5,
-        maxProducts: 1000,
-        maxInvoices: -1,
-        maxWarehouses: 3,
+    it('should have correct PYME plan limits', () => {
+      expect(PLAN_LIMITS.PYME).toMatchObject({
+        maxUsers: 3, // 2 usuarios + 1 contador
+        maxProducts: -1, // Ilimitados
+        maxInvoices: -1, // Ilimitadas
+        maxWarehouses: 2,
       });
     });
 
     it('should have correct PRO plan limits', () => {
-      expect(PLAN_LIMITS.PRO).toEqual({
-        maxUsers: 20,
-        maxProducts: -1,
-        maxInvoices: -1,
+      expect(PLAN_LIMITS.PRO).toMatchObject({
+        maxUsers: 4, // 3 usuarios + 1 contador
+        maxProducts: -1, // Ilimitados
+        maxInvoices: -1, // Ilimitadas
         maxWarehouses: 10,
       });
     });
 
-    it('should have correct ENTERPRISE plan limits', () => {
-      expect(PLAN_LIMITS.ENTERPRISE).toEqual({
-        maxUsers: -1,
-        maxProducts: -1,
-        maxInvoices: -1,
-        maxWarehouses: -1,
+    it('should have correct PLUS plan limits', () => {
+      expect(PLAN_LIMITS.PLUS).toMatchObject({
+        maxUsers: 9, // 8 usuarios + 1 contador
+        maxProducts: -1, // Ilimitados
+        maxInvoices: -1, // Ilimitadas
+        maxWarehouses: 100,
       });
     });
   });
@@ -284,8 +285,8 @@ describe('SubscriptionsService', () => {
       );
     });
 
-    it('should create checkout session for BASIC plan', async () => {
-      const result = await service.createCheckoutSession(mockTenantId, 'BASIC');
+    it('should create checkout session for PYME plan', async () => {
+      const result = await service.createCheckoutSession(mockTenantId, 'PYME');
 
       expect(result).toEqual({
         sessionId: mockCheckoutSession.id,
@@ -302,10 +303,10 @@ describe('SubscriptionsService', () => {
       });
     });
 
-    it('should create checkout session for ENTERPRISE plan', async () => {
+    it('should create checkout session for PLUS plan', async () => {
       const result = await service.createCheckoutSession(
         mockTenantId,
-        'ENTERPRISE',
+        'PLUS',
       );
 
       expect(result).toEqual({
@@ -314,20 +315,22 @@ describe('SubscriptionsService', () => {
       });
     });
 
-    it('should throw BadRequestException for FREE plan', async () => {
+    it('should throw BadRequestException for EMPRENDEDOR plan', async () => {
       await expect(
-        service.createCheckoutSession(mockTenantId, 'FREE'),
+        service.createCheckoutSession(mockTenantId, 'EMPRENDEDOR'),
       ).rejects.toThrow(BadRequestException);
       await expect(
-        service.createCheckoutSession(mockTenantId, 'FREE'),
-      ).rejects.toThrow('Cannot create checkout session for FREE plan');
+        service.createCheckoutSession(mockTenantId, 'EMPRENDEDOR'),
+      ).rejects.toThrow(
+        'Cannot create checkout session for EMPRENDEDOR plan - it is the base plan',
+      );
     });
 
     it('should throw NotFoundException when tenant not found', async () => {
       mockPrismaTenant.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.createCheckoutSession(mockTenantId, 'BASIC'),
+        service.createCheckoutSession(mockTenantId, 'PYME'),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -349,7 +352,7 @@ describe('SubscriptionsService', () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenant);
 
       const stripeInstance = getStripeInstance(service);
-      await service.createCheckoutSession(mockTenantId, 'BASIC');
+      await service.createCheckoutSession(mockTenantId, 'PYME');
 
       expect(stripeInstance.customers.create).toHaveBeenCalledWith({
         email: mockTenant.email,
@@ -369,7 +372,7 @@ describe('SubscriptionsService', () => {
         id: mockStripeCustomerId,
       });
 
-      await service.createCheckoutSession(mockTenantId, 'BASIC');
+      await service.createCheckoutSession(mockTenantId, 'PYME');
 
       expect(mockPrismaTenant.update).toHaveBeenCalledWith({
         where: { id: mockTenantId },
@@ -381,18 +384,18 @@ describe('SubscriptionsService', () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
       const stripeInstance = getStripeInstance(service);
-      await service.createCheckoutSession(mockTenantId, 'BASIC');
+      await service.createCheckoutSession(mockTenantId, 'PYME');
 
       expect(stripeInstance.checkout.sessions.create).toHaveBeenCalledWith(
         expect.objectContaining({
           metadata: {
             tenantId: mockTenantId,
-            plan: 'BASIC',
+            plan: 'PYME',
           },
           subscription_data: {
             metadata: {
               tenantId: mockTenantId,
-              plan: 'BASIC',
+              plan: 'PYME',
             },
           },
         }),
@@ -403,7 +406,7 @@ describe('SubscriptionsService', () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
       const stripeInstance = getStripeInstance(service);
-      await service.createCheckoutSession(mockTenantId, 'BASIC');
+      await service.createCheckoutSession(mockTenantId, 'PYME');
 
       expect(stripeInstance.checkout.sessions.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -422,14 +425,14 @@ describe('SubscriptionsService', () => {
       );
 
       await expect(
-        service.createCheckoutSession(mockTenantId, 'BASIC'),
+        service.createCheckoutSession(mockTenantId, 'PYME'),
       ).rejects.toThrow(InternalServerErrorException);
     });
 
     it('should log checkout session creation', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
 
-      await service.createCheckoutSession(mockTenantId, 'BASIC');
+      await service.createCheckoutSession(mockTenantId, 'PYME');
 
       expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining('Creating checkout session'),
@@ -443,9 +446,9 @@ describe('SubscriptionsService', () => {
           const config: Record<string, string | undefined> = {
             STRIPE_SECRET_KEY: 'sk_test_123',
             STRIPE_WEBHOOK_SECRET: 'whsec_test123',
-            STRIPE_PRICE_BASIC: '', // Empty price
+            STRIPE_PRICE_PYME: '', // Empty price
             STRIPE_PRICE_PRO: 'price_pro123',
-            STRIPE_PRICE_ENTERPRISE: 'price_enterprise123',
+            STRIPE_PRICE_PLUS: 'price_plus123',
             FRONTEND_URL: 'https://app.stockflow.com',
           };
           return config[key];
@@ -471,11 +474,11 @@ describe('SubscriptionsService', () => {
       mockPrismaTenant.findUnique.mockResolvedValue(mockTenantWithStripe);
 
       await expect(
-        serviceWithoutPrice.createCheckoutSession(mockTenantId, 'BASIC'),
+        serviceWithoutPrice.createCheckoutSession(mockTenantId, 'PYME'),
       ).rejects.toThrow(BadRequestException);
       await expect(
-        serviceWithoutPrice.createCheckoutSession(mockTenantId, 'BASIC'),
-      ).rejects.toThrow('Price not configured for plan: BASIC');
+        serviceWithoutPrice.createCheckoutSession(mockTenantId, 'PYME'),
+      ).rejects.toThrow('Price not configured for plan: PYME');
     });
 
     it('should throw InternalServerErrorException when Stripe customer creation fails', async () => {
@@ -487,10 +490,10 @@ describe('SubscriptionsService', () => {
       );
 
       await expect(
-        service.createCheckoutSession(mockTenantId, 'BASIC'),
+        service.createCheckoutSession(mockTenantId, 'PYME'),
       ).rejects.toThrow(InternalServerErrorException);
       await expect(
-        service.createCheckoutSession(mockTenantId, 'BASIC'),
+        service.createCheckoutSession(mockTenantId, 'PYME'),
       ).rejects.toThrow('Failed to create Stripe customer');
     });
 
@@ -504,7 +507,7 @@ describe('SubscriptionsService', () => {
         subscription: mockStripeSubscriptionId,
       });
 
-      const result = await service.createCheckoutSession(mockTenantId, 'BASIC');
+      const result = await service.createCheckoutSession(mockTenantId, 'PYME');
 
       expect(result).toEqual({
         sessionId: 'cs_test123',
@@ -521,7 +524,7 @@ describe('SubscriptionsService', () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
 
       await expect(
-        service.createCheckoutSession(mockTenantId, 'BASIC'),
+        service.createCheckoutSession(mockTenantId, 'PYME'),
       ).rejects.toThrow(InternalServerErrorException);
 
       expect(errorSpy).toHaveBeenCalledWith(
@@ -636,7 +639,7 @@ describe('SubscriptionsService', () => {
 
       expect(result).toMatchObject({
         tenantId: mockTenantId,
-        plan: 'BASIC',
+        plan: 'PYME',
         stripeCustomerId: mockStripeCustomerId,
         stripeSubscriptionId: mockStripeSubscriptionId,
       });
@@ -1176,7 +1179,7 @@ describe('SubscriptionsService', () => {
         },
       } as unknown as Stripe.Event;
 
-      it('should downgrade tenant to FREE plan', async () => {
+      it('should remove tenant plan when subscription deleted', async () => {
         const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           subscriptionDeletedEvent,
@@ -1187,7 +1190,7 @@ describe('SubscriptionsService', () => {
         expect(mockExecuteInTransaction).toHaveBeenCalled();
       });
 
-      it('should log downgrade', async () => {
+      it('should log subscription cancellation', async () => {
         const stripeInstance = getStripeInstance(service);
         stripeInstance.webhooks.constructEvent.mockReturnValue(
           subscriptionDeletedEvent,
@@ -1197,7 +1200,7 @@ describe('SubscriptionsService', () => {
         await service.handleWebhook(mockSignature, mockRawBody);
 
         expect(logSpy).toHaveBeenCalledWith(
-          expect.stringContaining('downgraded to FREE'),
+          expect.stringContaining('subscription cancelled'),
         );
       });
 

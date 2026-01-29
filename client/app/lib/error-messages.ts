@@ -31,12 +31,20 @@ const errorMappings: ErrorMapping[] = [
     message: 'Tu cuenta esta inactiva. Contacta al administrador para reactivarla.',
   },
   {
+    pattern: /cuenta.*pendiente.*aprobaci[oó]n/i,
+    message: 'Tu cuenta esta pendiente de aprobacion por un administrador. Te notificaremos por correo cuando sea aprobada.',
+  },
+  {
     pattern: /account.*pending/i,
-    message: 'Tu cuenta esta pendiente de aprobacion. Te notificaremos por correo cuando sea aprobada.',
+    message: 'Tu cuenta esta pendiente de aprobacion por un administrador. Te notificaremos por correo cuando sea aprobada.',
+  },
+  {
+    pattern: /verifica tu correo electr[oó]nico/i,
+    message: 'Por favor verifica tu correo electronico antes de iniciar sesion. Revisa tu bandeja de entrada.',
   },
   {
     pattern: /email.*not.*verified/i,
-    message: 'Tu correo no ha sido verificado. Revisa tu bandeja de entrada y haz clic en el enlace de verificacion.',
+    message: 'Por favor verifica tu correo electronico antes de iniciar sesion. Revisa tu bandeja de entrada.',
   },
   {
     pattern: /invalid.*verification.*token/i,

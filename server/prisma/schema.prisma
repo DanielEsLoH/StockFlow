@@ -18,10 +18,23 @@ enum TenantStatus {
 }
 
 enum SubscriptionPlan {
-  FREE
-  BASIC
+  EMPRENDEDOR
+  PYME
   PRO
-  ENTERPRISE
+  PLUS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+  CANCELLED
+}
+
+enum SubscriptionPeriod {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
 }
 
 enum UserRole {
@@ -146,6 +159,11 @@ enum NotificationType {
   REPORT_READY
   SYSTEM
   INFO
+  USER_VERIFIED_EMAIL
+  USER_APPROVED
+  SUBSCRIPTION_EXPIRING
+  SUBSCRIPTION_EXPIRED
+  SUBSCRIPTION_ACTIVATED
 }
 
 enum NotificationPriority {
@@ -160,21 +178,21 @@ enum NotificationPriority {
 // ============================================================================
 
 model Tenant {
-  id                     String           @id @default(cuid())
+  id                     String            @id @default(cuid())
   name                   String
-  slug                   String           @unique
+  slug                   String            @unique
   email                  String
   phone                  String?
-  status                 TenantStatus     @default(TRIAL)
-  plan                   SubscriptionPlan @default(FREE)
-  stripeCustomerId       String?          @map("stripe_customer_id")
-  stripeSubscriptionId   String?          @map("stripe_subscription_id")
-  maxUsers               Int              @default(5) @map("max_users")
-  maxProducts            Int              @default(-1) @map("max_products")
-  maxInvoices            Int              @default(-1) @map("max_invoices")
-  maxWarehouses          Int              @default(1) @map("max_warehouses")
-  createdAt              DateTime         @default(now()) @map("created_at")
-  updatedAt              DateTime         @updatedAt @map("updated_at")
+  status                 TenantStatus      @default(TRIAL)
+  plan                   SubscriptionPlan?
+  stripeCustomerId       String?           @map("stripe_customer_id")
+  stripeSubscriptionId   String?           @map("stripe_subscription_id")
+  maxUsers               Int               @default(1) @map("max_users")
+  maxProducts            Int               @default(100) @map("max_products")
+  maxInvoices            Int               @default(50) @map("max_invoices")
+  maxWarehouses          Int               @default(1) @map("max_warehouses")
+  createdAt              DateTime          @default(now()) @map("created_at")
+  updatedAt              DateTime          @updatedAt @map("updated_at")
 
   users         User[]
   products      Product[]
@@ -187,33 +205,36 @@ model Tenant {
   auditLogs     AuditLog[]
   invitations   Invitation[]
   notifications Notification[]
+  subscription  Subscription?
 
   @@map("tenants")
 }
 
 model User {
-  id                       String     @id @default(cuid())
-  tenantId                 String     @map("tenant_id")
-  email                    String     @unique
+  id                       String        @id @default(cuid())
+  tenantId                 String        @map("tenant_id")
+  email                    String        @unique
   password                 String
-  firstName                String     @map("first_name")
-  lastName                 String     @map("last_name")
+  firstName                String        @map("first_name")
+  lastName                 String        @map("last_name")
   phone                    String?
   avatar                   String?
   googleId                 String?       @unique @map("google_id")
   githubId                 String?       @unique @map("github_id")
   authProvider             AuthProvider  @default(EMAIL) @map("auth_provider")
-  role                     UserRole   @default(EMPLOYEE)
-  status                   UserStatus @default(PENDING)
-  emailVerified            Boolean    @default(false) @map("email_verified")
-  verificationToken        String?    @unique @map("verification_token")
-  verificationTokenExpiry  DateTime?  @map("verification_token_expiry")
-  refreshToken             String?    @map("refresh_token")
-  resetToken               String?    @map("reset_token")
-  resetTokenExpiry         DateTime?  @map("reset_token_expiry")
-  createdAt                DateTime   @default(now()) @map("created_at")
-  updatedAt                DateTime   @updatedAt @map("updated_at")
-  lastLoginAt              DateTime?  @map("last_login_at")
+  role                     UserRole      @default(EMPLOYEE)
+  status                   UserStatus    @default(PENDING)
+  emailVerified            Boolean       @default(false) @map("email_verified")
+  verificationToken        String?       @unique @map("verification_token")
+  verificationTokenExpiry  DateTime?     @map("verification_token_expiry")
+  refreshToken             String?       @map("refresh_token")
+  resetToken               String?       @map("reset_token")
+  resetTokenExpiry         DateTime?     @map("reset_token_expiry")
+  approvedAt               DateTime?     @map("approved_at")
+  approvedById             String?       @map("approved_by_id")
+  createdAt                DateTime      @default(now()) @map("created_at")
+  updatedAt                DateTime      @updatedAt @map("updated_at")
+  lastLoginAt              DateTime?     @map("last_login_at")
 
   tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   invoices      Invoice[]
@@ -524,6 +545,31 @@ model Notification {
   @@index([tenantId, type])
   @@index([tenantId, createdAt])
   @@map("notifications")
+}
+
+// ============================================================================
+// SUBSCRIPTION MODEL
+// ============================================================================
+
+model Subscription {
+  id              String             @id @default(cuid())
+  tenantId        String             @unique @map("tenant_id")
+  plan            SubscriptionPlan
+  status          SubscriptionStatus @default(ACTIVE)
+  startDate       DateTime           @default(now()) @map("start_date")
+  endDate         DateTime           @map("end_date")
+  periodType      SubscriptionPeriod @map("period_type")
+  activatedById   String?            @map("activated_by_id")
+  suspendedAt     DateTime?          @map("suspended_at")
+  suspendedReason String?            @map("suspended_reason")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([endDate])
+  @@map("subscriptions")
 }
 
 // ============================================================================

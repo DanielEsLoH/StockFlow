@@ -122,75 +122,85 @@ const techStack = [
 ];
 
 // Pricing plans data - hoisted outside component
+// Plans based on Alegra model with UNLIMITED products and invoices in ALL plans
 const pricingPlans = [
   {
-    name: "FREE",
-    price: "$0",
+    name: "EMPRENDEDOR",
+    price: "$69,900",
     period: "COP/mes",
     description: "Para emprendedores que inician",
     features: [
-      "1 usuario",
-      "50 productos",
+      "1 usuario + 1 contador gratis",
       "1 bodega",
-      "20 facturas/mes",
+      "Productos ilimitados",
+      "Facturas ilimitadas",
+      "Facturacion electronica DIAN",
       "Soporte por email",
+      "Reportes basicos",
     ],
-    cta: "Comenzar Gratis",
-    href: "/register",
+    cta: "Comenzar Ahora",
+    href: "/register?plan=emprendedor",
     highlighted: false,
   },
   {
-    name: "BASIC",
-    price: "$49,000",
+    name: "PYME",
+    price: "$149,900",
     period: "COP/mes",
-    description: "Para pequeños negocios en crecimiento",
+    description: "Para pequenas empresas en crecimiento",
     features: [
-      "5 usuarios",
-      "500 productos",
-      "3 bodegas",
-      "200 facturas/mes",
+      "2 usuarios + 1 contador gratis",
+      "2 bodegas",
+      "Productos ilimitados",
+      "Facturas ilimitadas",
+      "Facturacion electronica DIAN",
       "Soporte prioritario",
-      "Reportes básicos",
+      "Reportes avanzados",
+      "Notificaciones de stock",
     ],
-    cta: "Iniciar Prueba",
-    href: "/register?plan=basic",
+    cta: "Comenzar Ahora",
+    href: "/register?plan=pyme",
     highlighted: true,
-    badge: "Más Popular",
+    badge: "Mas Popular",
   },
   {
     name: "PRO",
-    price: "$149,000",
+    price: "$219,900",
     period: "COP/mes",
-    description: "Para empresas establecidas",
+    description: "Para empresas en expansion",
     features: [
-      "20 usuarios",
-      "5,000 productos",
-      "Bodegas ilimitadas",
-      "2,000 facturas/mes",
+      "3 usuarios + 1 contador gratis",
+      "10 bodegas",
+      "Productos ilimitados",
+      "Facturas ilimitadas",
+      "Facturacion electronica DIAN",
       "Soporte 24/7",
-      "Reportes avanzados",
-      "API access",
+      "Reportes personalizados",
+      "Integraciones basicas",
+      "Alertas automatizadas",
     ],
-    cta: "Iniciar Prueba",
+    cta: "Comenzar Ahora",
     href: "/register?plan=pro",
     highlighted: false,
   },
   {
-    name: "ENTERPRISE",
-    price: "Personalizado",
-    period: "",
-    description: "Para grandes organizaciones",
+    name: "PLUS",
+    price: "$279,900",
+    period: "COP/mes",
+    description: "Para empresas consolidadas",
     features: [
-      "Usuarios ilimitados",
+      "8 usuarios + 1 contador gratis",
+      "100 bodegas",
       "Productos ilimitados",
-      "Todo ilimitado",
-      "SLA garantizado",
+      "Facturas ilimitadas",
+      "Facturacion electronica DIAN",
       "Soporte dedicado",
-      "Integraciones custom",
-      "On-premise disponible",
+      "API access",
+      "Integraciones avanzadas",
+      "Dashboard personalizado",
+      "Multi-sucursal",
     ],
-    cta: "Contáctanos",
-    href: "/contact",
+    cta: "Comenzar Ahora",
+    href: "/register?plan=plus",
     highlighted: false,
   },
 ];
@@ -266,7 +276,7 @@ export default function Home() {
               to="/register"
               className="rounded-lg bg-primary-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-600"
             >
-              Comenzar Gratis
+              Comenzar Ahora
             </Link>
           </div>
 
@@ -316,7 +326,7 @@ export default function Home() {
                 to="/register"
                 className="rounded-lg bg-primary-500 px-4 py-2 text-center text-base font-medium text-white"
               >
-                Comenzar Gratis
+                Comenzar Ahora
               </Link>
             </div>
           </motion.div>
@@ -367,7 +377,7 @@ export default function Home() {
                     to="/register"
                     className="inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:bg-primary-600 hover:shadow-xl hover:shadow-primary-500/40"
                   >
-                    Comienza Gratis
+                    Ver Planes
                     <ChevronRight className="h-5 w-5" />
                   </Link>
                 </motion.div>
@@ -407,15 +417,12 @@ export default function Home() {
                   dashboard.stockflow.co
                 </span>
               </div>
-              <div className="aspect-video bg-linear-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-900">
-                <div className="flex h-full items-center justify-center">
-                  <div className="text-center">
-                    <Package className="mx-auto h-16 w-16 text-neutral-300 dark:text-neutral-600" />
-                    <p className="mt-4 text-neutral-400 dark:text-neutral-600">
-                      Vista previa del Dashboard
-                    </p>
-                  </div>
-                </div>
+              <div>
+                <img
+                  src="/dashboard-preview.png"
+                  alt="Vista previa del Dashboard de StockFlow"
+                  className="block w-full h-auto border-0"
+                />
               </div>
             </div>
           </motion.div>
@@ -526,7 +533,7 @@ export default function Home() {
               Planes para cada etapa de tu negocio
             </h2>
             <p className="mt-4 text-lg text-neutral-600 dark:text-neutral-400">
-              Comienza gratis y escala según tus necesidades
+              Elige el plan perfecto para tu empresa y escala segun creces
             </p>
           </motion.div>
 
@@ -632,7 +639,7 @@ export default function Home() {
                   to="/register"
                   className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-base font-semibold text-primary-600 shadow-lg transition-all hover:bg-primary-50"
                 >
-                  Comenzar Gratis
+                  Comenzar Ahora
                   <ChevronRight className="h-5 w-5" />
                 </Link>
               </motion.div>

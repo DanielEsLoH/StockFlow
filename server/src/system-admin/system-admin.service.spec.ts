@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { SystemAdminService } from './system-admin.service';
 import { PrismaService } from '../prisma';
 import { BrevoService } from '../notifications/mail/brevo.service';
+import { SubscriptionManagementService } from '../subscriptions/subscription-management.service';
 import { SystemAdminRole, SystemAdminStatus } from './types';
 import { UserStatus, SubscriptionPlan, TenantStatus } from '@prisma/client';
 
@@ -50,7 +51,7 @@ describe('SystemAdminService', () => {
       email: 'contact@acme.com',
       phone: null,
       status: TenantStatus.ACTIVE,
-      plan: SubscriptionPlan.BASIC,
+      plan: SubscriptionPlan.PYME,
     },
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -64,7 +65,7 @@ describe('SystemAdminService', () => {
     email: 'contact@acme.com',
     phone: null,
     status: TenantStatus.ACTIVE,
-    plan: SubscriptionPlan.BASIC,
+    plan: SubscriptionPlan.PYME,
     createdAt: new Date(),
     updatedAt: new Date(),
     _count: { users: 5 },
@@ -116,6 +117,14 @@ describe('SystemAdminService', () => {
       sendAccountApprovedEmail: jest.fn().mockResolvedValue({ success: true }),
     };
 
+    const mockSubscriptionManagementService = {
+      activatePlan: jest.fn(),
+      suspendPlan: jest.fn(),
+      changePlan: jest.fn(),
+      reactivatePlan: jest.fn(),
+      getSubscription: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SystemAdminService,
@@ -123,6 +132,10 @@ describe('SystemAdminService', () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: BrevoService, useValue: mockBrevoService },
+        {
+          provide: SubscriptionManagementService,
+          useValue: mockSubscriptionManagementService,
+        },
       ],
     }).compile();
 
@@ -391,7 +404,11 @@ describe('SystemAdminService', () => {
       expect(result.action).toBe('approve');
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        data: { status: UserStatus.ACTIVE, emailVerified: true },
+        data: {
+          status: UserStatus.ACTIVE,
+          approvedAt: expect.any(Date),
+          approvedById: mockSystemAdmin.id,
+        },
       });
     });
 
@@ -412,28 +429,18 @@ describe('SystemAdminService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should auto-verify email when approving a user with unverified email', async () => {
+    it('should throw BadRequestException when approving a user with unverified email', async () => {
       const unverifiedUser = { ...mockUser, emailVerified: false };
       prismaService.user.findUnique = jest
         .fn()
         .mockResolvedValue(unverifiedUser);
-      prismaService.user.update = jest.fn().mockResolvedValue({
-        ...unverifiedUser,
-        status: UserStatus.ACTIVE,
-        emailVerified: true,
-      });
-      prismaService.systemAdminAuditLog.create = jest
-        .fn()
-        .mockResolvedValue({});
 
-      const result = await service.approveUser(mockUser.id, mockSystemAdmin.id);
-
-      expect(result.success).toBe(true);
-      expect(result.action).toBe('approve');
-      expect(prismaService.user.update).toHaveBeenCalledWith({
-        where: { id: mockUser.id },
-        data: { status: UserStatus.ACTIVE, emailVerified: true },
-      });
+      await expect(
+        service.approveUser(mockUser.id, mockSystemAdmin.id),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.approveUser(mockUser.id, mockSystemAdmin.id),
+      ).rejects.toThrow('No se puede aprobar un usuario que no ha verificado su correo electrónico');
     });
   });
 
@@ -600,7 +607,7 @@ describe('SystemAdminService', () => {
 
       expect(result.success).toBe(true);
       expect(result.action).toBe('change_plan');
-      expect(result.previousPlan).toBe(SubscriptionPlan.BASIC);
+      expect(result.previousPlan).toBe(SubscriptionPlan.PYME);
       expect(result.newPlan).toBe(SubscriptionPlan.PRO);
     });
 
@@ -622,7 +629,7 @@ describe('SystemAdminService', () => {
       await expect(
         service.changeTenantPlan(
           mockTenant.id,
-          SubscriptionPlan.BASIC,
+          SubscriptionPlan.PYME,
           mockSystemAdmin.id,
         ),
       ).rejects.toThrow(ConflictException);
@@ -763,11 +770,11 @@ describe('SystemAdminService', () => {
     it('should return correct limits for FREE plan', async () => {
       prismaService.tenant.findUnique = jest.fn().mockResolvedValue({
         ...mockTenant,
-        plan: SubscriptionPlan.FREE,
+        plan: SubscriptionPlan.EMPRENDEDOR,
       });
       prismaService.tenant.update = jest.fn().mockResolvedValue({
         ...mockTenant,
-        plan: SubscriptionPlan.FREE,
+        plan: SubscriptionPlan.EMPRENDEDOR,
       });
       prismaService.systemAdminAuditLog.create = jest
         .fn()
@@ -776,22 +783,22 @@ describe('SystemAdminService', () => {
       // Call changeTenantPlan which internally calls getPlanLimits
       const freeTenant = {
         ...mockTenant,
-        plan: SubscriptionPlan.BASIC, // Current plan is BASIC
+        plan: SubscriptionPlan.PYME, // Current plan is BASIC
       };
       prismaService.tenant.findUnique = jest.fn().mockResolvedValue(freeTenant);
       prismaService.tenant.update = jest.fn().mockResolvedValue({
         ...freeTenant,
-        plan: SubscriptionPlan.FREE,
+        plan: SubscriptionPlan.EMPRENDEDOR,
       });
 
       const result = await service.changeTenantPlan(
         mockTenant.id,
-        SubscriptionPlan.FREE,
+        SubscriptionPlan.EMPRENDEDOR,
         mockSystemAdmin.id,
       );
 
       expect(result.success).toBe(true);
-      expect(result.newPlan).toBe(SubscriptionPlan.FREE);
+      expect(result.newPlan).toBe(SubscriptionPlan.EMPRENDEDOR);
     });
 
     it('should return correct limits for PRO plan', async () => {
@@ -818,7 +825,7 @@ describe('SystemAdminService', () => {
       prismaService.tenant.findUnique = jest.fn().mockResolvedValue(mockTenant);
       prismaService.tenant.update = jest.fn().mockResolvedValue({
         ...mockTenant,
-        plan: SubscriptionPlan.ENTERPRISE,
+        plan: SubscriptionPlan.PLUS,
       });
       prismaService.systemAdminAuditLog.create = jest
         .fn()
@@ -826,12 +833,12 @@ describe('SystemAdminService', () => {
 
       const result = await service.changeTenantPlan(
         mockTenant.id,
-        SubscriptionPlan.ENTERPRISE,
+        SubscriptionPlan.PLUS,
         mockSystemAdmin.id,
       );
 
       expect(result.success).toBe(true);
-      expect(result.newPlan).toBe(SubscriptionPlan.ENTERPRISE);
+      expect(result.newPlan).toBe(SubscriptionPlan.PLUS);
     });
   });
 

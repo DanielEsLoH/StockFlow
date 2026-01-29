@@ -234,7 +234,7 @@ describe('AuthController', () => {
     id: 'tenant-123',
     name: 'Test Company',
     slug: 'test-company',
-    plan: 'BASIC',
+    plan: 'PYME',
     status: 'ACTIVE',
   };
 

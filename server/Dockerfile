@@ -68,6 +68,11 @@ COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
 # Copy source code
 COPY . .
 
+# Prisma 7 requires DATABASE_URL even for prisma generate (build-time only)
+# This dummy URL is never used for actual connections - real URL comes from Railway at runtime
+ARG DATABASE_URL="postgresql://build:build@localhost:5432/build"
+ENV DATABASE_URL=$DATABASE_URL
+
 # Build the NestJS application
 # This compiles TypeScript to JavaScript in the dist/ directory
 RUN npm run build

@@ -110,7 +110,9 @@ ARG BUILD_VERSION=3
 # Install runtime dependencies:
 # - tini: Minimal init system for proper signal handling (SIGTERM, SIGINT)
 #         Prevents zombie processes and ensures graceful shutdown
-RUN apk add --no-cache tini
+RUN apk add --no-cache tini && \
+    # Upgrade npm to silence "new version available" notices during startup
+    npm install -g npm@11.8.0
 
 # Create non-root user for security (principle of least privilege)
 # Running as root in containers is a security risk

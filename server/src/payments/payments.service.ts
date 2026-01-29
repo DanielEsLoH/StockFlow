@@ -88,6 +88,113 @@ export class PaymentsService {
   ) {}
 
   /**
+   * Gets aggregated statistics for all payments in the current tenant.
+   *
+   * @returns Payment statistics including totals, status/method breakdowns, and period summaries
+   */
+  async getStats(): Promise<{
+    totalPayments: number;
+    totalReceived: number;
+    totalPending: number;
+    totalRefunded: number;
+    totalProcessing: number;
+    averagePaymentValue: number;
+    paymentsByStatus: Record<PaymentStatus, number>;
+    paymentsByMethod: Record<PaymentMethod, number>;
+    todayPayments: number;
+    todayTotal: number;
+    weekPayments: number;
+    weekTotal: number;
+  }> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(`Getting payment statistics for tenant ${tenantId}`);
+
+    // Get date boundaries
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(startOfToday);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+
+    // Get all payments for the tenant
+    const payments = await this.prisma.payment.findMany({
+      where: { tenantId },
+      select: {
+        amount: true,
+        method: true,
+        paymentDate: true,
+      },
+    });
+
+    // Initialize status counts (payments don't have status in current schema, so we'll use PaymentStatus from invoice context)
+    // For now, all recorded payments are considered PAID
+    const paymentsByStatus: Record<PaymentStatus, number> = {
+      [PaymentStatus.UNPAID]: 0,
+      [PaymentStatus.PARTIALLY_PAID]: 0,
+      [PaymentStatus.PAID]: payments.length, // All recorded payments count as paid
+    };
+
+    // Initialize method counts
+    const paymentsByMethod: Record<PaymentMethod, number> = {
+      [PaymentMethod.CASH]: 0,
+      [PaymentMethod.CREDIT_CARD]: 0,
+      [PaymentMethod.DEBIT_CARD]: 0,
+      [PaymentMethod.BANK_TRANSFER]: 0,
+      [PaymentMethod.PSE]: 0,
+      [PaymentMethod.NEQUI]: 0,
+      [PaymentMethod.DAVIPLATA]: 0,
+      [PaymentMethod.OTHER]: 0,
+    };
+
+    let totalReceived = 0;
+    let todayPayments = 0;
+    let todayTotal = 0;
+    let weekPayments = 0;
+    let weekTotal = 0;
+
+    // Calculate statistics in a single pass
+    for (const payment of payments) {
+      const amount = Number(payment.amount);
+
+      // Count by method
+      paymentsByMethod[payment.method]++;
+
+      // Total received
+      totalReceived += amount;
+
+      // Today's payments
+      if (payment.paymentDate >= startOfToday) {
+        todayPayments++;
+        todayTotal += amount;
+      }
+
+      // This week's payments
+      if (payment.paymentDate >= startOfWeek) {
+        weekPayments++;
+        weekTotal += amount;
+      }
+    }
+
+    const totalPayments = payments.length;
+    const averagePaymentValue = totalPayments > 0 ? totalReceived / totalPayments : 0;
+
+    return {
+      totalPayments,
+      totalReceived,
+      totalPending: 0, // No pending status for payments in current schema
+      totalRefunded: 0, // Would need refund tracking
+      totalProcessing: 0, // Would need processing status
+      averagePaymentValue,
+      paymentsByStatus,
+      paymentsByMethod,
+      todayPayments,
+      todayTotal,
+      weekPayments,
+      weekTotal,
+    };
+  }
+
+  /**
    * Lists all payments within the current tenant with filtering and pagination.
    *
    * @param filters - Filter and pagination options

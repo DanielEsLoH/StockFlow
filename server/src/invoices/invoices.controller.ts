@@ -104,6 +104,33 @@ export class InvoicesController {
   }
 
   /**
+   * Gets aggregated statistics for all invoices in the tenant.
+   *
+   * @returns Invoice statistics
+   *
+   * @example
+   * GET /invoices/stats
+   */
+  @Get('stats')
+  @ApiOperation({
+    summary: 'Get invoice statistics',
+    description:
+      'Returns aggregated statistics for all invoices in the tenant including totals, pending amounts, and status breakdown.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Invoice statistics retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async getStats() {
+    this.logger.log('Getting invoice statistics');
+    return this.invoicesService.getStats();
+  }
+
+  /**
    * Gets an invoice by ID.
    * Includes all items, customer, and user relations.
    *

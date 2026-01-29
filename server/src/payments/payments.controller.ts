@@ -86,6 +86,33 @@ export class PaymentsController {
   }
 
   /**
+   * Gets aggregated statistics for all payments in the tenant.
+   *
+   * @returns Payment statistics
+   *
+   * @example
+   * GET /payments/stats
+   */
+  @Get('stats')
+  @ApiOperation({
+    summary: 'Get payment statistics',
+    description:
+      'Returns aggregated statistics for all payments in the tenant including totals, method breakdown, and period summaries.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment statistics retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async getStats() {
+    this.logger.log('Getting payment statistics');
+    return this.paymentsService.getStats();
+  }
+
+  /**
    * Gets a payment by ID.
    * Includes invoice and customer relations.
    *

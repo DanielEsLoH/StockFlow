@@ -125,6 +125,90 @@ export class InvoicesService {
   ) {}
 
   /**
+   * Gets aggregated statistics for all invoices in the current tenant.
+   *
+   * @returns Invoice statistics including totals, amounts by status, and averages
+   */
+  async getStats(): Promise<{
+    totalInvoices: number;
+    totalRevenue: number;
+    pendingAmount: number;
+    overdueAmount: number;
+    averageInvoiceValue: number;
+    invoicesByStatus: Record<InvoiceStatus, number>;
+  }> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(`Getting invoice statistics for tenant ${tenantId}`);
+
+    // Get all invoices for the tenant to calculate statistics
+    const invoices = await this.prisma.invoice.findMany({
+      where: { tenantId },
+      select: {
+        status: true,
+        paymentStatus: true,
+        total: true,
+      },
+    });
+
+    // Initialize status counts
+    const invoicesByStatus: Record<InvoiceStatus, number> = {
+      [InvoiceStatus.DRAFT]: 0,
+      [InvoiceStatus.PENDING]: 0,
+      [InvoiceStatus.SENT]: 0,
+      [InvoiceStatus.OVERDUE]: 0,
+      [InvoiceStatus.CANCELLED]: 0,
+      [InvoiceStatus.VOID]: 0,
+    };
+
+    let totalRevenue = 0;
+    let pendingAmount = 0;
+    let overdueAmount = 0;
+
+    // Calculate statistics in a single pass
+    for (const invoice of invoices) {
+      // Count by status
+      invoicesByStatus[invoice.status]++;
+
+      const total = Number(invoice.total);
+
+      // Total revenue from SENT invoices that are fully PAID (paymentStatus)
+      if (invoice.paymentStatus === PaymentStatus.PAID) {
+        totalRevenue += total;
+      }
+
+      // Pending amount (SENT invoices that are not yet paid)
+      if (
+        invoice.status === InvoiceStatus.SENT &&
+        invoice.paymentStatus !== PaymentStatus.PAID
+      ) {
+        pendingAmount += total;
+      }
+
+      // Overdue amount
+      if (invoice.status === InvoiceStatus.OVERDUE) {
+        overdueAmount += total;
+      }
+    }
+
+    const totalInvoices = invoices.length;
+    const averageInvoiceValue =
+      totalInvoices > 0
+        ? invoices.reduce((sum, inv) => sum + Number(inv.total), 0) /
+          totalInvoices
+        : 0;
+
+    return {
+      totalInvoices,
+      totalRevenue,
+      pendingAmount,
+      overdueAmount,
+      averageInvoiceValue,
+      invoicesByStatus,
+    };
+  }
+
+  /**
    * Lists all invoices within the current tenant with filtering and pagination.
    *
    * @param filters - Filter and pagination options

@@ -115,7 +115,7 @@ async function main() {
     data: {
       name: 'Tienda Demo',
       slug: 'tienda-demo',
-      email: 'demo@stockflow.co',
+      email: 'admin@tienda-demo.com',
       phone: '+57 300 123 4567',
       status: 'ACTIVE',
       plan: 'PRO',
@@ -131,7 +131,7 @@ async function main() {
     data: {
       name: 'Distribuidora Nacional',
       slug: 'distribuidora-nacional',
-      email: 'contacto@distribuidoranacional.com',
+      email: 'admin@distribuidoranacional.com',
       phone: '+57 1 234 5678',
       status: 'ACTIVE',
       plan: 'PLUS',
@@ -147,7 +147,7 @@ async function main() {
     data: {
       name: 'Nuevo Negocio',
       slug: 'nuevo-negocio',
-      email: 'nuevo@negocio.com',
+      email: 'admin@nuevonegocio.com',
       phone: '+57 311 555 4444',
       status: 'TRIAL',
       plan: 'EMPRENDEDOR',
@@ -163,7 +163,7 @@ async function main() {
     data: {
       name: 'Papelería Central',
       slug: 'papeleria-central',
-      email: 'info@papeleriacentral.com',
+      email: 'admin@papeleriacentral.com',
       phone: '+57 4 987 6543',
       status: 'ACTIVE',
       plan: 'PYME',

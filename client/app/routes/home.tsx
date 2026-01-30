@@ -550,7 +550,7 @@ export default function Home() {
                 variants={fadeInUp}
                 className={`relative rounded-2xl border p-8 ${
                   plan.highlighted
-                    ? "border-primary-500 bg-primary-50 shadow-xl dark:border-primary-500 dark:bg-primary-950/50"
+                    ? "border-primary-500 bg-primary-50 shadow-xl dark:border-primary-500 dark:bg-primary-900"
                     : "border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
                 }`}
               >

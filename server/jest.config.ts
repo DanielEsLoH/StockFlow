@@ -10,6 +10,10 @@ const config: Config = {
   },
   testEnvironment: 'node',
 
+  // Setup file to load .env.test before tests run
+  // This ensures tests use the Docker test database (stockflow_test)
+  setupFilesAfterEnv: ['<rootDir>/../test/setup.ts'],
+
   // Coverage collection configuration
   collectCoverageFrom: [
     // Include these file patterns

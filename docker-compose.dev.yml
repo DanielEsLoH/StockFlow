@@ -19,6 +19,8 @@ services:
       POSTGRES_DB: stockflow_dev
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
+      # Init script creates both dev and test databases on first run
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     ports:
       - "5432:5432"
     healthcheck:

@@ -19,7 +19,7 @@
 # -----------------------------------------------------------------------------
 # Install all dependencies including devDependencies for building.
 # This stage is cached and reused when package files don't change.
-FROM node:20-alpine AS deps
+FROM node:25-alpine AS deps
 
 WORKDIR /app
 
@@ -51,7 +51,7 @@ RUN npm ci && \
 # Stage 2: Builder
 # -----------------------------------------------------------------------------
 # Build the TypeScript application to JavaScript
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
@@ -81,7 +81,7 @@ RUN npm run build
 # Stage 3: Production Dependencies
 # -----------------------------------------------------------------------------
 # Install only production dependencies to minimize final image size
-FROM node:20-alpine AS prod-deps
+FROM node:25-alpine AS prod-deps
 
 WORKDIR /app
 
@@ -115,7 +115,7 @@ RUN npm ci --omit=dev && \
 # Stage 4: Runner (Production)
 # -----------------------------------------------------------------------------
 # Create the final minimal production image
-FROM node:20-alpine AS runner
+FROM node:25-alpine AS runner
 
 WORKDIR /app
 

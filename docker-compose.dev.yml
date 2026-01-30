@@ -10,7 +10,7 @@ services:
   # PostgreSQL Database (Development)
   # ---------------------------------------------------------------------------
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: stockflow-postgres-dev
     restart: unless-stopped
     environment:

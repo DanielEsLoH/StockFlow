@@ -34,7 +34,7 @@ RUN npm install -g npm@11.8.0
 # Changes to source code won't invalidate the npm install cache
 COPY package*.json ./
 COPY prisma ./prisma/
-COPY prisma.config.ts ./
+COPY prisma.config.mjs ./
 
 # Prisma 7 requires DATABASE_URL even for prisma generate (build-time only)
 # This dummy URL is never used for actual connections - real URL comes from Railway at runtime
@@ -94,7 +94,7 @@ RUN npm install -g npm@11.8.0
 # Copy package files and Prisma schema
 COPY package*.json ./
 COPY prisma ./prisma/
-COPY prisma.config.ts ./
+COPY prisma.config.mjs ./
 
 # Prisma 7 requires DATABASE_URL even for prisma generate (build-time only)
 # This dummy URL is never used for actual connections - real URL comes from Railway at runtime

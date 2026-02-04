@@ -22,6 +22,7 @@ import {
   X,
   Banknote,
   Hash,
+  Smartphone,
 } from "lucide-react";
 import type { Route } from "./+types/_app.payments.$id";
 import { cn, formatDate, formatCurrency } from "~/lib/utils";
@@ -172,6 +173,14 @@ function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
     PSE: {
       label: PaymentMethodLabels.PSE,
       icon: <Building2 className="h-3 w-3" />,
+    },
+    NEQUI: {
+      label: PaymentMethodLabels.NEQUI,
+      icon: <Smartphone className="h-3 w-3" />,
+    },
+    DAVIPLATA: {
+      label: PaymentMethodLabels.DAVIPLATA,
+      icon: <Smartphone className="h-3 w-3" />,
     },
     OTHER: {
       label: PaymentMethodLabels.OTHER,

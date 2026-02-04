@@ -15,6 +15,10 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle,
+  ShoppingCart,
+  Store,
+  TrendingUp,
+  Receipt,
 } from 'lucide-react';
 import type { Route } from './+types/_app.invoices';
 import { cn, debounce, formatCurrency, formatDate } from '~/lib/utils';
@@ -26,7 +30,7 @@ import {
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
 import { Card } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
+import { Badge, StatusBadge } from '~/components/ui/Badge';
 import { StatCard } from '~/components/ui/StatCard';
 import { Select } from '~/components/ui/Select';
 import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
@@ -41,7 +45,7 @@ import {
 import { SkeletonTableRow } from '~/components/ui/Skeleton';
 import { DeleteModal } from '~/components/ui/DeleteModal';
 import { EmptyState } from '~/components/ui/EmptyState';
-import type { InvoiceFilters, InvoiceSummary, InvoiceStatus } from '~/types/invoice';
+import type { InvoiceFilters, InvoiceSummary, InvoiceStatus, InvoiceSource } from '~/types/invoice';
 import { useUrlFilters } from '~/hooks/useUrlFilters';
 import { useCustomerOptions } from '~/hooks/useCustomerOptions';
 
@@ -61,6 +65,13 @@ const statusOptions = [
   { value: 'PAID', label: 'Pagada' },
   { value: 'OVERDUE', label: 'Vencida' },
   { value: 'CANCELLED', label: 'Cancelada' },
+];
+
+// Source options for filter
+const sourceOptions = [
+  { value: '', label: 'Todos los origenes' },
+  { value: 'MANUAL', label: 'Manual' },
+  { value: 'POS', label: 'POS' },
 ];
 
 // Items per page options
@@ -105,25 +116,48 @@ function InvoiceTableHeader() {
         <TableHead className="hidden sm:table-cell">Fecha Vencimiento</TableHead>
         <TableHead className="text-right">Total</TableHead>
         <TableHead>Estado</TableHead>
+        <TableHead className="hidden lg:table-cell">Origen</TableHead>
+        <TableHead className="hidden lg:table-cell text-center">DIAN</TableHead>
         <TableHead className="w-30">Acciones</TableHead>
       </TableRow>
     </TableHeader>
   );
 }
 
-// Status badge component
-function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
-  const config: Record<InvoiceStatus, { label: string; variant: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' }> = {
-    DRAFT: { label: 'Borrador', variant: 'secondary' },
-    PENDING: { label: 'Pendiente', variant: 'warning' },
-    PAID: { label: 'Pagada', variant: 'success' },
-    OVERDUE: { label: 'Vencida', variant: 'error' },
-    CANCELLED: { label: 'Cancelada', variant: 'secondary' },
+// Source badge component
+function InvoiceSourceBadge({ source }: { source: InvoiceSource }) {
+  const config: Record<InvoiceSource, { label: string; variant: 'default' | 'primary' | 'secondary'; icon: React.ReactNode }> = {
+    MANUAL: { label: 'Manual', variant: 'secondary', icon: <FileText className="h-3 w-3" /> },
+    POS: { label: 'POS', variant: 'primary', icon: <ShoppingCart className="h-3 w-3" /> },
   };
 
-  const statusConfig = config[status] || { label: status || 'Desconocido', variant: 'default' as const };
+  const sourceConfig = config[source] || { label: source || 'Desconocido', variant: 'default' as const, icon: null };
 
-  return <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>;
+  return (
+    <Badge variant={sourceConfig.variant} size="sm" icon={sourceConfig.icon}>
+      {sourceConfig.label}
+    </Badge>
+  );
+}
+
+// DIAN status icon
+function DianStatusIcon({ hasCufe }: { hasCufe: boolean }) {
+  if (hasCufe) {
+    return (
+      <div className="flex items-center justify-center" title="Enviada a DIAN">
+        <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-success-100 dark:bg-success-900/30">
+          <Store className="h-4 w-4 text-success-600 dark:text-success-400" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center justify-center" title="Sin enviar a DIAN">
+      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+        <Store className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+      </div>
+    </div>
+  );
 }
 
 
@@ -132,6 +166,7 @@ const invoiceFiltersParser = {
   parse: (searchParams: URLSearchParams): InvoiceFilters => ({
     search: searchParams.get('search') || undefined,
     status: (searchParams.get('status') as InvoiceStatus) || undefined,
+    source: (searchParams.get('source') as InvoiceSource) || undefined,
     customerId: searchParams.get('customerId') || undefined,
     startDate: searchParams.get('startDate') || undefined,
     endDate: searchParams.get('endDate') || undefined,
@@ -193,7 +228,7 @@ export default function InvoicesPage() {
   const invoices = invoicesData?.data || [];
   const paginationMeta = invoicesData?.meta;
   const hasActiveFilters =
-    filters.search || filters.status || filters.customerId || filters.startDate || filters.endDate;
+    filters.search || filters.status || filters.source || filters.customerId || filters.startDate || filters.endDate;
 
   return (
     <motion.div
@@ -204,16 +239,21 @@ export default function InvoicesPage() {
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
-            Facturas
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-            Gestiona tus facturas y pagos
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500/20 to-accent-500/10 dark:from-primary-500/20 dark:to-accent-900/30">
+            <Receipt className="h-7 w-7 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold font-display bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
+              Facturas
+            </h1>
+            <p className="text-neutral-500 dark:text-neutral-400 mt-0.5">
+              {paginationMeta?.total || 0} facturas en total
+            </p>
+          </div>
         </div>
         <Link to="/invoices/new">
-          <Button leftIcon={<Plus className="h-4 w-4" />}>
+          <Button variant="gradient" leftIcon={<Plus className="h-4 w-4" />}>
             Nueva Factura
           </Button>
         </Link>
@@ -227,18 +267,27 @@ export default function InvoicesPage() {
             label="Pendiente de Cobro"
             value={formatCurrency(stats?.pendingAmount || 0)}
             color="warning"
+            variant="gradient"
+            animate
+            animationDelay={0}
           />
           <StatCard
             icon={AlertTriangle}
             label="Facturas Vencidas"
             value={formatCurrency(stats?.overdueAmount || 0)}
             color="error"
+            variant="gradient"
+            animate
+            animationDelay={0.1}
           />
           <StatCard
-            icon={CheckCircle}
+            icon={TrendingUp}
             label="Pagado este Mes"
             value={formatCurrency(stats?.totalRevenue || 0)}
             color="success"
+            variant="gradient"
+            animate
+            animationDelay={0.2}
           />
           <StatCard
             icon={FileText}
@@ -246,13 +295,16 @@ export default function InvoicesPage() {
             value={stats?.totalInvoices || 0}
             subtitle="en el sistema"
             color="primary"
+            variant="gradient"
+            animate
+            animationDelay={0.3}
           />
         </div>
       </motion.div>
 
       {/* Search and Filters */}
       <motion.div variants={itemVariants}>
-        <Card padding="md">
+        <Card variant="elevated" padding="md">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               {/* Search */}
@@ -268,17 +320,14 @@ export default function InvoicesPage() {
 
               {/* Filter toggle */}
               <Button
-                variant="outline"
+                variant={showFilters ? 'soft-primary' : 'outline'}
                 onClick={() => setShowFilters(!showFilters)}
-                className={cn(
-                  showFilters && 'bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20'
-                )}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
                 {hasActiveFilters && (
-                  <Badge variant="primary" className="ml-2">
-                    {[filters.status, filters.customerId, filters.startDate, filters.endDate].filter(Boolean).length}
+                  <Badge variant="gradient" size="xs" className="ml-2">
+                    {[filters.status, filters.source, filters.customerId, filters.startDate, filters.endDate].filter(Boolean).length}
                   </Badge>
                 )}
               </Button>
@@ -301,7 +350,7 @@ export default function InvoicesPage() {
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                     <Select
                       options={statusOptions}
                       value={filters.status || ''}
@@ -309,6 +358,14 @@ export default function InvoicesPage() {
                         updateFilters({ status: (value as InvoiceStatus) || undefined })
                       }
                       placeholder="Todos los estados"
+                    />
+                    <Select
+                      options={sourceOptions}
+                      value={filters.source || ''}
+                      onChange={(value) =>
+                        updateFilters({ source: (value as InvoiceSource) || undefined })
+                      }
+                      placeholder="Todos los origenes"
                     />
                     <Select
                       options={customerOptions}
@@ -336,13 +393,13 @@ export default function InvoicesPage() {
 
       {/* Table */}
       <motion.div variants={itemVariants}>
-        <Card>
+        <Card variant="elevated">
           {isLoading ? (
             <Table>
               <InvoiceTableHeader />
               <TableBody>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <SkeletonTableRow key={i} columns={7} />
+                  <SkeletonTableRow key={i} columns={9} />
                 ))}
               </TableBody>
             </Table>
@@ -383,12 +440,12 @@ export default function InvoicesPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="border-b border-neutral-200 dark:border-neutral-700 last:border-0"
+                        className="group border-b border-neutral-200 dark:border-neutral-700 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
                       >
                         <TableCell>
                           <Link
                             to={`/invoices/${invoice.id}`}
-                            className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                            className="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
                           >
                             {invoice.invoiceNumber}
                           </Link>
@@ -423,15 +480,21 @@ export default function InvoicesPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <p className="font-semibold text-neutral-900 dark:text-white">
+                          <p className="font-bold text-lg bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-300 bg-clip-text text-transparent">
                             {formatCurrency(invoice.total)}
                           </p>
                         </TableCell>
                         <TableCell>
-                          <InvoiceStatusBadge status={invoice.status} />
+                          <StatusBadge status={invoice.status} />
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <InvoiceSourceBadge source={invoice.source} />
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <DianStatusIcon hasCufe={!!invoice.dianCufe} />
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Link to={`/invoices/${invoice.id}`}>
                               <Button variant="ghost" size="icon" title="Ver detalles">
                                 <Eye className="h-4 w-4" />

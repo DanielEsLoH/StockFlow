@@ -6,6 +6,9 @@ import type { Product } from './product';
 // Invoice Status
 export type InvoiceStatus = 'DRAFT' | 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED';
 
+// Invoice Source
+export type InvoiceSource = 'MANUAL' | 'POS';
+
 // Status display labels in Spanish
 export const InvoiceStatusLabels: Record<InvoiceStatus, string> = {
   DRAFT: 'Borrador',
@@ -24,6 +27,7 @@ export interface InvoiceItem {
   description: string;
   quantity: number;
   unitPrice: number;
+  taxRate: number;
   discount: number;
   tax: number;
   subtotal: number;
@@ -39,15 +43,21 @@ export interface Invoice {
   customerId: string;
   customer?: Customer;
   status: InvoiceStatus;
+  source: InvoiceSource;
   issueDate: string;
   dueDate: string;
   paidAt?: string;
   items: InvoiceItem[];
   subtotal: number;
-  taxAmount: number;
-  discountAmount: number;
+  tax: number;
+  discount: number;
   total: number;
   notes?: string;
+  // DIAN fields
+  dianCufe?: string;
+  dianXml?: string;
+  dianPdf?: string;
+  dianSentAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -59,14 +69,17 @@ export interface InvoiceSummary {
   customerId: string;
   customer?: Customer;
   status: InvoiceStatus;
+  source: InvoiceSource;
   issueDate: string;
   dueDate: string;
   paidAt?: string;
   itemCount: number;
   subtotal: number;
-  taxAmount: number;
-  discountAmount: number;
+  tax: number;
+  discount: number;
   total: number;
+  // DIAN fields
+  dianCufe?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -75,6 +88,7 @@ export interface InvoiceSummary {
 export interface InvoiceFilters {
   search?: string;
   status?: InvoiceStatus;
+  source?: InvoiceSource;
   customerId?: string;
   startDate?: string;
   endDate?: string;
@@ -100,11 +114,10 @@ export interface InvoicesResponse {
 // Create invoice item data
 export interface CreateInvoiceItemData {
   productId: string;
-  description: string;
   quantity: number;
   unitPrice: number;
   discount?: number;
-  tax?: number;
+  taxRate?: number;
 }
 
 // Update invoice item data
@@ -115,11 +128,10 @@ export interface UpdateInvoiceItemData extends Partial<CreateInvoiceItemData> {
 // Create invoice data
 export interface CreateInvoiceData {
   customerId: string;
-  status?: InvoiceStatus;
-  issueDate?: string;
-  dueDate: string;
+  dueDate?: string;
   items: CreateInvoiceItemData[];
   notes?: string;
+  source?: InvoiceSource;
 }
 
 // Update invoice data

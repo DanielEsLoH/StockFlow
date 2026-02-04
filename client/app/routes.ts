@@ -68,5 +68,23 @@ export default [
     // Settings and Profile
     route("settings", "routes/_app.settings.tsx"),
     route("profile", "routes/_app.profile.tsx"),
+
+    // POS module
+    route("pos", "routes/_app.pos.tsx"),
+    route("pos/open", "routes/_app.pos.open.tsx"),
+    route("pos/close", "routes/_app.pos.close.tsx"),
+    route("pos/sales", "routes/_app.pos.sales.tsx"),
+    route("pos/sales/:id", "routes/_app.pos.sales.$id.tsx"),
+    route("pos/sessions", "routes/_app.pos.sessions.tsx"),
+    route("pos/sessions/:id", "routes/_app.pos.sessions.$id.tsx"),
+    route("pos/cash-registers", "routes/_app.pos.cash-registers.tsx"),
+    route("pos/cash-registers/new", "routes/_app.pos.cash-registers.new.tsx"),
+    route("pos/cash-registers/:id/edit", "routes/_app.pos.cash-registers.$id.edit.tsx"),
+
+    // DIAN Electronic Invoicing module
+    route("dian", "routes/_app.dian.tsx"),
+    route("dian/config", "routes/_app.dian.config.tsx"),
+    route("dian/documents", "routes/_app.dian.documents.tsx"),
+    route("dian/documents/:id", "routes/_app.dian.documents.$id.tsx"),
   ]),
 ] satisfies RouteConfig;

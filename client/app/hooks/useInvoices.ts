@@ -453,3 +453,30 @@ export function useRemoveInvoiceItem() {
     },
   });
 }
+
+// ============================================================================
+// DIAN INTEGRATION
+// ============================================================================
+
+/**
+ * Send invoice to DIAN for electronic validation
+ */
+export function useSendInvoiceToDian() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (invoiceId: string) => invoicesService.sendToDian(invoiceId),
+    onSuccess: (invoice) => {
+      // Update detail cache with the returned invoice (now has DIAN fields)
+      queryClient.setQueryData(queryKeys.invoices.detail(invoice.id), invoice);
+
+      // Invalidate list queries
+      void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+
+      toast.success(`Factura "${invoice.invoiceNumber}" enviada a la DIAN exitosamente`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Error al enviar la factura a la DIAN');
+    },
+  });
+}

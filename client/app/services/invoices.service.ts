@@ -112,4 +112,10 @@ export const invoicesService = {
     const { data } = await api.get<InvoicePayment[]>(`/invoices/${invoiceId}/payments`);
     return data;
   },
+
+  // Send invoice to DIAN
+  async sendToDian(invoiceId: string): Promise<Invoice> {
+    const { data } = await api.post<Invoice>(`/invoices/${invoiceId}/send-to-dian`);
+    return data;
+  },
 };

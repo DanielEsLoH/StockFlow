@@ -12,6 +12,8 @@ export type PaymentMethod =
   | 'WIRE_TRANSFER'
   | 'CHECK'
   | 'PSE'
+  | 'NEQUI'
+  | 'DAVIPLATA'
   | 'OTHER';
 
 // Payment Status
@@ -32,6 +34,8 @@ export const PaymentMethodLabels: Record<PaymentMethod, string> = {
   WIRE_TRANSFER: 'Transferencia Internacional',
   CHECK: 'Cheque',
   PSE: 'PSE',
+  NEQUI: 'Nequi',
+  DAVIPLATA: 'Daviplata',
   OTHER: 'Otro',
 };
 

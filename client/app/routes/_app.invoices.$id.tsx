@@ -18,6 +18,11 @@ import {
   Clock,
   AlertTriangle,
   ChevronDown,
+  Send,
+  Download,
+  Store,
+  ShoppingCart,
+  Loader2,
 } from "lucide-react";
 import type { Route } from "./+types/_app.invoices.$id";
 import { cn, formatDate, formatCurrency } from "~/lib/utils";
@@ -25,7 +30,9 @@ import {
   useInvoice,
   useDeleteInvoice,
   useUpdateInvoiceStatus,
+  useSendInvoiceToDian,
 } from "~/hooks/useInvoices";
+import { useDianConfig, useDownloadDianXml } from "~/hooks/useDian";
 import { Button } from "~/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
 import { Badge } from "~/components/ui/Badge";
@@ -39,7 +46,9 @@ import {
   TableRow,
   TableCell,
 } from "~/components/ui/Table";
-import type { InvoiceStatus } from "~/types/invoice";
+import type { InvoiceStatus, InvoiceSource } from "~/types/invoice";
+import { POSTicketModal } from "~/components/pos";
+import { useAuthStore } from "~/stores/auth.store";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -122,6 +131,58 @@ function InvoiceStatusBadge({
     <Badge variant={variant} size={size}>
       {icon}
       <span className="ml-1">{label}</span>
+    </Badge>
+  );
+}
+
+// Source badge component
+function InvoiceSourceBadge({ source }: { source?: InvoiceSource }) {
+  const config: Record<
+    InvoiceSource,
+    {
+      label: string;
+      variant: "default" | "primary" | "secondary";
+      icon: React.ReactNode;
+    }
+  > = {
+    MANUAL: {
+      label: "Manual",
+      variant: "secondary",
+      icon: <FileText className="h-3 w-3" />,
+    },
+    POS: {
+      label: "POS",
+      variant: "primary",
+      icon: <ShoppingCart className="h-3 w-3" />,
+    },
+  };
+
+  // Default to MANUAL if source is undefined (for backwards compatibility)
+  const safeSource = source ?? "MANUAL";
+  const { label, variant, icon } = config[safeSource];
+
+  return (
+    <Badge variant={variant} size="sm">
+      {icon}
+      <span className="ml-1">{label}</span>
+    </Badge>
+  );
+}
+
+// DIAN status badge component
+function DianStatusBadge({ hasCufe }: { hasCufe: boolean }) {
+  if (hasCufe) {
+    return (
+      <Badge variant="success" size="sm">
+        <CheckCircle className="h-3 w-3" />
+        <span className="ml-1">DIAN</span>
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" size="sm">
+      <Clock className="h-3 w-3" />
+      <span className="ml-1">Sin DIAN</span>
     </Badge>
   );
 }
@@ -245,10 +306,14 @@ function LoadingSkeleton() {
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showTicketModal, setShowTicketModal] = useState(false);
 
   const { data: invoice, isLoading, isError } = useInvoice(id!);
+  const { data: dianConfig } = useDianConfig();
   const deleteInvoice = useDeleteInvoice();
   const updateStatus = useUpdateInvoiceStatus();
+  const sendToDian = useSendInvoiceToDian();
+  const downloadXml = useDownloadDianXml();
 
   const handleDelete = async () => {
     await deleteInvoice.mutateAsync(id!);
@@ -260,13 +325,38 @@ export default function InvoiceDetailPage() {
   };
 
   const handlePrint = () => {
-    window.print();
+    // Si es factura POS, mostrar modal de ticket térmico
+    if (invoice?.source === "POS") {
+      setShowTicketModal(true);
+    } else {
+      // Facturas manuales usan impresión normal
+      window.print();
+    }
+  };
+
+  const handleSendToDian = () => {
+    if (id) {
+      sendToDian.mutate(id);
+    }
+  };
+
+  const handleDownloadXml = () => {
+    if (id) {
+      downloadXml.mutate(id);
+    }
   };
 
   // Check permissions based on status
   const canEdit =
     invoice && invoice.status !== "PAID" && invoice.status !== "CANCELLED";
   const canDelete = invoice && invoice.status === "DRAFT";
+
+  // Can send to DIAN if: has DIAN config, invoice is PENDING or PAID, and no CUFE yet
+  const canSendToDian =
+    dianConfig &&
+    invoice &&
+    (invoice.status === "PENDING" || invoice.status === "PAID") &&
+    !invoice.dianCufe;
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -309,11 +399,13 @@ export default function InvoiceDetailPage() {
               </Button>
             </Link>
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
                   Factura {invoice.invoiceNumber}
                 </h1>
                 <InvoiceStatusBadge status={invoice.status} size="lg" />
+                <InvoiceSourceBadge source={invoice.source} />
+                <DianStatusBadge hasCufe={!!invoice.dianCufe} />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400 mt-1">
                 Creada el {formatDate(invoice.createdAt)}
@@ -326,6 +418,20 @@ export default function InvoiceDetailPage() {
               onStatusChange={handleStatusChange}
               isLoading={updateStatus.isPending}
             />
+            {canSendToDian && (
+              <Button
+                variant="primary"
+                onClick={handleSendToDian}
+                disabled={sendToDian.isPending}
+              >
+                {sendToDian.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                Enviar a DIAN
+              </Button>
+            )}
             {canEdit && (
               <Link to={`/invoices/${id}/edit`}>
                 <Button variant="outline">
@@ -493,13 +599,13 @@ export default function InvoiceDetailPage() {
                       {formatCurrency(invoice.subtotal)}
                     </span>
                   </div>
-                  {invoice.discountAmount > 0 && (
+                  {invoice.discount > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-neutral-500 dark:text-neutral-400">
                         Descuento
                       </span>
                       <span className="text-error-600 dark:text-error-400">
-                        -{formatCurrency(invoice.discountAmount)}
+                        -{formatCurrency(invoice.discount)}
                       </span>
                     </div>
                   )}
@@ -508,7 +614,7 @@ export default function InvoiceDetailPage() {
                       IVA
                     </span>
                     <span className="text-neutral-900 dark:text-white">
-                      {formatCurrency(invoice.taxAmount)}
+                      {formatCurrency(invoice.tax)}
                     </span>
                   </div>
                   <div className="flex justify-between pt-2 border-t border-neutral-200 dark:border-neutral-700">
@@ -582,7 +688,7 @@ export default function InvoiceDetailPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right hidden md:table-cell">
-                        {item.tax > 0 ? `${item.tax}%` : "-"}
+                        {item.taxRate > 0 ? `${item.taxRate}%` : "-"}
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(item.subtotal)}
@@ -595,6 +701,61 @@ export default function InvoiceDetailPage() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* DIAN Section */}
+      {invoice.dianCufe && (
+        <motion.div variants={itemVariants}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Store className="h-5 w-5 text-primary-500" />
+                Facturacion Electronica DIAN
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    CUFE (Codigo Unico de Factura Electronica)
+                  </p>
+                  <p className="font-mono text-xs text-neutral-900 dark:text-white mt-1 break-all">
+                    {invoice.dianCufe}
+                  </p>
+                </div>
+                {invoice.dianSentAt && (
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Fecha de Envio
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Calendar className="h-4 w-4 text-success-500" />
+                      <p className="font-medium text-success-600 dark:text-success-400">
+                        {formatDate(invoice.dianSentAt)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadXml}
+                  disabled={downloadXml.isPending}
+                >
+                  {downloadXml.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2" />
+                  )}
+                  Descargar XML
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Notes */}
       {invoice.notes && (
@@ -621,6 +782,43 @@ export default function InvoiceDetailPage() {
         onConfirm={handleDelete}
         isLoading={deleteInvoice.isPending}
       />
+
+      {/* POS Ticket Modal - Solo para facturas POS */}
+      {invoice.source === "POS" && (
+        <POSTicketModal
+          isOpen={showTicketModal}
+          onClose={() => setShowTicketModal(false)}
+          // Datos del negocio - usar DianConfig si existe, fallback a tenant name
+          businessName={dianConfig?.businessName || useAuthStore.getState().tenant?.name || "Mi Empresa"}
+          businessNit={dianConfig?.nit ? `NIT: ${dianConfig.nit}-${dianConfig.dv}` : undefined}
+          businessAddress={dianConfig?.address ? `${dianConfig.address}, ${dianConfig.city}` : undefined}
+          businessPhone={dianConfig?.phone}
+          // Datos de la factura
+          invoiceNumber={invoice.invoiceNumber}
+          date={invoice.issueDate}
+          // Datos del cliente
+          customerName={invoice.customer?.name}
+          customerDocument={invoice.customer?.document}
+          customerDocumentType={invoice.customer?.documentType}
+          // Items
+          items={invoice.items?.map((item) => ({
+            name: item.product?.name || item.description || "Producto",
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            total: item.subtotal,
+            discount: item.discount,
+          })) || []}
+          // Totales
+          subtotal={invoice.subtotal}
+          discountAmount={invoice.discount}
+          taxAmount={invoice.tax}
+          total={invoice.total}
+          // Pagos y DIAN
+          payments={[]}
+          dianCufe={invoice.dianCufe}
+          footerMessage="¡Gracias por su compra!"
+        />
+      )}
     </motion.div>
   );
 }

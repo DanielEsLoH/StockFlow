@@ -1,7 +1,7 @@
 import { IsDate, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { InvoiceStatus, PaymentStatus } from '@prisma/client';
+import { InvoiceStatus, InvoiceSource, PaymentStatus } from '@prisma/client';
 import { PaginationDto } from '../../common/dto';
 
 // CUID pattern: starts with 'c' followed by lowercase letters and numbers, typically 25 chars
@@ -87,4 +87,19 @@ export class FilterInvoicesDto extends PaginationDto {
   @Type(() => Date)
   @IsOptional()
   toDate?: Date;
+
+  /**
+   * Filter by invoice source (MANUAL or POS)
+   * @example "POS"
+   */
+  @ApiPropertyOptional({
+    description: 'Filter by invoice source',
+    enum: InvoiceSource,
+    example: 'POS',
+  })
+  @IsEnum(InvoiceSource, {
+    message: 'El origen debe ser MANUAL o POS',
+  })
+  @IsOptional()
+  source?: InvoiceSource;
 }

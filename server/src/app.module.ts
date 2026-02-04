@@ -25,6 +25,10 @@ import { AuditLogsModule } from './audit-logs';
 import { HealthModule } from './health';
 import { SystemAdminModule } from './system-admin';
 import { InvitationsModule } from './invitations';
+import { CashRegistersModule } from './cash-registers';
+import { POSSessionsModule } from './pos-sessions';
+import { POSSalesModule } from './pos-sales';
+import { DianModule } from './dian';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 
@@ -59,6 +63,10 @@ import { TenantMiddleware } from './common/middleware';
     HealthModule,
     SystemAdminModule,
     InvitationsModule,
+    CashRegistersModule,
+    POSSessionsModule,
+    POSSalesModule,
+    DianModule,
   ],
   controllers: [AppController],
   providers: [AppService],

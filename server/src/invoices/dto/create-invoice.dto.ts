@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -12,6 +13,7 @@ import {
   ArrayMinSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { InvoiceSource } from '@prisma/client';
 
 // CUID pattern: starts with 'c' followed by lowercase letters and numbers, typically 25 chars
 // Example: clh1234567890abcdefghijkl or cmkcykam80004reya0hsdx337
@@ -155,4 +157,20 @@ export class CreateInvoiceDto {
   @IsString({ message: 'Las notas deben ser texto' })
   @IsOptional()
   notes?: string;
+
+  /**
+   * Invoice source (MANUAL or POS)
+   * @example "POS"
+   */
+  @ApiPropertyOptional({
+    description: 'Invoice source - MANUAL for regular invoices, POS for point of sale',
+    enum: InvoiceSource,
+    example: 'MANUAL',
+    default: 'MANUAL',
+  })
+  @IsEnum(InvoiceSource, {
+    message: 'La fuente debe ser MANUAL o POS',
+  })
+  @IsOptional()
+  source?: InvoiceSource = InvoiceSource.MANUAL;
 }

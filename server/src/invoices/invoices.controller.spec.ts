@@ -17,11 +17,13 @@ import { InvoiceStatus, PaymentStatus, PaymentMethod } from '@prisma/client';
 import type { RequestUser } from '../auth';
 import { PaymentsService } from '../payments';
 import type { PaymentResponse } from '../payments';
+import { DianService } from '../dian/dian.service';
 
 describe('InvoicesController', () => {
   let controller: InvoicesController;
   let invoicesService: jest.Mocked<InvoicesService>;
   let paymentsService: jest.Mocked<PaymentsService>;
+  let dianService: jest.Mocked<DianService>;
 
   // Test data
   const mockUser: RequestUser = {
@@ -44,6 +46,7 @@ describe('InvoicesController', () => {
     issueDate: new Date('2024-01-15'),
     dueDate: new Date('2024-02-15'),
     status: InvoiceStatus.DRAFT,
+    source: 'MANUAL',
     paymentStatus: PaymentStatus.UNPAID,
     notes: 'Test invoice notes',
     dianCufe: null,
@@ -171,17 +174,28 @@ describe('InvoicesController', () => {
       delete: jest.fn(),
     };
 
+    const mockDianService = {
+      sendInvoice: jest.fn(),
+      getInvoiceStatus: jest.fn(),
+      resendInvoice: jest.fn(),
+      downloadPdf: jest.fn(),
+      downloadXml: jest.fn(),
+      validateCufe: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [InvoicesController],
       providers: [
         { provide: InvoicesService, useValue: mockInvoicesService },
         { provide: PaymentsService, useValue: mockPaymentsService },
+        { provide: DianService, useValue: mockDianService },
       ],
     }).compile();
 
     controller = module.get<InvoicesController>(InvoicesController);
     invoicesService = module.get(InvoicesService);
     paymentsService = module.get(PaymentsService);
+    dianService = module.get(DianService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'log').mockImplementation();

@@ -63,6 +63,7 @@ export interface InvoiceResponse {
   issueDate: Date;
   dueDate: Date | null;
   status: InvoiceStatus;
+  source: 'MANUAL' | 'POS';
   paymentStatus: PaymentStatus;
   notes: string | null;
   dianCufe: string | null;
@@ -226,6 +227,7 @@ export class InvoicesService {
       customerId,
       fromDate,
       toDate,
+      source,
     } = filters;
     const skip = (page - 1) * limit;
 
@@ -256,6 +258,10 @@ export class InvoicesService {
       if (toDate) {
         where.issueDate.lte = toDate;
       }
+    }
+
+    if (source) {
+      where.source = source;
     }
 
     const [invoices, total] = await Promise.all([
@@ -401,6 +407,7 @@ export class InvoicesService {
           issueDate: new Date(),
           dueDate: dto.dueDate ?? null,
           status: InvoiceStatus.DRAFT,
+          source: dto.source ?? 'MANUAL',
           paymentStatus: PaymentStatus.UNPAID,
           notes: dto.notes ?? null,
         },
@@ -1387,6 +1394,7 @@ export class InvoicesService {
       issueDate: invoice.issueDate,
       dueDate: invoice.dueDate,
       status: invoice.status,
+      source: invoice.source,
       paymentStatus: invoice.paymentStatus,
       notes: invoice.notes,
       dianCufe: invoice.dianCufe,

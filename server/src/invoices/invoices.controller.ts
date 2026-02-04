@@ -43,6 +43,7 @@ import {
   PaginatedInvoicesEntity,
 } from './entities/invoice.entity';
 import { PaymentEntity } from '../payments/entities/payment.entity';
+import { DianService } from '../dian';
 
 /**
  * InvoicesController handles all invoice management endpoints.
@@ -67,6 +68,7 @@ export class InvoicesController {
   constructor(
     private readonly invoicesService: InvoicesService,
     private readonly paymentsService: PaymentsService,
+    private readonly dianService: DianService,
   ) {}
 
   /**
@@ -423,6 +425,52 @@ export class InvoicesController {
     this.logger.log(`Cancelling invoice: ${id}`);
 
     return this.invoicesService.cancel(id);
+  }
+
+  /**
+   * Sends an invoice to DIAN for electronic invoicing.
+   * Only ADMIN and MANAGER users can send invoices to DIAN.
+   * Requires tenant DIAN configuration to be set up.
+   *
+   * @param id - Invoice ID to send to DIAN
+   * @returns DIAN processing result with CUFE and status
+   *
+   * @example
+   * POST /invoices/:id/send-to-dian
+   */
+  @Post(':id/send-to-dian')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Send invoice to DIAN',
+    description:
+      'Processes an invoice for DIAN electronic invoicing. Generates XML, signs it, and sends to DIAN. Only ADMIN and MANAGER users can send invoices to DIAN.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Invoice ID to send to DIAN',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Invoice sent to DIAN successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - DIAN configuration missing or invoice not eligible',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  @ApiResponse({ status: 404, description: 'Invoice not found' })
+  async sendToDian(@Param('id') id: string) {
+    this.logger.log(`Sending invoice ${id} to DIAN`);
+
+    return this.dianService.processInvoice(id);
   }
 
   // ============================================================================

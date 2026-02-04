@@ -42,6 +42,13 @@ export class FilterProductsDto extends PaginationDto {
     enum: ProductStatus,
     example: 'ACTIVE',
   })
+  @Transform(({ value }) => {
+    // Convert string query param to ProductStatus enum value
+    if (typeof value === 'string' && Object.values(ProductStatus).includes(value as ProductStatus)) {
+      return value as ProductStatus;
+    }
+    return value;
+  })
   @IsEnum(ProductStatus, {
     message: 'Status must be ACTIVE, INACTIVE, or OUT_OF_STOCK',
   })

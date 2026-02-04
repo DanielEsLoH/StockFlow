@@ -98,7 +98,7 @@ export default function SystemAdminDashboard() {
           label="Total Tenants"
           value={dashboardData?.totalTenants ?? 0}
           icon={Building2}
-          color="blue"
+          color="primary"
           isLoading={isLoading}
           animate
         />
@@ -106,7 +106,7 @@ export default function SystemAdminDashboard() {
           label="Aprobaciones Pendientes"
           value={dashboardData?.pendingApprovals ?? 0}
           icon={Clock}
-          color="amber"
+          color="warning"
           isLoading={isLoading}
           animate
         />
@@ -114,7 +114,7 @@ export default function SystemAdminDashboard() {
           label="Usuarios Activos"
           value={dashboardData?.activeUsers ?? 0}
           icon={UserCheck}
-          color="green"
+          color="success"
           isLoading={isLoading}
           animate
         />
@@ -122,7 +122,7 @@ export default function SystemAdminDashboard() {
           label="Registros Recientes"
           value={dashboardData?.recentRegistrations?.length ?? 0}
           icon={Users}
-          color="purple"
+          color="accent"
           isLoading={isLoading}
           animate
         />

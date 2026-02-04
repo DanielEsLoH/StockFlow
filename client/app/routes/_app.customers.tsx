@@ -17,7 +17,9 @@ import {
   User,
   CheckCircle,
   XCircle,
-  DollarSign,
+  TrendingUp,
+  UserPlus,
+  MapPin,
 } from "lucide-react";
 import type { Route } from "./+types/_app.customers";
 import { cn, debounce, formatCurrency } from "~/lib/utils";
@@ -42,6 +44,7 @@ import {
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { DeleteModal } from "~/components/ui/DeleteModal";
+import { EmptyState } from "~/components/ui/EmptyState";
 import type { CustomerFilters, Customer, CustomerType } from "~/types/customer";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
 
@@ -141,6 +144,10 @@ export default function CustomersPage() {
     filters.city ||
     filters.isActive !== undefined;
 
+  // Calculate stats from customers data
+  const activeCount = customers.filter((c) => c.isActive).length;
+  const businessCount = customers.filter((c) => c.type === "BUSINESS").length;
+
   return (
     <motion.div
       variants={containerVariants}
@@ -153,22 +160,79 @@ export default function CustomersPage() {
         variants={itemVariants}
         className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
-        <div>
-          <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
-            Clientes
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-            Gestiona tu base de clientes
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-500/20 to-primary-500/10 dark:from-accent-500/20 dark:to-primary-900/30">
+            <Users className="h-7 w-7 text-accent-600 dark:text-accent-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold font-display bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
+              Clientes
+            </h1>
+            <p className="text-neutral-500 dark:text-neutral-400 mt-0.5">
+              {meta?.total || 0} clientes en tu base de datos
+            </p>
+          </div>
         </div>
         <Link to="/customers/new">
-          <Button leftIcon={<Plus className="h-4 w-4" />}>Nuevo Cliente</Button>
+          <Button variant="gradient" leftIcon={<UserPlus className="h-4 w-4" />}>
+            Nuevo Cliente
+          </Button>
         </Link>
+      </motion.div>
+
+      {/* Quick Stats */}
+      <motion.div variants={itemVariants}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card variant="soft-primary" padding="sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-500/20">
+                <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{meta?.total || 0}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Total Clientes</p>
+              </div>
+            </div>
+          </Card>
+          <Card variant="soft-success" padding="sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-500/20">
+                <CheckCircle className="h-5 w-5 text-success-600 dark:text-success-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{activeCount}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Activos</p>
+              </div>
+            </div>
+          </Card>
+          <Card variant="soft-warning" padding="sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning-500/20">
+                <Building2 className="h-5 w-5 text-warning-600 dark:text-warning-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{businessCount}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Empresas</p>
+              </div>
+            </div>
+          </Card>
+          <Card variant="soft" padding="sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-500/20">
+                <User className="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{(meta?.total || 0) - businessCount}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Personas</p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </motion.div>
 
       {/* Search and Filters */}
       <motion.div variants={itemVariants}>
-        <Card padding="md">
+        <Card variant="elevated" padding="md">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               {/* Search */}
@@ -184,17 +248,13 @@ export default function CustomersPage() {
 
               {/* Filter toggle */}
               <Button
-                variant="outline"
+                variant={showFilters ? "soft-primary" : "outline"}
                 onClick={() => setShowFilters(!showFilters)}
-                className={cn(
-                  showFilters &&
-                    "bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20",
-                )}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
                 {hasActiveFilters && (
-                  <Badge variant="primary" className="ml-2">
+                  <Badge variant="gradient" size="xs" className="ml-2">
                     {
                       [
                         filters.type,
@@ -267,7 +327,7 @@ export default function CustomersPage() {
 
       {/* Table */}
       <motion.div variants={itemVariants}>
-        <Card>
+        <Card variant="elevated">
           {isLoading ? (
             <Table>
               <TableHeader>
@@ -291,42 +351,30 @@ export default function CustomersPage() {
               </TableBody>
             </Table>
           ) : isError ? (
-            <div className="p-8 text-center">
-              <p className="text-error-500">Error al cargar los clientes</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => window.location.reload()}
-              >
-                Reintentar
-              </Button>
-            </div>
+            <EmptyState
+              type="error"
+              title="Error al cargar los clientes"
+              description="Hubo un problema al cargar los clientes. Por favor, intenta de nuevo."
+              action={{
+                label: "Reintentar",
+                onClick: () => window.location.reload(),
+              }}
+            />
           ) : customers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="mb-6 text-neutral-300 dark:text-neutral-600">
-                <Users className="h-16 w-16" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-white">
-                {hasActiveFilters ? "Sin resultados" : "No hay clientes"}
-              </h3>
-              <p className="mb-6 max-w-sm text-neutral-500 dark:text-neutral-400">
-                {hasActiveFilters
+            <EmptyState
+              icon={<Users className="h-16 w-16" />}
+              title={hasActiveFilters ? "Sin resultados" : "No hay clientes"}
+              description={
+                hasActiveFilters
                   ? "No se encontraron clientes con los filtros aplicados."
-                  : "Comienza agregando tu primer cliente."}
-              </p>
-              {hasActiveFilters ? (
-                <Button variant="outline" onClick={clearFilters}>
-                  Limpiar filtros
-                </Button>
-              ) : (
-                <Link to="/customers/new">
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar cliente
-                  </Button>
-                </Link>
-              )}
-            </div>
+                  : "Comienza agregando tu primer cliente."
+              }
+              action={
+                hasActiveFilters
+                  ? { label: "Limpiar filtros", onClick: clearFilters }
+                  : { label: "Agregar cliente", onClick: () => (window.location.href = "/customers/new") }
+              }
+            />
           ) : (
             <>
               <Table>
@@ -352,38 +400,54 @@ export default function CustomersPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="border-b border-neutral-200 dark:border-neutral-700 last:border-0"
+                        className="group border-b border-neutral-200 dark:border-neutral-700 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/20">
+                            <div className={cn(
+                              "flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-105",
+                              customer.type === "BUSINESS"
+                                ? "bg-gradient-to-br from-primary-500/20 to-accent-500/10"
+                                : "bg-gradient-to-br from-accent-500/20 to-primary-500/10"
+                            )}>
                               {customer.type === "BUSINESS" ? (
-                                <Building2 className="h-5 w-5 text-primary-500" />
+                                <Building2 className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                               ) : (
-                                <User className="h-5 w-5 text-primary-500" />
+                                <User className="h-5 w-5 text-accent-600 dark:text-accent-400" />
                               )}
                             </div>
                             <div>
-                              <p className="font-medium text-neutral-900 dark:text-white">
+                              <p className="font-semibold text-neutral-900 dark:text-white">
                                 {customer.name}
                               </p>
-                              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                              <p className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
                                 {customer.document || "Sin documento"}
+                                {customer.city && (
+                                  <>
+                                    <span className="text-neutral-300 dark:text-neutral-600">•</span>
+                                    <MapPin className="h-3 w-3" />
+                                    {customer.city}
+                                  </>
+                                )}
                               </p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 text-sm">
-                              <Mail className="h-3.5 w-3.5 text-neutral-400" />
-                              <span className="text-neutral-700 dark:text-neutral-300">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-neutral-100 dark:bg-neutral-800">
+                                <Mail className="h-3 w-3 text-neutral-500" />
+                              </div>
+                              <span className="text-neutral-700 dark:text-neutral-300 truncate max-w-[180px]">
                                 {customer.email}
                               </span>
                             </div>
                             {customer.phone && (
-                              <div className="flex items-center gap-1.5 text-sm">
-                                <Phone className="h-3.5 w-3.5 text-neutral-400" />
+                              <div className="flex items-center gap-2 text-sm">
+                                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-neutral-100 dark:bg-neutral-800">
+                                  <Phone className="h-3 w-3 text-neutral-500" />
+                                </div>
                                 <span className="text-neutral-700 dark:text-neutral-300">
                                   {customer.phone}
                                 </span>
@@ -395,9 +459,10 @@ export default function CustomersPage() {
                           <Badge
                             variant={
                               customer.type === "BUSINESS"
-                                ? "primary"
-                                : "secondary"
+                                ? "outline-primary"
+                                : "outline"
                             }
+                            icon={customer.type === "BUSINESS" ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
                           >
                             {customer.type === "BUSINESS"
                               ? "Empresa"
@@ -405,31 +470,31 @@ export default function CustomersPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
-                          <div className="flex items-center gap-1.5">
-                            <DollarSign className="h-4 w-4 text-success-500" />
-                            <span className="font-medium text-neutral-900 dark:text-white">
-                              {formatCurrency(customer.totalSpent || 0)}
-                            </span>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <TrendingUp className="h-4 w-4 text-success-500" />
+                              <span className="font-bold text-lg bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-300 bg-clip-text text-transparent">
+                                {formatCurrency(customer.totalSpent || 0)}
+                              </span>
+                            </div>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {customer.totalPurchases || 0} compras realizadas
+                            </p>
                           </div>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {customer.totalPurchases || 0} compras
-                          </p>
                         </TableCell>
                         <TableCell>
                           {customer.isActive ? (
-                            <Badge variant="success">
-                              <CheckCircle className="h-3 w-3 mr-1" />
+                            <Badge variant="success" dot>
                               Activo
                             </Badge>
                           ) : (
-                            <Badge variant="error">
-                              <XCircle className="h-3 w-3 mr-1" />
+                            <Badge variant="error" dot>
                               Inactivo
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Link to={`/customers/${customer.id}`}>
                               <Button
                                 variant="ghost"

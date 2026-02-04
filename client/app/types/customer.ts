@@ -1,6 +1,7 @@
 // Customer Types
 
 export type CustomerType = 'INDIVIDUAL' | 'BUSINESS';
+export type CustomerStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface Customer {
   id: string;
@@ -13,7 +14,8 @@ export interface Customer {
   address?: string;
   city?: string;
   notes?: string;
-  isActive: boolean;
+  status?: CustomerStatus;  // Backend format
+  isActive?: boolean;       // Legacy format
   totalPurchases?: number;
   totalSpent?: number;
   lastPurchaseDate?: string;

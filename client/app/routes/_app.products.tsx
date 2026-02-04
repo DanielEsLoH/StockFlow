@@ -14,13 +14,15 @@ import {
   X,
   LayoutGrid,
   LayoutList,
+  Sparkles,
+  TrendingUp,
 } from 'lucide-react';
 import type { Route } from './+types/_app.products';
 import { cn, formatCurrency, debounce } from '~/lib/utils';
 import { useProducts, useCategories, useWarehouses } from '~/hooks/useProducts';
 import { Button } from '~/components/ui/Button';
 import { Input } from '~/components/ui/Input';
-import { Card } from '~/components/ui/Card';
+import { Card, CardHeader, CardTitle } from '~/components/ui/Card';
 import { Badge, StatusBadge } from '~/components/ui/Badge';
 import { Select } from '~/components/ui/Select';
 import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
@@ -141,15 +143,22 @@ export default function ProductsPage() {
       {/* Header */}
       <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
-            Productos
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-            Gestiona tu inventario de productos
-          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-600/10 dark:from-primary-500/20 dark:to-primary-900/30">
+              <Package className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold font-display bg-gradient-to-r from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
+                Productos
+              </h1>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                {meta?.total || 0} productos en inventario
+              </p>
+            </div>
+          </div>
         </div>
         <Link to="/products/new">
-          <Button leftIcon={<Plus className="h-4 w-4" />}>
+          <Button variant="gradient" leftIcon={<Plus className="h-4 w-4" />}>
             Nuevo Producto
           </Button>
         </Link>
@@ -157,7 +166,7 @@ export default function ProductsPage() {
 
       {/* Search and Filters */}
       <motion.div variants={itemVariants}>
-        <Card padding="md">
+        <Card variant="elevated" padding="md">
           <div className="flex flex-col gap-4">
             {/* Search row */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -175,13 +184,13 @@ export default function ProductsPage() {
 
               {/* Filter toggle button */}
               <Button
-                variant={showFilters ? 'secondary' : 'outline'}
+                variant={showFilters ? 'soft-primary' : 'outline'}
                 onClick={() => setShowFilters(!showFilters)}
                 leftIcon={<Filter className="h-4 w-4" />}
                 rightIcon={
                   <ChevronDown
                     className={cn(
-                      'h-4 w-4 transition-transform',
+                      'h-4 w-4 transition-transform duration-200',
                       showFilters && 'rotate-180'
                     )}
                   />
@@ -189,21 +198,21 @@ export default function ProductsPage() {
               >
                 Filtros
                 {hasActiveFilters && (
-                  <span className="ml-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-xs text-white">
+                  <Badge variant="gradient" size="xs" className="ml-2">
                     !
-                  </span>
+                  </Badge>
                 )}
               </Button>
 
               {/* View mode toggle */}
-              <div className="hidden sm:flex items-center gap-1 rounded-lg border border-neutral-200 p-1 dark:border-neutral-700">
+              <div className="hidden sm:flex items-center gap-1 rounded-xl border border-neutral-200 dark:border-neutral-700 p-1 bg-neutral-50 dark:bg-neutral-800/50">
                 <button
                   type="button"
                   onClick={() => setViewMode('table')}
                   className={cn(
-                    'rounded-md p-1.5 transition-colors',
+                    'rounded-lg p-2 transition-all duration-200',
                     viewMode === 'table'
-                      ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white'
+                      ? 'bg-white dark:bg-neutral-700 text-primary-600 dark:text-primary-400 shadow-sm'
                       : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
                   )}
                   aria-label="Vista de tabla"
@@ -214,9 +223,9 @@ export default function ProductsPage() {
                   type="button"
                   onClick={() => setViewMode('grid')}
                   className={cn(
-                    'rounded-md p-1.5 transition-colors',
+                    'rounded-lg p-2 transition-all duration-200',
                     viewMode === 'grid'
-                      ? 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white'
+                      ? 'bg-white dark:bg-neutral-700 text-primary-600 dark:text-primary-400 shadow-sm'
                       : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
                   )}
                   aria-label="Vista de cuadricula"
@@ -236,7 +245,7 @@ export default function ProductsPage() {
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="grid grid-cols-1 gap-4 border-t border-neutral-100 pt-4 dark:border-neutral-800 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-4 border-t border-neutral-100 dark:border-neutral-800 pt-4 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Category filter */}
                     <Select
                       options={categoryOptions}
@@ -264,12 +273,12 @@ export default function ProductsPage() {
                     />
 
                     {/* Low stock toggle */}
-                    <label className="flex items-center gap-3 cursor-pointer">
+                    <label className="flex items-center gap-3 cursor-pointer px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-warning-300 dark:hover:border-warning-700 transition-colors">
                       <input
                         type="checkbox"
                         checked={filters.lowStock || false}
                         onChange={(e) => updateFilters({ lowStock: e.target.checked })}
-                        className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-800"
+                        className="h-4 w-4 rounded border-neutral-300 text-warning-600 focus:ring-warning-500 dark:border-neutral-600 dark:bg-neutral-800"
                       />
                       <span className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
                         <AlertTriangle className="h-4 w-4 text-warning-500" />
@@ -317,7 +326,7 @@ export default function ProductsPage() {
       {isLoading && (
         <motion.div variants={itemVariants}>
           {viewMode === 'table' ? (
-            <Card padding="none">
+            <Card variant="elevated" padding="none">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -350,7 +359,7 @@ export default function ProductsPage() {
       {/* Empty state */}
       {!isLoading && !isError && products.length === 0 && (
         <motion.div variants={itemVariants}>
-          <Card padding="none">
+          <Card variant="elevated" padding="none">
             <EmptyState
               type={hasActiveFilters ? 'search' : 'products'}
               action={
@@ -368,10 +377,10 @@ export default function ProductsPage() {
         <>
           {viewMode === 'table' ? (
             <motion.div variants={itemVariants}>
-              <Card padding="none">
+              <Card variant="elevated" padding="none" className="overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className="bg-neutral-50/50 dark:bg-neutral-800/30">
                       <TableHead className="w-20">Imagen</TableHead>
                       <TableHead>Producto</TableHead>
                       <TableHead className="hidden md:table-cell">Categoria</TableHead>
@@ -383,18 +392,19 @@ export default function ProductsPage() {
                   </TableHeader>
                   <TableBody>
                     <AnimatePresence mode="popLayout">
-                      {products.map((product) => (
+                      {products.map((product, index) => (
                         <motion.tr
                           key={product.id}
                           layout
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
-                          className="border-b border-neutral-100 transition-colors hover:bg-neutral-50/50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
+                          transition={{ delay: index * 0.03 }}
+                          className="border-b border-neutral-100 dark:border-neutral-800 transition-colors hover:bg-neutral-50/80 dark:hover:bg-neutral-800/50 group"
                         >
                           {/* Image */}
                           <TableCell>
-                            <div className="h-12 w-12 overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                            <div className="h-14 w-14 overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 group-hover:ring-primary-300 dark:group-hover:ring-primary-700 transition-all">
                               {product.imageUrl ? (
                                 <img
                                   src={product.imageUrl}
@@ -403,7 +413,7 @@ export default function ProductsPage() {
                                 />
                               ) : (
                                 <div className="flex h-full w-full items-center justify-center">
-                                  <Package className="h-5 w-5 text-neutral-400" />
+                                  <Package className="h-6 w-6 text-neutral-400" />
                                 </div>
                               )}
                             </div>
@@ -413,9 +423,9 @@ export default function ProductsPage() {
                           <TableCell>
                             <Link
                               to={`/products/${product.id}`}
-                              className="block hover:text-primary-600 dark:hover:text-primary-400"
+                              className="block group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors"
                             >
-                              <p className="font-medium text-neutral-900 dark:text-white">
+                              <p className="font-semibold text-neutral-900 dark:text-white">
                                 {product.name}
                               </p>
                               <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -426,12 +436,14 @@ export default function ProductsPage() {
 
                           {/* Category */}
                           <TableCell className="hidden md:table-cell">
-                            <Badge variant="secondary">{product.category?.name || '-'}</Badge>
+                            <Badge variant="outline" size="sm">{product.category?.name || '-'}</Badge>
                           </TableCell>
 
                           {/* Price */}
                           <TableCell className="text-right">
-                            <p className="font-medium">{formatCurrency(product.salePrice)}</p>
+                            <p className="font-semibold text-neutral-900 dark:text-white">
+                              {formatCurrency(product.salePrice)}
+                            </p>
                             <p className="text-xs text-neutral-400">
                               Costo: {formatCurrency(product.costPrice)}
                             </p>
@@ -441,7 +453,7 @@ export default function ProductsPage() {
                           <TableCell className="text-center">
                             <div
                               className={cn(
-                                'inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-medium',
+                                'inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold',
                                 product.stock <= product.minStock
                                   ? 'bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-400'
                                   : 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400'
@@ -461,7 +473,7 @@ export default function ProductsPage() {
 
                           {/* Actions */}
                           <TableCell>
-                            <div className="flex items-center justify-end gap-1">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Link to={`/products/${product.id}`}>
                                 <Button variant="ghost" size="icon-sm" aria-label="Ver detalles">
                                   <Eye className="h-4 w-4" />
@@ -487,52 +499,74 @@ export default function ProductsPage() {
               className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             >
               <AnimatePresence mode="popLayout">
-                {products.map((product) => (
+                {products.map((product, index) => (
                   <motion.div
                     key={product.id}
                     layout
-                    variants={itemVariants}
-                    initial="hidden"
-                    animate="visible"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: index * 0.05 }}
                   >
-                    <Card padding="none" hover="lift" className="overflow-hidden">
+                    <Card variant="elevated" padding="none" hover="lift" className="overflow-hidden group">
                       {/* Image */}
-                      <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-800">
+                      <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
                         {product.imageUrl ? (
                           <img
                             src={product.imageUrl}
                             alt={product.name}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center">
-                            <Package className="h-12 w-12 text-neutral-300 dark:text-neutral-600" />
+                            <Package className="h-16 w-16 text-neutral-300 dark:text-neutral-600" />
                           </div>
                         )}
 
+                        {/* Overlay gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
                         {/* Status badge */}
-                        <div className="absolute right-2 top-2">
+                        <div className="absolute right-3 top-3">
                           <StatusBadge status={product.status} />
                         </div>
 
                         {/* Low stock warning */}
                         {product.stock <= product.minStock && (
-                          <div className="absolute left-2 top-2">
-                            <Badge variant="error" dot>
+                          <div className="absolute left-3 top-3">
+                            <Badge variant="error" size="sm">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
                               Stock bajo
                             </Badge>
                           </div>
                         )}
+
+                        {/* Quick actions overlay */}
+                        <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
+                          <div className="flex gap-2">
+                            <Link to={`/products/${product.id}`} className="flex-1">
+                              <Button variant="glass" size="sm" fullWidth>
+                                <Eye className="h-4 w-4 mr-1.5" />
+                                Ver
+                              </Button>
+                            </Link>
+                            <Link to={`/products/${product.id}/edit`} className="flex-1">
+                              <Button variant="glass" size="sm" fullWidth>
+                                <Pencil className="h-4 w-4 mr-1.5" />
+                                Editar
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Content */}
                       <div className="p-4">
                         <Link
                           to={`/products/${product.id}`}
-                          className="block hover:text-primary-600 dark:hover:text-primary-400"
+                          className="block hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                         >
-                          <h3 className="font-medium text-neutral-900 dark:text-white line-clamp-1">
+                          <h3 className="font-semibold text-neutral-900 dark:text-white line-clamp-1">
                             {product.name}
                           </h3>
                         </Link>
@@ -540,13 +574,20 @@ export default function ProductsPage() {
                           SKU: {product.sku}
                         </p>
 
+                        {/* Category */}
+                        {product.category && (
+                          <Badge variant="outline" size="xs" className="mt-2">
+                            {product.category.name}
+                          </Badge>
+                        )}
+
                         <div className="mt-3 flex items-center justify-between">
-                          <p className="text-lg font-semibold text-neutral-900 dark:text-white">
+                          <p className="text-xl font-bold bg-gradient-to-r from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
                             {formatCurrency(product.salePrice)}
                           </p>
                           <div
                             className={cn(
-                              'rounded-full px-2 py-1 text-sm font-medium',
+                              'rounded-xl px-2.5 py-1 text-sm font-semibold',
                               product.stock <= product.minStock
                                 ? 'bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-400'
                                 : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'
@@ -554,22 +595,6 @@ export default function ProductsPage() {
                           >
                             {product.stock} uds
                           </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="mt-4 flex gap-2">
-                          <Link to={`/products/${product.id}`} className="flex-1">
-                            <Button variant="outline" size="sm" className="w-full">
-                              <Eye className="mr-1.5 h-4 w-4" />
-                              Ver
-                            </Button>
-                          </Link>
-                          <Link to={`/products/${product.id}/edit`} className="flex-1">
-                            <Button variant="secondary" size="sm" className="w-full">
-                              <Pencil className="mr-1.5 h-4 w-4" />
-                              Editar
-                            </Button>
-                          </Link>
                         </div>
                       </div>
                     </Card>

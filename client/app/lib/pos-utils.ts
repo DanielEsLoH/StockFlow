@@ -53,23 +53,38 @@ export function calculateLineItemTotals(item: POSCartItem): {
 
 /**
  * Calculate cart totals from items
+ * @param items - Cart items
+ * @param globalDiscount - Optional global discount percentage (0-100)
  */
-export function calculateCartTotals(items: POSCartItem[]): CartTotals {
-  const result = items.reduce(
+export function calculateCartTotals(items: POSCartItem[], globalDiscount: number = 0): CartTotals {
+  // First calculate item-level totals (before global discount)
+  const itemTotals = items.reduce(
     (acc, item) => {
       const { subtotal, discountAmount, taxAmount, total } =
         calculateLineItemTotals(item);
       return {
         itemCount: acc.itemCount + item.quantity,
         subtotal: acc.subtotal + subtotal,
-        discountAmount: acc.discountAmount + discountAmount,
+        itemDiscountAmount: acc.itemDiscountAmount + discountAmount,
         taxAmount: acc.taxAmount + taxAmount,
         total: acc.total + total,
       };
     },
-    { itemCount: 0, subtotal: 0, discountAmount: 0, taxAmount: 0, total: 0 },
+    { itemCount: 0, subtotal: 0, itemDiscountAmount: 0, taxAmount: 0, total: 0 },
   );
-  return result;
+
+  // Apply global discount to the total after item discounts
+  const clampedGlobalDiscount = Math.max(0, Math.min(100, globalDiscount));
+  const globalDiscountAmount = itemTotals.total * (clampedGlobalDiscount / 100);
+  const finalTotal = itemTotals.total - globalDiscountAmount;
+
+  return {
+    itemCount: itemTotals.itemCount,
+    subtotal: itemTotals.subtotal,
+    discountAmount: itemTotals.itemDiscountAmount + globalDiscountAmount,
+    taxAmount: itemTotals.taxAmount,
+    total: finalTotal,
+  };
 }
 
 /**

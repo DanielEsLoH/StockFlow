@@ -49,7 +49,8 @@ export function CustomerSelect({
 
   // Filter active customers and by search query
   const filteredCustomers = useMemo(() => {
-    const activeCustomers = customers.filter((c) => c.isActive);
+    // Support both backend format (status: "ACTIVE") and legacy format (isActive: true)
+    const activeCustomers = customers.filter((c) => c.status === 'ACTIVE' || c.isActive === true);
     if (!searchQuery.trim()) return activeCustomers;
 
     const lowerQuery = searchQuery.toLowerCase();

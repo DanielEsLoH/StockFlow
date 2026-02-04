@@ -20,6 +20,7 @@ export interface POSState {
   selectedCategory: string | null;
   isProcessing: boolean;
   notes: string;
+  globalDiscount: number;
 }
 
 /**
@@ -32,6 +33,7 @@ type POSAction =
   | { type: 'INCREMENT_QUANTITY'; payload: string } // productId
   | { type: 'DECREMENT_QUANTITY'; payload: string } // productId
   | { type: 'UPDATE_DISCOUNT'; payload: { productId: string; discount: number } }
+  | { type: 'UPDATE_UNIT_PRICE'; payload: { productId: string; price: number } }
   | { type: 'CLEAR_CART' }
   | { type: 'SET_CUSTOMER'; payload: string | null }
   | { type: 'SET_WAREHOUSE'; payload: string | null }
@@ -39,6 +41,7 @@ type POSAction =
   | { type: 'SET_SELECTED_CATEGORY'; payload: string | null }
   | { type: 'SET_PROCESSING'; payload: boolean }
   | { type: 'SET_NOTES'; payload: string }
+  | { type: 'SET_GLOBAL_DISCOUNT'; payload: number }
   | { type: 'RESET_STATE' };
 
 /**
@@ -52,6 +55,7 @@ const initialState: POSState = {
   selectedCategory: null,
   isProcessing: false,
   notes: '',
+  globalDiscount: 0,
 };
 
 /**
@@ -169,6 +173,28 @@ function posReducer(state: POSState, action: POSAction): POSState {
       };
     }
 
+    case 'UPDATE_UNIT_PRICE': {
+      const { productId, price } = action.payload;
+      if (price < 0) return state;
+
+      return {
+        ...state,
+        cart: state.cart.map((item) =>
+          item.productId === productId
+            ? { ...item, unitPrice: price }
+            : item
+        ),
+      };
+    }
+
+    case 'SET_GLOBAL_DISCOUNT': {
+      const clampedDiscount = Math.max(0, Math.min(100, action.payload));
+      return {
+        ...state,
+        globalDiscount: clampedDiscount,
+      };
+    }
+
     case 'CLEAR_CART':
       return {
         ...state,
@@ -253,6 +279,14 @@ export function usePOSCart() {
     dispatch({ type: 'UPDATE_DISCOUNT', payload: { productId, discount } });
   }, []);
 
+  const updateUnitPrice = useCallback((productId: string, price: number) => {
+    dispatch({ type: 'UPDATE_UNIT_PRICE', payload: { productId, price } });
+  }, []);
+
+  const setGlobalDiscount = useCallback((discount: number) => {
+    dispatch({ type: 'SET_GLOBAL_DISCOUNT', payload: discount });
+  }, []);
+
   const clearCart = useCallback(() => {
     dispatch({ type: 'CLEAR_CART' });
   }, []);
@@ -287,8 +321,8 @@ export function usePOSCart() {
 
   // Computed values
   const totals: CartTotals = useMemo(
-    () => calculateCartTotals(state.cart),
-    [state.cart]
+    () => calculateCartTotals(state.cart, state.globalDiscount),
+    [state.cart, state.globalDiscount]
   );
 
   const cartItemsMap = useMemo(() => {
@@ -333,6 +367,8 @@ export function usePOSCart() {
     incrementQuantity,
     decrementQuantity,
     updateDiscount,
+    updateUnitPrice,
+    setGlobalDiscount,
     clearCart,
     setCustomer,
     setWarehouse,

@@ -112,6 +112,11 @@ enum PaymentMethod {
   OTHER
 }
 
+enum InvoiceSource {
+  MANUAL
+  POS
+}
+
 enum AuditAction {
   CREATE
   UPDATE
@@ -145,6 +150,53 @@ enum AuthProvider {
   EMAIL
   GOOGLE
   GITHUB
+}
+
+// POS Enums
+enum CashRegisterStatus {
+  OPEN
+  CLOSED
+  SUSPENDED
+}
+
+enum POSSessionStatus {
+  ACTIVE
+  CLOSED
+  SUSPENDED
+}
+
+enum CashMovementType {
+  OPENING
+  CLOSING
+  SALE
+  REFUND
+  CASH_IN
+  CASH_OUT
+}
+
+// DIAN Enums
+enum DianDocumentType {
+  FACTURA_ELECTRONICA
+  NOTA_CREDITO
+  NOTA_DEBITO
+}
+
+enum DianDocumentStatus {
+  PENDING
+  GENERATED
+  SIGNED
+  SENT
+  ACCEPTED
+  REJECTED
+  ERROR
+}
+
+enum TaxResponsibility {
+  O_13 // Gran contribuyente
+  O_15 // Autoretenedor
+  O_23 // Agente de retencion IVA
+  O_47 // Regimen simple
+  R_99_PN // No responsable (persona natural)
 }
 
 enum NotificationType {
@@ -194,18 +246,24 @@ model Tenant {
   createdAt              DateTime          @default(now()) @map("created_at")
   updatedAt              DateTime          @updatedAt @map("updated_at")
 
-  users         User[]
-  products      Product[]
-  customers     Customer[]
-  invoices      Invoice[]
-  warehouses    Warehouse[]
-  categories    Category[]
-  movements     StockMovement[]
-  payments      Payment[]
-  auditLogs     AuditLog[]
-  invitations   Invitation[]
-  notifications Notification[]
-  subscription  Subscription?
+  users                 User[]
+  products              Product[]
+  customers             Customer[]
+  invoices              Invoice[]
+  warehouses            Warehouse[]
+  categories            Category[]
+  movements             StockMovement[]
+  payments              Payment[]
+  auditLogs             AuditLog[]
+  invitations           Invitation[]
+  notifications         Notification[]
+  subscription          Subscription?
+  cashRegisters         CashRegister[]
+  posSessions           POSSession[]
+  posSales              POSSale[]
+  cashRegisterMovements CashRegisterMovement[]
+  dianConfig            TenantDianConfig?
+  dianDocuments         DianDocument[]
 
   @@map("tenants")
 }
@@ -242,6 +300,7 @@ model User {
   auditLogs     AuditLog[]
   invitations   Invitation[]
   notifications Notification[]
+  posSessions   POSSession[]
 
   @@index([tenantId])
   @@map("users")
@@ -313,9 +372,10 @@ model Warehouse {
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
 
-  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  stocks    WarehouseStock[]
-  movements StockMovement[]
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stocks        WarehouseStock[]
+  movements     StockMovement[]
+  cashRegisters CashRegister[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -403,6 +463,7 @@ model Invoice {
   customerId    String?       @map("customer_id")
   userId        String?       @map("user_id")
   invoiceNumber String        @map("invoice_number")
+  source        InvoiceSource @default(MANUAL)
   subtotal      Decimal       @default(0) @db.Decimal(10, 2)
   tax           Decimal       @default(0) @db.Decimal(10, 2)
   discount      Decimal       @default(0) @db.Decimal(10, 2)
@@ -418,11 +479,13 @@ model Invoice {
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
-  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  user     User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  items    InvoiceItem[]
-  payments Payment[]
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer      Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items         InvoiceItem[]
+  payments      Payment[]
+  posSale       POSSale?
+  dianDocuments DianDocument[]
 
   @@unique([tenantId, invoiceNumber])
   @@index([tenantId])
@@ -431,6 +494,7 @@ model Invoice {
   @@index([tenantId, paymentStatus])
   @@index([tenantId, issueDate])
   @@index([tenantId, createdAt])
+  @@index([tenantId, source])
   @@map("invoices")
 }
 
@@ -612,4 +676,196 @@ model SystemAdminAuditLog {
   @@index([action])
   @@index([createdAt])
   @@map("system_admin_audit_logs")
+}
+
+// ============================================================================
+// POS MODELS
+// ============================================================================
+
+model CashRegister {
+  id          String             @id @default(cuid())
+  tenantId    String             @map("tenant_id")
+  warehouseId String             @map("warehouse_id")
+  name        String
+  code        String
+  status      CashRegisterStatus @default(CLOSED)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  warehouse Warehouse    @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  sessions  POSSession[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([warehouseId])
+  @@map("cash_registers")
+}
+
+model POSSession {
+  id              String           @id @default(cuid())
+  tenantId        String           @map("tenant_id")
+  cashRegisterId  String           @map("cash_register_id")
+  userId          String           @map("user_id")
+  status          POSSessionStatus @default(ACTIVE)
+  openingAmount   Decimal          @map("opening_amount") @db.Decimal(10, 2)
+  closingAmount   Decimal?         @map("closing_amount") @db.Decimal(10, 2)
+  expectedAmount  Decimal?         @map("expected_amount") @db.Decimal(10, 2)
+  difference      Decimal?         @db.Decimal(10, 2)
+  openedAt        DateTime         @default(now()) @map("opened_at")
+  closedAt        DateTime?        @map("closed_at")
+  notes           String?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  tenant       Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cashRegister CashRegister           @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+  user         User                   @relation(fields: [userId], references: [id])
+  movements    CashRegisterMovement[]
+  sales        POSSale[]
+
+  @@index([tenantId])
+  @@index([cashRegisterId])
+  @@index([userId])
+  @@index([tenantId, status])
+  @@index([tenantId, openedAt])
+  @@map("pos_sessions")
+}
+
+model CashRegisterMovement {
+  id        String           @id @default(cuid())
+  tenantId  String           @map("tenant_id")
+  sessionId String           @map("session_id")
+  saleId    String?          @map("sale_id")
+  type      CashMovementType
+  amount    Decimal          @db.Decimal(10, 2)
+  method    PaymentMethod?
+  reference String?
+  notes     String?
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  tenant  Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session POSSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sale    POSSale?   @relation(fields: [saleId], references: [id])
+
+  @@index([tenantId])
+  @@index([sessionId])
+  @@index([saleId])
+  @@index([tenantId, createdAt])
+  @@map("cash_register_movements")
+}
+
+model POSSale {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id")
+  sessionId  String   @map("session_id")
+  invoiceId  String   @unique @map("invoice_id")
+  saleNumber String   @map("sale_number")
+  subtotal   Decimal  @db.Decimal(10, 2)
+  tax        Decimal  @db.Decimal(10, 2)
+  discount   Decimal  @default(0) @db.Decimal(10, 2)
+  total      Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant    Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session   POSSession             @relation(fields: [sessionId], references: [id])
+  invoice   Invoice                @relation(fields: [invoiceId], references: [id])
+  payments  SalePayment[]
+  movements CashRegisterMovement[]
+
+  @@unique([tenantId, saleNumber])
+  @@index([tenantId])
+  @@index([sessionId])
+  @@index([tenantId, createdAt])
+  @@map("pos_sales")
+}
+
+model SalePayment {
+  id           String        @id @default(cuid())
+  saleId       String        @map("sale_id")
+  method       PaymentMethod
+  amount       Decimal       @db.Decimal(10, 2)
+  reference    String?
+  cardLastFour String?       @map("card_last_four")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  sale POSSale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([saleId])
+  @@map("sale_payments")
+}
+
+// ============================================================================
+// DIAN ELECTRONIC INVOICING MODELS
+// ============================================================================
+
+model TenantDianConfig {
+  id                  String              @id @default(cuid())
+  tenantId            String              @unique @map("tenant_id")
+  nit                 String
+  dv                  String // Digito de verificacion
+  businessName        String              @map("business_name")
+  tradeName           String?             @map("trade_name")
+  taxResponsibilities TaxResponsibility[] @map("tax_responsibilities")
+  economicActivity    String              @map("economic_activity")
+  address             String
+  city                String
+  cityCode            String              @map("city_code")
+  department          String
+  departmentCode      String              @map("department_code")
+  country             String              @default("CO")
+  countryCode         String              @default("CO") @map("country_code")
+  postalCode          String?             @map("postal_code")
+  phone               String?
+  email               String
+  testMode            Boolean             @default(true) @map("test_mode")
+  softwareId          String?             @map("software_id")
+  softwarePin         String?             @map("software_pin")
+  technicalKey        String?             @map("technical_key")
+  certificateFile     Bytes?              @map("certificate_file")
+  certificatePassword String?             @map("certificate_password")
+  resolutionNumber    String?             @map("resolution_number")
+  resolutionDate      DateTime?           @map("resolution_date")
+  resolutionPrefix    String?             @map("resolution_prefix")
+  resolutionRangeFrom Int?                @map("resolution_range_from")
+  resolutionRangeTo   Int?                @map("resolution_range_to")
+  currentNumber       Int                 @default(1) @map("current_number")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_dian_configs")
+}
+
+model DianDocument {
+  id             String             @id @default(cuid())
+  tenantId       String             @map("tenant_id")
+  invoiceId      String?            @map("invoice_id")
+  documentType   DianDocumentType   @map("document_type")
+  documentNumber String             @map("document_number")
+  cufe           String?            @unique
+  cude           String?            @unique // Para notas credito/debito
+  qrCode         String?            @map("qr_code") @db.Text
+  status         DianDocumentStatus @default(PENDING)
+  xmlContent     String?            @map("xml_content") @db.Text
+  signedXml      String?            @map("signed_xml") @db.Text
+  pdfContent     Bytes?             @map("pdf_content")
+  dianResponse   Json?              @map("dian_response")
+  dianTrackId    String?            @map("dian_track_id")
+  errorMessage   String?            @map("error_message") @db.Text
+  sentAt         DateTime?          @map("sent_at")
+  acceptedAt     DateTime?          @map("accepted_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice Invoice? @relation(fields: [invoiceId], references: [id])
+
+  @@index([tenantId])
+  @@index([cufe])
+  @@index([status])
+  @@index([tenantId, documentType])
+  @@index([tenantId, createdAt])
+  @@map("dian_documents")
 }

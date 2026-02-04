@@ -97,8 +97,8 @@ describe('Sidebar', () => {
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Should have backdrop overlay for mobile
-      const backdrop = document.querySelector('.lg\\:hidden.fixed.inset-0.z-40.bg-black\\/50');
+      // Should have backdrop overlay for mobile (bg-black/60 with backdrop-blur)
+      const backdrop = document.querySelector('.lg\\:hidden.fixed.inset-0.z-40.bg-black\\/60');
       expect(backdrop).toBeInTheDocument();
     });
 
@@ -108,7 +108,7 @@ describe('Sidebar', () => {
       render(<Sidebar />, { wrapper: createWrapper() });
 
       // Should NOT have backdrop overlay for mobile when closed
-      const backdrop = document.querySelector('.lg\\:hidden.fixed.inset-0.z-40.bg-black\\/50');
+      const backdrop = document.querySelector('.lg\\:hidden.fixed.inset-0.z-40.bg-black\\/60');
       expect(backdrop).not.toBeInTheDocument();
     });
 
@@ -314,8 +314,8 @@ describe('Sidebar', () => {
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Find the backdrop
-      const backdrop = document.querySelector('.lg\\:hidden.fixed.inset-0.z-40.bg-black\\/50');
+      // Find the backdrop (bg-black/60 with backdrop-blur)
+      const backdrop = document.querySelector('.lg\\:hidden.fixed.inset-0.z-40.bg-black\\/60');
       expect(backdrop).toBeInTheDocument();
 
       // Click the backdrop

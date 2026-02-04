@@ -10,7 +10,7 @@ const {
 } = vi.hoisted(() => {
   const handlers = {
     requestSuccess: null as
-      | ((config: InternalAxiosRequestConfig) => Promise<InternalAxiosRequestConfig>)
+      | ((config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>)
       | null,
     requestError: null as ((error: unknown) => Promise<never>) | null,
     responseSuccess: null as ((response: unknown) => unknown) | null,
@@ -26,7 +26,7 @@ const {
           (
             success: (
               config: InternalAxiosRequestConfig,
-            ) => InternalAxiosRequestConfig,
+            ) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>,
             error: (error: unknown) => Promise<never>,
           ) => {
             handlers.requestSuccess = success;

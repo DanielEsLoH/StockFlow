@@ -147,6 +147,85 @@ describe("Query Client", () => {
       expect(retry(2, error)).toBe(true);
       expect(retry(3, error)).toBe(false);
     });
+
+    it("allows 1 retry for 401 errors to give time for token refresh", () => {
+      const options = queryClient.getDefaultOptions();
+      const retry = options.queries?.retry as (
+        failureCount: number,
+        error: Error,
+      ) => boolean;
+
+      const error = Object.assign(new Error("Unauthorized"), { status: 401 });
+      expect(retry(0, error)).toBe(true); // First attempt, allow retry
+      expect(retry(1, error)).toBe(false); // After 1 failure, don't retry
+    });
+
+    it("does not retry on 403 forbidden errors", () => {
+      const options = queryClient.getDefaultOptions();
+      const retry = options.queries?.retry as (
+        failureCount: number,
+        error: Error,
+      ) => boolean;
+
+      const error = Object.assign(new Error("Forbidden"), { status: 403 });
+      expect(retry(0, error)).toBe(false);
+    });
+
+    it("does not retry on 422 validation errors", () => {
+      const options = queryClient.getDefaultOptions();
+      const retry = options.queries?.retry as (
+        failureCount: number,
+        error: Error,
+      ) => boolean;
+
+      const error = Object.assign(new Error("Unprocessable Entity"), { status: 422 });
+      expect(retry(0, error)).toBe(false);
+    });
+
+    it("does not retry on 499 client closed request", () => {
+      const options = queryClient.getDefaultOptions();
+      const retry = options.queries?.retry as (
+        failureCount: number,
+        error: Error,
+      ) => boolean;
+
+      const error = Object.assign(new Error("Client Closed Request"), { status: 499 });
+      expect(retry(0, error)).toBe(false);
+    });
+  });
+
+  describe("retryDelay logic", () => {
+    it("has retryDelay function defined", () => {
+      const options = queryClient.getDefaultOptions();
+      expect(typeof options.queries?.retryDelay).toBe("function");
+    });
+
+    it("calculates exponential backoff with cap at 3000ms", () => {
+      const options = queryClient.getDefaultOptions();
+      const retryDelay = options.queries?.retryDelay as (attemptIndex: number) => number;
+
+      // First attempt: min(1000 * 2^0, 3000) = min(1000, 3000) = 1000
+      expect(retryDelay(0)).toBe(1000);
+
+      // Second attempt: min(1000 * 2^1, 3000) = min(2000, 3000) = 2000
+      expect(retryDelay(1)).toBe(2000);
+
+      // Third attempt: min(1000 * 2^2, 3000) = min(4000, 3000) = 3000
+      expect(retryDelay(2)).toBe(3000);
+
+      // Fourth attempt: min(1000 * 2^3, 3000) = min(8000, 3000) = 3000
+      expect(retryDelay(3)).toBe(3000);
+
+      // Fifth attempt: should still be capped at 3000
+      expect(retryDelay(4)).toBe(3000);
+    });
+  });
+
+  describe("throwOnError option", () => {
+    it("has throwOnError set to false", () => {
+      const options = queryClient.getDefaultOptions();
+      expect(options.queries?.throwOnError).toBe(false);
+    });
   });
 });
 
@@ -439,6 +518,283 @@ describe("Query Keys", () => {
 
     it("generates current key", () => {
       expect(queryKeys.tenants.current()).toEqual(["tenants", "current"]);
+    });
+  });
+
+  describe("settings keys", () => {
+    it("generates correct base key", () => {
+      expect(queryKeys.settings.all).toEqual(["settings"]);
+    });
+
+    it("generates preferences key", () => {
+      expect(queryKeys.settings.preferences()).toEqual(["settings", "preferences"]);
+    });
+  });
+
+  describe("invitations keys", () => {
+    it("generates correct base key", () => {
+      expect(queryKeys.invitations.all).toEqual(["invitations"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.invitations.list()).toEqual([
+        "invitations",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { status: "pending", email: "test@example.com" };
+      expect(queryKeys.invitations.list(filters)).toEqual([
+        "invitations",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.invitations.detail("inv-123")).toEqual([
+        "invitations",
+        "inv-123",
+      ]);
+    });
+  });
+
+  describe("cashRegisters keys", () => {
+    it("generates correct base key", () => {
+      expect(queryKeys.cashRegisters.all).toEqual(["cashRegisters"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.cashRegisters.list()).toEqual([
+        "cashRegisters",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { isActive: true, location: "main-store" };
+      expect(queryKeys.cashRegisters.list(filters)).toEqual([
+        "cashRegisters",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.cashRegisters.detail("cr-456")).toEqual([
+        "cashRegisters",
+        "cr-456",
+      ]);
+    });
+  });
+
+  describe("posSessions keys", () => {
+    it("generates correct base key", () => {
+      expect(queryKeys.posSessions.all).toEqual(["posSessions"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.posSessions.list()).toEqual([
+        "posSessions",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { status: "ACTIVE", cashRegisterId: "cr-123" };
+      expect(queryKeys.posSessions.list(filters)).toEqual([
+        "posSessions",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.posSessions.detail("session-789")).toEqual([
+        "posSessions",
+        "session-789",
+      ]);
+    });
+
+    it("generates current key", () => {
+      expect(queryKeys.posSessions.current()).toEqual([
+        "posSessions",
+        "current",
+      ]);
+    });
+
+    it("generates movements key", () => {
+      expect(queryKeys.posSessions.movements("session-123")).toEqual([
+        "posSessions",
+        "session-123",
+        "movements",
+      ]);
+    });
+
+    it("generates xReport key", () => {
+      expect(queryKeys.posSessions.xReport("session-456")).toEqual([
+        "posSessions",
+        "session-456",
+        "x-report",
+      ]);
+    });
+
+    it("generates zReport key", () => {
+      expect(queryKeys.posSessions.zReport("session-789")).toEqual([
+        "posSessions",
+        "session-789",
+        "z-report",
+      ]);
+    });
+  });
+
+  describe("posSales keys", () => {
+    it("generates correct base key", () => {
+      expect(queryKeys.posSales.all).toEqual(["posSales"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.posSales.list()).toEqual([
+        "posSales",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { sessionId: "session-123", fromDate: "2024-01-01" };
+      expect(queryKeys.posSales.list(filters)).toEqual([
+        "posSales",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.posSales.detail("sale-001")).toEqual([
+        "posSales",
+        "sale-001",
+      ]);
+    });
+  });
+
+  describe("invoices additional keys", () => {
+    it("generates byCustomer key", () => {
+      expect(queryKeys.invoices.byCustomer("cust-123")).toEqual([
+        "invoices",
+        "customer",
+        "cust-123",
+      ]);
+    });
+
+    it("generates stats key", () => {
+      expect(queryKeys.invoices.stats()).toEqual(["invoices", "stats"]);
+    });
+  });
+
+  describe("payments additional keys", () => {
+    it("generates list key without filters", () => {
+      expect(queryKeys.payments.list()).toEqual([
+        "payments",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { method: "CASH", status: "completed" };
+      expect(queryKeys.payments.list(filters)).toEqual([
+        "payments",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.payments.detail("pay-123")).toEqual([
+        "payments",
+        "pay-123",
+      ]);
+    });
+
+    it("generates byCustomer key", () => {
+      expect(queryKeys.payments.byCustomer("cust-456")).toEqual([
+        "payments",
+        "customer",
+        "cust-456",
+      ]);
+    });
+
+    it("generates recent key without limit", () => {
+      expect(queryKeys.payments.recent()).toEqual([
+        "payments",
+        "recent",
+        undefined,
+      ]);
+    });
+
+    it("generates recent key with limit", () => {
+      expect(queryKeys.payments.recent(20)).toEqual([
+        "payments",
+        "recent",
+        20,
+      ]);
+    });
+
+    it("generates stats key", () => {
+      expect(queryKeys.payments.stats()).toEqual(["payments", "stats"]);
+    });
+  });
+
+  describe("dashboard additional keys", () => {
+    it("generates activity key", () => {
+      expect(queryKeys.dashboard.activity()).toEqual(["dashboard", "activity"]);
+    });
+  });
+
+  describe("reports additional keys", () => {
+    it("generates recent key without limit", () => {
+      expect(queryKeys.reports.recent()).toEqual([
+        "reports",
+        "recent",
+        undefined,
+      ]);
+    });
+
+    it("generates recent key with limit", () => {
+      expect(queryKeys.reports.recent(15)).toEqual([
+        "reports",
+        "recent",
+        15,
+      ]);
+    });
+
+    it("generates sales key without params", () => {
+      expect(queryKeys.reports.sales()).toEqual([
+        "reports",
+        "sales",
+        undefined,
+      ]);
+    });
+
+    it("generates inventory key without params", () => {
+      expect(queryKeys.reports.inventory()).toEqual([
+        "reports",
+        "inventory",
+        undefined,
+      ]);
+    });
+
+    it("generates customers key without params", () => {
+      expect(queryKeys.reports.customers()).toEqual([
+        "reports",
+        "customers",
+        undefined,
+      ]);
     });
   });
 });

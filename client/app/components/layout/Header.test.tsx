@@ -390,7 +390,10 @@ describe('Header', () => {
       await user.click(screen.getByText('John Doe'));
 
       await waitFor(() => {
-        expect(screen.getByText('Administrador')).toBeInTheDocument();
+        // Role is now shown in the profile dropdown with different styling
+        // There may be two "Administrador" texts (one in button, one in dropdown)
+        const roleElements = screen.getAllByText('Administrador');
+        expect(roleElements.length).toBeGreaterThan(0);
       });
     });
 
@@ -529,7 +532,9 @@ describe('Header', () => {
       await user.click(screen.getByText('John Doe'));
 
       await waitFor(() => {
-        expect(screen.getByText('Super Admin')).toBeInTheDocument();
+        // Role is shown in multiple places now
+        const roleElements = screen.getAllByText('Super Admin');
+        expect(roleElements.length).toBeGreaterThan(0);
       });
     });
 
@@ -541,7 +546,8 @@ describe('Header', () => {
       await user.click(screen.getByText('John Doe'));
 
       await waitFor(() => {
-        expect(screen.getByText('Gerente')).toBeInTheDocument();
+        const roleElements = screen.getAllByText('Gerente');
+        expect(roleElements.length).toBeGreaterThan(0);
       });
     });
 
@@ -553,33 +559,37 @@ describe('Header', () => {
       await user.click(screen.getByText('John Doe'));
 
       await waitFor(() => {
-        expect(screen.getByText('Empleado')).toBeInTheDocument();
+        const roleElements = screen.getAllByText('Empleado');
+        expect(roleElements.length).toBeGreaterThan(0);
       });
     });
   });
 
-  describe('search input blur behavior', () => {
-    it('should close search on blur when search query is empty', async () => {
+  describe('search input behavior', () => {
+    it('should close search when clicking backdrop', async () => {
       const user = userEvent.setup();
       render(<Header />, { wrapper: createWrapper() });
 
-      // Open search
+      // Open search via Spotlight
       await user.click(screen.getByText('Buscar...'));
 
-      // Wait for search input to appear
+      // Wait for search input to appear (new Spotlight implementation)
       const searchInput = await screen.findByPlaceholderText(/buscar productos/i);
       expect(searchInput).toBeInTheDocument();
 
-      // Trigger blur directly on the input
-      fireEvent.blur(searchInput);
+      // Click the backdrop to close
+      const backdrop = document.querySelector('.fixed.inset-0.z-50.bg-neutral-900\\/60');
+      if (backdrop) {
+        await user.click(backdrop);
+      }
 
-      // Search should close when blurred with empty query
+      // Search should close
       await waitFor(() => {
         expect(screen.queryByPlaceholderText(/buscar productos/i)).not.toBeInTheDocument();
       });
     });
 
-    it('should keep search open on blur when search query is not empty', async () => {
+    it('should allow typing in spotlight search', async () => {
       const user = userEvent.setup();
       render(<Header />, { wrapper: createWrapper() });
 
@@ -590,45 +600,28 @@ describe('Header', () => {
       const searchInput = await screen.findByPlaceholderText(/buscar productos/i);
       await user.type(searchInput, 'test');
 
-      // Trigger blur directly
-      fireEvent.blur(searchInput);
-
-      // The search should still be visible since query is not empty
+      // The search input should have the value
       expect(searchInput).toHaveValue('test');
-      expect(screen.getByPlaceholderText(/buscar productos/i)).toBeInTheDocument();
     });
 
-    it('should clear search query and close search when clear button is clicked in desktop search', async () => {
+    it('should close search when pressing Escape', async () => {
       const user = userEvent.setup();
       render(<Header />, { wrapper: createWrapper() });
 
       // Open search
       await user.click(screen.getByText('Buscar...'));
 
-      // Wait for search input to appear and type
+      // Wait for search input to appear
       const searchInput = await screen.findByPlaceholderText(/buscar productos/i);
-      await user.type(searchInput, 'test query');
-      expect(searchInput).toHaveValue('test query');
+      expect(searchInput).toBeInTheDocument();
 
-      // Find and click the X button (clear button) in the search input
-      // The clear button is within the rightElement of the Input
-      const clearButtons = document.querySelectorAll('button');
-      let clearButton: HTMLElement | null = null;
-      clearButtons.forEach((btn) => {
-        if (btn.querySelector('.lucide-x')) {
-          clearButton = btn;
-        }
+      // Press Escape
+      await user.keyboard('{Escape}');
+
+      // Search should be closed
+      await waitFor(() => {
+        expect(screen.queryByPlaceholderText(/buscar productos/i)).not.toBeInTheDocument();
       });
-
-      expect(clearButton).not.toBeNull();
-      if (clearButton) {
-        await user.click(clearButton);
-
-        // Search should be closed
-        await waitFor(() => {
-          expect(screen.queryByPlaceholderText(/buscar productos/i)).not.toBeInTheDocument();
-        });
-      }
     });
   });
 
@@ -725,136 +718,107 @@ describe('Header', () => {
     });
   });
 
-  describe('mobile search overlay rendering', () => {
-    // Note: The mobile search overlay uses sm:hidden CSS class which doesn't work in jsdom.
-    // These tests verify that the overlay structure is rendered when searchOpen is true.
+  describe('spotlight search overlay rendering', () => {
+    // The new implementation uses a Spotlight-style modal with bg-neutral-900/60
 
-    it('should render mobile search overlay when search is open', async () => {
+    it('should render spotlight search overlay when search is open', async () => {
       const user = userEvent.setup();
       render(<Header />, { wrapper: createWrapper() });
 
       // Open search via the button
       await user.click(screen.getByLabelText('Buscar'));
 
-      // Wait for search to be open - the mobile overlay div should exist in DOM
+      // Wait for search to be open - the new spotlight backdrop
       await waitFor(() => {
-        // The mobile overlay has class 'fixed inset-0 z-50 bg-black/50 sm:hidden'
-        const overlay = document.querySelector('.fixed.inset-0.z-50.bg-black\\/50');
+        const overlay = document.querySelector('.fixed.inset-0.z-50.bg-neutral-900\\/60');
         expect(overlay).toBeInTheDocument();
       });
     });
 
-    it('should close search when clicking on mobile overlay backdrop', async () => {
+    it('should close search when clicking on spotlight overlay backdrop', async () => {
       const user = userEvent.setup();
       render(<Header />, { wrapper: createWrapper() });
 
       // Open search
       await user.click(screen.getByLabelText('Buscar'));
 
-      // Find the mobile overlay backdrop
+      // Find the spotlight overlay backdrop
       await waitFor(() => {
-        const overlay = document.querySelector('.fixed.inset-0.z-50.bg-black\\/50');
+        const overlay = document.querySelector('.fixed.inset-0.z-50.bg-neutral-900\\/60');
         expect(overlay).toBeInTheDocument();
       });
 
-      // Click on the overlay (backdrop) to close - this tests line 479
-      const overlay = document.querySelector('.fixed.inset-0.z-50.bg-black\\/50');
+      // Click on the overlay (backdrop) to close
+      const overlay = document.querySelector('.fixed.inset-0.z-50.bg-neutral-900\\/60');
       if (overlay) {
         await user.click(overlay);
 
         // Search should be closed
         await waitFor(() => {
-          expect(document.querySelector('.fixed.inset-0.z-50.bg-black\\/50')).not.toBeInTheDocument();
+          expect(document.querySelector('.fixed.inset-0.z-50.bg-neutral-900\\/60')).not.toBeInTheDocument();
         });
       }
     });
 
-    it('should prevent search from closing when clicking inside the search content area', async () => {
+    it('should render search input in spotlight with autoFocus', async () => {
       const user = userEvent.setup();
       render(<Header />, { wrapper: createWrapper() });
 
       // Open search
       await user.click(screen.getByLabelText('Buscar'));
 
-      // Find the inner content div that has stopPropagation - this tests line 486
+      // The spotlight should have an input
       await waitFor(() => {
-        const innerDiv = document.querySelector('.fixed.inset-0.z-50 > div');
-        expect(innerDiv).toBeInTheDocument();
-      });
-
-      const innerDiv = document.querySelector('.fixed.inset-0.z-50 > div');
-      if (innerDiv) {
-        await user.click(innerDiv);
-
-        // Search should still be open because of stopPropagation
-        expect(document.querySelector('.fixed.inset-0.z-50.bg-black\\/50')).toBeInTheDocument();
-      }
-    });
-
-    it('should render search input in mobile overlay with autoFocus', async () => {
-      const user = userEvent.setup();
-      render(<Header />, { wrapper: createWrapper() });
-
-      // Open search
-      await user.click(screen.getByLabelText('Buscar'));
-
-      // The mobile overlay should have an input with placeholder "Buscar..."
-      await waitFor(() => {
-        const mobileOverlay = document.querySelector('.fixed.inset-0.z-50.bg-black\\/50');
-        expect(mobileOverlay).toBeInTheDocument();
-        // Mobile search has placeholder "Buscar..." (shorter)
-        const mobileInput = mobileOverlay?.querySelector('input[placeholder="Buscar..."]');
-        expect(mobileInput).toBeInTheDocument();
+        const searchInput = screen.getByPlaceholderText(/buscar productos/i);
+        expect(searchInput).toBeInTheDocument();
       });
     });
 
-    it('should update search query when typing in mobile overlay input', async () => {
+    it('should update search query when typing in spotlight input', async () => {
       const user = userEvent.setup();
       render(<Header />, { wrapper: createWrapper() });
 
       // Open search
       await user.click(screen.getByLabelText('Buscar'));
 
-      // Find the mobile overlay input (shorter placeholder "Buscar...")
-      await waitFor(() => {
-        const mobileInput = document.querySelector('.fixed.inset-0.z-50 input[placeholder="Buscar..."]');
-        expect(mobileInput).toBeInTheDocument();
-      });
-
-      const mobileInput = document.querySelector('.fixed.inset-0.z-50 input[placeholder="Buscar..."]') as HTMLInputElement;
-      if (mobileInput) {
-        // Type in mobile input - tests line 493
-        await user.type(mobileInput, 'test mobile search');
-        expect(mobileInput).toHaveValue('test mobile search');
-      }
+      // Find the spotlight input
+      const searchInput = await screen.findByPlaceholderText(/buscar productos/i);
+      await user.type(searchInput, 'test spotlight search');
+      expect(searchInput).toHaveValue('test spotlight search');
     });
 
-    it('should close search when clicking clear button in mobile overlay', async () => {
+    it('should filter quick actions based on search query', async () => {
       const user = userEvent.setup();
       render(<Header />, { wrapper: createWrapper() });
 
       // Open search
       await user.click(screen.getByLabelText('Buscar'));
 
-      // Find the mobile overlay
+      // Type to filter
+      const searchInput = await screen.findByPlaceholderText(/buscar productos/i);
+      await user.type(searchInput, 'Dashboard');
+
+      // Dashboard should be visible, others should be filtered
       await waitFor(() => {
-        const mobileOverlay = document.querySelector('.fixed.inset-0.z-50.bg-black\\/50');
-        expect(mobileOverlay).toBeInTheDocument();
+        expect(screen.getByText('Dashboard')).toBeInTheDocument();
       });
+    });
 
-      // Find the clear button in mobile overlay (the one with lucide-x)
-      const mobileOverlay = document.querySelector('.fixed.inset-0.z-50.bg-black\\/50');
-      const clearButton = mobileOverlay?.querySelector('button');
+    it('should show no results message when nothing matches', async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
 
-      if (clearButton) {
-        // Click the clear button - tests lines 497-500
-        await user.click(clearButton);
+      // Open search
+      await user.click(screen.getByLabelText('Buscar'));
 
-        // Search should be closed
-        await waitFor(() => {
-          expect(document.querySelector('.fixed.inset-0.z-50.bg-black\\/50')).not.toBeInTheDocument();
-        });
-      }
+      // Type something that doesn't match
+      const searchInput = await screen.findByPlaceholderText(/buscar productos/i);
+      await user.type(searchInput, 'xyznonexistent');
+
+      // Should show no results message
+      await waitFor(() => {
+        expect(screen.getByText('No se encontraron resultados')).toBeInTheDocument();
+      });
     });
   });
 
@@ -955,8 +919,8 @@ describe('Header', () => {
     });
   });
 
-  describe('desktop search clear button (line 209)', () => {
-    it('should clear search query and close search when desktop clear button is clicked', async () => {
+  describe('spotlight search keyboard navigation', () => {
+    it('should close search when pressing Escape', async () => {
       const user = userEvent.setup();
       render(<Header />, { wrapper: createWrapper() });
 
@@ -967,43 +931,29 @@ describe('Header', () => {
       const searchInput = await screen.findByPlaceholderText(/buscar productos/i);
       expect(searchInput).toBeInTheDocument();
 
-      // Type something in the search input
-      await user.type(searchInput, 'test search');
-      expect(searchInput).toHaveValue('test search');
+      // Press Escape
+      await user.keyboard('{Escape}');
 
-      // Find the desktop search container (the one with the expanded search input)
-      // The clear button is in the rightElement of the Input component
-      const desktopSearchContainer = searchInput.closest('.relative');
-      expect(desktopSearchContainer).toBeInTheDocument();
-
-      // Find the X button within the search area (not the mobile overlay)
-      // We need to specifically target the button that is NOT in the mobile overlay
-      const allCloseButtons = document.querySelectorAll('button');
-      let desktopClearButton: HTMLElement | null = null;
-
-      allCloseButtons.forEach((btn) => {
-        // Check if the button has the X icon and is in the desktop area (sm:block parent)
-        const hasXIcon = btn.querySelector('.lucide-x');
-        const isInMobileOverlay = btn.closest('.fixed.inset-0.z-50');
-        if (hasXIcon && !isInMobileOverlay) {
-          desktopClearButton = btn;
-        }
+      // Verify search is closed
+      await waitFor(() => {
+        expect(screen.queryByPlaceholderText(/buscar productos/i)).not.toBeInTheDocument();
       });
 
-      expect(desktopClearButton).not.toBeNull();
+      // Verify the "Buscar..." button is back
+      expect(screen.getByText('Buscar...')).toBeInTheDocument();
+    });
 
-      if (desktopClearButton) {
-        // Click the clear button - this tests line 209 (setSearchOpen(false) in the onClick handler)
-        await user.click(desktopClearButton);
+    it('should show ESC hint in spotlight search', async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
 
-        // Verify search is closed
-        await waitFor(() => {
-          expect(screen.queryByPlaceholderText(/buscar productos/i)).not.toBeInTheDocument();
-        });
+      // Open search
+      await user.click(screen.getByText('Buscar...'));
 
-        // Verify the "Buscar..." button is back
-        expect(screen.getByText('Buscar...')).toBeInTheDocument();
-      }
+      // Should show ESC keyboard hint
+      await waitFor(() => {
+        expect(screen.getByText('ESC')).toBeInTheDocument();
+      });
     });
   });
 
@@ -1063,7 +1013,7 @@ describe('Header', () => {
   });
 
   describe('edge cases for branch coverage', () => {
-    it('should show role as-is when role is unknown (line 134)', async () => {
+    it('should show role as-is when role is unknown', async () => {
       const user = userEvent.setup();
       // Set an unknown role
       useAuthStore.setState({ user: { ...mockUser, role: 'UNKNOWN_ROLE' as never } });
@@ -1071,9 +1021,10 @@ describe('Header', () => {
       render(<Header />, { wrapper: createWrapper() });
       await user.click(screen.getByText('John Doe'));
 
-      // Should display the raw role value
+      // Should display the raw role value (role is shown in multiple places)
       await waitFor(() => {
-        expect(screen.getByText('UNKNOWN_ROLE')).toBeInTheDocument();
+        const roleElements = screen.getAllByText('UNKNOWN_ROLE');
+        expect(roleElements.length).toBeGreaterThan(0);
       });
     });
 

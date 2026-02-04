@@ -121,6 +121,8 @@ const mockPaymentStats: PaymentStats = {
     WIRE_TRANSFER: 1,
     CHECK: 1,
     PSE: 1,
+    NEQUI: 0,
+    DAVIPLATA: 0,
     OTHER: 0,
   },
   todayPayments: 3,

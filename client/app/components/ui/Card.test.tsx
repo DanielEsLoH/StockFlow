@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
+  CardDivider,
 } from './Card';
 import { createRef } from 'react';
 
@@ -131,7 +132,7 @@ describe('Card', () => {
       render(<Card hover="border" data-testid="card">Content</Card>);
 
       const card = screen.getByTestId('card');
-      expect(card.className).toContain('hover:border-primary-500');
+      expect(card.className).toContain('hover:border-primary-300');
     });
   });
 
@@ -153,19 +154,20 @@ describe('CardHeader', () => {
     expect(screen.getByText('Header Content')).toBeInTheDocument();
   });
 
-  it('should apply flex column layout', () => {
+  it('should apply flex layout with justify-between', () => {
     render(<CardHeader data-testid="header">Content</CardHeader>);
 
     const header = screen.getByTestId('header');
     expect(header.className).toContain('flex');
-    expect(header.className).toContain('flex-col');
+    expect(header.className).toContain('items-start');
+    expect(header.className).toContain('justify-between');
   });
 
-  it('should apply spacing between children', () => {
+  it('should apply gap between children', () => {
     render(<CardHeader data-testid="header">Content</CardHeader>);
 
     const header = screen.getByTestId('header');
-    expect(header.className).toContain('space-y-1.5');
+    expect(header.className).toContain('gap-4');
   });
 
   it('should forward ref correctly', () => {
@@ -367,5 +369,217 @@ describe('Card composition', () => {
 
     expect(screen.getByText('Simple Card')).toBeInTheDocument();
     expect(screen.getByText('Just content, no footer')).toBeInTheDocument();
+  });
+});
+
+describe('CardDivider', () => {
+  it('should render as a div element', () => {
+    render(<CardDivider data-testid="divider" />);
+
+    const divider = screen.getByTestId('divider');
+    expect(divider.tagName).toBe('DIV');
+  });
+
+  it('should apply gradient background styles', () => {
+    render(<CardDivider data-testid="divider" />);
+
+    const divider = screen.getByTestId('divider');
+    expect(divider).toHaveClass('bg-gradient-to-r');
+    expect(divider).toHaveClass('from-transparent');
+    expect(divider).toHaveClass('via-neutral-200');
+    expect(divider).toHaveClass('to-transparent');
+  });
+
+  it('should have 1px height', () => {
+    render(<CardDivider data-testid="divider" />);
+
+    const divider = screen.getByTestId('divider');
+    expect(divider).toHaveClass('h-px');
+  });
+
+  it('should have vertical margin', () => {
+    render(<CardDivider data-testid="divider" />);
+
+    const divider = screen.getByTestId('divider');
+    expect(divider).toHaveClass('my-4');
+  });
+
+  it('should forward ref correctly', () => {
+    const ref = createRef<HTMLDivElement>();
+    render(<CardDivider ref={ref} />);
+
+    expect(ref.current).toBeInstanceOf(HTMLDivElement);
+  });
+
+  it('should accept custom className', () => {
+    render(<CardDivider className="custom-divider" data-testid="divider" />);
+
+    expect(screen.getByTestId('divider')).toHaveClass('custom-divider');
+  });
+});
+
+describe('Card additional variants', () => {
+  it('should render glass-elevated variant', () => {
+    render(<Card variant="glass-elevated" data-testid="card">Glass Elevated</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('backdrop-blur-xl');
+    expect(card.className).toContain('shadow-xl');
+  });
+
+  it('should render gradient-border variant', () => {
+    render(<Card variant="gradient-border" data-testid="card">Gradient Border</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('bg-gradient-to-br');
+    expect(card.className).toContain('from-primary-500');
+  });
+
+  it('should render soft variant', () => {
+    render(<Card variant="soft" data-testid="card">Soft</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('bg-neutral-50');
+  });
+
+  it('should render soft-primary variant', () => {
+    render(<Card variant="soft-primary" data-testid="card">Soft Primary</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('bg-primary-50/50');
+  });
+
+  it('should render soft-success variant', () => {
+    render(<Card variant="soft-success" data-testid="card">Soft Success</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('bg-success-50/50');
+  });
+
+  it('should render soft-warning variant', () => {
+    render(<Card variant="soft-warning" data-testid="card">Soft Warning</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('bg-warning-50/50');
+  });
+
+  it('should render soft-error variant', () => {
+    render(<Card variant="soft-error" data-testid="card">Soft Error</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('bg-error-50/50');
+  });
+});
+
+describe('Card additional padding sizes', () => {
+  it('should render xs padding', () => {
+    render(<Card padding="xs" data-testid="card">Content</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('p-3');
+  });
+
+  it('should render xl padding', () => {
+    render(<Card padding="xl" data-testid="card">Content</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('p-10');
+  });
+});
+
+describe('Card additional hover effects', () => {
+  it('should render glow-accent hover effect', () => {
+    render(<Card hover="glow-accent" data-testid="card">Content</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('hover:shadow-accent-500/10');
+  });
+
+  it('should render scale hover effect', () => {
+    render(<Card hover="scale" data-testid="card">Content</Card>);
+
+    const card = screen.getByTestId('card');
+    expect(card.className).toContain('hover:scale-[1.02]');
+    expect(card.className).toContain('active:scale-[0.98]');
+  });
+});
+
+describe('CardHeader action prop', () => {
+  it('should render action slot when provided', () => {
+    render(
+      <CardHeader action={<button data-testid="action-btn">Action</button>}>
+        Header Content
+      </CardHeader>
+    );
+
+    expect(screen.getByTestId('action-btn')).toBeInTheDocument();
+    expect(screen.getByText('Header Content')).toBeInTheDocument();
+  });
+
+  it('should not render action container when action is not provided', () => {
+    const { container } = render(
+      <CardHeader data-testid="header">Header Content</CardHeader>
+    );
+
+    const header = screen.getByTestId('header');
+    // Should have only one child div (the content wrapper)
+    expect(header.children.length).toBe(1);
+  });
+});
+
+describe('CardTitle gradient prop', () => {
+  it('should apply gradient styles when gradient is true', () => {
+    render(<CardTitle gradient data-testid="title">Gradient Title</CardTitle>);
+
+    const title = screen.getByTestId('title');
+    expect(title).toHaveClass('bg-gradient-to-r');
+    expect(title).toHaveClass('bg-clip-text');
+    expect(title).toHaveClass('text-transparent');
+  });
+
+  it('should not apply gradient styles when gradient is false', () => {
+    render(<CardTitle data-testid="title">Normal Title</CardTitle>);
+
+    const title = screen.getByTestId('title');
+    expect(title).not.toHaveClass('bg-gradient-to-r');
+    expect(title).toHaveClass('text-neutral-900');
+  });
+});
+
+describe('CardFooter divider prop', () => {
+  it('should render border when divider is true', () => {
+    render(<CardFooter divider data-testid="footer">Footer</CardFooter>);
+
+    const footer = screen.getByTestId('footer');
+    expect(footer).toHaveClass('border-t');
+    expect(footer).toHaveClass('mt-4');
+  });
+
+  it('should not render border when divider is false', () => {
+    render(<CardFooter data-testid="footer">Footer</CardFooter>);
+
+    const footer = screen.getByTestId('footer');
+    expect(footer).not.toHaveClass('border-t');
+    expect(footer).not.toHaveClass('mt-4');
+  });
+});
+
+describe('CardTitle heading levels', () => {
+  it('should render as h4', () => {
+    render(<CardTitle as="h4">H4 Title</CardTitle>);
+
+    expect(screen.getByRole('heading', { level: 4 })).toBeInTheDocument();
+  });
+
+  it('should render as h5', () => {
+    render(<CardTitle as="h5">H5 Title</CardTitle>);
+
+    expect(screen.getByRole('heading', { level: 5 })).toBeInTheDocument();
+  });
+
+  it('should render as h6', () => {
+    render(<CardTitle as="h6">H6 Title</CardTitle>);
+
+    expect(screen.getByRole('heading', { level: 6 })).toBeInTheDocument();
   });
 });

@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
-import { customersService } from '~/services/customers.service';
-import { queryKeys } from '~/lib/query-client';
-import { toast } from '~/components/ui/Toast';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
+import { customersService } from "~/services/customers.service";
+import { queryKeys } from "~/lib/query-client";
+import { toast } from "~/components/ui/Toast";
 import type {
   Customer,
   CustomerFilters,
@@ -10,7 +10,7 @@ import type {
   CreateCustomerData,
   UpdateCustomerData,
   CustomerStats,
-} from '~/types/customer';
+} from "~/types/customer";
 
 // Customers list hook with filters
 export function useCustomers(filters: CustomerFilters = {}) {
@@ -35,7 +35,7 @@ export function useCustomer(id: string) {
 // Customer stats hook
 export function useCustomerStats(id: string) {
   return useQuery<CustomerStats>({
-    queryKey: [...queryKeys.customers.detail(id), 'stats'],
+    queryKey: [...queryKeys.customers.detail(id), "stats"],
     queryFn: () => customersService.getCustomerStats(id),
     staleTime: 1000 * 60 * 2, // 2 minutes
     enabled: !!id,
@@ -45,7 +45,7 @@ export function useCustomerStats(id: string) {
 // Cities for filter dropdown
 export function useCustomerCities() {
   return useQuery<string[]>({
-    queryKey: [...queryKeys.customers.all, 'cities'],
+    queryKey: [...queryKeys.customers.all, "cities"],
     queryFn: () => customersService.getCities(),
     staleTime: 1000 * 60 * 30, // 30 minutes
   });
@@ -62,10 +62,10 @@ export function useCreateCustomer() {
     onSuccess: (customer) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers.all });
       toast.success(`Cliente "${customer.name}" creado exitosamente`);
-      navigate('/customers');
+      navigate("/customers");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear el cliente');
+      toast.error(error.message || "Error al crear el cliente");
     },
   });
 }
@@ -80,12 +80,15 @@ export function useUpdateCustomer() {
       customersService.updateCustomer(id, data),
     onSuccess: (customer) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers.all });
-      queryClient.setQueryData(queryKeys.customers.detail(customer.id), customer);
+      queryClient.setQueryData(
+        queryKeys.customers.detail(customer.id),
+        customer,
+      );
       toast.success(`Cliente "${customer.name}" actualizado exitosamente`);
       navigate(`/customers/${customer.id}`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar el cliente');
+      toast.error(error.message || "Error al actualizar el cliente");
     },
   });
 }
@@ -99,11 +102,11 @@ export function useDeleteCustomer() {
     mutationFn: (id: string) => customersService.deleteCustomer(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.customers.all });
-      toast.success('Cliente eliminado exitosamente');
-      navigate('/customers');
+      toast.success("Cliente eliminado exitosamente");
+      navigate("/customers");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar el cliente');
+      toast.error(error.message || "Error al eliminar el cliente");
     },
   });
 }

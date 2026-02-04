@@ -10,7 +10,9 @@ const {
 } = vi.hoisted(() => {
   const handlers = {
     requestSuccess: null as
-      | ((config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>)
+      | ((
+          config: InternalAxiosRequestConfig,
+        ) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>)
       | null,
     requestError: null as ((error: unknown) => Promise<never>) | null,
     responseSuccess: null as ((response: unknown) => unknown) | null,
@@ -26,7 +28,9 @@ const {
           (
             success: (
               config: InternalAxiosRequestConfig,
-            ) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>,
+            ) =>
+              | InternalAxiosRequestConfig
+              | Promise<InternalAxiosRequestConfig>,
             error: (error: unknown) => Promise<never>,
           ) => {
             handlers.requestSuccess = success;
@@ -697,7 +701,9 @@ describe("API client", () => {
       // Both should complete (order doesn't matter)
       expect(results).toHaveLength(2);
       results.forEach((result) => {
-        expect((result as { data: { success: number } }).data.success).toBeGreaterThan(0);
+        expect(
+          (result as { data: { success: number } }).data.success,
+        ).toBeGreaterThan(0);
       });
 
       // Only one refresh call should have been made
@@ -843,7 +849,9 @@ describe("API client", () => {
       // Verify all completed successfully
       expect(results).toHaveLength(3);
       results.forEach((result) => {
-        expect((result as { data: { success: boolean } }).data.success).toBe(true);
+        expect((result as { data: { success: boolean } }).data.success).toBe(
+          true,
+        );
       });
 
       // Verify all configs have the new token

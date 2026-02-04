@@ -1,13 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '~/lib/query-client';
-import { dashboardService } from '~/services/dashboard.service';
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "~/lib/query-client";
+import { dashboardService } from "~/services/dashboard.service";
 import type {
   DashboardStats,
   DashboardCharts,
   RecentInvoice,
   LowStockAlert,
   RecentActivity,
-} from '~/services/dashboard.service';
+} from "~/services/dashboard.service";
 
 export function useDashboardStats() {
   return useQuery<DashboardStats>({

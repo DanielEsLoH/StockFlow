@@ -1,4 +1,4 @@
-import { api } from '~/lib/api';
+import { api } from "~/lib/api";
 import type {
   Product,
   ProductFilters,
@@ -6,7 +6,7 @@ import type {
   CreateProductData,
   UpdateProductData,
   LowStockProduct,
-} from '~/types/product';
+} from "~/types/product";
 
 // Service - Real API calls
 export const productsService = {
@@ -17,7 +17,9 @@ export const productsService = {
         params.append(key, String(value));
       }
     });
-    const { data } = await api.get<ProductsResponse>(`/products?${params.toString()}`);
+    const { data } = await api.get<ProductsResponse>(
+      `/products?${params.toString()}`,
+    );
     return data;
   },
 
@@ -27,11 +29,14 @@ export const productsService = {
   },
 
   async createProduct(productData: CreateProductData): Promise<Product> {
-    const { data } = await api.post<Product>('/products', productData);
+    const { data } = await api.post<Product>("/products", productData);
     return data;
   },
 
-  async updateProduct(id: string, productData: UpdateProductData): Promise<Product> {
+  async updateProduct(
+    id: string,
+    productData: UpdateProductData,
+  ): Promise<Product> {
     const { data } = await api.patch<Product>(`/products/${id}`, productData);
     return data;
   },
@@ -41,17 +46,26 @@ export const productsService = {
   },
 
   async getLowStockProducts(): Promise<LowStockProduct[]> {
-    const { data } = await api.get<LowStockProduct[]>('/products/low-stock');
+    const { data } = await api.get<LowStockProduct[]>("/products/low-stock");
     return data;
   },
 
   async searchProducts(query: string): Promise<Product[]> {
-    const { data } = await api.get<Product[]>(`/products/search?q=${encodeURIComponent(query)}`);
+    const { data } = await api.get<Product[]>(
+      `/products/search?q=${encodeURIComponent(query)}`,
+    );
     return data;
   },
 
-  async updateStock(id: string, quantity: number, warehouseId?: string): Promise<Product> {
-    const { data } = await api.patch<Product>(`/products/${id}/stock`, { quantity, warehouseId });
+  async updateStock(
+    id: string,
+    quantity: number,
+    warehouseId?: string,
+  ): Promise<Product> {
+    const { data } = await api.patch<Product>(`/products/${id}/stock`, {
+      quantity,
+      warehouseId,
+    });
     return data;
   },
 };

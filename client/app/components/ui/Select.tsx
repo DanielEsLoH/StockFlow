@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { ChevronDown, Check, X } from 'lucide-react';
-import { cn } from '~/lib/utils';
+import * as React from "react";
+import { ChevronDown, Check, X } from "lucide-react";
+import { cn } from "~/lib/utils";
 
 export interface SelectOption {
   value: string;
@@ -8,7 +8,10 @@ export interface SelectOption {
   disabled?: boolean;
 }
 
-export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
+export interface SelectProps extends Omit<
+  React.SelectHTMLAttributes<HTMLSelectElement>,
+  "onChange"
+> {
   options: SelectOption[];
   placeholder?: string;
   error?: boolean;
@@ -16,7 +19,10 @@ export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectE
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, options, placeholder, error, onChange, value, ...props }, ref) => {
+  (
+    { className, options, placeholder, error, onChange, value, ...props },
+    ref,
+  ) => {
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       onChange?.(e.target.value);
     };
@@ -34,10 +40,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
              disabled:cursor-not-allowed disabled:opacity-50
              dark:bg-neutral-900 dark:text-white`,
             error
-              ? 'border-error-500 focus:ring-error-500 focus:border-error-500'
-              : 'border-neutral-200 dark:border-neutral-700',
-            !value && 'text-neutral-400 dark:text-neutral-500',
-            className
+              ? "border-error-500 focus:ring-error-500 focus:border-error-500"
+              : "border-neutral-200 dark:border-neutral-700",
+            !value && "text-neutral-400 dark:text-neutral-500",
+            className,
           )}
           {...props}
         >
@@ -59,10 +65,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
       </div>
     );
-  }
+  },
 );
 
-Select.displayName = 'Select';
+Select.displayName = "Select";
 
 // Native select with label wrapper
 interface SelectFieldProps extends SelectProps {
@@ -82,7 +88,7 @@ export function SelectField({
   const hasError = error || !!errorMessage;
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn("space-y-2", className)}>
       {label && (
         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
           {label}
@@ -92,10 +98,10 @@ export function SelectField({
       {(helperText || errorMessage) && (
         <p
           className={cn(
-            'text-sm',
+            "text-sm",
             hasError
-              ? 'text-error-500'
-              : 'text-neutral-500 dark:text-neutral-400'
+              ? "text-error-500"
+              : "text-neutral-500 dark:text-neutral-400",
           )}
         >
           {errorMessage || helperText}
@@ -119,7 +125,7 @@ export function MultiSelect({
   options,
   value,
   onChange,
-  placeholder = 'Seleccionar...',
+  placeholder = "Seleccionar...",
   className,
   error,
 }: MultiSelectProps) {
@@ -129,13 +135,16 @@ export function MultiSelect({
   // Close on click outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const toggleOption = (optionValue: string) => {
@@ -156,7 +165,7 @@ export function MultiSelect({
     .map((opt) => opt.label);
 
   return (
-    <div ref={containerRef} className={cn('relative', className)}>
+    <div ref={containerRef} className={cn("relative", className)}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -166,8 +175,8 @@ export function MultiSelect({
            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
            dark:bg-neutral-900`,
           error
-            ? 'border-error-500 focus:ring-error-500'
-            : 'border-neutral-200 dark:border-neutral-700'
+            ? "border-error-500 focus:ring-error-500"
+            : "border-neutral-200 dark:border-neutral-700",
         )}
       >
         <div className="flex flex-1 flex-wrap gap-1">
@@ -183,9 +192,12 @@ export function MultiSelect({
                   tabIndex={0}
                   onClick={(e) => removeOption(value[index], e)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      removeOption(value[index], e as unknown as React.MouseEvent);
+                      removeOption(
+                        value[index],
+                        e as unknown as React.MouseEvent,
+                      );
                     }
                   }}
                   className="hover:text-primary-600 cursor-pointer"
@@ -202,8 +214,8 @@ export function MultiSelect({
         </div>
         <ChevronDown
           className={cn(
-            'h-4 w-4 text-neutral-400 transition-transform',
-            isOpen && 'rotate-180'
+            "h-4 w-4 text-neutral-400 transition-transform",
+            isOpen && "rotate-180",
           )}
         />
       </button>
@@ -219,18 +231,18 @@ export function MultiSelect({
                 onClick={() => toggleOption(option.value)}
                 disabled={option.disabled}
                 className={cn(
-                  'flex w-full items-center gap-2 px-4 py-2 text-left text-sm',
-                  'hover:bg-neutral-50 dark:hover:bg-neutral-800',
-                  isSelected && 'bg-primary-50 dark:bg-primary-900/20',
-                  option.disabled && 'cursor-not-allowed opacity-50'
+                  "flex w-full items-center gap-2 px-4 py-2 text-left text-sm",
+                  "hover:bg-neutral-50 dark:hover:bg-neutral-800",
+                  isSelected && "bg-primary-50 dark:bg-primary-900/20",
+                  option.disabled && "cursor-not-allowed opacity-50",
                 )}
               >
                 <span
                   className={cn(
-                    'flex h-4 w-4 items-center justify-center rounded border',
+                    "flex h-4 w-4 items-center justify-center rounded border",
                     isSelected
-                      ? 'border-primary-500 bg-primary-500 text-white'
-                      : 'border-neutral-300 dark:border-neutral-600'
+                      ? "border-primary-500 bg-primary-500 text-white"
+                      : "border-neutral-300 dark:border-neutral-600",
                   )}
                 >
                   {isSelected && <Check className="h-3 w-3" />}

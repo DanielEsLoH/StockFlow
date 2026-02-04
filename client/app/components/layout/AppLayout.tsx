@@ -1,28 +1,28 @@
-import { useState, useEffect } from 'react';
-import { Outlet, NavLink } from 'react-router';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { Outlet, NavLink } from "react-router";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Package,
   FileText,
   ShoppingCart,
   Settings,
-} from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { useUIStore } from '~/stores/ui.store';
-import { Sidebar } from './Sidebar';
-import { Header } from './Header';
+} from "lucide-react";
+import { cn } from "~/lib/utils";
+import { useUIStore } from "~/stores/ui.store";
+import { Sidebar } from "./Sidebar";
+import { Header } from "./Header";
 
 // Media query breakpoint for lg (1024px)
 const DESKTOP_BREAKPOINT = 1024;
 
 // Bottom navigation items for mobile
 const bottomNavItems = [
-  { name: 'Inicio', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Productos', href: '/products', icon: Package },
-  { name: 'Caja', href: '/invoices/new', icon: ShoppingCart, isMain: true },
-  { name: 'Facturas', href: '/invoices', icon: FileText },
-  { name: 'Config', href: '/settings', icon: Settings },
+  { name: "Inicio", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Productos", href: "/products", icon: Package },
+  { name: "Caja", href: "/invoices/new", icon: ShoppingCart, isMain: true },
+  { name: "Facturas", href: "/invoices", icon: FileText },
+  { name: "Config", href: "/settings", icon: Settings },
 ];
 
 export function AppLayout() {
@@ -36,9 +36,11 @@ export function AppLayout() {
   // Close mobile sidebar when viewport changes to desktop
   useEffect(() => {
     // SSR safety check
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
-    const mediaQuery = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT}px)`);
+    const mediaQuery = window.matchMedia(
+      `(min-width: ${DESKTOP_BREAKPOINT}px)`,
+    );
 
     const handleChange = (e: MediaQueryListEvent) => {
       if (e.matches) {
@@ -48,15 +50,15 @@ export function AppLayout() {
     };
 
     // Add listener for viewport changes
-    mediaQuery.addEventListener('change', handleChange);
+    mediaQuery.addEventListener("change", handleChange);
 
     return () => {
-      mediaQuery.removeEventListener('change', handleChange);
+      mediaQuery.removeEventListener("change", handleChange);
     };
   }, [setMobileSidebarOpen]);
 
   // Calculate content margin based on desktop sidebar state
-  const contentMarginLeft = sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-[280px]';
+  const contentMarginLeft = sidebarCollapsed ? "lg:ml-20" : "lg:ml-[280px]";
 
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950">
@@ -66,8 +68,8 @@ export function AppLayout() {
       {/* Main content area */}
       <div
         className={cn(
-          'flex flex-1 flex-col overflow-hidden transition-all duration-300',
-          contentMarginLeft
+          "flex flex-1 flex-col overflow-hidden transition-all duration-300",
+          contentMarginLeft,
         )}
       >
         {/* Header */}
@@ -108,11 +110,11 @@ export function AppLayout() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className={cn(
-                          'flex h-14 w-14 items-center justify-center rounded-2xl',
-                          'bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600',
-                          'shadow-lg shadow-primary-500/30',
-                          'transition-shadow duration-200',
-                          isActive && 'shadow-primary-500/50 shadow-xl'
+                          "flex h-14 w-14 items-center justify-center rounded-2xl",
+                          "bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600",
+                          "shadow-lg shadow-primary-500/30",
+                          "transition-shadow duration-200",
+                          isActive && "shadow-primary-500/50 shadow-xl",
                         )}
                       >
                         <Icon className="h-6 w-6 text-white" />
@@ -127,7 +129,7 @@ export function AppLayout() {
                 <NavLink
                   key={item.href}
                   to={item.href}
-                  end={item.href === '/dashboard'}
+                  end={item.href === "/dashboard"}
                   className="flex-1 flex flex-col items-center py-1"
                 >
                   {({ isActive }) => (
@@ -137,20 +139,20 @@ export function AppLayout() {
                     >
                       <div
                         className={cn(
-                          'flex h-9 w-9 items-center justify-center rounded-xl transition-colors',
+                          "flex h-9 w-9 items-center justify-center rounded-xl transition-colors",
                           isActive
-                            ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                            : 'text-neutral-500 dark:text-neutral-400'
+                            ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+                            : "text-neutral-500 dark:text-neutral-400",
                         )}
                       >
                         <Icon className="h-5 w-5" />
                       </div>
                       <span
                         className={cn(
-                          'text-[10px] font-medium transition-colors',
+                          "text-[10px] font-medium transition-colors",
                           isActive
-                            ? 'text-primary-600 dark:text-primary-400'
-                            : 'text-neutral-500 dark:text-neutral-400'
+                            ? "text-primary-600 dark:text-primary-400"
+                            : "text-neutral-500 dark:text-neutral-400",
                         )}
                       >
                         {item.name}
@@ -160,7 +162,11 @@ export function AppLayout() {
                         <motion.div
                           layoutId="bottomNavIndicator"
                           className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-primary-500"
-                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 30,
+                          }}
                         />
                       )}
                     </motion.div>

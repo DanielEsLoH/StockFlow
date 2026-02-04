@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface UIState {
   // Sidebar
@@ -33,7 +33,7 @@ export const useUIStore = create<UIState>((set) => ({
   activeModal: null,
   modalData: null,
   globalLoading: false,
-  loadingMessage: '',
+  loadingMessage: "",
 
   // Actions
   toggleSidebar: () =>
@@ -67,7 +67,7 @@ export const useUIStore = create<UIState>((set) => ({
       modalData: null,
     }),
 
-  setGlobalLoading: (globalLoading, loadingMessage = '') =>
+  setGlobalLoading: (globalLoading, loadingMessage = "") =>
     set({
       globalLoading,
       loadingMessage,

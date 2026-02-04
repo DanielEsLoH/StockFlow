@@ -1,4 +1,4 @@
-import { api } from '~/lib/api';
+import { api } from "~/lib/api";
 
 // Types
 export interface DashboardStats {
@@ -40,7 +40,7 @@ export interface RecentInvoice {
   number: string;
   customer: string;
   amount: number;
-  status: 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED';
+  status: "PAID" | "PENDING" | "OVERDUE" | "CANCELLED";
   date: string;
 }
 
@@ -53,7 +53,12 @@ export interface LowStockAlert {
   warehouse: string;
 }
 
-export type ActivityType = 'sale' | 'product' | 'customer' | 'invoice' | 'stock';
+export type ActivityType =
+  | "sale"
+  | "product"
+  | "customer"
+  | "invoice"
+  | "stock";
 
 export interface RecentActivity {
   id: string;
@@ -81,38 +86,45 @@ export interface DashboardData {
 // Service - Real API calls
 export const dashboardService = {
   async getStats(): Promise<DashboardStats> {
-    const { data } = await api.get<DashboardStats>('/dashboard/stats');
+    const { data } = await api.get<DashboardStats>("/dashboard/stats");
     return data;
   },
 
   async getCharts(): Promise<DashboardCharts> {
-    const { data } = await api.get<DashboardCharts>('/dashboard/charts');
+    const { data } = await api.get<DashboardCharts>("/dashboard/charts");
     return data;
   },
 
   async getRecentInvoices(): Promise<RecentInvoice[]> {
-    const { data } = await api.get<RecentInvoice[]>('/dashboard/recent-invoices');
+    const { data } = await api.get<RecentInvoice[]>(
+      "/dashboard/recent-invoices",
+    );
     return data;
   },
 
   async getLowStockAlerts(): Promise<LowStockAlert[]> {
-    const { data } = await api.get<LowStockAlert[]>('/dashboard/low-stock-alerts');
+    const { data } = await api.get<LowStockAlert[]>(
+      "/dashboard/low-stock-alerts",
+    );
     return data;
   },
 
   async getRecentActivity(): Promise<RecentActivity[]> {
-    const { data } = await api.get<RecentActivity[]>('/dashboard/recent-activity');
+    const { data } = await api.get<RecentActivity[]>(
+      "/dashboard/recent-activity",
+    );
     return data;
   },
 
   async getAll(): Promise<DashboardData> {
-    const [stats, charts, recentInvoices, lowStockAlerts, recentActivity] = await Promise.all([
-      this.getStats(),
-      this.getCharts(),
-      this.getRecentInvoices(),
-      this.getLowStockAlerts(),
-      this.getRecentActivity(),
-    ]);
+    const [stats, charts, recentInvoices, lowStockAlerts, recentActivity] =
+      await Promise.all([
+        this.getStats(),
+        this.getCharts(),
+        this.getRecentInvoices(),
+        this.getLowStockAlerts(),
+        this.getRecentActivity(),
+      ]);
 
     return { stats, charts, recentInvoices, lowStockAlerts, recentActivity };
   },

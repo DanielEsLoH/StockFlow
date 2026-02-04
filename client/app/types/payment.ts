@@ -1,52 +1,52 @@
 // Payment Types
 
-import type { Customer } from './customer';
-import type { Invoice } from './invoice';
+import type { Customer } from "./customer";
+import type { Invoice } from "./invoice";
 
 // Payment Method
 export type PaymentMethod =
-  | 'CASH'
-  | 'CREDIT_CARD'
-  | 'DEBIT_CARD'
-  | 'BANK_TRANSFER'
-  | 'WIRE_TRANSFER'
-  | 'CHECK'
-  | 'PSE'
-  | 'NEQUI'
-  | 'DAVIPLATA'
-  | 'OTHER';
+  | "CASH"
+  | "CREDIT_CARD"
+  | "DEBIT_CARD"
+  | "BANK_TRANSFER"
+  | "WIRE_TRANSFER"
+  | "CHECK"
+  | "PSE"
+  | "NEQUI"
+  | "DAVIPLATA"
+  | "OTHER";
 
 // Payment Status
 export type PaymentStatus =
-  | 'PENDING'
-  | 'PROCESSING'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'REFUNDED'
-  | 'CANCELLED';
+  | "PENDING"
+  | "PROCESSING"
+  | "COMPLETED"
+  | "FAILED"
+  | "REFUNDED"
+  | "CANCELLED";
 
 // Payment method display labels in Spanish
 export const PaymentMethodLabels: Record<PaymentMethod, string> = {
-  CASH: 'Efectivo',
-  CREDIT_CARD: 'Tarjeta de Crédito',
-  DEBIT_CARD: 'Tarjeta Débito',
-  BANK_TRANSFER: 'Transferencia Bancaria',
-  WIRE_TRANSFER: 'Transferencia Internacional',
-  CHECK: 'Cheque',
-  PSE: 'PSE',
-  NEQUI: 'Nequi',
-  DAVIPLATA: 'Daviplata',
-  OTHER: 'Otro',
+  CASH: "Efectivo",
+  CREDIT_CARD: "Tarjeta de Crédito",
+  DEBIT_CARD: "Tarjeta Débito",
+  BANK_TRANSFER: "Transferencia Bancaria",
+  WIRE_TRANSFER: "Transferencia Internacional",
+  CHECK: "Cheque",
+  PSE: "PSE",
+  NEQUI: "Nequi",
+  DAVIPLATA: "Daviplata",
+  OTHER: "Otro",
 };
 
 // Payment status display labels in Spanish
 export const PaymentStatusLabels: Record<PaymentStatus, string> = {
-  PENDING: 'Pendiente',
-  PROCESSING: 'Procesando',
-  COMPLETED: 'Completado',
-  FAILED: 'Fallido',
-  REFUNDED: 'Reembolsado',
-  CANCELLED: 'Cancelado',
+  PENDING: "Pendiente",
+  PROCESSING: "Procesando",
+  COMPLETED: "Completado",
+  FAILED: "Fallido",
+  REFUNDED: "Reembolsado",
+  CANCELLED: "Cancelado",
 };
 
 // Main Payment entity
@@ -109,7 +109,7 @@ export interface PaymentFilters {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 // Paginated response for payments

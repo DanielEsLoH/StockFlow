@@ -1,7 +1,7 @@
-import { forwardRef } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { Loader2 } from 'lucide-react';
-import { cn } from '~/lib/utils';
+import { forwardRef } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { Loader2 } from "lucide-react";
+import { cn } from "~/lib/utils";
 
 const buttonVariants = cva(
   `inline-flex items-center justify-center rounded-xl font-medium
@@ -30,7 +30,7 @@ const buttonVariants = cva(
                   hover:border-neutral-300
                   dark:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:border-neutral-600`,
         // Outline Primary - Primary colored border
-        'outline-primary': `border-2 border-primary-500 bg-transparent text-primary-600
+        "outline-primary": `border-2 border-primary-500 bg-transparent text-primary-600
                            hover:bg-primary-50 dark:text-primary-400
                            dark:hover:bg-primary-900/20`,
         // Ghost - Transparent with hover
@@ -49,45 +49,46 @@ const buttonVariants = cva(
                 hover:bg-white/90 dark:hover:bg-neutral-900/90
                 shadow-lg`,
         // Soft Primary - Subtle primary background
-        'soft-primary': `bg-primary-100 text-primary-700 hover:bg-primary-200
+        "soft-primary": `bg-primary-100 text-primary-700 hover:bg-primary-200
                          dark:bg-primary-900/30 dark:text-primary-300 dark:hover:bg-primary-900/50`,
         // Soft Success - Subtle success background
-        'soft-success': `bg-success-100 text-success-700 hover:bg-success-200
+        "soft-success": `bg-success-100 text-success-700 hover:bg-success-200
                          dark:bg-success-900/30 dark:text-success-300 dark:hover:bg-success-900/50`,
         // Soft Warning - Subtle warning background
-        'soft-warning': `bg-warning-100 text-warning-700 hover:bg-warning-200
+        "soft-warning": `bg-warning-100 text-warning-700 hover:bg-warning-200
                          dark:bg-warning-900/30 dark:text-warning-300 dark:hover:bg-warning-900/50`,
         // Soft Danger - Subtle error background
-        'soft-danger': `bg-error-100 text-error-700 hover:bg-error-200
+        "soft-danger": `bg-error-100 text-error-700 hover:bg-error-200
                         dark:bg-error-900/30 dark:text-error-300 dark:hover:bg-error-900/50`,
       },
       size: {
-        xs: 'h-7 px-2.5 text-xs gap-1',
-        sm: 'h-9 px-3 text-sm gap-1.5',
-        md: 'h-10 px-4 text-sm gap-2',
-        lg: 'h-12 px-6 text-base gap-2',
-        xl: 'h-14 px-8 text-lg gap-3',
-        icon: 'h-10 w-10',
-        'icon-xs': 'h-7 w-7',
-        'icon-sm': 'h-8 w-8',
-        'icon-lg': 'h-12 w-12',
-        'icon-xl': 'h-14 w-14',
+        xs: "h-7 px-2.5 text-xs gap-1",
+        sm: "h-9 px-3 text-sm gap-1.5",
+        md: "h-10 px-4 text-sm gap-2",
+        lg: "h-12 px-6 text-base gap-2",
+        xl: "h-14 px-8 text-lg gap-3",
+        icon: "h-10 w-10",
+        "icon-xs": "h-7 w-7",
+        "icon-sm": "h-8 w-8",
+        "icon-lg": "h-12 w-12",
+        "icon-xl": "h-14 w-14",
       },
       fullWidth: {
-        true: 'w-full',
-        false: '',
+        true: "w-full",
+        false: "",
       },
     },
     defaultVariants: {
-      variant: 'primary',
-      size: 'md',
+      variant: "primary",
+      size: "md",
       fullWidth: false,
     },
-  }
+  },
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
@@ -108,7 +109,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <button
@@ -123,12 +124,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           leftIcon && <span className="shrink-0">{leftIcon}</span>
         )}
         {children}
-        {!isLoading && rightIcon && <span className="shrink-0">{rightIcon}</span>}
+        {!isLoading && rightIcon && (
+          <span className="shrink-0">{rightIcon}</span>
+        )}
       </button>
     );
-  }
+  },
 );
 
-Button.displayName = 'Button';
+Button.displayName = "Button";
 
 export { buttonVariants };

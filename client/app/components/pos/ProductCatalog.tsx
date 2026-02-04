@@ -1,12 +1,16 @@
-import { useMemo, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Package, ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { filterProductsBySearch, filterProductsByCategory, sortProductsForPOS } from '~/lib/pos-utils';
-import { ProductCard } from './ProductCard';
-import { CategoryTabs } from './CategoryTabs';
-import type { Product } from '~/types/product';
-import type { Category } from '~/types/category';
+import { useMemo, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "~/lib/utils";
+import {
+  filterProductsBySearch,
+  filterProductsByCategory,
+  sortProductsForPOS,
+} from "~/lib/pos-utils";
+import { ProductCard } from "./ProductCard";
+import { CategoryTabs } from "./CategoryTabs";
+import type { Product } from "~/types/product";
+import type { Category } from "~/types/category";
 
 interface ProductCatalogProps {
   products: Product[];
@@ -44,7 +48,7 @@ export function ProductCatalog({
 
   // Get active products only (for counting and filtering)
   const activeProducts = useMemo(() => {
-    return products.filter((p) => p.status === 'ACTIVE');
+    return products.filter((p) => p.status === "ACTIVE");
   }, [products]);
 
   // Build a Map of categoryId -> active product count for O(1) lookups
@@ -143,8 +147,8 @@ export function ProductCatalog({
               </h3>
               <p className="mt-1 text-xs sm:text-sm text-neutral-500 text-center px-4">
                 {searchQuery
-                  ? 'Intenta con otros terminos de busqueda'
-                  : 'No hay productos en esta categoria'}
+                  ? "Intenta con otros terminos de busqueda"
+                  : "No hay productos en esta categoria"}
               </p>
             </motion.div>
           ) : (
@@ -183,7 +187,7 @@ export function ProductCatalog({
         <div className="mt-4 flex items-center justify-between border-t border-neutral-200 pt-4 dark:border-neutral-700">
           <p className="text-sm text-neutral-500">
             Mostrando {(currentPage - 1) * itemsPerPage + 1}-
-            {Math.min(currentPage * itemsPerPage, filteredProducts.length)} de{' '}
+            {Math.min(currentPage * itemsPerPage, filteredProducts.length)} de{" "}
             {filteredProducts.length} productos
           </p>
 
@@ -193,10 +197,10 @@ export function ProductCatalog({
               onClick={handlePrevPage}
               disabled={currentPage === 1}
               className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-lg border transition-colors',
+                "flex h-9 w-9 items-center justify-center rounded-lg border transition-colors",
                 currentPage === 1
-                  ? 'cursor-not-allowed border-neutral-200 text-neutral-300 dark:border-neutral-700 dark:text-neutral-600'
-                  : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800'
+                  ? "cursor-not-allowed border-neutral-200 text-neutral-300 dark:border-neutral-700 dark:text-neutral-600"
+                  : "border-neutral-200 text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800",
               )}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -221,10 +225,10 @@ export function ProductCatalog({
                     type="button"
                     onClick={() => setCurrentPage(pageNum)}
                     className={cn(
-                      'flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors',
+                      "flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors",
                       currentPage === pageNum
-                        ? 'bg-primary-600 text-white'
-                        : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800'
+                        ? "bg-primary-600 text-white"
+                        : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800",
                     )}
                   >
                     {pageNum}
@@ -238,10 +242,10 @@ export function ProductCatalog({
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
               className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-lg border transition-colors',
+                "flex h-9 w-9 items-center justify-center rounded-lg border transition-colors",
                 currentPage === totalPages
-                  ? 'cursor-not-allowed border-neutral-200 text-neutral-300 dark:border-neutral-700 dark:text-neutral-600'
-                  : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800'
+                  ? "cursor-not-allowed border-neutral-200 text-neutral-300 dark:border-neutral-700 dark:text-neutral-600"
+                  : "border-neutral-200 text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800",
               )}
             >
               <ChevronRight className="h-4 w-4" />

@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
-import { paymentsService } from '~/services/payments.service';
-import { queryKeys } from '~/lib/query-client';
-import { toast } from '~/components/ui/Toast';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
+import { paymentsService } from "~/services/payments.service";
+import { queryKeys } from "~/lib/query-client";
+import { toast } from "~/components/ui/Toast";
 import type {
   Payment,
   PaymentFilters,
@@ -11,7 +11,7 @@ import type {
   UpdatePaymentData,
   PaymentStats,
   PaymentStatus,
-} from '~/types/payment';
+} from "~/types/payment";
 
 // ============================================================================
 // QUERIES
@@ -99,7 +99,8 @@ export function useCreatePayment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreatePaymentData) => paymentsService.createPayment(data),
+    mutationFn: (data: CreatePaymentData) =>
+      paymentsService.createPayment(data),
     onSuccess: (payment) => {
       // Invalidate all payment-related queries
       void queryClient.invalidateQueries({ queryKey: queryKeys.payments.all });
@@ -118,7 +119,9 @@ export function useCreatePayment() {
       // Invalidate invoice list (payment status may affect invoice list)
       void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
       // Invalidate payment stats
-      void queryClient.invalidateQueries({ queryKey: queryKeys.payments.stats() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.payments.stats(),
+      });
       // Invalidate dashboard data
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
 
@@ -126,7 +129,7 @@ export function useCreatePayment() {
       navigate(`/payments/${payment.id}`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al registrar el pago');
+      toast.error(error.message || "Error al registrar el pago");
     },
   });
 }
@@ -143,11 +146,13 @@ export function useUpdatePayment() {
       paymentsService.updatePayment(id, data),
     onMutate: async ({ id, data }) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.payments.detail(id) });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.payments.detail(id),
+      });
 
       // Snapshot the previous value
       const previousPayment = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail(id)
+        queryKeys.payments.detail(id),
       );
 
       // Optimistically update the payment detail
@@ -179,7 +184,9 @@ export function useUpdatePayment() {
         queryKey: queryKeys.invoices.detail(payment.invoiceId),
       });
       // Invalidate payment stats
-      void queryClient.invalidateQueries({ queryKey: queryKeys.payments.stats() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.payments.stats(),
+      });
       // Invalidate dashboard
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
 
@@ -191,10 +198,10 @@ export function useUpdatePayment() {
       if (context?.previousPayment) {
         queryClient.setQueryData(
           queryKeys.payments.detail(id),
-          context.previousPayment
+          context.previousPayment,
         );
       }
-      toast.error(error.message || 'Error al actualizar el pago');
+      toast.error(error.message || "Error al actualizar el pago");
     },
   });
 }
@@ -210,11 +217,13 @@ export function useUpdatePaymentStatus() {
       paymentsService.updatePaymentStatus(id, status),
     onMutate: async ({ id, status }) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.payments.detail(id) });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.payments.detail(id),
+      });
 
       // Snapshot the previous value
       const previousPayment = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail(id)
+        queryKeys.payments.detail(id),
       );
 
       // Optimistically update the status
@@ -248,21 +257,23 @@ export function useUpdatePaymentStatus() {
       // Invalidate invoice list
       void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
       // Invalidate stats
-      void queryClient.invalidateQueries({ queryKey: queryKeys.payments.stats() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.payments.stats(),
+      });
       // Invalidate dashboard
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
 
       const statusMessages: Record<PaymentStatus, string> = {
-        PENDING: 'marcado como pendiente',
-        PROCESSING: 'marcado como en proceso',
-        COMPLETED: 'marcado como completado',
-        FAILED: 'marcado como fallido',
-        REFUNDED: 'marcado como reembolsado',
-        CANCELLED: 'cancelado',
+        PENDING: "marcado como pendiente",
+        PROCESSING: "marcado como en proceso",
+        COMPLETED: "marcado como completado",
+        FAILED: "marcado como fallido",
+        REFUNDED: "marcado como reembolsado",
+        CANCELLED: "cancelado",
       };
 
       toast.success(
-        `Pago "${payment.paymentNumber}" ${statusMessages[payment.status]}`
+        `Pago "${payment.paymentNumber}" ${statusMessages[payment.status]}`,
       );
     },
     onError: (error: Error, { id }, context) => {
@@ -270,10 +281,10 @@ export function useUpdatePaymentStatus() {
       if (context?.previousPayment) {
         queryClient.setQueryData(
           queryKeys.payments.detail(id),
-          context.previousPayment
+          context.previousPayment,
         );
       }
-      toast.error(error.message || 'Error al actualizar el estado del pago');
+      toast.error(error.message || "Error al actualizar el estado del pago");
     },
   });
 }
@@ -290,7 +301,7 @@ export function useDeletePayment() {
     onSuccess: (_result, id) => {
       // Get the payment before removing from cache to access invoiceId and customerId
       const payment = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail(id)
+        queryKeys.payments.detail(id),
       );
 
       // Invalidate all payment queries
@@ -318,17 +329,19 @@ export function useDeletePayment() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
 
       // Invalidate stats and dashboard
-      void queryClient.invalidateQueries({ queryKey: queryKeys.payments.stats() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.payments.stats(),
+      });
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
 
       // Remove from detail cache
       queryClient.removeQueries({ queryKey: queryKeys.payments.detail(id) });
 
-      toast.success('Pago eliminado exitosamente');
-      navigate('/payments');
+      toast.success("Pago eliminado exitosamente");
+      navigate("/payments");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar el pago');
+      toast.error(error.message || "Error al eliminar el pago");
     },
   });
 }
@@ -345,7 +358,7 @@ export function useRefundPayment() {
     onSuccess: (payment, { id }) => {
       // Get the original payment to access invoiceId and customerId
       const originalPayment = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail(id)
+        queryKeys.payments.detail(id),
       );
 
       // Invalidate all payment queries
@@ -388,20 +401,22 @@ export function useRefundPayment() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
 
       // Invalidate stats and dashboard
-      void queryClient.invalidateQueries({ queryKey: queryKeys.payments.stats() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.payments.stats(),
+      });
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
 
       const refundAmount = payment.refundAmount || payment.amount;
-      const formattedAmount = new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
+      const formattedAmount = new Intl.NumberFormat("es-CO", {
+        style: "currency",
+        currency: "COP",
         minimumFractionDigits: 0,
       }).format(Math.abs(refundAmount));
 
       toast.success(`Reembolso de ${formattedAmount} procesado exitosamente`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al procesar el reembolso');
+      toast.error(error.message || "Error al procesar el reembolso");
     },
   });
 }

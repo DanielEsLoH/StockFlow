@@ -4,7 +4,7 @@ import type {
   CustomersReportParams,
   RecentReport,
   ReportFormat,
-} from '~/types/report';
+} from "~/types/report";
 
 // Helper to generate random delay between min and max milliseconds
 function randomDelay(min: number, max: number): Promise<void> {
@@ -14,19 +14,19 @@ function randomDelay(min: number, max: number): Promise<void> {
 
 // Helper to format date for filename (YYYY-MM-DD)
 function formatDateForFilename(date: Date = new Date()): string {
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 // Helper to get file extension based on format
 function getFileExtension(format: ReportFormat): string {
-  return format === 'pdf' ? 'pdf' : 'xlsx';
+  return format === "pdf" ? "pdf" : "xlsx";
 }
 
 // Helper to get MIME type based on format
 function getMimeType(format: ReportFormat): string {
-  return format === 'pdf'
-    ? 'application/pdf'
-    : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  return format === "pdf"
+    ? "application/pdf"
+    : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 }
 
 // Helper to create a mock Blob with simulated file data
@@ -42,65 +42,65 @@ function createMockBlob(format: ReportFormat, content: string): Blob {
 // Mock recent reports data
 const mockRecentReports: RecentReport[] = [
   {
-    id: '1',
-    type: 'sales',
-    format: 'pdf',
-    generatedAt: '2024-01-14T15:30:00Z',
+    id: "1",
+    type: "sales",
+    format: "pdf",
+    generatedAt: "2024-01-14T15:30:00Z",
     params: {
-      format: 'pdf',
-      fromDate: '2024-01-01',
-      toDate: '2024-01-14',
+      format: "pdf",
+      fromDate: "2024-01-01",
+      toDate: "2024-01-14",
     },
     fileSize: 245760,
-    fileName: 'reporte-ventas-2024-01-14.pdf',
+    fileName: "reporte-ventas-2024-01-14.pdf",
   },
   {
-    id: '2',
-    type: 'inventory',
-    format: 'excel',
-    generatedAt: '2024-01-13T10:15:00Z',
+    id: "2",
+    type: "inventory",
+    format: "excel",
+    generatedAt: "2024-01-13T10:15:00Z",
     params: {
-      format: 'excel',
+      format: "excel",
     },
     fileSize: 512000,
-    fileName: 'reporte-inventario-2024-01-13.xlsx',
+    fileName: "reporte-inventario-2024-01-13.xlsx",
   },
   {
-    id: '3',
-    type: 'customers',
-    format: 'pdf',
-    generatedAt: '2024-01-12T09:00:00Z',
+    id: "3",
+    type: "customers",
+    format: "pdf",
+    generatedAt: "2024-01-12T09:00:00Z",
     params: {
-      format: 'pdf',
+      format: "pdf",
     },
     fileSize: 184320,
-    fileName: 'reporte-clientes-2024-01-12.pdf',
+    fileName: "reporte-clientes-2024-01-12.pdf",
   },
   {
-    id: '4',
-    type: 'sales',
-    format: 'excel',
-    generatedAt: '2024-01-10T14:45:00Z',
+    id: "4",
+    type: "sales",
+    format: "excel",
+    generatedAt: "2024-01-10T14:45:00Z",
     params: {
-      format: 'excel',
-      fromDate: '2023-12-01',
-      toDate: '2023-12-31',
-      categoryId: 'cat-1',
+      format: "excel",
+      fromDate: "2023-12-01",
+      toDate: "2023-12-31",
+      categoryId: "cat-1",
     },
     fileSize: 768000,
-    fileName: 'reporte-ventas-2024-01-10.xlsx',
+    fileName: "reporte-ventas-2024-01-10.xlsx",
   },
   {
-    id: '5',
-    type: 'inventory',
-    format: 'pdf',
-    generatedAt: '2024-01-08T11:20:00Z',
+    id: "5",
+    type: "inventory",
+    format: "pdf",
+    generatedAt: "2024-01-08T11:20:00Z",
     params: {
-      format: 'pdf',
-      categoryId: 'cat-2',
+      format: "pdf",
+      categoryId: "cat-2",
     },
     fileSize: 156672,
-    fileName: 'reporte-inventario-2024-01-08.pdf',
+    fileName: "reporte-inventario-2024-01-08.pdf",
   },
 ];
 
@@ -108,7 +108,7 @@ const mockRecentReports: RecentReport[] = [
 export const reportsService = {
   // Generate sales report
   async generateSalesReport(
-    params: SalesReportParams
+    params: SalesReportParams,
   ): Promise<{ blob: Blob; fileName: string }> {
     // In production, uncomment this:
     // const { data } = await api.post<Blob>('/reports/sales', params, {
@@ -124,7 +124,7 @@ export const reportsService = {
       REPORTE DE VENTAS
       =================
       Periodo: ${params.fromDate} - ${params.toDate}
-      ${params.categoryId ? `Categoria: ${params.categoryId}` : 'Todas las categorias'}
+      ${params.categoryId ? `Categoria: ${params.categoryId}` : "Todas las categorias"}
       Generado: ${new Date().toISOString()}
 
       Este es un archivo de prueba generado para desarrollo.
@@ -139,7 +139,7 @@ export const reportsService = {
 
   // Generate inventory report
   async generateInventoryReport(
-    params: InventoryReportParams
+    params: InventoryReportParams,
   ): Promise<{ blob: Blob; fileName: string }> {
     // In production, uncomment this:
     // const { data } = await api.post<Blob>('/reports/inventory', params, {
@@ -154,7 +154,7 @@ export const reportsService = {
     const content = `
       REPORTE DE INVENTARIO
       =====================
-      ${params.categoryId ? `Categoria: ${params.categoryId}` : 'Todas las categorias'}
+      ${params.categoryId ? `Categoria: ${params.categoryId}` : "Todas las categorias"}
       Generado: ${new Date().toISOString()}
 
       Este es un archivo de prueba generado para desarrollo.
@@ -169,7 +169,7 @@ export const reportsService = {
 
   // Generate customers report
   async generateCustomersReport(
-    params: CustomersReportParams
+    params: CustomersReportParams,
   ): Promise<{ blob: Blob; fileName: string }> {
     // In production, uncomment this:
     // const { data } = await api.post<Blob>('/reports/customers', params, {
@@ -198,7 +198,7 @@ export const reportsService = {
 
   // Download invoice as PDF
   async downloadInvoicePdf(
-    invoiceId: string
+    invoiceId: string,
   ): Promise<{ blob: Blob; fileName: string }> {
     // In production, uncomment this:
     // const { data } = await api.get<Blob>(`/invoices/${invoiceId}/pdf`, {
@@ -220,7 +220,7 @@ export const reportsService = {
       En produccion, este seria un archivo PDF real con los datos de la factura.
     `;
 
-    const blob = createMockBlob('pdf', content);
+    const blob = createMockBlob("pdf", content);
     const fileName = `factura-${invoiceId}.pdf`;
 
     return { blob, fileName };
@@ -232,7 +232,7 @@ export const reportsService = {
     const url = window.URL.createObjectURL(blob);
 
     // Create anchor element
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = fileName;
 

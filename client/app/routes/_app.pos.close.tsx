@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router";
+import { motion } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   LogOut,
   DollarSign,
@@ -13,30 +13,32 @@ import {
   CreditCard,
   TrendingUp,
   TrendingDown,
-} from 'lucide-react';
-import type { Route } from './+types/_app.pos.close';
-import { useCurrentSession, useCloseSession, useXReport } from '~/hooks/usePOS';
-import { Button } from '~/components/ui/Button';
-import { Card } from '~/components/ui/Card';
-import { Input } from '~/components/ui/Input';
-import { Badge } from '~/components/ui/Badge';
-import { formatCurrency, formatDateTime } from '~/lib/utils';
+} from "lucide-react";
+import type { Route } from "./+types/_app.pos.close";
+import { useCurrentSession, useCloseSession, useXReport } from "~/hooks/usePOS";
+import { Button } from "~/components/ui/Button";
+import { Card } from "~/components/ui/Card";
+import { Input } from "~/components/ui/Input";
+import { Badge } from "~/components/ui/Badge";
+import { formatCurrency, formatDateTime } from "~/lib/utils";
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Cerrar Turno - POS - StockFlow' },
-    { name: 'description', content: 'Cerrar turno de caja' },
+    { title: "Cerrar Turno - POS - StockFlow" },
+    { name: "description", content: "Cerrar turno de caja" },
   ];
 };
 
 export default function POSClosePage() {
   const navigate = useNavigate();
   const [isMounted, setIsMounted] = useState(false);
-  const [closingAmount, setClosingAmount] = useState('');
-  const [notes, setNotes] = useState('');
+  const [closingAmount, setClosingAmount] = useState("");
+  const [notes, setNotes] = useState("");
 
   const { data: session, isLoading: loadingSession } = useCurrentSession();
-  const { data: xReport, isLoading: loadingReport } = useXReport(session?.id || '');
+  const { data: xReport, isLoading: loadingReport } = useXReport(
+    session?.id || "",
+  );
   const closeSession = useCloseSession();
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function POSClosePage() {
 
   useEffect(() => {
     if (!loadingSession && !session) {
-      navigate('/pos/open');
+      navigate("/pos/open");
     }
   }, [session, loadingSession, navigate]);
 
@@ -78,7 +80,7 @@ export default function POSClosePage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial={isMounted ? 'hidden' : false}
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="max-w-3xl mx-auto space-y-6"
     >
@@ -163,27 +165,36 @@ export default function POSClosePage() {
                   <h3 className="font-medium text-neutral-900 dark:text-white">
                     Desglose por Metodo
                   </h3>
-                  {xReport?.salesByPaymentMethod && Object.entries(xReport.salesByPaymentMethod).length > 0 ? (
-                    Object.entries(xReport.salesByPaymentMethod).map(([method, amount]) => (
-                      <div key={method} className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          {method === 'CASH' ? (
-                            <Banknote className="h-4 w-4 text-success-500" />
-                          ) : (
-                            <CreditCard className="h-4 w-4 text-primary-500" />
-                          )}
-                          <span className="text-neutral-500 dark:text-neutral-400 capitalize">
-                            {method === 'CASH' ? 'Efectivo' :
-                             method === 'CARD' ? 'Tarjeta' :
-                             method === 'TRANSFER' ? 'Transferencia' :
-                             method}
+                  {xReport?.salesByPaymentMethod &&
+                  Object.entries(xReport.salesByPaymentMethod).length > 0 ? (
+                    Object.entries(xReport.salesByPaymentMethod).map(
+                      ([method, amount]) => (
+                        <div
+                          key={method}
+                          className="flex justify-between items-center"
+                        >
+                          <div className="flex items-center gap-2">
+                            {method === "CASH" ? (
+                              <Banknote className="h-4 w-4 text-success-500" />
+                            ) : (
+                              <CreditCard className="h-4 w-4 text-primary-500" />
+                            )}
+                            <span className="text-neutral-500 dark:text-neutral-400 capitalize">
+                              {method === "CASH"
+                                ? "Efectivo"
+                                : method === "CARD"
+                                  ? "Tarjeta"
+                                  : method === "TRANSFER"
+                                    ? "Transferencia"
+                                    : method}
+                            </span>
+                          </div>
+                          <span className="font-medium text-neutral-900 dark:text-white">
+                            {formatCurrency(Number(amount))}
                           </span>
                         </div>
-                        <span className="font-medium text-neutral-900 dark:text-white">
-                          {formatCurrency(Number(amount))}
-                        </span>
-                      </div>
-                    ))
+                      ),
+                    )
                   ) : (
                     <p className="text-neutral-500 dark:text-neutral-400 text-sm">
                       Sin ventas registradas
@@ -214,9 +225,7 @@ export default function POSClosePage() {
                   </p>
                 </div>
               </div>
-              <Badge variant="secondary">
-                Calculado
-              </Badge>
+              <Badge variant="secondary">Calculado</Badge>
             </div>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-3">
               = Apertura + Ventas Efectivo + Ingresos - Retiros
@@ -261,8 +270,8 @@ export default function POSClosePage() {
               <div
                 className={`p-4 rounded-lg flex items-start gap-3 ${
                   difference > 0
-                    ? 'bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800'
-                    : 'bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800'
+                    ? "bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800"
+                    : "bg-error-50 dark:bg-error-900/20 border border-error-200 dark:border-error-800"
                 }`}
               >
                 {difference > 0 ? (
@@ -274,22 +283,23 @@ export default function POSClosePage() {
                   <p
                     className={`font-medium ${
                       difference > 0
-                        ? 'text-success-800 dark:text-success-200'
-                        : 'text-error-800 dark:text-error-200'
+                        ? "text-success-800 dark:text-success-200"
+                        : "text-error-800 dark:text-error-200"
                     }`}
                   >
-                    {difference > 0 ? 'Sobrante' : 'Faltante'}: {formatCurrency(Math.abs(difference))}
+                    {difference > 0 ? "Sobrante" : "Faltante"}:{" "}
+                    {formatCurrency(Math.abs(difference))}
                   </p>
                   <p
                     className={`text-sm mt-1 ${
                       difference > 0
-                        ? 'text-success-600 dark:text-success-300'
-                        : 'text-error-600 dark:text-error-300'
+                        ? "text-success-600 dark:text-success-300"
+                        : "text-error-600 dark:text-error-300"
                     }`}
                   >
                     {difference > 0
-                      ? 'Hay mas efectivo del esperado en la caja.'
-                      : 'Hay menos efectivo del esperado en la caja.'}
+                      ? "Hay mas efectivo del esperado en la caja."
+                      : "Hay menos efectivo del esperado en la caja."}
                   </p>
                 </div>
               </div>
@@ -326,11 +336,11 @@ export default function POSClosePage() {
               </Link>
               <Button
                 type="submit"
-                variant={hasDifference && difference < 0 ? 'danger' : 'primary'}
+                variant={hasDifference && difference < 0 ? "danger" : "primary"}
                 disabled={!closingAmount || closeSession.isPending}
                 leftIcon={<LogOut className="h-4 w-4" />}
               >
-                {closeSession.isPending ? 'Cerrando...' : 'Cerrar Turno'}
+                {closeSession.isPending ? "Cerrando..." : "Cerrar Turno"}
               </Button>
             </div>
           </form>

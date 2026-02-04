@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router';
-import { motion } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router";
+import { motion } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   ArrowLeft,
   Clock,
@@ -20,12 +20,12 @@ import {
   ShoppingCart,
   FileText,
   Download,
-} from 'lucide-react';
-import type { Route } from './+types/_app.pos.sessions.$id';
-import { usePOSSession, useXReport, useSessionMovements } from '~/hooks/usePOS';
-import { Button } from '~/components/ui/Button';
-import { Card } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
+} from "lucide-react";
+import type { Route } from "./+types/_app.pos.sessions.$id";
+import { usePOSSession, useXReport, useSessionMovements } from "~/hooks/usePOS";
+import { Button } from "~/components/ui/Button";
+import { Card } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
 import {
   Table,
   TableHeader,
@@ -33,65 +33,74 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { formatCurrency, formatDateTime } from '~/lib/utils';
+} from "~/components/ui/Table";
+import { formatCurrency, formatDateTime } from "~/lib/utils";
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Detalle de Sesion - POS - StockFlow' },
-    { name: 'description', content: 'Detalle de sesion de caja' },
+    { title: "Detalle de Sesion - POS - StockFlow" },
+    { name: "description", content: "Detalle de sesion de caja" },
   ];
 };
 
-const movementTypeLabels: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+const movementTypeLabels: Record<
+  string,
+  { label: string; icon: React.ReactNode; color: string }
+> = {
   OPENING: {
-    label: 'Apertura',
+    label: "Apertura",
     icon: <PlayCircle className="h-4 w-4" />,
-    color: 'text-primary-500 bg-primary-50 dark:bg-primary-900/20',
+    color: "text-primary-500 bg-primary-50 dark:bg-primary-900/20",
   },
   CLOSING: {
-    label: 'Cierre',
+    label: "Cierre",
     icon: <CheckCircle className="h-4 w-4" />,
-    color: 'text-secondary-500 bg-secondary-50 dark:bg-secondary-900/20',
+    color: "text-secondary-500 bg-secondary-50 dark:bg-secondary-900/20",
   },
   SALE: {
-    label: 'Venta',
+    label: "Venta",
     icon: <ShoppingCart className="h-4 w-4" />,
-    color: 'text-success-500 bg-success-50 dark:bg-success-900/20',
+    color: "text-success-500 bg-success-50 dark:bg-success-900/20",
   },
   REFUND: {
-    label: 'Devolucion',
+    label: "Devolucion",
     icon: <ArrowDownCircle className="h-4 w-4" />,
-    color: 'text-warning-500 bg-warning-50 dark:bg-warning-900/20',
+    color: "text-warning-500 bg-warning-50 dark:bg-warning-900/20",
   },
   CASH_IN: {
-    label: 'Ingreso',
+    label: "Ingreso",
     icon: <ArrowUpCircle className="h-4 w-4" />,
-    color: 'text-success-500 bg-success-50 dark:bg-success-900/20',
+    color: "text-success-500 bg-success-50 dark:bg-success-900/20",
   },
   CASH_OUT: {
-    label: 'Retiro',
+    label: "Retiro",
     icon: <ArrowDownCircle className="h-4 w-4" />,
-    color: 'text-error-500 bg-error-50 dark:bg-error-900/20',
+    color: "text-error-500 bg-error-50 dark:bg-error-900/20",
   },
 };
 
 const paymentMethodLabels: Record<string, string> = {
-  CASH: 'Efectivo',
-  CARD: 'Tarjeta',
-  TRANSFER: 'Transferencia',
-  NEQUI: 'Nequi',
-  DAVIPLATA: 'Daviplata',
-  PSE: 'PSE',
+  CASH: "Efectivo",
+  CARD: "Tarjeta",
+  TRANSFER: "Transferencia",
+  NEQUI: "Nequi",
+  DAVIPLATA: "Daviplata",
+  PSE: "PSE",
 };
 
 export default function POSSessionDetailPage() {
   const { id } = useParams();
   const [isMounted, setIsMounted] = useState(false);
 
-  const { data: session, isLoading: loadingSession, isError } = usePOSSession(id!);
+  const {
+    data: session,
+    isLoading: loadingSession,
+    isError,
+  } = usePOSSession(id!);
   const { data: report, isLoading: loadingReport } = useXReport(id!);
-  const { data: movements, isLoading: loadingMovements } = useSessionMovements(id!);
+  const { data: movements, isLoading: loadingMovements } = useSessionMovements(
+    id!,
+  );
 
   useEffect(() => {
     setIsMounted(true);
@@ -118,21 +127,21 @@ export default function POSSessionDetailPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'ACTIVE':
+      case "ACTIVE":
         return (
           <Badge variant="success">
             <PlayCircle className="h-3 w-3 mr-1" />
             Activa
           </Badge>
         );
-      case 'CLOSED':
+      case "CLOSED":
         return (
           <Badge variant="secondary">
             <CheckCircle className="h-3 w-3 mr-1" />
             Cerrada
           </Badge>
         );
-      case 'SUSPENDED':
+      case "SUSPENDED":
         return (
           <Badge variant="warning">
             <PauseCircle className="h-3 w-3 mr-1" />
@@ -144,17 +153,20 @@ export default function POSSessionDetailPage() {
     }
   };
 
-  const hasDifference = session.status === 'CLOSED' && session.difference !== 0;
+  const hasDifference = session.status === "CLOSED" && session.difference !== 0;
 
   return (
     <motion.div
       variants={containerVariants}
-      initial={isMounted ? 'hidden' : false}
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="max-w-5xl mx-auto space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between">
+      <motion.div
+        variants={itemVariants}
+        className="flex items-center justify-between"
+      >
         <div className="flex items-center gap-4">
           <Link to="/pos/sessions">
             <Button variant="ghost" size="icon">
@@ -258,8 +270,8 @@ export default function POSSessionDetailPage() {
           <Card
             className={
               session.difference! > 0
-                ? 'border-success-200 bg-success-50 dark:border-success-800 dark:bg-success-900/20'
-                : 'border-error-200 bg-error-50 dark:border-error-800 dark:bg-error-900/20'
+                ? "border-success-200 bg-success-50 dark:border-success-800 dark:bg-success-900/20"
+                : "border-error-200 bg-error-50 dark:border-error-800 dark:bg-error-900/20"
             }
           >
             <div className="p-4 flex items-center justify-between">
@@ -273,17 +285,17 @@ export default function POSSessionDetailPage() {
                   <p
                     className={`font-semibold ${
                       session.difference! > 0
-                        ? 'text-success-800 dark:text-success-200'
-                        : 'text-error-800 dark:text-error-200'
+                        ? "text-success-800 dark:text-success-200"
+                        : "text-error-800 dark:text-error-200"
                     }`}
                   >
-                    {session.difference! > 0 ? 'Sobrante' : 'Faltante'} en Caja
+                    {session.difference! > 0 ? "Sobrante" : "Faltante"} en Caja
                   </p>
                   <p
                     className={`text-sm ${
                       session.difference! > 0
-                        ? 'text-success-600 dark:text-success-300'
-                        : 'text-error-600 dark:text-error-300'
+                        ? "text-success-600 dark:text-success-300"
+                        : "text-error-600 dark:text-error-300"
                     }`}
                   >
                     Diferencia detectada al cierre
@@ -293,8 +305,8 @@ export default function POSSessionDetailPage() {
               <span
                 className={`text-2xl font-bold ${
                   session.difference! > 0
-                    ? 'text-success-600'
-                    : 'text-error-600'
+                    ? "text-success-600"
+                    : "text-error-600"
                 }`}
               >
                 {formatCurrency(Math.abs(session.difference!))}
@@ -319,7 +331,9 @@ export default function POSSessionDetailPage() {
                   Usuario:
                 </span>
                 <span className="font-medium text-neutral-900 dark:text-white">
-                  {session.user?.name || `${session.user?.firstName || ''} ${session.user?.lastName || ''}`.trim() || 'Usuario'}
+                  {session.user?.name ||
+                    `${session.user?.firstName || ""} ${session.user?.lastName || ""}`.trim() ||
+                    "Usuario"}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -335,7 +349,7 @@ export default function POSSessionDetailPage() {
                   Bodega:
                 </span>
                 <span className="font-medium text-neutral-900 dark:text-white">
-                  {session.cashRegister?.warehouse?.name || '-'}
+                  {session.cashRegister?.warehouse?.name || "-"}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -378,29 +392,37 @@ export default function POSSessionDetailPage() {
             {loadingReport ? (
               <div className="animate-pulse space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-6 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                  <div
+                    key={i}
+                    className="h-6 bg-neutral-200 dark:bg-neutral-700 rounded"
+                  />
                 ))}
               </div>
             ) : report?.salesByPaymentMethod &&
               Object.entries(report.salesByPaymentMethod).length > 0 ? (
               <div className="space-y-3">
-                {Object.entries(report.salesByPaymentMethod).map(([method, amount]) => (
-                  <div key={method} className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      {method === 'CASH' ? (
-                        <Banknote className="h-5 w-5 text-success-500" />
-                      ) : (
-                        <CreditCard className="h-5 w-5 text-primary-500" />
-                      )}
-                      <span className="text-neutral-700 dark:text-neutral-300">
-                        {paymentMethodLabels[method] || method}
+                {Object.entries(report.salesByPaymentMethod).map(
+                  ([method, amount]) => (
+                    <div
+                      key={method}
+                      className="flex justify-between items-center"
+                    >
+                      <div className="flex items-center gap-2">
+                        {method === "CASH" ? (
+                          <Banknote className="h-5 w-5 text-success-500" />
+                        ) : (
+                          <CreditCard className="h-5 w-5 text-primary-500" />
+                        )}
+                        <span className="text-neutral-700 dark:text-neutral-300">
+                          {paymentMethodLabels[method] || method}
+                        </span>
+                      </div>
+                      <span className="font-semibold text-neutral-900 dark:text-white">
+                        {formatCurrency(Number(amount))}
                       </span>
                     </div>
-                    <span className="font-semibold text-neutral-900 dark:text-white">
-                      {formatCurrency(Number(amount))}
-                    </span>
-                  </div>
-                ))}
+                  ),
+                )}
                 <div className="flex justify-between items-center pt-3 border-t border-neutral-200 dark:border-neutral-700">
                   <span className="font-medium text-neutral-900 dark:text-white">
                     Total
@@ -437,7 +459,9 @@ export default function POSSessionDetailPage() {
                 <TableRow>
                   <TableHead>Tipo</TableHead>
                   <TableHead className="hidden sm:table-cell">Metodo</TableHead>
-                  <TableHead className="hidden md:table-cell">Referencia</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Referencia
+                  </TableHead>
                   <TableHead>Monto</TableHead>
                   <TableHead className="hidden sm:table-cell">Fecha</TableHead>
                 </TableRow>
@@ -447,9 +471,11 @@ export default function POSSessionDetailPage() {
                   const typeInfo = movementTypeLabels[movement.type] || {
                     label: movement.type,
                     icon: <DollarSign className="h-4 w-4" />,
-                    color: 'text-neutral-500 bg-neutral-50',
+                    color: "text-neutral-500 bg-neutral-50",
                   };
-                  const isPositive = ['OPENING', 'SALE', 'CASH_IN'].includes(movement.type);
+                  const isPositive = ["OPENING", "SALE", "CASH_IN"].includes(
+                    movement.type,
+                  );
 
                   return (
                     <TableRow key={movement.id}>
@@ -466,18 +492,21 @@ export default function POSSessionDetailPage() {
                         </div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        {movement.method ? (paymentMethodLabels[movement.method] || movement.method) : '-'}
+                        {movement.method
+                          ? paymentMethodLabels[movement.method] ||
+                            movement.method
+                          : "-"}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-neutral-500 dark:text-neutral-400">
-                        {movement.reference || movement.notes || '-'}
+                        {movement.reference || movement.notes || "-"}
                       </TableCell>
                       <TableCell>
                         <span
                           className={`font-semibold ${
-                            isPositive ? 'text-success-600' : 'text-error-600'
+                            isPositive ? "text-success-600" : "text-error-600"
                           }`}
                         >
-                          {isPositive ? '+' : '-'}
+                          {isPositive ? "+" : "-"}
                           {formatCurrency(movement.amount)}
                         </span>
                       </TableCell>

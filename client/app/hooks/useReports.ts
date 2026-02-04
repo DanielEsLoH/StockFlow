@@ -1,13 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { reportsService } from '~/services/reports.service';
-import { queryKeys } from '~/lib/query-client';
-import { toast } from '~/components/ui/Toast';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { reportsService } from "~/services/reports.service";
+import { queryKeys } from "~/lib/query-client";
+import { toast } from "~/components/ui/Toast";
 import type {
   RecentReport,
   SalesReportParams,
   InventoryReportParams,
   CustomersReportParams,
-} from '~/types/report';
+} from "~/types/report";
 
 // ============================================================================
 // QUERIES
@@ -44,10 +44,10 @@ export function useGenerateSalesReport() {
       // Invalidate recent reports to refresh the list
       void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
 
-      toast.success('Reporte de ventas generado exitosamente');
+      toast.success("Reporte de ventas generado exitosamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al generar el reporte de ventas');
+      toast.error(error.message || "Error al generar el reporte de ventas");
     },
   });
 }
@@ -68,10 +68,10 @@ export function useGenerateInventoryReport() {
       // Invalidate recent reports to refresh the list
       void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
 
-      toast.success('Reporte de inventario generado exitosamente');
+      toast.success("Reporte de inventario generado exitosamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al generar el reporte de inventario');
+      toast.error(error.message || "Error al generar el reporte de inventario");
     },
   });
 }
@@ -92,10 +92,10 @@ export function useGenerateCustomersReport() {
       // Invalidate recent reports to refresh the list
       void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
 
-      toast.success('Reporte de clientes generado exitosamente');
+      toast.success("Reporte de clientes generado exitosamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al generar el reporte de clientes');
+      toast.error(error.message || "Error al generar el reporte de clientes");
     },
   });
 }
@@ -111,10 +111,10 @@ export function useDownloadInvoicePdf() {
       // Trigger file download
       reportsService.downloadReport(blob, fileName);
 
-      toast.success('Factura descargada exitosamente');
+      toast.success("Factura descargada exitosamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al descargar la factura');
+      toast.error(error.message || "Error al descargar la factura");
     },
   });
 }

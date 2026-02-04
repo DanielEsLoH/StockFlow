@@ -1,14 +1,14 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { clearAllAuthData } from '~/lib/api';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { clearAllAuthData } from "~/lib/api";
 
 export interface User {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
-  status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+  role: "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "EMPLOYEE";
+  status: "ACTIVE" | "PENDING" | "SUSPENDED";
   tenantId: string;
   avatarUrl?: string;
 }
@@ -17,8 +17,8 @@ export interface Tenant {
   id: string;
   name: string;
   slug: string;
-  plan: 'FREE' | 'BASIC' | 'PRO' | 'ENTERPRISE';
-  status: 'ACTIVE' | 'SUSPENDED';
+  plan: "FREE" | "BASIC" | "PRO" | "ENTERPRISE";
+  status: "ACTIVE" | "SUSPENDED";
   logoUrl?: string;
 }
 
@@ -68,12 +68,12 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
         tenant: state.tenant,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );

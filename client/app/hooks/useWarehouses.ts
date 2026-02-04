@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
-import { warehousesService } from '~/services/warehouses.service';
-import { queryKeys } from '~/lib/query-client';
-import { toast } from '~/components/ui/Toast';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
+import { warehousesService } from "~/services/warehouses.service";
+import { queryKeys } from "~/lib/query-client";
+import { toast } from "~/components/ui/Toast";
 import type {
   Warehouse,
   WarehouseFilters,
@@ -10,7 +10,7 @@ import type {
   CreateWarehouseData,
   UpdateWarehouseData,
   WarehouseStats,
-} from '~/types/warehouse';
+} from "~/types/warehouse";
 
 // Warehouses list hook with filters (paginated)
 export function useWarehousesWithFilters(filters: WarehouseFilters = {}) {
@@ -34,7 +34,7 @@ export function useWarehouses() {
 // All warehouses including inactive
 export function useAllWarehouses() {
   return useQuery<Warehouse[]>({
-    queryKey: [...queryKeys.warehouses.all, 'all'],
+    queryKey: [...queryKeys.warehouses.all, "all"],
     queryFn: () => warehousesService.getAllWarehouses(),
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
@@ -53,7 +53,7 @@ export function useWarehouse(id: string) {
 // Warehouse stats hook
 export function useWarehouseStats(id: string) {
   return useQuery<WarehouseStats>({
-    queryKey: [...queryKeys.warehouses.detail(id), 'stats'],
+    queryKey: [...queryKeys.warehouses.detail(id), "stats"],
     queryFn: () => warehousesService.getWarehouseStats(id),
     staleTime: 1000 * 60 * 2, // 2 minutes
     enabled: !!id,
@@ -63,7 +63,7 @@ export function useWarehouseStats(id: string) {
 // Cities for filter dropdown
 export function useWarehouseCities() {
   return useQuery<string[]>({
-    queryKey: [...queryKeys.warehouses.all, 'cities'],
+    queryKey: [...queryKeys.warehouses.all, "cities"],
     queryFn: () => warehousesService.getCities(),
     staleTime: 1000 * 60 * 30, // 30 minutes
   });
@@ -78,12 +78,14 @@ export function useCreateWarehouse() {
     mutationFn: (data: CreateWarehouseData) =>
       warehousesService.createWarehouse(data),
     onSuccess: (warehouse) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.warehouses.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.warehouses.all,
+      });
       toast.success(`Bodega "${warehouse.name}" creada exitosamente`);
-      navigate('/warehouses');
+      navigate("/warehouses");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear la bodega');
+      toast.error(error.message || "Error al crear la bodega");
     },
   });
 }
@@ -97,13 +99,18 @@ export function useUpdateWarehouse() {
     mutationFn: ({ id, data }: { id: string; data: UpdateWarehouseData }) =>
       warehousesService.updateWarehouse(id, data),
     onSuccess: (warehouse) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.warehouses.all });
-      queryClient.setQueryData(queryKeys.warehouses.detail(warehouse.id), warehouse);
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.warehouses.all,
+      });
+      queryClient.setQueryData(
+        queryKeys.warehouses.detail(warehouse.id),
+        warehouse,
+      );
       toast.success(`Bodega "${warehouse.name}" actualizada exitosamente`);
       navigate(`/warehouses/${warehouse.id}`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar la bodega');
+      toast.error(error.message || "Error al actualizar la bodega");
     },
   });
 }
@@ -116,12 +123,14 @@ export function useDeleteWarehouse() {
   return useMutation({
     mutationFn: (id: string) => warehousesService.deleteWarehouse(id),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.warehouses.all });
-      toast.success('Bodega eliminada exitosamente');
-      navigate('/warehouses');
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.warehouses.all,
+      });
+      toast.success("Bodega eliminada exitosamente");
+      navigate("/warehouses");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar la bodega');
+      toast.error(error.message || "Error al eliminar la bodega");
     },
   });
 }

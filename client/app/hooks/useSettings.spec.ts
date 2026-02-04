@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
 import {
   useUserPreferences,
   useUpdateProfile,
@@ -10,41 +10,41 @@ import {
   useUploadAvatar,
   useDeleteAvatar,
   usePasswordStrength,
-} from './useSettings';
+} from "./useSettings";
 import {
   settingsService,
   type UserPreferences,
   type ProfileUpdateData,
   type PasswordChangeData,
-} from '~/services/settings.service';
-import { useAuthStore, type User } from '~/stores/auth.store';
-import { toast } from '~/components/ui/Toast';
-import { queryKeys } from '~/lib/query-client';
+} from "~/services/settings.service";
+import { useAuthStore, type User } from "~/stores/auth.store";
+import { toast } from "~/components/ui/Toast";
+import { queryKeys } from "~/lib/query-client";
 
 // Mock dependencies
-vi.mock('~/services/settings.service');
-vi.mock('~/components/ui/Toast');
-vi.mock('~/stores/auth.store', () => ({
+vi.mock("~/services/settings.service");
+vi.mock("~/components/ui/Toast");
+vi.mock("~/stores/auth.store", () => ({
   useAuthStore: vi.fn(),
 }));
 
 // Mock data
 const mockUser: User = {
-  id: 'user-1',
-  email: 'test@example.com',
-  firstName: 'Juan',
-  lastName: 'Perez',
-  role: 'ADMIN',
-  status: 'ACTIVE',
-  tenantId: 'tenant-1',
-  avatarUrl: 'https://example.com/avatar.jpg',
+  id: "user-1",
+  email: "test@example.com",
+  firstName: "Juan",
+  lastName: "Perez",
+  role: "ADMIN",
+  status: "ACTIVE",
+  tenantId: "tenant-1",
+  avatarUrl: "https://example.com/avatar.jpg",
 };
 
 const mockPreferences: UserPreferences = {
-  theme: 'system',
-  language: 'es',
-  currency: 'COP',
-  dateFormat: 'DD/MM/YYYY',
+  theme: "system",
+  language: "es",
+  currency: "COP",
+  dateFormat: "DD/MM/YYYY",
   notifications: {
     email: true,
     push: true,
@@ -61,10 +61,10 @@ const mockPreferences: UserPreferences = {
 };
 
 const defaultPreferences: UserPreferences = {
-  theme: 'system',
-  language: 'es',
-  currency: 'COP',
-  dateFormat: 'DD/MM/YYYY',
+  theme: "system",
+  language: "es",
+  currency: "COP",
+  dateFormat: "DD/MM/YYYY",
   notifications: {
     email: true,
     push: true,
@@ -103,7 +103,7 @@ function createWrapper() {
     return React.createElement(
       QueryClientProvider,
       { client: queryClient },
-      children
+      children,
     );
   };
 }
@@ -123,18 +123,22 @@ function createWrapperWithClient() {
     },
   });
 
-  const wrapper = function Wrapper({ children }: { children: React.ReactNode }) {
+  const wrapper = function Wrapper({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
     return React.createElement(
       QueryClientProvider,
       { client: queryClient },
-      children
+      children,
     );
   };
 
   return { wrapper, queryClient };
 }
 
-describe('useSettings hooks', () => {
+describe("useSettings hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSetUser.mockClear();
@@ -154,7 +158,8 @@ describe('useSettings hooks', () => {
 
     // Mock getState for useChangePassword
     mockGetState.mockReturnValue({ user: mockUser });
-    (useAuthStore as unknown as { getState: typeof mockGetState }).getState = mockGetState;
+    (useAuthStore as unknown as { getState: typeof mockGetState }).getState =
+      mockGetState;
   });
 
   afterEach(() => {
@@ -165,9 +170,11 @@ describe('useSettings hooks', () => {
   // QUERY HOOKS
   // ============================================================================
 
-  describe('useUserPreferences', () => {
-    it('should fetch preferences on mount', async () => {
-      vi.mocked(settingsService.getPreferences).mockReturnValue(mockPreferences);
+  describe("useUserPreferences", () => {
+    it("should fetch preferences on mount", async () => {
+      vi.mocked(settingsService.getPreferences).mockReturnValue(
+        mockPreferences,
+      );
 
       const { result } = renderHook(() => useUserPreferences(), {
         wrapper: createWrapper(),
@@ -183,8 +190,10 @@ describe('useSettings hooks', () => {
       expect(settingsService.getPreferences).toHaveBeenCalled();
     });
 
-    it('should return default preferences when none stored', async () => {
-      vi.mocked(settingsService.getPreferences).mockReturnValue(defaultPreferences);
+    it("should return default preferences when none stored", async () => {
+      vi.mocked(settingsService.getPreferences).mockReturnValue(
+        defaultPreferences,
+      );
 
       const { result } = renderHook(() => useUserPreferences(), {
         wrapper: createWrapper(),
@@ -197,13 +206,11 @@ describe('useSettings hooks', () => {
       expect(result.current.data).toEqual(defaultPreferences);
     });
 
-    it('should return loading state initially', () => {
-      vi.mocked(settingsService.getPreferences).mockImplementation(
-        () => {
-          // Simulate a synchronous call that takes time by returning value
-          return mockPreferences;
-        }
-      );
+    it("should return loading state initially", () => {
+      vi.mocked(settingsService.getPreferences).mockImplementation(() => {
+        // Simulate a synchronous call that takes time by returning value
+        return mockPreferences;
+      });
 
       const { result } = renderHook(() => useUserPreferences(), {
         wrapper: createWrapper(),
@@ -213,9 +220,9 @@ describe('useSettings hooks', () => {
       expect(result.current.isLoading).toBe(true);
     });
 
-    it('should handle error state on failure', async () => {
+    it("should handle error state on failure", async () => {
       vi.mocked(settingsService.getPreferences).mockImplementation(() => {
-        throw new Error('Failed to fetch preferences');
+        throw new Error("Failed to fetch preferences");
       });
 
       const { result } = renderHook(() => useUserPreferences(), {
@@ -229,8 +236,10 @@ describe('useSettings hooks', () => {
       expect(result.current.error).toBeDefined();
     });
 
-    it('should have staleTime set to Infinity', async () => {
-      vi.mocked(settingsService.getPreferences).mockReturnValue(mockPreferences);
+    it("should have staleTime set to Infinity", async () => {
+      vi.mocked(settingsService.getPreferences).mockReturnValue(
+        mockPreferences,
+      );
 
       const { result } = renderHook(() => useUserPreferences(), {
         wrapper: createWrapper(),
@@ -249,12 +258,12 @@ describe('useSettings hooks', () => {
   // MUTATION HOOKS
   // ============================================================================
 
-  describe('useUpdateProfile', () => {
-    it('should update profile successfully', async () => {
+  describe("useUpdateProfile", () => {
+    it("should update profile successfully", async () => {
       const profileData: ProfileUpdateData = {
-        firstName: 'Carlos',
-        lastName: 'Martinez',
-        email: 'carlos@example.com',
+        firstName: "Carlos",
+        lastName: "Martinez",
+        email: "carlos@example.com",
       };
 
       const updatedUser: User = {
@@ -276,17 +285,20 @@ describe('useSettings hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(settingsService.updateProfile).toHaveBeenCalledWith(mockUser.id, profileData);
+      expect(settingsService.updateProfile).toHaveBeenCalledWith(
+        mockUser.id,
+        profileData,
+      );
     });
 
-    it('should update auth store on success', async () => {
+    it("should update auth store on success", async () => {
       const profileData: ProfileUpdateData = {
-        firstName: 'Carlos',
+        firstName: "Carlos",
       };
 
       const updatedUser: User = {
         ...mockUser,
-        firstName: 'Carlos',
+        firstName: "Carlos",
       };
 
       vi.mocked(settingsService.updateProfile).mockResolvedValue(updatedUser);
@@ -308,12 +320,12 @@ describe('useSettings hooks', () => {
 
     it('should show success toast "Perfil actualizado exitosamente"', async () => {
       const profileData: ProfileUpdateData = {
-        firstName: 'Carlos',
+        firstName: "Carlos",
       };
 
       const updatedUser: User = {
         ...mockUser,
-        firstName: 'Carlos',
+        firstName: "Carlos",
       };
 
       vi.mocked(settingsService.updateProfile).mockResolvedValue(updatedUser);
@@ -330,11 +342,13 @@ describe('useSettings hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Perfil actualizado exitosamente');
+      expect(toast.success).toHaveBeenCalledWith(
+        "Perfil actualizado exitosamente",
+      );
     });
 
-    it('should show error toast on failure', async () => {
-      const error = new Error('Error al actualizar el perfil');
+    it("should show error toast on failure", async () => {
+      const error = new Error("Error al actualizar el perfil");
       vi.mocked(settingsService.updateProfile).mockRejectedValue(error);
 
       const { result } = renderHook(() => useUpdateProfile(), {
@@ -342,17 +356,17 @@ describe('useSettings hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ firstName: 'Carlos' });
+        result.current.mutate({ firstName: "Carlos" });
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al actualizar el perfil');
+      expect(toast.error).toHaveBeenCalledWith("Error al actualizar el perfil");
     });
 
-    it('should show default error message when error has no message', async () => {
+    it("should show default error message when error has no message", async () => {
       vi.mocked(settingsService.updateProfile).mockRejectedValue(new Error());
 
       const { result } = renderHook(() => useUpdateProfile(), {
@@ -360,24 +374,24 @@ describe('useSettings hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ firstName: 'Carlos' });
+        result.current.mutate({ firstName: "Carlos" });
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al actualizar el perfil');
+      expect(toast.error).toHaveBeenCalledWith("Error al actualizar el perfil");
     });
 
-    it('should update auth query cache on success', async () => {
+    it("should update auth query cache on success", async () => {
       const profileData: ProfileUpdateData = {
-        firstName: 'Carlos',
+        firstName: "Carlos",
       };
 
       const updatedUser: User = {
         ...mockUser,
-        firstName: 'Carlos',
+        firstName: "Carlos",
       };
 
       vi.mocked(settingsService.updateProfile).mockResolvedValue(updatedUser);
@@ -398,11 +412,13 @@ describe('useSettings hooks', () => {
       });
 
       // Verify auth cache was updated
-      const authData = queryClient.getQueryData(queryKeys.auth.me()) as { user: User };
-      expect(authData.user.firstName).toBe('Carlos');
+      const authData = queryClient.getQueryData(queryKeys.auth.me()) as {
+        user: User;
+      };
+      expect(authData.user.firstName).toBe("Carlos");
     });
 
-    it('should handle user with empty id', async () => {
+    it("should handle user with empty id", async () => {
       // Mock user with no id
       vi.mocked(useAuthStore).mockReturnValue({
         user: null,
@@ -417,8 +433,8 @@ describe('useSettings hooks', () => {
 
       const updatedUser: User = {
         ...mockUser,
-        id: '',
-        firstName: 'Carlos',
+        id: "",
+        firstName: "Carlos",
       };
 
       vi.mocked(settingsService.updateProfile).mockResolvedValue(updatedUser);
@@ -428,7 +444,7 @@ describe('useSettings hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ firstName: 'Carlos' });
+        result.current.mutate({ firstName: "Carlos" });
       });
 
       await waitFor(() => {
@@ -436,20 +452,22 @@ describe('useSettings hooks', () => {
       });
 
       // Should call with empty string as fallback
-      expect(settingsService.updateProfile).toHaveBeenCalledWith('', { firstName: 'Carlos' });
+      expect(settingsService.updateProfile).toHaveBeenCalledWith("", {
+        firstName: "Carlos",
+      });
     });
   });
 
-  describe('useChangePassword', () => {
-    it('should change password successfully', async () => {
+  describe("useChangePassword", () => {
+    it("should change password successfully", async () => {
       const passwordData: PasswordChangeData = {
-        currentPassword: 'currentPassword123',
-        newPassword: 'newSecurePassword123!',
-        confirmPassword: 'newSecurePassword123!',
+        currentPassword: "currentPassword123",
+        newPassword: "newSecurePassword123!",
+        confirmPassword: "newSecurePassword123!",
       };
 
       vi.mocked(settingsService.changePassword).mockResolvedValue({
-        message: 'Contrasena actualizada exitosamente',
+        message: "Contrasena actualizada exitosamente",
       });
 
       const { result } = renderHook(() => useChangePassword(), {
@@ -464,18 +482,21 @@ describe('useSettings hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(settingsService.changePassword).toHaveBeenCalledWith(mockUser.id, passwordData);
+      expect(settingsService.changePassword).toHaveBeenCalledWith(
+        mockUser.id,
+        passwordData,
+      );
     });
 
     it('should show success toast "Contrasena actualizada exitosamente"', async () => {
       const passwordData: PasswordChangeData = {
-        currentPassword: 'currentPassword123',
-        newPassword: 'newSecurePassword123!',
-        confirmPassword: 'newSecurePassword123!',
+        currentPassword: "currentPassword123",
+        newPassword: "newSecurePassword123!",
+        confirmPassword: "newSecurePassword123!",
       };
 
       vi.mocked(settingsService.changePassword).mockResolvedValue({
-        message: 'Contrasena actualizada exitosamente',
+        message: "Contrasena actualizada exitosamente",
       });
 
       const { result } = renderHook(() => useChangePassword(), {
@@ -490,11 +511,13 @@ describe('useSettings hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Contrasena actualizada exitosamente');
+      expect(toast.success).toHaveBeenCalledWith(
+        "Contrasena actualizada exitosamente",
+      );
     });
 
     it('should show error toast "Contrasena actual incorrecta" on wrong password', async () => {
-      const error = new Error('La contrasena actual es incorrecta');
+      const error = new Error("La contrasena actual es incorrecta");
       vi.mocked(settingsService.changePassword).mockRejectedValue(error);
 
       const { result } = renderHook(() => useChangePassword(), {
@@ -503,9 +526,9 @@ describe('useSettings hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          currentPassword: 'wrongPassword',
-          newPassword: 'newPassword123!',
-          confirmPassword: 'newPassword123!',
+          currentPassword: "wrongPassword",
+          newPassword: "newPassword123!",
+          confirmPassword: "newPassword123!",
         });
       });
 
@@ -513,10 +536,12 @@ describe('useSettings hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('La contrasena actual es incorrecta');
+      expect(toast.error).toHaveBeenCalledWith(
+        "La contrasena actual es incorrecta",
+      );
     });
 
-    it('should show default error message on other errors', async () => {
+    it("should show default error message on other errors", async () => {
       vi.mocked(settingsService.changePassword).mockRejectedValue(new Error());
 
       const { result } = renderHook(() => useChangePassword(), {
@@ -525,9 +550,9 @@ describe('useSettings hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          currentPassword: 'currentPassword123',
-          newPassword: 'newPassword123!',
-          confirmPassword: 'newPassword123!',
+          currentPassword: "currentPassword123",
+          newPassword: "newPassword123!",
+          confirmPassword: "newPassword123!",
         });
       });
 
@@ -535,12 +560,12 @@ describe('useSettings hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Contrasena actual incorrecta');
+      expect(toast.error).toHaveBeenCalledWith("Contrasena actual incorrecta");
     });
 
-    it('should get user from auth store getState', async () => {
+    it("should get user from auth store getState", async () => {
       vi.mocked(settingsService.changePassword).mockResolvedValue({
-        message: 'Contrasena actualizada exitosamente',
+        message: "Contrasena actualizada exitosamente",
       });
 
       const { result } = renderHook(() => useChangePassword(), {
@@ -549,9 +574,9 @@ describe('useSettings hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          currentPassword: 'currentPassword123',
-          newPassword: 'newPassword123!',
-          confirmPassword: 'newPassword123!',
+          currentPassword: "currentPassword123",
+          newPassword: "newPassword123!",
+          confirmPassword: "newPassword123!",
         });
       });
 
@@ -563,11 +588,11 @@ describe('useSettings hooks', () => {
       expect(mockGetState).toHaveBeenCalled();
     });
 
-    it('should handle user with no id', async () => {
+    it("should handle user with no id", async () => {
       mockGetState.mockReturnValue({ user: null });
 
       vi.mocked(settingsService.changePassword).mockResolvedValue({
-        message: 'Contrasena actualizada exitosamente',
+        message: "Contrasena actualizada exitosamente",
       });
 
       const { result } = renderHook(() => useChangePassword(), {
@@ -576,9 +601,9 @@ describe('useSettings hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          currentPassword: 'currentPassword123',
-          newPassword: 'newPassword123!',
-          confirmPassword: 'newPassword123!',
+          currentPassword: "currentPassword123",
+          newPassword: "newPassword123!",
+          confirmPassword: "newPassword123!",
         });
       });
 
@@ -587,21 +612,29 @@ describe('useSettings hooks', () => {
       });
 
       // Should call with empty string as fallback
-      expect(settingsService.changePassword).toHaveBeenCalledWith('', expect.any(Object));
+      expect(settingsService.changePassword).toHaveBeenCalledWith(
+        "",
+        expect.any(Object),
+      );
     });
   });
 
-  describe('useUpdatePreferences', () => {
-    it('should update preferences successfully', async () => {
+  describe("useUpdatePreferences", () => {
+    it("should update preferences successfully", async () => {
       const newPreferences: UserPreferences = {
         ...mockPreferences,
-        theme: 'dark',
+        theme: "dark",
       };
 
-      vi.mocked(settingsService.updatePreferences).mockReturnValue(newPreferences);
+      vi.mocked(settingsService.updatePreferences).mockReturnValue(
+        newPreferences,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.settings.preferences(), mockPreferences);
+      queryClient.setQueryData(
+        queryKeys.settings.preferences(),
+        mockPreferences,
+      );
 
       const { result } = renderHook(() => useUpdatePreferences(), { wrapper });
 
@@ -613,19 +646,26 @@ describe('useSettings hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(settingsService.updatePreferences).toHaveBeenCalledWith(newPreferences);
+      expect(settingsService.updatePreferences).toHaveBeenCalledWith(
+        newPreferences,
+      );
     });
 
     it('should show success toast "Preferencias guardadas exitosamente"', async () => {
       const newPreferences: UserPreferences = {
         ...mockPreferences,
-        theme: 'dark',
+        theme: "dark",
       };
 
-      vi.mocked(settingsService.updatePreferences).mockReturnValue(newPreferences);
+      vi.mocked(settingsService.updatePreferences).mockReturnValue(
+        newPreferences,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.settings.preferences(), mockPreferences);
+      queryClient.setQueryData(
+        queryKeys.settings.preferences(),
+        mockPreferences,
+      );
 
       const { result } = renderHook(() => useUpdatePreferences(), { wrapper });
 
@@ -637,14 +677,16 @@ describe('useSettings hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Preferencias guardadas exitosamente');
+      expect(toast.success).toHaveBeenCalledWith(
+        "Preferencias guardadas exitosamente",
+      );
     });
 
-    it('should perform optimistic update', async () => {
+    it("should perform optimistic update", async () => {
       const newPreferences: UserPreferences = {
         ...mockPreferences,
-        theme: 'dark',
-        language: 'en',
+        theme: "dark",
+        language: "en",
       };
 
       // Delay the response to test optimistic update
@@ -653,7 +695,10 @@ describe('useSettings hooks', () => {
       });
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.settings.preferences(), mockPreferences);
+      queryClient.setQueryData(
+        queryKeys.settings.preferences(),
+        mockPreferences,
+      );
 
       const { result } = renderHook(() => useUpdatePreferences(), { wrapper });
 
@@ -663,23 +708,23 @@ describe('useSettings hooks', () => {
 
       // Check optimistic update was applied immediately
       const optimisticData = queryClient.getQueryData<UserPreferences>(
-        queryKeys.settings.preferences()
+        queryKeys.settings.preferences(),
       );
-      expect(optimisticData?.theme).toBe('dark');
-      expect(optimisticData?.language).toBe('en');
+      expect(optimisticData?.theme).toBe("dark");
+      expect(optimisticData?.language).toBe("en");
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
     });
 
-    it('should rollback on error', async () => {
+    it("should rollback on error", async () => {
       const newPreferences: UserPreferences = {
         ...mockPreferences,
-        theme: 'dark',
+        theme: "dark",
       };
 
-      const error = new Error('Failed to save preferences');
+      const error = new Error("Failed to save preferences");
       vi.mocked(settingsService.updatePreferences).mockImplementation(() => {
         throw error;
       });
@@ -698,16 +743,23 @@ describe('useSettings hooks', () => {
         },
       });
 
-      const wrapper = function Wrapper({ children }: { children: React.ReactNode }) {
+      const wrapper = function Wrapper({
+        children,
+      }: {
+        children: React.ReactNode;
+      }) {
         return React.createElement(
           QueryClientProvider,
           { client: queryClient },
-          children
+          children,
         );
       };
 
       // Set initial preferences
-      queryClient.setQueryData(queryKeys.settings.preferences(), mockPreferences);
+      queryClient.setQueryData(
+        queryKeys.settings.preferences(),
+        mockPreferences,
+      );
 
       const { result } = renderHook(() => useUpdatePreferences(), { wrapper });
 
@@ -721,24 +773,27 @@ describe('useSettings hooks', () => {
 
       // Check rollback occurred - the onError handler should have restored the previous value
       const rolledBackData = queryClient.getQueryData<UserPreferences>(
-        queryKeys.settings.preferences()
+        queryKeys.settings.preferences(),
       );
-      expect(rolledBackData?.theme).toBe('system');
+      expect(rolledBackData?.theme).toBe("system");
     });
 
-    it('should show error toast on failure', async () => {
+    it("should show error toast on failure", async () => {
       const newPreferences: UserPreferences = {
         ...mockPreferences,
-        theme: 'dark',
+        theme: "dark",
       };
 
-      const error = new Error('Error al guardar las preferencias');
+      const error = new Error("Error al guardar las preferencias");
       vi.mocked(settingsService.updatePreferences).mockImplementation(() => {
         throw error;
       });
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.settings.preferences(), mockPreferences);
+      queryClient.setQueryData(
+        queryKeys.settings.preferences(),
+        mockPreferences,
+      );
 
       const { result } = renderHook(() => useUpdatePreferences(), { wrapper });
 
@@ -750,13 +805,15 @@ describe('useSettings hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al guardar las preferencias');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al guardar las preferencias",
+      );
     });
 
-    it('should show default error message when error has no message', async () => {
+    it("should show default error message when error has no message", async () => {
       const newPreferences: UserPreferences = {
         ...mockPreferences,
-        theme: 'dark',
+        theme: "dark",
       };
 
       vi.mocked(settingsService.updatePreferences).mockImplementation(() => {
@@ -764,7 +821,10 @@ describe('useSettings hooks', () => {
       });
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.settings.preferences(), mockPreferences);
+      queryClient.setQueryData(
+        queryKeys.settings.preferences(),
+        mockPreferences,
+      );
 
       const { result } = renderHook(() => useUpdatePreferences(), { wrapper });
 
@@ -776,20 +836,27 @@ describe('useSettings hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al guardar las preferencias');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al guardar las preferencias",
+      );
     });
 
-    it('should cancel outgoing refetches on mutate', async () => {
+    it("should cancel outgoing refetches on mutate", async () => {
       const newPreferences: UserPreferences = {
         ...mockPreferences,
-        theme: 'dark',
+        theme: "dark",
       };
 
-      vi.mocked(settingsService.updatePreferences).mockReturnValue(newPreferences);
+      vi.mocked(settingsService.updatePreferences).mockReturnValue(
+        newPreferences,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const cancelQueriesSpy = vi.spyOn(queryClient, 'cancelQueries');
-      queryClient.setQueryData(queryKeys.settings.preferences(), mockPreferences);
+      const cancelQueriesSpy = vi.spyOn(queryClient, "cancelQueries");
+      queryClient.setQueryData(
+        queryKeys.settings.preferences(),
+        mockPreferences,
+      );
 
       const { result } = renderHook(() => useUpdatePreferences(), { wrapper });
 
@@ -806,13 +873,13 @@ describe('useSettings hooks', () => {
       });
     });
 
-    it('should handle rollback when previousPreferences is undefined', async () => {
+    it("should handle rollback when previousPreferences is undefined", async () => {
       const newPreferences: UserPreferences = {
         ...mockPreferences,
-        theme: 'dark',
+        theme: "dark",
       };
 
-      const error = new Error('Failed to save');
+      const error = new Error("Failed to save");
       vi.mocked(settingsService.updatePreferences).mockImplementation(() => {
         throw error;
       });
@@ -835,12 +902,12 @@ describe('useSettings hooks', () => {
     });
   });
 
-  describe('useUploadAvatar', () => {
-    it('should upload avatar successfully', async () => {
-      const file = new File(['test'], 'avatar.jpg', { type: 'image/jpeg' });
+  describe("useUploadAvatar", () => {
+    it("should upload avatar successfully", async () => {
+      const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
       const response = {
-        url: 'https://example.com/new-avatar.jpg',
-        filename: 'avatar.jpg',
+        url: "https://example.com/new-avatar.jpg",
+        filename: "avatar.jpg",
       };
 
       vi.mocked(settingsService.uploadAvatar).mockResolvedValue(response);
@@ -860,11 +927,11 @@ describe('useSettings hooks', () => {
       expect(settingsService.uploadAvatar).toHaveBeenCalledWith(file);
     });
 
-    it('should update auth store on success', async () => {
-      const file = new File(['test'], 'avatar.jpg', { type: 'image/jpeg' });
+    it("should update auth store on success", async () => {
+      const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
       const response = {
-        url: 'https://example.com/new-avatar.jpg',
-        filename: 'avatar.jpg',
+        url: "https://example.com/new-avatar.jpg",
+        filename: "avatar.jpg",
       };
 
       vi.mocked(settingsService.uploadAvatar).mockResolvedValue(response);
@@ -888,10 +955,10 @@ describe('useSettings hooks', () => {
     });
 
     it('should show success toast "Foto de perfil actualizada"', async () => {
-      const file = new File(['test'], 'avatar.jpg', { type: 'image/jpeg' });
+      const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
       const response = {
-        url: 'https://example.com/new-avatar.jpg',
-        filename: 'avatar.jpg',
+        url: "https://example.com/new-avatar.jpg",
+        filename: "avatar.jpg",
       };
 
       vi.mocked(settingsService.uploadAvatar).mockResolvedValue(response);
@@ -908,12 +975,12 @@ describe('useSettings hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Foto de perfil actualizada');
+      expect(toast.success).toHaveBeenCalledWith("Foto de perfil actualizada");
     });
 
-    it('should show error toast on failure', async () => {
-      const file = new File(['test'], 'avatar.jpg', { type: 'image/jpeg' });
-      const error = new Error('Error al subir la foto de perfil');
+    it("should show error toast on failure", async () => {
+      const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
+      const error = new Error("Error al subir la foto de perfil");
       vi.mocked(settingsService.uploadAvatar).mockRejectedValue(error);
 
       const { result } = renderHook(() => useUploadAvatar(), {
@@ -928,11 +995,13 @@ describe('useSettings hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al subir la foto de perfil');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al subir la foto de perfil",
+      );
     });
 
-    it('should show default error message when error has no message', async () => {
-      const file = new File(['test'], 'avatar.jpg', { type: 'image/jpeg' });
+    it("should show default error message when error has no message", async () => {
+      const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
       vi.mocked(settingsService.uploadAvatar).mockRejectedValue(new Error());
 
       const { result } = renderHook(() => useUploadAvatar(), {
@@ -947,14 +1016,16 @@ describe('useSettings hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al subir la foto de perfil');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al subir la foto de perfil",
+      );
     });
 
-    it('should update auth query cache on success', async () => {
-      const file = new File(['test'], 'avatar.jpg', { type: 'image/jpeg' });
+    it("should update auth query cache on success", async () => {
+      const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
       const response = {
-        url: 'https://example.com/new-avatar.jpg',
-        filename: 'avatar.jpg',
+        url: "https://example.com/new-avatar.jpg",
+        filename: "avatar.jpg",
       };
 
       vi.mocked(settingsService.uploadAvatar).mockResolvedValue(response);
@@ -975,11 +1046,13 @@ describe('useSettings hooks', () => {
       });
 
       // Verify auth cache was updated
-      const authData = queryClient.getQueryData(queryKeys.auth.me()) as { user: User };
+      const authData = queryClient.getQueryData(queryKeys.auth.me()) as {
+        user: User;
+      };
       expect(authData.user.avatarUrl).toBe(response.url);
     });
 
-    it('should not update auth store when user is null', async () => {
+    it("should not update auth store when user is null", async () => {
       vi.mocked(useAuthStore).mockReturnValue({
         user: null,
         setUser: mockSetUser,
@@ -991,10 +1064,10 @@ describe('useSettings hooks', () => {
         logout: vi.fn(),
       });
 
-      const file = new File(['test'], 'avatar.jpg', { type: 'image/jpeg' });
+      const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
       const response = {
-        url: 'https://example.com/new-avatar.jpg',
-        filename: 'avatar.jpg',
+        url: "https://example.com/new-avatar.jpg",
+        filename: "avatar.jpg",
       };
 
       vi.mocked(settingsService.uploadAvatar).mockResolvedValue(response);
@@ -1014,15 +1087,17 @@ describe('useSettings hooks', () => {
       // setUser should NOT be called when user is null
       expect(mockSetUser).not.toHaveBeenCalled();
       // But success toast should still be shown
-      expect(toast.success).toHaveBeenCalledWith('Foto de perfil actualizada');
+      expect(toast.success).toHaveBeenCalledWith("Foto de perfil actualizada");
     });
 
-    it('should return loading state while uploading', async () => {
-      const file = new File(['test'], 'avatar.jpg', { type: 'image/jpeg' });
+    it("should return loading state while uploading", async () => {
+      const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
       let resolvePromise: (value: { url: string; filename: string }) => void;
-      const promise = new Promise<{ url: string; filename: string }>((resolve) => {
-        resolvePromise = resolve;
-      });
+      const promise = new Promise<{ url: string; filename: string }>(
+        (resolve) => {
+          resolvePromise = resolve;
+        },
+      );
 
       vi.mocked(settingsService.uploadAvatar).mockReturnValue(promise);
 
@@ -1041,8 +1116,8 @@ describe('useSettings hooks', () => {
 
       // Resolve the promise to clean up
       resolvePromise!({
-        url: 'https://example.com/new-avatar.jpg',
-        filename: 'avatar.jpg',
+        url: "https://example.com/new-avatar.jpg",
+        filename: "avatar.jpg",
       });
 
       await waitFor(() => {
@@ -1051,10 +1126,10 @@ describe('useSettings hooks', () => {
     });
   });
 
-  describe('useDeleteAvatar', () => {
-    it('should delete avatar successfully', async () => {
+  describe("useDeleteAvatar", () => {
+    it("should delete avatar successfully", async () => {
       vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: 'Avatar eliminado exitosamente',
+        message: "Avatar eliminado exitosamente",
       });
 
       const { result } = renderHook(() => useDeleteAvatar(), {
@@ -1072,9 +1147,9 @@ describe('useSettings hooks', () => {
       expect(settingsService.deleteAvatar).toHaveBeenCalledWith(mockUser.id);
     });
 
-    it('should update auth store on success', async () => {
+    it("should update auth store on success", async () => {
       vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: 'Avatar eliminado exitosamente',
+        message: "Avatar eliminado exitosamente",
       });
 
       const { result } = renderHook(() => useDeleteAvatar(), {
@@ -1097,7 +1172,7 @@ describe('useSettings hooks', () => {
 
     it('should show success toast "Foto de perfil eliminada"', async () => {
       vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: 'Avatar eliminado exitosamente',
+        message: "Avatar eliminado exitosamente",
       });
 
       const { result } = renderHook(() => useDeleteAvatar(), {
@@ -1112,11 +1187,11 @@ describe('useSettings hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Foto de perfil eliminada');
+      expect(toast.success).toHaveBeenCalledWith("Foto de perfil eliminada");
     });
 
-    it('should show error toast on failure', async () => {
-      const error = new Error('Error al eliminar la foto de perfil');
+    it("should show error toast on failure", async () => {
+      const error = new Error("Error al eliminar la foto de perfil");
       vi.mocked(settingsService.deleteAvatar).mockRejectedValue(error);
 
       const { result } = renderHook(() => useDeleteAvatar(), {
@@ -1131,10 +1206,12 @@ describe('useSettings hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al eliminar la foto de perfil');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al eliminar la foto de perfil",
+      );
     });
 
-    it('should show default error message when error has no message', async () => {
+    it("should show default error message when error has no message", async () => {
       vi.mocked(settingsService.deleteAvatar).mockRejectedValue(new Error());
 
       const { result } = renderHook(() => useDeleteAvatar(), {
@@ -1149,12 +1226,14 @@ describe('useSettings hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al eliminar la foto de perfil');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al eliminar la foto de perfil",
+      );
     });
 
-    it('should update auth query cache on success', async () => {
+    it("should update auth query cache on success", async () => {
       vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: 'Avatar eliminado exitosamente',
+        message: "Avatar eliminado exitosamente",
       });
 
       const { wrapper, queryClient } = createWrapperWithClient();
@@ -1173,11 +1252,13 @@ describe('useSettings hooks', () => {
       });
 
       // Verify auth cache was updated with avatarUrl removed
-      const authData = queryClient.getQueryData(queryKeys.auth.me()) as { user: User };
+      const authData = queryClient.getQueryData(queryKeys.auth.me()) as {
+        user: User;
+      };
       expect(authData.user.avatarUrl).toBeUndefined();
     });
 
-    it('should not update auth store when user is null', async () => {
+    it("should not update auth store when user is null", async () => {
       vi.mocked(useAuthStore).mockReturnValue({
         user: null,
         setUser: mockSetUser,
@@ -1190,7 +1271,7 @@ describe('useSettings hooks', () => {
       });
 
       vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: 'Avatar eliminado exitosamente',
+        message: "Avatar eliminado exitosamente",
       });
 
       const { result } = renderHook(() => useDeleteAvatar(), {
@@ -1208,12 +1289,12 @@ describe('useSettings hooks', () => {
       // setUser should NOT be called when user is null
       expect(mockSetUser).not.toHaveBeenCalled();
       // But success toast should still be shown
-      expect(toast.success).toHaveBeenCalledWith('Foto de perfil eliminada');
+      expect(toast.success).toHaveBeenCalledWith("Foto de perfil eliminada");
     });
 
-    it('should handle user with empty id', async () => {
+    it("should handle user with empty id", async () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        user: { ...mockUser, id: '' },
+        user: { ...mockUser, id: "" },
         setUser: mockSetUser,
         tenant: null,
         isAuthenticated: true,
@@ -1224,7 +1305,7 @@ describe('useSettings hooks', () => {
       });
 
       vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: 'Avatar eliminado exitosamente',
+        message: "Avatar eliminado exitosamente",
       });
 
       const { result } = renderHook(() => useDeleteAvatar(), {
@@ -1240,7 +1321,7 @@ describe('useSettings hooks', () => {
       });
 
       // Should call with empty string
-      expect(settingsService.deleteAvatar).toHaveBeenCalledWith('');
+      expect(settingsService.deleteAvatar).toHaveBeenCalledWith("");
     });
   });
 
@@ -1248,109 +1329,117 @@ describe('useSettings hooks', () => {
   // UTILITY HOOKS
   // ============================================================================
 
-  describe('usePasswordStrength', () => {
+  describe("usePasswordStrength", () => {
     it('should return "weak" for short passwords', () => {
-      const { result } = renderHook(() => usePasswordStrength('abc'));
+      const { result } = renderHook(() => usePasswordStrength("abc"));
 
-      expect(result.current).toBe('weak');
+      expect(result.current).toBe("weak");
     });
 
     it('should return "weak" for empty password', () => {
-      const { result } = renderHook(() => usePasswordStrength(''));
+      const { result } = renderHook(() => usePasswordStrength(""));
 
-      expect(result.current).toBe('weak');
+      expect(result.current).toBe("weak");
     });
 
     it('should return "fair" for passwords with some criteria', () => {
       // Password with 8+ chars, lowercase, and uppercase (3 criteria = fair)
-      const { result: result1 } = renderHook(() => usePasswordStrength('Abcdefgh'));
-      expect(result1.current).toBe('fair');
+      const { result: result1 } = renderHook(() =>
+        usePasswordStrength("Abcdefgh"),
+      );
+      expect(result1.current).toBe("fair");
 
       // Password with 12+ chars and lowercase (3 criteria = fair)
-      const { result: result2 } = renderHook(() => usePasswordStrength('abcdefghijkl'));
-      expect(result2.current).toBe('fair');
+      const { result: result2 } = renderHook(() =>
+        usePasswordStrength("abcdefghijkl"),
+      );
+      expect(result2.current).toBe("fair");
     });
 
     it('should return "good" for passwords with most criteria', () => {
       // Password with 8+ chars, lowercase, uppercase, and numbers (4 criteria = good)
-      const { result: result1 } = renderHook(() => usePasswordStrength('Abcdefg1'));
-      expect(result1.current).toBe('good');
+      const { result: result1 } = renderHook(() =>
+        usePasswordStrength("Abcdefg1"),
+      );
+      expect(result1.current).toBe("good");
 
       // Password with 8+ chars, lowercase, uppercase, numbers, and special chars (5 criteria = good)
-      const { result: result2 } = renderHook(() => usePasswordStrength('Abcdef1!'));
-      expect(result2.current).toBe('good');
+      const { result: result2 } = renderHook(() =>
+        usePasswordStrength("Abcdef1!"),
+      );
+      expect(result2.current).toBe("good");
     });
 
     it('should return "strong" for passwords with all criteria', () => {
       // Password with 12+ chars, lowercase, uppercase, numbers, and special chars (6 criteria = strong)
-      const { result } = renderHook(() => usePasswordStrength('Abcdefg12345!'));
+      const { result } = renderHook(() => usePasswordStrength("Abcdefg12345!"));
 
-      expect(result.current).toBe('strong');
+      expect(result.current).toBe("strong");
     });
 
-    it('should update when password changes', () => {
+    it("should update when password changes", () => {
       const { result, rerender } = renderHook(
         ({ password }) => usePasswordStrength(password),
-        { initialProps: { password: '' } }
+        { initialProps: { password: "" } },
       );
 
-      expect(result.current).toBe('weak');
+      expect(result.current).toBe("weak");
 
       // 8+ chars + lowercase = 2 criteria = weak
-      rerender({ password: 'abcdefgh' });
-      expect(result.current).toBe('weak');
+      rerender({ password: "abcdefgh" });
+      expect(result.current).toBe("weak");
 
       // 8+ chars + lowercase + uppercase = 3 criteria = fair
-      rerender({ password: 'Abcdefgh' });
-      expect(result.current).toBe('fair');
+      rerender({ password: "Abcdefgh" });
+      expect(result.current).toBe("fair");
 
       // 8+ chars + lowercase + uppercase + numbers = 4 criteria = good
-      rerender({ password: 'Abcdefg1' });
-      expect(result.current).toBe('good');
+      rerender({ password: "Abcdefg1" });
+      expect(result.current).toBe("good");
 
       // 12+ chars + 8+ chars + lowercase + uppercase + numbers + special = 6 criteria = strong
-      rerender({ password: 'Abcdefg12345!' });
-      expect(result.current).toBe('strong');
+      rerender({ password: "Abcdefg12345!" });
+      expect(result.current).toBe("strong");
     });
 
     it('should return "weak" for passwords with only numbers', () => {
-      const { result } = renderHook(() => usePasswordStrength('12345678'));
+      const { result } = renderHook(() => usePasswordStrength("12345678"));
 
       // 8+ chars (1) + numbers (1) = 2 criteria = weak
-      expect(result.current).toBe('weak');
+      expect(result.current).toBe("weak");
     });
 
     it('should return "weak" for passwords with only special characters', () => {
-      const { result } = renderHook(() => usePasswordStrength('!@#$%^&*'));
+      const { result } = renderHook(() => usePasswordStrength("!@#$%^&*"));
 
       // 8+ chars (1) + special (1) = 2 criteria = weak
-      expect(result.current).toBe('weak');
+      expect(result.current).toBe("weak");
     });
 
     it('should return "fair" for 12+ char password with only lowercase', () => {
-      const { result } = renderHook(() => usePasswordStrength('abcdefghijkl'));
+      const { result } = renderHook(() => usePasswordStrength("abcdefghijkl"));
 
       // 8+ chars (1) + 12+ chars (1) + lowercase (1) = 3 criteria = fair
-      expect(result.current).toBe('fair');
+      expect(result.current).toBe("fair");
     });
 
-    it('should handle password with all character types but short length', () => {
-      const { result } = renderHook(() => usePasswordStrength('Aa1!'));
+    it("should handle password with all character types but short length", () => {
+      const { result } = renderHook(() => usePasswordStrength("Aa1!"));
 
       // No 8+ chars, but has lowercase (1), uppercase (1), numbers (1), special (1) = 4 criteria = good
-      expect(result.current).toBe('good');
+      expect(result.current).toBe("good");
     });
 
-    it('should be memoized based on password', () => {
+    it("should be memoized based on password", () => {
       const { result, rerender } = renderHook(
         ({ password }) => usePasswordStrength(password),
-        { initialProps: { password: 'testPassword123!' } }
+        { initialProps: { password: "testPassword123!" } },
       );
 
       const firstResult = result.current;
 
       // Rerender with same password
-      rerender({ password: 'testPassword123!' });
+      rerender({ password: "testPassword123!" });
 
       // Result should be the same object (memoized)
       expect(result.current).toBe(firstResult);
@@ -1361,9 +1450,9 @@ describe('useSettings hooks', () => {
   // EDGE CASES AND ERROR HANDLING
   // ============================================================================
 
-  describe('Edge cases', () => {
-    it('should handle network errors gracefully for updateProfile', async () => {
-      const networkError = new Error('Network error');
+  describe("Edge cases", () => {
+    it("should handle network errors gracefully for updateProfile", async () => {
+      const networkError = new Error("Network error");
       vi.mocked(settingsService.updateProfile).mockRejectedValue(networkError);
 
       const { result } = renderHook(() => useUpdateProfile(), {
@@ -1371,18 +1460,18 @@ describe('useSettings hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ firstName: 'Carlos' });
+        result.current.mutate({ firstName: "Carlos" });
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Network error');
+      expect(toast.error).toHaveBeenCalledWith("Network error");
     });
 
-    it('should handle network errors gracefully for changePassword', async () => {
-      const networkError = new Error('Network error');
+    it("should handle network errors gracefully for changePassword", async () => {
+      const networkError = new Error("Network error");
       vi.mocked(settingsService.changePassword).mockRejectedValue(networkError);
 
       const { result } = renderHook(() => useChangePassword(), {
@@ -1391,9 +1480,9 @@ describe('useSettings hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          currentPassword: 'currentPassword123',
-          newPassword: 'newPassword123!',
-          confirmPassword: 'newPassword123!',
+          currentPassword: "currentPassword123",
+          newPassword: "newPassword123!",
+          confirmPassword: "newPassword123!",
         });
       });
 
@@ -1401,16 +1490,16 @@ describe('useSettings hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Network error');
+      expect(toast.error).toHaveBeenCalledWith("Network error");
     });
 
-    it('should handle concurrent mutations', async () => {
-      const profileData: ProfileUpdateData = { firstName: 'Carlos' };
-      const updatedUser: User = { ...mockUser, firstName: 'Carlos' };
+    it("should handle concurrent mutations", async () => {
+      const profileData: ProfileUpdateData = { firstName: "Carlos" };
+      const updatedUser: User = { ...mockUser, firstName: "Carlos" };
 
       vi.mocked(settingsService.updateProfile).mockResolvedValue(updatedUser);
       vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: 'Avatar eliminado exitosamente',
+        message: "Avatar eliminado exitosamente",
       });
 
       const { result: profileResult } = renderHook(() => useUpdateProfile(), {
@@ -1435,9 +1524,9 @@ describe('useSettings hooks', () => {
       expect(settingsService.deleteAvatar).toHaveBeenCalled();
     });
 
-    it('should handle auth cache update when oldData is not an object', async () => {
-      const profileData: ProfileUpdateData = { firstName: 'Carlos' };
-      const updatedUser: User = { ...mockUser, firstName: 'Carlos' };
+    it("should handle auth cache update when oldData is not an object", async () => {
+      const profileData: ProfileUpdateData = { firstName: "Carlos" };
+      const updatedUser: User = { ...mockUser, firstName: "Carlos" };
 
       vi.mocked(settingsService.updateProfile).mockResolvedValue(updatedUser);
 
@@ -1461,16 +1550,16 @@ describe('useSettings hooks', () => {
       expect(authData).toBeNull();
     });
 
-    it('should handle auth cache update when oldData has no user property', async () => {
-      const profileData: ProfileUpdateData = { firstName: 'Carlos' };
-      const updatedUser: User = { ...mockUser, firstName: 'Carlos' };
+    it("should handle auth cache update when oldData has no user property", async () => {
+      const profileData: ProfileUpdateData = { firstName: "Carlos" };
+      const updatedUser: User = { ...mockUser, firstName: "Carlos" };
 
       vi.mocked(settingsService.updateProfile).mockResolvedValue(updatedUser);
 
       const { wrapper, queryClient } = createWrapperWithClient();
 
       // Set auth cache to an object without user property
-      queryClient.setQueryData(queryKeys.auth.me(), { someOtherProp: 'value' });
+      queryClient.setQueryData(queryKeys.auth.me(), { someOtherProp: "value" });
 
       const { result } = renderHook(() => useUpdateProfile(), { wrapper });
 
@@ -1483,8 +1572,10 @@ describe('useSettings hooks', () => {
       });
 
       // The cache should remain unchanged since the update function returns oldData when 'user' property is not present
-      const authData = queryClient.getQueryData(queryKeys.auth.me()) as { someOtherProp: string };
-      expect(authData.someOtherProp).toBe('value');
+      const authData = queryClient.getQueryData(queryKeys.auth.me()) as {
+        someOtherProp: string;
+      };
+      expect(authData.someOtherProp).toBe("value");
     });
   });
 });

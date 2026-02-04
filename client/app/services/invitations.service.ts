@@ -1,10 +1,10 @@
-import { api } from '~/lib/api';
+import { api } from "~/lib/api";
 
 export interface Invitation {
   id: string;
   email: string;
   role: string;
-  status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'CANCELLED';
+  status: "PENDING" | "ACCEPTED" | "EXPIRED" | "CANCELLED";
   createdAt: string;
   expiresAt: string;
   acceptedAt: string | null;
@@ -21,12 +21,12 @@ export interface CreateInvitationData {
 
 export const invitationsService = {
   async getAll(): Promise<Invitation[]> {
-    const response = await api.get('/invitations');
+    const response = await api.get("/invitations");
     return response.data;
   },
 
   async create(data: CreateInvitationData): Promise<Invitation> {
-    const response = await api.post('/invitations', data);
+    const response = await api.post("/invitations", data);
     return response.data;
   },
 

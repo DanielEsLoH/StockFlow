@@ -184,9 +184,12 @@ export const queryKeys = {
       [...queryKeys.posSessions.all, "list", filters] as const,
     detail: (id: string) => [...queryKeys.posSessions.all, id] as const,
     current: () => [...queryKeys.posSessions.all, "current"] as const,
-    movements: (id: string) => [...queryKeys.posSessions.all, id, "movements"] as const,
-    xReport: (id: string) => [...queryKeys.posSessions.all, id, "x-report"] as const,
-    zReport: (id: string) => [...queryKeys.posSessions.all, id, "z-report"] as const,
+    movements: (id: string) =>
+      [...queryKeys.posSessions.all, id, "movements"] as const,
+    xReport: (id: string) =>
+      [...queryKeys.posSessions.all, id, "x-report"] as const,
+    zReport: (id: string) =>
+      [...queryKeys.posSessions.all, id, "z-report"] as const,
   },
 
   // POS Sales

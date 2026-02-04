@@ -18,7 +18,7 @@ export interface CategoryFilters {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 export interface CreateCategoryData {
@@ -27,7 +27,7 @@ export interface CreateCategoryData {
   parentId?: string;
 }
 
-export type UpdateCategoryData = Partial<CreateCategoryData>
+export type UpdateCategoryData = Partial<CreateCategoryData>;
 
 export interface CategoriesResponse {
   data: Category[];

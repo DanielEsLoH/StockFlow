@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   Search,
   Filter,
@@ -25,9 +25,9 @@ import {
   ExternalLink,
   Mail,
   MailOpen,
-} from 'lucide-react';
-import type { Route } from './+types/_app.notifications';
-import { cn, debounce, formatRelativeTime } from '~/lib/utils';
+} from "lucide-react";
+import type { Route } from "./+types/_app.notifications";
+import { cn, debounce, formatRelativeTime } from "~/lib/utils";
 import {
   useNotifications,
   useMarkAsRead,
@@ -38,16 +38,16 @@ import {
   useDeleteMultipleNotifications,
   useClearReadNotifications,
   useUnreadCount,
-} from '~/hooks/useNotifications';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Select } from '~/components/ui/Select';
-import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
-import { EmptyState } from '~/components/ui/EmptyState';
-import { DeleteModal } from '~/components/ui/DeleteModal';
-import { SkeletonTableRow } from '~/components/ui/Skeleton';
+} from "~/hooks/useNotifications";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Select } from "~/components/ui/Select";
+import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
+import { EmptyState } from "~/components/ui/EmptyState";
+import { DeleteModal } from "~/components/ui/DeleteModal";
+import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import {
   Table,
   TableHeader,
@@ -55,95 +55,95 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { useUrlFilters } from '~/hooks/useUrlFilters';
+} from "~/components/ui/Table";
+import { useUrlFilters } from "~/hooks/useUrlFilters";
 import type {
   NotificationFilters,
   NotificationType,
   NotificationPriority,
   NotificationSummary,
   NotificationCategory,
-} from '~/types/notification';
+} from "~/types/notification";
 import {
   NotificationTypeLabels,
   NotificationPriorityLabels,
   NotificationTypeToCategory,
-} from '~/types/notification';
+} from "~/types/notification";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Notificaciones - StockFlow' },
-    { name: 'description', content: 'Centro de notificaciones' },
+    { title: "Notificaciones - StockFlow" },
+    { name: "description", content: "Centro de notificaciones" },
   ];
 };
 
 // Type options for filter
 const typeOptions = [
-  { value: '', label: 'Todos los tipos' },
-  { value: 'LOW_STOCK', label: NotificationTypeLabels.LOW_STOCK },
-  { value: 'OUT_OF_STOCK', label: NotificationTypeLabels.OUT_OF_STOCK },
-  { value: 'NEW_INVOICE', label: NotificationTypeLabels.NEW_INVOICE },
-  { value: 'INVOICE_PAID', label: NotificationTypeLabels.INVOICE_PAID },
-  { value: 'INVOICE_OVERDUE', label: NotificationTypeLabels.INVOICE_OVERDUE },
-  { value: 'PAYMENT_RECEIVED', label: NotificationTypeLabels.PAYMENT_RECEIVED },
-  { value: 'PAYMENT_FAILED', label: NotificationTypeLabels.PAYMENT_FAILED },
-  { value: 'NEW_CUSTOMER', label: NotificationTypeLabels.NEW_CUSTOMER },
-  { value: 'REPORT_READY', label: NotificationTypeLabels.REPORT_READY },
-  { value: 'SYSTEM', label: NotificationTypeLabels.SYSTEM },
-  { value: 'INFO', label: NotificationTypeLabels.INFO },
+  { value: "", label: "Todos los tipos" },
+  { value: "LOW_STOCK", label: NotificationTypeLabels.LOW_STOCK },
+  { value: "OUT_OF_STOCK", label: NotificationTypeLabels.OUT_OF_STOCK },
+  { value: "NEW_INVOICE", label: NotificationTypeLabels.NEW_INVOICE },
+  { value: "INVOICE_PAID", label: NotificationTypeLabels.INVOICE_PAID },
+  { value: "INVOICE_OVERDUE", label: NotificationTypeLabels.INVOICE_OVERDUE },
+  { value: "PAYMENT_RECEIVED", label: NotificationTypeLabels.PAYMENT_RECEIVED },
+  { value: "PAYMENT_FAILED", label: NotificationTypeLabels.PAYMENT_FAILED },
+  { value: "NEW_CUSTOMER", label: NotificationTypeLabels.NEW_CUSTOMER },
+  { value: "REPORT_READY", label: NotificationTypeLabels.REPORT_READY },
+  { value: "SYSTEM", label: NotificationTypeLabels.SYSTEM },
+  { value: "INFO", label: NotificationTypeLabels.INFO },
 ];
 
 // Priority options for filter
 const priorityOptions = [
-  { value: '', label: 'Todas las prioridades' },
-  { value: 'LOW', label: NotificationPriorityLabels.LOW },
-  { value: 'MEDIUM', label: NotificationPriorityLabels.MEDIUM },
-  { value: 'HIGH', label: NotificationPriorityLabels.HIGH },
-  { value: 'URGENT', label: NotificationPriorityLabels.URGENT },
+  { value: "", label: "Todas las prioridades" },
+  { value: "LOW", label: NotificationPriorityLabels.LOW },
+  { value: "MEDIUM", label: NotificationPriorityLabels.MEDIUM },
+  { value: "HIGH", label: NotificationPriorityLabels.HIGH },
+  { value: "URGENT", label: NotificationPriorityLabels.URGENT },
 ];
 
 // Read status options for filter
 const readStatusOptions = [
-  { value: '', label: 'Todas' },
-  { value: 'unread', label: 'No leidas' },
-  { value: 'read', label: 'Leidas' },
+  { value: "", label: "Todas" },
+  { value: "unread", label: "No leidas" },
+  { value: "read", label: "Leidas" },
 ];
 
 // Items per page options
 const pageSizeOptions = [
-  { value: '10', label: '10 por pagina' },
-  { value: '25', label: '25 por pagina' },
-  { value: '50', label: '50 por pagina' },
+  { value: "10", label: "10 por pagina" },
+  { value: "25", label: "25 por pagina" },
+  { value: "50", label: "50 por pagina" },
 ];
 
 // Notification icon based on type
 function getNotificationIcon(type: NotificationType) {
-  const iconClass = 'h-5 w-5';
+  const iconClass = "h-5 w-5";
   switch (type) {
-    case 'LOW_STOCK':
-    case 'OUT_OF_STOCK':
+    case "LOW_STOCK":
+    case "OUT_OF_STOCK":
       return <Package className={iconClass} />;
-    case 'NEW_INVOICE':
-    case 'INVOICE_PAID':
-    case 'INVOICE_OVERDUE':
+    case "NEW_INVOICE":
+    case "INVOICE_PAID":
+    case "INVOICE_OVERDUE":
       return <FileText className={iconClass} />;
-    case 'PAYMENT_RECEIVED':
-    case 'PAYMENT_FAILED':
+    case "PAYMENT_RECEIVED":
+    case "PAYMENT_FAILED":
       return <CreditCard className={iconClass} />;
-    case 'NEW_CUSTOMER':
+    case "NEW_CUSTOMER":
       return <User className={iconClass} />;
-    case 'REPORT_READY':
+    case "REPORT_READY":
       return <BarChart3 className={iconClass} />;
-    case 'SYSTEM':
+    case "SYSTEM":
       return <Settings className={iconClass} />;
-    case 'INFO':
+    case "INFO":
       return <Info className={iconClass} />;
-    case 'WARNING':
+    case "WARNING":
       return <AlertTriangle className={iconClass} />;
-    case 'SUCCESS':
+    case "SUCCESS":
       return <CheckCircle className={iconClass} />;
-    case 'ERROR':
+    case "ERROR":
       return <AlertCircle className={iconClass} />;
     default:
       return <Bell className={iconClass} />;
@@ -153,41 +153,44 @@ function getNotificationIcon(type: NotificationType) {
 // Get category color classes
 function getCategoryColors(category: NotificationCategory) {
   switch (category) {
-    case 'success':
+    case "success":
       return {
-        bg: 'bg-success-100 dark:bg-success-900/30',
-        text: 'text-success-600 dark:text-success-400',
-        border: 'border-success-200 dark:border-success-800',
+        bg: "bg-success-100 dark:bg-success-900/30",
+        text: "text-success-600 dark:text-success-400",
+        border: "border-success-200 dark:border-success-800",
       };
-    case 'warning':
+    case "warning":
       return {
-        bg: 'bg-warning-100 dark:bg-warning-900/30',
-        text: 'text-warning-600 dark:text-warning-400',
-        border: 'border-warning-200 dark:border-warning-800',
+        bg: "bg-warning-100 dark:bg-warning-900/30",
+        text: "text-warning-600 dark:text-warning-400",
+        border: "border-warning-200 dark:border-warning-800",
       };
-    case 'error':
+    case "error":
       return {
-        bg: 'bg-error-100 dark:bg-error-900/30',
-        text: 'text-error-600 dark:text-error-400',
-        border: 'border-error-200 dark:border-error-800',
+        bg: "bg-error-100 dark:bg-error-900/30",
+        text: "text-error-600 dark:text-error-400",
+        border: "border-error-200 dark:border-error-800",
       };
-    case 'info':
+    case "info":
     default:
       return {
-        bg: 'bg-primary-100 dark:bg-primary-900/30',
-        text: 'text-primary-600 dark:text-primary-400',
-        border: 'border-primary-200 dark:border-primary-800',
+        bg: "bg-primary-100 dark:bg-primary-900/30",
+        text: "text-primary-600 dark:text-primary-400",
+        border: "border-primary-200 dark:border-primary-800",
       };
   }
 }
 
 // Priority badge component
 function PriorityBadge({ priority }: { priority: NotificationPriority }) {
-  const variants: Record<NotificationPriority, 'secondary' | 'primary' | 'warning' | 'error'> = {
-    LOW: 'secondary',
-    MEDIUM: 'primary',
-    HIGH: 'warning',
-    URGENT: 'error',
+  const variants: Record<
+    NotificationPriority,
+    "secondary" | "primary" | "warning" | "error"
+  > = {
+    LOW: "secondary",
+    MEDIUM: "primary",
+    HIGH: "warning",
+    URGENT: "error",
   };
 
   return (
@@ -200,12 +203,18 @@ function PriorityBadge({ priority }: { priority: NotificationPriority }) {
 // Parser config for notification filters
 const notificationFiltersParser = {
   parse: (searchParams: URLSearchParams): NotificationFilters => ({
-    search: searchParams.get('search') || undefined,
-    type: (searchParams.get('type') as NotificationType) || undefined,
-    priority: (searchParams.get('priority') as NotificationPriority) || undefined,
-    read: searchParams.get('read') === 'read' ? true : searchParams.get('read') === 'unread' ? false : undefined,
-    page: Number(searchParams.get('page')) || 1,
-    limit: Number(searchParams.get('limit')) || 10,
+    search: searchParams.get("search") || undefined,
+    type: (searchParams.get("type") as NotificationType) || undefined,
+    priority:
+      (searchParams.get("priority") as NotificationPriority) || undefined,
+    read:
+      searchParams.get("read") === "read"
+        ? true
+        : searchParams.get("read") === "unread"
+          ? false
+          : undefined,
+    page: Number(searchParams.get("page")) || 1,
+    limit: Number(searchParams.get("limit")) || 10,
   }),
 };
 
@@ -247,20 +256,27 @@ function NotificationTableHeader({
 export default function NotificationsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [deletingNotification, setDeletingNotification] = useState<NotificationSummary | null>(null);
+  const [deletingNotification, setDeletingNotification] =
+    useState<NotificationSummary | null>(null);
   const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  const { filters, updateFilters, clearFilters } = useUrlFilters<NotificationFilters>({
-    parserConfig: notificationFiltersParser,
-  });
+  const { filters, updateFilters, clearFilters } =
+    useUrlFilters<NotificationFilters>({
+      parserConfig: notificationFiltersParser,
+    });
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   // Queries
-  const { data: notificationsData, isLoading, isError, error } = useNotifications(filters);
+  const {
+    data: notificationsData,
+    isLoading,
+    isError,
+    error,
+  } = useNotifications(filters);
   const { data: unreadCount } = useUnreadCount();
 
   // Mutations
@@ -274,8 +290,12 @@ export default function NotificationsPage() {
 
   // Debounced search
   const debouncedSearch = useMemo(
-    () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
-    [updateFilters]
+    () =>
+      debounce(
+        (value: string) => updateFilters({ search: value || undefined }),
+        300,
+      ),
+    [updateFilters],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -284,16 +304,16 @@ export default function NotificationsPage() {
 
   // Get read status filter value for select
   const getReadStatusValue = () => {
-    if (filters.read === true) return 'read';
-    if (filters.read === false) return 'unread';
-    return '';
+    if (filters.read === true) return "read";
+    if (filters.read === false) return "unread";
+    return "";
   };
 
   // Handle read status filter change
   const handleReadStatusChange = (value: string) => {
-    if (value === 'read') {
+    if (value === "read") {
       updateFilters({ read: true });
-    } else if (value === 'unread') {
+    } else if (value === "unread") {
       updateFilters({ read: false });
     } else {
       updateFilters({ read: undefined });
@@ -304,7 +324,8 @@ export default function NotificationsPage() {
   const notifications = notificationsData?.data || [];
   const meta = notificationsData?.meta;
 
-  const allSelected = notifications.length > 0 && selectedIds.size === notifications.length;
+  const allSelected =
+    notifications.length > 0 && selectedIds.size === notifications.length;
   const someSelected = selectedIds.size > 0;
 
   const toggleSelection = useCallback((id: string) => {
@@ -327,7 +348,7 @@ export default function NotificationsPage() {
         setSelectedIds(new Set());
       }
     },
-    [notifications]
+    [notifications],
   );
 
   // Clear selection when filters change
@@ -367,12 +388,16 @@ export default function NotificationsPage() {
   };
 
   // Check if any filters are active
-  const hasActiveFilters = filters.search || filters.type || filters.priority || filters.read !== undefined;
+  const hasActiveFilters =
+    filters.search ||
+    filters.type ||
+    filters.priority ||
+    filters.read !== undefined;
 
   return (
     <motion.div
       variants={containerVariants}
-      initial={isMounted ? 'hidden' : false}
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="space-y-6"
     >
@@ -388,14 +413,16 @@ export default function NotificationsPage() {
           <p className="text-neutral-500 dark:text-neutral-400 mt-1">
             {unreadCount?.count ? (
               <>
-                Tienes{' '}
+                Tienes{" "}
                 <span className="font-medium text-primary-600 dark:text-primary-400">
                   {unreadCount.count}
-                </span>{' '}
-                {unreadCount.count === 1 ? 'notificacion sin leer' : 'notificaciones sin leer'}
+                </span>{" "}
+                {unreadCount.count === 1
+                  ? "notificacion sin leer"
+                  : "notificaciones sin leer"}
               </>
             ) : (
-              'Todas las notificaciones estan al dia'
+              "Todas las notificaciones estan al dia"
             )}
           </p>
         </div>
@@ -435,7 +462,7 @@ export default function NotificationsPage() {
                 <Input
                   type="search"
                   placeholder="Buscar en notificaciones..."
-                  defaultValue={filters.search || ''}
+                  defaultValue={filters.search || ""}
                   onChange={handleSearchChange}
                   className="pl-10"
                 />
@@ -443,12 +470,15 @@ export default function NotificationsPage() {
 
               {/* Filter toggle button */}
               <Button
-                variant={showFilters ? 'secondary' : 'outline'}
+                variant={showFilters ? "secondary" : "outline"}
                 onClick={() => setShowFilters(!showFilters)}
                 leftIcon={<Filter className="h-4 w-4" />}
                 rightIcon={
                   <ChevronDown
-                    className={cn('h-4 w-4 transition-transform', showFilters && 'rotate-180')}
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      showFilters && "rotate-180",
+                    )}
                   />
                 }
               >
@@ -466,7 +496,7 @@ export default function NotificationsPage() {
               {showFilters && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
@@ -475,9 +505,11 @@ export default function NotificationsPage() {
                     {/* Type filter */}
                     <Select
                       options={typeOptions}
-                      value={filters.type || ''}
+                      value={filters.type || ""}
                       onChange={(value) =>
-                        updateFilters({ type: (value as NotificationType) || undefined })
+                        updateFilters({
+                          type: (value as NotificationType) || undefined,
+                        })
                       }
                       placeholder="Tipo de notificacion"
                     />
@@ -485,9 +517,12 @@ export default function NotificationsPage() {
                     {/* Priority filter */}
                     <Select
                       options={priorityOptions}
-                      value={filters.priority || ''}
+                      value={filters.priority || ""}
                       onChange={(value) =>
-                        updateFilters({ priority: (value as NotificationPriority) || undefined })
+                        updateFilters({
+                          priority:
+                            (value as NotificationPriority) || undefined,
+                        })
                       }
                       placeholder="Prioridad"
                     />
@@ -526,14 +561,20 @@ export default function NotificationsPage() {
         {someSelected && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <Card padding="sm" className="bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800">
+            <Card
+              padding="sm"
+              className="bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800"
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
-                  {selectedIds.size} {selectedIds.size === 1 ? 'notificacion seleccionada' : 'notificaciones seleccionadas'}
+                  {selectedIds.size}{" "}
+                  {selectedIds.size === 1
+                    ? "notificacion seleccionada"
+                    : "notificaciones seleccionadas"}
                 </span>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -554,7 +595,11 @@ export default function NotificationsPage() {
                   >
                     Eliminar seleccionadas
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedIds(new Set())}
+                  >
                     Cancelar
                   </Button>
                 </div>
@@ -584,24 +629,29 @@ export default function NotificationsPage() {
             <EmptyState
               type="error"
               title="Error al cargar notificaciones"
-              description={error?.message || 'Hubo un problema al cargar las notificaciones.'}
+              description={
+                error?.message ||
+                "Hubo un problema al cargar las notificaciones."
+              }
               action={{
-                label: 'Reintentar',
+                label: "Reintentar",
                 onClick: () => window.location.reload(),
               }}
             />
           ) : notifications.length === 0 ? (
             <EmptyState
               icon={<BellOff className="h-16 w-16" />}
-              title={hasActiveFilters ? 'Sin resultados' : 'No hay notificaciones'}
+              title={
+                hasActiveFilters ? "Sin resultados" : "No hay notificaciones"
+              }
               description={
                 hasActiveFilters
-                  ? 'No se encontraron notificaciones con los filtros aplicados.'
-                  : 'Cuando tengas notificaciones nuevas, apareceran aqui.'
+                  ? "No se encontraron notificaciones con los filtros aplicados."
+                  : "Cuando tengas notificaciones nuevas, apareceran aqui."
               }
               action={
                 hasActiveFilters
-                  ? { label: 'Limpiar filtros', onClick: clearFilters }
+                  ? { label: "Limpiar filtros", onClick: clearFilters }
                   : undefined
               }
             />
@@ -616,7 +666,8 @@ export default function NotificationsPage() {
                 <TableBody>
                   <AnimatePresence mode="popLayout">
                     {notifications.map((notification) => {
-                      const category = NotificationTypeToCategory[notification.type] || 'info';
+                      const category =
+                        NotificationTypeToCategory[notification.type] || "info";
                       const colors = getCategoryColors(category);
                       const isSelected = selectedIds.has(notification.id);
 
@@ -628,9 +679,11 @@ export default function NotificationsPage() {
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           className={cn(
-                            'border-b border-neutral-100 transition-colors dark:border-neutral-800',
-                            !notification.read && 'bg-primary-50/50 dark:bg-primary-900/10',
-                            isSelected && 'bg-primary-100/50 dark:bg-primary-900/20'
+                            "border-b border-neutral-100 transition-colors dark:border-neutral-800",
+                            !notification.read &&
+                              "bg-primary-50/50 dark:bg-primary-900/10",
+                            isSelected &&
+                              "bg-primary-100/50 dark:bg-primary-900/20",
                           )}
                         >
                           {/* Checkbox */}
@@ -650,9 +703,9 @@ export default function NotificationsPage() {
                               {/* Icon */}
                               <div
                                 className={cn(
-                                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+                                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
                                   colors.bg,
-                                  colors.text
+                                  colors.text,
                                 )}
                               >
                                 {getNotificationIcon(notification.type)}
@@ -663,8 +716,8 @@ export default function NotificationsPage() {
                                 <div className="flex items-center gap-2">
                                   <p
                                     className={cn(
-                                      'font-medium text-neutral-900 dark:text-white truncate',
-                                      !notification.read && 'font-semibold'
+                                      "font-medium text-neutral-900 dark:text-white truncate",
+                                      !notification.read && "font-semibold",
                                     )}
                                   >
                                     {notification.title}
@@ -691,7 +744,18 @@ export default function NotificationsPage() {
 
                           {/* Type */}
                           <TableCell className="hidden md:table-cell">
-                            <Badge variant={category === 'error' ? 'error' : category === 'warning' ? 'warning' : category === 'success' ? 'success' : 'secondary'} size="sm">
+                            <Badge
+                              variant={
+                                category === "error"
+                                  ? "error"
+                                  : category === "warning"
+                                    ? "warning"
+                                    : category === "success"
+                                      ? "success"
+                                      : "secondary"
+                              }
+                              size="sm"
+                            >
                               {NotificationTypeLabels[notification.type]}
                             </Badge>
                           </TableCell>
@@ -715,8 +779,14 @@ export default function NotificationsPage() {
                                 variant="ghost"
                                 size="icon-sm"
                                 onClick={() => handleToggleRead(notification)}
-                                title={notification.read ? 'Marcar como no leida' : 'Marcar como leida'}
-                                disabled={markAsRead.isPending || markAsUnread.isPending}
+                                title={
+                                  notification.read
+                                    ? "Marcar como no leida"
+                                    : "Marcar como leida"
+                                }
+                                disabled={
+                                  markAsRead.isPending || markAsUnread.isPending
+                                }
                               >
                                 {notification.read ? (
                                   <Mail className="h-4 w-4" />
@@ -727,7 +797,9 @@ export default function NotificationsPage() {
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                onClick={() => setDeletingNotification(notification)}
+                                onClick={() =>
+                                  setDeletingNotification(notification)
+                                }
                                 title="Eliminar"
                                 className="text-error-500 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20"
                               >
@@ -754,7 +826,9 @@ export default function NotificationsPage() {
                     <Select
                       options={pageSizeOptions}
                       value={String(filters.limit || 10)}
-                      onChange={(value) => updateFilters({ limit: Number(value), page: 1 })}
+                      onChange={(value) =>
+                        updateFilters({ limit: Number(value), page: 1 })
+                      }
                       className="w-36"
                     />
                   </div>
@@ -774,7 +848,7 @@ export default function NotificationsPage() {
       <DeleteModal
         open={!!deletingNotification}
         onOpenChange={(open) => !open && setDeletingNotification(null)}
-        itemName={deletingNotification?.title || ''}
+        itemName={deletingNotification?.title || ""}
         itemType="notificacion"
         onConfirm={handleDelete}
         isLoading={deleteNotification.isPending}
@@ -787,7 +861,7 @@ export default function NotificationsPage() {
         itemName={`${selectedIds.size} notificaciones`}
         itemType="notificaciones"
         title="Eliminar notificaciones"
-        description={`¿Estas seguro de que deseas eliminar ${selectedIds.size} ${selectedIds.size === 1 ? 'notificacion' : 'notificaciones'}? Esta accion no se puede deshacer.`}
+        description={`¿Estas seguro de que deseas eliminar ${selectedIds.size} ${selectedIds.size === 1 ? "notificacion" : "notificaciones"}? Esta accion no se puede deshacer.`}
         onConfirm={handleDeleteSelected}
         isLoading={deleteMultiple.isPending}
       />

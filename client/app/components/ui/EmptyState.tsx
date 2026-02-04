@@ -1,9 +1,9 @@
-import * as React from 'react';
-import { Package, FileText, Search, AlertCircle, Plus } from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { Button } from './Button';
+import * as React from "react";
+import { Package, FileText, Search, AlertCircle, Plus } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { Button } from "./Button";
 
-type EmptyStateType = 'products' | 'search' | 'error' | 'default';
+type EmptyStateType = "products" | "search" | "error" | "default";
 
 interface EmptyStateProps {
   type?: EmptyStateType;
@@ -18,31 +18,36 @@ interface EmptyStateProps {
   className?: string;
 }
 
-const defaultConfigs: Record<EmptyStateType, { icon: React.ReactNode; title: string; description: string }> = {
+const defaultConfigs: Record<
+  EmptyStateType,
+  { icon: React.ReactNode; title: string; description: string }
+> = {
   products: {
     icon: <Package className="h-16 w-16" />,
-    title: 'No hay productos',
-    description: 'Comienza agregando tu primer producto al inventario.',
+    title: "No hay productos",
+    description: "Comienza agregando tu primer producto al inventario.",
   },
   search: {
     icon: <Search className="h-16 w-16" />,
-    title: 'Sin resultados',
-    description: 'No encontramos productos que coincidan con tu busqueda. Intenta con otros terminos.',
+    title: "Sin resultados",
+    description:
+      "No encontramos productos que coincidan con tu busqueda. Intenta con otros terminos.",
   },
   error: {
     icon: <AlertCircle className="h-16 w-16" />,
-    title: 'Error al cargar',
-    description: 'Hubo un problema al cargar los datos. Por favor, intenta de nuevo.',
+    title: "Error al cargar",
+    description:
+      "Hubo un problema al cargar los datos. Por favor, intenta de nuevo.",
   },
   default: {
     icon: <FileText className="h-16 w-16" />,
-    title: 'Sin datos',
-    description: 'No hay informacion disponible en este momento.',
+    title: "Sin datos",
+    description: "No hay informacion disponible en este momento.",
   },
 };
 
 export function EmptyState({
-  type = 'default',
+  type = "default",
   title,
   description,
   icon,
@@ -54,8 +59,8 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center py-16 text-center',
-        className
+        "flex flex-col items-center justify-center py-16 text-center",
+        className,
       )}
     >
       {/* Icon */}
@@ -93,14 +98,14 @@ interface InlineEmptyStateProps {
 }
 
 export function InlineEmptyState({
-  message = 'No hay datos disponibles',
+  message = "No hay datos disponibles",
   className,
 }: InlineEmptyStateProps) {
   return (
     <div
       className={cn(
-        'flex items-center justify-center py-8 text-sm text-neutral-500 dark:text-neutral-400',
-        className
+        "flex items-center justify-center py-8 text-sm text-neutral-500 dark:text-neutral-400",
+        className,
       )}
     >
       {message}

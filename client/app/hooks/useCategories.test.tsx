@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router';
-import type { ReactNode } from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router";
+import type { ReactNode } from "react";
 import {
   useCategoriesWithFilters,
   useCategories,
@@ -10,15 +10,12 @@ import {
   useCreateCategory,
   useUpdateCategory,
   useDeleteCategory,
-} from './useCategories';
-import { categoriesService } from '~/services/categories.service';
-import type {
-  Category,
-  CategoriesResponse,
-} from '~/types/category';
+} from "./useCategories";
+import { categoriesService } from "~/services/categories.service";
+import type { Category, CategoriesResponse } from "~/types/category";
 
 // Mock dependencies
-vi.mock('~/services/categories.service', () => ({
+vi.mock("~/services/categories.service", () => ({
   categoriesService: {
     getCategoriesWithFilters: vi.fn(),
     getCategories: vi.fn(),
@@ -29,7 +26,7 @@ vi.mock('~/services/categories.service', () => ({
   },
 }));
 
-vi.mock('~/components/ui/Toast', () => ({
+vi.mock("~/components/ui/Toast", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
@@ -39,8 +36,8 @@ vi.mock('~/components/ui/Toast', () => ({
 }));
 
 const mockNavigate = vi.fn();
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual('react-router');
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -49,34 +46,34 @@ vi.mock('react-router', async () => {
 
 // Mock data
 const mockCategory: Category = {
-  id: '1',
-  name: 'Electronica',
-  description: 'Dispositivos electronicos y tecnologia',
+  id: "1",
+  name: "Electronica",
+  description: "Dispositivos electronicos y tecnologia",
   productCount: 45,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
 };
 
 const mockCategoryWithParent: Category = {
-  id: '2',
-  name: 'Accesorios',
-  description: 'Accesorios para dispositivos electronicos',
-  parentId: '1',
+  id: "2",
+  name: "Accesorios",
+  description: "Accesorios para dispositivos electronicos",
+  parentId: "1",
   productCount: 32,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
+  createdAt: "2024-01-01T00:00:00Z",
+  updatedAt: "2024-01-01T00:00:00Z",
 };
 
 const mockCategories: Category[] = [
   mockCategory,
   mockCategoryWithParent,
   {
-    id: '3',
-    name: 'Ropa',
-    description: 'Prendas de vestir y moda',
+    id: "3",
+    name: "Ropa",
+    description: "Prendas de vestir y moda",
     productCount: 78,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
   },
 ];
 
@@ -107,7 +104,7 @@ function createWrapper() {
   };
 }
 
-describe('useCategories hooks', () => {
+describe("useCategories hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -116,9 +113,11 @@ describe('useCategories hooks', () => {
     vi.resetAllMocks();
   });
 
-  describe('useCategoriesWithFilters', () => {
-    it('should fetch categories with no filters', async () => {
-      vi.mocked(categoriesService.getCategoriesWithFilters).mockResolvedValue(mockCategoriesResponse);
+  describe("useCategoriesWithFilters", () => {
+    it("should fetch categories with no filters", async () => {
+      vi.mocked(categoriesService.getCategoriesWithFilters).mockResolvedValue(
+        mockCategoriesResponse,
+      );
 
       const { result } = renderHook(() => useCategoriesWithFilters(), {
         wrapper: createWrapper(),
@@ -130,14 +129,18 @@ describe('useCategories hooks', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(categoriesService.getCategoriesWithFilters).toHaveBeenCalledWith({});
+      expect(categoriesService.getCategoriesWithFilters).toHaveBeenCalledWith(
+        {},
+      );
       expect(result.current.data).toEqual(mockCategoriesResponse);
     });
 
-    it('should fetch categories with search filter', async () => {
-      vi.mocked(categoriesService.getCategoriesWithFilters).mockResolvedValue(mockCategoriesResponse);
+    it("should fetch categories with search filter", async () => {
+      vi.mocked(categoriesService.getCategoriesWithFilters).mockResolvedValue(
+        mockCategoriesResponse,
+      );
 
-      const filters = { search: 'Electronica' };
+      const filters = { search: "Electronica" };
       const { result } = renderHook(() => useCategoriesWithFilters(filters), {
         wrapper: createWrapper(),
       });
@@ -146,13 +149,17 @@ describe('useCategories hooks', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(categoriesService.getCategoriesWithFilters).toHaveBeenCalledWith(filters);
+      expect(categoriesService.getCategoriesWithFilters).toHaveBeenCalledWith(
+        filters,
+      );
     });
 
-    it('should fetch categories with parentId filter', async () => {
-      vi.mocked(categoriesService.getCategoriesWithFilters).mockResolvedValue(mockCategoriesResponse);
+    it("should fetch categories with parentId filter", async () => {
+      vi.mocked(categoriesService.getCategoriesWithFilters).mockResolvedValue(
+        mockCategoriesResponse,
+      );
 
-      const filters = { parentId: '1' };
+      const filters = { parentId: "1" };
       const { result } = renderHook(() => useCategoriesWithFilters(filters), {
         wrapper: createWrapper(),
       });
@@ -161,11 +168,15 @@ describe('useCategories hooks', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(categoriesService.getCategoriesWithFilters).toHaveBeenCalledWith(filters);
+      expect(categoriesService.getCategoriesWithFilters).toHaveBeenCalledWith(
+        filters,
+      );
     });
 
-    it('should handle pagination filters', async () => {
-      vi.mocked(categoriesService.getCategoriesWithFilters).mockResolvedValue(mockCategoriesResponse);
+    it("should handle pagination filters", async () => {
+      vi.mocked(categoriesService.getCategoriesWithFilters).mockResolvedValue(
+        mockCategoriesResponse,
+      );
 
       const filters = { page: 2, limit: 20 };
       const { result } = renderHook(() => useCategoriesWithFilters(filters), {
@@ -176,13 +187,17 @@ describe('useCategories hooks', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(categoriesService.getCategoriesWithFilters).toHaveBeenCalledWith(filters);
+      expect(categoriesService.getCategoriesWithFilters).toHaveBeenCalledWith(
+        filters,
+      );
     });
 
-    it('should handle sorting filters', async () => {
-      vi.mocked(categoriesService.getCategoriesWithFilters).mockResolvedValue(mockCategoriesResponse);
+    it("should handle sorting filters", async () => {
+      vi.mocked(categoriesService.getCategoriesWithFilters).mockResolvedValue(
+        mockCategoriesResponse,
+      );
 
-      const filters = { sortBy: 'name', sortOrder: 'desc' as const };
+      const filters = { sortBy: "name", sortOrder: "desc" as const };
       const { result } = renderHook(() => useCategoriesWithFilters(filters), {
         wrapper: createWrapper(),
       });
@@ -191,12 +206,16 @@ describe('useCategories hooks', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(categoriesService.getCategoriesWithFilters).toHaveBeenCalledWith(filters);
+      expect(categoriesService.getCategoriesWithFilters).toHaveBeenCalledWith(
+        filters,
+      );
     });
 
-    it('should handle error state', async () => {
-      const error = new Error('Failed to fetch categories');
-      vi.mocked(categoriesService.getCategoriesWithFilters).mockRejectedValue(error);
+    it("should handle error state", async () => {
+      const error = new Error("Failed to fetch categories");
+      vi.mocked(categoriesService.getCategoriesWithFilters).mockRejectedValue(
+        error,
+      );
 
       const { result } = renderHook(() => useCategoriesWithFilters(), {
         wrapper: createWrapper(),
@@ -210,9 +229,11 @@ describe('useCategories hooks', () => {
     });
   });
 
-  describe('useCategories', () => {
-    it('should fetch all categories', async () => {
-      vi.mocked(categoriesService.getCategories).mockResolvedValue(mockCategories);
+  describe("useCategories", () => {
+    it("should fetch all categories", async () => {
+      vi.mocked(categoriesService.getCategories).mockResolvedValue(
+        mockCategories,
+      );
 
       const { result } = renderHook(() => useCategories(), {
         wrapper: createWrapper(),
@@ -228,8 +249,8 @@ describe('useCategories hooks', () => {
       expect(result.current.data).toEqual(mockCategories);
     });
 
-    it('should handle error state', async () => {
-      const error = new Error('Failed to fetch categories');
+    it("should handle error state", async () => {
+      const error = new Error("Failed to fetch categories");
       vi.mocked(categoriesService.getCategories).mockRejectedValue(error);
 
       const { result } = renderHook(() => useCategories(), {
@@ -244,11 +265,11 @@ describe('useCategories hooks', () => {
     });
   });
 
-  describe('useCategory', () => {
-    it('should fetch a single category by id', async () => {
+  describe("useCategory", () => {
+    it("should fetch a single category by id", async () => {
       vi.mocked(categoriesService.getCategory).mockResolvedValue(mockCategory);
 
-      const { result } = renderHook(() => useCategory('1'), {
+      const { result } = renderHook(() => useCategory("1"), {
         wrapper: createWrapper(),
       });
 
@@ -256,12 +277,12 @@ describe('useCategories hooks', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(categoriesService.getCategory).toHaveBeenCalledWith('1');
+      expect(categoriesService.getCategory).toHaveBeenCalledWith("1");
       expect(result.current.data).toEqual(mockCategory);
     });
 
-    it('should not fetch if id is empty', async () => {
-      const { result } = renderHook(() => useCategory(''), {
+    it("should not fetch if id is empty", async () => {
+      const { result } = renderHook(() => useCategory(""), {
         wrapper: createWrapper(),
       });
 
@@ -270,11 +291,11 @@ describe('useCategories hooks', () => {
       expect(categoriesService.getCategory).not.toHaveBeenCalled();
     });
 
-    it('should handle error state', async () => {
-      const error = new Error('Category not found');
+    it("should handle error state", async () => {
+      const error = new Error("Category not found");
       vi.mocked(categoriesService.getCategory).mockRejectedValue(error);
 
-      const { result } = renderHook(() => useCategory('999'), {
+      const { result } = renderHook(() => useCategory("999"), {
         wrapper: createWrapper(),
       });
 
@@ -284,10 +305,12 @@ describe('useCategories hooks', () => {
     });
   });
 
-  describe('useCreateCategory', () => {
-    it('should create a category and show success toast', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(categoriesService.createCategory).mockResolvedValue(mockCategory);
+  describe("useCreateCategory", () => {
+    it("should create a category and show success toast", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(categoriesService.createCategory).mockResolvedValue(
+        mockCategory,
+      );
 
       const { result } = renderHook(() => useCreateCategory(), {
         wrapper: createWrapper(),
@@ -295,8 +318,8 @@ describe('useCategories hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          name: 'Electronica',
-          description: 'Dispositivos electronicos y tecnologia',
+          name: "Electronica",
+          description: "Dispositivos electronicos y tecnologia",
         });
       });
 
@@ -305,13 +328,15 @@ describe('useCategories hooks', () => {
       });
 
       expect(toast.success).toHaveBeenCalledWith(
-        `Categoria "${mockCategory.name}" creada exitosamente`
+        `Categoria "${mockCategory.name}" creada exitosamente`,
       );
     });
 
-    it('should create a category with parentId', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(categoriesService.createCategory).mockResolvedValue(mockCategoryWithParent);
+    it("should create a category with parentId", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(categoriesService.createCategory).mockResolvedValue(
+        mockCategoryWithParent,
+      );
 
       const { result } = renderHook(() => useCreateCategory(), {
         wrapper: createWrapper(),
@@ -319,9 +344,9 @@ describe('useCategories hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          name: 'Accesorios',
-          description: 'Accesorios para dispositivos electronicos',
-          parentId: '1',
+          name: "Accesorios",
+          description: "Accesorios para dispositivos electronicos",
+          parentId: "1",
         });
       });
 
@@ -330,18 +355,18 @@ describe('useCategories hooks', () => {
       });
 
       expect(categoriesService.createCategory).toHaveBeenCalledWith({
-        name: 'Accesorios',
-        description: 'Accesorios para dispositivos electronicos',
-        parentId: '1',
+        name: "Accesorios",
+        description: "Accesorios para dispositivos electronicos",
+        parentId: "1",
       });
       expect(toast.success).toHaveBeenCalledWith(
-        `Categoria "${mockCategoryWithParent.name}" creada exitosamente`
+        `Categoria "${mockCategoryWithParent.name}" creada exitosamente`,
       );
     });
 
-    it('should show error toast on failure', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      const error = new Error('Creation failed');
+    it("should show error toast on failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      const error = new Error("Creation failed");
       vi.mocked(categoriesService.createCategory).mockRejectedValue(error);
 
       const { result } = renderHook(() => useCreateCategory(), {
@@ -350,7 +375,7 @@ describe('useCategories hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          name: 'New Category',
+          name: "New Category",
         });
       });
 
@@ -358,12 +383,14 @@ describe('useCategories hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Creation failed');
+      expect(toast.error).toHaveBeenCalledWith("Creation failed");
     });
 
-    it('should show default error message if error has no message', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(categoriesService.createCategory).mockRejectedValue(new Error(''));
+    it("should show default error message if error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(categoriesService.createCategory).mockRejectedValue(
+        new Error(""),
+      );
 
       const { result } = renderHook(() => useCreateCategory(), {
         wrapper: createWrapper(),
@@ -371,7 +398,7 @@ describe('useCategories hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          name: 'New Category',
+          name: "New Category",
         });
       });
 
@@ -379,15 +406,20 @@ describe('useCategories hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al crear la categoria');
+      expect(toast.error).toHaveBeenCalledWith("Error al crear la categoria");
     });
   });
 
-  describe('useUpdateCategory', () => {
-    it('should update a category and show success toast', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      const updatedCategory = { ...mockCategory, name: 'Electronica Actualizada' };
-      vi.mocked(categoriesService.updateCategory).mockResolvedValue(updatedCategory);
+  describe("useUpdateCategory", () => {
+    it("should update a category and show success toast", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      const updatedCategory = {
+        ...mockCategory,
+        name: "Electronica Actualizada",
+      };
+      vi.mocked(categoriesService.updateCategory).mockResolvedValue(
+        updatedCategory,
+      );
 
       const { result } = renderHook(() => useUpdateCategory(), {
         wrapper: createWrapper(),
@@ -395,8 +427,8 @@ describe('useCategories hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          id: '1',
-          data: { name: 'Electronica Actualizada' },
+          id: "1",
+          data: { name: "Electronica Actualizada" },
         });
       });
 
@@ -404,18 +436,23 @@ describe('useCategories hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(categoriesService.updateCategory).toHaveBeenCalledWith('1', {
-        name: 'Electronica Actualizada',
+      expect(categoriesService.updateCategory).toHaveBeenCalledWith("1", {
+        name: "Electronica Actualizada",
       });
       expect(toast.success).toHaveBeenCalledWith(
-        `Categoria "${updatedCategory.name}" actualizada exitosamente`
+        `Categoria "${updatedCategory.name}" actualizada exitosamente`,
       );
     });
 
-    it('should update a category description', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      const updatedCategory = { ...mockCategory, description: 'Nueva descripcion' };
-      vi.mocked(categoriesService.updateCategory).mockResolvedValue(updatedCategory);
+    it("should update a category description", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      const updatedCategory = {
+        ...mockCategory,
+        description: "Nueva descripcion",
+      };
+      vi.mocked(categoriesService.updateCategory).mockResolvedValue(
+        updatedCategory,
+      );
 
       const { result } = renderHook(() => useUpdateCategory(), {
         wrapper: createWrapper(),
@@ -423,8 +460,8 @@ describe('useCategories hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          id: '1',
-          data: { description: 'Nueva descripcion' },
+          id: "1",
+          data: { description: "Nueva descripcion" },
         });
       });
 
@@ -432,17 +469,17 @@ describe('useCategories hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(categoriesService.updateCategory).toHaveBeenCalledWith('1', {
-        description: 'Nueva descripcion',
+      expect(categoriesService.updateCategory).toHaveBeenCalledWith("1", {
+        description: "Nueva descripcion",
       });
       expect(toast.success).toHaveBeenCalledWith(
-        `Categoria "${updatedCategory.name}" actualizada exitosamente`
+        `Categoria "${updatedCategory.name}" actualizada exitosamente`,
       );
     });
 
-    it('should show error toast on failure', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      const error = new Error('Update failed');
+    it("should show error toast on failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      const error = new Error("Update failed");
       vi.mocked(categoriesService.updateCategory).mockRejectedValue(error);
 
       const { result } = renderHook(() => useUpdateCategory(), {
@@ -451,8 +488,8 @@ describe('useCategories hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          id: '1',
-          data: { name: 'Updated Category' },
+          id: "1",
+          data: { name: "Updated Category" },
         });
       });
 
@@ -460,12 +497,14 @@ describe('useCategories hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Update failed');
+      expect(toast.error).toHaveBeenCalledWith("Update failed");
     });
 
-    it('should show default error message if error has no message', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(categoriesService.updateCategory).mockRejectedValue(new Error(''));
+    it("should show default error message if error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(categoriesService.updateCategory).mockRejectedValue(
+        new Error(""),
+      );
 
       const { result } = renderHook(() => useUpdateCategory(), {
         wrapper: createWrapper(),
@@ -473,8 +512,8 @@ describe('useCategories hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          id: '1',
-          data: { name: 'Updated Category' },
+          id: "1",
+          data: { name: "Updated Category" },
         });
       });
 
@@ -482,13 +521,15 @@ describe('useCategories hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al actualizar la categoria');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al actualizar la categoria",
+      );
     });
   });
 
-  describe('useDeleteCategory', () => {
-    it('should delete a category and show success toast', async () => {
-      const { toast } = await import('~/components/ui/Toast');
+  describe("useDeleteCategory", () => {
+    it("should delete a category and show success toast", async () => {
+      const { toast } = await import("~/components/ui/Toast");
       vi.mocked(categoriesService.deleteCategory).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useDeleteCategory(), {
@@ -496,20 +537,22 @@ describe('useCategories hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(categoriesService.deleteCategory).toHaveBeenCalledWith('1');
-      expect(toast.success).toHaveBeenCalledWith('Categoria eliminada exitosamente');
+      expect(categoriesService.deleteCategory).toHaveBeenCalledWith("1");
+      expect(toast.success).toHaveBeenCalledWith(
+        "Categoria eliminada exitosamente",
+      );
     });
 
-    it('should show error toast on failure', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      const error = new Error('Delete failed');
+    it("should show error toast on failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      const error = new Error("Delete failed");
       vi.mocked(categoriesService.deleteCategory).mockRejectedValue(error);
 
       const { result } = renderHook(() => useDeleteCategory(), {
@@ -517,33 +560,37 @@ describe('useCategories hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Delete failed');
+      expect(toast.error).toHaveBeenCalledWith("Delete failed");
     });
 
-    it('should show default error message if error has no message', async () => {
-      const { toast } = await import('~/components/ui/Toast');
-      vi.mocked(categoriesService.deleteCategory).mockRejectedValue(new Error(''));
+    it("should show default error message if error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(categoriesService.deleteCategory).mockRejectedValue(
+        new Error(""),
+      );
 
       const { result } = renderHook(() => useDeleteCategory(), {
         wrapper: createWrapper(),
       });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al eliminar la categoria');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al eliminar la categoria",
+      );
     });
   });
 });

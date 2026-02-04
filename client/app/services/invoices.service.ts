@@ -1,4 +1,4 @@
-import { api } from '~/lib/api';
+import { api } from "~/lib/api";
 import type {
   Invoice,
   InvoiceFilters,
@@ -10,7 +10,7 @@ import type {
   InvoiceStats,
   InvoiceStatus,
   InvoicePayment,
-} from '~/types/invoice';
+} from "~/types/invoice";
 
 // Service - Real API calls
 export const invoicesService = {
@@ -22,7 +22,9 @@ export const invoicesService = {
         params.append(key, String(value));
       }
     });
-    const { data } = await api.get<InvoicesResponse>(`/invoices?${params.toString()}`);
+    const { data } = await api.get<InvoicesResponse>(
+      `/invoices?${params.toString()}`,
+    );
     return data;
   },
 
@@ -34,30 +36,40 @@ export const invoicesService = {
 
   // Get invoices by customer ID
   async getInvoicesByCustomer(customerId: string): Promise<Invoice[]> {
-    const { data } = await api.get<Invoice[]>(`/invoices?customerId=${customerId}`);
+    const { data } = await api.get<Invoice[]>(
+      `/invoices?customerId=${customerId}`,
+    );
     return data;
   },
 
   // Get recent invoices for dashboard
   async getRecentInvoices(limit: number = 5): Promise<Invoice[]> {
-    const { data } = await api.get<Invoice[]>(`/invoices?limit=${limit}&sortBy=createdAt&sortOrder=desc`);
+    const { data } = await api.get<Invoice[]>(
+      `/invoices?limit=${limit}&sortBy=createdAt&sortOrder=desc`,
+    );
     return data;
   },
 
   // Create new invoice
   async createInvoice(invoiceData: CreateInvoiceData): Promise<Invoice> {
-    const { data } = await api.post<Invoice>('/invoices', invoiceData);
+    const { data } = await api.post<Invoice>("/invoices", invoiceData);
     return data;
   },
 
   // Update invoice
-  async updateInvoice(id: string, invoiceData: UpdateInvoiceData): Promise<Invoice> {
+  async updateInvoice(
+    id: string,
+    invoiceData: UpdateInvoiceData,
+  ): Promise<Invoice> {
     const { data } = await api.patch<Invoice>(`/invoices/${id}`, invoiceData);
     return data;
   },
 
   // Update invoice status only
-  async updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
+  async updateInvoiceStatus(
+    id: string,
+    status: InvoiceStatus,
+  ): Promise<Invoice> {
     const { data } = await api.patch<Invoice>(`/invoices/${id}`, { status });
     return data;
   },
@@ -80,8 +92,14 @@ export const invoicesService = {
   },
 
   // Add line item to invoice
-  async addInvoiceItem(invoiceId: string, item: CreateInvoiceItemData): Promise<Invoice> {
-    const { data } = await api.post<Invoice>(`/invoices/${invoiceId}/items`, item);
+  async addInvoiceItem(
+    invoiceId: string,
+    item: CreateInvoiceItemData,
+  ): Promise<Invoice> {
+    const { data } = await api.post<Invoice>(
+      `/invoices/${invoiceId}/items`,
+      item,
+    );
     return data;
   },
 
@@ -89,33 +107,42 @@ export const invoicesService = {
   async updateInvoiceItem(
     invoiceId: string,
     itemId: string,
-    itemData: UpdateInvoiceItemData
+    itemData: UpdateInvoiceItemData,
   ): Promise<Invoice> {
-    const { data } = await api.patch<Invoice>(`/invoices/${invoiceId}/items/${itemId}`, itemData);
+    const { data } = await api.patch<Invoice>(
+      `/invoices/${invoiceId}/items/${itemId}`,
+      itemData,
+    );
     return data;
   },
 
   // Remove line item
   async removeInvoiceItem(invoiceId: string, itemId: string): Promise<Invoice> {
-    const { data } = await api.delete<Invoice>(`/invoices/${invoiceId}/items/${itemId}`);
+    const { data } = await api.delete<Invoice>(
+      `/invoices/${invoiceId}/items/${itemId}`,
+    );
     return data;
   },
 
   // Get invoice statistics
   async getInvoiceStats(): Promise<InvoiceStats> {
-    const { data } = await api.get<InvoiceStats>('/invoices/stats');
+    const { data } = await api.get<InvoiceStats>("/invoices/stats");
     return data;
   },
 
   // Get invoice payments
   async getInvoicePayments(invoiceId: string): Promise<InvoicePayment[]> {
-    const { data } = await api.get<InvoicePayment[]>(`/invoices/${invoiceId}/payments`);
+    const { data } = await api.get<InvoicePayment[]>(
+      `/invoices/${invoiceId}/payments`,
+    );
     return data;
   },
 
   // Send invoice to DIAN
   async sendToDian(invoiceId: string): Promise<Invoice> {
-    const { data } = await api.post<Invoice>(`/invoices/${invoiceId}/send-to-dian`);
+    const { data } = await api.post<Invoice>(
+      `/invoices/${invoiceId}/send-to-dian`,
+    );
     return data;
   },
 };

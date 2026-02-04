@@ -1,5 +1,5 @@
-import { NavLink, useLocation, Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
+import { NavLink, useLocation, Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Package,
@@ -19,12 +19,12 @@ import {
   Building,
   TrendingUp,
   Receipt,
-} from 'lucide-react';
-import { cn, getInitials } from '~/lib/utils';
-import { useUIStore } from '~/stores/ui.store';
-import { useAuthStore } from '~/stores/auth.store';
-import { useAuth } from '~/hooks/useAuth';
-import { Button } from '~/components/ui/Button';
+} from "lucide-react";
+import { cn, getInitials } from "~/lib/utils";
+import { useUIStore } from "~/stores/ui.store";
+import { useAuthStore } from "~/stores/auth.store";
+import { useAuth } from "~/hooks/useAuth";
+import { Button } from "~/components/ui/Button";
 
 interface NavItem {
   name: string;
@@ -42,33 +42,31 @@ interface NavSection {
 const navSections: NavSection[] = [
   {
     label: null,
+    items: [{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard }],
+  },
+  {
+    label: "Inventario",
     items: [
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: "Productos", href: "/products", icon: Package },
+      { name: "Categorias", href: "/categories", icon: FolderTree },
+      { name: "Bodegas", href: "/warehouses", icon: Warehouse },
     ],
   },
   {
-    label: 'Inventario',
+    label: "Ventas",
     items: [
-      { name: 'Productos', href: '/products', icon: Package },
-      { name: 'Categorias', href: '/categories', icon: FolderTree },
-      { name: 'Bodegas', href: '/warehouses', icon: Warehouse },
+      { name: "Facturas", href: "/invoices", icon: FileText },
+      { name: "Pagos", href: "/payments", icon: CreditCard },
+      { name: "Clientes", href: "/customers", icon: Users },
     ],
   },
   {
-    label: 'Ventas',
+    label: "Administracion",
     items: [
-      { name: 'Facturas', href: '/invoices', icon: FileText },
-      { name: 'Pagos', href: '/payments', icon: CreditCard },
-      { name: 'Clientes', href: '/customers', icon: Users },
-    ],
-  },
-  {
-    label: 'Administracion',
-    items: [
-      { name: 'Equipo', href: '/team', icon: UsersRound, adminOnly: true },
-      { name: 'Reportes', href: '/reports', icon: BarChart3 },
-      { name: 'DIAN', href: '/dian', icon: Building },
-      { name: 'Configuracion', href: '/settings', icon: Settings },
+      { name: "Equipo", href: "/team", icon: UsersRound, adminOnly: true },
+      { name: "Reportes", href: "/reports", icon: BarChart3 },
+      { name: "DIAN", href: "/dian", icon: Building },
+      { name: "Configuracion", href: "/settings", icon: Settings },
     ],
   },
 ];
@@ -76,11 +74,11 @@ const navSections: NavSection[] = [
 const sidebarVariants = {
   expanded: {
     width: 280,
-    transition: { duration: 0.3, ease: 'easeInOut' as const },
+    transition: { duration: 0.3, ease: "easeInOut" as const },
   },
   collapsed: {
     width: 80,
-    transition: { duration: 0.3, ease: 'easeInOut' as const },
+    transition: { duration: 0.3, ease: "easeInOut" as const },
   },
 };
 
@@ -88,54 +86,63 @@ const itemVariants = {
   expanded: {
     opacity: 1,
     x: 0,
-    display: 'block',
+    display: "block",
     transition: { duration: 0.2, delay: 0.1 },
   },
   collapsed: {
     opacity: 0,
     x: -10,
-    transitionEnd: { display: 'none' },
+    transitionEnd: { display: "none" },
     transition: { duration: 0.1 },
   },
 };
 
 // Caja Quick Access Button Component
-function CajaQuickAccess({ isCollapsed, onClick }: { isCollapsed: boolean; onClick?: () => void }) {
+function CajaQuickAccess({
+  isCollapsed,
+  onClick,
+}: {
+  isCollapsed: boolean;
+  onClick?: () => void;
+}) {
   return (
     <Link to="/invoices/new" onClick={onClick}>
       <motion.div
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         className={cn(
-          'mx-3 my-4 rounded-2xl overflow-hidden',
-          'bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600',
-          'shadow-lg shadow-primary-500/30',
-          'hover:shadow-xl hover:shadow-primary-500/40',
-          'transition-all duration-300',
-          isCollapsed ? 'p-3' : 'p-4'
+          "mx-3 my-4 rounded-2xl overflow-hidden",
+          "bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600",
+          "shadow-lg shadow-primary-500/30",
+          "hover:shadow-xl hover:shadow-primary-500/40",
+          "transition-all duration-300",
+          isCollapsed ? "p-3" : "p-4",
         )}
       >
-        <div className={cn(
-          'flex items-center',
-          isCollapsed ? 'justify-center' : 'gap-4'
-        )}>
+        <div
+          className={cn(
+            "flex items-center",
+            isCollapsed ? "justify-center" : "gap-4",
+          )}
+        >
           {/* Icon container */}
-          <div className={cn(
-            'flex items-center justify-center rounded-xl',
-            'bg-white/20 backdrop-blur-sm',
-            isCollapsed ? 'h-10 w-10' : 'h-12 w-12',
-            'flex-shrink-0'
-          )}>
-            <ShoppingCart className={cn(
-              'text-white',
-              isCollapsed ? 'h-5 w-5' : 'h-6 w-6'
-            )} />
+          <div
+            className={cn(
+              "flex items-center justify-center rounded-xl",
+              "bg-white/20 backdrop-blur-sm",
+              isCollapsed ? "h-10 w-10" : "h-12 w-12",
+              "flex-shrink-0",
+            )}
+          >
+            <ShoppingCart
+              className={cn("text-white", isCollapsed ? "h-5 w-5" : "h-6 w-6")}
+            />
           </div>
 
           {/* Text content */}
           <motion.div
             variants={itemVariants}
-            animate={isCollapsed ? 'collapsed' : 'expanded'}
+            animate={isCollapsed ? "collapsed" : "expanded"}
             className="flex-1 min-w-0"
           >
             <p className="font-bold text-white text-base">Abrir Caja</p>
@@ -145,7 +152,7 @@ function CajaQuickAccess({ isCollapsed, onClick }: { isCollapsed: boolean; onCli
           {/* Arrow indicator */}
           <motion.div
             variants={itemVariants}
-            animate={isCollapsed ? 'collapsed' : 'expanded'}
+            animate={isCollapsed ? "collapsed" : "expanded"}
           >
             <ChevronRight className="h-5 w-5 text-white/60" />
           </motion.div>
@@ -162,7 +169,7 @@ function QuickStats({ isCollapsed }: { isCollapsed: boolean }) {
   return (
     <motion.div
       variants={itemVariants}
-      animate={isCollapsed ? 'collapsed' : 'expanded'}
+      animate={isCollapsed ? "collapsed" : "expanded"}
       className="mx-3 mb-4 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50"
     >
       <div className="flex items-center gap-2 mb-2">
@@ -173,11 +180,15 @@ function QuickStats({ isCollapsed }: { isCollapsed: boolean }) {
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="text-center p-2 rounded-lg bg-white dark:bg-neutral-800">
-          <p className="text-lg font-bold text-neutral-900 dark:text-white">$0</p>
+          <p className="text-lg font-bold text-neutral-900 dark:text-white">
+            $0
+          </p>
           <p className="text-[10px] text-neutral-500">Ventas hoy</p>
         </div>
         <div className="text-center p-2 rounded-lg bg-white dark:bg-neutral-800">
-          <p className="text-lg font-bold text-neutral-900 dark:text-white">0</p>
+          <p className="text-lg font-bold text-neutral-900 dark:text-white">
+            0
+          </p>
           <p className="text-[10px] text-neutral-500">Facturas</p>
         </div>
       </div>
@@ -205,20 +216,20 @@ function SidebarContent({
   const { user, tenant } = useAuthStore();
   const { logout, isLoggingOut } = useAuth();
 
-  const userName = user ? `${user.firstName} ${user.lastName}` : 'Usuario';
-  const userEmail = user?.email || 'usuario@email.com';
+  const userName = user ? `${user.firstName} ${user.lastName}` : "Usuario";
+  const userEmail = user?.email || "usuario@email.com";
   const userInitials = getInitials(userName);
-  const tenantName = tenant?.name || 'Mi Empresa';
+  const tenantName = tenant?.name || "Mi Empresa";
 
   return (
     <motion.div
       variants={sidebarVariants}
       initial={false}
-      animate={isCollapsed ? 'collapsed' : 'expanded'}
+      animate={isCollapsed ? "collapsed" : "expanded"}
       className={cn(
-        'flex h-full flex-col',
-        'bg-white dark:bg-neutral-900',
-        'border-r border-neutral-200/80 dark:border-neutral-800'
+        "flex h-full flex-col",
+        "bg-white dark:bg-neutral-900",
+        "border-r border-neutral-200/80 dark:border-neutral-800",
       )}
     >
       {/* Header */}
@@ -226,14 +237,20 @@ function SidebarContent({
         {/* Top row: Logo/Icon + Controls */}
         <div className="flex items-center justify-between mb-3">
           {/* Logo Icon */}
-          <div className={cn(
-            'flex items-center justify-center rounded-xl',
-            'bg-gradient-to-br from-primary-500 to-accent-600',
-            'text-white shadow-lg shadow-primary-500/25',
-            'flex-shrink-0',
-            isCollapsed ? 'h-10 w-10' : 'h-11 w-11'
-          )}>
-            <svg className={isCollapsed ? 'h-5 w-5' : 'h-6 w-6'} viewBox="0 0 24 24" fill="currentColor">
+          <div
+            className={cn(
+              "flex items-center justify-center rounded-xl",
+              "bg-gradient-to-br from-primary-500 to-accent-600",
+              "text-white shadow-lg shadow-primary-500/25",
+              "flex-shrink-0",
+              isCollapsed ? "h-10 w-10" : "h-11 w-11",
+            )}
+          >
+            <svg
+              className={isCollapsed ? "h-5 w-5" : "h-6 w-6"}
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
               <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM10 4h4v3h-4V4zm10 16H4V9h16v11z" />
               <path d="M13 12h-2v3H8v2h3v3h2v-3h3v-2h-3z" />
             </svg>
@@ -246,10 +263,10 @@ function SidebarContent({
               <button
                 onClick={onClose}
                 className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-lg',
-                  'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100',
-                  'dark:hover:text-neutral-300 dark:hover:bg-neutral-800',
-                  'transition-colors'
+                  "flex h-8 w-8 items-center justify-center rounded-lg",
+                  "text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100",
+                  "dark:hover:text-neutral-300 dark:hover:bg-neutral-800",
+                  "transition-colors",
                 )}
                 aria-label="Cerrar menu"
               >
@@ -262,12 +279,12 @@ function SidebarContent({
               <button
                 onClick={onToggleCollapse}
                 className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-lg',
-                  'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100',
-                  'dark:hover:text-neutral-300 dark:hover:bg-neutral-800',
-                  'transition-colors'
+                  "flex h-8 w-8 items-center justify-center rounded-lg",
+                  "text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100",
+                  "dark:hover:text-neutral-300 dark:hover:bg-neutral-800",
+                  "transition-colors",
                 )}
-                title={isCollapsed ? 'Expandir' : 'Colapsar'}
+                title={isCollapsed ? "Expandir" : "Colapsar"}
               >
                 {isCollapsed ? (
                   <ChevronRight className="h-5 w-5" />
@@ -282,7 +299,7 @@ function SidebarContent({
         {/* Brand + Tenant info */}
         <motion.div
           variants={itemVariants}
-          animate={isCollapsed ? 'collapsed' : 'expanded'}
+          animate={isCollapsed ? "collapsed" : "expanded"}
         >
           <h1 className="text-xl font-bold font-display text-neutral-900 dark:text-white">
             StockFlow
@@ -307,7 +324,7 @@ function SidebarContent({
           // Filter items based on admin status
           const filteredItems = section.items.filter((item) => {
             if (item.adminOnly) {
-              return user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+              return user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
             }
             return true;
           });
@@ -315,12 +332,12 @@ function SidebarContent({
           if (filteredItems.length === 0) return null;
 
           return (
-            <div key={sectionIndex} className={sectionIndex > 0 ? 'mt-6' : ''}>
+            <div key={sectionIndex} className={sectionIndex > 0 ? "mt-6" : ""}>
               {/* Section label */}
               {section.label && !isCollapsed && (
                 <motion.p
                   variants={itemVariants}
-                  animate={isCollapsed ? 'collapsed' : 'expanded'}
+                  animate={isCollapsed ? "collapsed" : "expanded"}
                   className="sidebar-label"
                 >
                   {section.label}
@@ -342,12 +359,12 @@ function SidebarContent({
                         onClick={onClose}
                         className={({ isActive: navLinkActive }) =>
                           cn(
-                            'group flex items-center gap-3 px-3 py-2.5 rounded-xl',
-                            'transition-all duration-200',
-                            'relative',
+                            "group flex items-center gap-3 px-3 py-2.5 rounded-xl",
+                            "transition-all duration-200",
+                            "relative",
                             isActive || navLinkActive
-                              ? 'bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400'
-                              : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white'
+                              ? "bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400"
+                              : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white",
                           )
                         }
                         title={isCollapsed ? item.name : undefined}
@@ -355,24 +372,32 @@ function SidebarContent({
                         {/* Active indicator */}
                         {isActive && (
                           <motion.div
-                            layoutId={showCloseButton ? 'mobileActiveIndicator' : 'activeIndicator'}
+                            layoutId={
+                              showCloseButton
+                                ? "mobileActiveIndicator"
+                                : "activeIndicator"
+                            }
                             className="nav-indicator"
                             initial={false}
-                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 30,
+                            }}
                           />
                         )}
 
                         <Icon
                           className={cn(
-                            'h-5 w-5 flex-shrink-0 transition-colors',
+                            "h-5 w-5 flex-shrink-0 transition-colors",
                             isActive
-                              ? 'text-primary-600 dark:text-primary-400'
-                              : 'text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300'
+                              ? "text-primary-600 dark:text-primary-400"
+                              : "text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300",
                           )}
                         />
                         <motion.span
                           variants={itemVariants}
-                          animate={isCollapsed ? 'collapsed' : 'expanded'}
+                          animate={isCollapsed ? "collapsed" : "expanded"}
                           className="text-sm font-medium whitespace-nowrap"
                         >
                           {item.name}
@@ -394,8 +419,8 @@ function SidebarContent({
       <div className="border-t border-neutral-100 dark:border-neutral-800 p-4">
         <div
           className={cn(
-            'flex items-center gap-3',
-            isCollapsed ? 'justify-center' : ''
+            "flex items-center gap-3",
+            isCollapsed ? "justify-center" : "",
           )}
         >
           {/* Avatar */}
@@ -417,7 +442,7 @@ function SidebarContent({
           {/* User info */}
           <motion.div
             variants={itemVariants}
-            animate={isCollapsed ? 'collapsed' : 'expanded'}
+            animate={isCollapsed ? "collapsed" : "expanded"}
             className="flex-1 min-w-0"
           >
             <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
@@ -431,7 +456,7 @@ function SidebarContent({
           {/* Logout button */}
           <motion.div
             variants={itemVariants}
-            animate={isCollapsed ? 'collapsed' : 'expanded'}
+            animate={isCollapsed ? "collapsed" : "expanded"}
           >
             <Button
               variant="ghost"
@@ -451,8 +476,12 @@ function SidebarContent({
 }
 
 export function Sidebar() {
-  const { sidebarCollapsed, toggleSidebarCollapse, mobileSidebarOpen, setMobileSidebarOpen } =
-    useUIStore();
+  const {
+    sidebarCollapsed,
+    toggleSidebarCollapse,
+    mobileSidebarOpen,
+    setMobileSidebarOpen,
+  } = useUIStore();
 
   return (
     <>
@@ -485,7 +514,7 @@ export function Sidebar() {
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
               className="lg:hidden fixed inset-y-0 left-0 z-50 w-[280px]"
             >
               <SidebarContent

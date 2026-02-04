@@ -1,5 +1,5 @@
-import { useState, useCallback, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingCart,
   Trash2,
@@ -14,12 +14,16 @@ import {
   ChevronUp,
   Percent,
   X,
-} from 'lucide-react';
-import { cn, formatCurrency } from '~/lib/utils';
-import { calculateLineItemTotals, type POSCartItem, type CartTotals } from '~/lib/pos-utils';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import type { Customer } from '~/types/customer';
+} from "lucide-react";
+import { cn, formatCurrency } from "~/lib/utils";
+import {
+  calculateLineItemTotals,
+  type POSCartItem,
+  type CartTotals,
+} from "~/lib/pos-utils";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import type { Customer } from "~/types/customer";
 
 // ============================================================================
 // TYPES
@@ -43,7 +47,7 @@ interface POSCartProProps {
   onSetNotes: (notes: string) => void;
   onSetGlobalDiscount: (discount: number) => void;
   onSelectCustomer: () => void;
-  onCheckout: (status: 'PENDING' | 'PAID') => void;
+  onCheckout: (status: "PENDING" | "PAID") => void;
   className?: string;
 }
 
@@ -118,7 +122,7 @@ const CartItemRow = memo(function CartItemRow({
       <td className="py-2 pr-2">
         <div className="min-w-0">
           <p className="text-sm font-medium text-neutral-900 dark:text-white line-clamp-1">
-            {item.product?.name ?? 'Producto'}
+            {item.product?.name ?? "Producto"}
           </p>
           <p className="text-xs text-neutral-400 dark:text-neutral-500">
             {item.product?.sku}
@@ -138,7 +142,7 @@ const CartItemRow = memo(function CartItemRow({
           </button>
           <span
             className="w-7 text-center text-sm font-semibold text-neutral-900 dark:text-white"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {item.quantity}
           </span>
@@ -147,10 +151,10 @@ const CartItemRow = memo(function CartItemRow({
             onClick={() => onIncrement(item.productId)}
             disabled={!canIncrement}
             className={cn(
-              'flex h-6 w-6 items-center justify-center rounded border transition-colors active:scale-95',
+              "flex h-6 w-6 items-center justify-center rounded border transition-colors active:scale-95",
               canIncrement
-                ? 'border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300'
-                : 'cursor-not-allowed border-neutral-100 bg-neutral-50 text-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-600'
+                ? "border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
+                : "cursor-not-allowed border-neutral-100 bg-neutral-50 text-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-600",
             )}
           >
             <Plus className="h-3 w-3" />
@@ -166,7 +170,7 @@ const CartItemRow = memo(function CartItemRow({
             value={tempPrice}
             onChange={(e) => setTempPrice(e.target.value)}
             onBlur={handlePriceSubmit}
-            onKeyDown={(e) => e.key === 'Enter' && handlePriceSubmit()}
+            onKeyDown={(e) => e.key === "Enter" && handlePriceSubmit()}
             className="w-20 rounded border border-primary-400 bg-white px-1 py-0.5 text-right text-xs dark:bg-neutral-800"
             autoFocus
           />
@@ -178,7 +182,7 @@ const CartItemRow = memo(function CartItemRow({
               setIsEditingPrice(true);
             }}
             className="group inline-flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-300 hover:text-primary-600"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {formatCurrency(item.unitPrice)}
             <Pencil className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -191,7 +195,7 @@ const CartItemRow = memo(function CartItemRow({
         <div className="flex flex-col items-end">
           <span
             className="text-sm font-bold text-primary-600 dark:text-primary-400"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {formatCurrency(total)}
           </span>
@@ -203,7 +207,7 @@ const CartItemRow = memo(function CartItemRow({
                 value={tempDiscount}
                 onChange={(e) => setTempDiscount(e.target.value)}
                 onBlur={handleDiscountSubmit}
-                onKeyDown={(e) => e.key === 'Enter' && handleDiscountSubmit()}
+                onKeyDown={(e) => e.key === "Enter" && handleDiscountSubmit()}
                 className="w-10 rounded border border-primary-400 bg-white px-1 py-0.5 text-right text-xs dark:bg-neutral-800"
                 autoFocus
                 min={0}
@@ -226,7 +230,7 @@ const CartItemRow = memo(function CartItemRow({
             <button
               type="button"
               onClick={() => {
-                setTempDiscount('0');
+                setTempDiscount("0");
                 setIsEditingDiscount(true);
               }}
               className="text-xs text-neutral-400 hover:text-primary-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -279,7 +283,9 @@ export function POSCartPro({
   const [showNotes, setShowNotes] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isEditingGlobalDiscount, setIsEditingGlobalDiscount] = useState(false);
-  const [tempGlobalDiscount, setTempGlobalDiscount] = useState(globalDiscount.toString());
+  const [tempGlobalDiscount, setTempGlobalDiscount] = useState(
+    globalDiscount.toString(),
+  );
 
   const handleClearCart = useCallback(() => {
     if (showClearConfirm) {
@@ -304,8 +310,8 @@ export function POSCartPro({
   return (
     <div
       className={cn(
-        'flex h-full flex-col rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-800',
-        className
+        "flex h-full flex-col rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-800",
+        className,
       )}
     >
       {/* ================================================================== */}
@@ -329,14 +335,14 @@ export function POSCartPro({
             type="button"
             onClick={handleClearCart}
             className={cn(
-              'flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors',
+              "flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
               showClearConfirm
-                ? 'bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-300'
-                : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-300'
+                ? "bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-300"
+                : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-300",
             )}
           >
             <Trash2 className="h-3.5 w-3.5" />
-            {showClearConfirm ? 'Confirmar' : 'Limpiar'}
+            {showClearConfirm ? "Confirmar" : "Limpiar"}
           </button>
         )}
       </div>
@@ -344,12 +350,14 @@ export function POSCartPro({
       {/* ================================================================== */}
       {/* CUSTOMER SECTION */}
       {/* ================================================================== */}
-      <div className={cn(
-        "shrink-0 border-b px-4 py-2",
-        !customer && items.length > 0
-          ? "border-warning-300 bg-warning-50 dark:border-warning-700 dark:bg-warning-900/20"
-          : "border-neutral-100 dark:border-neutral-700/50"
-      )}>
+      <div
+        className={cn(
+          "shrink-0 border-b px-4 py-2",
+          !customer && items.length > 0
+            ? "border-warning-300 bg-warning-50 dark:border-warning-700 dark:bg-warning-900/20"
+            : "border-neutral-100 dark:border-neutral-700/50",
+        )}
+      >
         <button
           type="button"
           onClick={onSelectCustomer}
@@ -357,21 +365,25 @@ export function POSCartPro({
             "flex w-full items-center gap-2 rounded-lg p-2 text-left transition-colors",
             !customer && items.length > 0
               ? "hover:bg-warning-100 dark:hover:bg-warning-900/30"
-              : "hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
+              : "hover:bg-neutral-50 dark:hover:bg-neutral-700/50",
           )}
         >
-          <div className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full",
-            !customer && items.length > 0
-              ? "bg-warning-200 dark:bg-warning-800"
-              : "bg-neutral-100 dark:bg-neutral-700"
-          )}>
-            <User className={cn(
-              "h-4 w-4",
+          <div
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-full",
               !customer && items.length > 0
-                ? "text-warning-700 dark:text-warning-300"
-                : "text-neutral-500 dark:text-neutral-400"
-            )} />
+                ? "bg-warning-200 dark:bg-warning-800"
+                : "bg-neutral-100 dark:bg-neutral-700",
+            )}
+          >
+            <User
+              className={cn(
+                "h-4 w-4",
+                !customer && items.length > 0
+                  ? "text-warning-700 dark:text-warning-300"
+                  : "text-neutral-500 dark:text-neutral-400",
+              )}
+            />
           </div>
           <div className="flex-1 min-w-0">
             {customer ? (
@@ -384,20 +396,28 @@ export function POSCartPro({
                 </p>
               </>
             ) : (
-              <p className={cn(
-                "text-sm",
-                items.length > 0
-                  ? "font-medium text-warning-700 dark:text-warning-300"
-                  : "text-neutral-500 dark:text-neutral-400"
-              )}>
-                {items.length > 0 ? "⚠️ Seleccionar cliente para facturar" : "Seleccionar cliente..."}
+              <p
+                className={cn(
+                  "text-sm",
+                  items.length > 0
+                    ? "font-medium text-warning-700 dark:text-warning-300"
+                    : "text-neutral-500 dark:text-neutral-400",
+                )}
+              >
+                {items.length > 0
+                  ? "⚠️ Seleccionar cliente para facturar"
+                  : "Seleccionar cliente..."}
               </p>
             )}
           </div>
-          <Pencil className={cn(
-            "h-4 w-4",
-            !customer && items.length > 0 ? "text-warning-600" : "text-neutral-400"
-          )} />
+          <Pencil
+            className={cn(
+              "h-4 w-4",
+              !customer && items.length > 0
+                ? "text-warning-600"
+                : "text-neutral-400",
+            )}
+          />
         </button>
       </div>
 
@@ -474,14 +494,18 @@ export function POSCartPro({
                 <span className="h-2 w-2 rounded-full bg-primary-500"></span>
               )}
             </span>
-            {showNotes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {showNotes ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </button>
 
           <AnimatePresence>
             {showNotes && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
+                animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
@@ -508,8 +532,13 @@ export function POSCartPro({
         <div className="shrink-0 border-t border-neutral-200 px-4 py-3 dark:border-neutral-700">
           {/* Subtotal */}
           <div className="flex items-center justify-between text-sm mb-1">
-            <span className="text-neutral-500 dark:text-neutral-400">Subtotal</span>
-            <span className="font-medium text-neutral-900 dark:text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <span className="text-neutral-500 dark:text-neutral-400">
+              Subtotal
+            </span>
+            <span
+              className="font-medium text-neutral-900 dark:text-white"
+              style={{ fontVariantNumeric: "tabular-nums" }}
+            >
               {formatCurrency(totals.subtotal)}
             </span>
           </div>
@@ -528,7 +557,9 @@ export function POSCartPro({
                     value={tempGlobalDiscount}
                     onChange={(e) => setTempGlobalDiscount(e.target.value)}
                     onBlur={handleGlobalDiscountSubmit}
-                    onKeyDown={(e) => e.key === 'Enter' && handleGlobalDiscountSubmit()}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleGlobalDiscountSubmit()
+                    }
                     className="w-12 rounded border border-primary-400 bg-white px-1 py-0.5 text-right text-sm dark:bg-neutral-800"
                     autoFocus
                     min={0}
@@ -545,12 +576,15 @@ export function POSCartPro({
                   }}
                   className="flex items-center gap-1 text-error-500 hover:underline"
                 >
-                  {globalDiscount > 0 ? `-${globalDiscount}%` : '0%'}
+                  {globalDiscount > 0 ? `-${globalDiscount}%` : "0%"}
                   <Pencil className="h-3 w-3" />
                 </button>
               )}
               {totals.discountAmount > 0 && (
-                <span className="text-error-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <span
+                  className="text-error-500"
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                >
                   -{formatCurrency(totals.discountAmount)}
                 </span>
               )}
@@ -559,8 +593,13 @@ export function POSCartPro({
 
           {/* Tax */}
           <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-neutral-500 dark:text-neutral-400">IVA (19%)</span>
-            <span className="font-medium text-neutral-900 dark:text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <span className="text-neutral-500 dark:text-neutral-400">
+              IVA (19%)
+            </span>
+            <span
+              className="font-medium text-neutral-900 dark:text-white"
+              style={{ fontVariantNumeric: "tabular-nums" }}
+            >
               {formatCurrency(totals.taxAmount)}
             </span>
           </div>
@@ -575,7 +614,7 @@ export function POSCartPro({
             </span>
             <span
               className="text-2xl font-bold text-primary-600 dark:text-primary-400"
-              style={{ fontVariantNumeric: 'tabular-nums' }}
+              style={{ fontVariantNumeric: "tabular-nums" }}
             >
               {formatCurrency(totals.total)}
             </span>
@@ -587,7 +626,7 @@ export function POSCartPro({
           <div className="space-y-2">
             <Button
               type="button"
-              onClick={() => onCheckout('PAID')}
+              onClick={() => onCheckout("PAID")}
               disabled={!canCheckout || isProcessing}
               isLoading={isProcessing}
               className="w-full"
@@ -600,7 +639,7 @@ export function POSCartPro({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onCheckout('PENDING')}
+              onClick={() => onCheckout("PENDING")}
               disabled={!canCheckout || isProcessing}
               className="w-full"
               size="sm"

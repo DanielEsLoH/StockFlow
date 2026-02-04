@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import {
   systemAdminService,
   getSystemAdminAccessToken,
@@ -8,30 +8,30 @@ import {
   type TenantsQueryParams,
   type SubscriptionPlan,
   type SubscriptionPeriod,
-} from '~/services/system-admin.service';
-import { useSystemAdminStore } from '~/stores/system-admin.store';
-import { toast } from '~/components/ui/Toast';
+} from "~/services/system-admin.service";
+import { useSystemAdminStore } from "~/stores/system-admin.store";
+import { toast } from "~/components/ui/Toast";
 
 // Query keys for system admin
-const BASE_KEY = ['system-admin'] as const;
-const USERS_KEY = [...BASE_KEY, 'users'] as const;
-const TENANTS_KEY = [...BASE_KEY, 'tenants'] as const;
+const BASE_KEY = ["system-admin"] as const;
+const USERS_KEY = [...BASE_KEY, "users"] as const;
+const TENANTS_KEY = [...BASE_KEY, "tenants"] as const;
 
 export const systemAdminQueryKeys = {
   all: BASE_KEY,
-  me: () => [...BASE_KEY, 'me'] as const,
-  dashboard: () => [...BASE_KEY, 'dashboard'] as const,
+  me: () => [...BASE_KEY, "me"] as const,
+  dashboard: () => [...BASE_KEY, "dashboard"] as const,
   users: {
     all: USERS_KEY,
     list: (params?: UsersQueryParams) =>
-      [...USERS_KEY, 'list', params] as const,
-    pending: (params?: Omit<UsersQueryParams, 'status'>) =>
-      [...USERS_KEY, 'pending', params] as const,
+      [...USERS_KEY, "list", params] as const,
+    pending: (params?: Omit<UsersQueryParams, "status">) =>
+      [...USERS_KEY, "pending", params] as const,
   },
   tenants: {
     all: TENANTS_KEY,
     list: (params?: TenantsQueryParams) =>
-      [...TENANTS_KEY, 'list', params] as const,
+      [...TENANTS_KEY, "list", params] as const,
   },
 };
 
@@ -64,10 +64,10 @@ export function useSystemAdminAuth() {
       setAdmin(data.admin);
       queryClient.setQueryData(systemAdminQueryKeys.me(), data.admin);
       toast.success(`Bienvenido, ${data.admin.firstName}!`);
-      navigate('/system-admin/dashboard');
+      navigate("/system-admin/dashboard");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Credenciales invalidas');
+      toast.error(error.message || "Credenciales invalidas");
     },
   });
 
@@ -77,8 +77,8 @@ export function useSystemAdminAuth() {
     onSuccess: () => {
       clearAuth();
       queryClient.clear();
-      navigate('/system-admin/login');
-      toast.success('Sesion cerrada');
+      navigate("/system-admin/login");
+      toast.success("Sesion cerrada");
     },
   });
 
@@ -123,11 +123,15 @@ export function useSystemAdminUsers(params: UsersQueryParams = {}) {
     mutationFn: (userId: string) => systemAdminService.approveUser(userId),
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.users.all });
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.users.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.dashboard(),
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al aprobar usuario');
+      toast.error(error.message || "Error al aprobar usuario");
     },
   });
 
@@ -136,11 +140,15 @@ export function useSystemAdminUsers(params: UsersQueryParams = {}) {
       systemAdminService.suspendUser(userId, reason),
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.users.all });
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.users.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.dashboard(),
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al suspender usuario');
+      toast.error(error.message || "Error al suspender usuario");
     },
   });
 
@@ -149,11 +157,15 @@ export function useSystemAdminUsers(params: UsersQueryParams = {}) {
       systemAdminService.deleteUser(userId, reason),
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.users.all });
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.users.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.dashboard(),
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar usuario');
+      toast.error(error.message || "Error al eliminar usuario");
     },
   });
 
@@ -178,7 +190,9 @@ export function useSystemAdminUsers(params: UsersQueryParams = {}) {
 /**
  * Hook for pending users
  */
-export function useSystemAdminPendingUsers(params: Omit<UsersQueryParams, 'status'> = {}) {
+export function useSystemAdminPendingUsers(
+  params: Omit<UsersQueryParams, "status"> = {},
+) {
   const queryClient = useQueryClient();
 
   const pendingQuery = useQuery({
@@ -191,11 +205,15 @@ export function useSystemAdminPendingUsers(params: Omit<UsersQueryParams, 'statu
     mutationFn: (userId: string) => systemAdminService.approveUser(userId),
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.users.all });
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.users.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.dashboard(),
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al aprobar usuario');
+      toast.error(error.message || "Error al aprobar usuario");
     },
   });
 
@@ -224,15 +242,24 @@ export function useSystemAdminTenants(params: TenantsQueryParams = {}) {
   });
 
   const changePlanMutation = useMutation({
-    mutationFn: ({ tenantId, plan }: { tenantId: string; plan: SubscriptionPlan }) =>
-      systemAdminService.changeTenantPlan(tenantId, plan),
+    mutationFn: ({
+      tenantId,
+      plan,
+    }: {
+      tenantId: string;
+      plan: SubscriptionPlan;
+    }) => systemAdminService.changeTenantPlan(tenantId, plan),
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.tenants.all });
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.tenants.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.dashboard(),
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al cambiar plan');
+      toast.error(error.message || "Error al cambiar plan");
     },
   });
 
@@ -248,11 +275,15 @@ export function useSystemAdminTenants(params: TenantsQueryParams = {}) {
     }) => systemAdminService.activateTenantPlan(tenantId, plan, period),
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.tenants.all });
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.tenants.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.dashboard(),
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al activar plan');
+      toast.error(error.message || "Error al activar plan");
     },
   });
 
@@ -261,23 +292,32 @@ export function useSystemAdminTenants(params: TenantsQueryParams = {}) {
       systemAdminService.suspendTenantPlan(tenantId, reason),
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.tenants.all });
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.tenants.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.dashboard(),
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al suspender plan');
+      toast.error(error.message || "Error al suspender plan");
     },
   });
 
   const reactivatePlanMutation = useMutation({
-    mutationFn: (tenantId: string) => systemAdminService.reactivateTenantPlan(tenantId),
+    mutationFn: (tenantId: string) =>
+      systemAdminService.reactivateTenantPlan(tenantId),
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.tenants.all });
-      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.dashboard() });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.tenants.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: systemAdminQueryKeys.dashboard(),
+      });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al reactivar plan');
+      toast.error(error.message || "Error al reactivar plan");
     },
   });
 
@@ -307,7 +347,7 @@ export function useSystemAdminTenants(params: TenantsQueryParams = {}) {
  */
 export function useSystemAdminPlanLimits() {
   return useQuery({
-    queryKey: [...systemAdminQueryKeys.all, 'plans'] as const,
+    queryKey: [...systemAdminQueryKeys.all, "plans"] as const,
     queryFn: systemAdminService.getAllPlanLimits,
     staleTime: 1000 * 60 * 60, // 1 hour - plan limits rarely change
   });

@@ -4,8 +4,8 @@ import {
   setRefreshToken,
   getRefreshToken,
   clearAllAuthData,
-} from '~/lib/api';
-import type { User, Tenant } from '~/stores/auth.store';
+} from "~/lib/api";
+import type { User, Tenant } from "~/stores/auth.store";
 
 // Types
 export interface LoginCredentials {
@@ -58,14 +58,17 @@ export interface AcceptInvitationData {
 // Service
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const { data } = await api.post<AuthResponse>('/auth/login', credentials);
+    const { data } = await api.post<AuthResponse>("/auth/login", credentials);
     setAccessToken(data.accessToken);
     setRefreshToken(data.refreshToken);
     return data;
   },
 
   async register(userData: RegisterData): Promise<RegisterResponse> {
-    const { data } = await api.post<RegisterResponse>('/auth/register', userData);
+    const { data } = await api.post<RegisterResponse>(
+      "/auth/register",
+      userData,
+    );
     // No token returned - registration is pending approval
     return data;
   },
@@ -75,7 +78,7 @@ export const authService = {
       const refreshToken = getRefreshToken();
       if (refreshToken) {
         // Notify the server to invalidate the refresh token
-        await api.post('/auth/logout', { refreshToken });
+        await api.post("/auth/logout", { refreshToken });
       }
     } catch {
       // Swallow errors - we want to log out regardless of server availability
@@ -88,7 +91,7 @@ export const authService = {
   },
 
   async getMe(): Promise<AuthResponse> {
-    const { data } = await api.get<AuthResponse>('/auth/me');
+    const { data } = await api.get<AuthResponse>("/auth/me");
     setAccessToken(data.accessToken);
     if (data.refreshToken) {
       setRefreshToken(data.refreshToken);
@@ -97,21 +100,21 @@ export const authService = {
   },
 
   async refreshToken(): Promise<{ accessToken: string }> {
-    const { data } = await api.post('/auth/refresh');
+    const { data } = await api.post("/auth/refresh");
     setAccessToken(data.accessToken);
     return data;
   },
 
   async forgotPassword(email: string): Promise<{ message: string }> {
-    const { data } = await api.post('/auth/forgot-password', { email });
+    const { data } = await api.post("/auth/forgot-password", { email });
     return data;
   },
 
   async resetPassword(
     token: string,
-    password: string
+    password: string,
   ): Promise<{ message: string }> {
-    const { data } = await api.post('/auth/reset-password', {
+    const { data } = await api.post("/auth/reset-password", {
       token,
       password,
     });
@@ -120,9 +123,9 @@ export const authService = {
 
   async changePassword(
     currentPassword: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<{ message: string }> {
-    const { data } = await api.post('/auth/change-password', {
+    const { data } = await api.post("/auth/change-password", {
       currentPassword,
       newPassword,
     });
@@ -130,22 +133,27 @@ export const authService = {
   },
 
   async verifyEmail(token: string): Promise<{ message: string }> {
-    const { data } = await api.post('/auth/verify-email', { token });
+    const { data } = await api.post("/auth/verify-email", { token });
     return data;
   },
 
   async resendVerification(email: string): Promise<{ message: string }> {
-    const { data } = await api.post('/auth/resend-verification', { email });
+    const { data } = await api.post("/auth/resend-verification", { email });
     return data;
   },
 
   async getInvitation(token: string): Promise<InvitationDetails> {
-    const { data } = await api.get<InvitationDetails>(`/auth/invitation/${token}`);
+    const { data } = await api.get<InvitationDetails>(
+      `/auth/invitation/${token}`,
+    );
     return data;
   },
 
   async acceptInvitation(data: AcceptInvitationData): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/accept-invitation', data);
+    const response = await api.post<AuthResponse>(
+      "/auth/accept-invitation",
+      data,
+    );
     setAccessToken(response.data.accessToken);
     setRefreshToken(response.data.refreshToken);
     return response.data;

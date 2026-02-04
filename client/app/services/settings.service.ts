@@ -1,4 +1,4 @@
-import type { User } from '~/stores/auth.store';
+import type { User } from "~/stores/auth.store";
 
 // Types
 export interface ProfileUpdateData {
@@ -16,10 +16,10 @@ export interface PasswordChangeData {
 }
 
 export interface UserPreferences {
-  theme: 'light' | 'dark' | 'system';
-  language: 'es' | 'en';
-  currency: 'COP' | 'USD' | 'EUR';
-  dateFormat: 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
+  theme: "light" | "dark" | "system";
+  language: "es" | "en";
+  currency: "COP" | "USD" | "EUR";
+  dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
   notifications: {
     email: boolean;
     push: boolean;
@@ -42,10 +42,10 @@ export interface AvatarUploadResponse {
 
 // Default preferences
 const defaultPreferences: UserPreferences = {
-  theme: 'system',
-  language: 'es',
-  currency: 'COP',
-  dateFormat: 'DD/MM/YYYY',
+  theme: "system",
+  language: "es",
+  currency: "COP",
+  dateFormat: "DD/MM/YYYY",
   notifications: {
     email: true,
     push: true,
@@ -62,10 +62,10 @@ const defaultPreferences: UserPreferences = {
 };
 
 // LocalStorage key
-const PREFERENCES_STORAGE_KEY = 'user-preferences';
+const PREFERENCES_STORAGE_KEY = "user-preferences";
 
 // Mock current password for validation
-const MOCK_CURRENT_PASSWORD = 'currentPassword123';
+const MOCK_CURRENT_PASSWORD = "currentPassword123";
 
 // Service
 export const settingsService = {
@@ -79,12 +79,12 @@ export const settingsService = {
 
     const updatedUser: User = {
       id: userId,
-      email: data.email || 'usuario@example.com',
-      firstName: data.firstName || 'Usuario',
-      lastName: data.lastName || 'Ejemplo',
-      role: 'ADMIN',
-      status: 'ACTIVE',
-      tenantId: 'tenant-1',
+      email: data.email || "usuario@example.com",
+      firstName: data.firstName || "Usuario",
+      lastName: data.lastName || "Ejemplo",
+      role: "ADMIN",
+      status: "ACTIVE",
+      tenantId: "tenant-1",
       avatarUrl: data.avatarUrl,
     };
 
@@ -93,7 +93,7 @@ export const settingsService = {
 
   async changePassword(
     userId: string,
-    data: PasswordChangeData
+    data: PasswordChangeData,
   ): Promise<{ message: string }> {
     // In production, uncomment this:
     // const { data: response } = await api.post(`/users/${userId}/change-password`, {
@@ -107,25 +107,25 @@ export const settingsService = {
 
     // Validate current password
     if (data.currentPassword !== MOCK_CURRENT_PASSWORD) {
-      throw new Error('La contrasena actual es incorrecta');
+      throw new Error("La contrasena actual es incorrecta");
     }
 
     // Validate password confirmation
     if (data.newPassword !== data.confirmPassword) {
-      throw new Error('Las contrasenas no coinciden');
+      throw new Error("Las contrasenas no coinciden");
     }
 
     // Validate password strength (basic check)
     if (data.newPassword.length < 8) {
-      throw new Error('La nueva contrasena debe tener al menos 8 caracteres');
+      throw new Error("La nueva contrasena debe tener al menos 8 caracteres");
     }
 
-    return { message: 'Contrasena actualizada exitosamente' };
+    return { message: "Contrasena actualizada exitosamente" };
   },
 
   getPreferences(): UserPreferences {
     // Check if running in browser environment
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return defaultPreferences;
     }
 
@@ -157,12 +157,15 @@ export const settingsService = {
 
   updatePreferences(preferences: UserPreferences): UserPreferences {
     // Check if running in browser environment
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return preferences;
     }
 
     try {
-      localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
+      localStorage.setItem(
+        PREFERENCES_STORAGE_KEY,
+        JSON.stringify(preferences),
+      );
     } catch {
       // If localStorage is unavailable (quota exceeded, private browsing, etc.)
       // preferences are still returned but not persisted
@@ -201,6 +204,6 @@ export const settingsService = {
     void userId;
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    return { message: 'Avatar eliminado exitosamente' };
+    return { message: "Avatar eliminado exitosamente" };
   },
 };

@@ -178,7 +178,9 @@ describe("Query Client", () => {
         error: Error,
       ) => boolean;
 
-      const error = Object.assign(new Error("Unprocessable Entity"), { status: 422 });
+      const error = Object.assign(new Error("Unprocessable Entity"), {
+        status: 422,
+      });
       expect(retry(0, error)).toBe(false);
     });
 
@@ -189,7 +191,9 @@ describe("Query Client", () => {
         error: Error,
       ) => boolean;
 
-      const error = Object.assign(new Error("Client Closed Request"), { status: 499 });
+      const error = Object.assign(new Error("Client Closed Request"), {
+        status: 499,
+      });
       expect(retry(0, error)).toBe(false);
     });
   });
@@ -202,7 +206,9 @@ describe("Query Client", () => {
 
     it("calculates exponential backoff with cap at 3000ms", () => {
       const options = queryClient.getDefaultOptions();
-      const retryDelay = options.queries?.retryDelay as (attemptIndex: number) => number;
+      const retryDelay = options.queries?.retryDelay as (
+        attemptIndex: number,
+      ) => number;
 
       // First attempt: min(1000 * 2^0, 3000) = min(1000, 3000) = 1000
       expect(retryDelay(0)).toBe(1000);
@@ -527,7 +533,10 @@ describe("Query Keys", () => {
     });
 
     it("generates preferences key", () => {
-      expect(queryKeys.settings.preferences()).toEqual(["settings", "preferences"]);
+      expect(queryKeys.settings.preferences()).toEqual([
+        "settings",
+        "preferences",
+      ]);
     });
   });
 
@@ -738,11 +747,7 @@ describe("Query Keys", () => {
     });
 
     it("generates recent key with limit", () => {
-      expect(queryKeys.payments.recent(20)).toEqual([
-        "payments",
-        "recent",
-        20,
-      ]);
+      expect(queryKeys.payments.recent(20)).toEqual(["payments", "recent", 20]);
     });
 
     it("generates stats key", () => {
@@ -766,11 +771,7 @@ describe("Query Keys", () => {
     });
 
     it("generates recent key with limit", () => {
-      expect(queryKeys.reports.recent(15)).toEqual([
-        "reports",
-        "recent",
-        15,
-      ]);
+      expect(queryKeys.reports.recent(15)).toEqual(["reports", "recent", 15]);
     });
 
     it("generates sales key without params", () => {

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
 import {
   usePayments,
   usePayment,
@@ -14,10 +14,10 @@ import {
   useUpdatePaymentStatus,
   useDeletePayment,
   useRefundPayment,
-} from './usePayments';
-import { paymentsService } from '~/services/payments.service';
-import { toast } from '~/components/ui/Toast';
-import { queryKeys } from '~/lib/query-client';
+} from "./usePayments";
+import { paymentsService } from "~/services/payments.service";
+import { toast } from "~/components/ui/Toast";
+import { queryKeys } from "~/lib/query-client";
 import type {
   Payment,
   PaymentsResponse,
@@ -26,12 +26,12 @@ import type {
   UpdatePaymentData,
   PaymentStats,
   PaymentStatus,
-} from '~/types/payment';
+} from "~/types/payment";
 
 // Mock dependencies
-vi.mock('~/services/payments.service');
-vi.mock('~/components/ui/Toast');
-vi.mock('react-router', () => ({
+vi.mock("~/services/payments.service");
+vi.mock("~/components/ui/Toast");
+vi.mock("react-router", () => ({
   useNavigate: () => mockNavigate,
 }));
 
@@ -39,55 +39,55 @@ const mockNavigate = vi.fn();
 
 // Mock data
 const mockPayment: Payment = {
-  id: '1',
-  paymentNumber: 'PAG-2024-0001',
-  invoiceId: 'inv-1',
-  customerId: 'cust-1',
-  customerName: 'Juan Carlos Perez',
-  invoiceNumber: 'FAC-2024-0001',
+  id: "1",
+  paymentNumber: "PAG-2024-0001",
+  invoiceId: "inv-1",
+  customerId: "cust-1",
+  customerName: "Juan Carlos Perez",
+  invoiceNumber: "FAC-2024-0001",
   amount: 8446620,
-  method: 'BANK_TRANSFER',
-  status: 'COMPLETED',
-  paymentDate: '2024-01-15T10:00:00Z',
-  referenceNumber: 'TRF-2024011814301234',
-  notes: 'Transferencia Bancolombia',
-  createdAt: '2024-01-15T10:00:00Z',
-  updatedAt: '2024-01-15T10:00:00Z',
+  method: "BANK_TRANSFER",
+  status: "COMPLETED",
+  paymentDate: "2024-01-15T10:00:00Z",
+  referenceNumber: "TRF-2024011814301234",
+  notes: "Transferencia Bancolombia",
+  createdAt: "2024-01-15T10:00:00Z",
+  updatedAt: "2024-01-15T10:00:00Z",
 };
 
 const mockPayment2: Payment = {
-  id: '2',
-  paymentNumber: 'PAG-2024-0002',
-  invoiceId: 'inv-2',
-  customerId: 'cust-2',
-  customerName: 'Distribuidora ABC S.A.S',
-  invoiceNumber: 'FAC-2024-0002',
+  id: "2",
+  paymentNumber: "PAG-2024-0002",
+  invoiceId: "inv-2",
+  customerId: "cust-2",
+  customerName: "Distribuidora ABC S.A.S",
+  invoiceNumber: "FAC-2024-0002",
   amount: 16169025,
-  method: 'CREDIT_CARD',
-  status: 'PENDING',
-  paymentDate: '2024-01-16T10:00:00Z',
-  referenceNumber: 'CC-4532****8901',
-  notes: 'Pago parcial',
-  createdAt: '2024-01-16T10:00:00Z',
-  updatedAt: '2024-01-16T10:00:00Z',
+  method: "CREDIT_CARD",
+  status: "PENDING",
+  paymentDate: "2024-01-16T10:00:00Z",
+  referenceNumber: "CC-4532****8901",
+  notes: "Pago parcial",
+  createdAt: "2024-01-16T10:00:00Z",
+  updatedAt: "2024-01-16T10:00:00Z",
 };
 
 const mockPaymentsResponse: PaymentsResponse = {
   data: [
     {
-      id: '1',
-      paymentNumber: 'PAG-2024-0001',
-      invoiceId: 'inv-1',
-      customerId: 'cust-1',
-      customerName: 'Juan Carlos Perez',
-      invoiceNumber: 'FAC-2024-0001',
+      id: "1",
+      paymentNumber: "PAG-2024-0001",
+      invoiceId: "inv-1",
+      customerId: "cust-1",
+      customerName: "Juan Carlos Perez",
+      invoiceNumber: "FAC-2024-0001",
       amount: 8446620,
-      method: 'BANK_TRANSFER',
-      status: 'COMPLETED',
-      paymentDate: '2024-01-15T10:00:00Z',
-      referenceNumber: 'TRF-2024011814301234',
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-15T10:00:00Z',
+      method: "BANK_TRANSFER",
+      status: "COMPLETED",
+      paymentDate: "2024-01-15T10:00:00Z",
+      referenceNumber: "TRF-2024011814301234",
+      createdAt: "2024-01-15T10:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z",
     },
   ],
   meta: {
@@ -150,7 +150,7 @@ function createWrapper() {
     return React.createElement(
       QueryClientProvider,
       { client: queryClient },
-      children
+      children,
     );
   };
 }
@@ -170,18 +170,22 @@ function createWrapperWithClient() {
     },
   });
 
-  const wrapper = function Wrapper({ children }: { children: React.ReactNode }) {
+  const wrapper = function Wrapper({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
     return React.createElement(
       QueryClientProvider,
       { client: queryClient },
-      children
+      children,
     );
   };
 
   return { wrapper, queryClient };
 }
 
-describe('usePayments hooks', () => {
+describe("usePayments hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockNavigate.mockClear();
@@ -195,9 +199,11 @@ describe('usePayments hooks', () => {
   // QUERY HOOKS
   // ============================================================================
 
-  describe('usePayments', () => {
-    it('should fetch payments with default filters', async () => {
-      vi.mocked(paymentsService.getPayments).mockResolvedValue(mockPaymentsResponse);
+  describe("usePayments", () => {
+    it("should fetch payments with default filters", async () => {
+      vi.mocked(paymentsService.getPayments).mockResolvedValue(
+        mockPaymentsResponse,
+      );
 
       const { result } = renderHook(() => usePayments(), {
         wrapper: createWrapper(),
@@ -213,15 +219,17 @@ describe('usePayments hooks', () => {
       expect(paymentsService.getPayments).toHaveBeenCalledWith({});
     });
 
-    it('should fetch payments with filters', async () => {
+    it("should fetch payments with filters", async () => {
       const filters: PaymentFilters = {
-        status: 'COMPLETED',
-        method: 'BANK_TRANSFER',
+        status: "COMPLETED",
+        method: "BANK_TRANSFER",
         page: 1,
         limit: 10,
       };
 
-      vi.mocked(paymentsService.getPayments).mockResolvedValue(mockPaymentsResponse);
+      vi.mocked(paymentsService.getPayments).mockResolvedValue(
+        mockPaymentsResponse,
+      );
 
       const { result } = renderHook(() => usePayments(filters), {
         wrapper: createWrapper(),
@@ -234,9 +242,9 @@ describe('usePayments hooks', () => {
       expect(paymentsService.getPayments).toHaveBeenCalledWith(filters);
     });
 
-    it('should return loading state initially', () => {
+    it("should return loading state initially", () => {
       vi.mocked(paymentsService.getPayments).mockImplementation(
-        () => new Promise(() => {})
+        () => new Promise(() => {}),
       );
 
       const { result } = renderHook(() => usePayments(), {
@@ -247,8 +255,8 @@ describe('usePayments hooks', () => {
       expect(result.current.data).toBeUndefined();
     });
 
-    it('should return error state on failure', async () => {
-      const error = new Error('Failed to fetch payments');
+    it("should return error state on failure", async () => {
+      const error = new Error("Failed to fetch payments");
       vi.mocked(paymentsService.getPayments).mockRejectedValue(error);
 
       const { result } = renderHook(() => usePayments(), {
@@ -262,9 +270,11 @@ describe('usePayments hooks', () => {
       expect(result.current.error).toBeDefined();
     });
 
-    it('should filter by search term', async () => {
-      const filters: PaymentFilters = { search: 'Juan' };
-      vi.mocked(paymentsService.getPayments).mockResolvedValue(mockPaymentsResponse);
+    it("should filter by search term", async () => {
+      const filters: PaymentFilters = { search: "Juan" };
+      vi.mocked(paymentsService.getPayments).mockResolvedValue(
+        mockPaymentsResponse,
+      );
 
       const { result } = renderHook(() => usePayments(filters), {
         wrapper: createWrapper(),
@@ -277,12 +287,14 @@ describe('usePayments hooks', () => {
       expect(paymentsService.getPayments).toHaveBeenCalledWith(filters);
     });
 
-    it('should filter by date range', async () => {
+    it("should filter by date range", async () => {
       const filters: PaymentFilters = {
-        startDate: '2024-01-01T00:00:00Z',
-        endDate: '2024-01-31T23:59:59Z',
+        startDate: "2024-01-01T00:00:00Z",
+        endDate: "2024-01-31T23:59:59Z",
       };
-      vi.mocked(paymentsService.getPayments).mockResolvedValue(mockPaymentsResponse);
+      vi.mocked(paymentsService.getPayments).mockResolvedValue(
+        mockPaymentsResponse,
+      );
 
       const { result } = renderHook(() => usePayments(filters), {
         wrapper: createWrapper(),
@@ -295,12 +307,14 @@ describe('usePayments hooks', () => {
       expect(paymentsService.getPayments).toHaveBeenCalledWith(filters);
     });
 
-    it('should filter by amount range', async () => {
+    it("should filter by amount range", async () => {
       const filters: PaymentFilters = {
         minAmount: 1000000,
         maxAmount: 10000000,
       };
-      vi.mocked(paymentsService.getPayments).mockResolvedValue(mockPaymentsResponse);
+      vi.mocked(paymentsService.getPayments).mockResolvedValue(
+        mockPaymentsResponse,
+      );
 
       const { result } = renderHook(() => usePayments(filters), {
         wrapper: createWrapper(),
@@ -314,11 +328,11 @@ describe('usePayments hooks', () => {
     });
   });
 
-  describe('usePayment', () => {
-    it('should fetch a single payment by id', async () => {
+  describe("usePayment", () => {
+    it("should fetch a single payment by id", async () => {
       vi.mocked(paymentsService.getPayment).mockResolvedValue(mockPayment);
 
-      const { result } = renderHook(() => usePayment('1'), {
+      const { result } = renderHook(() => usePayment("1"), {
         wrapper: createWrapper(),
       });
 
@@ -327,24 +341,24 @@ describe('usePayments hooks', () => {
       });
 
       expect(result.current.data).toEqual(mockPayment);
-      expect(paymentsService.getPayment).toHaveBeenCalledWith('1');
+      expect(paymentsService.getPayment).toHaveBeenCalledWith("1");
     });
 
-    it('should not fetch when id is empty', () => {
-      const { result } = renderHook(() => usePayment(''), {
+    it("should not fetch when id is empty", () => {
+      const { result } = renderHook(() => usePayment(""), {
         wrapper: createWrapper(),
       });
 
       expect(result.current.isLoading).toBe(false);
-      expect(result.current.fetchStatus).toBe('idle');
+      expect(result.current.fetchStatus).toBe("idle");
       expect(paymentsService.getPayment).not.toHaveBeenCalled();
     });
 
-    it('should return error when payment not found', async () => {
-      const error = new Error('Pago no encontrado');
+    it("should return error when payment not found", async () => {
+      const error = new Error("Pago no encontrado");
       vi.mocked(paymentsService.getPayment).mockRejectedValue(error);
 
-      const { result } = renderHook(() => usePayment('non-existent'), {
+      const { result } = renderHook(() => usePayment("non-existent"), {
         wrapper: createWrapper(),
       });
 
@@ -355,12 +369,12 @@ describe('usePayments hooks', () => {
       expect(result.current.error).toBeDefined();
     });
 
-    it('should return loading state initially', () => {
+    it("should return loading state initially", () => {
       vi.mocked(paymentsService.getPayment).mockImplementation(
-        () => new Promise(() => {})
+        () => new Promise(() => {}),
       );
 
-      const { result } = renderHook(() => usePayment('1'), {
+      const { result } = renderHook(() => usePayment("1"), {
         wrapper: createWrapper(),
       });
 
@@ -368,12 +382,14 @@ describe('usePayments hooks', () => {
     });
   });
 
-  describe('usePaymentsByInvoice', () => {
-    it('should fetch payments for an invoice', async () => {
+  describe("usePaymentsByInvoice", () => {
+    it("should fetch payments for an invoice", async () => {
       const payments = [mockPayment, mockPayment2];
-      vi.mocked(paymentsService.getPaymentsByInvoice).mockResolvedValue(payments);
+      vi.mocked(paymentsService.getPaymentsByInvoice).mockResolvedValue(
+        payments,
+      );
 
-      const { result } = renderHook(() => usePaymentsByInvoice('inv-1'), {
+      const { result } = renderHook(() => usePaymentsByInvoice("inv-1"), {
         wrapper: createWrapper(),
       });
 
@@ -382,23 +398,25 @@ describe('usePayments hooks', () => {
       });
 
       expect(result.current.data).toEqual(payments);
-      expect(paymentsService.getPaymentsByInvoice).toHaveBeenCalledWith('inv-1');
+      expect(paymentsService.getPaymentsByInvoice).toHaveBeenCalledWith(
+        "inv-1",
+      );
     });
 
-    it('should not fetch when invoiceId is empty', () => {
-      const { result } = renderHook(() => usePaymentsByInvoice(''), {
+    it("should not fetch when invoiceId is empty", () => {
+      const { result } = renderHook(() => usePaymentsByInvoice(""), {
         wrapper: createWrapper(),
       });
 
       expect(result.current.isLoading).toBe(false);
-      expect(result.current.fetchStatus).toBe('idle');
+      expect(result.current.fetchStatus).toBe("idle");
       expect(paymentsService.getPaymentsByInvoice).not.toHaveBeenCalled();
     });
 
-    it('should return empty array for invoice with no payments', async () => {
+    it("should return empty array for invoice with no payments", async () => {
       vi.mocked(paymentsService.getPaymentsByInvoice).mockResolvedValue([]);
 
-      const { result } = renderHook(() => usePaymentsByInvoice('inv-empty'), {
+      const { result } = renderHook(() => usePaymentsByInvoice("inv-empty"), {
         wrapper: createWrapper(),
       });
 
@@ -409,11 +427,11 @@ describe('usePayments hooks', () => {
       expect(result.current.data).toEqual([]);
     });
 
-    it('should handle error state', async () => {
-      const error = new Error('Error fetching payments');
+    it("should handle error state", async () => {
+      const error = new Error("Error fetching payments");
       vi.mocked(paymentsService.getPaymentsByInvoice).mockRejectedValue(error);
 
-      const { result } = renderHook(() => usePaymentsByInvoice('inv-1'), {
+      const { result } = renderHook(() => usePaymentsByInvoice("inv-1"), {
         wrapper: createWrapper(),
       });
 
@@ -423,12 +441,14 @@ describe('usePayments hooks', () => {
     });
   });
 
-  describe('usePaymentsByCustomer', () => {
-    it('should fetch payments for a customer', async () => {
+  describe("usePaymentsByCustomer", () => {
+    it("should fetch payments for a customer", async () => {
       const payments = [mockPayment];
-      vi.mocked(paymentsService.getPaymentsByCustomer).mockResolvedValue(payments);
+      vi.mocked(paymentsService.getPaymentsByCustomer).mockResolvedValue(
+        payments,
+      );
 
-      const { result } = renderHook(() => usePaymentsByCustomer('cust-1'), {
+      const { result } = renderHook(() => usePaymentsByCustomer("cust-1"), {
         wrapper: createWrapper(),
       });
 
@@ -437,23 +457,25 @@ describe('usePayments hooks', () => {
       });
 
       expect(result.current.data).toEqual(payments);
-      expect(paymentsService.getPaymentsByCustomer).toHaveBeenCalledWith('cust-1');
+      expect(paymentsService.getPaymentsByCustomer).toHaveBeenCalledWith(
+        "cust-1",
+      );
     });
 
-    it('should not fetch when customerId is empty', () => {
-      const { result } = renderHook(() => usePaymentsByCustomer(''), {
+    it("should not fetch when customerId is empty", () => {
+      const { result } = renderHook(() => usePaymentsByCustomer(""), {
         wrapper: createWrapper(),
       });
 
       expect(result.current.isLoading).toBe(false);
-      expect(result.current.fetchStatus).toBe('idle');
+      expect(result.current.fetchStatus).toBe("idle");
       expect(paymentsService.getPaymentsByCustomer).not.toHaveBeenCalled();
     });
 
-    it('should return empty array for customer with no payments', async () => {
+    it("should return empty array for customer with no payments", async () => {
       vi.mocked(paymentsService.getPaymentsByCustomer).mockResolvedValue([]);
 
-      const { result } = renderHook(() => usePaymentsByCustomer('cust-empty'), {
+      const { result } = renderHook(() => usePaymentsByCustomer("cust-empty"), {
         wrapper: createWrapper(),
       });
 
@@ -464,11 +486,11 @@ describe('usePayments hooks', () => {
       expect(result.current.data).toEqual([]);
     });
 
-    it('should handle error state', async () => {
-      const error = new Error('Error fetching customer payments');
+    it("should handle error state", async () => {
+      const error = new Error("Error fetching customer payments");
       vi.mocked(paymentsService.getPaymentsByCustomer).mockRejectedValue(error);
 
-      const { result } = renderHook(() => usePaymentsByCustomer('cust-1'), {
+      const { result } = renderHook(() => usePaymentsByCustomer("cust-1"), {
         wrapper: createWrapper(),
       });
 
@@ -478,10 +500,12 @@ describe('usePayments hooks', () => {
     });
   });
 
-  describe('useRecentPayments', () => {
-    it('should fetch recent payments with default limit', async () => {
+  describe("useRecentPayments", () => {
+    it("should fetch recent payments with default limit", async () => {
       const recentPayments = [mockPayment, mockPayment2];
-      vi.mocked(paymentsService.getRecentPayments).mockResolvedValue(recentPayments);
+      vi.mocked(paymentsService.getRecentPayments).mockResolvedValue(
+        recentPayments,
+      );
 
       const { result } = renderHook(() => useRecentPayments(), {
         wrapper: createWrapper(),
@@ -495,9 +519,11 @@ describe('usePayments hooks', () => {
       expect(paymentsService.getRecentPayments).toHaveBeenCalledWith(5);
     });
 
-    it('should fetch recent payments with custom limit', async () => {
+    it("should fetch recent payments with custom limit", async () => {
       const recentPayments = [mockPayment];
-      vi.mocked(paymentsService.getRecentPayments).mockResolvedValue(recentPayments);
+      vi.mocked(paymentsService.getRecentPayments).mockResolvedValue(
+        recentPayments,
+      );
 
       const { result } = renderHook(() => useRecentPayments(10), {
         wrapper: createWrapper(),
@@ -510,8 +536,10 @@ describe('usePayments hooks', () => {
       expect(paymentsService.getRecentPayments).toHaveBeenCalledWith(10);
     });
 
-    it('should fetch with limit of 3', async () => {
-      vi.mocked(paymentsService.getRecentPayments).mockResolvedValue([mockPayment]);
+    it("should fetch with limit of 3", async () => {
+      vi.mocked(paymentsService.getRecentPayments).mockResolvedValue([
+        mockPayment,
+      ]);
 
       const { result } = renderHook(() => useRecentPayments(3), {
         wrapper: createWrapper(),
@@ -524,8 +552,8 @@ describe('usePayments hooks', () => {
       expect(paymentsService.getRecentPayments).toHaveBeenCalledWith(3);
     });
 
-    it('should handle error state', async () => {
-      const error = new Error('Error fetching recent payments');
+    it("should handle error state", async () => {
+      const error = new Error("Error fetching recent payments");
       vi.mocked(paymentsService.getRecentPayments).mockRejectedValue(error);
 
       const { result } = renderHook(() => useRecentPayments(), {
@@ -538,9 +566,11 @@ describe('usePayments hooks', () => {
     });
   });
 
-  describe('usePaymentStats', () => {
-    it('should fetch payment statistics', async () => {
-      vi.mocked(paymentsService.getPaymentStats).mockResolvedValue(mockPaymentStats);
+  describe("usePaymentStats", () => {
+    it("should fetch payment statistics", async () => {
+      vi.mocked(paymentsService.getPaymentStats).mockResolvedValue(
+        mockPaymentStats,
+      );
 
       const { result } = renderHook(() => usePaymentStats(), {
         wrapper: createWrapper(),
@@ -554,9 +584,9 @@ describe('usePayments hooks', () => {
       expect(paymentsService.getPaymentStats).toHaveBeenCalled();
     });
 
-    it('should return loading state initially', () => {
+    it("should return loading state initially", () => {
       vi.mocked(paymentsService.getPaymentStats).mockImplementation(
-        () => new Promise(() => {})
+        () => new Promise(() => {}),
       );
 
       const { result } = renderHook(() => usePaymentStats(), {
@@ -566,8 +596,8 @@ describe('usePayments hooks', () => {
       expect(result.current.isLoading).toBe(true);
     });
 
-    it('should handle error state', async () => {
-      const error = new Error('Error fetching stats');
+    it("should handle error state", async () => {
+      const error = new Error("Error fetching stats");
       vi.mocked(paymentsService.getPaymentStats).mockRejectedValue(error);
 
       const { result } = renderHook(() => usePaymentStats(), {
@@ -579,8 +609,10 @@ describe('usePayments hooks', () => {
       });
     });
 
-    it('should return correct data structure', async () => {
-      vi.mocked(paymentsService.getPaymentStats).mockResolvedValue(mockPaymentStats);
+    it("should return correct data structure", async () => {
+      vi.mocked(paymentsService.getPaymentStats).mockResolvedValue(
+        mockPaymentStats,
+      );
 
       const { result } = renderHook(() => usePaymentStats(), {
         wrapper: createWrapper(),
@@ -590,11 +622,11 @@ describe('usePayments hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(result.current.data).toHaveProperty('totalPayments');
-      expect(result.current.data).toHaveProperty('totalReceived');
-      expect(result.current.data).toHaveProperty('totalPending');
-      expect(result.current.data).toHaveProperty('paymentsByStatus');
-      expect(result.current.data).toHaveProperty('paymentsByMethod');
+      expect(result.current.data).toHaveProperty("totalPayments");
+      expect(result.current.data).toHaveProperty("totalReceived");
+      expect(result.current.data).toHaveProperty("totalPending");
+      expect(result.current.data).toHaveProperty("paymentsByStatus");
+      expect(result.current.data).toHaveProperty("paymentsByMethod");
     });
   });
 
@@ -602,32 +634,34 @@ describe('usePayments hooks', () => {
   // MUTATION HOOKS
   // ============================================================================
 
-  describe('useCreatePayment', () => {
-    it('should create a payment successfully', async () => {
+  describe("useCreatePayment", () => {
+    it("should create a payment successfully", async () => {
       const newPaymentData: CreatePaymentData = {
-        invoiceId: 'inv-1',
-        customerId: 'cust-1',
-        customerName: 'Juan Carlos Perez',
-        invoiceNumber: 'FAC-2024-0001',
+        invoiceId: "inv-1",
+        customerId: "cust-1",
+        customerName: "Juan Carlos Perez",
+        invoiceNumber: "FAC-2024-0001",
         amount: 5000000,
-        method: 'BANK_TRANSFER',
-        paymentDate: '2024-01-20T10:00:00Z',
-        referenceNumber: 'TRF-123',
-        notes: 'Test payment',
+        method: "BANK_TRANSFER",
+        paymentDate: "2024-01-20T10:00:00Z",
+        referenceNumber: "TRF-123",
+        notes: "Test payment",
       };
 
       const createdPayment: Payment = {
         ...mockPayment,
         ...newPaymentData,
-        id: 'new-id',
-        paymentNumber: 'PAG-2024-0015',
-        status: 'PENDING',
+        id: "new-id",
+        paymentNumber: "PAG-2024-0015",
+        status: "PENDING",
       };
 
-      vi.mocked(paymentsService.createPayment).mockResolvedValue(createdPayment);
+      vi.mocked(paymentsService.createPayment).mockResolvedValue(
+        createdPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       const { result } = renderHook(() => useCreatePayment(), { wrapper });
 
@@ -639,16 +673,20 @@ describe('usePayments hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(paymentsService.createPayment).toHaveBeenCalledWith(newPaymentData);
-      expect(toast.success).toHaveBeenCalledWith(
-        `Pago "${createdPayment.paymentNumber}" registrado exitosamente`
+      expect(paymentsService.createPayment).toHaveBeenCalledWith(
+        newPaymentData,
       );
-      expect(mockNavigate).toHaveBeenCalledWith(`/payments/${createdPayment.id}`);
+      expect(toast.success).toHaveBeenCalledWith(
+        `Pago "${createdPayment.paymentNumber}" registrado exitosamente`,
+      );
+      expect(mockNavigate).toHaveBeenCalledWith(
+        `/payments/${createdPayment.id}`,
+      );
       expect(invalidateSpy).toHaveBeenCalled();
     });
 
-    it('should show error toast on creation failure', async () => {
-      const error = new Error('Error al registrar el pago');
+    it("should show error toast on creation failure", async () => {
+      const error = new Error("Error al registrar el pago");
       vi.mocked(paymentsService.createPayment).mockRejectedValue(error);
 
       const { result } = renderHook(() => useCreatePayment(), {
@@ -657,11 +695,11 @@ describe('usePayments hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          invoiceId: 'inv-1',
-          customerId: 'cust-1',
+          invoiceId: "inv-1",
+          customerId: "cust-1",
           amount: 5000000,
-          method: 'CASH',
-          paymentDate: '2024-01-20T10:00:00Z',
+          method: "CASH",
+          paymentDate: "2024-01-20T10:00:00Z",
         });
       });
 
@@ -669,30 +707,32 @@ describe('usePayments hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al registrar el pago');
+      expect(toast.error).toHaveBeenCalledWith("Error al registrar el pago");
       expect(mockNavigate).not.toHaveBeenCalled();
     });
 
-    it('should invalidate all related queries on success', async () => {
+    it("should invalidate all related queries on success", async () => {
       const createdPayment: Payment = {
         ...mockPayment,
-        id: 'new-id',
+        id: "new-id",
       };
 
-      vi.mocked(paymentsService.createPayment).mockResolvedValue(createdPayment);
+      vi.mocked(paymentsService.createPayment).mockResolvedValue(
+        createdPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       const { result } = renderHook(() => useCreatePayment(), { wrapper });
 
       await act(async () => {
         result.current.mutate({
-          invoiceId: 'inv-1',
-          customerId: 'cust-1',
+          invoiceId: "inv-1",
+          customerId: "cust-1",
           amount: 5000000,
-          method: 'CASH',
-          paymentDate: '2024-01-20T10:00:00Z',
+          method: "CASH",
+          paymentDate: "2024-01-20T10:00:00Z",
         });
       });
 
@@ -704,13 +744,15 @@ describe('usePayments hooks', () => {
       expect(invalidateSpy).toHaveBeenCalled();
     });
 
-    it('should navigate to payment detail on success', async () => {
+    it("should navigate to payment detail on success", async () => {
       const createdPayment: Payment = {
         ...mockPayment,
-        id: 'created-123',
+        id: "created-123",
       };
 
-      vi.mocked(paymentsService.createPayment).mockResolvedValue(createdPayment);
+      vi.mocked(paymentsService.createPayment).mockResolvedValue(
+        createdPayment,
+      );
 
       const { result } = renderHook(() => useCreatePayment(), {
         wrapper: createWrapper(),
@@ -718,11 +760,11 @@ describe('usePayments hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          invoiceId: 'inv-1',
-          customerId: 'cust-1',
+          invoiceId: "inv-1",
+          customerId: "cust-1",
           amount: 5000000,
-          method: 'CASH',
-          paymentDate: '2024-01-20T10:00:00Z',
+          method: "CASH",
+          paymentDate: "2024-01-20T10:00:00Z",
         });
       });
 
@@ -730,15 +772,15 @@ describe('usePayments hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/payments/created-123');
+      expect(mockNavigate).toHaveBeenCalledWith("/payments/created-123");
     });
   });
 
-  describe('useUpdatePayment', () => {
-    it('should update a payment successfully', async () => {
+  describe("useUpdatePayment", () => {
+    it("should update a payment successfully", async () => {
       const updateData: UpdatePaymentData = {
         amount: 9000000,
-        notes: 'Updated notes',
+        notes: "Updated notes",
       };
 
       const updatedPayment: Payment = {
@@ -747,31 +789,36 @@ describe('usePayments hooks', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      vi.mocked(paymentsService.updatePayment).mockResolvedValue(updatedPayment);
+      vi.mocked(paymentsService.updatePayment).mockResolvedValue(
+        updatedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
 
       // Set initial data in cache for optimistic update
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useUpdatePayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1', data: updateData });
+        result.current.mutate({ id: "1", data: updateData });
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(paymentsService.updatePayment).toHaveBeenCalledWith('1', updateData);
-      expect(toast.success).toHaveBeenCalledWith(
-        `Pago "${updatedPayment.paymentNumber}" actualizado exitosamente`
+      expect(paymentsService.updatePayment).toHaveBeenCalledWith(
+        "1",
+        updateData,
       );
-      expect(mockNavigate).toHaveBeenCalledWith('/payments/1');
+      expect(toast.success).toHaveBeenCalledWith(
+        `Pago "${updatedPayment.paymentNumber}" actualizado exitosamente`,
+      );
+      expect(mockNavigate).toHaveBeenCalledWith("/payments/1");
     });
 
-    it('should perform optimistic update', async () => {
+    it("should perform optimistic update", async () => {
       const updateData: UpdatePaymentData = {
         amount: 9000000,
       };
@@ -784,23 +831,25 @@ describe('usePayments hooks', () => {
       // Delay the response to test optimistic update
       vi.mocked(paymentsService.updatePayment).mockImplementation(
         () =>
-          new Promise((resolve) => setTimeout(() => resolve(updatedPayment), 100))
+          new Promise((resolve) =>
+            setTimeout(() => resolve(updatedPayment), 100),
+          ),
       );
 
       const { wrapper, queryClient } = createWrapperWithClient();
 
       // Set initial data
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useUpdatePayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1', data: updateData });
+        result.current.mutate({ id: "1", data: updateData });
       });
 
       // Check optimistic update was applied
       const optimisticData = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail('1')
+        queryKeys.payments.detail("1"),
       );
       expect(optimisticData?.amount).toBe(9000000);
 
@@ -809,12 +858,12 @@ describe('usePayments hooks', () => {
       });
     });
 
-    it('should rollback optimistic update on error', async () => {
+    it("should rollback optimistic update on error", async () => {
       const updateData: UpdatePaymentData = {
         amount: 9000000,
       };
 
-      const error = new Error('Update failed');
+      const error = new Error("Update failed");
       vi.mocked(paymentsService.updatePayment).mockRejectedValue(error);
 
       // Create query client with longer gcTime to preserve cache during test
@@ -831,21 +880,25 @@ describe('usePayments hooks', () => {
         },
       });
 
-      const wrapper = function Wrapper({ children }: { children: React.ReactNode }) {
+      const wrapper = function Wrapper({
+        children,
+      }: {
+        children: React.ReactNode;
+      }) {
         return React.createElement(
           QueryClientProvider,
           { client: queryClient },
-          children
+          children,
         );
       };
 
       // Set initial data
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useUpdatePayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1', data: updateData });
+        result.current.mutate({ id: "1", data: updateData });
       });
 
       await waitFor(() => {
@@ -854,14 +907,14 @@ describe('usePayments hooks', () => {
 
       // Check rollback - the onError handler should have restored the previous value
       const rolledBackData = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail('1')
+        queryKeys.payments.detail("1"),
       );
       expect(rolledBackData?.amount).toBe(mockPayment.amount);
-      expect(toast.error).toHaveBeenCalledWith('Update failed');
+      expect(toast.error).toHaveBeenCalledWith("Update failed");
     });
 
-    it('should show error toast on update failure', async () => {
-      const error = new Error('No se puede modificar un pago reembolsado');
+    it("should show error toast on update failure", async () => {
+      const error = new Error("No se puede modificar un pago reembolsado");
       vi.mocked(paymentsService.updatePayment).mockRejectedValue(error);
 
       const { result } = renderHook(() => useUpdatePayment(), {
@@ -869,7 +922,7 @@ describe('usePayments hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ id: '1', data: { amount: 9000000 } });
+        result.current.mutate({ id: "1", data: { amount: 9000000 } });
       });
 
       await waitFor(() => {
@@ -877,11 +930,11 @@ describe('usePayments hooks', () => {
       });
 
       expect(toast.error).toHaveBeenCalledWith(
-        'No se puede modificar un pago reembolsado'
+        "No se puede modificar un pago reembolsado",
       );
     });
 
-    it('should use default error message when error has no message', async () => {
+    it("should use default error message when error has no message", async () => {
       vi.mocked(paymentsService.updatePayment).mockRejectedValue(new Error());
 
       const { result } = renderHook(() => useUpdatePayment(), {
@@ -889,79 +942,90 @@ describe('usePayments hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ id: '1', data: { amount: 9000000 } });
+        result.current.mutate({ id: "1", data: { amount: 9000000 } });
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al actualizar el pago');
+      expect(toast.error).toHaveBeenCalledWith("Error al actualizar el pago");
     });
   });
 
-  describe('useUpdatePaymentStatus', () => {
-    it('should update payment status successfully', async () => {
+  describe("useUpdatePaymentStatus", () => {
+    it("should update payment status successfully", async () => {
       const updatedPayment: Payment = {
         ...mockPayment,
-        status: 'COMPLETED',
+        status: "COMPLETED",
         updatedAt: new Date().toISOString(),
       };
 
-      vi.mocked(paymentsService.updatePaymentStatus).mockResolvedValue(updatedPayment);
+      vi.mocked(paymentsService.updatePaymentStatus).mockResolvedValue(
+        updatedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
-      const { result } = renderHook(() => useUpdatePaymentStatus(), { wrapper });
+      const { result } = renderHook(() => useUpdatePaymentStatus(), {
+        wrapper,
+      });
 
       await act(async () => {
-        result.current.mutate({ id: '1', status: 'COMPLETED' });
+        result.current.mutate({ id: "1", status: "COMPLETED" });
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(paymentsService.updatePaymentStatus).toHaveBeenCalledWith('1', 'COMPLETED');
+      expect(paymentsService.updatePaymentStatus).toHaveBeenCalledWith(
+        "1",
+        "COMPLETED",
+      );
       expect(toast.success).toHaveBeenCalledWith(
-        `Pago "${updatedPayment.paymentNumber}" marcado como completado`
+        `Pago "${updatedPayment.paymentNumber}" marcado como completado`,
       );
     });
 
-    it('should perform optimistic status update', async () => {
+    it("should perform optimistic status update", async () => {
       const updatedPayment: Payment = {
         ...mockPayment,
-        status: 'PROCESSING',
+        status: "PROCESSING",
       };
 
       vi.mocked(paymentsService.updatePaymentStatus).mockImplementation(
         () =>
-          new Promise((resolve) => setTimeout(() => resolve(updatedPayment), 100))
+          new Promise((resolve) =>
+            setTimeout(() => resolve(updatedPayment), 100),
+          ),
       );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
-      const { result } = renderHook(() => useUpdatePaymentStatus(), { wrapper });
+      const { result } = renderHook(() => useUpdatePaymentStatus(), {
+        wrapper,
+      });
 
       await act(async () => {
-        result.current.mutate({ id: '1', status: 'PROCESSING' });
+        result.current.mutate({ id: "1", status: "PROCESSING" });
       });
 
       // Check optimistic update
       const optimisticData = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail('1')
+        queryKeys.payments.detail("1"),
       );
-      expect(optimisticData?.status).toBe('PROCESSING');
+      expect(optimisticData?.status).toBe("PROCESSING");
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
     });
 
-    it('should rollback on status update error', async () => {
-      const error = new Error('Invalid status transition');
+    it("should rollback on status update error", async () => {
+      const error = new Error("Invalid status transition");
       vi.mocked(paymentsService.updatePaymentStatus).mockRejectedValue(error);
 
       // Create query client with longer gcTime to preserve cache during test
@@ -978,23 +1042,29 @@ describe('usePayments hooks', () => {
         },
       });
 
-      const wrapper = function Wrapper({ children }: { children: React.ReactNode }) {
+      const wrapper = function Wrapper({
+        children,
+      }: {
+        children: React.ReactNode;
+      }) {
         return React.createElement(
           QueryClientProvider,
           { client: queryClient },
-          children
+          children,
         );
       };
 
-      queryClient.setQueryData(queryKeys.payments.detail('1'), {
+      queryClient.setQueryData(queryKeys.payments.detail("1"), {
         ...mockPayment,
-        status: 'PENDING',
+        status: "PENDING",
       });
 
-      const { result } = renderHook(() => useUpdatePaymentStatus(), { wrapper });
+      const { result } = renderHook(() => useUpdatePaymentStatus(), {
+        wrapper,
+      });
 
       await act(async () => {
-        result.current.mutate({ id: '1', status: 'REFUNDED' });
+        result.current.mutate({ id: "1", status: "REFUNDED" });
       });
 
       await waitFor(() => {
@@ -1003,14 +1073,21 @@ describe('usePayments hooks', () => {
 
       // Check rollback - the onError handler should have restored the previous value
       const rolledBackData = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail('1')
+        queryKeys.payments.detail("1"),
       );
-      expect(rolledBackData?.status).toBe('PENDING');
-      expect(toast.error).toHaveBeenCalledWith('Invalid status transition');
+      expect(rolledBackData?.status).toBe("PENDING");
+      expect(toast.error).toHaveBeenCalledWith("Invalid status transition");
     });
 
-    it('should show correct message for each status', async () => {
-      const statuses: PaymentStatus[] = ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REFUNDED', 'CANCELLED'];
+    it("should show correct message for each status", async () => {
+      const statuses: PaymentStatus[] = [
+        "PENDING",
+        "PROCESSING",
+        "COMPLETED",
+        "FAILED",
+        "REFUNDED",
+        "CANCELLED",
+      ];
 
       for (const status of statuses) {
         vi.clearAllMocks();
@@ -1020,15 +1097,19 @@ describe('usePayments hooks', () => {
           status,
         };
 
-        vi.mocked(paymentsService.updatePaymentStatus).mockResolvedValue(updatedPayment);
+        vi.mocked(paymentsService.updatePaymentStatus).mockResolvedValue(
+          updatedPayment,
+        );
 
         const { wrapper, queryClient } = createWrapperWithClient();
-        queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+        queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
-        const { result } = renderHook(() => useUpdatePaymentStatus(), { wrapper });
+        const { result } = renderHook(() => useUpdatePaymentStatus(), {
+          wrapper,
+        });
 
         await act(async () => {
-          result.current.mutate({ id: '1', status });
+          result.current.mutate({ id: "1", status });
         });
 
         await waitFor(() => {
@@ -1040,40 +1121,40 @@ describe('usePayments hooks', () => {
     });
   });
 
-  describe('useDeletePayment', () => {
-    it('should delete a payment successfully', async () => {
+  describe("useDeletePayment", () => {
+    it("should delete a payment successfully", async () => {
       vi.mocked(paymentsService.deletePayment).mockResolvedValue();
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useDeletePayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(paymentsService.deletePayment).toHaveBeenCalledWith('1');
-      expect(toast.success).toHaveBeenCalledWith('Pago eliminado exitosamente');
-      expect(mockNavigate).toHaveBeenCalledWith('/payments');
+      expect(paymentsService.deletePayment).toHaveBeenCalledWith("1");
+      expect(toast.success).toHaveBeenCalledWith("Pago eliminado exitosamente");
+      expect(mockNavigate).toHaveBeenCalledWith("/payments");
     });
 
-    it('should invalidate related queries on delete', async () => {
+    it("should invalidate related queries on delete", async () => {
       vi.mocked(paymentsService.deletePayment).mockResolvedValue();
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
-      const removeSpy = vi.spyOn(queryClient, 'removeQueries');
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+      const removeSpy = vi.spyOn(queryClient, "removeQueries");
 
       const { result } = renderHook(() => useDeletePayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
@@ -1084,8 +1165,8 @@ describe('usePayments hooks', () => {
       expect(removeSpy).toHaveBeenCalled();
     });
 
-    it('should show error toast on delete failure', async () => {
-      const error = new Error('Solo se pueden eliminar pagos pendientes');
+    it("should show error toast on delete failure", async () => {
+      const error = new Error("Solo se pueden eliminar pagos pendientes");
       vi.mocked(paymentsService.deletePayment).mockRejectedValue(error);
 
       const { result } = renderHook(() => useDeletePayment(), {
@@ -1093,7 +1174,7 @@ describe('usePayments hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
@@ -1101,106 +1182,116 @@ describe('usePayments hooks', () => {
       });
 
       expect(toast.error).toHaveBeenCalledWith(
-        'Solo se pueden eliminar pagos pendientes'
+        "Solo se pueden eliminar pagos pendientes",
       );
       expect(mockNavigate).not.toHaveBeenCalled();
     });
 
-    it('should navigate to payments list on success', async () => {
+    it("should navigate to payments list on success", async () => {
       vi.mocked(paymentsService.deletePayment).mockResolvedValue();
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useDeletePayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/payments');
+      expect(mockNavigate).toHaveBeenCalledWith("/payments");
     });
   });
 
-  describe('useRefundPayment', () => {
-    it('should process a full refund successfully', async () => {
+  describe("useRefundPayment", () => {
+    it("should process a full refund successfully", async () => {
       const refundedPayment: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundedAt: new Date().toISOString(),
         refundAmount: mockPayment.amount,
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(refundedPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        refundedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(paymentsService.refundPayment).toHaveBeenCalledWith('1', undefined);
+      expect(paymentsService.refundPayment).toHaveBeenCalledWith(
+        "1",
+        undefined,
+      );
       expect(toast.success).toHaveBeenCalled();
     });
 
-    it('should process a partial refund successfully', async () => {
+    it("should process a partial refund successfully", async () => {
       const partialRefundAmount = 1000000;
       const refundPayment: Payment = {
         ...mockPayment,
-        id: 'refund-id',
-        paymentNumber: 'PAG-2024-0015',
+        id: "refund-id",
+        paymentNumber: "PAG-2024-0015",
         amount: -partialRefundAmount,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: partialRefundAmount,
       };
 
       vi.mocked(paymentsService.refundPayment).mockResolvedValue(refundPayment);
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1', amount: partialRefundAmount });
+        result.current.mutate({ id: "1", amount: partialRefundAmount });
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(paymentsService.refundPayment).toHaveBeenCalledWith('1', partialRefundAmount);
+      expect(paymentsService.refundPayment).toHaveBeenCalledWith(
+        "1",
+        partialRefundAmount,
+      );
       expect(toast.success).toHaveBeenCalled();
     });
 
-    it('should invalidate related queries on refund', async () => {
+    it("should invalidate related queries on refund", async () => {
       const refundedPayment: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: mockPayment.amount,
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(refundedPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        refundedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
@@ -1210,8 +1301,8 @@ describe('usePayments hooks', () => {
       expect(invalidateSpy).toHaveBeenCalled();
     });
 
-    it('should show error toast on refund failure', async () => {
-      const error = new Error('Solo se pueden reembolsar pagos completados');
+    it("should show error toast on refund failure", async () => {
+      const error = new Error("Solo se pueden reembolsar pagos completados");
       vi.mocked(paymentsService.refundPayment).mockRejectedValue(error);
 
       const { result } = renderHook(() => useRefundPayment(), {
@@ -1219,7 +1310,7 @@ describe('usePayments hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
@@ -1227,12 +1318,14 @@ describe('usePayments hooks', () => {
       });
 
       expect(toast.error).toHaveBeenCalledWith(
-        'Solo se pueden reembolsar pagos completados'
+        "Solo se pueden reembolsar pagos completados",
       );
     });
 
-    it('should show error when refund amount exceeds payment amount', async () => {
-      const error = new Error('El monto de reembolso no puede exceder el monto del pago');
+    it("should show error when refund amount exceeds payment amount", async () => {
+      const error = new Error(
+        "El monto de reembolso no puede exceder el monto del pago",
+      );
       vi.mocked(paymentsService.refundPayment).mockRejectedValue(error);
 
       const { result } = renderHook(() => useRefundPayment(), {
@@ -1240,7 +1333,7 @@ describe('usePayments hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ id: '1', amount: 999999999 });
+        result.current.mutate({ id: "1", amount: 999999999 });
       });
 
       await waitFor(() => {
@@ -1248,27 +1341,29 @@ describe('usePayments hooks', () => {
       });
 
       expect(toast.error).toHaveBeenCalledWith(
-        'El monto de reembolso no puede exceder el monto del pago'
+        "El monto de reembolso no puede exceder el monto del pago",
       );
     });
 
-    it('should format refund amount in success message', async () => {
+    it("should format refund amount in success message", async () => {
       const refundAmount = 1000000;
       const refundedPayment: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount,
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(refundedPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        refundedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1', amount: refundAmount });
+        result.current.mutate({ id: "1", amount: refundAmount });
       });
 
       await waitFor(() => {
@@ -1284,8 +1379,8 @@ describe('usePayments hooks', () => {
   // EDGE CASES AND ERROR HANDLING
   // ============================================================================
 
-  describe('Edge cases', () => {
-    it('should handle empty search results', async () => {
+  describe("Edge cases", () => {
+    it("should handle empty search results", async () => {
       const emptyResponse: PaymentsResponse = {
         data: [],
         meta: {
@@ -1298,9 +1393,12 @@ describe('usePayments hooks', () => {
 
       vi.mocked(paymentsService.getPayments).mockResolvedValue(emptyResponse);
 
-      const { result } = renderHook(() => usePayments({ search: 'nonexistent' }), {
-        wrapper: createWrapper(),
-      });
+      const { result } = renderHook(
+        () => usePayments({ search: "nonexistent" }),
+        {
+          wrapper: createWrapper(),
+        },
+      );
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
@@ -1310,8 +1408,8 @@ describe('usePayments hooks', () => {
       expect(result.current.data?.meta.total).toBe(0);
     });
 
-    it('should handle network errors gracefully', async () => {
-      const networkError = new Error('Network error');
+    it("should handle network errors gracefully", async () => {
+      const networkError = new Error("Network error");
       vi.mocked(paymentsService.getPayments).mockRejectedValue(networkError);
 
       const { result } = renderHook(() => usePayments(), {
@@ -1322,26 +1420,28 @@ describe('usePayments hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(result.current.error?.message).toBe('Network error');
+      expect(result.current.error?.message).toBe("Network error");
     });
 
-    it('should handle concurrent mutations', async () => {
-      const payment1: Payment = { ...mockPayment, id: '1' };
-      const payment2: Payment = { ...mockPayment2, id: '2' };
+    it("should handle concurrent mutations", async () => {
+      const payment1: Payment = { ...mockPayment, id: "1" };
+      const payment2: Payment = { ...mockPayment2, id: "2" };
 
       vi.mocked(paymentsService.updatePaymentStatus)
-        .mockResolvedValueOnce({ ...payment1, status: 'COMPLETED' })
-        .mockResolvedValueOnce({ ...payment2, status: 'COMPLETED' });
+        .mockResolvedValueOnce({ ...payment1, status: "COMPLETED" })
+        .mockResolvedValueOnce({ ...payment2, status: "COMPLETED" });
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), payment1);
-      queryClient.setQueryData(queryKeys.payments.detail('2'), payment2);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), payment1);
+      queryClient.setQueryData(queryKeys.payments.detail("2"), payment2);
 
-      const { result } = renderHook(() => useUpdatePaymentStatus(), { wrapper });
+      const { result } = renderHook(() => useUpdatePaymentStatus(), {
+        wrapper,
+      });
 
       await act(async () => {
-        result.current.mutate({ id: '1', status: 'COMPLETED' });
-        result.current.mutate({ id: '2', status: 'COMPLETED' });
+        result.current.mutate({ id: "1", status: "COMPLETED" });
+        result.current.mutate({ id: "2", status: "COMPLETED" });
       });
 
       // Should handle both mutations (last one wins in this test setup)
@@ -1350,7 +1450,7 @@ describe('usePayments hooks', () => {
       });
     });
 
-    it('should use default error message when error has no message', async () => {
+    it("should use default error message when error has no message", async () => {
       vi.mocked(paymentsService.createPayment).mockRejectedValue(new Error());
 
       const { result } = renderHook(() => useCreatePayment(), {
@@ -1359,11 +1459,11 @@ describe('usePayments hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          invoiceId: 'inv-1',
-          customerId: 'cust-1',
+          invoiceId: "inv-1",
+          customerId: "cust-1",
           amount: 5000000,
-          method: 'CASH',
-          paymentDate: '2024-01-20T10:00:00Z',
+          method: "CASH",
+          paymentDate: "2024-01-20T10:00:00Z",
         });
       });
 
@@ -1371,7 +1471,7 @@ describe('usePayments hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al registrar el pago');
+      expect(toast.error).toHaveBeenCalledWith("Error al registrar el pago");
     });
   });
 
@@ -1379,54 +1479,62 @@ describe('usePayments hooks', () => {
   // ADDITIONAL BRANCH COVERAGE TESTS
   // ============================================================================
 
-  describe('useUpdatePaymentStatus - branch coverage', () => {
-    it('should handle onMutate when previousPayment exists', async () => {
+  describe("useUpdatePaymentStatus - branch coverage", () => {
+    it("should handle onMutate when previousPayment exists", async () => {
       const updatedPayment: Payment = {
         ...mockPayment,
-        status: 'COMPLETED',
+        status: "COMPLETED",
       };
 
       vi.mocked(paymentsService.updatePaymentStatus).mockImplementation(
         () =>
-          new Promise((resolve) => setTimeout(() => resolve(updatedPayment), 50))
+          new Promise((resolve) =>
+            setTimeout(() => resolve(updatedPayment), 50),
+          ),
       );
 
       const { wrapper, queryClient } = createWrapperWithClient();
       // Set previous payment in cache
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
-      const { result } = renderHook(() => useUpdatePaymentStatus(), { wrapper });
+      const { result } = renderHook(() => useUpdatePaymentStatus(), {
+        wrapper,
+      });
 
       await act(async () => {
-        result.current.mutate({ id: '1', status: 'COMPLETED' });
+        result.current.mutate({ id: "1", status: "COMPLETED" });
       });
 
       // Check optimistic update was applied (previousPayment existed)
       const optimisticData = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail('1')
+        queryKeys.payments.detail("1"),
       );
-      expect(optimisticData?.status).toBe('COMPLETED');
+      expect(optimisticData?.status).toBe("COMPLETED");
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
     });
 
-    it('should handle onMutate when previousPayment does NOT exist', async () => {
+    it("should handle onMutate when previousPayment does NOT exist", async () => {
       const updatedPayment: Payment = {
         ...mockPayment,
-        status: 'COMPLETED',
+        status: "COMPLETED",
       };
 
-      vi.mocked(paymentsService.updatePaymentStatus).mockResolvedValue(updatedPayment);
+      vi.mocked(paymentsService.updatePaymentStatus).mockResolvedValue(
+        updatedPayment,
+      );
 
       const { wrapper } = createWrapperWithClient();
       // DO NOT set previous payment in cache - this covers the branch where previousPayment is undefined
 
-      const { result } = renderHook(() => useUpdatePaymentStatus(), { wrapper });
+      const { result } = renderHook(() => useUpdatePaymentStatus(), {
+        wrapper,
+      });
 
       await act(async () => {
-        result.current.mutate({ id: '1', status: 'COMPLETED' });
+        result.current.mutate({ id: "1", status: "COMPLETED" });
       });
 
       await waitFor(() => {
@@ -1434,11 +1542,14 @@ describe('usePayments hooks', () => {
       });
 
       // The mutation should still succeed even without previous data
-      expect(paymentsService.updatePaymentStatus).toHaveBeenCalledWith('1', 'COMPLETED');
+      expect(paymentsService.updatePaymentStatus).toHaveBeenCalledWith(
+        "1",
+        "COMPLETED",
+      );
     });
 
-    it('should handle onError rollback when context.previousPayment exists', async () => {
-      const error = new Error('Status update failed');
+    it("should handle onError rollback when context.previousPayment exists", async () => {
+      const error = new Error("Status update failed");
       vi.mocked(paymentsService.updatePaymentStatus).mockRejectedValue(error);
 
       const queryClient = new QueryClient({
@@ -1448,20 +1559,30 @@ describe('usePayments hooks', () => {
         },
       });
 
-      const wrapper = function Wrapper({ children }: { children: React.ReactNode }) {
-        return React.createElement(QueryClientProvider, { client: queryClient }, children);
+      const wrapper = function Wrapper({
+        children,
+      }: {
+        children: React.ReactNode;
+      }) {
+        return React.createElement(
+          QueryClientProvider,
+          { client: queryClient },
+          children,
+        );
       };
 
       // Set previous payment with PENDING status
-      queryClient.setQueryData(queryKeys.payments.detail('1'), {
+      queryClient.setQueryData(queryKeys.payments.detail("1"), {
         ...mockPayment,
-        status: 'PENDING',
+        status: "PENDING",
       });
 
-      const { result } = renderHook(() => useUpdatePaymentStatus(), { wrapper });
+      const { result } = renderHook(() => useUpdatePaymentStatus(), {
+        wrapper,
+      });
 
       await act(async () => {
-        result.current.mutate({ id: '1', status: 'COMPLETED' });
+        result.current.mutate({ id: "1", status: "COMPLETED" });
       });
 
       await waitFor(() => {
@@ -1470,22 +1591,24 @@ describe('usePayments hooks', () => {
 
       // Verify rollback occurred
       const rolledBackData = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail('1')
+        queryKeys.payments.detail("1"),
       );
-      expect(rolledBackData?.status).toBe('PENDING');
+      expect(rolledBackData?.status).toBe("PENDING");
     });
 
-    it('should handle onError when context.previousPayment does NOT exist', async () => {
-      const error = new Error('Status update failed');
+    it("should handle onError when context.previousPayment does NOT exist", async () => {
+      const error = new Error("Status update failed");
       vi.mocked(paymentsService.updatePaymentStatus).mockRejectedValue(error);
 
       const { wrapper, queryClient } = createWrapperWithClient();
       // DO NOT set previous payment - context.previousPayment will be undefined
 
-      const { result } = renderHook(() => useUpdatePaymentStatus(), { wrapper });
+      const { result } = renderHook(() => useUpdatePaymentStatus(), {
+        wrapper,
+      });
 
       await act(async () => {
-        result.current.mutate({ id: '1', status: 'COMPLETED' });
+        result.current.mutate({ id: "1", status: "COMPLETED" });
       });
 
       await waitFor(() => {
@@ -1493,50 +1616,56 @@ describe('usePayments hooks', () => {
       });
 
       // Should still show error toast even without rollback data
-      expect(toast.error).toHaveBeenCalledWith('Status update failed');
+      expect(toast.error).toHaveBeenCalledWith("Status update failed");
 
       // Cache should remain empty (no rollback needed)
-      const data = queryClient.getQueryData<Payment>(queryKeys.payments.detail('1'));
+      const data = queryClient.getQueryData<Payment>(
+        queryKeys.payments.detail("1"),
+      );
       expect(data).toBeUndefined();
     });
 
-    it('should use default error message when error has no message in onError', async () => {
-      vi.mocked(paymentsService.updatePaymentStatus).mockRejectedValue(new Error());
+    it("should use default error message when error has no message in onError", async () => {
+      vi.mocked(paymentsService.updatePaymentStatus).mockRejectedValue(
+        new Error(),
+      );
 
       const { result } = renderHook(() => useUpdatePaymentStatus(), {
         wrapper: createWrapper(),
       });
 
       await act(async () => {
-        result.current.mutate({ id: '1', status: 'COMPLETED' });
+        result.current.mutate({ id: "1", status: "COMPLETED" });
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al actualizar el estado del pago');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al actualizar el estado del pago",
+      );
     });
   });
 
-  describe('useDeletePayment - branch coverage', () => {
-    it('should handle onSuccess when payment data exists with invoiceId and customerId', async () => {
+  describe("useDeletePayment - branch coverage", () => {
+    it("should handle onSuccess when payment data exists with invoiceId and customerId", async () => {
       vi.mocked(paymentsService.deletePayment).mockResolvedValue();
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       // Set payment with both invoiceId and customerId
-      queryClient.setQueryData(queryKeys.payments.detail('1'), {
+      queryClient.setQueryData(queryKeys.payments.detail("1"), {
         ...mockPayment,
-        invoiceId: 'inv-123',
-        customerId: 'cust-456',
+        invoiceId: "inv-123",
+        customerId: "cust-456",
       });
 
       const { result } = renderHook(() => useDeletePayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
@@ -1545,30 +1674,30 @@ describe('usePayments hooks', () => {
 
       // Verify invoice payments were invalidated
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: queryKeys.payments.byInvoice('inv-123'),
+        queryKey: queryKeys.payments.byInvoice("inv-123"),
       });
       // Verify invoice detail was invalidated
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: queryKeys.invoices.detail('inv-123'),
+        queryKey: queryKeys.invoices.detail("inv-123"),
       });
       // Verify customer payments were invalidated
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: queryKeys.payments.byCustomer('cust-456'),
+        queryKey: queryKeys.payments.byCustomer("cust-456"),
       });
     });
 
-    it('should handle onSuccess when payment data does NOT exist in cache', async () => {
+    it("should handle onSuccess when payment data does NOT exist in cache", async () => {
       vi.mocked(paymentsService.deletePayment).mockResolvedValue();
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       // DO NOT set payment data in cache
 
       const { result } = renderHook(() => useDeletePayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
@@ -1576,29 +1705,36 @@ describe('usePayments hooks', () => {
       });
 
       // Should still invalidate general queries
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.payments.all });
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.invoices.all });
-      expect(toast.success).toHaveBeenCalledWith('Pago eliminado exitosamente');
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.payments.all,
+      });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.invoices.all,
+      });
+      expect(toast.success).toHaveBeenCalledWith("Pago eliminado exitosamente");
     });
 
-    it('should handle onSuccess when payment has invoiceId but no customerId', async () => {
+    it("should handle onSuccess when payment has invoiceId but no customerId", async () => {
       vi.mocked(paymentsService.deletePayment).mockResolvedValue();
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       // Set payment with invoiceId but without customerId
       const paymentWithoutCustomer: Payment = {
         ...mockPayment,
-        invoiceId: 'inv-789',
-        customerId: '', // Empty customerId
+        invoiceId: "inv-789",
+        customerId: "", // Empty customerId
       };
-      queryClient.setQueryData(queryKeys.payments.detail('1'), paymentWithoutCustomer);
+      queryClient.setQueryData(
+        queryKeys.payments.detail("1"),
+        paymentWithoutCustomer,
+      );
 
       const { result } = renderHook(() => useDeletePayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
@@ -1607,33 +1743,36 @@ describe('usePayments hooks', () => {
 
       // Should invalidate invoice payments (invoiceId exists)
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: queryKeys.payments.byInvoice('inv-789'),
+        queryKey: queryKeys.payments.byInvoice("inv-789"),
       });
       // Should NOT have been called with empty customerId for byCustomer
       const byCustomerCalls = invalidateSpy.mock.calls.filter(
-        (call) => call[0]?.queryKey === queryKeys.payments.byCustomer('')
+        (call) => call[0]?.queryKey === queryKeys.payments.byCustomer(""),
       );
       expect(byCustomerCalls.length).toBe(0);
     });
 
-    it('should handle onSuccess when payment has customerId but no invoiceId', async () => {
+    it("should handle onSuccess when payment has customerId but no invoiceId", async () => {
       vi.mocked(paymentsService.deletePayment).mockResolvedValue();
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       // Set payment with customerId but without invoiceId
       const paymentWithoutInvoice: Payment = {
         ...mockPayment,
-        invoiceId: '', // Empty invoiceId
-        customerId: 'cust-999',
+        invoiceId: "", // Empty invoiceId
+        customerId: "cust-999",
       };
-      queryClient.setQueryData(queryKeys.payments.detail('1'), paymentWithoutInvoice);
+      queryClient.setQueryData(
+        queryKeys.payments.detail("1"),
+        paymentWithoutInvoice,
+      );
 
       const { result } = renderHook(() => useDeletePayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
@@ -1642,16 +1781,16 @@ describe('usePayments hooks', () => {
 
       // Should invalidate customer payments (customerId exists)
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: queryKeys.payments.byCustomer('cust-999'),
+        queryKey: queryKeys.payments.byCustomer("cust-999"),
       });
       // Should NOT have been called with empty invoiceId for byInvoice
       const byInvoiceCalls = invalidateSpy.mock.calls.filter(
-        (call) => call[0]?.queryKey === queryKeys.payments.byInvoice('')
+        (call) => call[0]?.queryKey === queryKeys.payments.byInvoice(""),
       );
       expect(byInvoiceCalls.length).toBe(0);
     });
 
-    it('should use default error message when error has no message', async () => {
+    it("should use default error message when error has no message", async () => {
       vi.mocked(paymentsService.deletePayment).mockRejectedValue(new Error());
 
       const { result } = renderHook(() => useDeletePayment(), {
@@ -1659,28 +1798,30 @@ describe('usePayments hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate('1');
+        result.current.mutate("1");
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al eliminar el pago');
+      expect(toast.error).toHaveBeenCalledWith("Error al eliminar el pago");
     });
   });
 
-  describe('useRefundPayment - branch coverage', () => {
-    it('should handle full refund where payment.id equals id', async () => {
+  describe("useRefundPayment - branch coverage", () => {
+    it("should handle full refund where payment.id equals id", async () => {
       const fullRefundPayment: Payment = {
         ...mockPayment,
-        id: '1', // Same as the id passed to mutate
-        status: 'REFUNDED',
+        id: "1", // Same as the id passed to mutate
+        status: "REFUNDED",
         refundedAt: new Date().toISOString(),
         refundAmount: mockPayment.amount,
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(fullRefundPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        fullRefundPayment,
+      );
 
       // Use QueryClient with longer gcTime to preserve cache
       const queryClient = new QueryClient({
@@ -1690,16 +1831,24 @@ describe('usePayments hooks', () => {
         },
       });
 
-      const wrapper = function Wrapper({ children }: { children: React.ReactNode }) {
-        return React.createElement(QueryClientProvider, { client: queryClient }, children);
+      const wrapper = function Wrapper({
+        children,
+      }: {
+        children: React.ReactNode;
+      }) {
+        return React.createElement(
+          QueryClientProvider,
+          { client: queryClient },
+          children,
+        );
       };
 
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
@@ -1708,32 +1857,34 @@ describe('usePayments hooks', () => {
 
       // Full refund - original payment should be updated in cache
       const cachedPayment = queryClient.getQueryData<Payment>(
-        queryKeys.payments.detail('1')
+        queryKeys.payments.detail("1"),
       );
-      expect(cachedPayment?.status).toBe('REFUNDED');
-      expect(cachedPayment?.id).toBe('1');
+      expect(cachedPayment?.status).toBe("REFUNDED");
+      expect(cachedPayment?.id).toBe("1");
     });
 
-    it('should handle partial refund where payment.id differs from original id', async () => {
+    it("should handle partial refund where payment.id differs from original id", async () => {
       const partialRefundPayment: Payment = {
         ...mockPayment,
-        id: 'refund-new-id', // Different from the original '1'
-        paymentNumber: 'PAG-2024-REFUND',
+        id: "refund-new-id", // Different from the original '1'
+        paymentNumber: "PAG-2024-REFUND",
         amount: -500000,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: 500000,
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(partialRefundPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        partialRefundPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1', amount: 500000 });
+        result.current.mutate({ id: "1", amount: 500000 });
       });
 
       await waitFor(() => {
@@ -1742,33 +1893,35 @@ describe('usePayments hooks', () => {
 
       // Partial refund - should invalidate the original payment detail
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: queryKeys.payments.detail('1'),
+        queryKey: queryKeys.payments.detail("1"),
       });
     });
 
-    it('should handle refund when originalPayment exists in cache', async () => {
+    it("should handle refund when originalPayment exists in cache", async () => {
       const refundedPayment: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: mockPayment.amount,
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(refundedPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        refundedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       // Set original payment in cache
-      queryClient.setQueryData(queryKeys.payments.detail('1'), {
+      queryClient.setQueryData(queryKeys.payments.detail("1"), {
         ...mockPayment,
-        invoiceId: 'inv-original',
-        customerId: 'cust-original',
+        invoiceId: "inv-original",
+        customerId: "cust-original",
       });
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
@@ -1781,26 +1934,28 @@ describe('usePayments hooks', () => {
       });
     });
 
-    it('should handle refund when originalPayment does NOT exist in cache', async () => {
+    it("should handle refund when originalPayment does NOT exist in cache", async () => {
       const refundedPayment: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: mockPayment.amount,
-        invoiceId: 'inv-from-response',
-        customerId: 'cust-from-response',
+        invoiceId: "inv-from-response",
+        customerId: "cust-from-response",
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(refundedPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        refundedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       // DO NOT set original payment in cache
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
@@ -1809,36 +1964,38 @@ describe('usePayments hooks', () => {
 
       // Should use invoiceId from payment response
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: queryKeys.payments.byInvoice('inv-from-response'),
+        queryKey: queryKeys.payments.byInvoice("inv-from-response"),
       });
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: queryKeys.payments.byCustomer('cust-from-response'),
+        queryKey: queryKeys.payments.byCustomer("cust-from-response"),
       });
     });
 
-    it('should use invoiceId from originalPayment when payment.invoiceId is empty', async () => {
+    it("should use invoiceId from originalPayment when payment.invoiceId is empty", async () => {
       const refundedPayment: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: mockPayment.amount,
-        invoiceId: '', // Empty in response
+        invoiceId: "", // Empty in response
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(refundedPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        refundedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       // Set original payment with invoiceId
-      queryClient.setQueryData(queryKeys.payments.detail('1'), {
+      queryClient.setQueryData(queryKeys.payments.detail("1"), {
         ...mockPayment,
-        invoiceId: 'inv-from-original',
+        invoiceId: "inv-from-original",
       });
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
@@ -1847,33 +2004,35 @@ describe('usePayments hooks', () => {
 
       // Should fall back to originalPayment.invoiceId
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: queryKeys.payments.byInvoice('inv-from-original'),
+        queryKey: queryKeys.payments.byInvoice("inv-from-original"),
       });
     });
 
-    it('should use customerId from originalPayment when payment.customerId is empty', async () => {
+    it("should use customerId from originalPayment when payment.customerId is empty", async () => {
       const refundedPayment: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: mockPayment.amount,
-        customerId: '', // Empty in response
+        customerId: "", // Empty in response
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(refundedPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        refundedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       // Set original payment with customerId
-      queryClient.setQueryData(queryKeys.payments.detail('1'), {
+      queryClient.setQueryData(queryKeys.payments.detail("1"), {
         ...mockPayment,
-        customerId: 'cust-from-original',
+        customerId: "cust-from-original",
       });
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
@@ -1882,34 +2041,36 @@ describe('usePayments hooks', () => {
 
       // Should fall back to originalPayment.customerId
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: queryKeys.payments.byCustomer('cust-from-original'),
+        queryKey: queryKeys.payments.byCustomer("cust-from-original"),
       });
     });
 
-    it('should not invalidate invoice payments when neither payment nor originalPayment has invoiceId', async () => {
+    it("should not invalidate invoice payments when neither payment nor originalPayment has invoiceId", async () => {
       const refundedPayment: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: mockPayment.amount,
-        invoiceId: '', // Empty
-        customerId: 'cust-1',
+        invoiceId: "", // Empty
+        customerId: "cust-1",
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(refundedPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        refundedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       // Set original payment without invoiceId
-      queryClient.setQueryData(queryKeys.payments.detail('1'), {
+      queryClient.setQueryData(queryKeys.payments.detail("1"), {
         ...mockPayment,
-        invoiceId: '', // Also empty
+        invoiceId: "", // Also empty
       });
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
@@ -1917,39 +2078,39 @@ describe('usePayments hooks', () => {
       });
 
       // Should NOT have called byInvoice with empty string
-      const byInvoiceCalls = invalidateSpy.mock.calls.filter(
-        (call) => {
-          const queryKey = call[0]?.queryKey;
-          return Array.isArray(queryKey) && queryKey.includes('byInvoice');
-        }
-      );
+      const byInvoiceCalls = invalidateSpy.mock.calls.filter((call) => {
+        const queryKey = call[0]?.queryKey;
+        return Array.isArray(queryKey) && queryKey.includes("byInvoice");
+      });
       expect(byInvoiceCalls.length).toBe(0);
     });
 
-    it('should not invalidate customer payments when neither payment nor originalPayment has customerId', async () => {
+    it("should not invalidate customer payments when neither payment nor originalPayment has customerId", async () => {
       const refundedPayment: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: mockPayment.amount,
-        invoiceId: 'inv-1',
-        customerId: '', // Empty
+        invoiceId: "inv-1",
+        customerId: "", // Empty
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(refundedPayment);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        refundedPayment,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
       // Set original payment without customerId
-      queryClient.setQueryData(queryKeys.payments.detail('1'), {
+      queryClient.setQueryData(queryKeys.payments.detail("1"), {
         ...mockPayment,
-        customerId: '', // Also empty
+        customerId: "", // Also empty
       });
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
@@ -1957,17 +2118,15 @@ describe('usePayments hooks', () => {
       });
 
       // Should NOT have called byCustomer with empty string
-      const byCustomerCalls = invalidateSpy.mock.calls.filter(
-        (call) => {
-          const queryKey = call[0]?.queryKey;
-          return Array.isArray(queryKey) && queryKey.includes('byCustomer');
-        }
-      );
+      const byCustomerCalls = invalidateSpy.mock.calls.filter((call) => {
+        const queryKey = call[0]?.queryKey;
+        return Array.isArray(queryKey) && queryKey.includes("byCustomer");
+      });
       expect(byCustomerCalls.length).toBe(0);
     });
 
-    it('should show error with custom message from error', async () => {
-      const customError = new Error('Refund limit exceeded');
+    it("should show error with custom message from error", async () => {
+      const customError = new Error("Refund limit exceeded");
       vi.mocked(paymentsService.refundPayment).mockRejectedValue(customError);
 
       const { result } = renderHook(() => useRefundPayment(), {
@@ -1975,17 +2134,17 @@ describe('usePayments hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Refund limit exceeded');
+      expect(toast.error).toHaveBeenCalledWith("Refund limit exceeded");
     });
 
-    it('should show default error message when error has no message', async () => {
+    it("should show default error message when error has no message", async () => {
       vi.mocked(paymentsService.refundPayment).mockRejectedValue(new Error());
 
       const { result } = renderHook(() => useRefundPayment(), {
@@ -1993,34 +2152,38 @@ describe('usePayments hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al procesar el reembolso');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al procesar el reembolso",
+      );
     });
 
-    it('should use refundAmount when available, otherwise use payment.amount', async () => {
+    it("should use refundAmount when available, otherwise use payment.amount", async () => {
       // Test case 1: refundAmount is available
       const paymentWithRefundAmount: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: 1500000,
         amount: 8446620, // Different from refundAmount
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(paymentWithRefundAmount);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        paymentWithRefundAmount,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1', amount: 1500000 });
+        result.current.mutate({ id: "1", amount: 1500000 });
       });
 
       await waitFor(() => {
@@ -2031,23 +2194,25 @@ describe('usePayments hooks', () => {
       expect(toast.success).toHaveBeenCalled();
     });
 
-    it('should use payment.amount when refundAmount is not available', async () => {
+    it("should use payment.amount when refundAmount is not available", async () => {
       const paymentWithoutRefundAmount: Payment = {
         ...mockPayment,
-        status: 'REFUNDED',
+        status: "REFUNDED",
         refundAmount: undefined as unknown as number, // No refundAmount
         amount: -2000000, // Negative for refund
       };
 
-      vi.mocked(paymentsService.refundPayment).mockResolvedValue(paymentWithoutRefundAmount);
+      vi.mocked(paymentsService.refundPayment).mockResolvedValue(
+        paymentWithoutRefundAmount,
+      );
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      queryClient.setQueryData(queryKeys.payments.detail('1'), mockPayment);
+      queryClient.setQueryData(queryKeys.payments.detail("1"), mockPayment);
 
       const { result } = renderHook(() => useRefundPayment(), { wrapper });
 
       await act(async () => {
-        result.current.mutate({ id: '1' });
+        result.current.mutate({ id: "1" });
       });
 
       await waitFor(() => {

@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   Search,
   Plus,
@@ -16,20 +16,20 @@ import {
   Package,
   CheckCircle,
   XCircle,
-} from 'lucide-react';
-import type { Route } from './+types/_app.warehouses';
-import { cn, debounce } from '~/lib/utils';
+} from "lucide-react";
+import type { Route } from "./+types/_app.warehouses";
+import { cn, debounce } from "~/lib/utils";
 import {
   useWarehousesWithFilters,
   useWarehouseCities,
   useDeleteWarehouse,
-} from '~/hooks/useWarehouses';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Select } from '~/components/ui/Select';
-import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
+} from "~/hooks/useWarehouses";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Select } from "~/components/ui/Select";
+import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
 import {
   Table,
   TableHeader,
@@ -37,71 +37,84 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { SkeletonTableRow } from '~/components/ui/Skeleton';
-import { DeleteModal } from '~/components/ui/DeleteModal';
-import type { WarehouseFilters, Warehouse as WarehouseType } from '~/types/warehouse';
-import { useUrlFilters } from '~/hooks/useUrlFilters';
+} from "~/components/ui/Table";
+import { SkeletonTableRow } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/DeleteModal";
+import type {
+  WarehouseFilters,
+  Warehouse as WarehouseType,
+} from "~/types/warehouse";
+import { useUrlFilters } from "~/hooks/useUrlFilters";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Bodegas - StockFlow' },
-    { name: 'description', content: 'Gestion de bodegas y almacenes' },
+    { title: "Bodegas - StockFlow" },
+    { name: "description", content: "Gestion de bodegas y almacenes" },
   ];
 };
 
 // Status options
 const statusOptions = [
-  { value: '', label: 'Todos los estados' },
-  { value: 'true', label: 'Activas' },
-  { value: 'false', label: 'Inactivas' },
+  { value: "", label: "Todos los estados" },
+  { value: "true", label: "Activas" },
+  { value: "false", label: "Inactivas" },
 ];
 
 // Parser config for warehouse filters
 const warehouseFiltersParser = {
   parse: (searchParams: URLSearchParams): WarehouseFilters => ({
-    search: searchParams.get('search') || undefined,
-    city: searchParams.get('city') || undefined,
-    isActive: searchParams.get('isActive')
-      ? searchParams.get('isActive') === 'true'
+    search: searchParams.get("search") || undefined,
+    city: searchParams.get("city") || undefined,
+    isActive: searchParams.get("isActive")
+      ? searchParams.get("isActive") === "true"
       : undefined,
-    page: Number(searchParams.get('page')) || 1,
-    limit: Number(searchParams.get('limit')) || 10,
+    page: Number(searchParams.get("page")) || 1,
+    limit: Number(searchParams.get("limit")) || 10,
   }),
 };
 
 export default function WarehousesPage() {
   const [showFilters, setShowFilters] = useState(false);
-  const [deletingWarehouse, setDeletingWarehouse] = useState<WarehouseType | null>(null);
+  const [deletingWarehouse, setDeletingWarehouse] =
+    useState<WarehouseType | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  const { filters, updateFilters, clearFilters } = useUrlFilters<WarehouseFilters>({
-    parserConfig: warehouseFiltersParser,
-  });
+  const { filters, updateFilters, clearFilters } =
+    useUrlFilters<WarehouseFilters>({
+      parserConfig: warehouseFiltersParser,
+    });
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   // Queries
-  const { data: warehousesData, isLoading, isError } = useWarehousesWithFilters(filters);
+  const {
+    data: warehousesData,
+    isLoading,
+    isError,
+  } = useWarehousesWithFilters(filters);
   const { data: cities = [] } = useWarehouseCities();
   const deleteWarehouse = useDeleteWarehouse();
 
   // City options
   const cityOptions = useMemo(
     () => [
-      { value: '', label: 'Todas las ciudades' },
+      { value: "", label: "Todas las ciudades" },
       ...cities.map((city) => ({ value: city, label: city })),
     ],
-    [cities]
+    [cities],
   );
 
   // Debounced search
   const debouncedSearch = useMemo(
-    () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
-    [updateFilters]
+    () =>
+      debounce(
+        (value: string) => updateFilters({ search: value || undefined }),
+        300,
+      ),
+    [updateFilters],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,7 +131,8 @@ export default function WarehousesPage() {
 
   const warehouses = warehousesData?.data || [];
   const meta = warehousesData?.meta;
-  const hasActiveFilters = filters.search || filters.city || filters.isActive !== undefined;
+  const hasActiveFilters =
+    filters.search || filters.city || filters.isActive !== undefined;
 
   return (
     <motion.div
@@ -128,7 +142,10 @@ export default function WarehousesPage() {
       className="space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Bodegas
@@ -138,9 +155,7 @@ export default function WarehousesPage() {
           </p>
         </div>
         <Link to="/warehouses/new">
-          <Button leftIcon={<Plus className="h-4 w-4" />}>
-            Nueva Bodega
-          </Button>
+          <Button leftIcon={<Plus className="h-4 w-4" />}>Nueva Bodega</Button>
         </Link>
       </motion.div>
 
@@ -165,14 +180,19 @@ export default function WarehousesPage() {
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
                 className={cn(
-                  showFilters && 'bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20'
+                  showFilters &&
+                    "bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20",
                 )}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
                 {hasActiveFilters && (
                   <Badge variant="primary" className="ml-2">
-                    {[filters.city, filters.isActive !== undefined].filter(Boolean).length}
+                    {
+                      [filters.city, filters.isActive !== undefined].filter(
+                        Boolean,
+                      ).length
+                    }
                   </Badge>
                 )}
               </Button>
@@ -190,7 +210,7 @@ export default function WarehousesPage() {
               {showFilters && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
@@ -198,16 +218,22 @@ export default function WarehousesPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                     <Select
                       options={cityOptions}
-                      value={filters.city || ''}
-                      onChange={(value) => updateFilters({ city: value || undefined })}
+                      value={filters.city || ""}
+                      onChange={(value) =>
+                        updateFilters({ city: value || undefined })
+                      }
                       placeholder="Todas las ciudades"
                     />
                     <Select
                       options={statusOptions}
-                      value={filters.isActive !== undefined ? String(filters.isActive) : ''}
+                      value={
+                        filters.isActive !== undefined
+                          ? String(filters.isActive)
+                          : ""
+                      }
                       onChange={(value) =>
                         updateFilters({
-                          isActive: value ? value === 'true' : undefined,
+                          isActive: value ? value === "true" : undefined,
                         })
                       }
                       placeholder="Todos los estados"
@@ -229,8 +255,12 @@ export default function WarehousesPage() {
                 <TableRow>
                   <TableHead>Bodega</TableHead>
                   <TableHead className="hidden md:table-cell">Ciudad</TableHead>
-                  <TableHead className="hidden sm:table-cell">Encargado</TableHead>
-                  <TableHead className="hidden lg:table-cell">Productos</TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Encargado
+                  </TableHead>
+                  <TableHead className="hidden lg:table-cell">
+                    Productos
+                  </TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="w-[120px]">Acciones</TableHead>
                 </TableRow>
@@ -244,7 +274,11 @@ export default function WarehousesPage() {
           ) : isError ? (
             <div className="p-8 text-center">
               <p className="text-error-500">Error al cargar las bodegas</p>
-              <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => window.location.reload()}
+              >
                 Reintentar
               </Button>
             </div>
@@ -254,12 +288,12 @@ export default function WarehousesPage() {
                 <Warehouse className="h-16 w-16" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-white">
-                {hasActiveFilters ? 'Sin resultados' : 'No hay bodegas'}
+                {hasActiveFilters ? "Sin resultados" : "No hay bodegas"}
               </h3>
               <p className="mb-6 max-w-sm text-neutral-500 dark:text-neutral-400">
                 {hasActiveFilters
-                  ? 'No se encontraron bodegas con los filtros aplicados.'
-                  : 'Comienza creando tu primera bodega.'}
+                  ? "No se encontraron bodegas con los filtros aplicados."
+                  : "Comienza creando tu primera bodega."}
               </p>
               {hasActiveFilters ? (
                 <Button variant="outline" onClick={clearFilters}>
@@ -280,9 +314,15 @@ export default function WarehousesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Bodega</TableHead>
-                    <TableHead className="hidden md:table-cell">Ciudad</TableHead>
-                    <TableHead className="hidden sm:table-cell">Encargado</TableHead>
-                    <TableHead className="hidden lg:table-cell">Productos</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Ciudad
+                    </TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      Encargado
+                    </TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      Productos
+                    </TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="w-[120px]">Acciones</TableHead>
                   </TableRow>
@@ -316,7 +356,7 @@ export default function WarehousesPage() {
                           <div className="flex items-center gap-1.5">
                             <MapPin className="h-4 w-4 text-neutral-400" />
                             <span className="text-neutral-700 dark:text-neutral-300">
-                              {warehouse.city || '-'}
+                              {warehouse.city || "-"}
                             </span>
                           </div>
                         </TableCell>
@@ -324,7 +364,7 @@ export default function WarehousesPage() {
                           <div className="flex items-center gap-1.5">
                             <User className="h-4 w-4 text-neutral-400" />
                             <span className="text-neutral-700 dark:text-neutral-300">
-                              {warehouse.manager || '-'}
+                              {warehouse.manager || "-"}
                             </span>
                           </div>
                         </TableCell>
@@ -350,12 +390,20 @@ export default function WarehousesPage() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Link to={`/warehouses/${warehouse.id}`}>
-                              <Button variant="ghost" size="icon" title="Ver detalles">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Ver detalles"
+                              >
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
                             <Link to={`/warehouses/${warehouse.id}/edit`}>
-                              <Button variant="ghost" size="icon" title="Editar">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Editar"
+                              >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             </Link>
@@ -400,7 +448,7 @@ export default function WarehousesPage() {
       <DeleteModal
         open={!!deletingWarehouse}
         onOpenChange={(open) => !open && setDeletingWarehouse(null)}
-        itemName={deletingWarehouse?.name || ''}
+        itemName={deletingWarehouse?.name || ""}
         itemType="bodega"
         onConfirm={handleDelete}
         isLoading={deleteWarehouse.isPending}

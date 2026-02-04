@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Warehouse, ChevronDown, Check, MapPin, Loader2 } from 'lucide-react';
-import { cn } from '~/lib/utils';
-import type { Warehouse as WarehouseType } from '~/types/warehouse';
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Warehouse, ChevronDown, Check, MapPin, Loader2 } from "lucide-react";
+import { cn } from "~/lib/utils";
+import type { Warehouse as WarehouseType } from "~/types/warehouse";
 
 interface WarehouseSelectProps {
   warehouses: WarehouseType[];
@@ -24,7 +24,9 @@ export function WarehouseSelect({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selectedWarehouse = warehouses.find((w) => w.id === selectedWarehouseId);
+  const selectedWarehouse = warehouses.find(
+    (w) => w.id === selectedWarehouseId,
+  );
 
   // Close on outside click
   useEffect(() => {
@@ -37,8 +39,8 @@ export function WarehouseSelect({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Auto-select first warehouse if none selected
@@ -51,52 +53,59 @@ export function WarehouseSelect({
   // Close on escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === "Escape" && isOpen) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
   return (
-    <div ref={containerRef} className={cn('relative', className)}>
+    <div ref={containerRef} className={cn("relative", className)}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={isLoading}
         className={cn(
-          'flex items-center gap-1.5 sm:gap-2 rounded-lg border transition-colors',
-          'border-neutral-300 bg-white hover:bg-neutral-50',
-          'dark:border-neutral-600 dark:bg-neutral-800 dark:hover:bg-neutral-700',
-          'focus:outline-none focus:ring-2 focus:ring-primary-500/20',
+          "flex items-center gap-1.5 sm:gap-2 rounded-lg border transition-colors",
+          "border-neutral-300 bg-white hover:bg-neutral-50",
+          "dark:border-neutral-600 dark:bg-neutral-800 dark:hover:bg-neutral-700",
+          "focus:outline-none focus:ring-2 focus:ring-primary-500/20",
           // Touch-friendly minimum height (44px)
-          'min-h-[44px]',
-          compact ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm',
-          isLoading && 'cursor-not-allowed opacity-50'
+          "min-h-[44px]",
+          compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm",
+          isLoading && "cursor-not-allowed opacity-50",
         )}
       >
         {isLoading ? (
           <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary-500" />
         ) : (
-          <Warehouse className={cn('shrink-0 text-primary-500', compact ? 'h-3.5 w-3.5' : 'h-4 w-4')} />
+          <Warehouse
+            className={cn(
+              "shrink-0 text-primary-500",
+              compact ? "h-3.5 w-3.5" : "h-4 w-4",
+            )}
+          />
         )}
         <span
           className={cn(
-            'truncate text-neutral-700 dark:text-neutral-200',
+            "truncate text-neutral-700 dark:text-neutral-200",
             // Allow more space for warehouse name on mobile
-            compact ? 'max-w-[100px] sm:max-w-[120px]' : 'max-w-[140px] sm:max-w-[160px]'
+            compact
+              ? "max-w-[100px] sm:max-w-[120px]"
+              : "max-w-[140px] sm:max-w-[160px]",
           )}
-          title={selectedWarehouse?.name || 'Bodega'}
+          title={selectedWarehouse?.name || "Bodega"}
         >
-          {selectedWarehouse?.name || 'Bodega'}
+          {selectedWarehouse?.name || "Bodega"}
         </span>
         <ChevronDown
           className={cn(
-            'shrink-0 text-neutral-400 transition-transform',
-            compact ? 'h-3.5 w-3.5' : 'h-4 w-4',
-            isOpen && 'rotate-180'
+            "shrink-0 text-neutral-400 transition-transform",
+            compact ? "h-3.5 w-3.5" : "h-4 w-4",
+            isOpen && "rotate-180",
           )}
         />
       </button>
@@ -109,9 +118,9 @@ export function WarehouseSelect({
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
             className={cn(
-              'absolute left-0 top-full z-50 mt-1 w-64',
-              'rounded-lg border bg-white shadow-lg',
-              'dark:border-neutral-700 dark:bg-neutral-800'
+              "absolute left-0 top-full z-50 mt-1 w-64",
+              "rounded-lg border bg-white shadow-lg",
+              "dark:border-neutral-700 dark:bg-neutral-800",
             )}
           >
             <div className="max-h-64 overflow-y-auto p-1">
@@ -129,16 +138,16 @@ export function WarehouseSelect({
                       setIsOpen(false);
                     }}
                     className={cn(
-                      'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors',
-                      'hover:bg-neutral-100 dark:hover:bg-neutral-700',
+                      "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors",
+                      "hover:bg-neutral-100 dark:hover:bg-neutral-700",
                       selectedWarehouseId === warehouse.id &&
-                        'bg-primary-50 dark:bg-primary-900/20'
+                        "bg-primary-50 dark:bg-primary-900/20",
                     )}
                   >
                     <div
                       className={cn(
-                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                        'bg-primary-100 text-primary-600 dark:bg-primary-900/30'
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                        "bg-primary-100 text-primary-600 dark:bg-primary-900/30",
                       )}
                     >
                       <MapPin className="h-4 w-4" />

@@ -1,6 +1,6 @@
-import { memo } from 'react';
-import { cn, formatCurrency } from '~/lib/utils';
-import type { CartTotals } from '~/lib/pos-utils';
+import { memo } from "react";
+import { cn, formatCurrency } from "~/lib/utils";
+import type { CartTotals } from "~/lib/pos-utils";
 
 interface CartSummaryProps {
   totals: CartTotals;
@@ -35,7 +35,7 @@ export const CartSummary = memo(function CartSummary({
   const total = safeTotals.total ?? 0;
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn("space-y-2", className)}>
       {/* Item count */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-neutral-500 dark:text-neutral-400">
@@ -43,7 +43,7 @@ export const CartSummary = memo(function CartSummary({
         </span>
         <span
           className="shrink-0 font-medium text-neutral-900 dark:text-white"
-          style={{ fontVariantNumeric: 'tabular-nums' }}
+          style={{ fontVariantNumeric: "tabular-nums" }}
         >
           {itemCount}
         </span>
@@ -54,7 +54,7 @@ export const CartSummary = memo(function CartSummary({
         <span className="text-neutral-500 dark:text-neutral-400">Subtotal</span>
         <span
           className="shrink-0 font-medium text-neutral-900 dark:text-white"
-          style={{ fontVariantNumeric: 'tabular-nums' }}
+          style={{ fontVariantNumeric: "tabular-nums" }}
         >
           {formatCurrency(subtotal)}
         </span>
@@ -68,7 +68,7 @@ export const CartSummary = memo(function CartSummary({
           </span>
           <span
             className="shrink-0 text-error-500"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             -{formatCurrency(discountAmount)}
           </span>
@@ -82,7 +82,7 @@ export const CartSummary = memo(function CartSummary({
         </span>
         <span
           className="shrink-0 font-medium text-neutral-900 dark:text-white"
-          style={{ fontVariantNumeric: 'tabular-nums' }}
+          style={{ fontVariantNumeric: "tabular-nums" }}
         >
           {formatCurrency(taxAmount)}
         </span>
@@ -98,7 +98,7 @@ export const CartSummary = memo(function CartSummary({
         </span>
         <span
           className="shrink-0 text-xl font-bold text-primary-600 dark:text-primary-400"
-          style={{ fontVariantNumeric: 'tabular-nums' }}
+          style={{ fontVariantNumeric: "tabular-nums" }}
         >
           {formatCurrency(total)}
         </span>

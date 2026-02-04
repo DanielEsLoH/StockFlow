@@ -82,29 +82,31 @@ function PlanBadge({ plan }: { plan: string | null }) {
     );
   }
 
-  const planConfig: Record<string, { bg: string; text: string; label: string }> =
-    {
-      EMPRENDEDOR: {
-        bg: "bg-slate-100 dark:bg-slate-900/20",
-        text: "text-slate-700 dark:text-slate-400",
-        label: "Emprendedor",
-      },
-      PYME: {
-        bg: "bg-blue-100 dark:bg-blue-900/20",
-        text: "text-blue-700 dark:text-blue-400",
-        label: "PYME",
-      },
-      PRO: {
-        bg: "bg-purple-100 dark:bg-purple-900/20",
-        text: "text-purple-700 dark:text-purple-400",
-        label: "PRO",
-      },
-      PLUS: {
-        bg: "bg-amber-100 dark:bg-amber-900/20",
-        text: "text-amber-700 dark:text-amber-400",
-        label: "PLUS",
-      },
-    };
+  const planConfig: Record<
+    string,
+    { bg: string; text: string; label: string }
+  > = {
+    EMPRENDEDOR: {
+      bg: "bg-slate-100 dark:bg-slate-900/20",
+      text: "text-slate-700 dark:text-slate-400",
+      label: "Emprendedor",
+    },
+    PYME: {
+      bg: "bg-blue-100 dark:bg-blue-900/20",
+      text: "text-blue-700 dark:text-blue-400",
+      label: "PYME",
+    },
+    PRO: {
+      bg: "bg-purple-100 dark:bg-purple-900/20",
+      text: "text-purple-700 dark:text-purple-400",
+      label: "PRO",
+    },
+    PLUS: {
+      bg: "bg-amber-100 dark:bg-amber-900/20",
+      text: "text-amber-700 dark:text-amber-400",
+      label: "PLUS",
+    },
+  };
 
   const config = planConfig[plan] || {
     bg: "bg-neutral-100 dark:bg-neutral-800",
@@ -138,7 +140,7 @@ function ActivatePlanDialog({
   isLoading?: boolean;
 }) {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(
-    null
+    null,
   );
   const [selectedPeriod, setSelectedPeriod] =
     useState<SubscriptionPeriod>("MONTHLY");
@@ -198,7 +200,7 @@ function ActivatePlanDialog({
 
   const getPrice = (
     plan: (typeof plans)[0],
-    period: SubscriptionPeriod
+    period: SubscriptionPeriod,
   ): string => {
     switch (period) {
       case "MONTHLY":
@@ -393,7 +395,7 @@ function SuspendPlanDialog({
 export default function SystemAdminTenantsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState(
-    searchParams.get("search") || ""
+    searchParams.get("search") || "",
   );
   const [activatePlanDialog, setActivatePlanDialog] = useState<{
     tenantId: string;
@@ -450,7 +452,7 @@ export default function SystemAdminTenantsPage() {
   // Handle activate plan
   const handleActivatePlan = (
     newPlan: SubscriptionPlan,
-    period: SubscriptionPeriod
+    period: SubscriptionPeriod,
   ) => {
     if (activatePlanDialog) {
       activatePlan({

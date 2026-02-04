@@ -1,8 +1,8 @@
-import { memo } from 'react';
-import { motion } from 'framer-motion';
-import { Trash2, Minus, Plus } from 'lucide-react';
-import { cn, formatCurrency } from '~/lib/utils';
-import { calculateLineItemTotals, type POSCartItem } from '~/lib/pos-utils';
+import { memo } from "react";
+import { motion } from "framer-motion";
+import { Trash2, Minus, Plus } from "lucide-react";
+import { cn, formatCurrency } from "~/lib/utils";
+import { calculateLineItemTotals, type POSCartItem } from "~/lib/pos-utils";
 
 interface CartItemProps {
   item: POSCartItem;
@@ -29,7 +29,7 @@ export const CartItem = memo(function CartItem(props: CartItemProps) {
   const total = lineItemTotals?.total ?? 0;
   const maxQuantity = item.product?.stock ?? 0;
   const canIncrement = item.quantity < maxQuantity;
-  const productName = item.product?.name ?? 'Producto';
+  const productName = item.product?.name ?? "Producto";
   const unitPrice = item.unitPrice ?? 0;
   const discount = item.discount ?? 0;
 
@@ -66,7 +66,7 @@ export const CartItem = memo(function CartItem(props: CartItemProps) {
         <div className="min-w-0 flex-1">
           <span
             className="text-xs text-neutral-500 dark:text-neutral-400"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {formatCurrency(unitPrice)} c/u
           </span>
@@ -87,7 +87,7 @@ export const CartItem = memo(function CartItem(props: CartItemProps) {
 
           <span
             className="w-8 text-center text-sm font-semibold text-neutral-900 dark:text-white"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {item.quantity}
           </span>
@@ -97,10 +97,10 @@ export const CartItem = memo(function CartItem(props: CartItemProps) {
             onClick={() => onIncrement(item.productId)}
             disabled={!canIncrement}
             className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-md border transition-colors active:scale-95',
+              "flex h-7 w-7 items-center justify-center rounded-md border transition-colors active:scale-95",
               canIncrement
-                ? 'border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300'
-                : 'cursor-not-allowed border-neutral-100 bg-neutral-50 text-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-600'
+                ? "border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
+                : "cursor-not-allowed border-neutral-100 bg-neutral-50 text-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-600",
             )}
           >
             <Plus className="h-3 w-3" />
@@ -110,7 +110,7 @@ export const CartItem = memo(function CartItem(props: CartItemProps) {
         {/* Line total - NEVER shrink, NEVER truncate */}
         <span
           className="shrink-0 text-sm font-bold text-primary-600 dark:text-primary-400"
-          style={{ fontVariantNumeric: 'tabular-nums' }}
+          style={{ fontVariantNumeric: "tabular-nums" }}
         >
           {formatCurrency(total)}
         </span>

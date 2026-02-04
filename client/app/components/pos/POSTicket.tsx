@@ -1,5 +1,5 @@
-import { forwardRef } from 'react';
-import { formatCurrency } from '~/lib/utils';
+import { forwardRef } from "react";
+import { formatCurrency } from "~/lib/utils";
 
 // ============================================================================
 // TYPES
@@ -64,18 +64,18 @@ export interface POSTicketProps {
 
 function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength - 3) + '...';
+  return text.substring(0, maxLength - 3) + "...";
 }
 
 function formatTicketDate(dateString: string): string {
   try {
     const date = new Date(dateString);
-    return date.toLocaleString('es-CO', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   } catch {
     return dateString;
@@ -120,7 +120,7 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
       payments,
       change,
       dianCufe,
-      footerMessage = '¡Gracias por su compra!',
+      footerMessage = "¡Gracias por su compra!",
     } = props;
 
     return (
@@ -129,8 +129,8 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
         className="pos-ticket bg-white text-black font-mono text-[8pt] leading-tight w-[80mm] mx-auto p-2"
         style={{
           fontFamily: "'Courier New', Courier, monospace",
-          width: '80mm',
-          maxWidth: '80mm',
+          width: "80mm",
+          maxWidth: "80mm",
         }}
       >
         {/* ================================================================ */}
@@ -140,11 +140,11 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
           <div className="text-sm font-bold uppercase tracking-wide">
             {businessName}
           </div>
-          {businessNit && (
-            <div className="text-[7pt]">NIT: {businessNit}</div>
-          )}
+          {businessNit && <div className="text-[7pt]">NIT: {businessNit}</div>}
           {businessAddress && (
-            <div className="text-[7pt]">{truncateText(businessAddress, 40)}</div>
+            <div className="text-[7pt]">
+              {truncateText(businessAddress, 40)}
+            </div>
           )}
           {businessPhone && (
             <div className="text-[7pt]">Tel: {businessPhone}</div>
@@ -189,7 +189,7 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
             </div>
             {customerDocument && (
               <div className="flex justify-between">
-                <span>{customerDocumentType || 'Doc'}:</span>
+                <span>{customerDocumentType || "Doc"}:</span>
                 <span>{customerDocument}</span>
               </div>
             )}
@@ -246,7 +246,9 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
 
           {discountAmount > 0 && (
             <div className="flex justify-between">
-              <span>Descuento{discountPercent ? ` (${discountPercent}%)` : ''}:</span>
+              <span>
+                Descuento{discountPercent ? ` (${discountPercent}%)` : ""}:
+              </span>
               <span>-{formatCurrency(discountAmount)}</span>
             </div>
           )}
@@ -287,9 +289,7 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
         {/* ================================================================ */}
         {dianCufe && (
           <div className="border-b border-dashed border-black pb-2 mb-2 text-center">
-            <div className="text-[6pt] break-all">
-              CUFE: {dianCufe}
-            </div>
+            <div className="text-[6pt] break-all">CUFE: {dianCufe}</div>
           </div>
         )}
 
@@ -347,5 +347,5 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
         `}</style>
       </div>
     );
-  }
+  },
 );

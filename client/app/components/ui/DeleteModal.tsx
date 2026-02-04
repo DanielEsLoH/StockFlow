@@ -1,7 +1,7 @@
-import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, X } from 'lucide-react';
-import { Button } from './Button';
+import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { AlertTriangle, X } from "lucide-react";
+import { Button } from "./Button";
 
 export interface DeleteModalProps {
   open: boolean;
@@ -13,7 +13,7 @@ export interface DeleteModalProps {
   title?: string;
   description?: string;
   actionLabel?: string;
-  variant?: 'danger' | 'warning';
+  variant?: "danger" | "warning";
   children?: React.ReactNode;
 }
 
@@ -27,13 +27,13 @@ export function DeleteModal({
   open,
   onOpenChange,
   itemName,
-  itemType = 'elemento',
+  itemType = "elemento",
   onConfirm,
   isLoading = false,
   title,
   description,
-  actionLabel = 'Eliminar',
-  variant = 'danger',
+  actionLabel = "Eliminar",
+  variant = "danger",
   children,
 }: DeleteModalProps) {
   const handleConfirm = async () => {
@@ -73,14 +73,20 @@ export function DeleteModal({
             {/* Content */}
             <div className="p-6 text-center">
               {/* Warning icon */}
-              <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${
-                variant === 'warning'
-                  ? 'bg-warning-50 dark:bg-warning-900/20'
-                  : 'bg-error-50 dark:bg-error-900/20'
-              }`}>
-                <AlertTriangle className={`h-7 w-7 ${
-                  variant === 'warning' ? 'text-warning-500' : 'text-error-500'
-                }`} />
+              <div
+                className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${
+                  variant === "warning"
+                    ? "bg-warning-50 dark:bg-warning-900/20"
+                    : "bg-error-50 dark:bg-error-900/20"
+                }`}
+              >
+                <AlertTriangle
+                  className={`h-7 w-7 ${
+                    variant === "warning"
+                      ? "text-warning-500"
+                      : "text-error-500"
+                  }`}
+                />
               </div>
 
               {/* Title */}
@@ -92,7 +98,7 @@ export function DeleteModal({
               <p className="mb-4 text-neutral-500 dark:text-neutral-400">
                 {description || (
                   <>
-                    ¿Estas seguro de que deseas {actionLabel.toLowerCase()}{' '}
+                    ¿Estas seguro de que deseas {actionLabel.toLowerCase()}{" "}
                     <span className="font-medium text-neutral-900 dark:text-white">
                       "{itemName}"
                     </span>

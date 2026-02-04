@@ -1,5 +1,5 @@
-import { redirect } from 'react-router';
-import type { Route } from './+types/_app.pos.sales.$id';
+import { redirect } from "react-router";
+import type { Route } from "./+types/_app.pos.sales.$id";
 
 // Redirect /pos/sales/:id to /invoices/:id
 // This is part of the unified navigation where all invoice details

@@ -789,9 +789,21 @@ export default function InvoiceDetailPage() {
           isOpen={showTicketModal}
           onClose={() => setShowTicketModal(false)}
           // Datos del negocio - usar DianConfig si existe, fallback a tenant name
-          businessName={dianConfig?.businessName || useAuthStore.getState().tenant?.name || "Mi Empresa"}
-          businessNit={dianConfig?.nit ? `NIT: ${dianConfig.nit}-${dianConfig.dv}` : undefined}
-          businessAddress={dianConfig?.address ? `${dianConfig.address}, ${dianConfig.city}` : undefined}
+          businessName={
+            dianConfig?.businessName ||
+            useAuthStore.getState().tenant?.name ||
+            "Mi Empresa"
+          }
+          businessNit={
+            dianConfig?.nit
+              ? `NIT: ${dianConfig.nit}-${dianConfig.dv}`
+              : undefined
+          }
+          businessAddress={
+            dianConfig?.address
+              ? `${dianConfig.address}, ${dianConfig.city}`
+              : undefined
+          }
           businessPhone={dianConfig?.phone}
           // Datos de la factura
           invoiceNumber={invoice.invoiceNumber}
@@ -801,13 +813,15 @@ export default function InvoiceDetailPage() {
           customerDocument={invoice.customer?.document}
           customerDocumentType={invoice.customer?.documentType}
           // Items
-          items={invoice.items?.map((item) => ({
-            name: item.product?.name || item.description || "Producto",
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            total: item.subtotal,
-            discount: item.discount,
-          })) || []}
+          items={
+            invoice.items?.map((item) => ({
+              name: item.product?.name || item.description || "Producto",
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.subtotal,
+              discount: item.discount,
+            })) || []
+          }
           // Totales
           subtotal={invoice.subtotal}
           discountAmount={invoice.discount}

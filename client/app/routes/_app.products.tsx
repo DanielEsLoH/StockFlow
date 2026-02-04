@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   Search,
   Plus,
@@ -16,17 +16,17 @@ import {
   LayoutList,
   Sparkles,
   TrendingUp,
-} from 'lucide-react';
-import type { Route } from './+types/_app.products';
-import { cn, formatCurrency, debounce } from '~/lib/utils';
-import { useProducts, useCategories, useWarehouses } from '~/hooks/useProducts';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card, CardHeader, CardTitle } from '~/components/ui/Card';
-import { Badge, StatusBadge } from '~/components/ui/Badge';
-import { Select } from '~/components/ui/Select';
-import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
-import { EmptyState } from '~/components/ui/EmptyState';
+} from "lucide-react";
+import type { Route } from "./+types/_app.products";
+import { cn, formatCurrency, debounce } from "~/lib/utils";
+import { useProducts, useCategories, useWarehouses } from "~/hooks/useProducts";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card, CardHeader, CardTitle } from "~/components/ui/Card";
+import { Badge, StatusBadge } from "~/components/ui/Badge";
+import { Select } from "~/components/ui/Select";
+import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
+import { EmptyState } from "~/components/ui/EmptyState";
 import {
   Table,
   TableHeader,
@@ -34,86 +34,99 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { SkeletonProductCard, SkeletonTableRow } from '~/components/ui/Skeleton';
-import type { ProductFilters, ProductStatus } from '~/types/product';
-import { useUrlFilters } from '~/hooks/useUrlFilters';
+} from "~/components/ui/Table";
+import {
+  SkeletonProductCard,
+  SkeletonTableRow,
+} from "~/components/ui/Skeleton";
+import type { ProductFilters, ProductStatus } from "~/types/product";
+import { useUrlFilters } from "~/hooks/useUrlFilters";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Productos - StockFlow' },
-    { name: 'description', content: 'Gestion de productos e inventario' },
+    { title: "Productos - StockFlow" },
+    { name: "description", content: "Gestion de productos e inventario" },
   ];
 };
 
 // Status options for filter
 const statusOptions = [
-  { value: '', label: 'Todos los estados' },
-  { value: 'ACTIVE', label: 'Activo' },
-  { value: 'INACTIVE', label: 'Inactivo' },
-  { value: 'DISCONTINUED', label: 'Descontinuado' },
+  { value: "", label: "Todos los estados" },
+  { value: "ACTIVE", label: "Activo" },
+  { value: "INACTIVE", label: "Inactivo" },
+  { value: "DISCONTINUED", label: "Descontinuado" },
 ];
 
 // Items per page options
 const pageSizeOptions = [
-  { value: '10', label: '10 por pagina' },
-  { value: '25', label: '25 por pagina' },
-  { value: '50', label: '50 por pagina' },
+  { value: "10", label: "10 por pagina" },
+  { value: "25", label: "25 por pagina" },
+  { value: "50", label: "50 por pagina" },
 ];
 
 // Parser config for product filters
 const productFiltersParser = {
   parse: (searchParams: URLSearchParams): ProductFilters => ({
-    search: searchParams.get('search') || undefined,
-    categoryId: searchParams.get('categoryId') || undefined,
-    warehouseId: searchParams.get('warehouseId') || undefined,
-    status: (searchParams.get('status') as ProductStatus) || undefined,
-    lowStock: searchParams.get('lowStock') === 'true',
-    page: Number(searchParams.get('page')) || 1,
-    limit: Number(searchParams.get('limit')) || 10,
+    search: searchParams.get("search") || undefined,
+    categoryId: searchParams.get("categoryId") || undefined,
+    warehouseId: searchParams.get("warehouseId") || undefined,
+    status: (searchParams.get("status") as ProductStatus) || undefined,
+    lowStock: searchParams.get("lowStock") === "true",
+    page: Number(searchParams.get("page")) || 1,
+    limit: Number(searchParams.get("limit")) || 10,
   }),
 };
 
 export default function ProductsPage() {
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [showFilters, setShowFilters] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  const { filters, updateFilters, clearFilters } = useUrlFilters<ProductFilters>({
-    parserConfig: productFiltersParser,
-  });
+  const { filters, updateFilters, clearFilters } =
+    useUrlFilters<ProductFilters>({
+      parserConfig: productFiltersParser,
+    });
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   // Queries
-  const { data: productsData, isLoading, isError, error } = useProducts(filters);
+  const {
+    data: productsData,
+    isLoading,
+    isError,
+    error,
+  } = useProducts(filters);
   const { data: categories = [] } = useCategories();
   const { data: warehouses = [] } = useWarehouses();
 
   // Category and warehouse options
   const categoryOptions = useMemo(
     () => [
-      { value: '', label: 'Todas las categorias' },
+      { value: "", label: "Todas las categorias" },
       ...categories.map((c) => ({ value: c.id, label: c.name })),
     ],
-    [categories]
+    [categories],
   );
 
   const warehouseOptions = useMemo(
     () => [
-      { value: '', label: 'Todas las bodegas' },
+      { value: "", label: "Todas las bodegas" },
       ...warehouses.map((w) => ({ value: w.id, label: w.name })),
     ],
-    [warehouses]
+    [warehouses],
   );
 
   // Debounced search
   const debouncedSearch = useMemo(
-    () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
-    [updateFilters]
+    () =>
+      debounce(
+        (value: string) => updateFilters({ search: value || undefined }),
+        300,
+      ),
+    [updateFilters],
   );
 
   // Handle search input
@@ -141,7 +154,10 @@ export default function ProductsPage() {
       className="space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-600/10 dark:from-primary-500/20 dark:to-primary-900/30">
@@ -176,7 +192,7 @@ export default function ProductsPage() {
                 <Input
                   type="search"
                   placeholder="Buscar por nombre, SKU o codigo de barras..."
-                  defaultValue={filters.search || ''}
+                  defaultValue={filters.search || ""}
                   onChange={handleSearchChange}
                   className="pl-10"
                 />
@@ -184,14 +200,14 @@ export default function ProductsPage() {
 
               {/* Filter toggle button */}
               <Button
-                variant={showFilters ? 'soft-primary' : 'outline'}
+                variant={showFilters ? "soft-primary" : "outline"}
                 onClick={() => setShowFilters(!showFilters)}
                 leftIcon={<Filter className="h-4 w-4" />}
                 rightIcon={
                   <ChevronDown
                     className={cn(
-                      'h-4 w-4 transition-transform duration-200',
-                      showFilters && 'rotate-180'
+                      "h-4 w-4 transition-transform duration-200",
+                      showFilters && "rotate-180",
                     )}
                   />
                 }
@@ -208,12 +224,12 @@ export default function ProductsPage() {
               <div className="hidden sm:flex items-center gap-1 rounded-xl border border-neutral-200 dark:border-neutral-700 p-1 bg-neutral-50 dark:bg-neutral-800/50">
                 <button
                   type="button"
-                  onClick={() => setViewMode('table')}
+                  onClick={() => setViewMode("table")}
                   className={cn(
-                    'rounded-lg p-2 transition-all duration-200',
-                    viewMode === 'table'
-                      ? 'bg-white dark:bg-neutral-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                    "rounded-lg p-2 transition-all duration-200",
+                    viewMode === "table"
+                      ? "bg-white dark:bg-neutral-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                      : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white",
                   )}
                   aria-label="Vista de tabla"
                 >
@@ -221,12 +237,12 @@ export default function ProductsPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewMode('grid')}
+                  onClick={() => setViewMode("grid")}
                   className={cn(
-                    'rounded-lg p-2 transition-all duration-200',
-                    viewMode === 'grid'
-                      ? 'bg-white dark:bg-neutral-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                    "rounded-lg p-2 transition-all duration-200",
+                    viewMode === "grid"
+                      ? "bg-white dark:bg-neutral-700 text-primary-600 dark:text-primary-400 shadow-sm"
+                      : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white",
                   )}
                   aria-label="Vista de cuadricula"
                 >
@@ -240,7 +256,7 @@ export default function ProductsPage() {
               {showFilters && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
@@ -249,25 +265,31 @@ export default function ProductsPage() {
                     {/* Category filter */}
                     <Select
                       options={categoryOptions}
-                      value={filters.categoryId || ''}
-                      onChange={(value) => updateFilters({ categoryId: value || undefined })}
+                      value={filters.categoryId || ""}
+                      onChange={(value) =>
+                        updateFilters({ categoryId: value || undefined })
+                      }
                       placeholder="Categoria"
                     />
 
                     {/* Warehouse filter */}
                     <Select
                       options={warehouseOptions}
-                      value={filters.warehouseId || ''}
-                      onChange={(value) => updateFilters({ warehouseId: value || undefined })}
+                      value={filters.warehouseId || ""}
+                      onChange={(value) =>
+                        updateFilters({ warehouseId: value || undefined })
+                      }
                       placeholder="Bodega"
                     />
 
                     {/* Status filter */}
                     <Select
                       options={statusOptions}
-                      value={filters.status || ''}
+                      value={filters.status || ""}
                       onChange={(value) =>
-                        updateFilters({ status: (value as ProductStatus) || undefined })
+                        updateFilters({
+                          status: (value as ProductStatus) || undefined,
+                        })
                       }
                       placeholder="Estado"
                     />
@@ -277,7 +299,9 @@ export default function ProductsPage() {
                       <input
                         type="checkbox"
                         checked={filters.lowStock || false}
-                        onChange={(e) => updateFilters({ lowStock: e.target.checked })}
+                        onChange={(e) =>
+                          updateFilters({ lowStock: e.target.checked })
+                        }
                         className="h-4 w-4 rounded border-neutral-300 text-warning-600 focus:ring-warning-500 dark:border-neutral-600 dark:bg-neutral-800"
                       />
                       <span className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
@@ -313,9 +337,11 @@ export default function ProductsPage() {
           <EmptyState
             type="error"
             title="Error al cargar productos"
-            description={error?.message || 'Hubo un problema al cargar los productos.'}
+            description={
+              error?.message || "Hubo un problema al cargar los productos."
+            }
             action={{
-              label: 'Reintentar',
+              label: "Reintentar",
               onClick: () => window.location.reload(),
             }}
           />
@@ -325,7 +351,7 @@ export default function ProductsPage() {
       {/* Loading state */}
       {isLoading && (
         <motion.div variants={itemVariants}>
-          {viewMode === 'table' ? (
+          {viewMode === "table" ? (
             <Card variant="elevated" padding="none">
               <Table>
                 <TableHeader>
@@ -361,11 +387,14 @@ export default function ProductsPage() {
         <motion.div variants={itemVariants}>
           <Card variant="elevated" padding="none">
             <EmptyState
-              type={hasActiveFilters ? 'search' : 'products'}
+              type={hasActiveFilters ? "search" : "products"}
               action={
                 hasActiveFilters
-                  ? { label: 'Limpiar filtros', onClick: clearFilters }
-                  : { label: 'Agregar producto', onClick: () => window.location.href = '/products/new' }
+                  ? { label: "Limpiar filtros", onClick: clearFilters }
+                  : {
+                      label: "Agregar producto",
+                      onClick: () => (window.location.href = "/products/new"),
+                    }
               }
             />
           </Card>
@@ -375,18 +404,26 @@ export default function ProductsPage() {
       {/* Products list/grid */}
       {!isLoading && !isError && products.length > 0 && (
         <>
-          {viewMode === 'table' ? (
+          {viewMode === "table" ? (
             <motion.div variants={itemVariants}>
-              <Card variant="elevated" padding="none" className="overflow-hidden">
+              <Card
+                variant="elevated"
+                padding="none"
+                className="overflow-hidden"
+              >
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-neutral-50/50 dark:bg-neutral-800/30">
                       <TableHead className="w-20">Imagen</TableHead>
                       <TableHead>Producto</TableHead>
-                      <TableHead className="hidden md:table-cell">Categoria</TableHead>
+                      <TableHead className="hidden md:table-cell">
+                        Categoria
+                      </TableHead>
                       <TableHead className="text-right">Precio</TableHead>
                       <TableHead className="text-center">Stock</TableHead>
-                      <TableHead className="hidden sm:table-cell">Estado</TableHead>
+                      <TableHead className="hidden sm:table-cell">
+                        Estado
+                      </TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -436,7 +473,9 @@ export default function ProductsPage() {
 
                           {/* Category */}
                           <TableCell className="hidden md:table-cell">
-                            <Badge variant="outline" size="sm">{product.category?.name || '-'}</Badge>
+                            <Badge variant="outline" size="sm">
+                              {product.category?.name || "-"}
+                            </Badge>
                           </TableCell>
 
                           {/* Price */}
@@ -453,10 +492,10 @@ export default function ProductsPage() {
                           <TableCell className="text-center">
                             <div
                               className={cn(
-                                'inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold',
+                                "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold",
                                 product.stock <= product.minStock
-                                  ? 'bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-400'
-                                  : 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400'
+                                  ? "bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-400"
+                                  : "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400",
                               )}
                             >
                               {product.stock <= product.minStock && (
@@ -475,12 +514,20 @@ export default function ProductsPage() {
                           <TableCell>
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Link to={`/products/${product.id}`}>
-                                <Button variant="ghost" size="icon-sm" aria-label="Ver detalles">
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label="Ver detalles"
+                                >
                                   <Eye className="h-4 w-4" />
                                 </Button>
                               </Link>
                               <Link to={`/products/${product.id}/edit`}>
-                                <Button variant="ghost" size="icon-sm" aria-label="Editar">
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label="Editar"
+                                >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                               </Link>
@@ -508,7 +555,12 @@ export default function ProductsPage() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <Card variant="elevated" padding="none" hover="lift" className="overflow-hidden group">
+                    <Card
+                      variant="elevated"
+                      padding="none"
+                      hover="lift"
+                      className="overflow-hidden group"
+                    >
                       {/* Image */}
                       <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
                         {product.imageUrl ? (
@@ -544,13 +596,19 @@ export default function ProductsPage() {
                         {/* Quick actions overlay */}
                         <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
                           <div className="flex gap-2">
-                            <Link to={`/products/${product.id}`} className="flex-1">
+                            <Link
+                              to={`/products/${product.id}`}
+                              className="flex-1"
+                            >
                               <Button variant="glass" size="sm" fullWidth>
                                 <Eye className="h-4 w-4 mr-1.5" />
                                 Ver
                               </Button>
                             </Link>
-                            <Link to={`/products/${product.id}/edit`} className="flex-1">
+                            <Link
+                              to={`/products/${product.id}/edit`}
+                              className="flex-1"
+                            >
                               <Button variant="glass" size="sm" fullWidth>
                                 <Pencil className="h-4 w-4 mr-1.5" />
                                 Editar
@@ -587,10 +645,10 @@ export default function ProductsPage() {
                           </p>
                           <div
                             className={cn(
-                              'rounded-xl px-2.5 py-1 text-sm font-semibold',
+                              "rounded-xl px-2.5 py-1 text-sm font-semibold",
                               product.stock <= product.minStock
-                                ? 'bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-400'
-                                : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'
+                                ? "bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-400"
+                                : "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
                             )}
                           >
                             {product.stock} uds
@@ -619,7 +677,9 @@ export default function ProductsPage() {
                 <Select
                   options={pageSizeOptions}
                   value={String(filters.limit || 10)}
-                  onChange={(value) => updateFilters({ limit: Number(value), page: 1 })}
+                  onChange={(value) =>
+                    updateFilters({ limit: Number(value), page: 1 })
+                  }
                   className="w-36"
                 />
               </div>

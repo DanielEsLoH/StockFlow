@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Search, Package, AlertCircle, Loader2 } from 'lucide-react';
-import { Input } from '~/components/ui/Input';
-import { formatCurrency } from '~/lib/utils';
-import type { Product } from '~/types/product';
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Search, Package, AlertCircle, Loader2 } from "lucide-react";
+import { Input } from "~/components/ui/Input";
+import { formatCurrency } from "~/lib/utils";
+import type { Product } from "~/types/product";
 
 interface POSProductSearchProps {
   products: Product[];
@@ -17,7 +17,7 @@ export function POSProductSearch({
   onSelectProduct,
   inputRef,
 }: POSProductSearchProps) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -25,14 +25,17 @@ export function POSProductSearch({
   const actualInputRef = inputRef || internalInputRef;
 
   // Filter products based on search
-  const filteredProducts = search.length >= 2
-    ? products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(search.toLowerCase()) ||
-          p.sku.toLowerCase().includes(search.toLowerCase()) ||
-          (p.barcode && p.barcode.includes(search))
-      ).slice(0, 10)
-    : [];
+  const filteredProducts =
+    search.length >= 2
+      ? products
+          .filter(
+            (p) =>
+              p.name.toLowerCase().includes(search.toLowerCase()) ||
+              p.sku.toLowerCase().includes(search.toLowerCase()) ||
+              (p.barcode && p.barcode.includes(search)),
+          )
+          .slice(0, 10)
+      : [];
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -44,8 +47,8 @@ export function POSProductSearch({
         setIsOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Handle keyboard navigation
@@ -54,33 +57,33 @@ export function POSProductSearch({
       if (!isOpen || filteredProducts.length === 0) return;
 
       switch (e.key) {
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
           setSelectedIndex((prev) =>
-            prev < filteredProducts.length - 1 ? prev + 1 : prev
+            prev < filteredProducts.length - 1 ? prev + 1 : prev,
           );
           break;
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
           setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
           break;
-        case 'Enter':
+        case "Enter":
           e.preventDefault();
           if (filteredProducts[selectedIndex]) {
             handleSelect(filteredProducts[selectedIndex]);
           }
           break;
-        case 'Escape':
+        case "Escape":
           setIsOpen(false);
           break;
       }
     },
-    [isOpen, filteredProducts, selectedIndex]
+    [isOpen, filteredProducts, selectedIndex],
   );
 
   const handleSelect = (product: Product) => {
     onSelectProduct(product);
-    setSearch('');
+    setSearch("");
     setIsOpen(false);
     setSelectedIndex(0);
   };
@@ -126,8 +129,8 @@ export function POSProductSearch({
                   onClick={() => handleSelect(product)}
                   className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors ${
                     index === selectedIndex
-                      ? 'bg-primary-50 dark:bg-primary-900/20'
-                      : ''
+                      ? "bg-primary-50 dark:bg-primary-900/20"
+                      : ""
                   }`}
                 >
                   <div className="flex-1 min-w-0">

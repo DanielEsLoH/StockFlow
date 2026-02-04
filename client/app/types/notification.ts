@@ -2,69 +2,73 @@
 
 // Notification Type (category of notification)
 export type NotificationType =
-  | 'LOW_STOCK'
-  | 'OUT_OF_STOCK'
-  | 'NEW_INVOICE'
-  | 'INVOICE_PAID'
-  | 'INVOICE_OVERDUE'
-  | 'PAYMENT_RECEIVED'
-  | 'PAYMENT_FAILED'
-  | 'NEW_CUSTOMER'
-  | 'REPORT_READY'
-  | 'SYSTEM'
-  | 'INFO'
-  | 'WARNING'
-  | 'SUCCESS'
-  | 'ERROR';
+  | "LOW_STOCK"
+  | "OUT_OF_STOCK"
+  | "NEW_INVOICE"
+  | "INVOICE_PAID"
+  | "INVOICE_OVERDUE"
+  | "PAYMENT_RECEIVED"
+  | "PAYMENT_FAILED"
+  | "NEW_CUSTOMER"
+  | "REPORT_READY"
+  | "SYSTEM"
+  | "INFO"
+  | "WARNING"
+  | "SUCCESS"
+  | "ERROR";
 
 // Notification Priority
-export type NotificationPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type NotificationPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
 // Display category for styling
-export type NotificationCategory = 'info' | 'success' | 'warning' | 'error';
+export type NotificationCategory = "info" | "success" | "warning" | "error";
 
 // Notification type labels in Spanish
 export const NotificationTypeLabels: Record<NotificationType, string> = {
-  LOW_STOCK: 'Stock bajo',
-  OUT_OF_STOCK: 'Agotado',
-  NEW_INVOICE: 'Nueva factura',
-  INVOICE_PAID: 'Factura pagada',
-  INVOICE_OVERDUE: 'Factura vencida',
-  PAYMENT_RECEIVED: 'Pago recibido',
-  PAYMENT_FAILED: 'Pago fallido',
-  NEW_CUSTOMER: 'Nuevo cliente',
-  REPORT_READY: 'Reporte listo',
-  SYSTEM: 'Sistema',
-  INFO: 'Informacion',
-  WARNING: 'Advertencia',
-  SUCCESS: 'Exito',
-  ERROR: 'Error',
+  LOW_STOCK: "Stock bajo",
+  OUT_OF_STOCK: "Agotado",
+  NEW_INVOICE: "Nueva factura",
+  INVOICE_PAID: "Factura pagada",
+  INVOICE_OVERDUE: "Factura vencida",
+  PAYMENT_RECEIVED: "Pago recibido",
+  PAYMENT_FAILED: "Pago fallido",
+  NEW_CUSTOMER: "Nuevo cliente",
+  REPORT_READY: "Reporte listo",
+  SYSTEM: "Sistema",
+  INFO: "Informacion",
+  WARNING: "Advertencia",
+  SUCCESS: "Exito",
+  ERROR: "Error",
 };
 
 // Priority labels in Spanish
-export const NotificationPriorityLabels: Record<NotificationPriority, string> = {
-  LOW: 'Baja',
-  MEDIUM: 'Media',
-  HIGH: 'Alta',
-  URGENT: 'Urgente',
-};
+export const NotificationPriorityLabels: Record<NotificationPriority, string> =
+  {
+    LOW: "Baja",
+    MEDIUM: "Media",
+    HIGH: "Alta",
+    URGENT: "Urgente",
+  };
 
 // Map notification types to categories for styling
-export const NotificationTypeToCategory: Record<NotificationType, NotificationCategory> = {
-  LOW_STOCK: 'warning',
-  OUT_OF_STOCK: 'error',
-  NEW_INVOICE: 'info',
-  INVOICE_PAID: 'success',
-  INVOICE_OVERDUE: 'warning',
-  PAYMENT_RECEIVED: 'success',
-  PAYMENT_FAILED: 'error',
-  NEW_CUSTOMER: 'info',
-  REPORT_READY: 'success',
-  SYSTEM: 'info',
-  INFO: 'info',
-  WARNING: 'warning',
-  SUCCESS: 'success',
-  ERROR: 'error',
+export const NotificationTypeToCategory: Record<
+  NotificationType,
+  NotificationCategory
+> = {
+  LOW_STOCK: "warning",
+  OUT_OF_STOCK: "error",
+  NEW_INVOICE: "info",
+  INVOICE_PAID: "success",
+  INVOICE_OVERDUE: "warning",
+  PAYMENT_RECEIVED: "success",
+  PAYMENT_FAILED: "error",
+  NEW_CUSTOMER: "info",
+  REPORT_READY: "success",
+  SYSTEM: "info",
+  INFO: "info",
+  WARNING: "warning",
+  SUCCESS: "success",
+  ERROR: "error",
 };
 
 // Main Notification entity
@@ -105,7 +109,7 @@ export interface NotificationFilters {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 // Paginated response for notifications
@@ -164,11 +168,15 @@ export const defaultNotificationPreferences: NotificationPreferences = {
 };
 
 // Helper function to get category from notification
-export function getNotificationCategory(notification: { type: NotificationType }): NotificationCategory {
-  return NotificationTypeToCategory[notification.type] || 'info';
+export function getNotificationCategory(notification: {
+  type: NotificationType;
+}): NotificationCategory {
+  return NotificationTypeToCategory[notification.type] || "info";
 }
 
 // Helper function to check if notification is high priority
-export function isHighPriorityNotification(notification: { priority: NotificationPriority }): boolean {
-  return notification.priority === 'HIGH' || notification.priority === 'URGENT';
+export function isHighPriorityNotification(notification: {
+  priority: NotificationPriority;
+}): boolean {
+  return notification.priority === "HIGH" || notification.priority === "URGENT";
 }

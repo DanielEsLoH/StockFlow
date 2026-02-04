@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo } from "react";
 import {
   X,
   Banknote,
@@ -9,12 +9,12 @@ import {
   Trash2,
   Check,
   AlertCircle,
-} from 'lucide-react';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { formatCurrency } from '~/lib/utils';
-import type { PaymentMethod } from '~/types/payment';
-import type { SalePaymentData } from '~/types/pos';
+} from "lucide-react";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { formatCurrency } from "~/lib/utils";
+import type { PaymentMethod } from "~/types/payment";
+import type { SalePaymentData } from "~/types/pos";
 
 interface POSSplitPaymentModalProps {
   isOpen: boolean;
@@ -32,14 +32,34 @@ interface PaymentRow {
   cardLastFour?: string;
 }
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: React.ReactNode }[] = [
-  { value: 'CASH', label: 'Efectivo', icon: <Banknote className="h-5 w-5" /> },
-  { value: 'CREDIT_CARD', label: 'Tarjeta Credito', icon: <CreditCard className="h-5 w-5" /> },
-  { value: 'DEBIT_CARD', label: 'Tarjeta Debito', icon: <CreditCard className="h-5 w-5" /> },
-  { value: 'NEQUI', label: 'Nequi', icon: <Smartphone className="h-5 w-5" /> },
-  { value: 'DAVIPLATA', label: 'Daviplata', icon: <Smartphone className="h-5 w-5" /> },
-  { value: 'PSE', label: 'PSE', icon: <Building2 className="h-5 w-5" /> },
-  { value: 'BANK_TRANSFER', label: 'Transferencia', icon: <Building2 className="h-5 w-5" /> },
+const PAYMENT_METHODS: {
+  value: PaymentMethod;
+  label: string;
+  icon: React.ReactNode;
+}[] = [
+  { value: "CASH", label: "Efectivo", icon: <Banknote className="h-5 w-5" /> },
+  {
+    value: "CREDIT_CARD",
+    label: "Tarjeta Credito",
+    icon: <CreditCard className="h-5 w-5" />,
+  },
+  {
+    value: "DEBIT_CARD",
+    label: "Tarjeta Debito",
+    icon: <CreditCard className="h-5 w-5" />,
+  },
+  { value: "NEQUI", label: "Nequi", icon: <Smartphone className="h-5 w-5" /> },
+  {
+    value: "DAVIPLATA",
+    label: "Daviplata",
+    icon: <Smartphone className="h-5 w-5" />,
+  },
+  { value: "PSE", label: "PSE", icon: <Building2 className="h-5 w-5" /> },
+  {
+    value: "BANK_TRANSFER",
+    label: "Transferencia",
+    icon: <Building2 className="h-5 w-5" />,
+  },
 ];
 
 export function POSSplitPaymentModal({
@@ -50,12 +70,12 @@ export function POSSplitPaymentModal({
   isProcessing = false,
 }: POSSplitPaymentModalProps) {
   const [payments, setPayments] = useState<PaymentRow[]>([
-    { id: '1', method: 'CASH', amount: total },
+    { id: "1", method: "CASH", amount: total },
   ]);
 
   const totalPaid = useMemo(
     () => payments.reduce((sum, p) => sum + (p.amount || 0), 0),
-    [payments]
+    [payments],
   );
 
   const remaining = total - totalPaid;
@@ -64,9 +84,9 @@ export function POSSplitPaymentModal({
 
   const addPayment = () => {
     const unusedMethods = PAYMENT_METHODS.filter(
-      (m) => !payments.some((p) => p.method === m.value)
+      (m) => !payments.some((p) => p.method === m.value),
     );
-    const defaultMethod = unusedMethods[0]?.value || 'CASH';
+    const defaultMethod = unusedMethods[0]?.value || "CASH";
 
     setPayments([
       ...payments,
@@ -85,9 +105,7 @@ export function POSSplitPaymentModal({
   };
 
   const updatePayment = (id: string, updates: Partial<PaymentRow>) => {
-    setPayments(
-      payments.map((p) => (p.id === id ? { ...p, ...updates } : p))
-    );
+    setPayments(payments.map((p) => (p.id === id ? { ...p, ...updates } : p)));
   };
 
   const handleConfirm = () => {
@@ -95,7 +113,8 @@ export function POSSplitPaymentModal({
       .filter((p) => p.amount > 0)
       .map((p) => ({
         method: p.method,
-        amount: p.method === 'CASH' && change > 0 ? p.amount - change : p.amount,
+        amount:
+          p.method === "CASH" && change > 0 ? p.amount - change : p.amount,
         reference: p.reference,
         cardLastFour: p.cardLastFour,
       }));
@@ -103,7 +122,7 @@ export function POSSplitPaymentModal({
   };
 
   const handleQuickCash = (amount: number) => {
-    if (payments.length === 1 && payments[0].method === 'CASH') {
+    if (payments.length === 1 && payments[0].method === "CASH") {
       updatePayment(payments[0].id, { amount });
     }
   };
@@ -122,10 +141,7 @@ export function POSSplitPaymentModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden">
@@ -151,7 +167,7 @@ export function POSSplitPaymentModal({
           </div>
 
           {/* Quick Cash Buttons */}
-          {payments.length === 1 && payments[0].method === 'CASH' && (
+          {payments.length === 1 && payments[0].method === "CASH" && (
             <div className="flex flex-wrap gap-2">
               {quickAmounts.slice(0, 4).map((amount) => (
                 <Button
@@ -196,7 +212,7 @@ export function POSSplitPaymentModal({
                     type="number"
                     min="0"
                     step="0.01"
-                    value={payment.amount || ''}
+                    value={payment.amount || ""}
                     onChange={(e) =>
                       updatePayment(payment.id, {
                         amount: Number(e.target.value),
@@ -220,14 +236,14 @@ export function POSSplitPaymentModal({
                 </div>
 
                 {/* Reference for cards/transfers */}
-                {['CREDIT_CARD', 'DEBIT_CARD'].includes(payment.method) && (
+                {["CREDIT_CARD", "DEBIT_CARD"].includes(payment.method) && (
                   <Input
                     type="text"
                     maxLength={4}
-                    value={payment.cardLastFour || ''}
+                    value={payment.cardLastFour || ""}
                     onChange={(e) =>
                       updatePayment(payment.id, {
-                        cardLastFour: e.target.value.replace(/\D/g, ''),
+                        cardLastFour: e.target.value.replace(/\D/g, ""),
                       })
                     }
                     placeholder="Ultimos 4 digitos de la tarjeta"
@@ -235,12 +251,12 @@ export function POSSplitPaymentModal({
                   />
                 )}
 
-                {['PSE', 'BANK_TRANSFER', 'NEQUI', 'DAVIPLATA'].includes(
-                  payment.method
+                {["PSE", "BANK_TRANSFER", "NEQUI", "DAVIPLATA"].includes(
+                  payment.method,
                 ) && (
                   <Input
                     type="text"
-                    value={payment.reference || ''}
+                    value={payment.reference || ""}
                     onChange={(e) =>
                       updatePayment(payment.id, { reference: e.target.value })
                     }
@@ -302,7 +318,7 @@ export function POSSplitPaymentModal({
             disabled={!isValid || isProcessing}
           >
             <Check className="h-5 w-5 mr-2" />
-            {isProcessing ? 'Procesando...' : 'Confirmar Pago'}
+            {isProcessing ? "Procesando..." : "Confirmar Pago"}
           </Button>
         </div>
       </div>

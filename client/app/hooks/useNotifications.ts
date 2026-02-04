@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
-import { notificationsService } from '~/services/notifications.service';
-import { queryKeys } from '~/lib/query-client';
-import { toast } from '~/components/ui/Toast';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
+import { notificationsService } from "~/services/notifications.service";
+import { queryKeys } from "~/lib/query-client";
+import { toast } from "~/components/ui/Toast";
 import type {
   Notification,
   NotificationSummary,
@@ -10,7 +10,7 @@ import type {
   NotificationsResponse,
   UnreadCountResponse,
   CreateNotificationData,
-} from '~/types/notification';
+} from "~/types/notification";
 
 // ============================================================================
 // QUERIES
@@ -77,24 +77,29 @@ export function useMarkAsRead() {
     mutationFn: (id: string) => notificationsService.markAsRead(id),
     onMutate: async (id) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.notifications.all });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.notifications.all,
+      });
 
       // Snapshot the previous values
       const previousNotification = queryClient.getQueryData<Notification>(
-        queryKeys.notifications.detail(id)
+        queryKeys.notifications.detail(id),
       );
       const previousUnreadCount = queryClient.getQueryData<UnreadCountResponse>(
-        queryKeys.notifications.unreadCount()
+        queryKeys.notifications.unreadCount(),
       );
 
       // Optimistically update the notification
       if (previousNotification && !previousNotification.read) {
-        queryClient.setQueryData<Notification>(queryKeys.notifications.detail(id), {
-          ...previousNotification,
-          read: true,
-          readAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+        queryClient.setQueryData<Notification>(
+          queryKeys.notifications.detail(id),
+          {
+            ...previousNotification,
+            read: true,
+            readAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        );
       }
 
       // Optimistically update the unread count
@@ -104,7 +109,7 @@ export function useMarkAsRead() {
           {
             ...previousUnreadCount,
             count: previousUnreadCount.count - 1,
-          }
+          },
         );
       }
 
@@ -112,27 +117,38 @@ export function useMarkAsRead() {
     },
     onSuccess: (notification) => {
       // Update detail cache
-      queryClient.setQueryData(queryKeys.notifications.detail(notification.id), notification);
+      queryClient.setQueryData(
+        queryKeys.notifications.detail(notification.id),
+        notification,
+      );
       // Invalidate list and recent queries
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.recent() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.list(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.recent(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.unreadCount(),
+      });
     },
     onError: (error: Error, id, context) => {
       // Rollback optimistic updates
       if (context?.previousNotification) {
         queryClient.setQueryData(
           queryKeys.notifications.detail(id),
-          context.previousNotification
+          context.previousNotification,
         );
       }
       if (context?.previousUnreadCount) {
         queryClient.setQueryData(
           queryKeys.notifications.unreadCount(),
-          context.previousUnreadCount
+          context.previousUnreadCount,
         );
       }
-      toast.error(error.message || 'Error al marcar la notificacion como leida');
+      toast.error(
+        error.message || "Error al marcar la notificacion como leida",
+      );
     },
   });
 }
@@ -147,18 +163,22 @@ export function useMarkMultipleAsRead() {
     mutationFn: (ids: string[]) => notificationsService.markMultipleAsRead(ids),
     onSuccess: (result) => {
       // Invalidate all notification queries
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.all,
+      });
 
       if (result.updatedCount > 0) {
         toast.success(
           result.updatedCount === 1
-            ? '1 notificacion marcada como leida'
-            : `${result.updatedCount} notificaciones marcadas como leidas`
+            ? "1 notificacion marcada como leida"
+            : `${result.updatedCount} notificaciones marcadas como leidas`,
         );
       }
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al marcar las notificaciones como leidas');
+      toast.error(
+        error.message || "Error al marcar las notificaciones como leidas",
+      );
     },
   });
 }
@@ -173,27 +193,31 @@ export function useMarkAllAsRead() {
     mutationFn: () => notificationsService.markAllAsRead(),
     onMutate: async () => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.notifications.all });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.notifications.all,
+      });
 
       // Snapshot the previous unread count
       const previousUnreadCount = queryClient.getQueryData<UnreadCountResponse>(
-        queryKeys.notifications.unreadCount()
+        queryKeys.notifications.unreadCount(),
       );
 
       // Optimistically set unread count to 0
       queryClient.setQueryData<UnreadCountResponse>(
         queryKeys.notifications.unreadCount(),
-        { count: 0, byType: {}, byPriority: {} }
+        { count: 0, byType: {}, byPriority: {} },
       );
 
       return { previousUnreadCount };
     },
     onSuccess: (result) => {
       // Invalidate all notification queries
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.all,
+      });
 
       if (result.updatedCount > 0) {
-        toast.success('Todas las notificaciones marcadas como leidas');
+        toast.success("Todas las notificaciones marcadas como leidas");
       }
     },
     onError: (error: Error, _variables, context) => {
@@ -201,10 +225,12 @@ export function useMarkAllAsRead() {
       if (context?.previousUnreadCount) {
         queryClient.setQueryData(
           queryKeys.notifications.unreadCount(),
-          context.previousUnreadCount
+          context.previousUnreadCount,
         );
       }
-      toast.error(error.message || 'Error al marcar todas las notificaciones como leidas');
+      toast.error(
+        error.message || "Error al marcar todas las notificaciones como leidas",
+      );
     },
   });
 }
@@ -219,24 +245,29 @@ export function useMarkAsUnread() {
     mutationFn: (id: string) => notificationsService.markAsUnread(id),
     onMutate: async (id) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.notifications.all });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.notifications.all,
+      });
 
       // Snapshot the previous values
       const previousNotification = queryClient.getQueryData<Notification>(
-        queryKeys.notifications.detail(id)
+        queryKeys.notifications.detail(id),
       );
       const previousUnreadCount = queryClient.getQueryData<UnreadCountResponse>(
-        queryKeys.notifications.unreadCount()
+        queryKeys.notifications.unreadCount(),
       );
 
       // Optimistically update the notification
       if (previousNotification && previousNotification.read) {
-        queryClient.setQueryData<Notification>(queryKeys.notifications.detail(id), {
-          ...previousNotification,
-          read: false,
-          readAt: undefined,
-          updatedAt: new Date().toISOString(),
-        });
+        queryClient.setQueryData<Notification>(
+          queryKeys.notifications.detail(id),
+          {
+            ...previousNotification,
+            read: false,
+            readAt: undefined,
+            updatedAt: new Date().toISOString(),
+          },
+        );
       }
 
       // Optimistically update the unread count
@@ -246,7 +277,7 @@ export function useMarkAsUnread() {
           {
             ...previousUnreadCount,
             count: previousUnreadCount.count + 1,
-          }
+          },
         );
       }
 
@@ -254,27 +285,38 @@ export function useMarkAsUnread() {
     },
     onSuccess: (notification) => {
       // Update detail cache
-      queryClient.setQueryData(queryKeys.notifications.detail(notification.id), notification);
+      queryClient.setQueryData(
+        queryKeys.notifications.detail(notification.id),
+        notification,
+      );
       // Invalidate list and recent queries
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.recent() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.list(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.recent(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.unreadCount(),
+      });
     },
     onError: (error: Error, id, context) => {
       // Rollback optimistic updates
       if (context?.previousNotification) {
         queryClient.setQueryData(
           queryKeys.notifications.detail(id),
-          context.previousNotification
+          context.previousNotification,
         );
       }
       if (context?.previousUnreadCount) {
         queryClient.setQueryData(
           queryKeys.notifications.unreadCount(),
-          context.previousUnreadCount
+          context.previousUnreadCount,
         );
       }
-      toast.error(error.message || 'Error al marcar la notificacion como no leida');
+      toast.error(
+        error.message || "Error al marcar la notificacion como no leida",
+      );
     },
   });
 }
@@ -290,35 +332,40 @@ export function useDeleteNotification() {
     onSuccess: (_result, id) => {
       // Get the notification before removing to check if it was unread
       const notification = queryClient.getQueryData<Notification>(
-        queryKeys.notifications.detail(id)
+        queryKeys.notifications.detail(id),
       );
 
       // Invalidate all notification queries
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.all,
+      });
 
       // Remove from detail cache
-      queryClient.removeQueries({ queryKey: queryKeys.notifications.detail(id) });
+      queryClient.removeQueries({
+        queryKey: queryKeys.notifications.detail(id),
+      });
 
       // Update unread count if notification was unread
       if (notification && !notification.read) {
-        const previousUnreadCount = queryClient.getQueryData<UnreadCountResponse>(
-          queryKeys.notifications.unreadCount()
-        );
+        const previousUnreadCount =
+          queryClient.getQueryData<UnreadCountResponse>(
+            queryKeys.notifications.unreadCount(),
+          );
         if (previousUnreadCount && previousUnreadCount.count > 0) {
           queryClient.setQueryData<UnreadCountResponse>(
             queryKeys.notifications.unreadCount(),
             {
               ...previousUnreadCount,
               count: previousUnreadCount.count - 1,
-            }
+            },
           );
         }
       }
 
-      toast.success('Notificacion eliminada');
+      toast.success("Notificacion eliminada");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar la notificacion');
+      toast.error(error.message || "Error al eliminar la notificacion");
     },
   });
 }
@@ -330,21 +377,24 @@ export function useDeleteMultipleNotifications() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (ids: string[]) => notificationsService.deleteMultipleNotifications(ids),
+    mutationFn: (ids: string[]) =>
+      notificationsService.deleteMultipleNotifications(ids),
     onSuccess: (result) => {
       // Invalidate all notification queries
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.all,
+      });
 
       if (result.deletedCount > 0) {
         toast.success(
           result.deletedCount === 1
-            ? '1 notificacion eliminada'
-            : `${result.deletedCount} notificaciones eliminadas`
+            ? "1 notificacion eliminada"
+            : `${result.deletedCount} notificaciones eliminadas`,
         );
       }
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar las notificaciones');
+      toast.error(error.message || "Error al eliminar las notificaciones");
     },
   });
 }
@@ -359,20 +409,24 @@ export function useClearReadNotifications() {
     mutationFn: () => notificationsService.clearReadNotifications(),
     onSuccess: (result) => {
       // Invalidate all notification queries
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.all,
+      });
 
       if (result.deletedCount > 0) {
         toast.success(
           result.deletedCount === 1
-            ? '1 notificacion leida eliminada'
-            : `${result.deletedCount} notificaciones leidas eliminadas`
+            ? "1 notificacion leida eliminada"
+            : `${result.deletedCount} notificaciones leidas eliminadas`,
         );
       } else {
-        toast.info('No hay notificaciones leidas para eliminar');
+        toast.info("No hay notificaciones leidas para eliminar");
       }
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al limpiar las notificaciones leidas');
+      toast.error(
+        error.message || "Error al limpiar las notificaciones leidas",
+      );
     },
   });
 }
@@ -384,15 +438,18 @@ export function useCreateNotification() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateNotificationData) => notificationsService.createNotification(data),
+    mutationFn: (data: CreateNotificationData) =>
+      notificationsService.createNotification(data),
     onSuccess: (notification) => {
       // Invalidate all notification queries
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.all,
+      });
 
       toast.success(`Notificacion "${notification.title}" creada`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear la notificacion');
+      toast.error(error.message || "Error al crear la notificacion");
     },
   });
 }

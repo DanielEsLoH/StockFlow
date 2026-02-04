@@ -1,4 +1,9 @@
-import { type RouteConfig, index, route, layout } from "@react-router/dev/routes";
+import {
+  type RouteConfig,
+  index,
+  route,
+  layout,
+} from "@react-router/dev/routes";
 
 export default [
   // Home/Landing page
@@ -79,7 +84,10 @@ export default [
     route("pos/sessions/:id", "routes/_app.pos.sessions.$id.tsx"),
     route("pos/cash-registers", "routes/_app.pos.cash-registers.tsx"),
     route("pos/cash-registers/new", "routes/_app.pos.cash-registers.new.tsx"),
-    route("pos/cash-registers/:id/edit", "routes/_app.pos.cash-registers.$id.edit.tsx"),
+    route(
+      "pos/cash-registers/:id/edit",
+      "routes/_app.pos.cash-registers.$id.edit.tsx",
+    ),
 
     // DIAN Electronic Invoicing module
     route("dian", "routes/_app.dian.tsx"),

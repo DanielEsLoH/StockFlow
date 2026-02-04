@@ -1,8 +1,8 @@
-import { useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Printer, Check } from 'lucide-react';
-import { Button } from '~/components/ui/Button';
-import { POSTicket, type POSTicketProps } from './POSTicket';
+import { useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Printer, Check } from "lucide-react";
+import { Button } from "~/components/ui/Button";
+import { POSTicket, type POSTicketProps } from "./POSTicket";
 
 interface POSTicketModalProps extends POSTicketProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ export function POSTicketModal({
 
   const handlePrint = () => {
     // Create a new window for printing
-    const printWindow = window.open('', '_blank', 'width=320,height=600');
+    const printWindow = window.open("", "_blank", "width=320,height=600");
 
     if (printWindow && ticketRef.current) {
       // Get the ticket HTML
@@ -182,7 +182,10 @@ export function POSTicketModal({
 
               {/* Ticket Preview */}
               <div className="p-4 bg-neutral-100 dark:bg-neutral-900 max-h-[60vh] overflow-y-auto">
-                <div className="bg-white shadow-lg mx-auto" style={{ width: 'fit-content' }}>
+                <div
+                  className="bg-white shadow-lg mx-auto"
+                  style={{ width: "fit-content" }}
+                >
                   <POSTicket ref={ticketRef} {...ticketProps} />
                 </div>
               </div>
@@ -196,10 +199,7 @@ export function POSTicketModal({
                 >
                   Cerrar
                 </Button>
-                <Button
-                  className="flex-1"
-                  onClick={handlePrint}
-                >
+                <Button className="flex-1" onClick={handlePrint}>
                   <Printer className="h-4 w-4 mr-2" />
                   Imprimir Ticket
                 </Button>

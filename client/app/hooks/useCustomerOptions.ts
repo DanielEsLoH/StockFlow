@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { useCustomers } from './useCustomers';
+import { useMemo } from "react";
+import { useCustomers } from "./useCustomers";
 
 /**
  * Hook to get customer options for select dropdowns
@@ -10,10 +10,13 @@ export function useCustomerOptions() {
 
   const customerOptions = useMemo(
     () => [
-      { value: '', label: 'Todos los clientes' },
-      ...(customersData?.data || []).map((c) => ({ value: c.id, label: c.name })),
+      { value: "", label: "Todos los clientes" },
+      ...(customersData?.data || []).map((c) => ({
+        value: c.id,
+        label: c.name,
+      })),
     ],
-    [customersData]
+    [customersData],
   );
 
   return customerOptions;

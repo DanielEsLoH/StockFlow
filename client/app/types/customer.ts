@@ -1,7 +1,7 @@
 // Customer Types
 
-export type CustomerType = 'INDIVIDUAL' | 'BUSINESS';
-export type CustomerStatus = 'ACTIVE' | 'INACTIVE';
+export type CustomerType = "INDIVIDUAL" | "BUSINESS";
+export type CustomerStatus = "ACTIVE" | "INACTIVE";
 
 export interface Customer {
   id: string;
@@ -9,13 +9,13 @@ export interface Customer {
   email: string;
   phone?: string;
   document?: string;
-  documentType?: 'CC' | 'NIT' | 'CE' | 'PASSPORT';
+  documentType?: "CC" | "NIT" | "CE" | "PASSPORT";
   type: CustomerType;
   address?: string;
   city?: string;
   notes?: string;
-  status?: CustomerStatus;  // Backend format
-  isActive?: boolean;       // Legacy format
+  status?: CustomerStatus; // Backend format
+  isActive?: boolean; // Legacy format
   totalPurchases?: number;
   totalSpent?: number;
   lastPurchaseDate?: string;
@@ -31,7 +31,7 @@ export interface CustomerFilters {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 export interface CreateCustomerData {
@@ -39,7 +39,7 @@ export interface CreateCustomerData {
   email: string;
   phone?: string;
   document?: string;
-  documentType?: 'CC' | 'NIT' | 'CE' | 'PASSPORT';
+  documentType?: "CC" | "NIT" | "CE" | "PASSPORT";
   type: CustomerType;
   address?: string;
   city?: string;
@@ -47,7 +47,7 @@ export interface CreateCustomerData {
   isActive?: boolean;
 }
 
-export type UpdateCustomerData = Partial<CreateCustomerData>
+export type UpdateCustomerData = Partial<CreateCustomerData>;
 
 export interface CustomersResponse {
   data: Customer[];

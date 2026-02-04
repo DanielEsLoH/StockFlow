@@ -355,11 +355,7 @@ export default function ProductDetailPage() {
                   label="Codigo de Barras"
                   value={product.barcode || "-"}
                 />
-                <InfoRow
-                  icon={Package}
-                  label="Unidad"
-                  value={product.unit}
-                />
+                <InfoRow icon={Package} label="Unidad" value={product.unit} />
                 <InfoRow
                   icon={Calendar}
                   label="Creado"

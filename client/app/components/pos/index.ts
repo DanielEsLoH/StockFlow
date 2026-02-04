@@ -1,16 +1,20 @@
-export { ProductCard } from './ProductCard';
-export { ProductCatalog } from './ProductCatalog';
-export { CategoryTabs } from './CategoryTabs';
-export { CartItem } from './CartItem';
-export { CartSummary } from './CartSummary';
-export { CartPanel } from './CartPanel';
-export { QuickSearch } from './QuickSearch';
-export { CustomerSelect } from './CustomerSelect';
-export { WarehouseSelect } from './WarehouseSelect';
-export { POSCart } from './POSCart';
-export { POSCartPro } from './POSCartPro';
-export { POSProductSearch } from './POSProductSearch';
-export { POSSplitPaymentModal } from './POSSplitPaymentModal';
-export { POSTicket } from './POSTicket';
-export { POSTicketModal } from './POSTicketModal';
-export type { POSTicketProps, POSTicketItem, POSTicketPayment } from './POSTicket';
+export { ProductCard } from "./ProductCard";
+export { ProductCatalog } from "./ProductCatalog";
+export { CategoryTabs } from "./CategoryTabs";
+export { CartItem } from "./CartItem";
+export { CartSummary } from "./CartSummary";
+export { CartPanel } from "./CartPanel";
+export { QuickSearch } from "./QuickSearch";
+export { CustomerSelect } from "./CustomerSelect";
+export { WarehouseSelect } from "./WarehouseSelect";
+export { POSCart } from "./POSCart";
+export { POSCartPro } from "./POSCartPro";
+export { POSProductSearch } from "./POSProductSearch";
+export { POSSplitPaymentModal } from "./POSSplitPaymentModal";
+export { POSTicket } from "./POSTicket";
+export { POSTicketModal } from "./POSTicketModal";
+export type {
+  POSTicketProps,
+  POSTicketItem,
+  POSTicketPayment,
+} from "./POSTicket";

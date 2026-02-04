@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
+import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   Search,
   Plus,
@@ -19,21 +19,21 @@ import {
   Store,
   TrendingUp,
   Receipt,
-} from 'lucide-react';
-import type { Route } from './+types/_app.invoices';
-import { cn, debounce, formatCurrency, formatDate } from '~/lib/utils';
+} from "lucide-react";
+import type { Route } from "./+types/_app.invoices";
+import { cn, debounce, formatCurrency, formatDate } from "~/lib/utils";
 import {
   useInvoices,
   useInvoiceStats,
   useDeleteInvoice,
-} from '~/hooks/useInvoices';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card } from '~/components/ui/Card';
-import { Badge, StatusBadge } from '~/components/ui/Badge';
-import { StatCard } from '~/components/ui/StatCard';
-import { Select } from '~/components/ui/Select';
-import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
+} from "~/hooks/useInvoices";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card } from "~/components/ui/Card";
+import { Badge, StatusBadge } from "~/components/ui/Badge";
+import { StatCard } from "~/components/ui/StatCard";
+import { Select } from "~/components/ui/Select";
+import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
 import {
   Table,
   TableHeader,
@@ -41,44 +41,49 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { SkeletonTableRow } from '~/components/ui/Skeleton';
-import { DeleteModal } from '~/components/ui/DeleteModal';
-import { EmptyState } from '~/components/ui/EmptyState';
-import type { InvoiceFilters, InvoiceSummary, InvoiceStatus, InvoiceSource } from '~/types/invoice';
-import { useUrlFilters } from '~/hooks/useUrlFilters';
-import { useCustomerOptions } from '~/hooks/useCustomerOptions';
+} from "~/components/ui/Table";
+import { SkeletonTableRow } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/DeleteModal";
+import { EmptyState } from "~/components/ui/EmptyState";
+import type {
+  InvoiceFilters,
+  InvoiceSummary,
+  InvoiceStatus,
+  InvoiceSource,
+} from "~/types/invoice";
+import { useUrlFilters } from "~/hooks/useUrlFilters";
+import { useCustomerOptions } from "~/hooks/useCustomerOptions";
 
 // Meta for SEO - used by React Router
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Facturas - StockFlow' },
-    { name: 'description', content: 'Gestion de facturas' },
+    { title: "Facturas - StockFlow" },
+    { name: "description", content: "Gestion de facturas" },
   ];
 };
 
 // Status options for filter
 const statusOptions = [
-  { value: '', label: 'Todos los estados' },
-  { value: 'DRAFT', label: 'Borrador' },
-  { value: 'PENDING', label: 'Pendiente' },
-  { value: 'PAID', label: 'Pagada' },
-  { value: 'OVERDUE', label: 'Vencida' },
-  { value: 'CANCELLED', label: 'Cancelada' },
+  { value: "", label: "Todos los estados" },
+  { value: "DRAFT", label: "Borrador" },
+  { value: "PENDING", label: "Pendiente" },
+  { value: "PAID", label: "Pagada" },
+  { value: "OVERDUE", label: "Vencida" },
+  { value: "CANCELLED", label: "Cancelada" },
 ];
 
 // Source options for filter
 const sourceOptions = [
-  { value: '', label: 'Todos los origenes' },
-  { value: 'MANUAL', label: 'Manual' },
-  { value: 'POS', label: 'POS' },
+  { value: "", label: "Todos los origenes" },
+  { value: "MANUAL", label: "Manual" },
+  { value: "POS", label: "POS" },
 ];
 
 // Items per page options
 const pageSizeOptions = [
-  { value: '10', label: '10 por pagina' },
-  { value: '25', label: '25 por pagina' },
-  { value: '50', label: '50 por pagina' },
+  { value: "10", label: "10 por pagina" },
+  { value: "25", label: "25 por pagina" },
+  { value: "50", label: "50 por pagina" },
 ];
 
 // Date filter input component - extracted to avoid duplication
@@ -97,7 +102,7 @@ function DateFilterInput({
       <Input
         type="date"
         placeholder={placeholder}
-        value={value || ''}
+        value={value || ""}
         onChange={(e) => onChange(e.target.value || undefined)}
         className="pl-10"
       />
@@ -113,7 +118,9 @@ function InvoiceTableHeader() {
         <TableHead>No. Factura</TableHead>
         <TableHead>Cliente</TableHead>
         <TableHead className="hidden md:table-cell">Fecha Emision</TableHead>
-        <TableHead className="hidden sm:table-cell">Fecha Vencimiento</TableHead>
+        <TableHead className="hidden sm:table-cell">
+          Fecha Vencimiento
+        </TableHead>
         <TableHead className="text-right">Total</TableHead>
         <TableHead>Estado</TableHead>
         <TableHead className="hidden lg:table-cell">Origen</TableHead>
@@ -126,12 +133,31 @@ function InvoiceTableHeader() {
 
 // Source badge component
 function InvoiceSourceBadge({ source }: { source: InvoiceSource }) {
-  const config: Record<InvoiceSource, { label: string; variant: 'default' | 'primary' | 'secondary'; icon: React.ReactNode }> = {
-    MANUAL: { label: 'Manual', variant: 'secondary', icon: <FileText className="h-3 w-3" /> },
-    POS: { label: 'POS', variant: 'primary', icon: <ShoppingCart className="h-3 w-3" /> },
+  const config: Record<
+    InvoiceSource,
+    {
+      label: string;
+      variant: "default" | "primary" | "secondary";
+      icon: React.ReactNode;
+    }
+  > = {
+    MANUAL: {
+      label: "Manual",
+      variant: "secondary",
+      icon: <FileText className="h-3 w-3" />,
+    },
+    POS: {
+      label: "POS",
+      variant: "primary",
+      icon: <ShoppingCart className="h-3 w-3" />,
+    },
   };
 
-  const sourceConfig = config[source] || { label: source || 'Desconocido', variant: 'default' as const, icon: null };
+  const sourceConfig = config[source] || {
+    label: source || "Desconocido",
+    variant: "default" as const,
+    icon: null,
+  };
 
   return (
     <Badge variant={sourceConfig.variant} size="sm" icon={sourceConfig.icon}>
@@ -160,30 +186,32 @@ function DianStatusIcon({ hasCufe }: { hasCufe: boolean }) {
   );
 }
 
-
 // Parser config for invoice filters
 const invoiceFiltersParser = {
   parse: (searchParams: URLSearchParams): InvoiceFilters => ({
-    search: searchParams.get('search') || undefined,
-    status: (searchParams.get('status') as InvoiceStatus) || undefined,
-    source: (searchParams.get('source') as InvoiceSource) || undefined,
-    customerId: searchParams.get('customerId') || undefined,
-    startDate: searchParams.get('startDate') || undefined,
-    endDate: searchParams.get('endDate') || undefined,
-    page: Number(searchParams.get('page')) || 1,
-    limit: Number(searchParams.get('limit')) || 10,
+    search: searchParams.get("search") || undefined,
+    status: (searchParams.get("status") as InvoiceStatus) || undefined,
+    source: (searchParams.get("source") as InvoiceSource) || undefined,
+    customerId: searchParams.get("customerId") || undefined,
+    startDate: searchParams.get("startDate") || undefined,
+    endDate: searchParams.get("endDate") || undefined,
+    page: Number(searchParams.get("page")) || 1,
+    limit: Number(searchParams.get("limit")) || 10,
   }),
 };
 
 // Default export used by React Router
 export default function InvoicesPage() {
   const [showFilters, setShowFilters] = useState(false);
-  const [deletingInvoice, setDeletingInvoice] = useState<InvoiceSummary | null>(null);
+  const [deletingInvoice, setDeletingInvoice] = useState<InvoiceSummary | null>(
+    null,
+  );
   const [isMounted, setIsMounted] = useState(false);
 
-  const { filters, updateFilters, clearFilters } = useUrlFilters<InvoiceFilters>({
-    parserConfig: invoiceFiltersParser,
-  });
+  const { filters, updateFilters, clearFilters } =
+    useUrlFilters<InvoiceFilters>({
+      parserConfig: invoiceFiltersParser,
+    });
 
   useEffect(() => {
     setIsMounted(true);
@@ -199,8 +227,12 @@ export default function InvoicesPage() {
 
   // Debounced search
   const debouncedSearch = useMemo(
-    () => debounce((value: string) => updateFilters({ search: value || undefined }), 300),
-    [updateFilters]
+    () =>
+      debounce(
+        (value: string) => updateFilters({ search: value || undefined }),
+        300,
+      ),
+    [updateFilters],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -217,18 +249,23 @@ export default function InvoicesPage() {
 
   // Check if invoice can be edited (not paid or cancelled)
   const canEdit = (invoice: InvoiceSummary) => {
-    return invoice.status !== 'PAID' && invoice.status !== 'CANCELLED';
+    return invoice.status !== "PAID" && invoice.status !== "CANCELLED";
   };
 
   // Check if invoice can be deleted (only drafts)
   const canDelete = (invoice: InvoiceSummary) => {
-    return invoice.status === 'DRAFT';
+    return invoice.status === "DRAFT";
   };
 
   const invoices = invoicesData?.data || [];
   const paginationMeta = invoicesData?.meta;
   const hasActiveFilters =
-    filters.search || filters.status || filters.source || filters.customerId || filters.startDate || filters.endDate;
+    filters.search ||
+    filters.status ||
+    filters.source ||
+    filters.customerId ||
+    filters.startDate ||
+    filters.endDate;
 
   return (
     <motion.div
@@ -238,7 +275,10 @@ export default function InvoicesPage() {
       className="space-y-6"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500/20 to-accent-500/10 dark:from-primary-500/20 dark:to-accent-900/30">
             <Receipt className="h-7 w-7 text-primary-600 dark:text-primary-400" />
@@ -320,14 +360,22 @@ export default function InvoicesPage() {
 
               {/* Filter toggle */}
               <Button
-                variant={showFilters ? 'soft-primary' : 'outline'}
+                variant={showFilters ? "soft-primary" : "outline"}
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
                 {hasActiveFilters && (
                   <Badge variant="gradient" size="xs" className="ml-2">
-                    {[filters.status, filters.source, filters.customerId, filters.startDate, filters.endDate].filter(Boolean).length}
+                    {
+                      [
+                        filters.status,
+                        filters.source,
+                        filters.customerId,
+                        filters.startDate,
+                        filters.endDate,
+                      ].filter(Boolean).length
+                    }
                   </Badge>
                 )}
               </Button>
@@ -345,7 +393,7 @@ export default function InvoicesPage() {
               {showFilters && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
@@ -353,24 +401,30 @@ export default function InvoicesPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                     <Select
                       options={statusOptions}
-                      value={filters.status || ''}
+                      value={filters.status || ""}
                       onChange={(value) =>
-                        updateFilters({ status: (value as InvoiceStatus) || undefined })
+                        updateFilters({
+                          status: (value as InvoiceStatus) || undefined,
+                        })
                       }
                       placeholder="Todos los estados"
                     />
                     <Select
                       options={sourceOptions}
-                      value={filters.source || ''}
+                      value={filters.source || ""}
                       onChange={(value) =>
-                        updateFilters({ source: (value as InvoiceSource) || undefined })
+                        updateFilters({
+                          source: (value as InvoiceSource) || undefined,
+                        })
                       }
                       placeholder="Todos los origenes"
                     />
                     <Select
                       options={customerOptions}
-                      value={filters.customerId || ''}
-                      onChange={(value) => updateFilters({ customerId: value || undefined })}
+                      value={filters.customerId || ""}
+                      onChange={(value) =>
+                        updateFilters({ customerId: value || undefined })
+                      }
                       placeholder="Todos los clientes"
                     />
                     <DateFilterInput
@@ -409,23 +463,26 @@ export default function InvoicesPage() {
               title="Error al cargar facturas"
               description="Hubo un problema al cargar las facturas. Por favor, intenta de nuevo."
               action={{
-                label: 'Reintentar',
+                label: "Reintentar",
                 onClick: () => window.location.reload(),
               }}
             />
           ) : invoices.length === 0 ? (
             <EmptyState
               icon={<FileText className="h-16 w-16" />}
-              title={hasActiveFilters ? 'Sin resultados' : 'No hay facturas'}
+              title={hasActiveFilters ? "Sin resultados" : "No hay facturas"}
               description={
                 hasActiveFilters
-                  ? 'No se encontraron facturas con los filtros aplicados.'
-                  : 'Comienza creando tu primera factura.'
+                  ? "No se encontraron facturas con los filtros aplicados."
+                  : "Comienza creando tu primera factura."
               }
               action={
                 hasActiveFilters
-                  ? { label: 'Limpiar filtros', onClick: clearFilters }
-                  : { label: 'Crear factura', onClick: () => (window.location.href = '/invoices/new') }
+                  ? { label: "Limpiar filtros", onClick: clearFilters }
+                  : {
+                      label: "Crear factura",
+                      onClick: () => (window.location.href = "/invoices/new"),
+                    }
               }
             />
           ) : (
@@ -453,10 +510,11 @@ export default function InvoicesPage() {
                         <TableCell>
                           <div>
                             <p className="font-medium text-neutral-900 dark:text-white">
-                              {invoice.customer?.name || 'Cliente desconocido'}
+                              {invoice.customer?.name || "Cliente desconocido"}
                             </p>
                             <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                              {invoice.itemCount} {invoice.itemCount === 1 ? 'item' : 'items'}
+                              {invoice.itemCount}{" "}
+                              {invoice.itemCount === 1 ? "item" : "items"}
                             </p>
                           </div>
                         </TableCell>
@@ -469,10 +527,10 @@ export default function InvoicesPage() {
                         <TableCell className="hidden sm:table-cell">
                           <div
                             className={cn(
-                              'flex items-center gap-1.5 text-sm',
-                              invoice.status === 'OVERDUE'
-                                ? 'text-error-600 dark:text-error-400'
-                                : 'text-neutral-700 dark:text-neutral-300'
+                              "flex items-center gap-1.5 text-sm",
+                              invoice.status === "OVERDUE"
+                                ? "text-error-600 dark:text-error-400"
+                                : "text-neutral-700 dark:text-neutral-300",
                             )}
                           >
                             <Calendar className="h-3.5 w-3.5" />
@@ -496,13 +554,21 @@ export default function InvoicesPage() {
                         <TableCell>
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Link to={`/invoices/${invoice.id}`}>
-                              <Button variant="ghost" size="icon" title="Ver detalles">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Ver detalles"
+                              >
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
                             {canEdit(invoice) && (
                               <Link to={`/invoices/${invoice.id}/edit`}>
-                                <Button variant="ghost" size="icon" title="Editar">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title="Editar"
+                                >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                               </Link>
@@ -538,7 +604,9 @@ export default function InvoicesPage() {
                     <Select
                       options={pageSizeOptions}
                       value={String(filters.limit || 10)}
-                      onChange={(value) => updateFilters({ limit: Number(value), page: 1 })}
+                      onChange={(value) =>
+                        updateFilters({ limit: Number(value), page: 1 })
+                      }
                       className="w-36"
                     />
                   </div>
@@ -558,7 +626,7 @@ export default function InvoicesPage() {
       <DeleteModal
         open={!!deletingInvoice}
         onOpenChange={(open) => !open && setDeletingInvoice(null)}
-        itemName={deletingInvoice?.invoiceNumber || ''}
+        itemName={deletingInvoice?.invoiceNumber || ""}
         itemType="factura"
         onConfirm={handleDelete}
         isLoading={deleteInvoice.isPending}

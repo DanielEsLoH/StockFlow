@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router';
+import { useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router";
 
 /**
  * Configuration for parsing URL filters
@@ -86,15 +86,15 @@ export interface UseUrlFiltersReturn<T> {
  * ```
  */
 export function useUrlFilters<T extends object>(
-  options: UseUrlFiltersOptions<T>
+  options: UseUrlFiltersOptions<T>,
 ): UseUrlFiltersReturn<T> {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { parserConfig, emptyValues = [undefined, '', false] } = options;
+  const { parserConfig, emptyValues = [undefined, "", false] } = options;
 
   // Parse current filters from URL
   const filters = useMemo(
     () => parserConfig.parse(searchParams),
-    [searchParams, parserConfig]
+    [searchParams, parserConfig],
   );
 
   // Update filters in URL
@@ -111,13 +111,13 @@ export function useUrlFilters<T extends object>(
       });
 
       // Reset to page 1 when filters change (except when page itself is being updated)
-      if (!('page' in newFilters)) {
-        params.set('page', '1');
+      if (!("page" in newFilters)) {
+        params.set("page", "1");
       }
 
       setSearchParams(params);
     },
-    [searchParams, setSearchParams, emptyValues]
+    [searchParams, setSearchParams, emptyValues],
   );
 
   // Clear all filters

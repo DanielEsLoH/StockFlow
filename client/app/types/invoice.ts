@@ -1,21 +1,26 @@
 // Invoice Types
 
-import type { Customer } from './customer';
-import type { Product } from './product';
+import type { Customer } from "./customer";
+import type { Product } from "./product";
 
 // Invoice Status
-export type InvoiceStatus = 'DRAFT' | 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED';
+export type InvoiceStatus =
+  | "DRAFT"
+  | "PENDING"
+  | "PAID"
+  | "OVERDUE"
+  | "CANCELLED";
 
 // Invoice Source
-export type InvoiceSource = 'MANUAL' | 'POS';
+export type InvoiceSource = "MANUAL" | "POS";
 
 // Status display labels in Spanish
 export const InvoiceStatusLabels: Record<InvoiceStatus, string> = {
-  DRAFT: 'Borrador',
-  PENDING: 'Pendiente',
-  PAID: 'Pagada',
-  OVERDUE: 'Vencida',
-  CANCELLED: 'Cancelada',
+  DRAFT: "Borrador",
+  PENDING: "Pendiente",
+  PAID: "Pagada",
+  OVERDUE: "Vencida",
+  CANCELLED: "Cancelada",
 };
 
 // Invoice Item (line item)
@@ -97,7 +102,7 @@ export interface InvoiceFilters {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 // Paginated response for invoices

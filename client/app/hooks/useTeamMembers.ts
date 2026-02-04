@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { teamService } from '~/services/team.service';
-import { queryKeys } from '~/lib/query-client';
+import { useQuery } from "@tanstack/react-query";
+import { teamService } from "~/services/team.service";
+import { queryKeys } from "~/lib/query-client";
 
 /**
  * Hook to fetch all team members (users in the tenant)

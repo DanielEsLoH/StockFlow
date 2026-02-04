@@ -921,7 +921,9 @@ describe("useAuth", () => {
     it("should show default error toast when error has no message", async () => {
       const { toast } = await import("~/components/ui/Toast");
       vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
-      vi.mocked(authService.resendVerification).mockRejectedValue(new Error(""));
+      vi.mocked(authService.resendVerification).mockRejectedValue(
+        new Error(""),
+      );
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
@@ -978,7 +980,9 @@ describe("useAuth", () => {
 
     it("should call authService.acceptInvitation with data", async () => {
       vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
-      vi.mocked(authService.acceptInvitation).mockResolvedValue(mockAuthResponse);
+      vi.mocked(authService.acceptInvitation).mockResolvedValue(
+        mockAuthResponse,
+      );
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
@@ -989,13 +993,17 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(authService.acceptInvitation).toHaveBeenCalledWith(mockAcceptData);
+        expect(authService.acceptInvitation).toHaveBeenCalledWith(
+          mockAcceptData,
+        );
       });
     });
 
     it("should navigate to dashboard on successful acceptance", async () => {
       vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
-      vi.mocked(authService.acceptInvitation).mockResolvedValue(mockAuthResponse);
+      vi.mocked(authService.acceptInvitation).mockResolvedValue(
+        mockAuthResponse,
+      );
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
@@ -1012,7 +1020,9 @@ describe("useAuth", () => {
 
     it("should update auth store on successful acceptance", async () => {
       vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
-      vi.mocked(authService.acceptInvitation).mockResolvedValue(mockAuthResponse);
+      vi.mocked(authService.acceptInvitation).mockResolvedValue(
+        mockAuthResponse,
+      );
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
@@ -1032,7 +1042,9 @@ describe("useAuth", () => {
     it("should show success toast with tenant name on acceptance", async () => {
       const { toast } = await import("~/components/ui/Toast");
       vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
-      vi.mocked(authService.acceptInvitation).mockResolvedValue(mockAuthResponse);
+      vi.mocked(authService.acceptInvitation).mockResolvedValue(
+        mockAuthResponse,
+      );
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
@@ -1182,9 +1194,11 @@ describe("useInvitation", () => {
 
   it("should return loading state while fetching", async () => {
     let resolveInvitation: () => void;
-    const invitationPromise = new Promise<typeof mockInvitationData>((resolve) => {
-      resolveInvitation = () => resolve(mockInvitationData);
-    });
+    const invitationPromise = new Promise<typeof mockInvitationData>(
+      (resolve) => {
+        resolveInvitation = () => resolve(mockInvitationData);
+      },
+    );
     vi.mocked(authService.getInvitation).mockReturnValue(invitationPromise);
 
     const { result } = renderHook(() => useInvitation("valid-token"), {

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Bell,
@@ -22,21 +22,21 @@ import {
   FileText,
   LayoutDashboard,
   Command,
-} from 'lucide-react';
-import { cn, getInitials, formatRelativeTime } from '~/lib/utils';
-import { useUIStore } from '~/stores/ui.store';
-import { useAuthStore } from '~/stores/auth.store';
-import { useAuth } from '~/hooks/useAuth';
+} from "lucide-react";
+import { cn, getInitials, formatRelativeTime } from "~/lib/utils";
+import { useUIStore } from "~/stores/ui.store";
+import { useAuthStore } from "~/stores/auth.store";
+import { useAuth } from "~/hooks/useAuth";
 import {
   useRecentNotifications,
   useUnreadCount,
   useMarkAllAsRead,
   useNotificationClick,
-} from '~/hooks/useNotifications';
-import { getNotificationCategory } from '~/types/notification';
-import type { NotificationCategory } from '~/types/notification';
-import { ThemeToggle } from '~/components/ui/ThemeToggle';
-import { Button } from '~/components/ui/Button';
+} from "~/hooks/useNotifications";
+import { getNotificationCategory } from "~/types/notification";
+import type { NotificationCategory } from "~/types/notification";
+import { ThemeToggle } from "~/components/ui/ThemeToggle";
+import { Button } from "~/components/ui/Button";
 
 const dropdownVariants = {
   hidden: {
@@ -50,7 +50,7 @@ const dropdownVariants = {
     scale: 1,
     transition: {
       duration: 0.15,
-      ease: 'easeOut' as const,
+      ease: "easeOut" as const,
     },
   },
   exit: {
@@ -90,16 +90,21 @@ const spotlightVariants = {
 
 // Quick action items for the command palette
 const quickActions = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, shortcut: 'D' },
-  { name: 'Productos', href: '/products', icon: Package, shortcut: 'P' },
-  { name: 'Clientes', href: '/customers', icon: Users, shortcut: 'C' },
-  { name: 'Facturas', href: '/invoices', icon: FileText, shortcut: 'F' },
-  { name: 'Configuracion', href: '/settings', icon: Settings, shortcut: 'S' },
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    shortcut: "D",
+  },
+  { name: "Productos", href: "/products", icon: Package, shortcut: "P" },
+  { name: "Clientes", href: "/customers", icon: Users, shortcut: "C" },
+  { name: "Facturas", href: "/invoices", icon: FileText, shortcut: "F" },
+  { name: "Configuracion", href: "/settings", icon: Settings, shortcut: "S" },
 ];
 
 export function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -118,42 +123,43 @@ export function Header() {
   }, []);
 
   // Notification hooks
-  const { data: notifications = [], isLoading: notificationsLoading } = useRecentNotifications(5);
+  const { data: notifications = [], isLoading: notificationsLoading } =
+    useRecentNotifications(5);
   const { data: unreadCountData } = useUnreadCount();
   const markAllAsRead = useMarkAllAsRead();
   const handleNotificationClick = useNotificationClick();
 
-  const userName = user ? `${user.firstName} ${user.lastName}` : 'Usuario';
-  const userEmail = user?.email || 'usuario@email.com';
+  const userName = user ? `${user.firstName} ${user.lastName}` : "Usuario";
+  const userEmail = user?.email || "usuario@email.com";
   const userInitials = getInitials(userName);
-  const userRole = user?.role || 'EMPLOYEE';
+  const userRole = user?.role || "EMPLOYEE";
 
   const unreadCount = unreadCountData?.count ?? 0;
 
   // Filtered quick actions based on search
   const filteredActions = quickActions.filter((action) =>
-    action.name.toLowerCase().includes(searchQuery.toLowerCase())
+    action.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // Handle keyboard shortcut for search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setSearchOpen(true);
         setSelectedIndex(0);
         setTimeout(() => searchRef.current?.focus(), 50);
       }
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setSearchOpen(false);
-        setSearchQuery('');
+        setSearchQuery("");
         setNotificationsOpen(false);
         setProfileOpen(false);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   // Handle navigation in spotlight
@@ -161,26 +167,26 @@ export function Header() {
     if (!searchOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
+      if (e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedIndex((prev) =>
-          prev < filteredActions.length - 1 ? prev + 1 : prev
+          prev < filteredActions.length - 1 ? prev + 1 : prev,
         );
       }
-      if (e.key === 'ArrowUp') {
+      if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
       }
-      if (e.key === 'Enter' && filteredActions[selectedIndex]) {
+      if (e.key === "Enter" && filteredActions[selectedIndex]) {
         e.preventDefault();
         window.location.href = filteredActions[selectedIndex].href;
         setSearchOpen(false);
-        setSearchQuery('');
+        setSearchQuery("");
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [searchOpen, selectedIndex, filteredActions]);
 
   // Reset selected index when search changes
@@ -197,45 +203,48 @@ export function Header() {
       ) {
         setNotificationsOpen(false);
       }
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(e.target as Node)
+      ) {
         setProfileOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
-      SUPER_ADMIN: 'Super Admin',
-      ADMIN: 'Administrador',
-      MANAGER: 'Gerente',
-      EMPLOYEE: 'Empleado',
+      SUPER_ADMIN: "Super Admin",
+      ADMIN: "Administrador",
+      MANAGER: "Gerente",
+      EMPLOYEE: "Empleado",
     };
     return labels[role] || role;
   };
 
   const getNotificationIconClass = (category: NotificationCategory) => {
     switch (category) {
-      case 'warning':
-        return 'bg-warning-100 text-warning-600 dark:bg-warning-900/30 dark:text-warning-400';
-      case 'success':
-        return 'bg-success-100 text-success-600 dark:bg-success-900/30 dark:text-success-400';
-      case 'error':
-        return 'bg-error-100 text-error-600 dark:bg-error-900/30 dark:text-error-400';
+      case "warning":
+        return "bg-warning-100 text-warning-600 dark:bg-warning-900/30 dark:text-warning-400";
+      case "success":
+        return "bg-success-100 text-success-600 dark:bg-success-900/30 dark:text-success-400";
+      case "error":
+        return "bg-error-100 text-error-600 dark:bg-error-900/30 dark:text-error-400";
       default:
-        return 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400';
+        return "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400";
     }
   };
 
   const getNotificationIcon = (category: NotificationCategory) => {
     switch (category) {
-      case 'warning':
+      case "warning":
         return <AlertTriangle className="h-5 w-5" />;
-      case 'success':
+      case "success":
         return <CheckCircle className="h-5 w-5" />;
-      case 'error':
+      case "error":
         return <AlertCircle className="h-5 w-5" />;
       default:
         return <Info className="h-5 w-5" />;
@@ -254,7 +263,7 @@ export function Header() {
               size="icon"
               onClick={toggleMobileSidebar}
               className="lg:hidden"
-              aria-label={mobileSidebarOpen ? 'Cerrar menu' : 'Abrir menu'}
+              aria-label={mobileSidebarOpen ? "Cerrar menu" : "Abrir menu"}
             >
               {mobileSidebarOpen ? (
                 <X className="h-5 w-5" />
@@ -272,14 +281,14 @@ export function Header() {
                 setTimeout(() => searchRef.current?.focus(), 50);
               }}
               className={cn(
-                'hidden sm:flex items-center gap-3 px-4 py-2.5 w-72 lg:w-80',
-                'bg-neutral-100/80 dark:bg-neutral-800/80',
-                'border border-neutral-200/60 dark:border-neutral-700/60',
-                'rounded-xl backdrop-blur-sm',
-                'hover:border-primary-300 dark:hover:border-primary-600',
-                'hover:bg-neutral-100 dark:hover:bg-neutral-800',
-                'transition-all duration-200',
-                'group'
+                "hidden sm:flex items-center gap-3 px-4 py-2.5 w-72 lg:w-80",
+                "bg-neutral-100/80 dark:bg-neutral-800/80",
+                "border border-neutral-200/60 dark:border-neutral-700/60",
+                "rounded-xl backdrop-blur-sm",
+                "hover:border-primary-300 dark:hover:border-primary-600",
+                "hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                "transition-all duration-200",
+                "group",
               )}
             >
               <Search className="h-4 w-4 text-neutral-400 group-hover:text-primary-500 transition-colors" />
@@ -338,7 +347,7 @@ export function Header() {
                     animate={{ scale: 1 }}
                     className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-error-500 to-error-600 text-[10px] font-bold text-white shadow-lg shadow-error-500/30"
                   >
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </motion.span>
                 )}
               </Button>
@@ -351,11 +360,11 @@ export function Header() {
                     animate="visible"
                     exit="exit"
                     className={cn(
-                      'absolute right-0 top-full mt-2 w-80 sm:w-96',
-                      'bg-white dark:bg-neutral-900',
-                      'border border-neutral-200/60 dark:border-neutral-800/60',
-                      'rounded-2xl shadow-xl shadow-neutral-200/50 dark:shadow-neutral-950/50',
-                      'overflow-hidden'
+                      "absolute right-0 top-full mt-2 w-80 sm:w-96",
+                      "bg-white dark:bg-neutral-900",
+                      "border border-neutral-200/60 dark:border-neutral-800/60",
+                      "rounded-2xl shadow-xl shadow-neutral-200/50 dark:shadow-neutral-950/50",
+                      "overflow-hidden",
                     )}
                   >
                     {/* Header */}
@@ -390,28 +399,31 @@ export function Header() {
                         </div>
                       ) : notifications.length > 0 ? (
                         notifications.map((notification) => {
-                          const category = getNotificationCategory(notification);
+                          const category =
+                            getNotificationCategory(notification);
                           return (
                             <motion.div
                               key={notification.id}
-                              whileHover={{ backgroundColor: 'var(--hover-bg)' }}
+                              whileHover={{
+                                backgroundColor: "var(--hover-bg)",
+                              }}
                               onClick={() => {
                                 handleNotificationClick(notification);
                                 setNotificationsOpen(false);
                               }}
                               className={cn(
-                                'flex items-start gap-3 px-4 py-3',
-                                'transition-colors cursor-pointer',
-                                '[--hover-bg:theme(colors.neutral.50)]',
-                                'dark:[--hover-bg:theme(colors.neutral.800)]',
+                                "flex items-start gap-3 px-4 py-3",
+                                "transition-colors cursor-pointer",
+                                "[--hover-bg:theme(colors.neutral.50)]",
+                                "dark:[--hover-bg:theme(colors.neutral.800)]",
                                 !notification.read &&
-                                  'bg-primary-50/50 dark:bg-primary-900/10'
+                                  "bg-primary-50/50 dark:bg-primary-900/10",
                               )}
                             >
                               <div
                                 className={cn(
-                                  'flex h-10 w-10 items-center justify-center rounded-xl shrink-0',
-                                  getNotificationIconClass(category)
+                                  "flex h-10 w-10 items-center justify-center rounded-xl shrink-0",
+                                  getNotificationIconClass(category),
                                 )}
                               >
                                 {getNotificationIcon(category)}
@@ -483,9 +495,9 @@ export function Header() {
                   setNotificationsOpen(false);
                 }}
                 className={cn(
-                  'flex items-center gap-2.5 p-1.5 pr-3 rounded-xl',
-                  'hover:bg-neutral-100 dark:hover:bg-neutral-800',
-                  'transition-colors'
+                  "flex items-center gap-2.5 p-1.5 pr-3 rounded-xl",
+                  "hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                  "transition-colors",
                 )}
               >
                 {user?.avatarUrl ? (
@@ -509,8 +521,8 @@ export function Header() {
                 </div>
                 <ChevronDown
                   className={cn(
-                    'hidden md:block h-4 w-4 text-neutral-400 transition-transform duration-200',
-                    profileOpen && 'rotate-180'
+                    "hidden md:block h-4 w-4 text-neutral-400 transition-transform duration-200",
+                    profileOpen && "rotate-180",
                   )}
                 />
               </motion.button>
@@ -523,11 +535,11 @@ export function Header() {
                     animate="visible"
                     exit="exit"
                     className={cn(
-                      'absolute right-0 top-full mt-2 w-64',
-                      'bg-white dark:bg-neutral-900',
-                      'border border-neutral-200/60 dark:border-neutral-800/60',
-                      'rounded-2xl shadow-xl shadow-neutral-200/50 dark:shadow-neutral-950/50',
-                      'overflow-hidden'
+                      "absolute right-0 top-full mt-2 w-64",
+                      "bg-white dark:bg-neutral-900",
+                      "border border-neutral-200/60 dark:border-neutral-800/60",
+                      "rounded-2xl shadow-xl shadow-neutral-200/50 dark:shadow-neutral-950/50",
+                      "overflow-hidden",
                     )}
                   >
                     {/* User info */}
@@ -597,7 +609,11 @@ export function Header() {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-error-100 dark:bg-error-900/30 text-error-600 dark:text-error-400">
                           <LogOut className="h-4 w-4" />
                         </div>
-                        <span>{isLoggingOut ? 'Cerrando sesion...' : 'Cerrar sesion'}</span>
+                        <span>
+                          {isLoggingOut
+                            ? "Cerrando sesion..."
+                            : "Cerrar sesion"}
+                        </span>
                       </button>
                     </div>
                   </motion.div>
@@ -619,7 +635,7 @@ export function Header() {
               exit={{ opacity: 0 }}
               onClick={() => {
                 setSearchOpen(false);
-                setSearchQuery('');
+                setSearchQuery("");
               }}
               className="fixed inset-0 z-50 bg-neutral-900/60 backdrop-blur-sm"
             />
@@ -664,32 +680,34 @@ export function Header() {
                         to={action.href}
                         onClick={() => {
                           setSearchOpen(false);
-                          setSearchQuery('');
+                          setSearchQuery("");
                         }}
                         className={cn(
-                          'flex items-center gap-3 px-4 py-2.5 mx-2 rounded-xl transition-colors',
+                          "flex items-center gap-3 px-4 py-2.5 mx-2 rounded-xl transition-colors",
                           index === selectedIndex
-                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                            : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+                            ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
+                            : "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300",
                         )}
                       >
                         <div
                           className={cn(
-                            'flex h-9 w-9 items-center justify-center rounded-xl',
+                            "flex h-9 w-9 items-center justify-center rounded-xl",
                             index === selectedIndex
-                              ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
+                              ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
                           )}
                         >
                           <action.icon className="h-4 w-4" />
                         </div>
-                        <span className="flex-1 text-sm font-medium">{action.name}</span>
+                        <span className="flex-1 text-sm font-medium">
+                          {action.name}
+                        </span>
                         <kbd
                           className={cn(
-                            'px-2 py-0.5 rounded text-xs font-medium',
+                            "px-2 py-0.5 rounded text-xs font-medium",
                             index === selectedIndex
-                              ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400'
-                              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500'
+                              ? "bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+                              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500",
                           )}
                         >
                           {action.shortcut}
@@ -715,12 +733,18 @@ export function Header() {
                 <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30">
                   <div className="flex items-center gap-4 text-xs text-neutral-400 dark:text-neutral-500">
                     <span className="flex items-center gap-1">
-                      <kbd className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 font-mono">↑</kbd>
-                      <kbd className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 font-mono">↓</kbd>
+                      <kbd className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 font-mono">
+                        ↑
+                      </kbd>
+                      <kbd className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 font-mono">
+                        ↓
+                      </kbd>
                       <span className="ml-1">navegar</span>
                     </span>
                     <span className="flex items-center gap-1">
-                      <kbd className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 font-mono">↵</kbd>
+                      <kbd className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 font-mono">
+                        ↵
+                      </kbd>
                       <span className="ml-1">seleccionar</span>
                     </span>
                   </div>

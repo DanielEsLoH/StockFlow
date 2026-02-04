@@ -1,4 +1,4 @@
-import { api } from '~/lib/api';
+import { api } from "~/lib/api";
 import type {
   Notification,
   NotificationSummary,
@@ -7,12 +7,14 @@ import type {
   UnreadCountResponse,
   CreateNotificationData,
   MarkAsReadResponse,
-} from '~/types/notification';
+} from "~/types/notification";
 
 // Service connected to real backend API
 export const notificationsService = {
   // Get paginated notifications with filters
-  async getNotifications(filters: NotificationFilters = {}): Promise<NotificationsResponse> {
+  async getNotifications(
+    filters: NotificationFilters = {},
+  ): Promise<NotificationsResponse> {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -20,7 +22,7 @@ export const notificationsService = {
       }
     });
     const { data } = await api.get<NotificationsResponse>(
-      `/notifications?${params.toString()}`
+      `/notifications?${params.toString()}`,
     );
     return data;
   },
@@ -33,14 +35,18 @@ export const notificationsService = {
 
   // Get unread notifications count
   async getUnreadCount(): Promise<UnreadCountResponse> {
-    const { data } = await api.get<UnreadCountResponse>('/notifications/unread/count');
+    const { data } = await api.get<UnreadCountResponse>(
+      "/notifications/unread/count",
+    );
     return data;
   },
 
   // Get recent notifications (for dropdown)
-  async getRecentNotifications(limit: number = 5): Promise<NotificationSummary[]> {
+  async getRecentNotifications(
+    limit: number = 5,
+  ): Promise<NotificationSummary[]> {
     const { data } = await api.get<NotificationSummary[]>(
-      `/notifications/recent?limit=${limit}`
+      `/notifications/recent?limit=${limit}`,
     );
     return data;
   },
@@ -53,19 +59,26 @@ export const notificationsService = {
 
   // Mark multiple notifications as read
   async markMultipleAsRead(ids: string[]): Promise<MarkAsReadResponse> {
-    const { data } = await api.patch<MarkAsReadResponse>('/notifications/read', { ids });
+    const { data } = await api.patch<MarkAsReadResponse>(
+      "/notifications/read",
+      { ids },
+    );
     return data;
   },
 
   // Mark all notifications as read
   async markAllAsRead(): Promise<MarkAsReadResponse> {
-    const { data } = await api.patch<MarkAsReadResponse>('/notifications/read-all');
+    const { data } = await api.patch<MarkAsReadResponse>(
+      "/notifications/read-all",
+    );
     return data;
   },
 
   // Mark single notification as unread
   async markAsUnread(id: string): Promise<Notification> {
-    const { data } = await api.patch<Notification>(`/notifications/${id}/unread`);
+    const { data } = await api.patch<Notification>(
+      `/notifications/${id}/unread`,
+    );
     return data;
   },
 
@@ -75,22 +88,34 @@ export const notificationsService = {
   },
 
   // Delete multiple notifications
-  async deleteMultipleNotifications(ids: string[]): Promise<{ deletedCount: number }> {
-    const { data } = await api.delete<{ deletedCount: number }>('/notifications', {
-      data: { ids },
-    });
+  async deleteMultipleNotifications(
+    ids: string[],
+  ): Promise<{ deletedCount: number }> {
+    const { data } = await api.delete<{ deletedCount: number }>(
+      "/notifications",
+      {
+        data: { ids },
+      },
+    );
     return data;
   },
 
   // Clear all read notifications
   async clearReadNotifications(): Promise<{ deletedCount: number }> {
-    const { data } = await api.delete<{ deletedCount: number }>('/notifications/clear-read');
+    const { data } = await api.delete<{ deletedCount: number }>(
+      "/notifications/clear-read",
+    );
     return data;
   },
 
   // Create notification (for system/testing purposes)
-  async createNotification(notificationData: CreateNotificationData): Promise<Notification> {
-    const { data } = await api.post<Notification>('/notifications', notificationData);
+  async createNotification(
+    notificationData: CreateNotificationData,
+  ): Promise<Notification> {
+    const { data } = await api.post<Notification>(
+      "/notifications",
+      notificationData,
+    );
     return data;
   },
 };

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from "react";
 
 interface POSKeyboardShortcuts {
   onSearch?: () => void; // F2
@@ -33,28 +33,28 @@ export function usePOSKeyboard({
       // Don't intercept if user is typing in an input
       const target = event.target as HTMLElement;
       const isInput =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
         target.isContentEditable;
 
       switch (event.key) {
-        case 'F2':
+        case "F2":
           event.preventDefault();
           onSearch?.();
           break;
-        case 'F4':
+        case "F4":
           event.preventDefault();
           onPay?.();
           break;
-        case 'F8':
+        case "F8":
           event.preventDefault();
           onSuspend?.();
           break;
-        case 'F11':
+        case "F11":
           event.preventDefault();
           onFullscreen?.();
           break;
-        case 'Escape':
+        case "Escape":
           // ESC works even in inputs to close modals
           onCancel?.();
           break;
@@ -62,15 +62,15 @@ export function usePOSKeyboard({
           break;
       }
     },
-    [enabled, onSearch, onPay, onSuspend, onFullscreen, onCancel]
+    [enabled, onSearch, onPay, onSuspend, onFullscreen, onCancel],
   );
 
   useEffect(() => {
     if (!enabled) return;
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [enabled, handleKeyDown]);
 }
@@ -81,11 +81,11 @@ export function usePOSKeyboard({
 export function toggleFullscreen() {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch((err) => {
-      console.warn('Error attempting to enable fullscreen:', err);
+      console.warn("Error attempting to enable fullscreen:", err);
     });
   } else {
     document.exitFullscreen().catch((err) => {
-      console.warn('Error attempting to exit fullscreen:', err);
+      console.warn("Error attempting to exit fullscreen:", err);
     });
   }
 }

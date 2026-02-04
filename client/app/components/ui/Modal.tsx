@@ -1,8 +1,8 @@
-import * as React from 'react';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X, AlertTriangle } from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { Button } from './Button';
+import * as React from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { X, AlertTriangle } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { Button } from "./Button";
 
 // Base Dialog components
 const Dialog = DialogPrimitive.Root;
@@ -17,9 +17,9 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-black/50 backdrop-blur-sm',
-      'data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out',
-      className
+      "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm",
+      "data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out",
+      className,
     )}
     {...props}
   />
@@ -36,13 +36,13 @@ const DialogContent = React.forwardRef<
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
-      aria-describedby={hideDescription ? undefined : props['aria-describedby']}
+      aria-describedby={hideDescription ? undefined : props["aria-describedby"]}
       className={cn(
-        'fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2',
-        'rounded-2xl bg-white p-6 shadow-xl dark:bg-neutral-900',
-        'border border-neutral-200 dark:border-neutral-800',
-        'data-[state=open]:animate-scale-in data-[state=closed]:animate-fade-out',
-        className
+        "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2",
+        "rounded-2xl bg-white p-6 shadow-xl dark:bg-neutral-900",
+        "border border-neutral-200 dark:border-neutral-800",
+        "data-[state=open]:animate-scale-in data-[state=closed]:animate-fade-out",
+        className,
       )}
       {...props}
     >
@@ -66,11 +66,14 @@ const DialogHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn('flex flex-col space-y-1.5 text-center sm:text-left', className)}
+    className={cn(
+      "flex flex-col space-y-1.5 text-center sm:text-left",
+      className,
+    )}
     {...props}
   />
 );
-DialogHeader.displayName = 'DialogHeader';
+DialogHeader.displayName = "DialogHeader";
 
 const DialogFooter = ({
   className,
@@ -78,13 +81,13 @@ const DialogFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'flex flex-col-reverse gap-2 pt-6 sm:flex-row sm:justify-end',
-      className
+      "flex flex-col-reverse gap-2 pt-6 sm:flex-row sm:justify-end",
+      className,
     )}
     {...props}
   />
 );
-DialogFooter.displayName = 'DialogFooter';
+DialogFooter.displayName = "DialogFooter";
 
 const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
@@ -93,8 +96,8 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      'text-lg font-semibold leading-none tracking-tight text-neutral-900 dark:text-white',
-      className
+      "text-lg font-semibold leading-none tracking-tight text-neutral-900 dark:text-white",
+      className,
     )}
     {...props}
   />
@@ -107,7 +110,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('text-sm text-neutral-500 dark:text-neutral-400', className)}
+    className={cn("text-sm text-neutral-500 dark:text-neutral-400", className)}
     {...props}
   />
 ));
@@ -124,7 +127,7 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   onCancel?: () => void;
   isLoading?: boolean;
-  variant?: 'danger' | 'warning' | 'default';
+  variant?: "danger" | "warning" | "default";
 }
 
 export function ConfirmModal({
@@ -132,12 +135,12 @@ export function ConfirmModal({
   onOpenChange,
   title,
   description,
-  confirmLabel = 'Confirmar',
-  cancelLabel = 'Cancelar',
+  confirmLabel = "Confirmar",
+  cancelLabel = "Cancelar",
   onConfirm,
   onCancel,
   isLoading = false,
-  variant = 'default',
+  variant = "default",
 }: ConfirmModalProps) {
   const handleCancel = () => {
     onCancel?.();
@@ -149,15 +152,15 @@ export function ConfirmModal({
   };
 
   const iconColors = {
-    danger: 'text-error-500 bg-error-100 dark:bg-error-900/30',
-    warning: 'text-warning-500 bg-warning-100 dark:bg-warning-900/30',
-    default: 'text-primary-500 bg-primary-100 dark:bg-primary-900/30',
+    danger: "text-error-500 bg-error-100 dark:bg-error-900/30",
+    warning: "text-warning-500 bg-warning-100 dark:bg-warning-900/30",
+    default: "text-primary-500 bg-primary-100 dark:bg-primary-900/30",
   };
 
   const buttonVariants = {
-    danger: 'danger' as const,
-    warning: 'primary' as const,
-    default: 'primary' as const,
+    danger: "danger" as const,
+    warning: "primary" as const,
+    default: "primary" as const,
   };
 
   return (
@@ -167,8 +170,8 @@ export function ConfirmModal({
           {/* Icon */}
           <div
             className={cn(
-              'mb-4 flex h-12 w-12 items-center justify-center rounded-full sm:mb-0 sm:mr-4',
-              iconColors[variant]
+              "mb-4 flex h-12 w-12 items-center justify-center rounded-full sm:mb-0 sm:mr-4",
+              iconColors[variant],
             )}
           >
             <AlertTriangle className="h-6 w-6" />

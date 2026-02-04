@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, Monitor } from 'lucide-react';
-import { useTheme } from '~/hooks/useTheme';
-import type { Theme } from '~/lib/theme';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sun, Moon, Monitor } from "lucide-react";
+import { useTheme } from "~/hooks/useTheme";
+import type { Theme } from "~/lib/theme";
 
 const icons: Record<Theme, React.ReactNode> = {
   light: <Sun className="h-5 w-5" />,
@@ -11,9 +11,9 @@ const icons: Record<Theme, React.ReactNode> = {
 };
 
 const labels: Record<Theme, string> = {
-  light: 'Light mode',
-  dark: 'Dark mode',
-  system: 'System',
+  light: "Light mode",
+  dark: "Dark mode",
+  system: "System",
 };
 
 export function ThemeToggle() {

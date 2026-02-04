@@ -122,14 +122,21 @@ function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
     CANCELLED: { label: PaymentStatusLabels.CANCELLED, variant: "secondary" },
   };
 
-  const statusConfig = config[status] || { label: status || 'Desconocido', variant: 'default' as const };
+  const statusConfig = config[status] || {
+    label: status || "Desconocido",
+    variant: "default" as const,
+  };
 
   return <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>;
 }
 
 // Method badge component
 function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
-  return <Badge variant="default">{PaymentMethodLabels[method] || method || 'Desconocido'}</Badge>;
+  return (
+    <Badge variant="default">
+      {PaymentMethodLabels[method] || method || "Desconocido"}
+    </Badge>
+  );
 }
 
 export default function PaymentsPage() {

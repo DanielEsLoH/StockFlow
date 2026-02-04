@@ -89,10 +89,7 @@ const statusOptions = [
 
 export default function NewProductPage() {
   const navigate = useNavigate();
-  const {
-    categories,
-    isLoading: isLoadingFormData,
-  } = useProductFormData();
+  const { categories, isLoading: isLoadingFormData } = useProductFormData();
   const createProduct = useCreateProduct();
 
   const {
@@ -140,7 +137,8 @@ export default function NewProductPage() {
   // Calculate margin for preview
   const salePrice = watch("salePrice");
   const costPrice = watch("costPrice");
-  const margin = salePrice > 0 ? ((salePrice - costPrice) / salePrice) * 100 : 0;
+  const margin =
+    salePrice > 0 ? ((salePrice - costPrice) / salePrice) * 100 : 0;
 
   if (isLoadingFormData) {
     return (

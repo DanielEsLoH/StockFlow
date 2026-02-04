@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   getDianConfig,
   createDianConfig,
@@ -14,7 +14,7 @@ import {
   downloadDianXml,
   getDianStats,
   type ListDocumentsParams,
-} from '~/services/dian.service';
+} from "~/services/dian.service";
 import type {
   CreateDianConfigDto,
   UpdateDianConfigDto,
@@ -22,16 +22,18 @@ import type {
   SetDianResolutionDto,
   SendInvoiceDto,
   CheckDocumentStatusDto,
-} from '~/types/dian';
+} from "~/types/dian";
 
 // Query Keys
 export const dianKeys = {
-  all: ['dian'] as const,
-  config: () => [...dianKeys.all, 'config'] as const,
-  stats: () => [...dianKeys.all, 'stats'] as const,
-  documents: () => [...dianKeys.all, 'documents'] as const,
-  documentList: (params: ListDocumentsParams) => [...dianKeys.documents(), 'list', params] as const,
-  documentDetail: (id: string) => [...dianKeys.documents(), 'detail', id] as const,
+  all: ["dian"] as const,
+  config: () => [...dianKeys.all, "config"] as const,
+  stats: () => [...dianKeys.all, "stats"] as const,
+  documents: () => [...dianKeys.all, "documents"] as const,
+  documentList: (params: ListDocumentsParams) =>
+    [...dianKeys.documents(), "list", params] as const,
+  documentDetail: (id: string) =>
+    [...dianKeys.documents(), "detail", id] as const,
 };
 
 // Configuration Hooks
@@ -49,7 +51,7 @@ export function useCreateDianConfig() {
     mutationFn: (data: CreateDianConfigDto) => createDianConfig(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dianKeys.config() });
-      toast.success('Configuracion DIAN creada');
+      toast.success("Configuracion DIAN creada");
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`);
@@ -64,7 +66,7 @@ export function useUpdateDianConfig() {
     mutationFn: (data: UpdateDianConfigDto) => updateDianConfig(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dianKeys.config() });
-      toast.success('Configuracion DIAN actualizada');
+      toast.success("Configuracion DIAN actualizada");
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`);
@@ -106,7 +108,8 @@ export function useUploadCertificate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ file, password }: { file: File; password: string }) => uploadCertificate(file, password),
+    mutationFn: ({ file, password }: { file: File; password: string }) =>
+      uploadCertificate(file, password),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: dianKeys.config() });
       toast.success(result.message);
@@ -146,11 +149,11 @@ export function useCheckDocumentStatus() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: dianKeys.documents() });
       if (result.isValid) {
-        toast.success('Documento aceptado por la DIAN');
+        toast.success("Documento aceptado por la DIAN");
       } else if (result.isValid === false) {
-        toast.error('Documento rechazado por la DIAN');
+        toast.error("Documento rechazado por la DIAN");
       } else {
-        toast.info(result.statusDescription || 'Estado consultado');
+        toast.info(result.statusDescription || "Estado consultado");
       }
     },
     onError: (error: Error) => {
@@ -181,7 +184,7 @@ export function useDownloadDianXml() {
       const blob = await downloadDianXml(id);
       // Create download link
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `documento_${id}.xml`;
       document.body.appendChild(link);
@@ -190,7 +193,7 @@ export function useDownloadDianXml() {
       window.URL.revokeObjectURL(url);
     },
     onSuccess: () => {
-      toast.success('XML descargado');
+      toast.success("XML descargado");
     },
     onError: (error: Error) => {
       toast.error(`Error al descargar XML: ${error.message}`);

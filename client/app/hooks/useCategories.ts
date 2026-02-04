@@ -1,14 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { categoriesService } from '~/services/categories.service';
-import { queryKeys } from '~/lib/query-client';
-import { toast } from '~/components/ui/Toast';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { categoriesService } from "~/services/categories.service";
+import { queryKeys } from "~/lib/query-client";
+import { toast } from "~/components/ui/Toast";
 import type {
   Category,
   CategoryFilters,
   CategoriesResponse,
   CreateCategoryData,
   UpdateCategoryData,
-} from '~/types/category';
+} from "~/types/category";
 
 // Categories list hook with filters (paginated)
 export function useCategoriesWithFilters(filters: CategoryFilters = {}) {
@@ -47,11 +47,13 @@ export function useCreateCategory() {
     mutationFn: (data: CreateCategoryData) =>
       categoriesService.createCategory(data),
     onSuccess: (category) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.categories.all,
+      });
       toast.success(`Categoria "${category.name}" creada exitosamente`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear la categoria');
+      toast.error(error.message || "Error al crear la categoria");
     },
   });
 }
@@ -64,12 +66,17 @@ export function useUpdateCategory() {
     mutationFn: ({ id, data }: { id: string; data: UpdateCategoryData }) =>
       categoriesService.updateCategory(id, data),
     onSuccess: (category) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
-      queryClient.setQueryData(queryKeys.categories.detail(category.id), category);
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.categories.all,
+      });
+      queryClient.setQueryData(
+        queryKeys.categories.detail(category.id),
+        category,
+      );
       toast.success(`Categoria "${category.name}" actualizada exitosamente`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar la categoria');
+      toast.error(error.message || "Error al actualizar la categoria");
     },
   });
 }
@@ -81,11 +88,13 @@ export function useDeleteCategory() {
   return useMutation({
     mutationFn: (id: string) => categoriesService.deleteCategory(id),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
-      toast.success('Categoria eliminada exitosamente');
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.categories.all,
+      });
+      toast.success("Categoria eliminada exitosamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar la categoria');
+      toast.error(error.message || "Error al eliminar la categoria");
     },
   });
 }

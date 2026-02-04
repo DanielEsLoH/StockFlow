@@ -1,47 +1,48 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
-import { ArrowLeft, Banknote, Warehouse } from 'lucide-react';
-import type { Route } from './+types/_app.pos.cash-registers.new';
-import { useCreateCashRegister } from '~/hooks/usePOS';
-import { useWarehouses } from '~/hooks/useWarehouses';
-import { Button } from '~/components/ui/Button';
-import { Card } from '~/components/ui/Card';
-import { Input } from '~/components/ui/Input';
-import { Select } from '~/components/ui/Select';
-import { Textarea } from '~/components/ui/Textarea';
+import { useState, useEffect } from "react";
+import { Link } from "react-router";
+import { motion } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
+import { ArrowLeft, Banknote, Warehouse } from "lucide-react";
+import type { Route } from "./+types/_app.pos.cash-registers.new";
+import { useCreateCashRegister } from "~/hooks/usePOS";
+import { useWarehouses } from "~/hooks/useWarehouses";
+import { Button } from "~/components/ui/Button";
+import { Card } from "~/components/ui/Card";
+import { Input } from "~/components/ui/Input";
+import { Select } from "~/components/ui/Select";
+import { Textarea } from "~/components/ui/Textarea";
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Nueva Caja Registradora - POS - StockFlow' },
-    { name: 'description', content: 'Crear nueva caja registradora' },
+    { title: "Nueva Caja Registradora - POS - StockFlow" },
+    { name: "description", content: "Crear nueva caja registradora" },
   ];
 };
 
 const statusOptions = [
-  { value: 'OPEN', label: 'Abierta - Disponible para usar' },
-  { value: 'CLOSED', label: 'Cerrada - No disponible' },
-  { value: 'SUSPENDED', label: 'Suspendida - Temporalmente fuera de servicio' },
+  { value: "OPEN", label: "Abierta - Disponible para usar" },
+  { value: "CLOSED", label: "Cerrada - No disponible" },
+  { value: "SUSPENDED", label: "Suspendida - Temporalmente fuera de servicio" },
 ];
 
 export default function NewCashRegisterPage() {
   const [isMounted, setIsMounted] = useState(false);
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
-  const [warehouseId, setWarehouseId] = useState('');
-  const [status, setStatus] = useState('OPEN');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
+  const [status, setStatus] = useState("OPEN");
+  const [description, setDescription] = useState("");
 
   const createRegister = useCreateCashRegister();
-  const { data: warehouses = [], isLoading: loadingWarehouses } = useWarehouses();
+  const { data: warehouses = [], isLoading: loadingWarehouses } =
+    useWarehouses();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   const warehouseOptions = [
-    { value: '', label: 'Seleccionar bodega...' },
+    { value: "", label: "Seleccionar bodega..." },
     ...warehouses.map((w) => ({
       value: w.id,
       label: w.name,
@@ -56,7 +57,7 @@ export default function NewCashRegisterPage() {
       name,
       code,
       warehouseId,
-      status: status as 'OPEN' | 'CLOSED' | 'SUSPENDED',
+      status: status as "OPEN" | "CLOSED" | "SUSPENDED",
       description: description || undefined,
     });
   };
@@ -64,7 +65,7 @@ export default function NewCashRegisterPage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial={isMounted ? 'hidden' : false}
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="max-w-2xl mx-auto space-y-6"
     >
@@ -175,9 +176,11 @@ export default function NewCashRegisterPage() {
               </Link>
               <Button
                 type="submit"
-                disabled={!name || !code || !warehouseId || createRegister.isPending}
+                disabled={
+                  !name || !code || !warehouseId || createRegister.isPending
+                }
               >
-                {createRegister.isPending ? 'Creando...' : 'Crear Caja'}
+                {createRegister.isPending ? "Creando..." : "Crear Caja"}
               </Button>
             </div>
           </form>

@@ -1,44 +1,49 @@
-import { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
-import { ArrowLeft, Banknote } from 'lucide-react';
-import type { Route } from './+types/_app.pos.cash-registers.$id.edit';
-import { useCashRegister, useUpdateCashRegister } from '~/hooks/usePOS';
-import { useWarehouses } from '~/hooks/useWarehouses';
-import { Button } from '~/components/ui/Button';
-import { Card } from '~/components/ui/Card';
-import { Input } from '~/components/ui/Input';
-import { Select } from '~/components/ui/Select';
-import { Textarea } from '~/components/ui/Textarea';
+import { useState, useEffect } from "react";
+import { Link, useParams, useNavigate } from "react-router";
+import { motion } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
+import { ArrowLeft, Banknote } from "lucide-react";
+import type { Route } from "./+types/_app.pos.cash-registers.$id.edit";
+import { useCashRegister, useUpdateCashRegister } from "~/hooks/usePOS";
+import { useWarehouses } from "~/hooks/useWarehouses";
+import { Button } from "~/components/ui/Button";
+import { Card } from "~/components/ui/Card";
+import { Input } from "~/components/ui/Input";
+import { Select } from "~/components/ui/Select";
+import { Textarea } from "~/components/ui/Textarea";
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Editar Caja Registradora - POS - StockFlow' },
-    { name: 'description', content: 'Editar caja registradora' },
+    { title: "Editar Caja Registradora - POS - StockFlow" },
+    { name: "description", content: "Editar caja registradora" },
   ];
 };
 
 const statusOptions = [
-  { value: 'OPEN', label: 'Abierta - Disponible para usar' },
-  { value: 'CLOSED', label: 'Cerrada - No disponible' },
-  { value: 'SUSPENDED', label: 'Suspendida - Temporalmente fuera de servicio' },
+  { value: "OPEN", label: "Abierta - Disponible para usar" },
+  { value: "CLOSED", label: "Cerrada - No disponible" },
+  { value: "SUSPENDED", label: "Suspendida - Temporalmente fuera de servicio" },
 ];
 
 export default function EditCashRegisterPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isMounted, setIsMounted] = useState(false);
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
-  const [warehouseId, setWarehouseId] = useState('');
-  const [status, setStatus] = useState('OPEN');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
+  const [status, setStatus] = useState("OPEN");
+  const [description, setDescription] = useState("");
   const [initialized, setInitialized] = useState(false);
 
-  const { data: register, isLoading: loadingRegister, isError } = useCashRegister(id!);
+  const {
+    data: register,
+    isLoading: loadingRegister,
+    isError,
+  } = useCashRegister(id!);
   const updateRegister = useUpdateCashRegister();
-  const { data: warehouses = [], isLoading: loadingWarehouses } = useWarehouses();
+  const { data: warehouses = [], isLoading: loadingWarehouses } =
+    useWarehouses();
 
   useEffect(() => {
     setIsMounted(true);
@@ -51,13 +56,13 @@ export default function EditCashRegisterPage() {
       setCode(register.code);
       setWarehouseId(register.warehouseId);
       setStatus(register.status);
-      setDescription(register.description || '');
+      setDescription(register.description || "");
       setInitialized(true);
     }
   }, [register, initialized]);
 
   const warehouseOptions = [
-    { value: '', label: 'Seleccionar bodega...' },
+    { value: "", label: "Seleccionar bodega..." },
     ...warehouses.map((w) => ({
       value: w.id,
       label: w.name,
@@ -74,11 +79,11 @@ export default function EditCashRegisterPage() {
         name,
         code,
         warehouseId,
-        status: status as 'OPEN' | 'CLOSED' | 'SUSPENDED',
+        status: status as "OPEN" | "CLOSED" | "SUSPENDED",
         description: description || undefined,
       },
     });
-    navigate('/pos/cash-registers');
+    navigate("/pos/cash-registers");
   };
 
   if (loadingRegister) {
@@ -92,7 +97,9 @@ export default function EditCashRegisterPage() {
   if (isError || !register) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <p className="text-error-500 mb-4">Error al cargar la caja registradora</p>
+        <p className="text-error-500 mb-4">
+          Error al cargar la caja registradora
+        </p>
         <Link to="/pos/cash-registers">
           <Button variant="outline">Volver</Button>
         </Link>
@@ -103,7 +110,7 @@ export default function EditCashRegisterPage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial={isMounted ? 'hidden' : false}
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="max-w-2xl mx-auto space-y-6"
     >
@@ -214,9 +221,11 @@ export default function EditCashRegisterPage() {
               </Link>
               <Button
                 type="submit"
-                disabled={!name || !code || !warehouseId || updateRegister.isPending}
+                disabled={
+                  !name || !code || !warehouseId || updateRegister.isPending
+                }
               >
-                {updateRegister.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                {updateRegister.isPending ? "Guardando..." : "Guardar Cambios"}
               </Button>
             </div>
           </form>

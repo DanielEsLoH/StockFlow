@@ -71,15 +71,10 @@ if (typeof window !== "undefined") {
 const AUTH_STORAGE_KEY = "auth-storage";
 
 // List of all auth-related storage keys to clear on logout
-const AUTH_STORAGE_KEYS = [
-  REFRESH_TOKEN_KEY,
-  AUTH_STORAGE_KEY,
-] as const;
+const AUTH_STORAGE_KEYS = [REFRESH_TOKEN_KEY, AUTH_STORAGE_KEY] as const;
 
 // List of all auth-related cookie names to clear on logout
-const AUTH_COOKIE_NAMES = [
-  REFRESH_TOKEN_KEY,
-] as const;
+const AUTH_COOKIE_NAMES = [REFRESH_TOKEN_KEY] as const;
 
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
@@ -221,7 +216,13 @@ function handleAuthFailure(): void {
   // Only redirect if not already redirecting and not on auth pages
   if (!isRedirectingToLogin) {
     const currentPath = window.location.pathname;
-    const authPages = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+    const authPages = [
+      "/login",
+      "/register",
+      "/forgot-password",
+      "/reset-password",
+      "/verify-email",
+    ];
     const isOnAuthPage = authPages.some((page) => currentPath.startsWith(page));
 
     if (!isOnAuthPage) {

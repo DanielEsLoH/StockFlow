@@ -1,5 +1,5 @@
-import { useEffect, useRef, type ReactNode } from 'react';
-import axios from 'axios';
+import { useEffect, useRef, type ReactNode } from "react";
+import axios from "axios";
 import {
   getRefreshToken,
   setAccessToken,
@@ -8,10 +8,10 @@ import {
   getAccessToken,
   completeAuthInit,
   isAuthInitializing,
-} from '~/lib/api';
-import { useAuthStore } from '~/stores/auth.store';
+} from "~/lib/api";
+import { useAuthStore } from "~/stores/auth.store";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 interface AuthInitializerProps {
   children: ReactNode;
@@ -41,7 +41,7 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
 
   useEffect(() => {
     // Skip on server
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     // Prevent double initialization in React strict mode
     if (initRef.current) return;
@@ -89,10 +89,15 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
         const response = await axios.post(
           `${API_URL}/auth/refresh`,
           { refreshToken },
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
-        const { accessToken, refreshToken: newRefreshToken, user, tenant } = response.data;
+        const {
+          accessToken,
+          refreshToken: newRefreshToken,
+          user,
+          tenant,
+        } = response.data;
 
         // Store the new tokens
         setAccessToken(accessToken);
@@ -110,7 +115,9 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
       } catch (error) {
         // Refresh failed - clear all auth data
         // This prevents stale tokens from causing issues
-        console.warn('[AuthInitializer] Token refresh failed, clearing auth data');
+        console.warn(
+          "[AuthInitializer] Token refresh failed, clearing auth data",
+        );
         clearAllAuthData();
       } finally {
         // Always complete auth init to unblock requests

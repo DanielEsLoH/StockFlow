@@ -1,8 +1,14 @@
-import { Link } from 'react-router';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Button } from '~/components/ui/Button';
-import { useDianConfig, useDianStats } from '~/hooks/useDian';
+import { Link } from "react-router";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Button } from "~/components/ui/Button";
+import { useDianConfig, useDianStats } from "~/hooks/useDian";
 import {
   FileText,
   Settings,
@@ -11,13 +17,16 @@ import {
   Clock,
   AlertTriangle,
   TrendingUp,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function DianPage() {
   const { data: config, isLoading: configLoading } = useDianConfig();
   const { data: stats, isLoading: statsLoading } = useDianStats();
 
-  const isConfigured = config?.hasSoftwareConfig && config?.hasResolution && config?.hasCertificate;
+  const isConfigured =
+    config?.hasSoftwareConfig &&
+    config?.hasResolution &&
+    config?.hasCertificate;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -51,7 +60,8 @@ export default function DianPage() {
             <div className="text-center py-8">
               <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
               <p className="text-gray-600 dark:text-gray-300 mb-4">
-                No hay configuracion DIAN. Configura tus datos para empezar a facturar electronicamente.
+                No hay configuracion DIAN. Configura tus datos para empezar a
+                facturar electronicamente.
               </p>
               <Link to="/dian/config">
                 <Button>Configurar DIAN</Button>
@@ -69,7 +79,7 @@ export default function DianPage() {
                   <div>
                     <p className="font-medium">Credenciales de Software</p>
                     <p className="text-sm text-gray-500">
-                      {config.hasSoftwareConfig ? 'Configuradas' : 'Pendiente'}
+                      {config.hasSoftwareConfig ? "Configuradas" : "Pendiente"}
                     </p>
                   </div>
                 </div>
@@ -85,7 +95,7 @@ export default function DianPage() {
                     <p className="text-sm text-gray-500">
                       {config.hasResolution
                         ? `${config.resolutionPrefix}${config.resolutionRangeFrom}-${config.resolutionRangeTo}`
-                        : 'Pendiente'}
+                        : "Pendiente"}
                     </p>
                   </div>
                 </div>
@@ -99,7 +109,7 @@ export default function DianPage() {
                   <div>
                     <p className="font-medium">Certificado Digital</p>
                     <p className="text-sm text-gray-500">
-                      {config.hasCertificate ? 'Cargado' : 'Pendiente'}
+                      {config.hasCertificate ? "Cargado" : "Pendiente"}
                     </p>
                   </div>
                 </div>
@@ -108,8 +118,8 @@ export default function DianPage() {
               <div className="flex items-center justify-between pt-4 border-t">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-500">Modo:</span>
-                  <Badge variant={config.testMode ? 'warning' : 'success'}>
-                    {config.testMode ? 'Pruebas/Habilitacion' : 'Produccion'}
+                  <Badge variant={config.testMode ? "warning" : "success"}>
+                    {config.testMode ? "Pruebas/Habilitacion" : "Produccion"}
                   </Badge>
                 </div>
                 <Link to="/dian/config">
@@ -130,7 +140,7 @@ export default function DianPage() {
                 <div>
                   <p className="text-sm text-gray-500">Total Documentos</p>
                   <p className="text-2xl font-bold">
-                    {statsLoading ? '...' : stats?.total || 0}
+                    {statsLoading ? "..." : stats?.total || 0}
                   </p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-500" />
@@ -144,7 +154,7 @@ export default function DianPage() {
                 <div>
                   <p className="text-sm text-gray-500">Aceptados</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {statsLoading ? '...' : stats?.accepted || 0}
+                    {statsLoading ? "..." : stats?.accepted || 0}
                   </p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-500" />
@@ -158,7 +168,7 @@ export default function DianPage() {
                 <div>
                   <p className="text-sm text-gray-500">Rechazados</p>
                   <p className="text-2xl font-bold text-red-600">
-                    {statsLoading ? '...' : stats?.rejected || 0}
+                    {statsLoading ? "..." : stats?.rejected || 0}
                   </p>
                 </div>
                 <XCircle className="h-8 w-8 text-red-500" />
@@ -172,7 +182,7 @@ export default function DianPage() {
                 <div>
                   <p className="text-sm text-gray-500">Pendientes</p>
                   <p className="text-2xl font-bold text-yellow-600">
-                    {statsLoading ? '...' : stats?.pending || 0}
+                    {statsLoading ? "..." : stats?.pending || 0}
                   </p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-500" />
@@ -204,12 +214,11 @@ export default function DianPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Numeracion Disponible</p>
-                  <p className="text-2xl font-bold">
-                    {stats.remainingNumbers}
-                  </p>
-                  {stats.remainingNumbers < 100 && stats.remainingNumbers > 0 && (
-                    <p className="text-xs text-yellow-600">Renovar pronto</p>
-                  )}
+                  <p className="text-2xl font-bold">{stats.remainingNumbers}</p>
+                  {stats.remainingNumbers < 100 &&
+                    stats.remainingNumbers > 0 && (
+                      <p className="text-xs text-yellow-600">Renovar pronto</p>
+                    )}
                 </div>
                 <FileText className="h-8 w-8 text-gray-500" />
               </div>

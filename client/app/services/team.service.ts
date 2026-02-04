@@ -1,5 +1,5 @@
-import { api } from '~/lib/api';
-import type { User } from '~/stores/auth.store';
+import { api } from "~/lib/api";
+import type { User } from "~/stores/auth.store";
 
 export interface TeamMember extends User {
   createdAt: string;
@@ -19,7 +19,7 @@ interface UsersResponse {
 export const teamService = {
   // Backend returns paginated response, extract the data array
   async getMembers(): Promise<TeamMember[]> {
-    const response = await api.get<UsersResponse>('/users?limit=1000');
+    const response = await api.get<UsersResponse>("/users?limit=1000");
     return response.data.data;
   },
 };

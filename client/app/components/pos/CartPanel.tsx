@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingCart,
   CreditCard,
@@ -8,12 +8,12 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronUp,
-} from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { Button } from '~/components/ui/Button';
-import { CartItem } from './CartItem';
-import { CartSummary } from './CartSummary';
-import type { POSCartItem, CartTotals } from '~/lib/pos-utils';
+} from "lucide-react";
+import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/Button";
+import { CartItem } from "./CartItem";
+import { CartSummary } from "./CartSummary";
+import type { POSCartItem, CartTotals } from "~/lib/pos-utils";
 
 interface CartPanelProps {
   items: POSCartItem[];
@@ -27,7 +27,7 @@ interface CartPanelProps {
   onRemove: (productId: string) => void;
   onClearCart: () => void;
   onSetNotes: (notes: string) => void;
-  onCheckout: (status: 'PENDING' | 'PAID') => void;
+  onCheckout: (status: "PENDING" | "PAID") => void;
   className?: string;
 }
 
@@ -74,8 +74,8 @@ export function CartPanel({
   return (
     <div
       className={cn(
-        'flex h-full flex-col rounded-2xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-800',
-        className
+        "flex h-full flex-col rounded-2xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-800",
+        className,
       )}
     >
       {/* Header - shrink-0: never shrink */}
@@ -97,14 +97,14 @@ export function CartPanel({
             type="button"
             onClick={handleClearCart}
             className={cn(
-              'flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors',
+              "flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
               showClearConfirm
-                ? 'bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-300'
-                : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-300'
+                ? "bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-300"
+                : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-300",
             )}
           >
             <Trash2 className="h-3.5 w-3.5" />
-            {showClearConfirm ? 'Confirmar' : 'Limpiar'}
+            {showClearConfirm ? "Confirmar" : "Limpiar"}
           </button>
         ) : null}
       </div>
@@ -175,7 +175,7 @@ export function CartPanel({
             {showNotes ? (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
+                animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
@@ -206,7 +206,7 @@ export function CartPanel({
             {/* Checkout - Create Invoice as PAID */}
             <Button
               type="button"
-              onClick={() => onCheckout('PAID')}
+              onClick={() => onCheckout("PAID")}
               disabled={!canCheckout || isProcessing}
               isLoading={isProcessing}
               className="w-full"
@@ -220,7 +220,7 @@ export function CartPanel({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onCheckout('PENDING')}
+              onClick={() => onCheckout("PENDING")}
               disabled={!canCheckout || isProcessing}
               className="w-full"
               size="lg"

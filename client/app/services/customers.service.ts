@@ -1,4 +1,4 @@
-import { api } from '~/lib/api';
+import { api } from "~/lib/api";
 import type {
   Customer,
   CustomerFilters,
@@ -6,19 +6,23 @@ import type {
   CreateCustomerData,
   UpdateCustomerData,
   CustomerStats,
-} from '~/types/customer';
+} from "~/types/customer";
 
 // Service - Real API calls
 export const customersService = {
   // Get paginated customers with filters
-  async getCustomers(filters: CustomerFilters = {}): Promise<CustomersResponse> {
+  async getCustomers(
+    filters: CustomerFilters = {},
+  ): Promise<CustomersResponse> {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         params.append(key, String(value));
       }
     });
-    const { data } = await api.get<CustomersResponse>(`/customers?${params.toString()}`);
+    const { data } = await api.get<CustomersResponse>(
+      `/customers?${params.toString()}`,
+    );
     return data;
   },
 
@@ -34,17 +38,25 @@ export const customersService = {
 
   // Search customers
   async searchCustomers(query: string): Promise<Customer[]> {
-    const { data } = await api.get<Customer[]>(`/customers/search?q=${encodeURIComponent(query)}`);
+    const { data } = await api.get<Customer[]>(
+      `/customers/search?q=${encodeURIComponent(query)}`,
+    );
     return data;
   },
 
   async createCustomer(customerData: CreateCustomerData): Promise<Customer> {
-    const { data } = await api.post<Customer>('/customers', customerData);
+    const { data } = await api.post<Customer>("/customers", customerData);
     return data;
   },
 
-  async updateCustomer(id: string, customerData: UpdateCustomerData): Promise<Customer> {
-    const { data } = await api.patch<Customer>(`/customers/${id}`, customerData);
+  async updateCustomer(
+    id: string,
+    customerData: UpdateCustomerData,
+  ): Promise<Customer> {
+    const { data } = await api.patch<Customer>(
+      `/customers/${id}`,
+      customerData,
+    );
     return data;
   },
 
@@ -54,7 +66,7 @@ export const customersService = {
 
   // Get unique cities for filter dropdown
   async getCities(): Promise<string[]> {
-    const { data } = await api.get<string[]>('/customers/cities');
+    const { data } = await api.get<string[]>("/customers/cities");
     return data;
   },
 };

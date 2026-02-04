@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
+import { useState, useEffect } from "react";
+import { Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   Filter,
   Clock,
@@ -13,16 +13,16 @@ import {
   PlayCircle,
   PauseCircle,
   User,
-} from 'lucide-react';
-import type { Route } from './+types/_app.pos.sessions';
-import { cn, formatCurrency, formatDateTime } from '~/lib/utils';
-import { usePOSSessions } from '~/hooks/usePOS';
-import { Button } from '~/components/ui/Button';
-import { Input } from '~/components/ui/Input';
-import { Card } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Select } from '~/components/ui/Select';
-import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
+} from "lucide-react";
+import type { Route } from "./+types/_app.pos.sessions";
+import { cn, formatCurrency, formatDateTime } from "~/lib/utils";
+import { usePOSSessions } from "~/hooks/usePOS";
+import { Button } from "~/components/ui/Button";
+import { Input } from "~/components/ui/Input";
+import { Card } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Select } from "~/components/ui/Select";
+import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
 import {
   Table,
   TableHeader,
@@ -30,32 +30,34 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { SkeletonTableRow } from '~/components/ui/Skeleton';
-import { useUrlFilters } from '~/hooks/useUrlFilters';
-import type { POSSessionFilters } from '~/types/pos';
+} from "~/components/ui/Table";
+import { SkeletonTableRow } from "~/components/ui/Skeleton";
+import { useUrlFilters } from "~/hooks/useUrlFilters";
+import type { POSSessionFilters } from "~/types/pos";
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Sesiones POS - StockFlow' },
-    { name: 'description', content: 'Historial de sesiones de caja' },
+    { title: "Sesiones POS - StockFlow" },
+    { name: "description", content: "Historial de sesiones de caja" },
   ];
 };
 
 const statusOptions = [
-  { value: '', label: 'Todos los estados' },
-  { value: 'ACTIVE', label: 'Activas' },
-  { value: 'CLOSED', label: 'Cerradas' },
-  { value: 'SUSPENDED', label: 'Suspendidas' },
+  { value: "", label: "Todos los estados" },
+  { value: "ACTIVE", label: "Activas" },
+  { value: "CLOSED", label: "Cerradas" },
+  { value: "SUSPENDED", label: "Suspendidas" },
 ];
 
 const sessionsFiltersParser = {
   parse: (searchParams: URLSearchParams): POSSessionFilters => ({
-    status: (searchParams.get('status') as 'ACTIVE' | 'CLOSED' | 'SUSPENDED') || undefined,
-    fromDate: searchParams.get('fromDate') || undefined,
-    toDate: searchParams.get('toDate') || undefined,
-    page: Number(searchParams.get('page')) || 1,
-    limit: Number(searchParams.get('limit')) || 10,
+    status:
+      (searchParams.get("status") as "ACTIVE" | "CLOSED" | "SUSPENDED") ||
+      undefined,
+    fromDate: searchParams.get("fromDate") || undefined,
+    toDate: searchParams.get("toDate") || undefined,
+    page: Number(searchParams.get("page")) || 1,
+    limit: Number(searchParams.get("limit")) || 10,
   }),
 };
 
@@ -63,9 +65,10 @@ export default function POSSessionsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  const { filters, updateFilters, clearFilters } = useUrlFilters<POSSessionFilters>({
-    parserConfig: sessionsFiltersParser,
-  });
+  const { filters, updateFilters, clearFilters } =
+    useUrlFilters<POSSessionFilters>({
+      parserConfig: sessionsFiltersParser,
+    });
 
   useEffect(() => {
     setIsMounted(true);
@@ -79,21 +82,21 @@ export default function POSSessionsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'ACTIVE':
+      case "ACTIVE":
         return (
           <Badge variant="success">
             <PlayCircle className="h-3 w-3 mr-1" />
             Activa
           </Badge>
         );
-      case 'CLOSED':
+      case "CLOSED":
         return (
           <Badge variant="secondary">
             <CheckCircle className="h-3 w-3 mr-1" />
             Cerrada
           </Badge>
         );
-      case 'SUSPENDED':
+      case "SUSPENDED":
         return (
           <Badge variant="warning">
             <PauseCircle className="h-3 w-3 mr-1" />
@@ -108,7 +111,7 @@ export default function POSSessionsPage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial={isMounted ? 'hidden' : false}
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="space-y-6"
     >
@@ -143,14 +146,18 @@ export default function POSSessionsPage() {
                 onClick={() => setShowFilters(!showFilters)}
                 className={cn(
                   showFilters &&
-                    'bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20'
+                    "bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20",
                 )}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
                 {hasActiveFilters && (
                   <Badge variant="primary" className="ml-2">
-                    {[filters.status, filters.fromDate, filters.toDate].filter(Boolean).length}
+                    {
+                      [filters.status, filters.fromDate, filters.toDate].filter(
+                        Boolean,
+                      ).length
+                    }
                   </Badge>
                 )}
               </Button>
@@ -167,7 +174,7 @@ export default function POSSessionsPage() {
               {showFilters && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
@@ -175,10 +182,12 @@ export default function POSSessionsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                     <Select
                       options={statusOptions}
-                      value={filters.status || ''}
+                      value={filters.status || ""}
                       onChange={(value) =>
                         updateFilters({
-                          status: (value as 'ACTIVE' | 'CLOSED' | 'SUSPENDED') || undefined,
+                          status:
+                            (value as "ACTIVE" | "CLOSED" | "SUSPENDED") ||
+                            undefined,
                         })
                       }
                       placeholder="Todos los estados"
@@ -187,9 +196,11 @@ export default function POSSessionsPage() {
                       <label className="text-sm text-neutral-500">Desde</label>
                       <Input
                         type="date"
-                        value={filters.fromDate || ''}
+                        value={filters.fromDate || ""}
                         onChange={(e) =>
-                          updateFilters({ fromDate: e.target.value || undefined })
+                          updateFilters({
+                            fromDate: e.target.value || undefined,
+                          })
                         }
                       />
                     </div>
@@ -197,7 +208,7 @@ export default function POSSessionsPage() {
                       <label className="text-sm text-neutral-500">Hasta</label>
                       <Input
                         type="date"
-                        value={filters.toDate || ''}
+                        value={filters.toDate || ""}
                         onChange={(e) =>
                           updateFilters({ toDate: e.target.value || undefined })
                         }
@@ -219,8 +230,12 @@ export default function POSSessionsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Caja</TableHead>
-                  <TableHead className="hidden md:table-cell">Usuario</TableHead>
-                  <TableHead className="hidden sm:table-cell">Apertura</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Usuario
+                  </TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Apertura
+                  </TableHead>
                   <TableHead>Ventas</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="w-[80px]">Acciones</TableHead>
@@ -249,12 +264,12 @@ export default function POSSessionsPage() {
                 <Clock className="h-16 w-16" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-white">
-                {hasActiveFilters ? 'Sin resultados' : 'No hay sesiones'}
+                {hasActiveFilters ? "Sin resultados" : "No hay sesiones"}
               </h3>
               <p className="mb-6 max-w-sm text-neutral-500 dark:text-neutral-400">
                 {hasActiveFilters
-                  ? 'No se encontraron sesiones con los filtros aplicados.'
-                  : 'Aun no hay sesiones de caja registradas.'}
+                  ? "No se encontraron sesiones con los filtros aplicados."
+                  : "Aun no hay sesiones de caja registradas."}
               </p>
               {hasActiveFilters ? (
                 <Button variant="outline" onClick={clearFilters}>
@@ -275,8 +290,12 @@ export default function POSSessionsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Caja</TableHead>
-                    <TableHead className="hidden md:table-cell">Usuario</TableHead>
-                    <TableHead className="hidden sm:table-cell">Apertura</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Usuario
+                    </TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      Apertura
+                    </TableHead>
                     <TableHead>Ventas</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="w-[80px]">Acciones</TableHead>
@@ -299,10 +318,10 @@ export default function POSSessionsPage() {
                             </div>
                             <div>
                               <p className="font-medium text-neutral-900 dark:text-white">
-                                {session.cashRegister?.name || 'Caja'}
+                                {session.cashRegister?.name || "Caja"}
                               </p>
                               <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                {session.cashRegister?.warehouse?.name || ''}
+                                {session.cashRegister?.warehouse?.name || ""}
                               </p>
                             </div>
                           </div>
@@ -311,7 +330,9 @@ export default function POSSessionsPage() {
                           <div className="flex items-center gap-1.5">
                             <User className="h-4 w-4 text-neutral-400" />
                             <span className="text-neutral-700 dark:text-neutral-300">
-                              {session.user?.name || `${session.user?.firstName || ''} ${session.user?.lastName || ''}`.trim() || 'Usuario'}
+                              {session.user?.name ||
+                                `${session.user?.firstName || ""} ${session.user?.lastName || ""}`.trim() ||
+                                "Usuario"}
                             </span>
                           </div>
                         </TableCell>
@@ -334,7 +355,11 @@ export default function POSSessionsPage() {
                         <TableCell>{getStatusBadge(session.status)}</TableCell>
                         <TableCell>
                           <Link to={`/pos/sessions/${session.id}`}>
-                            <Button variant="ghost" size="icon" title="Ver detalles">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Ver detalles"
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>

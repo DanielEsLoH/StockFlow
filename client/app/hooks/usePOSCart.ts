@@ -1,5 +1,5 @@
-import { useReducer, useCallback, useMemo } from 'react';
-import type { Product } from '~/types/product';
+import { useReducer, useCallback, useMemo } from "react";
+import type { Product } from "~/types/product";
 import {
   type POSCartItem,
   type CartTotals,
@@ -7,7 +7,7 @@ import {
   createCartItem,
   canAddToCart,
   COLOMBIA_VAT_RATE,
-} from '~/lib/pos-utils';
+} from "~/lib/pos-utils";
 
 /**
  * POS State interface
@@ -27,22 +27,28 @@ export interface POSState {
  * POS Action types
  */
 type POSAction =
-  | { type: 'ADD_TO_CART'; payload: Product }
-  | { type: 'REMOVE_FROM_CART'; payload: string } // productId
-  | { type: 'UPDATE_QUANTITY'; payload: { productId: string; quantity: number } }
-  | { type: 'INCREMENT_QUANTITY'; payload: string } // productId
-  | { type: 'DECREMENT_QUANTITY'; payload: string } // productId
-  | { type: 'UPDATE_DISCOUNT'; payload: { productId: string; discount: number } }
-  | { type: 'UPDATE_UNIT_PRICE'; payload: { productId: string; price: number } }
-  | { type: 'CLEAR_CART' }
-  | { type: 'SET_CUSTOMER'; payload: string | null }
-  | { type: 'SET_WAREHOUSE'; payload: string | null }
-  | { type: 'SET_SEARCH_QUERY'; payload: string }
-  | { type: 'SET_SELECTED_CATEGORY'; payload: string | null }
-  | { type: 'SET_PROCESSING'; payload: boolean }
-  | { type: 'SET_NOTES'; payload: string }
-  | { type: 'SET_GLOBAL_DISCOUNT'; payload: number }
-  | { type: 'RESET_STATE' };
+  | { type: "ADD_TO_CART"; payload: Product }
+  | { type: "REMOVE_FROM_CART"; payload: string } // productId
+  | {
+      type: "UPDATE_QUANTITY";
+      payload: { productId: string; quantity: number };
+    }
+  | { type: "INCREMENT_QUANTITY"; payload: string } // productId
+  | { type: "DECREMENT_QUANTITY"; payload: string } // productId
+  | {
+      type: "UPDATE_DISCOUNT";
+      payload: { productId: string; discount: number };
+    }
+  | { type: "UPDATE_UNIT_PRICE"; payload: { productId: string; price: number } }
+  | { type: "CLEAR_CART" }
+  | { type: "SET_CUSTOMER"; payload: string | null }
+  | { type: "SET_WAREHOUSE"; payload: string | null }
+  | { type: "SET_SEARCH_QUERY"; payload: string }
+  | { type: "SET_SELECTED_CATEGORY"; payload: string | null }
+  | { type: "SET_PROCESSING"; payload: boolean }
+  | { type: "SET_NOTES"; payload: string }
+  | { type: "SET_GLOBAL_DISCOUNT"; payload: number }
+  | { type: "RESET_STATE" };
 
 /**
  * Initial state
@@ -51,10 +57,10 @@ const initialState: POSState = {
   cart: [],
   selectedCustomerId: null,
   selectedWarehouseId: null,
-  searchQuery: '',
+  searchQuery: "",
   selectedCategory: null,
   isProcessing: false,
-  notes: '',
+  notes: "",
   globalDiscount: 0,
 };
 
@@ -63,14 +69,20 @@ const initialState: POSState = {
  */
 function posReducer(state: POSState, action: POSAction): POSState {
   switch (action.type) {
-    case 'ADD_TO_CART': {
+    case "ADD_TO_CART": {
       const product = action.payload;
-      const existingItem = state.cart.find((item) => item.productId === product.id);
+      const existingItem = state.cart.find(
+        (item) => item.productId === product.id,
+      );
 
       if (existingItem) {
         // Check if we can increment
         const newQuantity = existingItem.quantity + 1;
-        const { canAdd } = canAddToCart(product, existingItem.quantity - 1, newQuantity);
+        const { canAdd } = canAddToCart(
+          product,
+          existingItem.quantity - 1,
+          newQuantity,
+        );
 
         if (!canAdd) return state;
 
@@ -79,7 +91,7 @@ function posReducer(state: POSState, action: POSAction): POSState {
           cart: state.cart.map((item) =>
             item.productId === product.id
               ? { ...item, quantity: newQuantity }
-              : item
+              : item,
           ),
         };
       }
@@ -94,13 +106,13 @@ function posReducer(state: POSState, action: POSAction): POSState {
       };
     }
 
-    case 'REMOVE_FROM_CART':
+    case "REMOVE_FROM_CART":
       return {
         ...state,
         cart: state.cart.filter((item) => item.productId !== action.payload),
       };
 
-    case 'UPDATE_QUANTITY': {
+    case "UPDATE_QUANTITY": {
       const { productId, quantity } = action.payload;
 
       if (quantity <= 0) {
@@ -119,12 +131,12 @@ function posReducer(state: POSState, action: POSAction): POSState {
       return {
         ...state,
         cart: state.cart.map((item) =>
-          item.productId === productId ? { ...item, quantity } : item
+          item.productId === productId ? { ...item, quantity } : item,
         ),
       };
     }
 
-    case 'INCREMENT_QUANTITY': {
+    case "INCREMENT_QUANTITY": {
       const item = state.cart.find((i) => i.productId === action.payload);
       if (!item) return state;
 
@@ -134,12 +146,12 @@ function posReducer(state: POSState, action: POSAction): POSState {
       return {
         ...state,
         cart: state.cart.map((i) =>
-          i.productId === action.payload ? { ...i, quantity: newQuantity } : i
+          i.productId === action.payload ? { ...i, quantity: newQuantity } : i,
         ),
       };
     }
 
-    case 'DECREMENT_QUANTITY': {
+    case "DECREMENT_QUANTITY": {
       const item = state.cart.find((i) => i.productId === action.payload);
       if (!item) return state;
 
@@ -154,12 +166,12 @@ function posReducer(state: POSState, action: POSAction): POSState {
       return {
         ...state,
         cart: state.cart.map((i) =>
-          i.productId === action.payload ? { ...i, quantity: newQuantity } : i
+          i.productId === action.payload ? { ...i, quantity: newQuantity } : i,
         ),
       };
     }
 
-    case 'UPDATE_DISCOUNT': {
+    case "UPDATE_DISCOUNT": {
       const { productId, discount } = action.payload;
       const clampedDiscount = Math.max(0, Math.min(100, discount));
 
@@ -168,26 +180,24 @@ function posReducer(state: POSState, action: POSAction): POSState {
         cart: state.cart.map((item) =>
           item.productId === productId
             ? { ...item, discount: clampedDiscount }
-            : item
+            : item,
         ),
       };
     }
 
-    case 'UPDATE_UNIT_PRICE': {
+    case "UPDATE_UNIT_PRICE": {
       const { productId, price } = action.payload;
       if (price < 0) return state;
 
       return {
         ...state,
         cart: state.cart.map((item) =>
-          item.productId === productId
-            ? { ...item, unitPrice: price }
-            : item
+          item.productId === productId ? { ...item, unitPrice: price } : item,
         ),
       };
     }
 
-    case 'SET_GLOBAL_DISCOUNT': {
+    case "SET_GLOBAL_DISCOUNT": {
       const clampedDiscount = Math.max(0, Math.min(100, action.payload));
       return {
         ...state,
@@ -195,20 +205,20 @@ function posReducer(state: POSState, action: POSAction): POSState {
       };
     }
 
-    case 'CLEAR_CART':
+    case "CLEAR_CART":
       return {
         ...state,
         cart: [],
-        notes: '',
+        notes: "",
       };
 
-    case 'SET_CUSTOMER':
+    case "SET_CUSTOMER":
       return {
         ...state,
         selectedCustomerId: action.payload,
       };
 
-    case 'SET_WAREHOUSE':
+    case "SET_WAREHOUSE":
       return {
         ...state,
         selectedWarehouseId: action.payload,
@@ -216,31 +226,31 @@ function posReducer(state: POSState, action: POSAction): POSState {
         cart: [],
       };
 
-    case 'SET_SEARCH_QUERY':
+    case "SET_SEARCH_QUERY":
       return {
         ...state,
         searchQuery: action.payload,
       };
 
-    case 'SET_SELECTED_CATEGORY':
+    case "SET_SELECTED_CATEGORY":
       return {
         ...state,
         selectedCategory: action.payload,
       };
 
-    case 'SET_PROCESSING':
+    case "SET_PROCESSING":
       return {
         ...state,
         isProcessing: action.payload,
       };
 
-    case 'SET_NOTES':
+    case "SET_NOTES":
       return {
         ...state,
         notes: action.payload,
       };
 
-    case 'RESET_STATE':
+    case "RESET_STATE":
       return initialState;
 
     default:
@@ -256,73 +266,73 @@ export function usePOSCart() {
 
   // Actions
   const addToCart = useCallback((product: Product) => {
-    dispatch({ type: 'ADD_TO_CART', payload: product });
+    dispatch({ type: "ADD_TO_CART", payload: product });
   }, []);
 
   const removeFromCart = useCallback((productId: string) => {
-    dispatch({ type: 'REMOVE_FROM_CART', payload: productId });
+    dispatch({ type: "REMOVE_FROM_CART", payload: productId });
   }, []);
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity } });
+    dispatch({ type: "UPDATE_QUANTITY", payload: { productId, quantity } });
   }, []);
 
   const incrementQuantity = useCallback((productId: string) => {
-    dispatch({ type: 'INCREMENT_QUANTITY', payload: productId });
+    dispatch({ type: "INCREMENT_QUANTITY", payload: productId });
   }, []);
 
   const decrementQuantity = useCallback((productId: string) => {
-    dispatch({ type: 'DECREMENT_QUANTITY', payload: productId });
+    dispatch({ type: "DECREMENT_QUANTITY", payload: productId });
   }, []);
 
   const updateDiscount = useCallback((productId: string, discount: number) => {
-    dispatch({ type: 'UPDATE_DISCOUNT', payload: { productId, discount } });
+    dispatch({ type: "UPDATE_DISCOUNT", payload: { productId, discount } });
   }, []);
 
   const updateUnitPrice = useCallback((productId: string, price: number) => {
-    dispatch({ type: 'UPDATE_UNIT_PRICE', payload: { productId, price } });
+    dispatch({ type: "UPDATE_UNIT_PRICE", payload: { productId, price } });
   }, []);
 
   const setGlobalDiscount = useCallback((discount: number) => {
-    dispatch({ type: 'SET_GLOBAL_DISCOUNT', payload: discount });
+    dispatch({ type: "SET_GLOBAL_DISCOUNT", payload: discount });
   }, []);
 
   const clearCart = useCallback(() => {
-    dispatch({ type: 'CLEAR_CART' });
+    dispatch({ type: "CLEAR_CART" });
   }, []);
 
   const setCustomer = useCallback((customerId: string | null) => {
-    dispatch({ type: 'SET_CUSTOMER', payload: customerId });
+    dispatch({ type: "SET_CUSTOMER", payload: customerId });
   }, []);
 
   const setWarehouse = useCallback((warehouseId: string | null) => {
-    dispatch({ type: 'SET_WAREHOUSE', payload: warehouseId });
+    dispatch({ type: "SET_WAREHOUSE", payload: warehouseId });
   }, []);
 
   const setSearchQuery = useCallback((query: string) => {
-    dispatch({ type: 'SET_SEARCH_QUERY', payload: query });
+    dispatch({ type: "SET_SEARCH_QUERY", payload: query });
   }, []);
 
   const setSelectedCategory = useCallback((categoryId: string | null) => {
-    dispatch({ type: 'SET_SELECTED_CATEGORY', payload: categoryId });
+    dispatch({ type: "SET_SELECTED_CATEGORY", payload: categoryId });
   }, []);
 
   const setProcessing = useCallback((processing: boolean) => {
-    dispatch({ type: 'SET_PROCESSING', payload: processing });
+    dispatch({ type: "SET_PROCESSING", payload: processing });
   }, []);
 
   const setNotes = useCallback((notes: string) => {
-    dispatch({ type: 'SET_NOTES', payload: notes });
+    dispatch({ type: "SET_NOTES", payload: notes });
   }, []);
 
   const resetState = useCallback(() => {
-    dispatch({ type: 'RESET_STATE' });
+    dispatch({ type: "RESET_STATE" });
   }, []);
 
   // Computed values
   const totals: CartTotals = useMemo(
     () => calculateCartTotals(state.cart, state.globalDiscount),
-    [state.cart, state.globalDiscount]
+    [state.cart, state.globalDiscount],
   );
 
   const cartItemsMap = useMemo(() => {
@@ -337,14 +347,14 @@ export function usePOSCart() {
     (productId: string): number => {
       return cartItemsMap.get(productId) ?? 0;
     },
-    [cartItemsMap]
+    [cartItemsMap],
   );
 
   const isInCart = useCallback(
     (productId: string): boolean => {
       return cartItemsMap.has(productId);
     },
-    [cartItemsMap]
+    [cartItemsMap],
   );
 
   const canCheckout = useMemo(() => {

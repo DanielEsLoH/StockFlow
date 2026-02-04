@@ -1,7 +1,7 @@
-import * as React from 'react';
-import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { Button } from './Button';
+import * as React from "react";
+import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { Button } from "./Button";
 
 interface PaginationProps {
   currentPage: number;
@@ -14,8 +14,8 @@ interface PaginationProps {
 function generatePaginationRange(
   currentPage: number,
   totalPages: number,
-  siblingCount: number
-): (number | 'ellipsis')[] {
+  siblingCount: number,
+): (number | "ellipsis")[] {
   const totalNumbers = siblingCount * 2 + 3;
   const totalBlocks = totalNumbers + 2;
 
@@ -32,23 +32,23 @@ function generatePaginationRange(
   if (!shouldShowLeftEllipsis && shouldShowRightEllipsis) {
     const leftItemCount = 3 + 2 * siblingCount;
     const leftRange = Array.from({ length: leftItemCount }, (_, i) => i + 1);
-    return [...leftRange, 'ellipsis', totalPages];
+    return [...leftRange, "ellipsis", totalPages];
   }
 
   if (shouldShowLeftEllipsis && !shouldShowRightEllipsis) {
     const rightItemCount = 3 + 2 * siblingCount;
     const rightRange = Array.from(
       { length: rightItemCount },
-      (_, i) => totalPages - rightItemCount + i + 1
+      (_, i) => totalPages - rightItemCount + i + 1,
     );
-    return [1, 'ellipsis', ...rightRange];
+    return [1, "ellipsis", ...rightRange];
   }
 
   const middleRange = Array.from(
     { length: rightSiblingIndex - leftSiblingIndex + 1 },
-    (_, i) => leftSiblingIndex + i
+    (_, i) => leftSiblingIndex + i,
   );
-  return [1, 'ellipsis', ...middleRange, 'ellipsis', totalPages];
+  return [1, "ellipsis", ...middleRange, "ellipsis", totalPages];
 }
 
 export function Pagination({
@@ -58,7 +58,11 @@ export function Pagination({
   siblingCount = 1,
   className,
 }: PaginationProps) {
-  const paginationRange = generatePaginationRange(currentPage, totalPages, siblingCount);
+  const paginationRange = generatePaginationRange(
+    currentPage,
+    totalPages,
+    siblingCount,
+  );
 
   if (totalPages <= 1) {
     return null;
@@ -80,7 +84,7 @@ export function Pagination({
     <nav
       role="navigation"
       aria-label="Paginacion"
-      className={cn('flex items-center justify-center gap-1', className)}
+      className={cn("flex items-center justify-center gap-1", className)}
     >
       {/* Previous button */}
       <Button
@@ -96,7 +100,7 @@ export function Pagination({
       {/* Page numbers */}
       <div className="flex items-center gap-1">
         {paginationRange.map((pageNumber, index) => {
-          if (pageNumber === 'ellipsis') {
+          if (pageNumber === "ellipsis") {
             return (
               <span
                 key={`ellipsis-${index}`}
@@ -111,11 +115,11 @@ export function Pagination({
           return (
             <Button
               key={pageNumber}
-              variant={currentPage === pageNumber ? 'primary' : 'ghost'}
+              variant={currentPage === pageNumber ? "primary" : "ghost"}
               size="icon-sm"
               onClick={() => onPageChange(pageNumber)}
               aria-label={`Pagina ${pageNumber}`}
-              aria-current={currentPage === pageNumber ? 'page' : undefined}
+              aria-current={currentPage === pageNumber ? "page" : undefined}
             >
               {pageNumber}
             </Button>
@@ -155,9 +159,14 @@ export function PaginationInfo({
   const end = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <p className={cn('text-sm text-neutral-500 dark:text-neutral-400', className)}>
-      Mostrando <span className="font-medium">{start}</span> a{' '}
-      <span className="font-medium">{end}</span> de{' '}
+    <p
+      className={cn(
+        "text-sm text-neutral-500 dark:text-neutral-400",
+        className,
+      )}
+    >
+      Mostrando <span className="font-medium">{start}</span> a{" "}
+      <span className="font-medium">{end}</span> de{" "}
       <span className="font-medium">{totalItems}</span> resultados
     </p>
   );

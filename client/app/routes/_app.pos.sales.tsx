@@ -1,5 +1,5 @@
-import { redirect } from 'react-router';
-import type { Route } from './+types/_app.pos.sales';
+import { redirect } from "react-router";
+import type { Route } from "./+types/_app.pos.sales";
 
 // Redirect /pos/sales to /invoices?source=POS
 // This is part of the unified navigation where all invoices
@@ -7,7 +7,7 @@ import type { Route } from './+types/_app.pos.sales';
 export function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const params = new URLSearchParams(url.searchParams);
-  params.set('source', 'POS');
+  params.set("source", "POS");
   return redirect(`/invoices?${params.toString()}`);
 }
 

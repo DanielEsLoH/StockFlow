@@ -1,32 +1,32 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useAuthStore, type User, type Tenant } from './auth.store';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { useAuthStore, type User, type Tenant } from "./auth.store";
 
 // Mock the api module to prevent actual localStorage/cookie operations
-vi.mock('~/lib/api', () => ({
+vi.mock("~/lib/api", () => ({
   clearAllAuthData: vi.fn(),
 }));
 
 const mockUser: User = {
-  id: '1',
-  email: 'test@example.com',
-  firstName: 'John',
-  lastName: 'Doe',
-  role: 'ADMIN',
-  status: 'ACTIVE',
-  tenantId: 'tenant-1',
-  avatarUrl: 'https://example.com/avatar.jpg',
+  id: "1",
+  email: "test@example.com",
+  firstName: "John",
+  lastName: "Doe",
+  role: "ADMIN",
+  status: "ACTIVE",
+  tenantId: "tenant-1",
+  avatarUrl: "https://example.com/avatar.jpg",
 };
 
 const mockTenant: Tenant = {
-  id: 'tenant-1',
-  name: 'Test Company',
-  slug: 'test-company',
-  plan: 'PRO',
-  status: 'ACTIVE',
-  logoUrl: 'https://example.com/logo.jpg',
+  id: "tenant-1",
+  name: "Test Company",
+  slug: "test-company",
+  plan: "PRO",
+  status: "ACTIVE",
+  logoUrl: "https://example.com/logo.jpg",
 };
 
-describe('useAuthStore', () => {
+describe("useAuthStore", () => {
   beforeEach(() => {
     // Reset the store to initial state before each test
     useAuthStore.setState({
@@ -37,8 +37,8 @@ describe('useAuthStore', () => {
     });
   });
 
-  describe('initial state', () => {
-    it('should have correct initial state', () => {
+  describe("initial state", () => {
+    it("should have correct initial state", () => {
       const state = useAuthStore.getState();
 
       expect(state.user).toBeNull();
@@ -48,8 +48,8 @@ describe('useAuthStore', () => {
     });
   });
 
-  describe('setUser', () => {
-    it('should set user and update isAuthenticated to true', () => {
+  describe("setUser", () => {
+    it("should set user and update isAuthenticated to true", () => {
       const { setUser } = useAuthStore.getState();
 
       setUser(mockUser);
@@ -60,7 +60,7 @@ describe('useAuthStore', () => {
       expect(state.isLoading).toBe(false);
     });
 
-    it('should set isAuthenticated to false when user is null', () => {
+    it("should set isAuthenticated to false when user is null", () => {
       const { setUser } = useAuthStore.getState();
 
       // First set a user
@@ -76,7 +76,7 @@ describe('useAuthStore', () => {
       expect(state.isLoading).toBe(false);
     });
 
-    it('should set isLoading to false when setUser is called', () => {
+    it("should set isLoading to false when setUser is called", () => {
       expect(useAuthStore.getState().isLoading).toBe(true);
 
       useAuthStore.getState().setUser(mockUser);
@@ -85,8 +85,8 @@ describe('useAuthStore', () => {
     });
   });
 
-  describe('setTenant', () => {
-    it('should set tenant', () => {
+  describe("setTenant", () => {
+    it("should set tenant", () => {
       const { setTenant } = useAuthStore.getState();
 
       setTenant(mockTenant);
@@ -94,7 +94,7 @@ describe('useAuthStore', () => {
       expect(useAuthStore.getState().tenant).toEqual(mockTenant);
     });
 
-    it('should clear tenant when null is passed', () => {
+    it("should clear tenant when null is passed", () => {
       const { setTenant } = useAuthStore.getState();
 
       setTenant(mockTenant);
@@ -105,8 +105,8 @@ describe('useAuthStore', () => {
     });
   });
 
-  describe('setLoading', () => {
-    it('should set isLoading to true', () => {
+  describe("setLoading", () => {
+    it("should set isLoading to true", () => {
       const { setLoading, setUser } = useAuthStore.getState();
 
       // First ensure isLoading is false
@@ -117,7 +117,7 @@ describe('useAuthStore', () => {
       expect(useAuthStore.getState().isLoading).toBe(true);
     });
 
-    it('should set isLoading to false', () => {
+    it("should set isLoading to false", () => {
       const { setLoading } = useAuthStore.getState();
 
       expect(useAuthStore.getState().isLoading).toBe(true);
@@ -127,9 +127,9 @@ describe('useAuthStore', () => {
     });
   });
 
-  describe('logout', () => {
-    it('should clear all auth state', async () => {
-      const { clearAllAuthData } = await import('~/lib/api');
+  describe("logout", () => {
+    it("should clear all auth state", async () => {
+      const { clearAllAuthData } = await import("~/lib/api");
       const { setUser, setTenant, logout } = useAuthStore.getState();
 
       // Set up authenticated state
@@ -151,8 +151,8 @@ describe('useAuthStore', () => {
       expect(stateAfterLogout.isLoading).toBe(false);
     });
 
-    it('should call clearAllAuthData to clean up tokens and storage', async () => {
-      const { clearAllAuthData } = await import('~/lib/api');
+    it("should call clearAllAuthData to clean up tokens and storage", async () => {
+      const { clearAllAuthData } = await import("~/lib/api");
       const { setUser, setTenant, logout } = useAuthStore.getState();
 
       // Set up authenticated state
@@ -170,8 +170,8 @@ describe('useAuthStore', () => {
     });
   });
 
-  describe('persistence', () => {
-    it('should partialize state correctly (exclude isLoading)', () => {
+  describe("persistence", () => {
+    it("should partialize state correctly (exclude isLoading)", () => {
       const { setUser, setTenant } = useAuthStore.getState();
 
       setUser(mockUser);

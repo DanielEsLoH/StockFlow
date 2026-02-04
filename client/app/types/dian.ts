@@ -1,26 +1,26 @@
 // DIAN Electronic Invoicing Types
 
 export enum TaxResponsibility {
-  O_13 = 'O_13', // Gran contribuyente
-  O_15 = 'O_15', // Autorretenedor
-  O_23 = 'O_23', // Agente de retencion IVA
-  O_47 = 'O_47', // Regimen simple
-  R_99_PN = 'R_99_PN', // No responsable
+  O_13 = "O_13", // Gran contribuyente
+  O_15 = "O_15", // Autorretenedor
+  O_23 = "O_23", // Agente de retencion IVA
+  O_47 = "O_47", // Regimen simple
+  R_99_PN = "R_99_PN", // No responsable
 }
 
 export enum DianDocumentStatus {
-  PENDING = 'PENDING',
-  GENERATED = 'GENERATED',
-  SIGNED = 'SIGNED',
-  SENT = 'SENT',
-  ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED',
+  PENDING = "PENDING",
+  GENERATED = "GENERATED",
+  SIGNED = "SIGNED",
+  SENT = "SENT",
+  ACCEPTED = "ACCEPTED",
+  REJECTED = "REJECTED",
 }
 
 export enum DianDocumentType {
-  FACTURA_ELECTRONICA = 'FACTURA_ELECTRONICA',
-  NOTA_CREDITO = 'NOTA_CREDITO',
-  NOTA_DEBITO = 'NOTA_DEBITO',
+  FACTURA_ELECTRONICA = "FACTURA_ELECTRONICA",
+  NOTA_CREDITO = "NOTA_CREDITO",
+  NOTA_DEBITO = "NOTA_DEBITO",
 }
 
 export interface DianConfig {
@@ -212,33 +212,36 @@ export interface ColombiaCity {
 
 // Status display helpers
 export const dianStatusLabels: Record<DianDocumentStatus, string> = {
-  [DianDocumentStatus.PENDING]: 'Pendiente',
-  [DianDocumentStatus.GENERATED]: 'Generado',
-  [DianDocumentStatus.SIGNED]: 'Firmado',
-  [DianDocumentStatus.SENT]: 'Enviado',
-  [DianDocumentStatus.ACCEPTED]: 'Aceptado',
-  [DianDocumentStatus.REJECTED]: 'Rechazado',
+  [DianDocumentStatus.PENDING]: "Pendiente",
+  [DianDocumentStatus.GENERATED]: "Generado",
+  [DianDocumentStatus.SIGNED]: "Firmado",
+  [DianDocumentStatus.SENT]: "Enviado",
+  [DianDocumentStatus.ACCEPTED]: "Aceptado",
+  [DianDocumentStatus.REJECTED]: "Rechazado",
 };
 
-export const dianStatusColors: Record<DianDocumentStatus, 'default' | 'secondary' | 'success' | 'error' | 'warning'> = {
-  [DianDocumentStatus.PENDING]: 'default',
-  [DianDocumentStatus.GENERATED]: 'secondary',
-  [DianDocumentStatus.SIGNED]: 'secondary',
-  [DianDocumentStatus.SENT]: 'warning',
-  [DianDocumentStatus.ACCEPTED]: 'success',
-  [DianDocumentStatus.REJECTED]: 'error',
+export const dianStatusColors: Record<
+  DianDocumentStatus,
+  "default" | "secondary" | "success" | "error" | "warning"
+> = {
+  [DianDocumentStatus.PENDING]: "default",
+  [DianDocumentStatus.GENERATED]: "secondary",
+  [DianDocumentStatus.SIGNED]: "secondary",
+  [DianDocumentStatus.SENT]: "warning",
+  [DianDocumentStatus.ACCEPTED]: "success",
+  [DianDocumentStatus.REJECTED]: "error",
 };
 
 export const dianDocumentTypeLabels: Record<DianDocumentType, string> = {
-  [DianDocumentType.FACTURA_ELECTRONICA]: 'Factura Electronica',
-  [DianDocumentType.NOTA_CREDITO]: 'Nota Credito',
-  [DianDocumentType.NOTA_DEBITO]: 'Nota Debito',
+  [DianDocumentType.FACTURA_ELECTRONICA]: "Factura Electronica",
+  [DianDocumentType.NOTA_CREDITO]: "Nota Credito",
+  [DianDocumentType.NOTA_DEBITO]: "Nota Debito",
 };
 
 export const taxResponsibilityLabels: Record<TaxResponsibility, string> = {
-  [TaxResponsibility.O_13]: 'O-13 Gran Contribuyente',
-  [TaxResponsibility.O_15]: 'O-15 Autorretenedor',
-  [TaxResponsibility.O_23]: 'O-23 Agente de Retencion IVA',
-  [TaxResponsibility.O_47]: 'O-47 Regimen Simple de Tributacion',
-  [TaxResponsibility.R_99_PN]: 'R-99-PN No Responsable de IVA',
+  [TaxResponsibility.O_13]: "O-13 Gran Contribuyente",
+  [TaxResponsibility.O_15]: "O-15 Autorretenedor",
+  [TaxResponsibility.O_23]: "O-23 Agente de Retencion IVA",
+  [TaxResponsibility.O_47]: "O-47 Regimen Simple de Tributacion",
+  [TaxResponsibility.R_99_PN]: "R-99-PN No Responsable de IVA",
 };

@@ -5,29 +5,29 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-} from 'react-router';
-import { QueryClientProvider } from '@tanstack/react-query';
+} from "react-router";
+import { QueryClientProvider } from "@tanstack/react-query";
 
-import type { Route } from './+types/root';
-import { queryClient } from '~/lib/query-client';
-import { ToastProvider } from '~/components/ui/Toast';
-import { AuthInitializer } from '~/components/auth';
-import './styles/tailwind.css';
+import type { Route } from "./+types/root";
+import { queryClient } from "~/lib/query-client";
+import { ToastProvider } from "~/components/ui/Toast";
+import { AuthInitializer } from "~/components/auth";
+import "./styles/tailwind.css";
 
 export const links: Route.LinksFunction = () => [
-  { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+  { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
-    rel: 'preconnect',
-    href: 'https://fonts.gstatic.com',
-    crossOrigin: 'anonymous',
+    rel: "preconnect",
+    href: "https://fonts.gstatic.com",
+    crossOrigin: "anonymous",
   },
   {
-    rel: 'stylesheet',
-    href: 'https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@200..800&family=JetBrains+Mono:wght@100..800&display=swap',
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@200..800&family=JetBrains+Mono:wght@100..800&display=swap",
   },
-  { rel: 'icon', href: '/favicon.ico', type: 'image/x-icon' },
-  { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
-  { rel: 'manifest', href: '/manifest.json' },
+  { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+  { rel: "manifest", href: "/manifest.json" },
 ];
 
 // Theme initialization script to prevent flash
@@ -94,7 +94,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
   // Redirect to login for auth errors (client-side only)
   if (isAuthError && typeof window !== "undefined") {
-    console.log("[Root ErrorBoundary] Auth error detected, redirecting to login");
+    console.log(
+      "[Root ErrorBoundary] Auth error detected, redirecting to login",
+    );
     // Clear any stale auth data
     try {
       localStorage.removeItem("refreshToken");
@@ -106,15 +108,15 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     return null;
   }
 
-  let message = 'Oops!';
-  let details = 'An unexpected error occurred.';
+  let message = "Oops!";
+  let details = "An unexpected error occurred.";
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? '404' : 'Error';
+    message = error.status === 404 ? "404" : "Error";
     details =
       error.status === 404
-        ? 'The requested page could not be found.'
+        ? "The requested page could not be found."
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;

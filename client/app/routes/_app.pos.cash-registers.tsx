@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
+import { useState, useEffect } from "react";
+import { Link } from "react-router";
+import { motion, AnimatePresence } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   Plus,
   Warehouse,
@@ -12,14 +12,14 @@ import {
   XCircle,
   PauseCircle,
   Banknote,
-} from 'lucide-react';
-import type { Route } from './+types/_app.pos.cash-registers';
-import { cn, formatDateTime } from '~/lib/utils';
-import { useCashRegisters, useDeleteCashRegister } from '~/hooks/usePOS';
-import { Button } from '~/components/ui/Button';
-import { Card } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
-import { Pagination, PaginationInfo } from '~/components/ui/Pagination';
+} from "lucide-react";
+import type { Route } from "./+types/_app.pos.cash-registers";
+import { cn, formatDateTime } from "~/lib/utils";
+import { useCashRegisters, useDeleteCashRegister } from "~/hooks/usePOS";
+import { Button } from "~/components/ui/Button";
+import { Card } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
 import {
   Table,
   TableHeader,
@@ -27,30 +27,34 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from '~/components/ui/Table';
-import { SkeletonTableRow } from '~/components/ui/Skeleton';
-import { DeleteModal } from '~/components/ui/DeleteModal';
-import { useUrlFilters } from '~/hooks/useUrlFilters';
-import type { CashRegisterFilters, CashRegister } from '~/types/pos';
+} from "~/components/ui/Table";
+import { SkeletonTableRow } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/DeleteModal";
+import { useUrlFilters } from "~/hooks/useUrlFilters";
+import type { CashRegisterFilters, CashRegister } from "~/types/pos";
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Cajas Registradoras - POS - StockFlow' },
-    { name: 'description', content: 'Gestion de cajas registradoras' },
+    { title: "Cajas Registradoras - POS - StockFlow" },
+    { name: "description", content: "Gestion de cajas registradoras" },
   ];
 };
 
 const registersFiltersParser = {
   parse: (searchParams: URLSearchParams): CashRegisterFilters => ({
-    status: (searchParams.get('status') as 'OPEN' | 'CLOSED' | 'SUSPENDED') || undefined,
-    warehouseId: searchParams.get('warehouseId') || undefined,
-    page: Number(searchParams.get('page')) || 1,
-    limit: Number(searchParams.get('limit')) || 10,
+    status:
+      (searchParams.get("status") as "OPEN" | "CLOSED" | "SUSPENDED") ||
+      undefined,
+    warehouseId: searchParams.get("warehouseId") || undefined,
+    page: Number(searchParams.get("page")) || 1,
+    limit: Number(searchParams.get("limit")) || 10,
   }),
 };
 
 export default function CashRegistersPage() {
-  const [deletingRegister, setDeletingRegister] = useState<CashRegister | null>(null);
+  const [deletingRegister, setDeletingRegister] = useState<CashRegister | null>(
+    null,
+  );
   const [isMounted, setIsMounted] = useState(false);
 
   const { filters, updateFilters } = useUrlFilters<CashRegisterFilters>({
@@ -76,21 +80,21 @@ export default function CashRegistersPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'OPEN':
+      case "OPEN":
         return (
           <Badge variant="success">
             <CheckCircle className="h-3 w-3 mr-1" />
             Abierta
           </Badge>
         );
-      case 'CLOSED':
+      case "CLOSED":
         return (
           <Badge variant="secondary">
             <XCircle className="h-3 w-3 mr-1" />
             Cerrada
           </Badge>
         );
-      case 'SUSPENDED':
+      case "SUSPENDED":
         return (
           <Badge variant="warning">
             <PauseCircle className="h-3 w-3 mr-1" />
@@ -105,7 +109,7 @@ export default function CashRegistersPage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial={isMounted ? 'hidden' : false}
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="space-y-6"
     >
@@ -167,7 +171,8 @@ export default function CashRegistersPage() {
                 No hay cajas registradoras
               </h3>
               <p className="mb-6 max-w-sm text-neutral-500 dark:text-neutral-400">
-                Crea tu primera caja registradora para comenzar a usar el punto de venta.
+                Crea tu primera caja registradora para comenzar a usar el punto
+                de venta.
               </p>
               <Link to="/pos/cash-registers/new">
                 <Button>
@@ -182,8 +187,12 @@ export default function CashRegistersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Caja</TableHead>
-                    <TableHead className="hidden md:table-cell">Bodega</TableHead>
-                    <TableHead className="hidden sm:table-cell">Codigo</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Bodega
+                    </TableHead>
+                    <TableHead className="hidden sm:table-cell">
+                      Codigo
+                    </TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="w-[120px]">Acciones</TableHead>
                   </TableRow>
@@ -219,7 +228,7 @@ export default function CashRegistersPage() {
                           <div className="flex items-center gap-1.5">
                             <Warehouse className="h-4 w-4 text-neutral-400" />
                             <span className="text-neutral-700 dark:text-neutral-300">
-                              {(register as any).warehouse?.name || '-'}
+                              {(register as any).warehouse?.name || "-"}
                             </span>
                           </div>
                         </TableCell>
@@ -229,8 +238,14 @@ export default function CashRegistersPage() {
                         <TableCell>{getStatusBadge(register.status)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Link to={`/pos/cash-registers/${register.id}/edit`}>
-                              <Button variant="ghost" size="icon" title="Editar">
+                            <Link
+                              to={`/pos/cash-registers/${register.id}/edit`}
+                            >
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Editar"
+                              >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             </Link>
@@ -274,7 +289,7 @@ export default function CashRegistersPage() {
       <DeleteModal
         open={!!deletingRegister}
         onOpenChange={(open) => !open && setDeletingRegister(null)}
-        itemName={deletingRegister?.name || ''}
+        itemName={deletingRegister?.name || ""}
         itemType="caja registradora"
         onConfirm={handleDelete}
         isLoading={deleteRegister.isPending}

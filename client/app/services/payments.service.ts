@@ -1,4 +1,4 @@
-import { api } from '~/lib/api';
+import { api } from "~/lib/api";
 import type {
   Payment,
   PaymentFilters,
@@ -7,7 +7,7 @@ import type {
   UpdatePaymentData,
   PaymentStats,
   PaymentStatus,
-} from '~/types/payment';
+} from "~/types/payment";
 
 // Service - Real API calls
 export const paymentsService = {
@@ -19,7 +19,9 @@ export const paymentsService = {
         params.append(key, String(value));
       }
     });
-    const { data } = await api.get<PaymentsResponse>(`/payments?${params.toString()}`);
+    const { data } = await api.get<PaymentsResponse>(
+      `/payments?${params.toString()}`,
+    );
     return data;
   },
 
@@ -37,31 +39,43 @@ export const paymentsService = {
 
   // Get payments by customer ID
   async getPaymentsByCustomer(customerId: string): Promise<Payment[]> {
-    const { data } = await api.get<Payment[]>(`/payments/customer/${customerId}`);
+    const { data } = await api.get<Payment[]>(
+      `/payments/customer/${customerId}`,
+    );
     return data;
   },
 
   // Get recent payments for dashboard
   async getRecentPayments(limit: number = 5): Promise<Payment[]> {
-    const { data } = await api.get<Payment[]>(`/payments/recent?limit=${limit}`);
+    const { data } = await api.get<Payment[]>(
+      `/payments/recent?limit=${limit}`,
+    );
     return data;
   },
 
   // Create new payment
   async createPayment(paymentData: CreatePaymentData): Promise<Payment> {
-    const { data } = await api.post<Payment>('/payments', paymentData);
+    const { data } = await api.post<Payment>("/payments", paymentData);
     return data;
   },
 
   // Update payment (limited fields)
-  async updatePayment(id: string, paymentData: UpdatePaymentData): Promise<Payment> {
+  async updatePayment(
+    id: string,
+    paymentData: UpdatePaymentData,
+  ): Promise<Payment> {
     const { data } = await api.patch<Payment>(`/payments/${id}`, paymentData);
     return data;
   },
 
   // Update payment status only
-  async updatePaymentStatus(id: string, status: PaymentStatus): Promise<Payment> {
-    const { data } = await api.patch<Payment>(`/payments/${id}/status`, { status });
+  async updatePaymentStatus(
+    id: string,
+    status: PaymentStatus,
+  ): Promise<Payment> {
+    const { data } = await api.patch<Payment>(`/payments/${id}/status`, {
+      status,
+    });
     return data;
   },
 
@@ -72,13 +86,15 @@ export const paymentsService = {
 
   // Process refund (partial or full)
   async refundPayment(id: string, amount?: number): Promise<Payment> {
-    const { data } = await api.post<Payment>(`/payments/${id}/refund`, { amount });
+    const { data } = await api.post<Payment>(`/payments/${id}/refund`, {
+      amount,
+    });
     return data;
   },
 
   // Get payment statistics
   async getPaymentStats(): Promise<PaymentStats> {
-    const { data } = await api.get<PaymentStats>('/payments/stats');
+    const { data } = await api.get<PaymentStats>("/payments/stats");
     return data;
   },
 };

@@ -71,7 +71,7 @@ export default function POSPage() {
   });
   const { data: productsData, isLoading: isLoadingProducts } = useProducts({
     limit: 100,
-    status: 'ACTIVE',
+    status: "ACTIVE",
   });
   const { data: categoriesData, isLoading: isLoadingCategories } =
     useCategories();
@@ -170,7 +170,7 @@ export default function POSPage() {
           customerId: selectedCustomerId!,
           dueDate: getDateFromNow(30),
           notes: notes || undefined,
-          source: 'POS',
+          source: "POS",
           items: cart.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
@@ -186,7 +186,10 @@ export default function POSPage() {
               items: cartSnapshot,
               totals: totalsSnapshot,
               customer: customerSnapshot,
-              payments: status === "PAID" ? [{ method: "CASH", amount: totalsSnapshot.total }] : [],
+              payments:
+                status === "PAID"
+                  ? [{ method: "CASH", amount: totalsSnapshot.total }]
+                  : [],
             });
 
             resetState();
@@ -298,7 +301,11 @@ export default function POSPage() {
           {/* Left: Back & Title */}
           <div className="flex items-center gap-3">
             <Link to="/invoices">
-              <Button variant="ghost" size="icon-sm" className="hover:bg-neutral-100 dark:hover:bg-neutral-700">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
@@ -316,7 +323,10 @@ export default function POSPage() {
                 </h1>
                 <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                   <Clock className="h-3 w-3" />
-                  {currentTime.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                  {currentTime.toLocaleTimeString("es-CO", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
               </div>
             </div>
@@ -350,7 +360,11 @@ export default function POSPage() {
                 variant="ghost"
                 size="icon-sm"
                 onClick={toggleFullscreen}
-                title={isFullscreen ? "Salir pantalla completa (F11)" : "Pantalla completa (F11)"}
+                title={
+                  isFullscreen
+                    ? "Salir pantalla completa (F11)"
+                    : "Pantalla completa (F11)"
+                }
                 className="hidden sm:flex"
               >
                 {isFullscreen ? (
@@ -392,7 +406,9 @@ export default function POSPage() {
               disabled={!canCheckout || isProcessing}
               className="gap-2"
             >
-              <kbd className="px-1.5 py-0.5 rounded bg-success-600/20 text-[10px] font-mono">F4</kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-success-600/20 text-[10px] font-mono">
+                F4
+              </kbd>
               Cobrar
             </Button>
             <Button
@@ -402,7 +418,9 @@ export default function POSPage() {
               disabled={!canCheckout || isProcessing}
               className="gap-2"
             >
-              <kbd className="px-1.5 py-0.5 rounded bg-warning-600/20 text-[10px] font-mono">F8</kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-warning-600/20 text-[10px] font-mono">
+                F8
+              </kbd>
               Guardar
             </Button>
             <Button
@@ -412,7 +430,9 @@ export default function POSPage() {
               disabled={cart.length === 0}
               className="gap-2"
             >
-              <kbd className="px-1.5 py-0.5 rounded bg-neutral-500/20 text-[10px] font-mono">F9</kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-neutral-500/20 text-[10px] font-mono">
+                F9
+              </kbd>
               Limpiar
             </Button>
           </div>
@@ -423,30 +443,50 @@ export default function POSPage() {
           {showShortcuts && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
+              animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden border-t border-neutral-200 dark:border-neutral-700"
             >
               <div className="flex items-center justify-center gap-6 py-2 px-4 bg-neutral-100/50 dark:bg-neutral-800/50">
                 <div className="flex items-center gap-2 text-xs">
-                  <kbd className="px-2 py-1 rounded bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 font-mono shadow-sm">F2</kbd>
-                  <span className="text-neutral-600 dark:text-neutral-300">Buscar</span>
+                  <kbd className="px-2 py-1 rounded bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 font-mono shadow-sm">
+                    F2
+                  </kbd>
+                  <span className="text-neutral-600 dark:text-neutral-300">
+                    Buscar
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <kbd className="px-2 py-1 rounded bg-success-100 dark:bg-success-900/30 border border-success-200 dark:border-success-700 font-mono text-success-700 dark:text-success-300">F4</kbd>
-                  <span className="text-neutral-600 dark:text-neutral-300">Cobrar</span>
+                  <kbd className="px-2 py-1 rounded bg-success-100 dark:bg-success-900/30 border border-success-200 dark:border-success-700 font-mono text-success-700 dark:text-success-300">
+                    F4
+                  </kbd>
+                  <span className="text-neutral-600 dark:text-neutral-300">
+                    Cobrar
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <kbd className="px-2 py-1 rounded bg-warning-100 dark:bg-warning-900/30 border border-warning-200 dark:border-warning-700 font-mono text-warning-700 dark:text-warning-300">F8</kbd>
-                  <span className="text-neutral-600 dark:text-neutral-300">Guardar</span>
+                  <kbd className="px-2 py-1 rounded bg-warning-100 dark:bg-warning-900/30 border border-warning-200 dark:border-warning-700 font-mono text-warning-700 dark:text-warning-300">
+                    F8
+                  </kbd>
+                  <span className="text-neutral-600 dark:text-neutral-300">
+                    Guardar
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <kbd className="px-2 py-1 rounded bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 font-mono shadow-sm">F9</kbd>
-                  <span className="text-neutral-600 dark:text-neutral-300">Limpiar</span>
+                  <kbd className="px-2 py-1 rounded bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 font-mono shadow-sm">
+                    F9
+                  </kbd>
+                  <span className="text-neutral-600 dark:text-neutral-300">
+                    Limpiar
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <kbd className="px-2 py-1 rounded bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 font-mono shadow-sm">F11</kbd>
-                  <span className="text-neutral-600 dark:text-neutral-300">Pantalla completa</span>
+                  <kbd className="px-2 py-1 rounded bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 font-mono shadow-sm">
+                    F11
+                  </kbd>
+                  <span className="text-neutral-600 dark:text-neutral-300">
+                    Pantalla completa
+                  </span>
                 </div>
               </div>
             </motion.div>
@@ -495,7 +535,9 @@ export default function POSPage() {
               onSetNotes={setNotes}
               onSetGlobalDiscount={setGlobalDiscount}
               onSelectCustomer={() => {
-                const customerSelect = document.querySelector('[data-customer-select]');
+                const customerSelect = document.querySelector(
+                  "[data-customer-select]",
+                );
                 if (customerSelect instanceof HTMLElement) {
                   customerSelect.click();
                 }
@@ -536,7 +578,11 @@ export default function POSPage() {
               <ShoppingCart className="h-5 w-5" />
               <span>Carrito</span>
               {cart.length > 0 && (
-                <Badge variant="gradient" size="xs" className="absolute top-2 right-1/4">
+                <Badge
+                  variant="gradient"
+                  size="xs"
+                  className="absolute top-2 right-1/4"
+                >
                   {totals.itemCount > 99 ? "99+" : totals.itemCount}
                 </Badge>
               )}
@@ -634,12 +680,15 @@ export default function POSPage() {
                   <div className="flex flex-col items-start">
                     <span className="text-sm font-semibold">Ver carrito</span>
                     <span className="text-xs text-white/70">
-                      {totals.itemCount} {totals.itemCount === 1 ? 'producto' : 'productos'}
+                      {totals.itemCount}{" "}
+                      {totals.itemCount === 1 ? "producto" : "productos"}
                     </span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-lg font-bold">{formatCurrency(totals.total)}</span>
+                  <span className="text-lg font-bold">
+                    {formatCurrency(totals.total)}
+                  </span>
                   {totals.discountAmount > 0 && (
                     <span className="text-xs text-white/70">
                       -{formatCurrency(totals.discountAmount)}
@@ -666,7 +715,11 @@ export default function POSPage() {
             name: item.product.name,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            total: item.quantity * item.unitPrice * (1 - item.discount / 100) * (1 + item.tax / 100),
+            total:
+              item.quantity *
+              item.unitPrice *
+              (1 - item.discount / 100) *
+              (1 + item.tax / 100),
           }))}
           subtotal={lastInvoice.totals.subtotal}
           discountAmount={lastInvoice.totals.discountAmount}

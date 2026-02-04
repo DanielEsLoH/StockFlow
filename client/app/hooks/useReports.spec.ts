@@ -1,87 +1,87 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
 import {
   useRecentReports,
   useGenerateSalesReport,
   useGenerateInventoryReport,
   useGenerateCustomersReport,
   useDownloadInvoicePdf,
-} from './useReports';
-import { reportsService } from '~/services/reports.service';
-import { toast } from '~/components/ui/Toast';
-import { queryKeys } from '~/lib/query-client';
+} from "./useReports";
+import { reportsService } from "~/services/reports.service";
+import { toast } from "~/components/ui/Toast";
+import { queryKeys } from "~/lib/query-client";
 import type {
   RecentReport,
   SalesReportParams,
   InventoryReportParams,
   CustomersReportParams,
-} from '~/types/report';
+} from "~/types/report";
 
 // Mock dependencies
-vi.mock('~/services/reports.service');
-vi.mock('~/components/ui/Toast');
+vi.mock("~/services/reports.service");
+vi.mock("~/components/ui/Toast");
 
 // Mock data
 const mockRecentReports: RecentReport[] = [
   {
-    id: '1',
-    type: 'sales',
-    format: 'pdf',
-    generatedAt: '2024-01-14T15:30:00Z',
+    id: "1",
+    type: "sales",
+    format: "pdf",
+    generatedAt: "2024-01-14T15:30:00Z",
     params: {
-      format: 'pdf',
-      fromDate: '2024-01-01',
-      toDate: '2024-01-14',
+      format: "pdf",
+      fromDate: "2024-01-01",
+      toDate: "2024-01-14",
     },
     fileSize: 245760,
-    fileName: 'reporte-ventas-2024-01-14.pdf',
+    fileName: "reporte-ventas-2024-01-14.pdf",
   },
   {
-    id: '2',
-    type: 'inventory',
-    format: 'excel',
-    generatedAt: '2024-01-13T10:15:00Z',
+    id: "2",
+    type: "inventory",
+    format: "excel",
+    generatedAt: "2024-01-13T10:15:00Z",
     params: {
-      format: 'excel',
+      format: "excel",
     },
     fileSize: 512000,
-    fileName: 'reporte-inventario-2024-01-13.xlsx',
+    fileName: "reporte-inventario-2024-01-13.xlsx",
   },
   {
-    id: '3',
-    type: 'customers',
-    format: 'pdf',
-    generatedAt: '2024-01-12T09:00:00Z',
+    id: "3",
+    type: "customers",
+    format: "pdf",
+    generatedAt: "2024-01-12T09:00:00Z",
     params: {
-      format: 'pdf',
+      format: "pdf",
     },
     fileSize: 184320,
-    fileName: 'reporte-clientes-2024-01-12.pdf',
+    fileName: "reporte-clientes-2024-01-12.pdf",
   },
 ];
 
-const mockBlob = new Blob(['test content'], { type: 'application/pdf' });
+const mockBlob = new Blob(["test content"], { type: "application/pdf" });
 
 const mockSalesReportResponse = {
   blob: mockBlob,
-  fileName: 'reporte-ventas-2024-01-15.pdf',
+  fileName: "reporte-ventas-2024-01-15.pdf",
 };
 
 const mockInventoryReportResponse = {
   blob: mockBlob,
-  fileName: 'reporte-inventario-2024-01-15.pdf',
+  fileName: "reporte-inventario-2024-01-15.pdf",
 };
 
 const mockCustomersReportResponse = {
   blob: mockBlob,
-  fileName: 'reporte-clientes-2024-01-15.pdf',
+  fileName: "reporte-clientes-2024-01-15.pdf",
 };
 
 const mockInvoicePdfResponse = {
   blob: mockBlob,
-  fileName: 'factura-inv-123.pdf',
+  fileName: "factura-inv-123.pdf",
 };
 
 // Helper to create a wrapper with QueryClient
@@ -103,7 +103,7 @@ function createWrapper() {
     return React.createElement(
       QueryClientProvider,
       { client: queryClient },
-      children
+      children,
     );
   };
 }
@@ -123,18 +123,22 @@ function createWrapperWithClient() {
     },
   });
 
-  const wrapper = function Wrapper({ children }: { children: React.ReactNode }) {
+  const wrapper = function Wrapper({
+    children,
+  }: {
+    children: React.ReactNode;
+  }) {
     return React.createElement(
       QueryClientProvider,
       { client: queryClient },
-      children
+      children,
     );
   };
 
   return { wrapper, queryClient };
 }
 
-describe('useReports hooks', () => {
+describe("useReports hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -147,9 +151,11 @@ describe('useReports hooks', () => {
   // QUERY HOOKS
   // ============================================================================
 
-  describe('useRecentReports', () => {
-    it('should fetch recent reports on mount', async () => {
-      vi.mocked(reportsService.getRecentReports).mockResolvedValue(mockRecentReports);
+  describe("useRecentReports", () => {
+    it("should fetch recent reports on mount", async () => {
+      vi.mocked(reportsService.getRecentReports).mockResolvedValue(
+        mockRecentReports,
+      );
 
       const { result } = renderHook(() => useRecentReports(), {
         wrapper: createWrapper(),
@@ -165,8 +171,10 @@ describe('useReports hooks', () => {
       expect(reportsService.getRecentReports).toHaveBeenCalled();
     });
 
-    it('should respect limit parameter with default value of 10', async () => {
-      vi.mocked(reportsService.getRecentReports).mockResolvedValue(mockRecentReports);
+    it("should respect limit parameter with default value of 10", async () => {
+      vi.mocked(reportsService.getRecentReports).mockResolvedValue(
+        mockRecentReports,
+      );
 
       const { result } = renderHook(() => useRecentReports(), {
         wrapper: createWrapper(),
@@ -180,8 +188,10 @@ describe('useReports hooks', () => {
       expect(result.current.data).toEqual(mockRecentReports);
     });
 
-    it('should respect custom limit parameter', async () => {
-      vi.mocked(reportsService.getRecentReports).mockResolvedValue(mockRecentReports.slice(0, 2));
+    it("should respect custom limit parameter", async () => {
+      vi.mocked(reportsService.getRecentReports).mockResolvedValue(
+        mockRecentReports.slice(0, 2),
+      );
 
       const { result } = renderHook(() => useRecentReports(5), {
         wrapper: createWrapper(),
@@ -194,9 +204,9 @@ describe('useReports hooks', () => {
       expect(result.current.data).toHaveLength(2);
     });
 
-    it('should return loading state initially', () => {
+    it("should return loading state initially", () => {
       vi.mocked(reportsService.getRecentReports).mockImplementation(
-        () => new Promise(() => {})
+        () => new Promise(() => {}),
       );
 
       const { result } = renderHook(() => useRecentReports(), {
@@ -207,8 +217,8 @@ describe('useReports hooks', () => {
       expect(result.current.data).toBeUndefined();
     });
 
-    it('should return error state on failure', async () => {
-      const error = new Error('Failed to fetch recent reports');
+    it("should return error state on failure", async () => {
+      const error = new Error("Failed to fetch recent reports");
       vi.mocked(reportsService.getRecentReports).mockRejectedValue(error);
 
       const { result } = renderHook(() => useRecentReports(), {
@@ -222,7 +232,7 @@ describe('useReports hooks', () => {
       expect(result.current.error).toBeDefined();
     });
 
-    it('should return empty array when no reports exist', async () => {
+    it("should return empty array when no reports exist", async () => {
       vi.mocked(reportsService.getRecentReports).mockResolvedValue([]);
 
       const { result } = renderHook(() => useRecentReports(), {
@@ -236,8 +246,10 @@ describe('useReports hooks', () => {
       expect(result.current.data).toEqual([]);
     });
 
-    it('should fetch with different limit values', async () => {
-      vi.mocked(reportsService.getRecentReports).mockResolvedValue(mockRecentReports);
+    it("should fetch with different limit values", async () => {
+      vi.mocked(reportsService.getRecentReports).mockResolvedValue(
+        mockRecentReports,
+      );
 
       const { result: result3 } = renderHook(() => useRecentReports(3), {
         wrapper: createWrapper(),
@@ -264,15 +276,17 @@ describe('useReports hooks', () => {
   // MUTATION HOOKS
   // ============================================================================
 
-  describe('useGenerateSalesReport', () => {
+  describe("useGenerateSalesReport", () => {
     const salesParams: SalesReportParams = {
-      format: 'pdf',
-      fromDate: '2024-01-01',
-      toDate: '2024-01-15',
+      format: "pdf",
+      fromDate: "2024-01-01",
+      toDate: "2024-01-15",
     };
 
-    it('should generate sales report successfully', async () => {
-      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(mockSalesReportResponse);
+    it("should generate sales report successfully", async () => {
+      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(
+        mockSalesReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateSalesReport(), {
@@ -287,11 +301,15 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.generateSalesReport).toHaveBeenCalledWith(salesParams);
+      expect(reportsService.generateSalesReport).toHaveBeenCalledWith(
+        salesParams,
+      );
     });
 
-    it('should download the file on success', async () => {
-      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(mockSalesReportResponse);
+    it("should download the file on success", async () => {
+      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(
+        mockSalesReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateSalesReport(), {
@@ -308,12 +326,14 @@ describe('useReports hooks', () => {
 
       expect(reportsService.downloadReport).toHaveBeenCalledWith(
         mockSalesReportResponse.blob,
-        mockSalesReportResponse.fileName
+        mockSalesReportResponse.fileName,
       );
     });
 
     it('should show success toast "Reporte de ventas generado exitosamente"', async () => {
-      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(mockSalesReportResponse);
+      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(
+        mockSalesReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateSalesReport(), {
@@ -328,11 +348,13 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Reporte de ventas generado exitosamente');
+      expect(toast.success).toHaveBeenCalledWith(
+        "Reporte de ventas generado exitosamente",
+      );
     });
 
-    it('should show error toast on failure', async () => {
-      const error = new Error('Error al generar el reporte');
+    it("should show error toast on failure", async () => {
+      const error = new Error("Error al generar el reporte");
       vi.mocked(reportsService.generateSalesReport).mockRejectedValue(error);
 
       const { result } = renderHook(() => useGenerateSalesReport(), {
@@ -347,11 +369,13 @@ describe('useReports hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al generar el reporte');
+      expect(toast.error).toHaveBeenCalledWith("Error al generar el reporte");
     });
 
-    it('should show default error message when error has no message', async () => {
-      vi.mocked(reportsService.generateSalesReport).mockRejectedValue(new Error());
+    it("should show default error message when error has no message", async () => {
+      vi.mocked(reportsService.generateSalesReport).mockRejectedValue(
+        new Error(),
+      );
 
       const { result } = renderHook(() => useGenerateSalesReport(), {
         wrapper: createWrapper(),
@@ -365,17 +389,23 @@ describe('useReports hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al generar el reporte de ventas');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al generar el reporte de ventas",
+      );
     });
 
-    it('should invalidate reports cache on success', async () => {
-      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(mockSalesReportResponse);
+    it("should invalidate reports cache on success", async () => {
+      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(
+        mockSalesReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
-      const { result } = renderHook(() => useGenerateSalesReport(), { wrapper });
+      const { result } = renderHook(() => useGenerateSalesReport(), {
+        wrapper,
+      });
 
       await act(async () => {
         result.current.mutate(salesParams);
@@ -385,16 +415,20 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.reports.all });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.reports.all,
+      });
     });
 
-    it('should generate sales report with optional categoryId', async () => {
+    it("should generate sales report with optional categoryId", async () => {
       const paramsWithCategory: SalesReportParams = {
         ...salesParams,
-        categoryId: 'cat-123',
+        categoryId: "cat-123",
       };
 
-      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(mockSalesReportResponse);
+      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(
+        mockSalesReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateSalesReport(), {
@@ -409,23 +443,27 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.generateSalesReport).toHaveBeenCalledWith(paramsWithCategory);
+      expect(reportsService.generateSalesReport).toHaveBeenCalledWith(
+        paramsWithCategory,
+      );
     });
 
-    it('should generate sales report in excel format', async () => {
+    it("should generate sales report in excel format", async () => {
       const excelParams: SalesReportParams = {
         ...salesParams,
-        format: 'excel',
+        format: "excel",
       };
 
       const excelResponse = {
-        blob: new Blob(['excel content'], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        blob: new Blob(["excel content"], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName: 'reporte-ventas-2024-01-15.xlsx',
+        fileName: "reporte-ventas-2024-01-15.xlsx",
       };
 
-      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(excelResponse);
+      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(
+        excelResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateSalesReport(), {
@@ -440,18 +478,22 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.generateSalesReport).toHaveBeenCalledWith(excelParams);
+      expect(reportsService.generateSalesReport).toHaveBeenCalledWith(
+        excelParams,
+      );
       expect(reportsService.downloadReport).toHaveBeenCalledWith(
         excelResponse.blob,
-        excelResponse.fileName
+        excelResponse.fileName,
       );
     });
 
-    it('should return loading state while generating', async () => {
+    it("should return loading state while generating", async () => {
       let resolvePromise: (value: { blob: Blob; fileName: string }) => void;
-      const promise = new Promise<{ blob: Blob; fileName: string }>((resolve) => {
-        resolvePromise = resolve;
-      });
+      const promise = new Promise<{ blob: Blob; fileName: string }>(
+        (resolve) => {
+          resolvePromise = resolve;
+        },
+      );
 
       vi.mocked(reportsService.generateSalesReport).mockReturnValue(promise);
 
@@ -477,13 +519,15 @@ describe('useReports hooks', () => {
     });
   });
 
-  describe('useGenerateInventoryReport', () => {
+  describe("useGenerateInventoryReport", () => {
     const inventoryParams: InventoryReportParams = {
-      format: 'pdf',
+      format: "pdf",
     };
 
-    it('should generate inventory report successfully', async () => {
-      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(mockInventoryReportResponse);
+    it("should generate inventory report successfully", async () => {
+      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(
+        mockInventoryReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateInventoryReport(), {
@@ -498,11 +542,15 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.generateInventoryReport).toHaveBeenCalledWith(inventoryParams);
+      expect(reportsService.generateInventoryReport).toHaveBeenCalledWith(
+        inventoryParams,
+      );
     });
 
-    it('should download the file on success', async () => {
-      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(mockInventoryReportResponse);
+    it("should download the file on success", async () => {
+      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(
+        mockInventoryReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateInventoryReport(), {
@@ -519,12 +567,14 @@ describe('useReports hooks', () => {
 
       expect(reportsService.downloadReport).toHaveBeenCalledWith(
         mockInventoryReportResponse.blob,
-        mockInventoryReportResponse.fileName
+        mockInventoryReportResponse.fileName,
       );
     });
 
     it('should show success toast "Reporte de inventario generado exitosamente"', async () => {
-      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(mockInventoryReportResponse);
+      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(
+        mockInventoryReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateInventoryReport(), {
@@ -539,12 +589,16 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Reporte de inventario generado exitosamente');
+      expect(toast.success).toHaveBeenCalledWith(
+        "Reporte de inventario generado exitosamente",
+      );
     });
 
-    it('should show error toast on failure', async () => {
-      const error = new Error('Error al generar el reporte de inventario');
-      vi.mocked(reportsService.generateInventoryReport).mockRejectedValue(error);
+    it("should show error toast on failure", async () => {
+      const error = new Error("Error al generar el reporte de inventario");
+      vi.mocked(reportsService.generateInventoryReport).mockRejectedValue(
+        error,
+      );
 
       const { result } = renderHook(() => useGenerateInventoryReport(), {
         wrapper: createWrapper(),
@@ -558,11 +612,15 @@ describe('useReports hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al generar el reporte de inventario');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al generar el reporte de inventario",
+      );
     });
 
-    it('should show default error message when error has no message', async () => {
-      vi.mocked(reportsService.generateInventoryReport).mockRejectedValue(new Error());
+    it("should show default error message when error has no message", async () => {
+      vi.mocked(reportsService.generateInventoryReport).mockRejectedValue(
+        new Error(),
+      );
 
       const { result } = renderHook(() => useGenerateInventoryReport(), {
         wrapper: createWrapper(),
@@ -576,17 +634,23 @@ describe('useReports hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al generar el reporte de inventario');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al generar el reporte de inventario",
+      );
     });
 
-    it('should invalidate reports cache on success', async () => {
-      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(mockInventoryReportResponse);
+    it("should invalidate reports cache on success", async () => {
+      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(
+        mockInventoryReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
-      const { result } = renderHook(() => useGenerateInventoryReport(), { wrapper });
+      const { result } = renderHook(() => useGenerateInventoryReport(), {
+        wrapper,
+      });
 
       await act(async () => {
         result.current.mutate(inventoryParams);
@@ -596,16 +660,20 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.reports.all });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.reports.all,
+      });
     });
 
-    it('should generate inventory report with optional categoryId', async () => {
+    it("should generate inventory report with optional categoryId", async () => {
       const paramsWithCategory: InventoryReportParams = {
         ...inventoryParams,
-        categoryId: 'cat-456',
+        categoryId: "cat-456",
       };
 
-      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(mockInventoryReportResponse);
+      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(
+        mockInventoryReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateInventoryReport(), {
@@ -620,22 +688,26 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.generateInventoryReport).toHaveBeenCalledWith(paramsWithCategory);
+      expect(reportsService.generateInventoryReport).toHaveBeenCalledWith(
+        paramsWithCategory,
+      );
     });
 
-    it('should generate inventory report in excel format', async () => {
+    it("should generate inventory report in excel format", async () => {
       const excelParams: InventoryReportParams = {
-        format: 'excel',
+        format: "excel",
       };
 
       const excelResponse = {
-        blob: new Blob(['excel content'], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        blob: new Blob(["excel content"], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName: 'reporte-inventario-2024-01-15.xlsx',
+        fileName: "reporte-inventario-2024-01-15.xlsx",
       };
 
-      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(excelResponse);
+      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(
+        excelResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateInventoryReport(), {
@@ -650,16 +722,22 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.generateInventoryReport).toHaveBeenCalledWith(excelParams);
+      expect(reportsService.generateInventoryReport).toHaveBeenCalledWith(
+        excelParams,
+      );
     });
 
-    it('should return loading state while generating', async () => {
+    it("should return loading state while generating", async () => {
       let resolvePromise: (value: { blob: Blob; fileName: string }) => void;
-      const promise = new Promise<{ blob: Blob; fileName: string }>((resolve) => {
-        resolvePromise = resolve;
-      });
+      const promise = new Promise<{ blob: Blob; fileName: string }>(
+        (resolve) => {
+          resolvePromise = resolve;
+        },
+      );
 
-      vi.mocked(reportsService.generateInventoryReport).mockReturnValue(promise);
+      vi.mocked(reportsService.generateInventoryReport).mockReturnValue(
+        promise,
+      );
 
       const { result } = renderHook(() => useGenerateInventoryReport(), {
         wrapper: createWrapper(),
@@ -683,13 +761,15 @@ describe('useReports hooks', () => {
     });
   });
 
-  describe('useGenerateCustomersReport', () => {
+  describe("useGenerateCustomersReport", () => {
     const customersParams: CustomersReportParams = {
-      format: 'pdf',
+      format: "pdf",
     };
 
-    it('should generate customers report successfully', async () => {
-      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(mockCustomersReportResponse);
+    it("should generate customers report successfully", async () => {
+      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(
+        mockCustomersReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateCustomersReport(), {
@@ -704,11 +784,15 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.generateCustomersReport).toHaveBeenCalledWith(customersParams);
+      expect(reportsService.generateCustomersReport).toHaveBeenCalledWith(
+        customersParams,
+      );
     });
 
-    it('should download the file on success', async () => {
-      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(mockCustomersReportResponse);
+    it("should download the file on success", async () => {
+      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(
+        mockCustomersReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateCustomersReport(), {
@@ -725,12 +809,14 @@ describe('useReports hooks', () => {
 
       expect(reportsService.downloadReport).toHaveBeenCalledWith(
         mockCustomersReportResponse.blob,
-        mockCustomersReportResponse.fileName
+        mockCustomersReportResponse.fileName,
       );
     });
 
     it('should show success toast "Reporte de clientes generado exitosamente"', async () => {
-      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(mockCustomersReportResponse);
+      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(
+        mockCustomersReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateCustomersReport(), {
@@ -745,12 +831,16 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Reporte de clientes generado exitosamente');
+      expect(toast.success).toHaveBeenCalledWith(
+        "Reporte de clientes generado exitosamente",
+      );
     });
 
-    it('should show error toast on failure', async () => {
-      const error = new Error('Error al generar el reporte de clientes');
-      vi.mocked(reportsService.generateCustomersReport).mockRejectedValue(error);
+    it("should show error toast on failure", async () => {
+      const error = new Error("Error al generar el reporte de clientes");
+      vi.mocked(reportsService.generateCustomersReport).mockRejectedValue(
+        error,
+      );
 
       const { result } = renderHook(() => useGenerateCustomersReport(), {
         wrapper: createWrapper(),
@@ -764,11 +854,15 @@ describe('useReports hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al generar el reporte de clientes');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al generar el reporte de clientes",
+      );
     });
 
-    it('should show default error message when error has no message', async () => {
-      vi.mocked(reportsService.generateCustomersReport).mockRejectedValue(new Error());
+    it("should show default error message when error has no message", async () => {
+      vi.mocked(reportsService.generateCustomersReport).mockRejectedValue(
+        new Error(),
+      );
 
       const { result } = renderHook(() => useGenerateCustomersReport(), {
         wrapper: createWrapper(),
@@ -782,17 +876,23 @@ describe('useReports hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al generar el reporte de clientes');
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al generar el reporte de clientes",
+      );
     });
 
-    it('should invalidate reports cache on success', async () => {
-      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(mockCustomersReportResponse);
+    it("should invalidate reports cache on success", async () => {
+      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(
+        mockCustomersReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { wrapper, queryClient } = createWrapperWithClient();
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
-      const { result } = renderHook(() => useGenerateCustomersReport(), { wrapper });
+      const { result } = renderHook(() => useGenerateCustomersReport(), {
+        wrapper,
+      });
 
       await act(async () => {
         result.current.mutate(customersParams);
@@ -802,22 +902,26 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.reports.all });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.reports.all,
+      });
     });
 
-    it('should generate customers report in excel format', async () => {
+    it("should generate customers report in excel format", async () => {
       const excelParams: CustomersReportParams = {
-        format: 'excel',
+        format: "excel",
       };
 
       const excelResponse = {
-        blob: new Blob(['excel content'], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        blob: new Blob(["excel content"], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }),
-        fileName: 'reporte-clientes-2024-01-15.xlsx',
+        fileName: "reporte-clientes-2024-01-15.xlsx",
       };
 
-      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(excelResponse);
+      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(
+        excelResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateCustomersReport(), {
@@ -832,16 +936,22 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.generateCustomersReport).toHaveBeenCalledWith(excelParams);
+      expect(reportsService.generateCustomersReport).toHaveBeenCalledWith(
+        excelParams,
+      );
     });
 
-    it('should return loading state while generating', async () => {
+    it("should return loading state while generating", async () => {
       let resolvePromise: (value: { blob: Blob; fileName: string }) => void;
-      const promise = new Promise<{ blob: Blob; fileName: string }>((resolve) => {
-        resolvePromise = resolve;
-      });
+      const promise = new Promise<{ blob: Blob; fileName: string }>(
+        (resolve) => {
+          resolvePromise = resolve;
+        },
+      );
 
-      vi.mocked(reportsService.generateCustomersReport).mockReturnValue(promise);
+      vi.mocked(reportsService.generateCustomersReport).mockReturnValue(
+        promise,
+      );
 
       const { result } = renderHook(() => useGenerateCustomersReport(), {
         wrapper: createWrapper(),
@@ -865,11 +975,13 @@ describe('useReports hooks', () => {
     });
   });
 
-  describe('useDownloadInvoicePdf', () => {
-    const invoiceId = 'inv-123';
+  describe("useDownloadInvoicePdf", () => {
+    const invoiceId = "inv-123";
 
-    it('should download invoice PDF successfully', async () => {
-      vi.mocked(reportsService.downloadInvoicePdf).mockResolvedValue(mockInvoicePdfResponse);
+    it("should download invoice PDF successfully", async () => {
+      vi.mocked(reportsService.downloadInvoicePdf).mockResolvedValue(
+        mockInvoicePdfResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useDownloadInvoicePdf(), {
@@ -887,8 +999,10 @@ describe('useReports hooks', () => {
       expect(reportsService.downloadInvoicePdf).toHaveBeenCalledWith(invoiceId);
     });
 
-    it('should trigger file download on success', async () => {
-      vi.mocked(reportsService.downloadInvoicePdf).mockResolvedValue(mockInvoicePdfResponse);
+    it("should trigger file download on success", async () => {
+      vi.mocked(reportsService.downloadInvoicePdf).mockResolvedValue(
+        mockInvoicePdfResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useDownloadInvoicePdf(), {
@@ -905,12 +1019,14 @@ describe('useReports hooks', () => {
 
       expect(reportsService.downloadReport).toHaveBeenCalledWith(
         mockInvoicePdfResponse.blob,
-        mockInvoicePdfResponse.fileName
+        mockInvoicePdfResponse.fileName,
       );
     });
 
     it('should show success toast "Factura descargada exitosamente"', async () => {
-      vi.mocked(reportsService.downloadInvoicePdf).mockResolvedValue(mockInvoicePdfResponse);
+      vi.mocked(reportsService.downloadInvoicePdf).mockResolvedValue(
+        mockInvoicePdfResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useDownloadInvoicePdf(), {
@@ -925,11 +1041,13 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(toast.success).toHaveBeenCalledWith('Factura descargada exitosamente');
+      expect(toast.success).toHaveBeenCalledWith(
+        "Factura descargada exitosamente",
+      );
     });
 
-    it('should show error toast on failure', async () => {
-      const error = new Error('Error al descargar la factura');
+    it("should show error toast on failure", async () => {
+      const error = new Error("Error al descargar la factura");
       vi.mocked(reportsService.downloadInvoicePdf).mockRejectedValue(error);
 
       const { result } = renderHook(() => useDownloadInvoicePdf(), {
@@ -944,11 +1062,13 @@ describe('useReports hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al descargar la factura');
+      expect(toast.error).toHaveBeenCalledWith("Error al descargar la factura");
     });
 
-    it('should show default error message when error has no message', async () => {
-      vi.mocked(reportsService.downloadInvoicePdf).mockRejectedValue(new Error());
+    it("should show default error message when error has no message", async () => {
+      vi.mocked(reportsService.downloadInvoicePdf).mockRejectedValue(
+        new Error(),
+      );
 
       const { result } = renderHook(() => useDownloadInvoicePdf(), {
         wrapper: createWrapper(),
@@ -962,14 +1082,16 @@ describe('useReports hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Error al descargar la factura');
+      expect(toast.error).toHaveBeenCalledWith("Error al descargar la factura");
     });
 
-    it('should return loading state while downloading', async () => {
+    it("should return loading state while downloading", async () => {
       let resolvePromise: (value: { blob: Blob; fileName: string }) => void;
-      const promise = new Promise<{ blob: Blob; fileName: string }>((resolve) => {
-        resolvePromise = resolve;
-      });
+      const promise = new Promise<{ blob: Blob; fileName: string }>(
+        (resolve) => {
+          resolvePromise = resolve;
+        },
+      );
 
       vi.mocked(reportsService.downloadInvoicePdf).mockReturnValue(promise);
 
@@ -994,8 +1116,10 @@ describe('useReports hooks', () => {
       });
     });
 
-    it('should download with different invoice IDs', async () => {
-      vi.mocked(reportsService.downloadInvoicePdf).mockResolvedValue(mockInvoicePdfResponse);
+    it("should download with different invoice IDs", async () => {
+      vi.mocked(reportsService.downloadInvoicePdf).mockResolvedValue(
+        mockInvoicePdfResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useDownloadInvoicePdf(), {
@@ -1003,18 +1127,18 @@ describe('useReports hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate('inv-456');
+        result.current.mutate("inv-456");
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.downloadInvoicePdf).toHaveBeenCalledWith('inv-456');
+      expect(reportsService.downloadInvoicePdf).toHaveBeenCalledWith("inv-456");
     });
 
-    it('should handle invoice not found error', async () => {
-      const error = new Error('Factura no encontrada');
+    it("should handle invoice not found error", async () => {
+      const error = new Error("Factura no encontrada");
       vi.mocked(reportsService.downloadInvoicePdf).mockRejectedValue(error);
 
       const { result } = renderHook(() => useDownloadInvoicePdf(), {
@@ -1022,14 +1146,14 @@ describe('useReports hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate('non-existent-id');
+        result.current.mutate("non-existent-id");
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Factura no encontrada');
+      expect(toast.error).toHaveBeenCalledWith("Factura no encontrada");
     });
   });
 
@@ -1037,10 +1161,12 @@ describe('useReports hooks', () => {
   // EDGE CASES AND ERROR HANDLING
   // ============================================================================
 
-  describe('Edge cases', () => {
-    it('should handle network errors gracefully for sales report', async () => {
-      const networkError = new Error('Network error');
-      vi.mocked(reportsService.generateSalesReport).mockRejectedValue(networkError);
+  describe("Edge cases", () => {
+    it("should handle network errors gracefully for sales report", async () => {
+      const networkError = new Error("Network error");
+      vi.mocked(reportsService.generateSalesReport).mockRejectedValue(
+        networkError,
+      );
 
       const { result } = renderHook(() => useGenerateSalesReport(), {
         wrapper: createWrapper(),
@@ -1048,9 +1174,9 @@ describe('useReports hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          format: 'pdf',
-          fromDate: '2024-01-01',
-          toDate: '2024-01-15',
+          format: "pdf",
+          fromDate: "2024-01-01",
+          toDate: "2024-01-15",
         });
       });
 
@@ -1058,86 +1184,102 @@ describe('useReports hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Network error');
+      expect(toast.error).toHaveBeenCalledWith("Network error");
     });
 
-    it('should handle network errors gracefully for inventory report', async () => {
-      const networkError = new Error('Network error');
-      vi.mocked(reportsService.generateInventoryReport).mockRejectedValue(networkError);
+    it("should handle network errors gracefully for inventory report", async () => {
+      const networkError = new Error("Network error");
+      vi.mocked(reportsService.generateInventoryReport).mockRejectedValue(
+        networkError,
+      );
 
       const { result } = renderHook(() => useGenerateInventoryReport(), {
         wrapper: createWrapper(),
       });
 
       await act(async () => {
-        result.current.mutate({ format: 'pdf' });
+        result.current.mutate({ format: "pdf" });
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Network error');
+      expect(toast.error).toHaveBeenCalledWith("Network error");
     });
 
-    it('should handle network errors gracefully for customers report', async () => {
-      const networkError = new Error('Network error');
-      vi.mocked(reportsService.generateCustomersReport).mockRejectedValue(networkError);
+    it("should handle network errors gracefully for customers report", async () => {
+      const networkError = new Error("Network error");
+      vi.mocked(reportsService.generateCustomersReport).mockRejectedValue(
+        networkError,
+      );
 
       const { result } = renderHook(() => useGenerateCustomersReport(), {
         wrapper: createWrapper(),
       });
 
       await act(async () => {
-        result.current.mutate({ format: 'pdf' });
+        result.current.mutate({ format: "pdf" });
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Network error');
+      expect(toast.error).toHaveBeenCalledWith("Network error");
     });
 
-    it('should handle network errors gracefully for invoice PDF download', async () => {
-      const networkError = new Error('Network error');
-      vi.mocked(reportsService.downloadInvoicePdf).mockRejectedValue(networkError);
+    it("should handle network errors gracefully for invoice PDF download", async () => {
+      const networkError = new Error("Network error");
+      vi.mocked(reportsService.downloadInvoicePdf).mockRejectedValue(
+        networkError,
+      );
 
       const { result } = renderHook(() => useDownloadInvoicePdf(), {
         wrapper: createWrapper(),
       });
 
       await act(async () => {
-        result.current.mutate('inv-123');
+        result.current.mutate("inv-123");
       });
 
       await waitFor(() => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Network error');
+      expect(toast.error).toHaveBeenCalledWith("Network error");
     });
 
-    it('should handle concurrent report generation', async () => {
-      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(mockSalesReportResponse);
-      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(mockInventoryReportResponse);
+    it("should handle concurrent report generation", async () => {
+      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(
+        mockSalesReportResponse,
+      );
+      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(
+        mockInventoryReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
-      const { result: salesResult } = renderHook(() => useGenerateSalesReport(), {
-        wrapper: createWrapper(),
-      });
+      const { result: salesResult } = renderHook(
+        () => useGenerateSalesReport(),
+        {
+          wrapper: createWrapper(),
+        },
+      );
 
-      const { result: inventoryResult } = renderHook(() => useGenerateInventoryReport(), {
-        wrapper: createWrapper(),
-      });
+      const { result: inventoryResult } = renderHook(
+        () => useGenerateInventoryReport(),
+        {
+          wrapper: createWrapper(),
+        },
+      );
 
       await act(async () => {
         salesResult.current.mutate({
-          format: 'pdf',
-          fromDate: '2024-01-01',
-          toDate: '2024-01-15',
+          format: "pdf",
+          fromDate: "2024-01-01",
+          toDate: "2024-01-15",
         });
-        inventoryResult.current.mutate({ format: 'pdf' });
+        inventoryResult.current.mutate({ format: "pdf" });
       });
 
       await waitFor(() => {
@@ -1149,13 +1291,15 @@ describe('useReports hooks', () => {
       expect(reportsService.generateInventoryReport).toHaveBeenCalled();
     });
 
-    it('should handle empty blob response', async () => {
+    it("should handle empty blob response", async () => {
       const emptyBlobResponse = {
-        blob: new Blob([], { type: 'application/pdf' }),
-        fileName: 'empty-report.pdf',
+        blob: new Blob([], { type: "application/pdf" }),
+        fileName: "empty-report.pdf",
       };
 
-      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(emptyBlobResponse);
+      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(
+        emptyBlobResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateSalesReport(), {
@@ -1164,9 +1308,9 @@ describe('useReports hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          format: 'pdf',
-          fromDate: '2024-01-01',
-          toDate: '2024-01-15',
+          format: "pdf",
+          fromDate: "2024-01-01",
+          toDate: "2024-01-15",
         });
       });
 
@@ -1176,13 +1320,15 @@ describe('useReports hooks', () => {
 
       expect(reportsService.downloadReport).toHaveBeenCalledWith(
         emptyBlobResponse.blob,
-        emptyBlobResponse.fileName
+        emptyBlobResponse.fileName,
       );
     });
 
-    it('should handle server timeout error', async () => {
-      const timeoutError = new Error('Request timeout');
-      vi.mocked(reportsService.generateSalesReport).mockRejectedValue(timeoutError);
+    it("should handle server timeout error", async () => {
+      const timeoutError = new Error("Request timeout");
+      vi.mocked(reportsService.generateSalesReport).mockRejectedValue(
+        timeoutError,
+      );
 
       const { result } = renderHook(() => useGenerateSalesReport(), {
         wrapper: createWrapper(),
@@ -1190,9 +1336,9 @@ describe('useReports hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          format: 'pdf',
-          fromDate: '2024-01-01',
-          toDate: '2024-01-15',
+          format: "pdf",
+          fromDate: "2024-01-01",
+          toDate: "2024-01-15",
         });
       });
 
@@ -1200,7 +1346,7 @@ describe('useReports hooks', () => {
         expect(result.current.isError).toBe(true);
       });
 
-      expect(toast.error).toHaveBeenCalledWith('Request timeout');
+      expect(toast.error).toHaveBeenCalledWith("Request timeout");
     });
   });
 
@@ -1208,9 +1354,11 @@ describe('useReports hooks', () => {
   // CACHE INVALIDATION TESTS
   // ============================================================================
 
-  describe('Cache invalidation', () => {
-    it('should invalidate reports.all cache after generating sales report', async () => {
-      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(mockSalesReportResponse);
+  describe("Cache invalidation", () => {
+    it("should invalidate reports.all cache after generating sales report", async () => {
+      vi.mocked(reportsService.generateSalesReport).mockResolvedValue(
+        mockSalesReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { wrapper, queryClient } = createWrapperWithClient();
@@ -1218,15 +1366,17 @@ describe('useReports hooks', () => {
       // Pre-populate cache
       queryClient.setQueryData(queryKeys.reports.recent(10), mockRecentReports);
 
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
-      const { result } = renderHook(() => useGenerateSalesReport(), { wrapper });
+      const { result } = renderHook(() => useGenerateSalesReport(), {
+        wrapper,
+      });
 
       await act(async () => {
         result.current.mutate({
-          format: 'pdf',
-          fromDate: '2024-01-01',
-          toDate: '2024-01-15',
+          format: "pdf",
+          fromDate: "2024-01-01",
+          toDate: "2024-01-15",
         });
       });
 
@@ -1234,11 +1384,15 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.reports.all });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.reports.all,
+      });
     });
 
-    it('should invalidate reports.all cache after generating inventory report', async () => {
-      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(mockInventoryReportResponse);
+    it("should invalidate reports.all cache after generating inventory report", async () => {
+      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(
+        mockInventoryReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { wrapper, queryClient } = createWrapperWithClient();
@@ -1246,23 +1400,29 @@ describe('useReports hooks', () => {
       // Pre-populate cache
       queryClient.setQueryData(queryKeys.reports.recent(10), mockRecentReports);
 
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
-      const { result } = renderHook(() => useGenerateInventoryReport(), { wrapper });
+      const { result } = renderHook(() => useGenerateInventoryReport(), {
+        wrapper,
+      });
 
       await act(async () => {
-        result.current.mutate({ format: 'pdf' });
+        result.current.mutate({ format: "pdf" });
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.reports.all });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.reports.all,
+      });
     });
 
-    it('should invalidate reports.all cache after generating customers report', async () => {
-      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(mockCustomersReportResponse);
+    it("should invalidate reports.all cache after generating customers report", async () => {
+      vi.mocked(reportsService.generateCustomersReport).mockResolvedValue(
+        mockCustomersReportResponse,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { wrapper, queryClient } = createWrapperWithClient();
@@ -1270,23 +1430,27 @@ describe('useReports hooks', () => {
       // Pre-populate cache
       queryClient.setQueryData(queryKeys.reports.recent(10), mockRecentReports);
 
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
-      const { result } = renderHook(() => useGenerateCustomersReport(), { wrapper });
+      const { result } = renderHook(() => useGenerateCustomersReport(), {
+        wrapper,
+      });
 
       await act(async () => {
-        result.current.mutate({ format: 'pdf' });
+        result.current.mutate({ format: "pdf" });
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.reports.all });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.reports.all,
+      });
     });
 
-    it('should NOT invalidate cache on error', async () => {
-      const error = new Error('Report generation failed');
+    it("should NOT invalidate cache on error", async () => {
+      const error = new Error("Report generation failed");
       vi.mocked(reportsService.generateSalesReport).mockRejectedValue(error);
 
       const { wrapper, queryClient } = createWrapperWithClient();
@@ -1294,15 +1458,17 @@ describe('useReports hooks', () => {
       // Pre-populate cache
       queryClient.setQueryData(queryKeys.reports.recent(10), mockRecentReports);
 
-      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 
-      const { result } = renderHook(() => useGenerateSalesReport(), { wrapper });
+      const { result } = renderHook(() => useGenerateSalesReport(), {
+        wrapper,
+      });
 
       await act(async () => {
         result.current.mutate({
-          format: 'pdf',
-          fromDate: '2024-01-01',
-          toDate: '2024-01-15',
+          format: "pdf",
+          fromDate: "2024-01-01",
+          toDate: "2024-01-15",
         });
       });
 
@@ -1319,10 +1485,12 @@ describe('useReports hooks', () => {
   // FILE DOWNLOAD TESTS
   // ============================================================================
 
-  describe('File download behavior', () => {
-    it('should call downloadReport with correct blob and fileName for sales report', async () => {
-      const customFileName = 'ventas-enero-2024.pdf';
-      const customBlob = new Blob(['custom content'], { type: 'application/pdf' });
+  describe("File download behavior", () => {
+    it("should call downloadReport with correct blob and fileName for sales report", async () => {
+      const customFileName = "ventas-enero-2024.pdf";
+      const customBlob = new Blob(["custom content"], {
+        type: "application/pdf",
+      });
       const response = { blob: customBlob, fileName: customFileName };
 
       vi.mocked(reportsService.generateSalesReport).mockResolvedValue(response);
@@ -1334,9 +1502,9 @@ describe('useReports hooks', () => {
 
       await act(async () => {
         result.current.mutate({
-          format: 'pdf',
-          fromDate: '2024-01-01',
-          toDate: '2024-01-31',
+          format: "pdf",
+          fromDate: "2024-01-01",
+          toDate: "2024-01-31",
         });
       });
 
@@ -1344,16 +1512,21 @@ describe('useReports hooks', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.downloadReport).toHaveBeenCalledWith(customBlob, customFileName);
+      expect(reportsService.downloadReport).toHaveBeenCalledWith(
+        customBlob,
+        customFileName,
+      );
     });
 
-    it('should handle large blob files', async () => {
+    it("should handle large blob files", async () => {
       // Create a large blob (simulating a large file)
-      const largeContent = 'x'.repeat(10000000); // 10MB of content
-      const largeBlob = new Blob([largeContent], { type: 'application/pdf' });
-      const response = { blob: largeBlob, fileName: 'large-report.pdf' };
+      const largeContent = "x".repeat(10000000); // 10MB of content
+      const largeBlob = new Blob([largeContent], { type: "application/pdf" });
+      const response = { blob: largeBlob, fileName: "large-report.pdf" };
 
-      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(response);
+      vi.mocked(reportsService.generateInventoryReport).mockResolvedValue(
+        response,
+      );
       vi.mocked(reportsService.downloadReport).mockImplementation(() => {});
 
       const { result } = renderHook(() => useGenerateInventoryReport(), {
@@ -1361,14 +1534,17 @@ describe('useReports hooks', () => {
       });
 
       await act(async () => {
-        result.current.mutate({ format: 'pdf' });
+        result.current.mutate({ format: "pdf" });
       });
 
       await waitFor(() => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(reportsService.downloadReport).toHaveBeenCalledWith(largeBlob, 'large-report.pdf');
+      expect(reportsService.downloadReport).toHaveBeenCalledWith(
+        largeBlob,
+        "large-report.pdf",
+      );
     });
   });
 });

@@ -1,7 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { invitationsService, type CreateInvitationData } from '~/services/invitations.service';
-import { queryKeys } from '~/lib/query-client';
-import { toast } from '~/components/ui/Toast';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  invitationsService,
+  type CreateInvitationData,
+} from "~/services/invitations.service";
+import { queryKeys } from "~/lib/query-client";
+import { toast } from "~/components/ui/Toast";
 
 /**
  * Hook to fetch all invitations
@@ -24,10 +27,10 @@ export function useCreateInvitation() {
     mutationFn: (data: CreateInvitationData) => invitationsService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invitations.all });
-      toast.success('Invitacion enviada correctamente');
+      toast.success("Invitacion enviada correctamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al enviar la invitacion');
+      toast.error(error.message || "Error al enviar la invitacion");
     },
   });
 }
@@ -42,10 +45,10 @@ export function useCancelInvitation() {
     mutationFn: (id: string) => invitationsService.cancel(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invitations.all });
-      toast.success('Invitacion cancelada');
+      toast.success("Invitacion cancelada");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al cancelar la invitacion');
+      toast.error(error.message || "Error al cancelar la invitacion");
     },
   });
 }
@@ -60,10 +63,10 @@ export function useResendInvitation() {
     mutationFn: (id: string) => invitationsService.resend(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.invitations.all });
-      toast.success('Invitacion reenviada correctamente');
+      toast.success("Invitacion reenviada correctamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al reenviar la invitacion');
+      toast.error(error.message || "Error al reenviar la invitacion");
     },
   });
 }

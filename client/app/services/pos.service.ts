@@ -1,4 +1,4 @@
-import { api } from '~/lib/api';
+import { api } from "~/lib/api";
 import type {
   CashRegister,
   CashRegisterWithWarehouse,
@@ -18,14 +18,16 @@ import type {
   POSSalesResponse,
   POSSaleFilters,
   CreateSaleData,
-} from '~/types/pos';
+} from "~/types/pos";
 
 // ============================================================================
 // CASH REGISTERS SERVICE
 // ============================================================================
 
 export const cashRegistersService = {
-  async getAll(filters: CashRegisterFilters = {}): Promise<CashRegistersResponse> {
+  async getAll(
+    filters: CashRegisterFilters = {},
+  ): Promise<CashRegistersResponse> {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -33,23 +35,36 @@ export const cashRegistersService = {
       }
     });
     const { data } = await api.get<CashRegistersResponse>(
-      `/cash-registers?${params.toString()}`
+      `/cash-registers?${params.toString()}`,
     );
     return data;
   },
 
   async getById(id: string): Promise<CashRegisterWithWarehouse> {
-    const { data } = await api.get<CashRegisterWithWarehouse>(`/cash-registers/${id}`);
+    const { data } = await api.get<CashRegisterWithWarehouse>(
+      `/cash-registers/${id}`,
+    );
     return data;
   },
 
-  async create(cashRegisterData: CreateCashRegisterData): Promise<CashRegister> {
-    const { data } = await api.post<CashRegister>('/cash-registers', cashRegisterData);
+  async create(
+    cashRegisterData: CreateCashRegisterData,
+  ): Promise<CashRegister> {
+    const { data } = await api.post<CashRegister>(
+      "/cash-registers",
+      cashRegisterData,
+    );
     return data;
   },
 
-  async update(id: string, cashRegisterData: UpdateCashRegisterData): Promise<CashRegister> {
-    const { data } = await api.patch<CashRegister>(`/cash-registers/${id}`, cashRegisterData);
+  async update(
+    id: string,
+    cashRegisterData: UpdateCashRegisterData,
+  ): Promise<CashRegister> {
+    const { data } = await api.patch<CashRegister>(
+      `/cash-registers/${id}`,
+      cashRegisterData,
+    );
     return data;
   },
 
@@ -71,60 +86,73 @@ export const posSessionsService = {
       }
     });
     const { data } = await api.get<POSSessionsResponse>(
-      `/pos-sessions?${params.toString()}`
+      `/pos-sessions?${params.toString()}`,
     );
     return data;
   },
 
   async getById(id: string): Promise<POSSessionWithDetails> {
-    const { data } = await api.get<POSSessionWithDetails>(`/pos-sessions/${id}`);
+    const { data } = await api.get<POSSessionWithDetails>(
+      `/pos-sessions/${id}`,
+    );
     return data;
   },
 
   async getCurrent(): Promise<POSSessionWithDetails | null> {
-    const { data } = await api.get<POSSessionWithDetails | null>('/pos-sessions/current');
+    const { data } = await api.get<POSSessionWithDetails | null>(
+      "/pos-sessions/current",
+    );
     return data;
   },
 
   async open(sessionData: OpenSessionData): Promise<POSSessionWithDetails> {
     const { data } = await api.post<POSSessionWithDetails>(
-      '/pos-sessions/open',
-      sessionData
+      "/pos-sessions/open",
+      sessionData,
     );
     return data;
   },
 
-  async close(sessionId: string, closeData: CloseSessionData): Promise<POSSessionWithDetails> {
+  async close(
+    sessionId: string,
+    closeData: CloseSessionData,
+  ): Promise<POSSessionWithDetails> {
     const { data } = await api.post<POSSessionWithDetails>(
       `/pos-sessions/${sessionId}/close`,
-      closeData
+      closeData,
     );
     return data;
   },
 
   async registerCashMovement(
     sessionId: string,
-    movementData: CashMovementData
+    movementData: CashMovementData,
   ): Promise<CashMovement> {
     const { data } = await api.post<CashMovement>(
       `/pos-sessions/${sessionId}/cash-movement`,
-      movementData
+      movementData,
     );
     return data;
   },
 
   async getMovements(sessionId: string): Promise<CashMovement[]> {
-    const { data } = await api.get<CashMovement[]>(`/pos-sessions/${sessionId}/movements`);
+    const { data } = await api.get<CashMovement[]>(
+      `/pos-sessions/${sessionId}/movements`,
+    );
     return data;
   },
 
   async getXReport(sessionId: string): Promise<XZReport> {
-    const { data } = await api.get<XZReport>(`/pos-sessions/${sessionId}/x-report`);
+    const { data } = await api.get<XZReport>(
+      `/pos-sessions/${sessionId}/x-report`,
+    );
     return data;
   },
 
   async getZReport(sessionId: string): Promise<XZReport> {
-    const { data } = await api.get<XZReport>(`/pos-sessions/${sessionId}/z-report`);
+    const { data } = await api.get<XZReport>(
+      `/pos-sessions/${sessionId}/z-report`,
+    );
     return data;
   },
 };
@@ -141,7 +169,9 @@ export const posSalesService = {
         params.append(key, String(value));
       }
     });
-    const { data } = await api.get<POSSalesResponse>(`/pos-sales?${params.toString()}`);
+    const { data } = await api.get<POSSalesResponse>(
+      `/pos-sales?${params.toString()}`,
+    );
     return data;
   },
 
@@ -151,14 +181,17 @@ export const posSalesService = {
   },
 
   async create(saleData: CreateSaleData): Promise<POSSaleWithDetails> {
-    const { data } = await api.post<POSSaleWithDetails>('/pos-sales', saleData);
+    const { data } = await api.post<POSSaleWithDetails>("/pos-sales", saleData);
     return data;
   },
 
   async void(saleId: string, reason: string): Promise<POSSaleWithDetails> {
-    const { data } = await api.post<POSSaleWithDetails>(`/pos-sales/${saleId}/void`, {
-      reason,
-    });
+    const { data } = await api.post<POSSaleWithDetails>(
+      `/pos-sales/${saleId}/void`,
+      {
+        reason,
+      },
+    );
     return data;
   },
 };

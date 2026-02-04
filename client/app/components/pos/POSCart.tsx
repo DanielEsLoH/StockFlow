@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from "react";
 import {
   Trash2,
   Plus,
@@ -6,12 +6,12 @@ import {
   ShoppingCart,
   CreditCard,
   Percent,
-} from 'lucide-react';
-import { Button } from '~/components/ui/Button';
-import { Card } from '~/components/ui/Card';
-import { Input } from '~/components/ui/Input';
-import { formatCurrency } from '~/lib/utils';
-import type { CartItem } from '~/types/pos';
+} from "lucide-react";
+import { Button } from "~/components/ui/Button";
+import { Card } from "~/components/ui/Card";
+import { Input } from "~/components/ui/Input";
+import { formatCurrency } from "~/lib/utils";
+import type { CartItem } from "~/types/pos";
 
 interface POSCartProps {
   items: CartItem[];
@@ -67,7 +67,7 @@ export function POSCart({
         }
       }
     },
-    [items, onUpdateQuantity, onRemoveItem]
+    [items, onUpdateQuantity, onRemoveItem],
   );
 
   if (items.length === 0) {
@@ -180,7 +180,7 @@ export function POSCart({
               value={globalDiscount}
               onChange={(e) =>
                 onGlobalDiscountChange(
-                  Math.min(100, Math.max(0, Number(e.target.value)))
+                  Math.min(100, Math.max(0, Number(e.target.value))),
                 )
               }
               className="w-20"
@@ -242,7 +242,7 @@ export function POSCart({
           disabled={isProcessing || items.length === 0}
         >
           <CreditCard className="h-5 w-5 mr-2" />
-          {isProcessing ? 'Procesando...' : 'Cobrar (F4)'}
+          {isProcessing ? "Procesando..." : "Cobrar (F4)"}
         </Button>
       </div>
     </Card>

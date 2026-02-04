@@ -23,7 +23,7 @@ export interface WarehouseFilters {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 export interface CreateWarehouseData {
@@ -37,7 +37,7 @@ export interface CreateWarehouseData {
   isActive?: boolean;
 }
 
-export type UpdateWarehouseData = Partial<CreateWarehouseData>
+export type UpdateWarehouseData = Partial<CreateWarehouseData>;
 
 export interface WarehousesResponse {
   data: Warehouse[];

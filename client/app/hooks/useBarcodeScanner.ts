@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from "react";
 
 interface UseBarcodeScanner {
   onScan: (barcode: string) => void;
@@ -18,7 +18,7 @@ export function useBarcodeScanner({
   minLength = 3,
   maxDelay = 50,
 }: UseBarcodeScanner) {
-  const bufferRef = useRef<string>('');
+  const bufferRef = useRef<string>("");
   const lastKeyTimeRef = useRef<number>(0);
 
   const handleKeyDown = useCallback(
@@ -30,20 +30,20 @@ export function useBarcodeScanner({
 
       // If too much time has passed, reset the buffer
       if (timeDiff > maxDelay && bufferRef.current.length > 0) {
-        bufferRef.current = '';
+        bufferRef.current = "";
       }
 
       lastKeyTimeRef.current = now;
 
       // Handle Enter key - submit the barcode
-      if (event.key === 'Enter') {
+      if (event.key === "Enter") {
         const barcode = bufferRef.current.trim();
         if (barcode.length >= minLength) {
           event.preventDefault();
           event.stopPropagation();
           onScan(barcode);
         }
-        bufferRef.current = '';
+        bufferRef.current = "";
         return;
       }
 
@@ -52,20 +52,20 @@ export function useBarcodeScanner({
         bufferRef.current += event.key;
       }
     },
-    [enabled, minLength, maxDelay, onScan]
+    [enabled, minLength, maxDelay, onScan],
   );
 
   useEffect(() => {
     if (!enabled) return;
 
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    window.addEventListener("keydown", handleKeyDown, { capture: true });
     return () => {
-      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+      window.removeEventListener("keydown", handleKeyDown, { capture: true });
     };
   }, [enabled, handleKeyDown]);
 
   const reset = useCallback(() => {
-    bufferRef.current = '';
+    bufferRef.current = "";
   }, []);
 
   return { reset };

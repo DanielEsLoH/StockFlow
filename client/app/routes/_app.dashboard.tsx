@@ -47,7 +47,13 @@ import {
   formatRelativeTime,
 } from "~/lib/utils";
 import { useDashboard } from "~/hooks/useDashboard";
-import { Card, CardHeader, CardTitle, CardContent, CardDivider } from "~/components/ui/Card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDivider,
+} from "~/components/ui/Card";
 import { Button } from "~/components/ui/Button";
 import { StatCard } from "~/components/ui/StatCard";
 import { Badge, StatusBadge } from "~/components/ui/Badge";
@@ -99,27 +105,32 @@ const activityTypeConfig: Record<
   sale: {
     icon: ShoppingCart,
     color: "text-success-600 dark:text-success-400",
-    bgColor: "bg-gradient-to-br from-success-500/20 to-success-600/10 dark:from-success-500/20 dark:to-success-900/30",
+    bgColor:
+      "bg-gradient-to-br from-success-500/20 to-success-600/10 dark:from-success-500/20 dark:to-success-900/30",
   },
   product: {
     icon: Package,
     color: "text-primary-600 dark:text-primary-400",
-    bgColor: "bg-gradient-to-br from-primary-500/20 to-primary-600/10 dark:from-primary-500/20 dark:to-primary-900/30",
+    bgColor:
+      "bg-gradient-to-br from-primary-500/20 to-primary-600/10 dark:from-primary-500/20 dark:to-primary-900/30",
   },
   customer: {
     icon: UserPlus,
     color: "text-accent-600 dark:text-accent-400",
-    bgColor: "bg-gradient-to-br from-accent-500/20 to-accent-600/10 dark:from-accent-500/20 dark:to-accent-900/30",
+    bgColor:
+      "bg-gradient-to-br from-accent-500/20 to-accent-600/10 dark:from-accent-500/20 dark:to-accent-900/30",
   },
   invoice: {
     icon: FileText,
     color: "text-warning-600 dark:text-warning-400",
-    bgColor: "bg-gradient-to-br from-warning-500/20 to-warning-600/10 dark:from-warning-500/20 dark:to-warning-900/30",
+    bgColor:
+      "bg-gradient-to-br from-warning-500/20 to-warning-600/10 dark:from-warning-500/20 dark:to-warning-900/30",
   },
   stock: {
     icon: AlertTriangle,
     color: "text-error-600 dark:text-error-400",
-    bgColor: "bg-gradient-to-br from-error-500/20 to-error-600/10 dark:from-error-500/20 dark:to-error-900/30",
+    bgColor:
+      "bg-gradient-to-br from-error-500/20 to-error-600/10 dark:from-error-500/20 dark:to-error-900/30",
   },
 };
 
@@ -144,8 +155,15 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
           {formatDate(label || "")}
         </p>
         {payload.map((entry: TooltipPayloadEntry, index: number) => (
-          <p key={index} className="text-sm flex items-center gap-2" style={{ color: entry.color }}>
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+          <p
+            key={index}
+            className="text-sm flex items-center gap-2"
+            style={{ color: entry.color }}
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
             {entry.name}:{" "}
             <span className="font-semibold">
               {entry.name === "Ventas" || entry.name === "Periodo Anterior"
@@ -250,7 +268,7 @@ function QuickActionCard({
         className={cn(
           "relative overflow-hidden rounded-2xl p-4 h-full",
           "bg-gradient-to-br shadow-lg transition-shadow hover:shadow-xl",
-          gradient
+          gradient,
         )}
       >
         <div className="relative z-10 flex items-start gap-3">
@@ -421,13 +439,15 @@ export default function DashboardPage() {
                   {(lowStockAlerts?.length ?? 0) > 0 && (
                     <span>
                       <strong>{lowStockAlerts?.length}</strong> producto
-                      {(lowStockAlerts?.length ?? 0) !== 1 ? "s" : ""} con stock bajo.{" "}
+                      {(lowStockAlerts?.length ?? 0) !== 1 ? "s" : ""} con stock
+                      bajo.{" "}
                     </span>
                   )}
                   {(stats?.overdueInvoicesCount ?? 0) > 0 && (
                     <span>
                       <strong>{stats?.overdueInvoicesCount}</strong> factura
-                      {(stats?.overdueInvoicesCount ?? 0) !== 1 ? "s" : ""} vencida
+                      {(stats?.overdueInvoicesCount ?? 0) !== 1 ? "s" : ""}{" "}
+                      vencida
                       {(stats?.overdueInvoicesCount ?? 0) !== 1 ? "s" : ""}.
                     </span>
                   )}
@@ -525,7 +545,11 @@ export default function DashboardPage() {
         className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
         {/* Sales Area Chart */}
-        <Card variant="elevated" padding="none" className="lg:col-span-2 overflow-hidden">
+        <Card
+          variant="elevated"
+          padding="none"
+          className="lg:col-span-2 overflow-hidden"
+        >
           <div className="p-6 pb-0">
             <CardHeader className="flex-row items-center justify-between p-0 mb-4">
               <div className="flex items-center gap-3">
@@ -559,7 +583,13 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={charts?.salesChart || []}>
                   <defs>
-                    <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="salesGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
                       <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
                     </linearGradient>
@@ -571,13 +601,17 @@ export default function DashboardPage() {
                   />
                   <XAxis
                     dataKey="date"
-                    tickFormatter={(value) => new Date(value).getDate().toString()}
+                    tickFormatter={(value) =>
+                      new Date(value).getDate().toString()
+                    }
                     tick={{ fontSize: 12, fill: "#9CA3AF" }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`}
+                    tickFormatter={(value) =>
+                      `${(value / 1000000).toFixed(0)}M`
+                    }
                     tick={{ fontSize: 12, fill: "#9CA3AF" }}
                     axisLine={false}
                     tickLine={false}
@@ -630,9 +664,11 @@ export default function DashboardPage() {
                     nameKey="name"
                     strokeWidth={0}
                   >
-                    {(charts?.categoryDistribution || []).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                    {(charts?.categoryDistribution || []).map(
+                      (entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ),
+                    )}
                   </Pie>
                   <Tooltip
                     formatter={(value) => `${value}%`}
@@ -666,7 +702,11 @@ export default function DashboardPage() {
         className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
         {/* Top Products Bar Chart */}
-        <Card variant="elevated" padding="none" className="lg:col-span-2 overflow-hidden">
+        <Card
+          variant="elevated"
+          padding="none"
+          className="lg:col-span-2 overflow-hidden"
+        >
           <div className="p-6 pb-0">
             <CardHeader className="flex-row items-center justify-between p-0 mb-4">
               <div className="flex items-center gap-3">
@@ -713,7 +753,9 @@ export default function DashboardPage() {
                   />
                   <XAxis
                     type="number"
-                    tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`}
+                    tickFormatter={(value) =>
+                      `${(value / 1000000).toFixed(0)}M`
+                    }
                     tick={{ fontSize: 12, fill: "#9CA3AF" }}
                     axisLine={false}
                     tickLine={false}
@@ -810,7 +852,11 @@ export default function DashboardPage() {
         className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
         {/* Recent Invoices Table */}
-        <Card variant="elevated" padding="none" className="lg:col-span-2 overflow-hidden">
+        <Card
+          variant="elevated"
+          padding="none"
+          className="lg:col-span-2 overflow-hidden"
+        >
           <div className="p-6 pb-0">
             <CardHeader className="flex-row items-center justify-between p-0 mb-4">
               <div className="flex items-center gap-3">
@@ -829,7 +875,11 @@ export default function DashboardPage() {
           </div>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full" role="table" aria-label="Facturas recientes">
+              <table
+                className="w-full"
+                role="table"
+                aria-label="Facturas recientes"
+              >
                 <thead>
                   <tr className="border-y border-neutral-100 dark:border-neutral-800">
                     <th
@@ -889,7 +939,15 @@ export default function DashboardPage() {
                         </p>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={invoice.status as 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED'} />
+                        <StatusBadge
+                          status={
+                            invoice.status as
+                              | "PAID"
+                              | "PENDING"
+                              | "OVERDUE"
+                              | "CANCELLED"
+                          }
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-1">

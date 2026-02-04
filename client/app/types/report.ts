@@ -1,8 +1,8 @@
 // Report format options
-export type ReportFormat = 'pdf' | 'excel';
+export type ReportFormat = "pdf" | "excel";
 
 // Report type enum
-export type ReportType = 'sales' | 'inventory' | 'customers';
+export type ReportType = "sales" | "inventory" | "customers";
 
 // Sales report parameters
 export interface SalesReportParams {
@@ -25,38 +25,38 @@ export interface CustomersReportParams {
 
 // Date range preset options
 export type DateRangePreset =
-  | 'today'
-  | 'yesterday'
-  | 'last7days'
-  | 'last30days'
-  | 'thisMonth'
-  | 'lastMonth'
-  | 'thisYear'
-  | 'custom';
+  | "today"
+  | "yesterday"
+  | "last7days"
+  | "last30days"
+  | "thisMonth"
+  | "lastMonth"
+  | "thisYear"
+  | "custom";
 
 // Date range preset labels in Spanish
 export const DateRangePresetLabels: Record<DateRangePreset, string> = {
-  today: 'Hoy',
-  yesterday: 'Ayer',
-  last7days: 'Últimos 7 días',
-  last30days: 'Últimos 30 días',
-  thisMonth: 'Este mes',
-  lastMonth: 'Mes anterior',
-  thisYear: 'Este año',
-  custom: 'Personalizado',
+  today: "Hoy",
+  yesterday: "Ayer",
+  last7days: "Últimos 7 días",
+  last30days: "Últimos 30 días",
+  thisMonth: "Este mes",
+  lastMonth: "Mes anterior",
+  thisYear: "Este año",
+  custom: "Personalizado",
 };
 
 // Report format labels in Spanish
 export const ReportFormatLabels: Record<ReportFormat, string> = {
-  pdf: 'PDF',
-  excel: 'Excel',
+  pdf: "PDF",
+  excel: "Excel",
 };
 
 // Report type labels in Spanish
 export const ReportTypeLabels: Record<ReportType, string> = {
-  sales: 'Ventas',
-  inventory: 'Inventario',
-  customers: 'Clientes',
+  sales: "Ventas",
+  inventory: "Inventario",
+  customers: "Clientes",
 };
 
 // Report generation status

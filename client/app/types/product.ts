@@ -23,7 +23,11 @@ export interface Product {
   updatedAt: string;
 }
 
-export type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'DISCONTINUED' | 'OUT_OF_STOCK';
+export type ProductStatus =
+  | "ACTIVE"
+  | "INACTIVE"
+  | "DISCONTINUED"
+  | "OUT_OF_STOCK";
 
 export interface Category {
   id: string;
@@ -62,7 +66,7 @@ export interface ProductFilters {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
 }
 
 export interface CreateProductData {
@@ -82,7 +86,7 @@ export interface CreateProductData {
   status?: ProductStatus;
 }
 
-export type UpdateProductData = Partial<CreateProductData>
+export type UpdateProductData = Partial<CreateProductData>;
 
 export interface ProductsResponse {
   data: Product[];

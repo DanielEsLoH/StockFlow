@@ -1,39 +1,45 @@
-import * as React from 'react';
-import { cn } from '~/lib/utils';
+import * as React from "react";
+import { cn } from "~/lib/utils";
 
 interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'circular' | 'rounded';
+  variant?: "default" | "circular" | "rounded";
 }
 
 const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  ({ className, variant = 'default', ...props }, ref) => {
+  ({ className, variant = "default", ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={cn(
-          'animate-pulse bg-neutral-200 dark:bg-neutral-800',
-          variant === 'circular' && 'rounded-full',
-          variant === 'rounded' && 'rounded-xl',
-          variant === 'default' && 'rounded-lg',
-          className
+          "animate-pulse bg-neutral-200 dark:bg-neutral-800",
+          variant === "circular" && "rounded-full",
+          variant === "rounded" && "rounded-xl",
+          variant === "default" && "rounded-lg",
+          className,
         )}
         {...props}
       />
     );
-  }
+  },
 );
-Skeleton.displayName = 'Skeleton';
+Skeleton.displayName = "Skeleton";
 
 // Common skeleton patterns
-function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {
+function SkeletonText({
+  lines = 3,
+  className,
+}: {
+  lines?: number;
+  className?: string;
+}) {
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn("space-y-2", className)}>
       {Array.from({ length: lines }).map((_, i) => (
         <Skeleton
           key={i}
           className={cn(
-            'h-4',
-            i === lines - 1 && lines > 1 ? 'w-3/4' : 'w-full'
+            "h-4",
+            i === lines - 1 && lines > 1 ? "w-3/4" : "w-full",
           )}
         />
       ))}
@@ -45,8 +51,8 @@ function SkeletonCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900',
-        className
+        "rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900",
+        className,
       )}
     >
       <div className="flex items-start gap-4">
@@ -64,9 +70,20 @@ function SkeletonCard({ className }: { className?: string }) {
   );
 }
 
-function SkeletonTableRow({ columns = 5, className }: { columns?: number; className?: string }) {
+function SkeletonTableRow({
+  columns = 5,
+  className,
+}: {
+  columns?: number;
+  className?: string;
+}) {
   return (
-    <tr className={cn('border-b border-neutral-100 dark:border-neutral-800', className)}>
+    <tr
+      className={cn(
+        "border-b border-neutral-100 dark:border-neutral-800",
+        className,
+      )}
+    >
       {Array.from({ length: columns }).map((_, i) => (
         <td key={i} className="p-4">
           <Skeleton className="h-5 w-full" />
@@ -86,7 +103,12 @@ function SkeletonTable({
   className?: string;
 }) {
   return (
-    <div className={cn('overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800', className)}>
+    <div
+      className={cn(
+        "overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800",
+        className,
+      )}
+    >
       <table className="w-full">
         <thead className="bg-neutral-50 dark:bg-neutral-900">
           <tr>
@@ -111,8 +133,8 @@ function SkeletonProductCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900',
-        className
+        "rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900",
+        className,
       )}
     >
       {/* Image */}

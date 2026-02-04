@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
-import { invoicesService } from '~/services/invoices.service';
-import { queryKeys } from '~/lib/query-client';
-import { toast } from '~/components/ui/Toast';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
+import { invoicesService } from "~/services/invoices.service";
+import { queryKeys } from "~/lib/query-client";
+import { toast } from "~/components/ui/Toast";
 import type {
   Invoice,
   InvoiceFilters,
@@ -13,7 +13,7 @@ import type {
   UpdateInvoiceItemData,
   InvoiceStats,
   InvoiceStatus,
-} from '~/types/invoice';
+} from "~/types/invoice";
 
 // ============================================================================
 // QUERIES
@@ -89,7 +89,8 @@ export function useCreateInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateInvoiceData) => invoicesService.createInvoice(data),
+    mutationFn: (data: CreateInvoiceData) =>
+      invoicesService.createInvoice(data),
     onSuccess: (invoice) => {
       // Invalidate all invoice-related queries
       void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
@@ -104,7 +105,7 @@ export function useCreateInvoice() {
       navigate(`/invoices/${invoice.id}`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear la factura');
+      toast.error(error.message || "Error al crear la factura");
     },
   });
 }
@@ -121,11 +122,13 @@ export function useUpdateInvoice() {
       invoicesService.updateInvoice(id, data),
     onMutate: async ({ id, data }) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.invoices.detail(id) });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.invoices.detail(id),
+      });
 
       // Snapshot the previous value
       const previousInvoice = queryClient.getQueryData<Invoice>(
-        queryKeys.invoices.detail(id)
+        queryKeys.invoices.detail(id),
       );
 
       // Optimistically update the invoice detail (excluding items to avoid type issues)
@@ -153,7 +156,9 @@ export function useUpdateInvoice() {
       // Invalidate dashboard stats
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
 
-      toast.success(`Factura "${invoice.invoiceNumber}" actualizada exitosamente`);
+      toast.success(
+        `Factura "${invoice.invoiceNumber}" actualizada exitosamente`,
+      );
       navigate(`/invoices/${invoice.id}`);
     },
     onError: (error: Error, { id }, context) => {
@@ -161,10 +166,10 @@ export function useUpdateInvoice() {
       if (context?.previousInvoice) {
         queryClient.setQueryData(
           queryKeys.invoices.detail(id),
-          context.previousInvoice
+          context.previousInvoice,
         );
       }
-      toast.error(error.message || 'Error al actualizar la factura');
+      toast.error(error.message || "Error al actualizar la factura");
     },
   });
 }
@@ -180,11 +185,13 @@ export function useUpdateInvoiceStatus() {
       invoicesService.updateInvoiceStatus(id, status),
     onMutate: async ({ id, status }) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.invoices.detail(id) });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.invoices.detail(id),
+      });
 
       // Snapshot the previous value
       const previousInvoice = queryClient.getQueryData<Invoice>(
-        queryKeys.invoices.detail(id)
+        queryKeys.invoices.detail(id),
       );
 
       // Optimistically update the status
@@ -192,7 +199,10 @@ export function useUpdateInvoiceStatus() {
         queryClient.setQueryData<Invoice>(queryKeys.invoices.detail(id), {
           ...previousInvoice,
           status,
-          paidAt: status === 'PAID' ? new Date().toISOString() : previousInvoice.paidAt,
+          paidAt:
+            status === "PAID"
+              ? new Date().toISOString()
+              : previousInvoice.paidAt,
           updatedAt: new Date().toISOString(),
         });
       }
@@ -209,20 +219,22 @@ export function useUpdateInvoiceStatus() {
         queryKey: queryKeys.invoices.byCustomer(invoice.customerId),
       });
       // Invalidate stats
-      void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.stats() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.invoices.stats(),
+      });
       // Invalidate dashboard
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
 
       const statusMessages: Record<InvoiceStatus, string> = {
-        DRAFT: 'marcada como borrador',
-        PENDING: 'marcada como pendiente',
-        PAID: 'marcada como pagada',
-        OVERDUE: 'marcada como vencida',
-        CANCELLED: 'cancelada',
+        DRAFT: "marcada como borrador",
+        PENDING: "marcada como pendiente",
+        PAID: "marcada como pagada",
+        OVERDUE: "marcada como vencida",
+        CANCELLED: "cancelada",
       };
 
       toast.success(
-        `Factura "${invoice.invoiceNumber}" ${statusMessages[invoice.status]}`
+        `Factura "${invoice.invoiceNumber}" ${statusMessages[invoice.status]}`,
       );
     },
     onError: (error: Error, { id }, context) => {
@@ -230,10 +242,12 @@ export function useUpdateInvoiceStatus() {
       if (context?.previousInvoice) {
         queryClient.setQueryData(
           queryKeys.invoices.detail(id),
-          context.previousInvoice
+          context.previousInvoice,
         );
       }
-      toast.error(error.message || 'Error al actualizar el estado de la factura');
+      toast.error(
+        error.message || "Error al actualizar el estado de la factura",
+      );
     },
   });
 }
@@ -250,7 +264,7 @@ export function useDeleteInvoice() {
     onSuccess: (_result, id) => {
       // Get the invoice before removing from cache to access customerId
       const invoice = queryClient.getQueryData<Invoice>(
-        queryKeys.invoices.detail(id)
+        queryKeys.invoices.detail(id),
       );
 
       // Invalidate all invoice queries
@@ -264,17 +278,19 @@ export function useDeleteInvoice() {
       }
 
       // Invalidate stats and dashboard
-      void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.stats() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.invoices.stats(),
+      });
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
 
       // Remove from detail cache
       queryClient.removeQueries({ queryKey: queryKeys.invoices.detail(id) });
 
-      toast.success('Factura eliminada exitosamente');
-      navigate('/invoices');
+      toast.success("Factura eliminada exitosamente");
+      navigate("/invoices");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar la factura');
+      toast.error(error.message || "Error al eliminar la factura");
     },
   });
 }
@@ -309,10 +325,10 @@ export function useAddInvoiceItem() {
         queryKey: queryKeys.invoices.byCustomer(invoice.customerId),
       });
 
-      toast.success('Item agregado a la factura');
+      toast.success("Item agregado a la factura");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al agregar el item');
+      toast.error(error.message || "Error al agregar el item");
     },
   });
 }
@@ -341,13 +357,13 @@ export function useUpdateInvoiceItem() {
 
       // Snapshot previous invoice
       const previousInvoice = queryClient.getQueryData<Invoice>(
-        queryKeys.invoices.detail(invoiceId)
+        queryKeys.invoices.detail(invoiceId),
       );
 
       // Optimistically update the item
       if (previousInvoice?.items) {
         const updatedItems = previousInvoice.items.map((item) =>
-          item.id === itemId ? { ...item, ...data } : item
+          item.id === itemId ? { ...item, ...data } : item,
         );
 
         queryClient.setQueryData<Invoice>(
@@ -356,7 +372,7 @@ export function useUpdateInvoiceItem() {
             ...previousInvoice,
             items: updatedItems,
             updatedAt: new Date().toISOString(),
-          }
+          },
         );
       }
 
@@ -374,17 +390,17 @@ export function useUpdateInvoiceItem() {
         queryKey: queryKeys.invoices.byCustomer(invoice.customerId),
       });
 
-      toast.success('Item actualizado');
+      toast.success("Item actualizado");
     },
     onError: (error: Error, { invoiceId }, context) => {
       // Rollback optimistic update
       if (context?.previousInvoice) {
         queryClient.setQueryData(
           queryKeys.invoices.detail(invoiceId),
-          context.previousInvoice
+          context.previousInvoice,
         );
       }
-      toast.error(error.message || 'Error al actualizar el item');
+      toast.error(error.message || "Error al actualizar el item");
     },
   });
 }
@@ -396,8 +412,13 @@ export function useRemoveInvoiceItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ invoiceId, itemId }: { invoiceId: string; itemId: string }) =>
-      invoicesService.removeInvoiceItem(invoiceId, itemId),
+    mutationFn: ({
+      invoiceId,
+      itemId,
+    }: {
+      invoiceId: string;
+      itemId: string;
+    }) => invoicesService.removeInvoiceItem(invoiceId, itemId),
     onMutate: async ({ invoiceId, itemId }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
@@ -406,13 +427,13 @@ export function useRemoveInvoiceItem() {
 
       // Snapshot previous invoice
       const previousInvoice = queryClient.getQueryData<Invoice>(
-        queryKeys.invoices.detail(invoiceId)
+        queryKeys.invoices.detail(invoiceId),
       );
 
       // Optimistically remove the item
       if (previousInvoice?.items) {
         const updatedItems = previousInvoice.items.filter(
-          (item) => item.id !== itemId
+          (item) => item.id !== itemId,
         );
 
         queryClient.setQueryData<Invoice>(
@@ -421,7 +442,7 @@ export function useRemoveInvoiceItem() {
             ...previousInvoice,
             items: updatedItems,
             updatedAt: new Date().toISOString(),
-          }
+          },
         );
       }
 
@@ -439,17 +460,17 @@ export function useRemoveInvoiceItem() {
         queryKey: queryKeys.invoices.byCustomer(invoice.customerId),
       });
 
-      toast.success('Item eliminado de la factura');
+      toast.success("Item eliminado de la factura");
     },
     onError: (error: Error, { invoiceId }, context) => {
       // Rollback optimistic update
       if (context?.previousInvoice) {
         queryClient.setQueryData(
           queryKeys.invoices.detail(invoiceId),
-          context.previousInvoice
+          context.previousInvoice,
         );
       }
-      toast.error(error.message || 'Error al eliminar el item');
+      toast.error(error.message || "Error al eliminar el item");
     },
   });
 }
@@ -473,10 +494,12 @@ export function useSendInvoiceToDian() {
       // Invalidate list queries
       void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
 
-      toast.success(`Factura "${invoice.invoiceNumber}" enviada a la DIAN exitosamente`);
+      toast.success(
+        `Factura "${invoice.invoiceNumber}" enviada a la DIAN exitosamente`,
+      );
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al enviar la factura a la DIAN');
+      toast.error(error.message || "Error al enviar la factura a la DIAN");
     },
   });
 }

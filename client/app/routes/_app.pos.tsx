@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { Link, useNavigate } from "react-router";
+import { motion } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   ShoppingCart,
   DollarSign,
@@ -12,29 +12,29 @@ import {
   LogOut,
   Maximize,
   Keyboard,
-} from 'lucide-react';
-import type { Route } from './+types/_app.pos';
-import { useCurrentSession, useCreateSale } from '~/hooks/usePOS';
-import { useProducts } from '~/hooks/useProducts';
-import { Button } from '~/components/ui/Button';
-import { Card } from '~/components/ui/Card';
-import { Badge } from '~/components/ui/Badge';
+} from "lucide-react";
+import type { Route } from "./+types/_app.pos";
+import { useCurrentSession, useCreateSale } from "~/hooks/usePOS";
+import { useProducts } from "~/hooks/useProducts";
+import { Button } from "~/components/ui/Button";
+import { Card } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
 import {
   POSCart,
   POSProductSearch,
   POSSplitPaymentModal,
-} from '~/components/pos';
-import { formatCurrency, formatDateTime } from '~/lib/utils';
-import { useBarcodeScanner } from '~/hooks/useBarcodeScanner';
-import { usePOSKeyboard, toggleFullscreen } from '~/hooks/usePOSKeyboard';
-import type { CartItem, SalePaymentData } from '~/types/pos';
-import type { Product } from '~/types/product';
-import { toast } from 'sonner';
+} from "~/components/pos";
+import { formatCurrency, formatDateTime } from "~/lib/utils";
+import { useBarcodeScanner } from "~/hooks/useBarcodeScanner";
+import { usePOSKeyboard, toggleFullscreen } from "~/hooks/usePOSKeyboard";
+import type { CartItem, SalePaymentData } from "~/types/pos";
+import type { Product } from "~/types/product";
+import { toast } from "sonner";
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Punto de Venta - StockFlow' },
-    { name: 'description', content: 'Sistema de punto de venta' },
+    { title: "Punto de Venta - StockFlow" },
+    { name: "description", content: "Sistema de punto de venta" },
   ];
 };
 
@@ -43,7 +43,7 @@ export default function POSPage() {
   const [isMounted, setIsMounted] = useState(false);
   const { data: session, isLoading: isSessionLoading } = useCurrentSession();
   const { data: productsData, isLoading: isProductsLoading } = useProducts({
-    status: 'ACTIVE',
+    status: "ACTIVE",
     limit: 500,
   });
   const createSaleMutation = useCreateSale();
@@ -66,7 +66,7 @@ export default function POSPage() {
   // Redirect to open session if no active session
   useEffect(() => {
     if (!isSessionLoading && !session) {
-      navigate('/pos/open');
+      navigate("/pos/open");
     }
   }, [session, isSessionLoading, navigate]);
 
@@ -89,7 +89,7 @@ export default function POSPage() {
 
     setCartItems((prev) => {
       const existingIndex = prev.findIndex(
-        (item) => item.productId === product.id
+        (item) => item.productId === product.id,
       );
 
       if (existingIndex >= 0) {
@@ -113,7 +113,7 @@ export default function POSPage() {
                 tax,
                 total: subtotal + tax,
               }
-            : item
+            : item,
         );
       }
 
@@ -144,29 +144,26 @@ export default function POSPage() {
   }, []);
 
   // Update cart item quantity
-  const updateQuantity = useCallback(
-    (productId: string, quantity: number) => {
-      setCartItems((prev) =>
-        prev.map((item) => {
-          if (item.productId !== productId) return item;
+  const updateQuantity = useCallback((productId: string, quantity: number) => {
+    setCartItems((prev) =>
+      prev.map((item) => {
+        if (item.productId !== productId) return item;
 
-          const subtotal = quantity * item.unitPrice;
-          const discountAmount = subtotal * (item.discountPercent / 100);
-          const subtotalAfterDiscount = subtotal - discountAmount;
-          const tax = subtotalAfterDiscount * (item.taxRate / 100);
+        const subtotal = quantity * item.unitPrice;
+        const discountAmount = subtotal * (item.discountPercent / 100);
+        const subtotalAfterDiscount = subtotal - discountAmount;
+        const tax = subtotalAfterDiscount * (item.taxRate / 100);
 
-          return {
-            ...item,
-            quantity,
-            subtotal: subtotalAfterDiscount,
-            tax,
-            total: subtotalAfterDiscount + tax,
-          };
-        })
-      );
-    },
-    []
-  );
+        return {
+          ...item,
+          quantity,
+          subtotal: subtotalAfterDiscount,
+          tax,
+          total: subtotalAfterDiscount + tax,
+        };
+      }),
+    );
+  }, []);
 
   // Remove item from cart
   const removeFromCart = useCallback((productId: string) => {
@@ -190,7 +187,7 @@ export default function POSPage() {
         toast.error(`Producto con codigo "${barcode}" no encontrado`);
       }
     },
-    [products, addToCart]
+    [products, addToCart],
   );
 
   // Barcode scanner hook
@@ -224,14 +221,14 @@ export default function POSPage() {
           discountPercent: globalDiscount,
         });
 
-        toast.success('Venta procesada exitosamente');
+        toast.success("Venta procesada exitosamente");
         setShowPaymentModal(false);
         clearCart();
       } catch {
-        toast.error('Error al procesar la venta');
+        toast.error("Error al procesar la venta");
       }
     },
-    [cartItems, customerId, globalDiscount, createSaleMutation, clearCart]
+    [cartItems, customerId, globalDiscount, createSaleMutation, clearCart],
   );
 
   if (isSessionLoading) {
@@ -248,7 +245,7 @@ export default function POSPage() {
 
   const sessionDuration = session.openedAt
     ? Math.floor(
-        (Date.now() - new Date(session.openedAt).getTime()) / 1000 / 60
+        (Date.now() - new Date(session.openedAt).getTime()) / 1000 / 60,
       )
     : 0;
   const hours = Math.floor(sessionDuration / 60);
@@ -257,7 +254,7 @@ export default function POSPage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial={isMounted ? 'hidden' : false}
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="h-[calc(100vh-8rem)] flex flex-col gap-4"
     >
@@ -291,7 +288,7 @@ export default function POSPage() {
                 </Badge>
                 <Badge className="bg-white/20 text-white border-0">
                   <User className="h-4 w-4 mr-1" />
-                  {session.user?.firstName || 'Usuario'}
+                  {session.user?.firstName || "Usuario"}
                 </Badge>
 
                 <div className="flex gap-2">
@@ -322,7 +319,10 @@ export default function POSPage() {
       </motion.div>
 
       {/* Main POS Interface */}
-      <motion.div variants={itemVariants} className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
+      <motion.div
+        variants={itemVariants}
+        className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0"
+      >
         {/* Product Search & Catalog */}
         <div className="lg:col-span-2 flex flex-col gap-4 min-h-0">
           {/* Search Bar */}
@@ -378,7 +378,7 @@ export default function POSPage() {
                   <p className="text-xs text-neutral-500">Efectivo</p>
                   <p className="text-lg font-bold">
                     {formatCurrency(
-                      session.currentCash || session.openingAmount || 0
+                      session.currentCash || session.openingAmount || 0,
                     )}
                   </p>
                 </div>

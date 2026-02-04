@@ -106,8 +106,10 @@ export default function VerifyEmailPage() {
         // If the error is about invalid token, it might have been verified already
         // Check if the message indicates it was already verified
         const errorMsg = error.message || "Error al verificar el email";
-        if (errorMsg.toLowerCase().includes("already been verified") ||
-            errorMsg.toLowerCase().includes("ya ha sido verificado")) {
+        if (
+          errorMsg.toLowerCase().includes("already been verified") ||
+          errorMsg.toLowerCase().includes("ya ha sido verificado")
+        ) {
           setStatus("success");
         } else {
           setStatus("error");

@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { SystemAdmin } from '~/services/system-admin.service';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { SystemAdmin } from "~/services/system-admin.service";
 
 interface SystemAdminState {
   admin: SystemAdmin | null;
@@ -37,11 +37,11 @@ export const useSystemAdminStore = create<SystemAdminState>()(
         }),
     }),
     {
-      name: 'system-admin-storage',
+      name: "system-admin-storage",
       partialize: (state) => ({
         admin: state.admin,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );

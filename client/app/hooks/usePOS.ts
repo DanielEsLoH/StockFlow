@@ -1,12 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import {
   cashRegistersService,
   posSessionsService,
   posSalesService,
-} from '~/services/pos.service';
-import { queryKeys } from '~/lib/query-client';
-import { toast } from '~/components/ui/Toast';
+} from "~/services/pos.service";
+import { queryKeys } from "~/lib/query-client";
+import { toast } from "~/components/ui/Toast";
 import type {
   CashRegister,
   CashRegisterWithWarehouse,
@@ -26,7 +26,7 @@ import type {
   POSSalesResponse,
   POSSaleFilters,
   CreateSaleData,
-} from '~/types/pos';
+} from "~/types/pos";
 
 // ============================================================================
 // CASH REGISTERS HOOKS
@@ -65,10 +65,10 @@ export function useCreateCashRegister() {
         queryKey: queryKeys.cashRegisters.all,
       });
       toast.success(`Caja "${cashRegister.name}" creada exitosamente`);
-      navigate('/pos/settings/cash-registers');
+      navigate("/pos/settings/cash-registers");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear la caja');
+      toast.error(error.message || "Error al crear la caja");
     },
   });
 }
@@ -86,12 +86,12 @@ export function useUpdateCashRegister() {
       });
       queryClient.setQueryData(
         queryKeys.cashRegisters.detail(cashRegister.id),
-        cashRegister
+        cashRegister,
       );
       toast.success(`Caja "${cashRegister.name}" actualizada exitosamente`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al actualizar la caja');
+      toast.error(error.message || "Error al actualizar la caja");
     },
   });
 }
@@ -106,10 +106,10 @@ export function useDeleteCashRegister() {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.cashRegisters.all,
       });
-      toast.success('Caja eliminada exitosamente');
+      toast.success("Caja eliminada exitosamente");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al eliminar la caja');
+      toast.error(error.message || "Error al eliminar la caja");
     },
   });
 }
@@ -193,11 +193,11 @@ export function useOpenSession() {
         queryKey: queryKeys.cashRegisters.all,
       });
       queryClient.setQueryData(queryKeys.posSessions.current(), session);
-      toast.success('Sesión de caja abierta exitosamente');
-      navigate('/pos');
+      toast.success("Sesión de caja abierta exitosamente");
+      navigate("/pos");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al abrir la sesión');
+      toast.error(error.message || "Error al abrir la sesión");
     },
   });
 }
@@ -225,13 +225,13 @@ export function useCloseSession() {
       queryClient.setQueryData(queryKeys.posSessions.current(), null);
       queryClient.setQueryData(
         queryKeys.posSessions.detail(session.id),
-        session
+        session,
       );
-      toast.success('Sesión de caja cerrada exitosamente');
-      navigate('/pos/sessions');
+      toast.success("Sesión de caja cerrada exitosamente");
+      navigate("/pos/sessions");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al cerrar la sesión');
+      toast.error(error.message || "Error al cerrar la sesión");
     },
   });
 }
@@ -259,15 +259,15 @@ export function useCashMovement() {
         queryKey: queryKeys.posSessions.current(),
       });
       const typeLabels: Record<string, string> = {
-        CASH_IN: 'Ingreso de efectivo',
-        CASH_OUT: 'Retiro de efectivo',
+        CASH_IN: "Ingreso de efectivo",
+        CASH_OUT: "Retiro de efectivo",
       };
       toast.success(
-        `${typeLabels[movement.type] || 'Movimiento'} registrado exitosamente`
+        `${typeLabels[movement.type] || "Movimiento"} registrado exitosamente`,
       );
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al registrar el movimiento');
+      toast.error(error.message || "Error al registrar el movimiento");
     },
   });
 }
@@ -318,7 +318,7 @@ export function useCreateSale() {
       toast.success(`Venta #${sale.saleNumber} creada exitosamente`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al crear la venta');
+      toast.error(error.message || "Error al crear la venta");
     },
   });
 }
@@ -347,7 +347,7 @@ export function useVoidSale() {
       toast.success(`Venta #${sale.saleNumber} anulada exitosamente`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Error al anular la venta');
+      toast.error(error.message || "Error al anular la venta");
     },
   });
 }

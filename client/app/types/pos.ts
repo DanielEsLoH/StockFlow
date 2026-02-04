@@ -1,10 +1,10 @@
-import type { PaymentMethod } from './payment';
+import type { PaymentMethod } from "./payment";
 
 // ============================================================================
 // CASH REGISTER TYPES
 // ============================================================================
 
-export type CashRegisterStatus = 'OPEN' | 'CLOSED' | 'SUSPENDED';
+export type CashRegisterStatus = "OPEN" | "CLOSED" | "SUSPENDED";
 
 export interface CashRegister {
   id: string;
@@ -68,15 +68,15 @@ export interface CashRegisterFilters {
 // POS SESSION TYPES
 // ============================================================================
 
-export type POSSessionStatus = 'ACTIVE' | 'CLOSED' | 'SUSPENDED';
+export type POSSessionStatus = "ACTIVE" | "CLOSED" | "SUSPENDED";
 
 export type CashMovementType =
-  | 'OPENING'
-  | 'CLOSING'
-  | 'SALE'
-  | 'REFUND'
-  | 'CASH_IN'
-  | 'CASH_OUT';
+  | "OPENING"
+  | "CLOSING"
+  | "SALE"
+  | "REFUND"
+  | "CASH_IN"
+  | "CASH_OUT";
 
 export interface POSSession {
   id: string;
@@ -139,7 +139,7 @@ export interface CloseSessionData {
 }
 
 export interface CashMovementData {
-  action: 'CASH_IN' | 'CASH_OUT';
+  action: "CASH_IN" | "CASH_OUT";
   amount: number;
   reference?: string;
   notes?: string;
@@ -171,7 +171,7 @@ export interface POSSessionFilters {
 // ============================================================================
 
 export interface XZReport {
-  type: 'X' | 'Z';
+  type: "X" | "Z";
   session: {
     id: string;
     cashRegisterName: string;
@@ -229,7 +229,7 @@ export interface POSSale {
   createdAt: string;
 }
 
-export type POSSaleStatus = 'COMPLETED' | 'VOIDED';
+export type POSSaleStatus = "COMPLETED" | "VOIDED";
 
 export interface POSSaleItem {
   id: string;

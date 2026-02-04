@@ -174,7 +174,10 @@ export default function CustomersPage() {
           </div>
         </div>
         <Link to="/customers/new">
-          <Button variant="gradient" leftIcon={<UserPlus className="h-4 w-4" />}>
+          <Button
+            variant="gradient"
+            leftIcon={<UserPlus className="h-4 w-4" />}
+          >
             Nuevo Cliente
           </Button>
         </Link>
@@ -189,8 +192,12 @@ export default function CustomersPage() {
                 <Users className="h-5 w-5 text-primary-600 dark:text-primary-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{meta?.total || 0}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Total Clientes</p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {meta?.total || 0}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Total Clientes
+                </p>
               </div>
             </div>
           </Card>
@@ -200,8 +207,12 @@ export default function CustomersPage() {
                 <CheckCircle className="h-5 w-5 text-success-600 dark:text-success-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{activeCount}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Activos</p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {activeCount}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Activos
+                </p>
               </div>
             </div>
           </Card>
@@ -211,8 +222,12 @@ export default function CustomersPage() {
                 <Building2 className="h-5 w-5 text-warning-600 dark:text-warning-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{businessCount}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Empresas</p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {businessCount}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Empresas
+                </p>
               </div>
             </div>
           </Card>
@@ -222,8 +237,12 @@ export default function CustomersPage() {
                 <User className="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-neutral-900 dark:text-white">{(meta?.total || 0) - businessCount}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Personas</p>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-white">
+                  {(meta?.total || 0) - businessCount}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Personas
+                </p>
               </div>
             </div>
           </Card>
@@ -372,7 +391,10 @@ export default function CustomersPage() {
               action={
                 hasActiveFilters
                   ? { label: "Limpiar filtros", onClick: clearFilters }
-                  : { label: "Agregar cliente", onClick: () => (window.location.href = "/customers/new") }
+                  : {
+                      label: "Agregar cliente",
+                      onClick: () => (window.location.href = "/customers/new"),
+                    }
               }
             />
           ) : (
@@ -404,12 +426,14 @@ export default function CustomersPage() {
                       >
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className={cn(
-                              "flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-105",
-                              customer.type === "BUSINESS"
-                                ? "bg-gradient-to-br from-primary-500/20 to-accent-500/10"
-                                : "bg-gradient-to-br from-accent-500/20 to-primary-500/10"
-                            )}>
+                            <div
+                              className={cn(
+                                "flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-105",
+                                customer.type === "BUSINESS"
+                                  ? "bg-gradient-to-br from-primary-500/20 to-accent-500/10"
+                                  : "bg-gradient-to-br from-accent-500/20 to-primary-500/10",
+                              )}
+                            >
                               {customer.type === "BUSINESS" ? (
                                 <Building2 className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                               ) : (
@@ -424,7 +448,9 @@ export default function CustomersPage() {
                                 {customer.document || "Sin documento"}
                                 {customer.city && (
                                   <>
-                                    <span className="text-neutral-300 dark:text-neutral-600">•</span>
+                                    <span className="text-neutral-300 dark:text-neutral-600">
+                                      •
+                                    </span>
                                     <MapPin className="h-3 w-3" />
                                     {customer.city}
                                   </>
@@ -462,7 +488,13 @@ export default function CustomersPage() {
                                 ? "outline-primary"
                                 : "outline"
                             }
-                            icon={customer.type === "BUSINESS" ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                            icon={
+                              customer.type === "BUSINESS" ? (
+                                <Building2 className="h-3 w-3" />
+                              ) : (
+                                <User className="h-3 w-3" />
+                              )
+                            }
                           >
                             {customer.type === "BUSINESS"
                               ? "Empresa"

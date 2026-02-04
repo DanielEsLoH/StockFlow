@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect } from "vitest";
+import { render, screen } from "@testing-library/react";
 import {
   Table,
   TableHeader,
@@ -9,11 +9,11 @@ import {
   TableRow,
   TableCell,
   TableCaption,
-} from './Table';
+} from "./Table";
 
-describe('Table Components', () => {
-  describe('Table', () => {
-    it('should render a table element', () => {
+describe("Table Components", () => {
+  describe("Table", () => {
+    it("should render a table element", () => {
       render(
         <Table data-testid="table">
           <tbody>
@@ -21,14 +21,14 @@ describe('Table Components', () => {
               <td>Content</td>
             </tr>
           </tbody>
-        </Table>
+        </Table>,
       );
 
-      const table = screen.getByTestId('table');
-      expect(table.tagName).toBe('TABLE');
+      const table = screen.getByTestId("table");
+      expect(table.tagName).toBe("TABLE");
     });
 
-    it('should apply default classes', () => {
+    it("should apply default classes", () => {
       render(
         <Table data-testid="table">
           <tbody>
@@ -36,16 +36,16 @@ describe('Table Components', () => {
               <td>Content</td>
             </tr>
           </tbody>
-        </Table>
+        </Table>,
       );
 
-      const table = screen.getByTestId('table');
-      expect(table).toHaveClass('w-full');
-      expect(table).toHaveClass('caption-bottom');
-      expect(table).toHaveClass('text-sm');
+      const table = screen.getByTestId("table");
+      expect(table).toHaveClass("w-full");
+      expect(table).toHaveClass("caption-bottom");
+      expect(table).toHaveClass("text-sm");
     });
 
-    it('should allow custom className', () => {
+    it("should allow custom className", () => {
       render(
         <Table data-testid="table" className="custom-class">
           <tbody>
@@ -53,14 +53,14 @@ describe('Table Components', () => {
               <td>Content</td>
             </tr>
           </tbody>
-        </Table>
+        </Table>,
       );
 
-      const table = screen.getByTestId('table');
-      expect(table).toHaveClass('custom-class');
+      const table = screen.getByTestId("table");
+      expect(table).toHaveClass("custom-class");
     });
 
-    it('should wrap table in overflow container', () => {
+    it("should wrap table in overflow container", () => {
       render(
         <Table data-testid="table">
           <tbody>
@@ -68,17 +68,17 @@ describe('Table Components', () => {
               <td>Content</td>
             </tr>
           </tbody>
-        </Table>
+        </Table>,
       );
 
-      const table = screen.getByTestId('table');
+      const table = screen.getByTestId("table");
       const wrapper = table.parentElement;
-      expect(wrapper).toHaveClass('overflow-auto');
+      expect(wrapper).toHaveClass("overflow-auto");
     });
   });
 
-  describe('TableHeader', () => {
-    it('should render a thead element', () => {
+  describe("TableHeader", () => {
+    it("should render a thead element", () => {
       render(
         <table>
           <TableHeader data-testid="thead">
@@ -86,14 +86,14 @@ describe('Table Components', () => {
               <th>Header</th>
             </tr>
           </TableHeader>
-        </table>
+        </table>,
       );
 
-      const thead = screen.getByTestId('thead');
-      expect(thead.tagName).toBe('THEAD');
+      const thead = screen.getByTestId("thead");
+      expect(thead.tagName).toBe("THEAD");
     });
 
-    it('should apply border styles to child rows', () => {
+    it("should apply border styles to child rows", () => {
       render(
         <table>
           <TableHeader data-testid="thead">
@@ -101,14 +101,14 @@ describe('Table Components', () => {
               <th>Header</th>
             </tr>
           </TableHeader>
-        </table>
+        </table>,
       );
 
-      const thead = screen.getByTestId('thead');
-      expect(thead).toHaveClass('[&_tr]:border-b');
+      const thead = screen.getByTestId("thead");
+      expect(thead).toHaveClass("[&_tr]:border-b");
     });
 
-    it('should allow custom className', () => {
+    it("should allow custom className", () => {
       render(
         <table>
           <TableHeader data-testid="thead" className="custom-header">
@@ -116,16 +116,16 @@ describe('Table Components', () => {
               <th>Header</th>
             </tr>
           </TableHeader>
-        </table>
+        </table>,
       );
 
-      const thead = screen.getByTestId('thead');
-      expect(thead).toHaveClass('custom-header');
+      const thead = screen.getByTestId("thead");
+      expect(thead).toHaveClass("custom-header");
     });
   });
 
-  describe('TableBody', () => {
-    it('should render a tbody element', () => {
+  describe("TableBody", () => {
+    it("should render a tbody element", () => {
       render(
         <table>
           <TableBody data-testid="tbody">
@@ -133,14 +133,14 @@ describe('Table Components', () => {
               <td>Content</td>
             </tr>
           </TableBody>
-        </table>
+        </table>,
       );
 
-      const tbody = screen.getByTestId('tbody');
-      expect(tbody.tagName).toBe('TBODY');
+      const tbody = screen.getByTestId("tbody");
+      expect(tbody.tagName).toBe("TBODY");
     });
 
-    it('should remove border from last row', () => {
+    it("should remove border from last row", () => {
       render(
         <table>
           <TableBody data-testid="tbody">
@@ -148,14 +148,14 @@ describe('Table Components', () => {
               <td>Content</td>
             </tr>
           </TableBody>
-        </table>
+        </table>,
       );
 
-      const tbody = screen.getByTestId('tbody');
-      expect(tbody).toHaveClass('[&_tr:last-child]:border-0');
+      const tbody = screen.getByTestId("tbody");
+      expect(tbody).toHaveClass("[&_tr:last-child]:border-0");
     });
 
-    it('should allow custom className', () => {
+    it("should allow custom className", () => {
       render(
         <table>
           <TableBody data-testid="tbody" className="custom-body">
@@ -163,16 +163,16 @@ describe('Table Components', () => {
               <td>Content</td>
             </tr>
           </TableBody>
-        </table>
+        </table>,
       );
 
-      const tbody = screen.getByTestId('tbody');
-      expect(tbody).toHaveClass('custom-body');
+      const tbody = screen.getByTestId("tbody");
+      expect(tbody).toHaveClass("custom-body");
     });
   });
 
-  describe('TableFooter', () => {
-    it('should render a tfoot element', () => {
+  describe("TableFooter", () => {
+    it("should render a tfoot element", () => {
       render(
         <table>
           <TableFooter data-testid="tfoot">
@@ -180,14 +180,14 @@ describe('Table Components', () => {
               <td>Footer</td>
             </tr>
           </TableFooter>
-        </table>
+        </table>,
       );
 
-      const tfoot = screen.getByTestId('tfoot');
-      expect(tfoot.tagName).toBe('TFOOT');
+      const tfoot = screen.getByTestId("tfoot");
+      expect(tfoot.tagName).toBe("TFOOT");
     });
 
-    it('should apply footer styles', () => {
+    it("should apply footer styles", () => {
       render(
         <table>
           <TableFooter data-testid="tfoot">
@@ -195,17 +195,17 @@ describe('Table Components', () => {
               <td>Footer</td>
             </tr>
           </TableFooter>
-        </table>
+        </table>,
       );
 
-      const tfoot = screen.getByTestId('tfoot');
-      expect(tfoot).toHaveClass('border-t');
-      expect(tfoot).toHaveClass('font-medium');
+      const tfoot = screen.getByTestId("tfoot");
+      expect(tfoot).toHaveClass("border-t");
+      expect(tfoot).toHaveClass("font-medium");
     });
   });
 
-  describe('TableRow', () => {
-    it('should render a tr element', () => {
+  describe("TableRow", () => {
+    it("should render a tr element", () => {
       render(
         <table>
           <tbody>
@@ -213,14 +213,14 @@ describe('Table Components', () => {
               <td>Cell</td>
             </TableRow>
           </tbody>
-        </table>
+        </table>,
       );
 
-      const row = screen.getByTestId('row');
-      expect(row.tagName).toBe('TR');
+      const row = screen.getByTestId("row");
+      expect(row.tagName).toBe("TR");
     });
 
-    it('should apply hover and border styles', () => {
+    it("should apply hover and border styles", () => {
       render(
         <table>
           <tbody>
@@ -228,15 +228,15 @@ describe('Table Components', () => {
               <td>Cell</td>
             </TableRow>
           </tbody>
-        </table>
+        </table>,
       );
 
-      const row = screen.getByTestId('row');
-      expect(row).toHaveClass('border-b');
-      expect(row).toHaveClass('transition-colors');
+      const row = screen.getByTestId("row");
+      expect(row).toHaveClass("border-b");
+      expect(row).toHaveClass("transition-colors");
     });
 
-    it('should allow custom className', () => {
+    it("should allow custom className", () => {
       render(
         <table>
           <tbody>
@@ -244,16 +244,16 @@ describe('Table Components', () => {
               <td>Cell</td>
             </TableRow>
           </tbody>
-        </table>
+        </table>,
       );
 
-      const row = screen.getByTestId('row');
-      expect(row).toHaveClass('selected-row');
+      const row = screen.getByTestId("row");
+      expect(row).toHaveClass("selected-row");
     });
   });
 
-  describe('TableHead', () => {
-    it('should render a th element', () => {
+  describe("TableHead", () => {
+    it("should render a th element", () => {
       render(
         <table>
           <thead>
@@ -261,14 +261,14 @@ describe('Table Components', () => {
               <TableHead data-testid="th">Header</TableHead>
             </tr>
           </thead>
-        </table>
+        </table>,
       );
 
-      const th = screen.getByTestId('th');
-      expect(th.tagName).toBe('TH');
+      const th = screen.getByTestId("th");
+      expect(th.tagName).toBe("TH");
     });
 
-    it('should have proper header styles', () => {
+    it("should have proper header styles", () => {
       render(
         <table>
           <thead>
@@ -276,17 +276,17 @@ describe('Table Components', () => {
               <TableHead data-testid="th">Header</TableHead>
             </tr>
           </thead>
-        </table>
+        </table>,
       );
 
-      const th = screen.getByTestId('th');
-      expect(th).toHaveClass('h-12');
-      expect(th).toHaveClass('px-4');
-      expect(th).toHaveClass('text-left');
-      expect(th).toHaveClass('font-medium');
+      const th = screen.getByTestId("th");
+      expect(th).toHaveClass("h-12");
+      expect(th).toHaveClass("px-4");
+      expect(th).toHaveClass("text-left");
+      expect(th).toHaveClass("font-medium");
     });
 
-    it('should render header content', () => {
+    it("should render header content", () => {
       render(
         <table>
           <thead>
@@ -294,15 +294,15 @@ describe('Table Components', () => {
               <TableHead>Product Name</TableHead>
             </tr>
           </thead>
-        </table>
+        </table>,
       );
 
-      expect(screen.getByText('Product Name')).toBeInTheDocument();
+      expect(screen.getByText("Product Name")).toBeInTheDocument();
     });
   });
 
-  describe('TableCell', () => {
-    it('should render a td element', () => {
+  describe("TableCell", () => {
+    it("should render a td element", () => {
       render(
         <table>
           <tbody>
@@ -310,14 +310,14 @@ describe('Table Components', () => {
               <TableCell data-testid="td">Cell Content</TableCell>
             </tr>
           </tbody>
-        </table>
+        </table>,
       );
 
-      const td = screen.getByTestId('td');
-      expect(td.tagName).toBe('TD');
+      const td = screen.getByTestId("td");
+      expect(td.tagName).toBe("TD");
     });
 
-    it('should have proper cell styles', () => {
+    it("should have proper cell styles", () => {
       render(
         <table>
           <tbody>
@@ -325,15 +325,15 @@ describe('Table Components', () => {
               <TableCell data-testid="td">Cell Content</TableCell>
             </tr>
           </tbody>
-        </table>
+        </table>,
       );
 
-      const td = screen.getByTestId('td');
-      expect(td).toHaveClass('p-4');
-      expect(td).toHaveClass('align-middle');
+      const td = screen.getByTestId("td");
+      expect(td).toHaveClass("p-4");
+      expect(td).toHaveClass("align-middle");
     });
 
-    it('should render cell content', () => {
+    it("should render cell content", () => {
       render(
         <table>
           <tbody>
@@ -341,13 +341,13 @@ describe('Table Components', () => {
               <TableCell>Test Value</TableCell>
             </tr>
           </tbody>
-        </table>
+        </table>,
       );
 
-      expect(screen.getByText('Test Value')).toBeInTheDocument();
+      expect(screen.getByText("Test Value")).toBeInTheDocument();
     });
 
-    it('should allow custom className', () => {
+    it("should allow custom className", () => {
       render(
         <table>
           <tbody>
@@ -357,16 +357,16 @@ describe('Table Components', () => {
               </TableCell>
             </tr>
           </tbody>
-        </table>
+        </table>,
       );
 
-      const td = screen.getByTestId('td');
-      expect(td).toHaveClass('text-right');
+      const td = screen.getByTestId("td");
+      expect(td).toHaveClass("text-right");
     });
   });
 
-  describe('TableCaption', () => {
-    it('should render a caption element', () => {
+  describe("TableCaption", () => {
+    it("should render a caption element", () => {
       render(
         <Table>
           <TableCaption data-testid="caption">Table Caption</TableCaption>
@@ -375,14 +375,14 @@ describe('Table Components', () => {
               <td>Content</td>
             </tr>
           </tbody>
-        </Table>
+        </Table>,
       );
 
-      const caption = screen.getByTestId('caption');
-      expect(caption.tagName).toBe('CAPTION');
+      const caption = screen.getByTestId("caption");
+      expect(caption.tagName).toBe("CAPTION");
     });
 
-    it('should have proper caption styles', () => {
+    it("should have proper caption styles", () => {
       render(
         <Table>
           <TableCaption data-testid="caption">Table Caption</TableCaption>
@@ -391,15 +391,15 @@ describe('Table Components', () => {
               <td>Content</td>
             </tr>
           </tbody>
-        </Table>
+        </Table>,
       );
 
-      const caption = screen.getByTestId('caption');
-      expect(caption).toHaveClass('mt-4');
-      expect(caption).toHaveClass('text-sm');
+      const caption = screen.getByTestId("caption");
+      expect(caption).toHaveClass("mt-4");
+      expect(caption).toHaveClass("text-sm");
     });
 
-    it('should render caption content', () => {
+    it("should render caption content", () => {
       render(
         <Table>
           <TableCaption>A list of products</TableCaption>
@@ -408,15 +408,15 @@ describe('Table Components', () => {
               <td>Content</td>
             </tr>
           </tbody>
-        </Table>
+        </Table>,
       );
 
-      expect(screen.getByText('A list of products')).toBeInTheDocument();
+      expect(screen.getByText("A list of products")).toBeInTheDocument();
     });
   });
 
-  describe('Complete Table', () => {
-    it('should render a complete table with all components', () => {
+  describe("Complete Table", () => {
+    it("should render a complete table with all components", () => {
       render(
         <Table>
           <TableCaption>Products List</TableCaption>
@@ -445,19 +445,19 @@ describe('Table Components', () => {
               <TableCell>75</TableCell>
             </TableRow>
           </TableFooter>
-        </Table>
+        </Table>,
       );
 
-      expect(screen.getByText('Products List')).toBeInTheDocument();
-      expect(screen.getByText('Name')).toBeInTheDocument();
-      expect(screen.getByText('Price')).toBeInTheDocument();
-      expect(screen.getByText('Stock')).toBeInTheDocument();
-      expect(screen.getByText('iPhone')).toBeInTheDocument();
-      expect(screen.getByText('MacBook')).toBeInTheDocument();
-      expect(screen.getByText('Total')).toBeInTheDocument();
+      expect(screen.getByText("Products List")).toBeInTheDocument();
+      expect(screen.getByText("Name")).toBeInTheDocument();
+      expect(screen.getByText("Price")).toBeInTheDocument();
+      expect(screen.getByText("Stock")).toBeInTheDocument();
+      expect(screen.getByText("iPhone")).toBeInTheDocument();
+      expect(screen.getByText("MacBook")).toBeInTheDocument();
+      expect(screen.getByText("Total")).toBeInTheDocument();
     });
 
-    it('should have proper accessibility structure', () => {
+    it("should have proper accessibility structure", () => {
       render(
         <Table aria-label="Products table">
           <TableHeader>
@@ -472,14 +472,14 @@ describe('Table Components', () => {
               <TableCell>$999</TableCell>
             </TableRow>
           </TableBody>
-        </Table>
+        </Table>,
       );
 
-      const table = screen.getByRole('table');
+      const table = screen.getByRole("table");
       expect(table).toBeInTheDocument();
-      expect(table).toHaveAttribute('aria-label', 'Products table');
+      expect(table).toHaveAttribute("aria-label", "Products table");
 
-      const columnHeaders = screen.getAllByRole('columnheader');
+      const columnHeaders = screen.getAllByRole("columnheader");
       expect(columnHeaders).toHaveLength(2);
     });
   });

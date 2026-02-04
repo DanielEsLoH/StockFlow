@@ -1,54 +1,60 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { motion } from 'framer-motion';
-import { containerVariants, itemVariants } from '~/lib/animations';
+import { useState, useEffect } from "react";
+import { Link } from "react-router";
+import { motion } from "framer-motion";
+import { containerVariants, itemVariants } from "~/lib/animations";
 import {
   Play,
   DollarSign,
   Warehouse,
   ArrowLeft,
   AlertCircle,
-} from 'lucide-react';
-import type { Route } from './+types/_app.pos.open';
-import { useCashRegisters, useOpenSession, useCurrentSession } from '~/hooks/usePOS';
-import { Button } from '~/components/ui/Button';
-import { Card } from '~/components/ui/Card';
-import { Input } from '~/components/ui/Input';
-import { Select } from '~/components/ui/Select';
-import { formatCurrency } from '~/lib/utils';
+} from "lucide-react";
+import type { Route } from "./+types/_app.pos.open";
+import {
+  useCashRegisters,
+  useOpenSession,
+  useCurrentSession,
+} from "~/hooks/usePOS";
+import { Button } from "~/components/ui/Button";
+import { Card } from "~/components/ui/Card";
+import { Input } from "~/components/ui/Input";
+import { Select } from "~/components/ui/Select";
+import { formatCurrency } from "~/lib/utils";
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Abrir Turno - POS - StockFlow' },
-    { name: 'description', content: 'Abrir turno de caja' },
+    { title: "Abrir Turno - POS - StockFlow" },
+    { name: "description", content: "Abrir turno de caja" },
   ];
 };
 
 export default function POSOpenPage() {
   const [isMounted, setIsMounted] = useState(false);
-  const [selectedRegister, setSelectedRegister] = useState('');
-  const [openingAmount, setOpeningAmount] = useState('');
-  const [notes, setNotes] = useState('');
+  const [selectedRegister, setSelectedRegister] = useState("");
+  const [openingAmount, setOpeningAmount] = useState("");
+  const [notes, setNotes] = useState("");
 
-  const { data: registersData, isLoading: loadingRegisters } = useCashRegisters({
-    status: 'OPEN',
-  });
-  const { data: currentSession, isLoading: loadingSession } = useCurrentSession();
+  const { data: registersData, isLoading: loadingRegisters } = useCashRegisters(
+    {
+      status: "OPEN",
+    },
+  );
+  const { data: currentSession, isLoading: loadingSession } =
+    useCurrentSession();
   const openSession = useOpenSession();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const availableRegisters = registersData?.data.filter(
-    (r) => r.status === 'OPEN'
-  ) || [];
+  const availableRegisters =
+    registersData?.data.filter((r) => r.status === "OPEN") || [];
 
   const registerOptions = [
-    { value: '', label: 'Seleccionar caja...' },
+    { value: "", label: "Seleccionar caja..." },
     ...availableRegisters.map((r) => ({
       value: r.id,
-      label: `${r.name} - ${r.warehouse?.name || 'Sin bodega'}`,
+      label: `${r.name} - ${r.warehouse?.name || "Sin bodega"}`,
     })),
   ];
 
@@ -69,7 +75,7 @@ export default function POSOpenPage() {
   return (
     <motion.div
       variants={containerVariants}
-      initial={isMounted ? 'hidden' : false}
+      initial={isMounted ? "hidden" : false}
       animate="visible"
       className="max-w-2xl mx-auto space-y-6"
     >
@@ -184,7 +190,11 @@ export default function POSOpenPage() {
                       Caja:
                     </span>
                     <span className="text-neutral-900 dark:text-white font-medium">
-                      {registerOptions.find((r) => r.value === selectedRegister)?.label}
+                      {
+                        registerOptions.find(
+                          (r) => r.value === selectedRegister,
+                        )?.label
+                      }
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -207,10 +217,12 @@ export default function POSOpenPage() {
                 </Link>
                 <Button
                   type="submit"
-                  disabled={!selectedRegister || !openingAmount || openSession.isPending}
+                  disabled={
+                    !selectedRegister || !openingAmount || openSession.isPending
+                  }
                   leftIcon={<Play className="h-4 w-4" />}
                 >
-                  {openSession.isPending ? 'Abriendo...' : 'Abrir Turno'}
+                  {openSession.isPending ? "Abriendo..." : "Abrir Turno"}
                 </Button>
               </div>
             </form>
@@ -230,8 +242,8 @@ export default function POSOpenPage() {
                 No hay cajas disponibles
               </h3>
               <p className="mb-6 max-w-sm text-neutral-500 dark:text-neutral-400">
-                Todas las cajas estan ocupadas o cerradas. Contacta al administrador
-                para habilitar una caja.
+                Todas las cajas estan ocupadas o cerradas. Contacta al
+                administrador para habilitar una caja.
               </p>
               <Link to="/pos/cash-registers">
                 <Button variant="outline">Ver Cajas Registradoras</Button>

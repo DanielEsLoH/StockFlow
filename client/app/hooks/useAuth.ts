@@ -1,12 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
-import { authService } from '~/services/auth.service';
-import { useAuthStore } from '~/stores/auth.store';
-import { queryKeys } from '~/lib/query-client';
-import { getAccessToken } from '~/lib/api';
-import { getErrorMessage } from '~/lib/error-messages';
-import { toast } from '~/components/ui/Toast';
-import type { LoginCredentials, RegisterData, AcceptInvitationData } from '~/services/auth.service';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
+import { authService } from "~/services/auth.service";
+import { useAuthStore } from "~/stores/auth.store";
+import { queryKeys } from "~/lib/query-client";
+import { getAccessToken } from "~/lib/api";
+import { getErrorMessage } from "~/lib/error-messages";
+import { toast } from "~/components/ui/Toast";
+import type {
+  LoginCredentials,
+  RegisterData,
+  AcceptInvitationData,
+} from "~/services/auth.service";
 
 export function useAuth() {
   const navigate = useNavigate();
@@ -35,10 +39,12 @@ export function useAuth() {
       setTenant(data.tenant);
       queryClient.setQueryData(queryKeys.auth.me(), data);
       toast.success(`Bienvenido, ${data.user.firstName}!`);
-      navigate('/dashboard');
+      navigate("/dashboard");
     },
     onError: (error: Error) => {
-      toast.error(getErrorMessage(error, 'El correo o la contrasena son incorrectos'));
+      toast.error(
+        getErrorMessage(error, "El correo o la contrasena son incorrectos"),
+      );
     },
   });
 
@@ -48,12 +54,17 @@ export function useAuth() {
     onSuccess: () => {
       // Registration successful - prompt user to verify email
       toast.success(
-        `Registro exitoso! Te hemos enviado un correo de verificacion. Por favor verifica tu email antes de iniciar sesion.`
+        `Registro exitoso! Te hemos enviado un correo de verificacion. Por favor verifica tu email antes de iniciar sesion.`,
       );
-      navigate('/login');
+      navigate("/login");
     },
     onError: (error: Error) => {
-      toast.error(getErrorMessage(error, 'No se pudo completar el registro. Intenta de nuevo.'));
+      toast.error(
+        getErrorMessage(
+          error,
+          "No se pudo completar el registro. Intenta de nuevo.",
+        ),
+      );
     },
   });
 
@@ -63,8 +74,8 @@ export function useAuth() {
     onSuccess: () => {
       clearAuth();
       queryClient.clear();
-      navigate('/login');
-      toast.success('Sesion cerrada');
+      navigate("/login");
+      toast.success("Sesion cerrada");
     },
   });
 
@@ -72,10 +83,17 @@ export function useAuth() {
   const forgotPasswordMutation = useMutation({
     mutationFn: (email: string) => authService.forgotPassword(email),
     onSuccess: () => {
-      toast.success('Se ha enviado un correo con instrucciones para restablecer tu contrasena');
+      toast.success(
+        "Se ha enviado un correo con instrucciones para restablecer tu contrasena",
+      );
     },
     onError: (error: Error) => {
-      toast.error(getErrorMessage(error, 'No se pudo enviar el correo. Intenta de nuevo.'));
+      toast.error(
+        getErrorMessage(
+          error,
+          "No se pudo enviar el correo. Intenta de nuevo.",
+        ),
+      );
     },
   });
 
@@ -84,11 +102,18 @@ export function useAuth() {
     mutationFn: ({ token, password }: { token: string; password: string }) =>
       authService.resetPassword(token, password),
     onSuccess: () => {
-      toast.success('Tu contrasena ha sido actualizada. Ya puedes iniciar sesion.');
-      navigate('/login');
+      toast.success(
+        "Tu contrasena ha sido actualizada. Ya puedes iniciar sesion.",
+      );
+      navigate("/login");
     },
     onError: (error: Error) => {
-      toast.error(getErrorMessage(error, 'No se pudo restablecer la contrasena. Intenta de nuevo.'));
+      toast.error(
+        getErrorMessage(
+          error,
+          "No se pudo restablecer la contrasena. Intenta de nuevo.",
+        ),
+      );
     },
   });
 
@@ -96,10 +121,15 @@ export function useAuth() {
   const verifyEmailMutation = useMutation({
     mutationFn: (token: string) => authService.verifyEmail(token),
     onSuccess: () => {
-      toast.success('Tu correo ha sido verificado correctamente');
+      toast.success("Tu correo ha sido verificado correctamente");
     },
     onError: (error: Error) => {
-      toast.error(getErrorMessage(error, 'No se pudo verificar tu correo. Solicita un nuevo enlace.'));
+      toast.error(
+        getErrorMessage(
+          error,
+          "No se pudo verificar tu correo. Solicita un nuevo enlace.",
+        ),
+      );
     },
   });
 
@@ -107,25 +137,40 @@ export function useAuth() {
   const resendVerificationMutation = useMutation({
     mutationFn: (email: string) => authService.resendVerification(email),
     onSuccess: () => {
-      toast.success('Te hemos enviado un nuevo correo de verificacion. Revisa tu bandeja de entrada.');
+      toast.success(
+        "Te hemos enviado un nuevo correo de verificacion. Revisa tu bandeja de entrada.",
+      );
     },
     onError: (error: Error) => {
-      toast.error(getErrorMessage(error, 'No se pudo enviar el correo de verificacion. Intenta de nuevo.'));
+      toast.error(
+        getErrorMessage(
+          error,
+          "No se pudo enviar el correo de verificacion. Intenta de nuevo.",
+        ),
+      );
     },
   });
 
   // Accept invitation mutation
   const acceptInvitationMutation = useMutation({
-    mutationFn: (data: AcceptInvitationData) => authService.acceptInvitation(data),
+    mutationFn: (data: AcceptInvitationData) =>
+      authService.acceptInvitation(data),
     onSuccess: (data) => {
       setUser(data.user);
       setTenant(data.tenant);
       queryClient.setQueryData(queryKeys.auth.me(), data);
-      toast.success(`Bienvenido a ${data.tenant.name}, ${data.user.firstName}!`);
-      navigate('/dashboard');
+      toast.success(
+        `Bienvenido a ${data.tenant.name}, ${data.user.firstName}!`,
+      );
+      navigate("/dashboard");
     },
     onError: (error: Error) => {
-      toast.error(getErrorMessage(error, 'No se pudo aceptar la invitacion. Intenta de nuevo.'));
+      toast.error(
+        getErrorMessage(
+          error,
+          "No se pudo aceptar la invitacion. Intenta de nuevo.",
+        ),
+      );
     },
   });
 
@@ -167,7 +212,7 @@ export function useAuth() {
  */
 export function useInvitation(token: string | null) {
   return useQuery({
-    queryKey: ['invitation', token],
+    queryKey: ["invitation", token],
     queryFn: () => authService.getInvitation(token!),
     enabled: !!token,
     retry: false,

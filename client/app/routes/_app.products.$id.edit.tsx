@@ -102,10 +102,7 @@ export default function EditProductPage() {
     isError,
     error,
   } = useProduct(id!);
-  const {
-    categories,
-    isLoading: isLoadingFormData,
-  } = useProductFormData();
+  const { categories, isLoading: isLoadingFormData } = useProductFormData();
   const updateProduct = useUpdateProduct();
 
   const {
@@ -162,7 +159,8 @@ export default function EditProductPage() {
   // Calculate margin for preview
   const salePrice = watch("salePrice") || 0;
   const costPrice = watch("costPrice") || 0;
-  const margin = salePrice > 0 ? ((salePrice - costPrice) / salePrice) * 100 : 0;
+  const margin =
+    salePrice > 0 ? ((salePrice - costPrice) / salePrice) * 100 : 0;
 
   const isLoading = isLoadingProduct || isLoadingFormData;
 

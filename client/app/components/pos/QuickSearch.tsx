@@ -1,7 +1,7 @@
-import { useRef, useEffect, useCallback } from 'react';
-import { Search, X } from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { Input } from '~/components/ui/Input';
+import { useRef, useEffect, useCallback } from "react";
+import { Search, X } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { Input } from "~/components/ui/Input";
 
 interface QuickSearchProps {
   value: string;
@@ -15,10 +15,10 @@ interface QuickSearchProps {
 export function QuickSearch({
   value,
   onChange,
-  placeholder = 'Buscar productos... (F2)',
+  placeholder = "Buscar productos... (F2)",
   className,
   autoFocus = false,
-  shortcutKey = 'F2',
+  shortcutKey = "F2",
 }: QuickSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -31,26 +31,26 @@ export function QuickSearch({
         inputRef.current?.select();
       }
       // Escape to clear and blur
-      if (e.key === 'Escape' && document.activeElement === inputRef.current) {
-        onChange('');
+      if (e.key === "Escape" && document.activeElement === inputRef.current) {
+        onChange("");
         inputRef.current?.blur();
       }
     },
-    [shortcutKey, onChange]
+    [shortcutKey, onChange],
   );
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
   const handleClear = () => {
-    onChange('');
+    onChange("");
     inputRef.current?.focus();
   };
 
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn("relative", className)}>
       <Input
         ref={inputRef}
         type="text"
@@ -58,9 +58,7 @@ export function QuickSearch({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        leftElement={
-          <Search className="h-4 w-4 text-neutral-400" />
-        }
+        leftElement={<Search className="h-4 w-4 text-neutral-400" />}
         rightElement={
           value ? (
             <button

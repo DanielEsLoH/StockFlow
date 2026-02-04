@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
 import { Button } from './Button';
 
-interface DeleteModalProps {
+export interface DeleteModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   itemName: string;
@@ -12,6 +12,9 @@ interface DeleteModalProps {
   isLoading?: boolean;
   title?: string;
   description?: string;
+  actionLabel?: string;
+  variant?: 'danger' | 'warning';
+  children?: React.ReactNode;
 }
 
 const modalVariants = {
@@ -29,6 +32,9 @@ export function DeleteModal({
   isLoading = false,
   title,
   description,
+  actionLabel = 'Eliminar',
+  variant = 'danger',
+  children,
 }: DeleteModalProps) {
   const handleConfirm = async () => {
     await onConfirm();
@@ -67,8 +73,14 @@ export function DeleteModal({
             {/* Content */}
             <div className="p-6 text-center">
               {/* Warning icon */}
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-error-50 dark:bg-error-900/20">
-                <AlertTriangle className="h-7 w-7 text-error-500" />
+              <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${
+                variant === 'warning'
+                  ? 'bg-warning-50 dark:bg-warning-900/20'
+                  : 'bg-error-50 dark:bg-error-900/20'
+              }`}>
+                <AlertTriangle className={`h-7 w-7 ${
+                  variant === 'warning' ? 'text-warning-500' : 'text-error-500'
+                }`} />
               </div>
 
               {/* Title */}
@@ -77,10 +89,10 @@ export function DeleteModal({
               </h3>
 
               {/* Description */}
-              <p className="mb-6 text-neutral-500 dark:text-neutral-400">
+              <p className="mb-4 text-neutral-500 dark:text-neutral-400">
                 {description || (
                   <>
-                    ¿Estas seguro de que deseas eliminar{' '}
+                    ¿Estas seguro de que deseas {actionLabel.toLowerCase()}{' '}
                     <span className="font-medium text-neutral-900 dark:text-white">
                       "{itemName}"
                     </span>
@@ -88,6 +100,9 @@ export function DeleteModal({
                   </>
                 )}
               </p>
+
+              {/* Custom children content */}
+              {children && <div className="mb-6">{children}</div>}
 
               {/* Actions */}
               <div className="flex justify-center gap-3">
@@ -103,7 +118,7 @@ export function DeleteModal({
                   onClick={handleConfirm}
                   isLoading={isLoading}
                 >
-                  Eliminar
+                  {actionLabel}
                 </Button>
               </div>
             </div>

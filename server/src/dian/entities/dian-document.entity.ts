@@ -20,7 +20,9 @@ export class DianDocumentEntity {
   @ApiPropertyOptional({ description: 'Codigo Unico de Factura Electronica' })
   cufe?: string;
 
-  @ApiPropertyOptional({ description: 'Codigo Unico de Documento Electronico (notas)' })
+  @ApiPropertyOptional({
+    description: 'Codigo Unico de Documento Electronico (notas)',
+  })
   cude?: string;
 
   @ApiPropertyOptional({ description: 'Codigo QR en base64' })

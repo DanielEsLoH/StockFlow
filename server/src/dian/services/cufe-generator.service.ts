@@ -107,7 +107,9 @@ export class CufeGeneratorService {
     // Generate SHA-384 hash
     const cufe = createHash('sha384').update(concatenated).digest('hex');
 
-    this.logger.log(`Generated CUFE for invoice ${invoiceNumber}: ${cufe.substring(0, 20)}...`);
+    this.logger.log(
+      `Generated CUFE for invoice ${invoiceNumber}: ${cufe.substring(0, 20)}...`,
+    );
 
     return cufe;
   }
@@ -172,7 +174,9 @@ export class CufeGeneratorService {
 
     const cude = createHash('sha384').update(concatenated).digest('hex');
 
-    this.logger.log(`Generated CUDE for document ${documentNumber}: ${cude.substring(0, 20)}...`);
+    this.logger.log(
+      `Generated CUDE for document ${documentNumber}: ${cude.substring(0, 20)}...`,
+    );
 
     return cude;
   }

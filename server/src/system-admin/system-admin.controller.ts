@@ -737,7 +737,7 @@ export class SystemAdminController {
   @ApiBearerAuth('SystemAdmin-JWT')
   @ApiOperation({
     summary: 'Get tenant subscription',
-    description: "Gets the subscription details for a specific tenant.",
+    description: 'Gets the subscription details for a specific tenant.',
   })
   @ApiParam({
     name: 'id',

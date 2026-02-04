@@ -8,7 +8,10 @@ import {
 } from '@nestjs/common';
 import { SubscriptionPlan } from '@prisma/client';
 import Stripe from 'stripe';
-import { SubscriptionsService, STRIPE_PLAN_LIMITS } from './subscriptions.service';
+import {
+  SubscriptionsService,
+  STRIPE_PLAN_LIMITS,
+} from './subscriptions.service';
 import { PLAN_LIMITS } from './plan-limits';
 import { PrismaService } from '../prisma';
 
@@ -304,10 +307,7 @@ describe('SubscriptionsService', () => {
     });
 
     it('should create checkout session for PLUS plan', async () => {
-      const result = await service.createCheckoutSession(
-        mockTenantId,
-        'PLUS',
-      );
+      const result = await service.createCheckoutSession(mockTenantId, 'PLUS');
 
       expect(result).toEqual({
         sessionId: mockCheckoutSession.id,

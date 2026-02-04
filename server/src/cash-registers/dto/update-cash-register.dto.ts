@@ -28,7 +28,8 @@ export class UpdateCashRegisterDto {
   @IsString()
   @MaxLength(20)
   @Matches(/^[A-Za-z0-9-_]+$/, {
-    message: 'Code must contain only letters, numbers, hyphens, and underscores',
+    message:
+      'Code must contain only letters, numbers, hyphens, and underscores',
   })
   code?: string;
 

@@ -163,7 +163,8 @@ export class CreateInvoiceDto {
    * @example "POS"
    */
   @ApiPropertyOptional({
-    description: 'Invoice source - MANUAL for regular invoices, POS for point of sale',
+    description:
+      'Invoice source - MANUAL for regular invoices, POS for point of sale',
     enum: InvoiceSource,
     example: 'MANUAL',
     default: 'MANUAL',

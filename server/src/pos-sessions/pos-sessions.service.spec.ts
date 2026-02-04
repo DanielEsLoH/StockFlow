@@ -184,7 +184,9 @@ describe('POSSessionsService', () => {
     it('should throw NotFoundException when session not found', async () => {
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should require tenant context', async () => {
@@ -192,13 +194,17 @@ describe('POSSessionsService', () => {
         throw new Error('Tenant context required');
       });
 
-      await expect(service.findOne(mockSessionId)).rejects.toThrow('Tenant context required');
+      await expect(service.findOne(mockSessionId)).rejects.toThrow(
+        'Tenant context required',
+      );
     });
   });
 
   describe('findAll', () => {
     it('should return paginated sessions', async () => {
-      (prisma.pOSSession.findMany as jest.Mock).mockResolvedValue([mockSession]);
+      (prisma.pOSSession.findMany as jest.Mock).mockResolvedValue([
+        mockSession,
+      ]);
       (prisma.pOSSession.count as jest.Mock).mockResolvedValue(1);
       (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
         _count: { id: 0 },
@@ -281,7 +287,15 @@ describe('POSSessionsService', () => {
       (prisma.pOSSession.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.pOSSession.count as jest.Mock).mockResolvedValue(0);
 
-      await service.findAll(1, 10, undefined, undefined, undefined, fromDate, toDate);
+      await service.findAll(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        fromDate,
+        toDate,
+      );
 
       expect(prisma.pOSSession.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -325,7 +339,9 @@ describe('POSSessionsService', () => {
     });
 
     it('should calculate totalPages correctly', async () => {
-      (prisma.pOSSession.findMany as jest.Mock).mockResolvedValue([mockSession]);
+      (prisma.pOSSession.findMany as jest.Mock).mockResolvedValue([
+        mockSession,
+      ]);
       (prisma.pOSSession.count as jest.Mock).mockResolvedValue(25);
       (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
         _count: { id: 0 },
@@ -349,26 +365,36 @@ describe('POSSessionsService', () => {
     it('should throw NotFoundException when cash register not found', async () => {
       (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.openSession(openDto, mockUserId)).rejects.toThrow(NotFoundException);
+      await expect(service.openSession(openDto, mockUserId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ConflictException when cash register has active session', async () => {
-      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(mockCashRegister);
+      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(
+        mockCashRegister,
+      );
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(mockSession);
 
-      await expect(service.openSession(openDto, mockUserId)).rejects.toThrow(ConflictException);
+      await expect(service.openSession(openDto, mockUserId)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should open session successfully', async () => {
-      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(mockCashRegister);
+      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(
+        mockCashRegister,
+      );
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(null);
 
       const mockTx = createMockTx();
       mockTx.pOSSession.create.mockResolvedValue(mockSession);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
       (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
         _count: { id: 0 },
@@ -385,15 +411,22 @@ describe('POSSessionsService', () => {
 
     it('should open session with notes', async () => {
       const openDtoWithNotes = { ...openDto, notes: 'Test notes' };
-      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(mockCashRegister);
+      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(
+        mockCashRegister,
+      );
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(null);
 
       const mockTx = createMockTx();
-      mockTx.pOSSession.create.mockResolvedValue({ ...mockSession, notes: 'Test notes' });
-
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
+      mockTx.pOSSession.create.mockResolvedValue({
+        ...mockSession,
+        notes: 'Test notes',
       });
+
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
       (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
         _count: { id: 0 },
@@ -416,43 +449,51 @@ describe('POSSessionsService', () => {
     it('should throw NotFoundException when session not found', async () => {
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.closeSession('nonexistent', closeDto, mockUserId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.closeSession('nonexistent', closeDto, mockUserId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException when session not active', async () => {
       const closedSession = { ...mockSession, status: POSSessionStatus.CLOSED };
-      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(closedSession);
-
-      await expect(service.closeSession(mockSessionId, closeDto, mockUserId)).rejects.toThrow(
-        BadRequestException,
+      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(
+        closedSession,
       );
+
+      await expect(
+        service.closeSession(mockSessionId, closeDto, mockUserId),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ForbiddenException when user is not owner and not admin', async () => {
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(mockSession);
-      (prisma.user.findFirst as jest.Mock).mockResolvedValue({ role: 'EMPLOYEE' });
+      (prisma.user.findFirst as jest.Mock).mockResolvedValue({
+        role: 'EMPLOYEE',
+      });
 
-      await expect(service.closeSession(mockSessionId, closeDto, 'other-user')).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.closeSession(mockSessionId, closeDto, 'other-user'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException when user not found', async () => {
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(mockSession);
       (prisma.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.closeSession(mockSessionId, closeDto, 'other-user')).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.closeSession(mockSessionId, closeDto, 'other-user'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should close session successfully by owner', async () => {
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(mockSession);
       (prisma.cashRegisterMovement.findMany as jest.Mock).mockResolvedValue([
         { type: CashMovementType.OPENING, amount: 100000, method: null },
-        { type: CashMovementType.SALE, amount: 50000, method: PaymentMethod.CASH },
+        {
+          type: CashMovementType.SALE,
+          amount: 50000,
+          method: PaymentMethod.CASH,
+        },
       ]);
 
       const closedSession = {
@@ -467,9 +508,11 @@ describe('POSSessionsService', () => {
       const mockTx = createMockTx();
       mockTx.pOSSession.update.mockResolvedValue(closedSession);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
       (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
         _count: { id: 1 },
@@ -477,7 +520,11 @@ describe('POSSessionsService', () => {
       });
       (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([]);
 
-      const result = await service.closeSession(mockSessionId, closeDto, mockUserId);
+      const result = await service.closeSession(
+        mockSessionId,
+        closeDto,
+        mockUserId,
+      );
 
       expect(result).toBeDefined();
       expect(result.status).toBe(POSSessionStatus.CLOSED);
@@ -500,9 +547,11 @@ describe('POSSessionsService', () => {
       const mockTx = createMockTx();
       mockTx.pOSSession.update.mockResolvedValue(closedSession);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
       (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
         _count: { id: 0 },
@@ -510,7 +559,11 @@ describe('POSSessionsService', () => {
       });
       (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([]);
 
-      const result = await service.closeSession(mockSessionId, closeDto, 'admin-user');
+      const result = await service.closeSession(
+        mockSessionId,
+        closeDto,
+        'admin-user',
+      );
 
       expect(result).toBeDefined();
     });
@@ -531,9 +584,11 @@ describe('POSSessionsService', () => {
       const mockTx = createMockTx();
       mockTx.pOSSession.update.mockResolvedValue(closedSession);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
       (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
         _count: { id: 0 },
@@ -541,7 +596,11 @@ describe('POSSessionsService', () => {
       });
       (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([]);
 
-      const result = await service.closeSession(mockSessionId, closeDtoWithNotes, mockUserId);
+      const result = await service.closeSession(
+        mockSessionId,
+        closeDtoWithNotes,
+        mockUserId,
+      );
 
       expect(result).toBeDefined();
     });
@@ -550,11 +609,31 @@ describe('POSSessionsService', () => {
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(mockSession);
       (prisma.cashRegisterMovement.findMany as jest.Mock).mockResolvedValue([
         { type: CashMovementType.OPENING, amount: 100000, method: null },
-        { type: CashMovementType.CASH_IN, amount: 20000, method: PaymentMethod.CASH },
-        { type: CashMovementType.CASH_OUT, amount: 10000, method: PaymentMethod.CASH },
-        { type: CashMovementType.SALE, amount: 50000, method: PaymentMethod.CASH },
-        { type: CashMovementType.SALE, amount: 30000, method: PaymentMethod.CREDIT_CARD },
-        { type: CashMovementType.REFUND, amount: 5000, method: PaymentMethod.CASH },
+        {
+          type: CashMovementType.CASH_IN,
+          amount: 20000,
+          method: PaymentMethod.CASH,
+        },
+        {
+          type: CashMovementType.CASH_OUT,
+          amount: 10000,
+          method: PaymentMethod.CASH,
+        },
+        {
+          type: CashMovementType.SALE,
+          amount: 50000,
+          method: PaymentMethod.CASH,
+        },
+        {
+          type: CashMovementType.SALE,
+          amount: 30000,
+          method: PaymentMethod.CREDIT_CARD,
+        },
+        {
+          type: CashMovementType.REFUND,
+          amount: 5000,
+          method: PaymentMethod.CASH,
+        },
       ]);
 
       const closedSession = {
@@ -567,9 +646,11 @@ describe('POSSessionsService', () => {
       const mockTx = createMockTx();
       mockTx.pOSSession.update.mockResolvedValue(closedSession);
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
       (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
         _count: { id: 0 },
@@ -577,7 +658,11 @@ describe('POSSessionsService', () => {
       });
       (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([]);
 
-      const result = await service.closeSession(mockSessionId, closeDto, mockUserId);
+      const result = await service.closeSession(
+        mockSessionId,
+        closeDto,
+        mockUserId,
+      );
 
       expect(result).toBeDefined();
     });
@@ -600,7 +685,9 @@ describe('POSSessionsService', () => {
 
     it('should throw BadRequestException when session not active', async () => {
       const closedSession = { ...mockSession, status: POSSessionStatus.CLOSED };
-      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(closedSession);
+      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(
+        closedSession,
+      );
 
       await expect(
         service.registerCashMovement(mockSessionId, movementDto, mockUserId),
@@ -609,7 +696,9 @@ describe('POSSessionsService', () => {
 
     it('should throw ForbiddenException when user is not owner and not admin', async () => {
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(mockSession);
-      (prisma.user.findFirst as jest.Mock).mockResolvedValue({ role: 'EMPLOYEE' });
+      (prisma.user.findFirst as jest.Mock).mockResolvedValue({
+        role: 'EMPLOYEE',
+      });
 
       await expect(
         service.registerCashMovement(mockSessionId, movementDto, 'other-user'),
@@ -627,7 +716,9 @@ describe('POSSessionsService', () => {
 
     it('should register cash in movement successfully', async () => {
       const activeSession = { ...mockSession, userId: mockUserId };
-      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(activeSession);
+      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(
+        activeSession,
+      );
       (prisma.cashRegisterMovement.create as jest.Mock).mockResolvedValue({
         id: 'movement-123',
         sessionId: mockSessionId,
@@ -639,7 +730,11 @@ describe('POSSessionsService', () => {
         createdAt: new Date(),
       });
 
-      const result = await service.registerCashMovement(mockSessionId, movementDto, mockUserId);
+      const result = await service.registerCashMovement(
+        mockSessionId,
+        movementDto,
+        mockUserId,
+      );
 
       expect(result).toBeDefined();
       expect(result.type).toBe(CashMovementType.CASH_IN);
@@ -654,7 +749,9 @@ describe('POSSessionsService', () => {
       };
 
       const activeSession = { ...mockSession, userId: mockUserId };
-      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(activeSession);
+      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(
+        activeSession,
+      );
       (prisma.cashRegisterMovement.create as jest.Mock).mockResolvedValue({
         id: 'movement-123',
         sessionId: mockSessionId,
@@ -666,7 +763,11 @@ describe('POSSessionsService', () => {
         createdAt: new Date(),
       });
 
-      const result = await service.registerCashMovement(mockSessionId, cashOutDto, mockUserId);
+      const result = await service.registerCashMovement(
+        mockSessionId,
+        cashOutDto,
+        mockUserId,
+      );
 
       expect(result).toBeDefined();
       expect(result.type).toBe(CashMovementType.CASH_OUT);
@@ -681,7 +782,9 @@ describe('POSSessionsService', () => {
       };
 
       const activeSession = { ...mockSession, userId: mockUserId };
-      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(activeSession);
+      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(
+        activeSession,
+      );
       (prisma.cashRegisterMovement.create as jest.Mock).mockResolvedValue({
         id: 'movement-123',
         sessionId: mockSessionId,
@@ -693,7 +796,11 @@ describe('POSSessionsService', () => {
         createdAt: new Date(),
       });
 
-      const result = await service.registerCashMovement(mockSessionId, movementWithRef, mockUserId);
+      const result = await service.registerCashMovement(
+        mockSessionId,
+        movementWithRef,
+        mockUserId,
+      );
 
       expect(result).toBeDefined();
       expect(result.reference).toBe('REF-001');
@@ -701,7 +808,9 @@ describe('POSSessionsService', () => {
 
     it('should allow manager to register movement on any session', async () => {
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(mockSession);
-      (prisma.user.findFirst as jest.Mock).mockResolvedValue({ role: 'MANAGER' });
+      (prisma.user.findFirst as jest.Mock).mockResolvedValue({
+        role: 'MANAGER',
+      });
       (prisma.cashRegisterMovement.create as jest.Mock).mockResolvedValue({
         id: 'movement-123',
         sessionId: mockSessionId,
@@ -713,7 +822,11 @@ describe('POSSessionsService', () => {
         createdAt: new Date(),
       });
 
-      const result = await service.registerCashMovement(mockSessionId, movementDto, 'manager-user');
+      const result = await service.registerCashMovement(
+        mockSessionId,
+        movementDto,
+        'manager-user',
+      );
 
       expect(result).toBeDefined();
     });
@@ -748,7 +861,9 @@ describe('POSSessionsService', () => {
     it('should throw NotFoundException when session not found', async () => {
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.generateXReport('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.generateXReport('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should generate X report successfully', async () => {
@@ -778,8 +893,16 @@ describe('POSSessionsService', () => {
       });
       (prisma.cashRegisterMovement.findMany as jest.Mock).mockResolvedValue([
         { type: CashMovementType.OPENING, amount: 100000, method: null },
-        { type: CashMovementType.CASH_IN, amount: 20000, method: PaymentMethod.CASH },
-        { type: CashMovementType.CASH_OUT, amount: 10000, method: PaymentMethod.CASH },
+        {
+          type: CashMovementType.CASH_IN,
+          amount: 20000,
+          method: PaymentMethod.CASH,
+        },
+        {
+          type: CashMovementType.CASH_OUT,
+          amount: 10000,
+          method: PaymentMethod.CASH,
+        },
       ]);
       (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.pOSSale.findMany as jest.Mock).mockResolvedValue([
@@ -792,15 +915,11 @@ describe('POSSessionsService', () => {
         },
         {
           id: 'sale-2',
-          payments: [
-            { method: PaymentMethod.CASH, amount: 40000 },
-          ],
+          payments: [{ method: PaymentMethod.CASH, amount: 40000 }],
         },
         {
           id: 'sale-3',
-          payments: [
-            { method: PaymentMethod.BANK_TRANSFER, amount: 30000 },
-          ],
+          payments: [{ method: PaymentMethod.BANK_TRANSFER, amount: 30000 }],
         },
       ]);
 
@@ -825,7 +944,9 @@ describe('POSSessionsService', () => {
       (prisma.cashRegisterMovement.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([]);
 
-      await expect(service.generateZReport(mockSessionId)).rejects.toThrow(BadRequestException);
+      await expect(service.generateZReport(mockSessionId)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should generate Z report for closed session', async () => {
@@ -838,7 +959,9 @@ describe('POSSessionsService', () => {
         closedAt: new Date(),
       };
 
-      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(closedSession);
+      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(
+        closedSession,
+      );
       (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
         _count: { id: 5 },
         _sum: { total: 500000 },
@@ -894,7 +1017,9 @@ describe('POSSessionsService', () => {
     it('should throw NotFoundException when session not found', async () => {
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.getSessionMovements('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.getSessionMovements('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should return empty array when no movements', async () => {
@@ -916,9 +1041,21 @@ describe('POSSessionsService', () => {
       });
       (prisma.cashRegisterMovement.findMany as jest.Mock).mockResolvedValue([
         { type: CashMovementType.OPENING, amount: 100000, method: null },
-        { type: CashMovementType.CASH_IN, amount: 50000, method: PaymentMethod.CASH },
-        { type: CashMovementType.CASH_OUT, amount: 20000, method: PaymentMethod.CASH },
-        { type: CashMovementType.SALE, amount: 30000, method: PaymentMethod.CASH },
+        {
+          type: CashMovementType.CASH_IN,
+          amount: 50000,
+          method: PaymentMethod.CASH,
+        },
+        {
+          type: CashMovementType.CASH_OUT,
+          amount: 20000,
+          method: PaymentMethod.CASH,
+        },
+        {
+          type: CashMovementType.SALE,
+          amount: 30000,
+          method: PaymentMethod.CASH,
+        },
       ]);
       (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([
         { method: PaymentMethod.CASH, amount: 30000 },
@@ -930,7 +1067,9 @@ describe('POSSessionsService', () => {
       expect(result.summary.totalCashIn).toBe(50000);
       expect(result.summary.totalCashOut).toBe(20000);
       expect(result.summary.salesByMethod[PaymentMethod.CASH]).toBe(30000);
-      expect(result.summary.salesByMethod[PaymentMethod.CREDIT_CARD]).toBe(20000);
+      expect(result.summary.salesByMethod[PaymentMethod.CREDIT_CARD]).toBe(
+        20000,
+      );
     });
 
     it('should handle session with null closing values', async () => {

@@ -100,7 +100,9 @@ describe('CashRegistersService', () => {
   describe('findAll', () => {
     it('should return paginated cash registers', async () => {
       const cashRegisters = [mockCashRegisterWithWarehouse];
-      (prisma.cashRegister.findMany as jest.Mock).mockResolvedValue(cashRegisters);
+      (prisma.cashRegister.findMany as jest.Mock).mockResolvedValue(
+        cashRegisters,
+      );
       (prisma.cashRegister.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAll(1, 10);
@@ -146,7 +148,9 @@ describe('CashRegistersService', () => {
         throw new Error('Tenant context required');
       });
 
-      await expect(service.findAll()).rejects.toThrow('Tenant context required');
+      await expect(service.findAll()).rejects.toThrow(
+        'Tenant context required',
+      );
     });
 
     it('should calculate pagination correctly for page 2', async () => {
@@ -186,7 +190,9 @@ describe('CashRegistersService', () => {
           },
         ],
       };
-      (prisma.cashRegister.findMany as jest.Mock).mockResolvedValue([cashRegisterWithSession]);
+      (prisma.cashRegister.findMany as jest.Mock).mockResolvedValue([
+        cashRegisterWithSession,
+      ]);
       (prisma.cashRegister.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAll();
@@ -218,7 +224,9 @@ describe('CashRegistersService', () => {
     it('should throw NotFoundException when cash register not found', async () => {
       (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException with English message', async () => {
@@ -248,7 +256,9 @@ describe('CashRegistersService', () => {
     };
 
     it('should create a cash register successfully', async () => {
-      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
       (prisma.cashRegister.findUnique as jest.Mock).mockResolvedValue(null);
       (prisma.cashRegister.create as jest.Mock).mockResolvedValue({
         ...mockCashRegister,
@@ -266,14 +276,22 @@ describe('CashRegistersService', () => {
     it('should throw NotFoundException when warehouse not found', async () => {
       (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.create(createDto)).rejects.toThrow(NotFoundException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ConflictException when code already exists', async () => {
-      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
-      (prisma.cashRegister.findUnique as jest.Mock).mockResolvedValue(mockCashRegister);
+      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
+      (prisma.cashRegister.findUnique as jest.Mock).mockResolvedValue(
+        mockCashRegister,
+      );
 
-      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should require tenant context', async () => {
@@ -281,7 +299,9 @@ describe('CashRegistersService', () => {
         throw new Error('Tenant context required');
       });
 
-      await expect(service.create(createDto)).rejects.toThrow('Tenant context required');
+      await expect(service.create(createDto)).rejects.toThrow(
+        'Tenant context required',
+      );
     });
 
     it('should auto-generate code if not provided', async () => {
@@ -289,7 +309,9 @@ describe('CashRegistersService', () => {
         warehouseId: mockWarehouseId,
         name: 'Nueva Caja',
       };
-      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
       (prisma.cashRegister.findUnique as jest.Mock).mockResolvedValue(null);
       (prisma.cashRegister.create as jest.Mock).mockResolvedValue({
         ...mockCashRegister,
@@ -363,16 +385,22 @@ describe('CashRegistersService', () => {
       });
 
       await expect(
-        service.update('cash-register-123', { status: CashRegisterStatus.CLOSED }),
+        service.update('cash-register-123', {
+          status: CashRegisterStatus.CLOSED,
+        }),
       ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('delete', () => {
     it('should delete a cash register successfully', async () => {
-      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(mockCashRegister);
+      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(
+        mockCashRegister,
+      );
       (prisma.pOSSession.count as jest.Mock).mockResolvedValue(0);
-      (prisma.cashRegister.delete as jest.Mock).mockResolvedValue(mockCashRegister);
+      (prisma.cashRegister.delete as jest.Mock).mockResolvedValue(
+        mockCashRegister,
+      );
 
       await expect(service.delete('cash-register-123')).resolves.not.toThrow();
     });
@@ -380,11 +408,15 @@ describe('CashRegistersService', () => {
     it('should throw NotFoundException when cash register not found', async () => {
       (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.delete('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.delete('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when cash register has sessions', async () => {
-      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(mockCashRegister);
+      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue(
+        mockCashRegister,
+      );
       (prisma.pOSSession.count as jest.Mock).mockResolvedValue(5);
 
       await expect(service.delete('cash-register-123')).rejects.toThrow(

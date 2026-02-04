@@ -76,7 +76,10 @@ describe('NotificationsController', () => {
       controllers: [NotificationsController],
       providers: [
         { provide: NotificationsService, useValue: mockNotificationsService },
-        { provide: InAppNotificationsService, useValue: mockInAppNotificationsService },
+        {
+          provide: InAppNotificationsService,
+          useValue: mockInAppNotificationsService,
+        },
         { provide: TenantContextService, useValue: mockTenantContextService },
       ],
     }).compile();
@@ -687,7 +690,9 @@ describe('NotificationsController', () => {
 
     describe('findAll', () => {
       it('should return paginated notifications', async () => {
-        inAppNotificationsService.findAll.mockResolvedValue(mockPaginatedResponse);
+        inAppNotificationsService.findAll.mockResolvedValue(
+          mockPaginatedResponse,
+        );
 
         const filters = { page: 1, limit: 10 };
         const result = await controller.findAll(filters);
@@ -697,9 +702,16 @@ describe('NotificationsController', () => {
       });
 
       it('should pass filters to service', async () => {
-        inAppNotificationsService.findAll.mockResolvedValue(mockPaginatedResponse);
+        inAppNotificationsService.findAll.mockResolvedValue(
+          mockPaginatedResponse,
+        );
 
-        const filters = { page: 2, limit: 20, type: 'SYSTEM' as const, isRead: false };
+        const filters = {
+          page: 2,
+          limit: 20,
+          type: 'SYSTEM' as const,
+          isRead: false,
+        };
         await controller.findAll(filters);
 
         expect(inAppNotificationsService.findAll).toHaveBeenCalledWith(filters);
@@ -707,7 +719,9 @@ describe('NotificationsController', () => {
 
       it('should log the operation', async () => {
         const logSpy = jest.spyOn(Logger.prototype, 'log');
-        inAppNotificationsService.findAll.mockResolvedValue(mockPaginatedResponse);
+        inAppNotificationsService.findAll.mockResolvedValue(
+          mockPaginatedResponse,
+        );
 
         await controller.findAll({ page: 1, limit: 10 });
 
@@ -718,13 +732,13 @@ describe('NotificationsController', () => {
 
       it('should use default pagination values in log', async () => {
         const logSpy = jest.spyOn(Logger.prototype, 'log');
-        inAppNotificationsService.findAll.mockResolvedValue(mockPaginatedResponse);
+        inAppNotificationsService.findAll.mockResolvedValue(
+          mockPaginatedResponse,
+        );
 
         await controller.findAll({});
 
-        expect(logSpy).toHaveBeenCalledWith(
-          expect.stringContaining('page: 1'),
-        );
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('page: 1'));
         expect(logSpy).toHaveBeenCalledWith(
           expect.stringContaining('limit: 10'),
         );
@@ -733,7 +747,9 @@ describe('NotificationsController', () => {
 
     describe('findRecent', () => {
       it('should return recent notifications with default limit', async () => {
-        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+        inAppNotificationsService.findRecent.mockResolvedValue([
+          mockNotification,
+        ]);
 
         const result = await controller.findRecent();
 
@@ -742,7 +758,9 @@ describe('NotificationsController', () => {
       });
 
       it('should parse limit parameter', async () => {
-        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+        inAppNotificationsService.findRecent.mockResolvedValue([
+          mockNotification,
+        ]);
 
         await controller.findRecent('10');
 
@@ -750,7 +768,9 @@ describe('NotificationsController', () => {
       });
 
       it('should cap limit at 20', async () => {
-        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+        inAppNotificationsService.findRecent.mockResolvedValue([
+          mockNotification,
+        ]);
 
         await controller.findRecent('50');
 
@@ -758,7 +778,9 @@ describe('NotificationsController', () => {
       });
 
       it('should use default of 5 when limit is 0 (falsy)', async () => {
-        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+        inAppNotificationsService.findRecent.mockResolvedValue([
+          mockNotification,
+        ]);
 
         // When limit is '0', parseInt returns 0 which is falsy, so || 5 kicks in
         await controller.findRecent('0');
@@ -767,7 +789,9 @@ describe('NotificationsController', () => {
       });
 
       it('should enforce minimum of 1 with Math.max', async () => {
-        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+        inAppNotificationsService.findRecent.mockResolvedValue([
+          mockNotification,
+        ]);
 
         // Negative values would get clamped to 1 by Math.max, but || 5 catches them first
         await controller.findRecent('-5');
@@ -778,7 +802,9 @@ describe('NotificationsController', () => {
       });
 
       it('should handle invalid limit values', async () => {
-        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+        inAppNotificationsService.findRecent.mockResolvedValue([
+          mockNotification,
+        ]);
 
         await controller.findRecent('invalid');
 
@@ -787,7 +813,9 @@ describe('NotificationsController', () => {
 
       it('should log the operation', async () => {
         const logSpy = jest.spyOn(Logger.prototype, 'log');
-        inAppNotificationsService.findRecent.mockResolvedValue([mockNotification]);
+        inAppNotificationsService.findRecent.mockResolvedValue([
+          mockNotification,
+        ]);
 
         await controller.findRecent('10');
 
@@ -799,7 +827,9 @@ describe('NotificationsController', () => {
 
     describe('getUnreadCount', () => {
       it('should return unread count', async () => {
-        inAppNotificationsService.getUnreadCount.mockResolvedValue(mockUnreadCountResponse);
+        inAppNotificationsService.getUnreadCount.mockResolvedValue(
+          mockUnreadCountResponse,
+        );
 
         const result = await controller.getUnreadCount();
 
@@ -809,7 +839,9 @@ describe('NotificationsController', () => {
 
       it('should log the operation', async () => {
         const logSpy = jest.spyOn(Logger.prototype, 'log');
-        inAppNotificationsService.getUnreadCount.mockResolvedValue(mockUnreadCountResponse);
+        inAppNotificationsService.getUnreadCount.mockResolvedValue(
+          mockUnreadCountResponse,
+        );
 
         await controller.getUnreadCount();
 
@@ -826,7 +858,9 @@ describe('NotificationsController', () => {
         const result = await controller.findOne('notif-123');
 
         expect(result).toEqual(mockNotification);
-        expect(inAppNotificationsService.findOne).toHaveBeenCalledWith('notif-123');
+        expect(inAppNotificationsService.findOne).toHaveBeenCalledWith(
+          'notif-123',
+        );
       });
 
       it('should log the operation', async () => {
@@ -862,7 +896,9 @@ describe('NotificationsController', () => {
         const result = await controller.create(createDto);
 
         expect(result).toEqual(mockNotification);
-        expect(inAppNotificationsService.create).toHaveBeenCalledWith(createDto);
+        expect(inAppNotificationsService.create).toHaveBeenCalledWith(
+          createDto,
+        );
       });
 
       it('should log the operation', async () => {
@@ -888,17 +924,23 @@ describe('NotificationsController', () => {
       const bulkDto = { ids: ['notif-1', 'notif-2', 'notif-3'] };
 
       it('should mark multiple notifications as read', async () => {
-        inAppNotificationsService.markManyAsRead.mockResolvedValue(mockBulkOperationResult);
+        inAppNotificationsService.markManyAsRead.mockResolvedValue(
+          mockBulkOperationResult,
+        );
 
         const result = await controller.markManyAsRead(bulkDto);
 
         expect(result).toEqual(mockBulkOperationResult);
-        expect(inAppNotificationsService.markManyAsRead).toHaveBeenCalledWith(bulkDto);
+        expect(inAppNotificationsService.markManyAsRead).toHaveBeenCalledWith(
+          bulkDto,
+        );
       });
 
       it('should log the operation', async () => {
         const logSpy = jest.spyOn(Logger.prototype, 'log');
-        inAppNotificationsService.markManyAsRead.mockResolvedValue(mockBulkOperationResult);
+        inAppNotificationsService.markManyAsRead.mockResolvedValue(
+          mockBulkOperationResult,
+        );
 
         await controller.markManyAsRead(bulkDto);
 
@@ -910,7 +952,9 @@ describe('NotificationsController', () => {
 
     describe('markAllAsRead', () => {
       it('should mark all notifications as read', async () => {
-        inAppNotificationsService.markAllAsRead.mockResolvedValue(mockBulkOperationResult);
+        inAppNotificationsService.markAllAsRead.mockResolvedValue(
+          mockBulkOperationResult,
+        );
 
         const result = await controller.markAllAsRead();
 
@@ -920,7 +964,9 @@ describe('NotificationsController', () => {
 
       it('should log the operation', async () => {
         const logSpy = jest.spyOn(Logger.prototype, 'log');
-        inAppNotificationsService.markAllAsRead.mockResolvedValue(mockBulkOperationResult);
+        inAppNotificationsService.markAllAsRead.mockResolvedValue(
+          mockBulkOperationResult,
+        );
 
         await controller.markAllAsRead();
 
@@ -932,18 +978,28 @@ describe('NotificationsController', () => {
 
     describe('markAsRead', () => {
       it('should mark single notification as read', async () => {
-        const readNotification = { ...mockNotification, read: true, readAt: new Date() };
-        inAppNotificationsService.markAsRead.mockResolvedValue(readNotification);
+        const readNotification = {
+          ...mockNotification,
+          read: true,
+          readAt: new Date(),
+        };
+        inAppNotificationsService.markAsRead.mockResolvedValue(
+          readNotification,
+        );
 
         const result = await controller.markAsRead('notif-123');
 
         expect(result).toEqual(readNotification);
-        expect(inAppNotificationsService.markAsRead).toHaveBeenCalledWith('notif-123');
+        expect(inAppNotificationsService.markAsRead).toHaveBeenCalledWith(
+          'notif-123',
+        );
       });
 
       it('should log the operation', async () => {
         const logSpy = jest.spyOn(Logger.prototype, 'log');
-        inAppNotificationsService.markAsRead.mockResolvedValue(mockNotification);
+        inAppNotificationsService.markAsRead.mockResolvedValue(
+          mockNotification,
+        );
 
         await controller.markAsRead('notif-123');
 
@@ -956,24 +1012,36 @@ describe('NotificationsController', () => {
         const error = new Error('Notification not found');
         inAppNotificationsService.markAsRead.mockRejectedValue(error);
 
-        await expect(controller.markAsRead('invalid-id')).rejects.toThrow(error);
+        await expect(controller.markAsRead('invalid-id')).rejects.toThrow(
+          error,
+        );
       });
     });
 
     describe('markAsUnread', () => {
       it('should mark single notification as unread', async () => {
-        const unreadNotification = { ...mockNotification, read: false, readAt: null };
-        inAppNotificationsService.markAsUnread.mockResolvedValue(unreadNotification);
+        const unreadNotification = {
+          ...mockNotification,
+          read: false,
+          readAt: null,
+        };
+        inAppNotificationsService.markAsUnread.mockResolvedValue(
+          unreadNotification,
+        );
 
         const result = await controller.markAsUnread('notif-123');
 
         expect(result).toEqual(unreadNotification);
-        expect(inAppNotificationsService.markAsUnread).toHaveBeenCalledWith('notif-123');
+        expect(inAppNotificationsService.markAsUnread).toHaveBeenCalledWith(
+          'notif-123',
+        );
       });
 
       it('should log the operation', async () => {
         const logSpy = jest.spyOn(Logger.prototype, 'log');
-        inAppNotificationsService.markAsUnread.mockResolvedValue(mockNotification);
+        inAppNotificationsService.markAsUnread.mockResolvedValue(
+          mockNotification,
+        );
 
         await controller.markAsUnread('notif-123');
 
@@ -986,13 +1054,17 @@ describe('NotificationsController', () => {
         const error = new Error('Notification not found');
         inAppNotificationsService.markAsUnread.mockRejectedValue(error);
 
-        await expect(controller.markAsUnread('invalid-id')).rejects.toThrow(error);
+        await expect(controller.markAsUnread('invalid-id')).rejects.toThrow(
+          error,
+        );
       });
     });
 
     describe('clearRead', () => {
       it('should clear read notifications', async () => {
-        inAppNotificationsService.clearRead.mockResolvedValue(mockBulkOperationResult);
+        inAppNotificationsService.clearRead.mockResolvedValue(
+          mockBulkOperationResult,
+        );
 
         const result = await controller.clearRead();
 
@@ -1002,7 +1074,9 @@ describe('NotificationsController', () => {
 
       it('should log the operation', async () => {
         const logSpy = jest.spyOn(Logger.prototype, 'log');
-        inAppNotificationsService.clearRead.mockResolvedValue(mockBulkOperationResult);
+        inAppNotificationsService.clearRead.mockResolvedValue(
+          mockBulkOperationResult,
+        );
 
         await controller.clearRead();
 
@@ -1016,17 +1090,23 @@ describe('NotificationsController', () => {
       const bulkDto = { ids: ['notif-1', 'notif-2', 'notif-3'] };
 
       it('should delete multiple notifications', async () => {
-        inAppNotificationsService.deleteMany.mockResolvedValue(mockBulkOperationResult);
+        inAppNotificationsService.deleteMany.mockResolvedValue(
+          mockBulkOperationResult,
+        );
 
         const result = await controller.deleteMany(bulkDto);
 
         expect(result).toEqual(mockBulkOperationResult);
-        expect(inAppNotificationsService.deleteMany).toHaveBeenCalledWith(bulkDto);
+        expect(inAppNotificationsService.deleteMany).toHaveBeenCalledWith(
+          bulkDto,
+        );
       });
 
       it('should log the operation', async () => {
         const logSpy = jest.spyOn(Logger.prototype, 'log');
-        inAppNotificationsService.deleteMany.mockResolvedValue(mockBulkOperationResult);
+        inAppNotificationsService.deleteMany.mockResolvedValue(
+          mockBulkOperationResult,
+        );
 
         await controller.deleteMany(bulkDto);
 
@@ -1042,7 +1122,9 @@ describe('NotificationsController', () => {
 
         await controller.delete('notif-123');
 
-        expect(inAppNotificationsService.delete).toHaveBeenCalledWith('notif-123');
+        expect(inAppNotificationsService.delete).toHaveBeenCalledWith(
+          'notif-123',
+        );
       });
 
       it('should log the operation', async () => {

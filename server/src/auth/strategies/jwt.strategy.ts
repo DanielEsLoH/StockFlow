@@ -81,17 +81,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       if (user.status === UserStatus.PENDING) {
         // Check if email is verified
         if (!user.emailVerified) {
-          this.logger.warn(
-            `User email not verified: ${user.email}`,
-          );
+          this.logger.warn(`User email not verified: ${user.email}`);
           throw new UnauthorizedException(
             'Por favor verifica tu correo electrónico antes de acceder a la aplicación.',
           );
         }
         // Email verified but not approved by admin
-        this.logger.warn(
-          `User pending approval: ${user.email}`,
-        );
+        this.logger.warn(`User pending approval: ${user.email}`);
         throw new UnauthorizedException(
           'Tu cuenta está pendiente de aprobación. Por favor espera la confirmación del administrador.',
         );

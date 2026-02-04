@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Response } from 'express';
 import { DianController } from './dian.controller';
 import { DianService } from './dian.service';
@@ -107,9 +103,7 @@ describe('DianController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DianController],
-      providers: [
-        { provide: DianService, useValue: mockDianService },
-      ],
+      providers: [{ provide: DianService, useValue: mockDianService }],
     }).compile();
 
     controller = module.get<DianController>(DianController);
@@ -182,7 +176,10 @@ describe('DianController', () => {
   describe('updateConfig', () => {
     it('should update config', async () => {
       const updateDto = { businessName: 'Updated Company' };
-      service.updateConfig.mockResolvedValue({ ...mockDianConfig, ...updateDto });
+      service.updateConfig.mockResolvedValue({
+        ...mockDianConfig,
+        ...updateDto,
+      });
 
       const result = await controller.updateConfig(updateDto);
 
@@ -198,7 +195,10 @@ describe('DianController', () => {
         softwarePin: 'pin',
         technicalKey: 'key',
       };
-      service.setSoftwareCredentials.mockResolvedValue({ success: true, message: 'Updated' });
+      service.setSoftwareCredentials.mockResolvedValue({
+        success: true,
+        message: 'Updated',
+      });
 
       const result = await controller.setSoftwareCredentials(dto);
 
@@ -216,7 +216,10 @@ describe('DianController', () => {
         resolutionRangeFrom: 1,
         resolutionRangeTo: 5000000,
       };
-      service.setResolution.mockResolvedValue({ success: true, message: 'Updated' });
+      service.setResolution.mockResolvedValue({
+        success: true,
+        message: 'Updated',
+      });
 
       const result = await controller.setResolution(dto);
 
@@ -229,12 +232,18 @@ describe('DianController', () => {
     it('should upload certificate', async () => {
       const file = { buffer: Buffer.from('cert') } as Express.Multer.File;
       const password = 'password';
-      service.uploadCertificate.mockResolvedValue({ success: true, message: 'Uploaded' });
+      service.uploadCertificate.mockResolvedValue({
+        success: true,
+        message: 'Uploaded',
+      });
 
       const result = await controller.uploadCertificate(file, password);
 
       expect(result.success).toBe(true);
-      expect(service.uploadCertificate).toHaveBeenCalledWith(file.buffer, password);
+      expect(service.uploadCertificate).toHaveBeenCalledWith(
+        file.buffer,
+        password,
+      );
     });
   });
 
@@ -254,7 +263,10 @@ describe('DianController', () => {
       const result = await controller.sendInvoice(dto);
 
       expect(result.success).toBe(true);
-      expect(service.processInvoice).toHaveBeenCalledWith(dto.invoiceId, dto.force);
+      expect(service.processInvoice).toHaveBeenCalledWith(
+        dto.invoiceId,
+        dto.force,
+      );
     });
 
     it('should propagate BadRequestException', async () => {
@@ -263,7 +275,9 @@ describe('DianController', () => {
         new BadRequestException('Configuration missing'),
       );
 
-      await expect(controller.sendInvoice(dto)).rejects.toThrow(BadRequestException);
+      await expect(controller.sendInvoice(dto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should propagate NotFoundException', async () => {
@@ -272,7 +286,9 @@ describe('DianController', () => {
         new NotFoundException('Invoice not found'),
       );
 
-      await expect(controller.sendInvoice(dto)).rejects.toThrow(NotFoundException);
+      await expect(controller.sendInvoice(dto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -295,7 +311,9 @@ describe('DianController', () => {
       const dto = { documentId: 'nonexistent' };
       service.checkDocumentStatus.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.checkStatus(dto)).rejects.toThrow(NotFoundException);
+      await expect(controller.checkStatus(dto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -306,7 +324,13 @@ describe('DianController', () => {
       const result = await controller.listDocuments('1', '10');
 
       expect(result).toEqual(mockPaginatedDocuments);
-      expect(service.listDocuments).toHaveBeenCalledWith(1, 10, undefined, undefined, undefined);
+      expect(service.listDocuments).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+      );
     });
 
     it('should handle invalid page number by defaulting to 1', async () => {
@@ -314,7 +338,13 @@ describe('DianController', () => {
 
       await controller.listDocuments('invalid', '10');
 
-      expect(service.listDocuments).toHaveBeenCalledWith(1, 10, undefined, undefined, undefined);
+      expect(service.listDocuments).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+      );
     });
 
     it('should pass status filter', async () => {
@@ -334,7 +364,13 @@ describe('DianController', () => {
     it('should pass date range filters', async () => {
       service.listDocuments.mockResolvedValue(mockPaginatedDocuments);
 
-      await controller.listDocuments('1', '10', undefined, '2024-01-01', '2024-12-31');
+      await controller.listDocuments(
+        '1',
+        '10',
+        undefined,
+        '2024-01-01',
+        '2024-12-31',
+      );
 
       expect(service.listDocuments).toHaveBeenCalledWith(
         1,
@@ -359,7 +395,9 @@ describe('DianController', () => {
     it('should propagate NotFoundException', async () => {
       service.getDocument.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.getDocument('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(controller.getDocument('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -377,7 +415,10 @@ describe('DianController', () => {
 
       await controller.downloadXml('document-123', mockResponse);
 
-      expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'application/xml');
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'application/xml',
+      );
       expect(mockResponse.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
         expect.stringContaining('attachment'),
@@ -389,9 +430,9 @@ describe('DianController', () => {
       const mockResponse = {} as Response;
       service.downloadXml.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.downloadXml('nonexistent', mockResponse)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.downloadXml('nonexistent', mockResponse),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

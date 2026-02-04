@@ -1,8 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { POSSessionStatus, CashMovementType, PaymentMethod } from '@prisma/client';
+import {
+  POSSessionStatus,
+  CashMovementType,
+  PaymentMethod,
+} from '@prisma/client';
 
 export class POSSessionEntity {
-  @ApiProperty({ description: 'Session ID', example: 'cmkcykam80004reya0hsdx337' })
+  @ApiProperty({
+    description: 'Session ID',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
   id: string;
 
   @ApiProperty({ description: 'Tenant ID' })
@@ -24,13 +31,22 @@ export class POSSessionEntity {
   @ApiProperty({ description: 'Opening amount', example: 100000 })
   openingAmount: number;
 
-  @ApiPropertyOptional({ description: 'Closing amount (after arqueo)', example: 250000 })
+  @ApiPropertyOptional({
+    description: 'Closing amount (after arqueo)',
+    example: 250000,
+  })
   closingAmount?: number | null;
 
-  @ApiPropertyOptional({ description: 'Expected amount based on movements', example: 245000 })
+  @ApiPropertyOptional({
+    description: 'Expected amount based on movements',
+    example: 245000,
+  })
   expectedAmount?: number | null;
 
-  @ApiPropertyOptional({ description: 'Difference (closing - expected)', example: 5000 })
+  @ApiPropertyOptional({
+    description: 'Difference (closing - expected)',
+    example: 5000,
+  })
   difference?: number | null;
 
   @ApiProperty({ description: 'Session opened at' })
@@ -62,7 +78,12 @@ export class POSSessionWithDetailsEntity extends POSSessionEntity {
 
   @ApiProperty({
     description: 'User who opened the session',
-    example: { id: 'xxx', firstName: 'Juan', lastName: 'Perez', email: 'juan@example.com' },
+    example: {
+      id: 'xxx',
+      firstName: 'Juan',
+      lastName: 'Perez',
+      email: 'juan@example.com',
+    },
   })
   user: {
     id: string;
@@ -154,7 +175,9 @@ export class XZReportEntity {
   @ApiProperty({ description: 'Expected cash in drawer' })
   expectedCashAmount: number;
 
-  @ApiPropertyOptional({ description: 'Declared cash amount (only for Z report)' })
+  @ApiPropertyOptional({
+    description: 'Declared cash amount (only for Z report)',
+  })
   declaredCashAmount?: number | null;
 
   @ApiPropertyOptional({ description: 'Difference (only for Z report)' })

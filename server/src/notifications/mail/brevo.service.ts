@@ -1262,7 +1262,10 @@ export class BrevoService {
         </tr>
       </table>`;
 
-    const htmlContent = this.getEmailTemplate(content, 'Usuario listo para aprobacion');
+    const htmlContent = this.getEmailTemplate(
+      content,
+      'Usuario listo para aprobacion',
+    );
 
     return this.sendEmail({
       to: this.adminEmail,
@@ -1286,7 +1289,8 @@ export class BrevoService {
     daysRemaining: number;
     tenantName: string;
   }): Promise<SendMailResult> {
-    const { to, firstName, planName, expiryDate, daysRemaining, tenantName } = data;
+    const { to, firstName, planName, expiryDate, daysRemaining, tenantName } =
+      data;
 
     const urgencyColor = daysRemaining <= 3 ? '#dc2626' : '#f59e0b';
     const urgencyBgColor = daysRemaining <= 3 ? '#fef2f2' : '#fef3c7';
@@ -1339,7 +1343,10 @@ export class BrevoService {
         Si tienes alguna pregunta, contactanos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a>
       </p>`;
 
-    const htmlContent = this.getEmailTemplate(content, 'Tu suscripcion esta por expirar');
+    const htmlContent = this.getEmailTemplate(
+      content,
+      'Tu suscripcion esta por expirar',
+    );
 
     return this.sendEmail({
       to,
@@ -1415,7 +1422,10 @@ export class BrevoService {
         Contactanos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a> para renovar tu suscripcion.
       </p>`;
 
-    const htmlContent = this.getEmailTemplate(content, 'Tu suscripcion ha expirado');
+    const htmlContent = this.getEmailTemplate(
+      content,
+      'Tu suscripcion ha expirado',
+    );
 
     return this.sendEmail({
       to,
@@ -1448,9 +1458,7 @@ export class BrevoService {
     };
 
     const featuresHtml = features
-      .map(
-        (f) => `<li style="margin-bottom: 8px;">${f}</li>`,
-      )
+      .map((f) => `<li style="margin-bottom: 8px;">${f}</li>`)
       .join('');
 
     const content = `
@@ -1510,7 +1518,10 @@ export class BrevoService {
         </tr>
       </table>`;
 
-    const htmlContent = this.getEmailTemplate(content, 'Plan activado - StockFlow');
+    const htmlContent = this.getEmailTemplate(
+      content,
+      'Plan activado - StockFlow',
+    );
 
     return this.sendEmail({
       to,
@@ -1575,7 +1586,10 @@ export class BrevoService {
         Contactanos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a>
       </p>`;
 
-    const htmlContent = this.getEmailTemplate(content, 'Cuenta suspendida - StockFlow');
+    const htmlContent = this.getEmailTemplate(
+      content,
+      'Cuenta suspendida - StockFlow',
+    );
 
     return this.sendEmail({
       to,
@@ -1601,9 +1615,7 @@ export class BrevoService {
     const { to, firstName, oldPlanName, newPlanName, newFeatures } = data;
 
     const featuresHtml = newFeatures
-      .map(
-        (f) => `<li style="margin-bottom: 8px;">${f}</li>`,
-      )
+      .map((f) => `<li style="margin-bottom: 8px;">${f}</li>`)
       .join('');
 
     const content = `
@@ -1657,7 +1669,10 @@ export class BrevoService {
         </tr>
       </table>`;
 
-    const htmlContent = this.getEmailTemplate(content, 'Cambio de plan - StockFlow');
+    const htmlContent = this.getEmailTemplate(
+      content,
+      'Cambio de plan - StockFlow',
+    );
 
     return this.sendEmail({
       to,

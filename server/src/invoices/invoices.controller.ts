@@ -456,7 +456,8 @@ export class InvoicesController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - DIAN configuration missing or invoice not eligible',
+    description:
+      'Bad Request - DIAN configuration missing or invoice not eligible',
   })
   @ApiResponse({
     status: 401,

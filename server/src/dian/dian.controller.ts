@@ -61,9 +61,14 @@ export class DianController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Get DIAN configuration',
-    description: 'Returns the current DIAN electronic invoicing configuration for the tenant.',
+    description:
+      'Returns the current DIAN electronic invoicing configuration for the tenant.',
   })
-  @ApiResponse({ status: 200, description: 'Configuration found', type: DianConfigEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'Configuration found',
+    type: DianConfigEntity,
+  })
   @ApiResponse({ status: 404, description: 'Configuration not found' })
   async getConfig() {
     this.logger.log('Getting DIAN config');
@@ -75,9 +80,14 @@ export class DianController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create DIAN configuration',
-    description: 'Creates or updates the DIAN electronic invoicing configuration.',
+    description:
+      'Creates or updates the DIAN electronic invoicing configuration.',
   })
-  @ApiResponse({ status: 201, description: 'Configuration created', type: DianConfigEntity })
+  @ApiResponse({
+    status: 201,
+    description: 'Configuration created',
+    type: DianConfigEntity,
+  })
   @ApiResponse({ status: 400, description: 'Invalid data' })
   async createConfig(@Body() dto: CreateDianConfigDto) {
     this.logger.log('Creating DIAN config');
@@ -90,7 +100,11 @@ export class DianController {
     summary: 'Update DIAN configuration',
     description: 'Updates the existing DIAN configuration.',
   })
-  @ApiResponse({ status: 200, description: 'Configuration updated', type: DianConfigEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'Configuration updated',
+    type: DianConfigEntity,
+  })
   async updateConfig(@Body() dto: UpdateDianConfigDto) {
     this.logger.log('Updating DIAN config');
     return this.dianService.updateConfig(dto);
@@ -101,7 +115,8 @@ export class DianController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Set software credentials',
-    description: 'Sets the software ID, PIN, and technical key provided by DIAN.',
+    description:
+      'Sets the software ID, PIN, and technical key provided by DIAN.',
   })
   @ApiResponse({ status: 200, description: 'Credentials set successfully' })
   async setSoftwareCredentials(@Body() dto: SetDianSoftwareDto) {
@@ -114,7 +129,8 @@ export class DianController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Set invoice resolution',
-    description: 'Sets the DIAN authorization resolution for electronic invoicing.',
+    description:
+      'Sets the DIAN authorization resolution for electronic invoicing.',
   })
   @ApiResponse({ status: 200, description: 'Resolution set successfully' })
   async setResolution(@Body() dto: SetDianResolutionDto) {
@@ -128,7 +144,8 @@ export class DianController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({
     summary: 'Upload digital certificate',
-    description: 'Uploads the .p12/.pfx digital certificate for signing documents.',
+    description:
+      'Uploads the .p12/.pfx digital certificate for signing documents.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -140,7 +157,10 @@ export class DianController {
       },
     },
   })
-  @ApiResponse({ status: 200, description: 'Certificate uploaded successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Certificate uploaded successfully',
+  })
   async uploadCertificate(
     @UploadedFile() file: Express.Multer.File,
     @Body('password') password: string,
@@ -158,10 +178,14 @@ export class DianController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Send invoice to DIAN',
-    description: 'Processes and sends an invoice to DIAN for electronic validation.',
+    description:
+      'Processes and sends an invoice to DIAN for electronic validation.',
   })
   @ApiResponse({ status: 200, description: 'Invoice sent successfully' })
-  @ApiResponse({ status: 400, description: 'Configuration missing or invalid invoice' })
+  @ApiResponse({
+    status: 400,
+    description: 'Configuration missing or invalid invoice',
+  })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async sendInvoice(@Body() dto: SendInvoiceDto) {
     this.logger.log(`Sending invoice ${dto.invoiceId} to DIAN`);
@@ -190,14 +214,19 @@ export class DianController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'List DIAN documents',
-    description: 'Returns a paginated list of DIAN documents with optional filters.',
+    description:
+      'Returns a paginated list of DIAN documents with optional filters.',
   })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, enum: DianDocumentStatus })
   @ApiQuery({ name: 'fromDate', required: false, type: Date })
   @ApiQuery({ name: 'toDate', required: false, type: Date })
-  @ApiResponse({ status: 200, description: 'List of documents', type: PaginatedDianDocumentsEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'List of documents',
+    type: PaginatedDianDocumentsEntity,
+  })
   async listDocuments(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -206,7 +235,10 @@ export class DianController {
     @Query('toDate') toDate?: string,
   ) {
     const pageNum = Math.max(1, parseInt(page ?? '1', 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit ?? '10', 10) || 10));
+    const limitNum = Math.min(
+      100,
+      Math.max(1, parseInt(limit ?? '10', 10) || 10),
+    );
 
     return this.dianService.listDocuments(
       pageNum,
@@ -224,7 +256,11 @@ export class DianController {
     description: 'Returns the details of a specific DIAN document.',
   })
   @ApiParam({ name: 'id', description: 'Document ID' })
-  @ApiResponse({ status: 200, description: 'Document details', type: DianDocumentWithInvoiceEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'Document details',
+    type: DianDocumentWithInvoiceEntity,
+  })
   @ApiResponse({ status: 404, description: 'Document not found' })
   async getDocument(@Param('id') id: string) {
     this.logger.log(`Getting document ${id}`);

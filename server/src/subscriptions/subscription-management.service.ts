@@ -80,7 +80,9 @@ export class SubscriptionManagementService {
     const limits = PLAN_LIMITS[plan];
     const durationDays = getPeriodDays(period);
     const startDate = new Date();
-    const endDate = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
+    const endDate = new Date(
+      startDate.getTime() + durationDays * 24 * 60 * 60 * 1000,
+    );
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Create or update subscription
@@ -173,7 +175,9 @@ export class SubscriptionManagementService {
     });
 
     if (!subscription) {
-      throw new NotFoundException(`Subscription for tenant ${tenantId} not found`);
+      throw new NotFoundException(
+        `Subscription for tenant ${tenantId} not found`,
+      );
     }
 
     if (subscription.status === SubscriptionStatus.SUSPENDED) {
@@ -241,7 +245,9 @@ export class SubscriptionManagementService {
     });
 
     if (!subscription) {
-      throw new NotFoundException(`Subscription for tenant ${tenantId} not found`);
+      throw new NotFoundException(
+        `Subscription for tenant ${tenantId} not found`,
+      );
     }
 
     if (subscription.status !== SubscriptionStatus.SUSPENDED) {
@@ -305,7 +311,9 @@ export class SubscriptionManagementService {
     });
 
     if (!subscription) {
-      throw new NotFoundException(`Subscription for tenant ${tenantId} not found`);
+      throw new NotFoundException(
+        `Subscription for tenant ${tenantId} not found`,
+      );
     }
 
     if (subscription.status !== SubscriptionStatus.ACTIVE) {
@@ -337,7 +345,9 @@ export class SubscriptionManagementService {
       return { subscription: updatedSubscription, tenant: updatedTenant };
     });
 
-    this.logger.log(`Plan changed from ${oldPlan} to ${newPlan} for tenant ${tenantId}`);
+    this.logger.log(
+      `Plan changed from ${oldPlan} to ${newPlan} for tenant ${tenantId}`,
+    );
 
     // Send notification to tenant admin
     const adminUser = subscription.tenant.users[0];
@@ -369,7 +379,9 @@ export class SubscriptionManagementService {
    * @param tenantId - The tenant ID
    * @returns The subscription with tenant info
    */
-  async getSubscription(tenantId: string): Promise<Subscription & { tenant: Tenant } | null> {
+  async getSubscription(
+    tenantId: string,
+  ): Promise<(Subscription & { tenant: Tenant }) | null> {
     return this.prisma.subscription.findUnique({
       where: { tenantId },
       include: { tenant: true },
@@ -471,7 +483,9 @@ export class SubscriptionManagementService {
       if (result.success) {
         this.logger.log(`Plan activation notification sent to ${email}`);
       } else {
-        this.logger.warn(`Plan activation notification failed for ${email}: ${result.error}`);
+        this.logger.warn(
+          `Plan activation notification failed for ${email}: ${result.error}`,
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -496,7 +510,9 @@ export class SubscriptionManagementService {
       if (result.success) {
         this.logger.log(`Plan suspension notification sent to ${email}`);
       } else {
-        this.logger.warn(`Plan suspension notification failed for ${email}: ${result.error}`);
+        this.logger.warn(
+          `Plan suspension notification failed for ${email}: ${result.error}`,
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -527,7 +543,9 @@ export class SubscriptionManagementService {
       if (result.success) {
         this.logger.log(`Plan change notification sent to ${email}`);
       } else {
-        this.logger.warn(`Plan change notification failed for ${email}: ${result.error}`);
+        this.logger.warn(
+          `Plan change notification failed for ${email}: ${result.error}`,
+        );
       }
     } catch (error) {
       this.logger.error(

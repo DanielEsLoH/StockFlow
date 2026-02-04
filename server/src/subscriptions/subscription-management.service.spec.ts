@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import {
   SubscriptionPlan,
   SubscriptionPeriod,
@@ -103,7 +99,8 @@ describe('SubscriptionManagementService', () => {
   };
 
   // Helper to flush promises
-  const flushPromises = () => new Promise(jest.requireActual('timers').setImmediate);
+  const flushPromises = () =>
+    new Promise(jest.requireActual('timers').setImmediate);
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -124,7 +121,9 @@ describe('SubscriptionManagementService', () => {
       ],
     }).compile();
 
-    service = module.get<SubscriptionManagementService>(SubscriptionManagementService);
+    service = module.get<SubscriptionManagementService>(
+      SubscriptionManagementService,
+    );
     prismaService = module.get<PrismaService>(PrismaService);
     brevoService = module.get<BrevoService>(BrevoService);
 
@@ -149,7 +148,10 @@ describe('SubscriptionManagementService', () => {
       const tenantWithUsers = { ...mockTenant, users: [mockUser] };
       mockPrismaTenant.findUnique.mockResolvedValue(tenantWithUsers);
 
-      const newSubscription = { ...mockSubscription, plan: SubscriptionPlan.PYME };
+      const newSubscription = {
+        ...mockSubscription,
+        plan: SubscriptionPlan.PYME,
+      };
       const updatedTenant = { ...mockTenant, plan: SubscriptionPlan.PYME };
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
@@ -224,7 +226,9 @@ describe('SubscriptionManagementService', () => {
       const expectedEndDate = new Date('2024-01-15T12:00:00.000Z');
       expectedEndDate.setDate(expectedEndDate.getDate() + 30);
 
-      expect(capturedUpsertData.create.periodType).toBe(SubscriptionPeriod.MONTHLY);
+      expect(capturedUpsertData.create.periodType).toBe(
+        SubscriptionPeriod.MONTHLY,
+      );
     });
 
     it('should calculate correct end date for QUARTERLY period', async () => {
@@ -254,7 +258,9 @@ describe('SubscriptionManagementService', () => {
         mockAdminId,
       );
 
-      expect(capturedUpsertData.create.periodType).toBe(SubscriptionPeriod.QUARTERLY);
+      expect(capturedUpsertData.create.periodType).toBe(
+        SubscriptionPeriod.QUARTERLY,
+      );
     });
 
     it('should calculate correct end date for ANNUAL period', async () => {
@@ -284,7 +290,9 @@ describe('SubscriptionManagementService', () => {
         mockAdminId,
       );
 
-      expect(capturedUpsertData.create.periodType).toBe(SubscriptionPeriod.ANNUAL);
+      expect(capturedUpsertData.create.periodType).toBe(
+        SubscriptionPeriod.ANNUAL,
+      );
     });
 
     it('should update tenant limits according to plan', async () => {
@@ -316,7 +324,9 @@ describe('SubscriptionManagementService', () => {
 
       const proLimits = PLAN_LIMITS[SubscriptionPlan.PRO];
       expect(capturedTenantUpdate.data.maxUsers).toBe(proLimits.maxUsers);
-      expect(capturedTenantUpdate.data.maxWarehouses).toBe(proLimits.maxWarehouses);
+      expect(capturedTenantUpdate.data.maxWarehouses).toBe(
+        proLimits.maxWarehouses,
+      );
       expect(capturedTenantUpdate.data.maxProducts).toBe(proLimits.maxProducts);
       expect(capturedTenantUpdate.data.maxInvoices).toBe(proLimits.maxInvoices);
     });
@@ -327,7 +337,9 @@ describe('SubscriptionManagementService', () => {
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { upsert: jest.fn().mockResolvedValue(mockSubscription) },
+          subscription: {
+            upsert: jest.fn().mockResolvedValue(mockSubscription),
+          },
           tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
         };
         return callback(tx);
@@ -347,7 +359,9 @@ describe('SubscriptionManagementService', () => {
       // Wait for async notification
       await flushPromises();
 
-      expect(mockBrevoService.sendSubscriptionActivatedEmail).toHaveBeenCalledWith(
+      expect(
+        mockBrevoService.sendSubscriptionActivatedEmail,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           to: mockUser.email,
           firstName: mockUser.firstName,
@@ -362,7 +376,9 @@ describe('SubscriptionManagementService', () => {
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { upsert: jest.fn().mockResolvedValue(mockSubscription) },
+          subscription: {
+            upsert: jest.fn().mockResolvedValue(mockSubscription),
+          },
           tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
         };
         return callback(tx);
@@ -377,7 +393,9 @@ describe('SubscriptionManagementService', () => {
 
       await flushPromises();
 
-      expect(mockBrevoService.sendSubscriptionActivatedEmail).not.toHaveBeenCalled();
+      expect(
+        mockBrevoService.sendSubscriptionActivatedEmail,
+      ).not.toHaveBeenCalled();
     });
 
     it('should handle notification failure gracefully', async () => {
@@ -386,7 +404,9 @@ describe('SubscriptionManagementService', () => {
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { upsert: jest.fn().mockResolvedValue(mockSubscription) },
+          subscription: {
+            upsert: jest.fn().mockResolvedValue(mockSubscription),
+          },
           tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
         };
         return callback(tx);
@@ -447,7 +467,9 @@ describe('SubscriptionManagementService', () => {
         ...mockSubscription,
         tenant: { ...mockTenant, users: [mockUser] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
 
       const suspendedSubscription = {
         ...mockSubscription,
@@ -497,7 +519,9 @@ describe('SubscriptionManagementService', () => {
         status: SubscriptionStatus.SUSPENDED,
         tenant: { ...mockTenant, users: [mockUser] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(suspendedSubscription);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        suspendedSubscription,
+      );
 
       await expect(
         service.suspendPlan(mockTenantId, 'Reason', mockAdminId),
@@ -509,11 +533,15 @@ describe('SubscriptionManagementService', () => {
         ...mockSubscription,
         tenant: { ...mockTenant, users: [mockUser] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+          subscription: {
+            update: jest.fn().mockResolvedValue(mockSubscription),
+          },
           tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
         };
         return callback(tx);
@@ -527,7 +555,9 @@ describe('SubscriptionManagementService', () => {
 
       await flushPromises();
 
-      expect(mockBrevoService.sendSubscriptionSuspendedEmail).toHaveBeenCalledWith({
+      expect(
+        mockBrevoService.sendSubscriptionSuspendedEmail,
+      ).toHaveBeenCalledWith({
         to: mockUser.email,
         firstName: mockUser.firstName,
         reason: 'Violation of ToS',
@@ -539,7 +569,9 @@ describe('SubscriptionManagementService', () => {
         ...mockSubscription,
         tenant: { ...mockTenant, users: [mockUser] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
 
       let capturedUpdateData: any;
       mockPrismaTransaction.mockImplementation(async (callback) => {
@@ -567,11 +599,15 @@ describe('SubscriptionManagementService', () => {
         ...mockSubscription,
         tenant: { ...mockTenant, users: [mockUser] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+          subscription: {
+            update: jest.fn().mockResolvedValue(mockSubscription),
+          },
           tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
         };
         return callback(tx);
@@ -581,7 +617,11 @@ describe('SubscriptionManagementService', () => {
         new Error('Service error'),
       );
 
-      const result = await service.suspendPlan(mockTenantId, 'Reason', mockAdminId);
+      const result = await service.suspendPlan(
+        mockTenantId,
+        'Reason',
+        mockAdminId,
+      );
 
       await flushPromises();
 
@@ -599,7 +639,9 @@ describe('SubscriptionManagementService', () => {
         suspendedReason: 'Test',
         endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // Future date
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(suspendedSubscription);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        suspendedSubscription,
+      );
 
       const reactivatedSubscription = {
         ...mockSubscription,
@@ -671,7 +713,9 @@ describe('SubscriptionManagementService', () => {
         status: SubscriptionStatus.SUSPENDED,
         endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(suspendedSubscription);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        suspendedSubscription,
+      );
 
       let capturedUpdateData: any;
       mockPrismaTransaction.mockImplementation(async (callback) => {
@@ -702,14 +746,21 @@ describe('SubscriptionManagementService', () => {
         plan: SubscriptionPlan.PYME,
         tenant: { ...mockTenant, users: [mockUser] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
 
-      const updatedSubscription = { ...mockSubscription, plan: SubscriptionPlan.PRO };
+      const updatedSubscription = {
+        ...mockSubscription,
+        plan: SubscriptionPlan.PRO,
+      };
       const updatedTenant = { ...mockTenant, plan: SubscriptionPlan.PRO };
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { update: jest.fn().mockResolvedValue(updatedSubscription) },
+          subscription: {
+            update: jest.fn().mockResolvedValue(updatedSubscription),
+          },
           tenant: { update: jest.fn().mockResolvedValue(updatedTenant) },
         };
         return callback(tx);
@@ -743,7 +794,9 @@ describe('SubscriptionManagementService', () => {
         status: SubscriptionStatus.SUSPENDED,
         tenant: mockTenant,
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(suspendedSubscription);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        suspendedSubscription,
+      );
 
       await expect(
         service.changePlan(mockTenantId, SubscriptionPlan.PRO, mockAdminId),
@@ -755,12 +808,16 @@ describe('SubscriptionManagementService', () => {
         ...mockSubscription,
         tenant: { ...mockTenant, users: [mockUser] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
 
       let capturedTenantUpdate: any;
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+          subscription: {
+            update: jest.fn().mockResolvedValue(mockSubscription),
+          },
           tenant: {
             update: jest.fn().mockImplementation((args) => {
               capturedTenantUpdate = args;
@@ -771,12 +828,18 @@ describe('SubscriptionManagementService', () => {
         return callback(tx);
       });
 
-      await service.changePlan(mockTenantId, SubscriptionPlan.PLUS, mockAdminId);
+      await service.changePlan(
+        mockTenantId,
+        SubscriptionPlan.PLUS,
+        mockAdminId,
+      );
 
       const plusLimits = PLAN_LIMITS[SubscriptionPlan.PLUS];
       expect(capturedTenantUpdate.data.plan).toBe(SubscriptionPlan.PLUS);
       expect(capturedTenantUpdate.data.maxUsers).toBe(plusLimits.maxUsers);
-      expect(capturedTenantUpdate.data.maxWarehouses).toBe(plusLimits.maxWarehouses);
+      expect(capturedTenantUpdate.data.maxWarehouses).toBe(
+        plusLimits.maxWarehouses,
+      );
     });
 
     it('should send change notification', async () => {
@@ -785,11 +848,15 @@ describe('SubscriptionManagementService', () => {
         plan: SubscriptionPlan.PYME,
         tenant: { ...mockTenant, users: [mockUser] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+          subscription: {
+            update: jest.fn().mockResolvedValue(mockSubscription),
+          },
           tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
         };
         return callback(tx);
@@ -803,7 +870,9 @@ describe('SubscriptionManagementService', () => {
 
       await flushPromises();
 
-      expect(mockBrevoService.sendSubscriptionChangedEmail).toHaveBeenCalledWith(
+      expect(
+        mockBrevoService.sendSubscriptionChangedEmail,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           to: mockUser.email,
           oldPlanName: PLAN_LIMITS[SubscriptionPlan.PYME].displayName,
@@ -817,11 +886,15 @@ describe('SubscriptionManagementService', () => {
         ...mockSubscription,
         tenant: { ...mockTenant, users: [mockUser] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+          subscription: {
+            update: jest.fn().mockResolvedValue(mockSubscription),
+          },
           tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
         };
         return callback(tx);
@@ -849,7 +922,9 @@ describe('SubscriptionManagementService', () => {
         ...mockSubscription,
         tenant: mockTenant,
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
 
       const result = await service.getSubscription(mockTenantId);
 
@@ -962,7 +1037,9 @@ describe('SubscriptionManagementService', () => {
         SubscriptionPlan.PYME,
         SubscriptionPeriod.MONTHLY,
       );
-      expect(price).toBe(calculatePlanPrice(SubscriptionPlan.PYME, SubscriptionPeriod.MONTHLY));
+      expect(price).toBe(
+        calculatePlanPrice(SubscriptionPlan.PYME, SubscriptionPeriod.MONTHLY),
+      );
     });
 
     it('should calculate quarterly price with discount', () => {
@@ -970,7 +1047,9 @@ describe('SubscriptionManagementService', () => {
         SubscriptionPlan.PRO,
         SubscriptionPeriod.QUARTERLY,
       );
-      expect(price).toBe(calculatePlanPrice(SubscriptionPlan.PRO, SubscriptionPeriod.QUARTERLY));
+      expect(price).toBe(
+        calculatePlanPrice(SubscriptionPlan.PRO, SubscriptionPeriod.QUARTERLY),
+      );
     });
 
     it('should calculate annual price with discount', () => {
@@ -978,7 +1057,9 @@ describe('SubscriptionManagementService', () => {
         SubscriptionPlan.PLUS,
         SubscriptionPeriod.ANNUAL,
       );
-      expect(price).toBe(calculatePlanPrice(SubscriptionPlan.PLUS, SubscriptionPeriod.ANNUAL));
+      expect(price).toBe(
+        calculatePlanPrice(SubscriptionPlan.PLUS, SubscriptionPeriod.ANNUAL),
+      );
     });
   });
 
@@ -990,7 +1071,9 @@ describe('SubscriptionManagementService', () => {
 
         mockPrismaTransaction.mockImplementation(async (callback) => {
           const tx = {
-            subscription: { upsert: jest.fn().mockResolvedValue(mockSubscription) },
+            subscription: {
+              upsert: jest.fn().mockResolvedValue(mockSubscription),
+            },
             tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
           };
           return callback(tx);
@@ -1020,7 +1103,9 @@ describe('SubscriptionManagementService', () => {
 
         mockPrismaTransaction.mockImplementation(async (callback) => {
           const tx = {
-            subscription: { upsert: jest.fn().mockResolvedValue(mockSubscription) },
+            subscription: {
+              upsert: jest.fn().mockResolvedValue(mockSubscription),
+            },
             tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
           };
           return callback(tx);
@@ -1051,7 +1136,9 @@ describe('SubscriptionManagementService', () => {
 
         mockPrismaTransaction.mockImplementation(async (callback) => {
           const tx = {
-            subscription: { upsert: jest.fn().mockResolvedValue(mockSubscription) },
+            subscription: {
+              upsert: jest.fn().mockResolvedValue(mockSubscription),
+            },
             tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
           };
           return callback(tx);
@@ -1083,11 +1170,15 @@ describe('SubscriptionManagementService', () => {
           ...mockSubscription,
           tenant: { ...mockTenant, users: [mockUser] },
         };
-        mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+        mockPrismaSubscription.findUnique.mockResolvedValue(
+          subscriptionWithTenant,
+        );
 
         mockPrismaTransaction.mockImplementation(async (callback) => {
           const tx = {
-            subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+            subscription: {
+              update: jest.fn().mockResolvedValue(mockSubscription),
+            },
             tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
           };
           return callback(tx);
@@ -1111,11 +1202,15 @@ describe('SubscriptionManagementService', () => {
           ...mockSubscription,
           tenant: { ...mockTenant, users: [mockUser] },
         };
-        mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+        mockPrismaSubscription.findUnique.mockResolvedValue(
+          subscriptionWithTenant,
+        );
 
         mockPrismaTransaction.mockImplementation(async (callback) => {
           const tx = {
-            subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+            subscription: {
+              update: jest.fn().mockResolvedValue(mockSubscription),
+            },
             tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
           };
           return callback(tx);
@@ -1142,11 +1237,15 @@ describe('SubscriptionManagementService', () => {
           ...mockSubscription,
           tenant: { ...mockTenant, users: [mockUser] },
         };
-        mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+        mockPrismaSubscription.findUnique.mockResolvedValue(
+          subscriptionWithTenant,
+        );
 
         mockPrismaTransaction.mockImplementation(async (callback) => {
           const tx = {
-            subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+            subscription: {
+              update: jest.fn().mockResolvedValue(mockSubscription),
+            },
             tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
           };
           return callback(tx);
@@ -1156,7 +1255,11 @@ describe('SubscriptionManagementService', () => {
           success: true,
         });
 
-        await service.changePlan(mockTenantId, SubscriptionPlan.PRO, mockAdminId);
+        await service.changePlan(
+          mockTenantId,
+          SubscriptionPlan.PRO,
+          mockAdminId,
+        );
 
         await flushPromises();
 
@@ -1170,11 +1273,15 @@ describe('SubscriptionManagementService', () => {
           ...mockSubscription,
           tenant: { ...mockTenant, users: [mockUser] },
         };
-        mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+        mockPrismaSubscription.findUnique.mockResolvedValue(
+          subscriptionWithTenant,
+        );
 
         mockPrismaTransaction.mockImplementation(async (callback) => {
           const tx = {
-            subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+            subscription: {
+              update: jest.fn().mockResolvedValue(mockSubscription),
+            },
             tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
           };
           return callback(tx);
@@ -1185,7 +1292,11 @@ describe('SubscriptionManagementService', () => {
           error: 'Invalid recipient',
         });
 
-        await service.changePlan(mockTenantId, SubscriptionPlan.PRO, mockAdminId);
+        await service.changePlan(
+          mockTenantId,
+          SubscriptionPlan.PRO,
+          mockAdminId,
+        );
 
         await flushPromises();
 
@@ -1199,19 +1310,29 @@ describe('SubscriptionManagementService', () => {
           ...mockSubscription,
           tenant: { ...mockTenant, users: [mockUser] },
         };
-        mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithTenant);
+        mockPrismaSubscription.findUnique.mockResolvedValue(
+          subscriptionWithTenant,
+        );
 
         mockPrismaTransaction.mockImplementation(async (callback) => {
           const tx = {
-            subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+            subscription: {
+              update: jest.fn().mockResolvedValue(mockSubscription),
+            },
             tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
           };
           return callback(tx);
         });
 
-        mockBrevoService.sendSubscriptionChangedEmail.mockRejectedValue('string error');
+        mockBrevoService.sendSubscriptionChangedEmail.mockRejectedValue(
+          'string error',
+        );
 
-        await service.changePlan(mockTenantId, SubscriptionPlan.PRO, mockAdminId);
+        await service.changePlan(
+          mockTenantId,
+          SubscriptionPlan.PRO,
+          mockAdminId,
+        );
 
         await flushPromises();
 
@@ -1229,20 +1350,30 @@ describe('SubscriptionManagementService', () => {
         ...mockSubscription,
         tenant: { ...mockTenant, users: [] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithNoAdmins);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithNoAdmins,
+      );
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+          subscription: {
+            update: jest.fn().mockResolvedValue(mockSubscription),
+          },
           tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
         };
         return callback(tx);
       });
 
-      const result = await service.suspendPlan(mockTenantId, 'Reason', mockAdminId);
+      const result = await service.suspendPlan(
+        mockTenantId,
+        'Reason',
+        mockAdminId,
+      );
 
       expect(result.success).toBe(true);
-      expect(mockBrevoService.sendSubscriptionSuspendedEmail).not.toHaveBeenCalled();
+      expect(
+        mockBrevoService.sendSubscriptionSuspendedEmail,
+      ).not.toHaveBeenCalled();
     });
 
     it('should handle tenant with no admin users for plan change', async () => {
@@ -1250,11 +1381,15 @@ describe('SubscriptionManagementService', () => {
         ...mockSubscription,
         tenant: { ...mockTenant, users: [] },
       };
-      mockPrismaSubscription.findUnique.mockResolvedValue(subscriptionWithNoAdmins);
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithNoAdmins,
+      );
 
       mockPrismaTransaction.mockImplementation(async (callback) => {
         const tx = {
-          subscription: { update: jest.fn().mockResolvedValue(mockSubscription) },
+          subscription: {
+            update: jest.fn().mockResolvedValue(mockSubscription),
+          },
           tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
         };
         return callback(tx);
@@ -1267,7 +1402,9 @@ describe('SubscriptionManagementService', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(mockBrevoService.sendSubscriptionChangedEmail).not.toHaveBeenCalled();
+      expect(
+        mockBrevoService.sendSubscriptionChangedEmail,
+      ).not.toHaveBeenCalled();
     });
   });
 });

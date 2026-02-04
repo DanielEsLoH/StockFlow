@@ -25,7 +25,12 @@ export const STRIPE_PLAN_LIMITS: Record<
     maxWarehouses: number;
   }
 > = {
-  EMPRENDEDOR: { maxUsers: 1, maxProducts: 100, maxInvoices: 50, maxWarehouses: 1 },
+  EMPRENDEDOR: {
+    maxUsers: 1,
+    maxProducts: 100,
+    maxInvoices: 50,
+    maxWarehouses: 1,
+  },
   PYME: { maxUsers: 2, maxProducts: 500, maxInvoices: -1, maxWarehouses: 2 },
   PRO: { maxUsers: 3, maxProducts: 2000, maxInvoices: -1, maxWarehouses: 10 },
   PLUS: {
@@ -98,7 +103,10 @@ export class SubscriptionsService {
   private readonly stripeEnabled: boolean;
   private readonly frontendUrl: string;
   private readonly webhookSecret: string;
-  private readonly priceIds: Record<Exclude<SubscriptionPlan, 'EMPRENDEDOR'>, string>;
+  private readonly priceIds: Record<
+    Exclude<SubscriptionPlan, 'EMPRENDEDOR'>,
+    string
+  >;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -313,7 +321,7 @@ export class SubscriptionsService {
       throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
     }
 
-      const status: SubscriptionStatus = {
+    const status: SubscriptionStatus = {
       tenantId: tenant.id,
       plan: tenant.plan || 'EMPRENDEDOR',
       stripeCustomerId: tenant.stripeCustomerId,

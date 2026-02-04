@@ -65,18 +65,20 @@ describe('POSSalesService', () => {
     total: 119,
     notes: null,
     customer: null,
-    items: [{
-      id: 'item-123',
-      productId: mockProductId,
-      product: { id: mockProductId, name: 'Test Product', sku: 'TEST-001' },
-      quantity: 1,
-      unitPrice: 100,
-      taxRate: 19,
-      discount: 0,
-      subtotal: 100,
-      tax: 19,
-      total: 119,
-    }],
+    items: [
+      {
+        id: 'item-123',
+        productId: mockProductId,
+        product: { id: mockProductId, name: 'Test Product', sku: 'TEST-001' },
+        quantity: 1,
+        unitPrice: 100,
+        taxRate: 19,
+        discount: 0,
+        subtotal: 100,
+        tax: 19,
+        total: 119,
+      },
+    ],
   };
 
   const mockSale = {
@@ -91,14 +93,16 @@ describe('POSSalesService', () => {
     total: 119,
     createdAt: new Date(),
     invoice: mockInvoice,
-    payments: [{
-      id: 'payment-123',
-      method: PaymentMethod.CASH,
-      amount: 119,
-      reference: null,
-      cardLastFour: null,
-      createdAt: new Date(),
-    }],
+    payments: [
+      {
+        id: 'payment-123',
+        method: PaymentMethod.CASH,
+        amount: 119,
+        reference: null,
+        cardLastFour: null,
+        createdAt: new Date(),
+      },
+    ],
     session: {
       id: mockSessionId,
       status: POSSessionStatus.ACTIVE,
@@ -246,7 +250,9 @@ describe('POSSalesService', () => {
     it('should throw NotFoundException when sale not found', async () => {
       (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should require tenant context', async () => {
@@ -254,7 +260,9 @@ describe('POSSalesService', () => {
         throw new Error('Tenant context required');
       });
 
-      await expect(service.findOne('sale-123')).rejects.toThrow('Tenant context required');
+      await expect(service.findOne('sale-123')).rejects.toThrow(
+        'Tenant context required',
+      );
     });
 
     it('should handle item without product name', async () => {
@@ -262,13 +270,17 @@ describe('POSSalesService', () => {
         ...mockSale,
         invoice: {
           ...mockInvoice,
-          items: [{
-            ...mockInvoice.items[0],
-            product: null,
-          }],
+          items: [
+            {
+              ...mockInvoice.items[0],
+              product: null,
+            },
+          ],
         },
       };
-      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(saleWithNoProduct);
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(
+        saleWithNoProduct,
+      );
 
       const result = await service.findOne('sale-123');
 
@@ -421,9 +433,9 @@ describe('POSSalesService', () => {
       (prisma.customer.findFirst as jest.Mock).mockResolvedValue(null);
 
       const dtoWithCustomer = { ...createDto, customerId: 'customer-123' };
-      await expect(service.createSale(dtoWithCustomer, mockUserId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.createSale(dtoWithCustomer, mockUserId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException when product not found', async () => {
@@ -447,30 +459,32 @@ describe('POSSalesService', () => {
         payments: [{ method: PaymentMethod.CASH, amount: 50 }], // Wrong amount
       };
 
-      await expect(service.createSale(dtoWithWrongPayment, mockUserId)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.createSale(dtoWithWrongPayment, mockUserId)).rejects.toThrow(
-        'Payment total',
-      );
+      await expect(
+        service.createSale(dtoWithWrongPayment, mockUserId),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.createSale(dtoWithWrongPayment, mockUserId),
+      ).rejects.toThrow('Payment total');
     });
 
     it('should throw BadRequestException when insufficient stock', async () => {
       const lowStockProduct = { ...mockProduct, stock: 0 };
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(mockSession);
-      (prisma.product.findMany as jest.Mock).mockResolvedValue([lowStockProduct]);
+      (prisma.product.findMany as jest.Mock).mockResolvedValue([
+        lowStockProduct,
+      ]);
 
       const dtoWithHighQuantity = {
         items: [{ productId: mockProductId, quantity: 10 }],
         payments: [{ method: PaymentMethod.CASH, amount: 1190 }],
       };
 
-      await expect(service.createSale(dtoWithHighQuantity, mockUserId)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.createSale(dtoWithHighQuantity, mockUserId)).rejects.toThrow(
-        'Insufficient stock',
-      );
+      await expect(
+        service.createSale(dtoWithHighQuantity, mockUserId),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.createSale(dtoWithHighQuantity, mockUserId),
+      ).rejects.toThrow('Insufficient stock');
     });
 
     it('should create sale successfully', async () => {
@@ -502,20 +516,24 @@ describe('POSSalesService', () => {
         createdAt: new Date(),
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        const result = await callback(mockTx);
-        return {
-          ...result,
-          invoice: mockInvoice,
-          payments: [mockTx.salePayment.create.mock.results[0]?.value || {
-            id: 'payment-123',
-            method: PaymentMethod.CASH,
-            amount: 119,
-            createdAt: new Date(),
-          }],
-          session: mockSession,
-        };
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const result = await callback(mockTx);
+          return {
+            ...result,
+            invoice: mockInvoice,
+            payments: [
+              mockTx.salePayment.create.mock.results[0]?.value || {
+                id: 'payment-123',
+                method: PaymentMethod.CASH,
+                amount: 119,
+                createdAt: new Date(),
+              },
+            ],
+            session: mockSession,
+          };
+        },
+      );
 
       const result = await service.createSale(createDto, mockUserId);
 
@@ -531,7 +549,11 @@ describe('POSSalesService', () => {
 
       const invoiceWithCustomer = {
         ...mockInvoice,
-        customer: { id: 'customer-123', name: 'Test Customer', documentNumber: '123' },
+        customer: {
+          id: 'customer-123',
+          name: 'Test Customer',
+          documentNumber: '123',
+        },
       };
 
       const mockTx = createMockTx(prisma);
@@ -557,29 +579,33 @@ describe('POSSalesService', () => {
         createdAt: new Date(),
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        await callback(mockTx);
-        return {
-          id: 'sale-123',
-          tenantId: mockTenantId,
-          sessionId: mockSessionId,
-          invoiceId: mockInvoiceId,
-          saleNumber: 'POS-00001',
-          subtotal: 100,
-          tax: 19,
-          discount: 0,
-          total: 119,
-          createdAt: new Date(),
-          invoice: invoiceWithCustomer,
-          payments: [{
-            id: 'payment-123',
-            method: PaymentMethod.CASH,
-            amount: 119,
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          await callback(mockTx);
+          return {
+            id: 'sale-123',
+            tenantId: mockTenantId,
+            sessionId: mockSessionId,
+            invoiceId: mockInvoiceId,
+            saleNumber: 'POS-00001',
+            subtotal: 100,
+            tax: 19,
+            discount: 0,
+            total: 119,
             createdAt: new Date(),
-          }],
-          session: mockSession,
-        };
-      });
+            invoice: invoiceWithCustomer,
+            payments: [
+              {
+                id: 'payment-123',
+                method: PaymentMethod.CASH,
+                amount: 119,
+                createdAt: new Date(),
+              },
+            ],
+            session: mockSession,
+          };
+        },
+      );
 
       const dtoWithCustomer = { ...createDto, customerId: 'customer-123' };
       const result = await service.createSale(dtoWithCustomer, mockUserId);
@@ -610,15 +636,17 @@ describe('POSSalesService', () => {
         amount: 107.1,
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        const result = await callback(mockTx);
-        return {
-          ...result,
-          invoice: mockInvoice,
-          payments: [mockTx.salePayment.create.mock.results[0]?.value],
-          session: mockSession,
-        };
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const result = await callback(mockTx);
+          return {
+            ...result,
+            invoice: mockInvoice,
+            payments: [mockTx.salePayment.create.mock.results[0]?.value],
+            session: mockSession,
+          };
+        },
+      );
 
       const dtoWithDiscount = {
         items: [{ productId: mockProductId, quantity: 1, discountPercent: 10 }],
@@ -652,15 +680,17 @@ describe('POSSalesService', () => {
         amount: 114,
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        const result = await callback(mockTx);
-        return {
-          ...result,
-          invoice: mockInvoice,
-          payments: [mockTx.salePayment.create.mock.results[0]?.value],
-          session: mockSession,
-        };
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const result = await callback(mockTx);
+          return {
+            ...result,
+            invoice: mockInvoice,
+            payments: [mockTx.salePayment.create.mock.results[0]?.value],
+            session: mockSession,
+          };
+        },
+      );
 
       const dtoWithGlobalDiscount = {
         items: [{ productId: mockProductId, quantity: 1 }],
@@ -668,7 +698,10 @@ describe('POSSalesService', () => {
         discountPercent: 5,
       };
 
-      const result = await service.createSale(dtoWithGlobalDiscount, mockUserId);
+      const result = await service.createSale(
+        dtoWithGlobalDiscount,
+        mockUserId,
+      );
       expect(result).toBeDefined();
     });
 
@@ -695,15 +728,17 @@ describe('POSSalesService', () => {
         amount: 95.2,
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        const result = await callback(mockTx);
-        return {
-          ...result,
-          invoice: mockInvoice,
-          payments: [mockTx.salePayment.create.mock.results[0]?.value],
-          session: mockSession,
-        };
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const result = await callback(mockTx);
+          return {
+            ...result,
+            invoice: mockInvoice,
+            payments: [mockTx.salePayment.create.mock.results[0]?.value],
+            session: mockSession,
+          };
+        },
+      );
 
       const dtoWithCustomPrice = {
         items: [{ productId: mockProductId, quantity: 1, unitPrice: 80 }],
@@ -737,24 +772,41 @@ describe('POSSalesService', () => {
         amount: 60,
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        const result = await callback(mockTx);
-        return {
-          ...result,
-          invoice: mockInvoice,
-          payments: [
-            { id: 'payment-1', method: PaymentMethod.CASH, amount: 60, createdAt: new Date() },
-            { id: 'payment-2', method: PaymentMethod.CREDIT_CARD, amount: 59, cardLastFour: '1234', createdAt: new Date() },
-          ],
-          session: mockSession,
-        };
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const result = await callback(mockTx);
+          return {
+            ...result,
+            invoice: mockInvoice,
+            payments: [
+              {
+                id: 'payment-1',
+                method: PaymentMethod.CASH,
+                amount: 60,
+                createdAt: new Date(),
+              },
+              {
+                id: 'payment-2',
+                method: PaymentMethod.CREDIT_CARD,
+                amount: 59,
+                cardLastFour: '1234',
+                createdAt: new Date(),
+              },
+            ],
+            session: mockSession,
+          };
+        },
+      );
 
       const dtoSplitPayments = {
         items: [{ productId: mockProductId, quantity: 1 }],
         payments: [
           { method: PaymentMethod.CASH, amount: 60 },
-          { method: PaymentMethod.CREDIT_CARD, amount: 59, cardLastFour: '1234' },
+          {
+            method: PaymentMethod.CREDIT_CARD,
+            amount: 59,
+            cardLastFour: '1234',
+          },
         ],
       };
 
@@ -768,7 +820,9 @@ describe('POSSalesService', () => {
         ...mockSession,
         cashRegister: { ...mockSession.cashRegister, warehouseId: null },
       };
-      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(sessionNoWarehouse);
+      (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(
+        sessionNoWarehouse,
+      );
       (prisma.product.findMany as jest.Mock).mockResolvedValue([mockProduct]);
 
       const mockTx = createMockTx(prisma);
@@ -790,15 +844,17 @@ describe('POSSalesService', () => {
         amount: 119,
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        const result = await callback(mockTx);
-        return {
-          ...result,
-          invoice: mockInvoice,
-          payments: [mockTx.salePayment.create.mock.results[0]?.value],
-          session: sessionNoWarehouse,
-        };
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const result = await callback(mockTx);
+          return {
+            ...result,
+            invoice: mockInvoice,
+            payments: [mockTx.salePayment.create.mock.results[0]?.value],
+            session: sessionNoWarehouse,
+          };
+        },
+      );
 
       const result = await service.createSale(createDto, mockUserId);
       expect(result).toBeDefined();
@@ -810,7 +866,9 @@ describe('POSSalesService', () => {
 
       const mockTx = createMockTx(prisma);
       mockTx.pOSSale.findFirst.mockResolvedValue({ saleNumber: 'POS-00099' });
-      mockTx.invoice.findFirst.mockResolvedValue({ invoiceNumber: 'INV-00050' });
+      mockTx.invoice.findFirst.mockResolvedValue({
+        invoiceNumber: 'INV-00050',
+      });
       mockTx.invoice.create.mockResolvedValue(mockInvoice);
       mockTx.pOSSale.create.mockResolvedValue({
         id: 'sale-123',
@@ -827,30 +885,45 @@ describe('POSSalesService', () => {
         amount: 119,
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        const result = await callback(mockTx);
-        return {
-          ...result,
-          invoice: mockInvoice,
-          payments: [mockTx.salePayment.create.mock.results[0]?.value],
-          session: mockSession,
-        };
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const result = await callback(mockTx);
+          return {
+            ...result,
+            invoice: mockInvoice,
+            payments: [mockTx.salePayment.create.mock.results[0]?.value],
+            session: mockSession,
+          };
+        },
+      );
 
       const result = await service.createSale(createDto, mockUserId);
       expect(result).toBeDefined();
     });
 
     it('should handle multiple products in one sale', async () => {
-      const product2 = { ...mockProduct, id: 'product-456', name: 'Product 2', salePrice: 200 };
+      const product2 = {
+        ...mockProduct,
+        id: 'product-456',
+        name: 'Product 2',
+        salePrice: 200,
+      };
       (prisma.pOSSession.findFirst as jest.Mock).mockResolvedValue(mockSession);
-      (prisma.product.findMany as jest.Mock).mockResolvedValue([mockProduct, product2]);
+      (prisma.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct,
+        product2,
+      ]);
 
       const invoiceMultiItems = {
         ...mockInvoice,
         items: [
           { ...mockInvoice.items[0] },
-          { ...mockInvoice.items[0], id: 'item-456', productId: 'product-456', product: { id: 'product-456', name: 'Product 2', sku: 'TEST-002' } },
+          {
+            ...mockInvoice.items[0],
+            id: 'item-456',
+            productId: 'product-456',
+            product: { id: 'product-456', name: 'Product 2', sku: 'TEST-002' },
+          },
         ],
       };
 
@@ -877,29 +950,33 @@ describe('POSSalesService', () => {
         createdAt: new Date(),
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        await callback(mockTx);
-        return {
-          id: 'sale-123',
-          tenantId: mockTenantId,
-          sessionId: mockSessionId,
-          invoiceId: mockInvoiceId,
-          saleNumber: 'POS-00001',
-          subtotal: 300,
-          tax: 57,
-          discount: 0,
-          total: 357,
-          createdAt: new Date(),
-          invoice: invoiceMultiItems,
-          payments: [{
-            id: 'payment-123',
-            method: PaymentMethod.CASH,
-            amount: 357,
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          await callback(mockTx);
+          return {
+            id: 'sale-123',
+            tenantId: mockTenantId,
+            sessionId: mockSessionId,
+            invoiceId: mockInvoiceId,
+            saleNumber: 'POS-00001',
+            subtotal: 300,
+            tax: 57,
+            discount: 0,
+            total: 357,
             createdAt: new Date(),
-          }],
-          session: mockSession,
-        };
-      });
+            invoice: invoiceMultiItems,
+            payments: [
+              {
+                id: 'payment-123',
+                method: PaymentMethod.CASH,
+                amount: 357,
+                createdAt: new Date(),
+              },
+            ],
+            session: mockSession,
+          };
+        },
+      );
 
       const dtoMultipleProducts = {
         items: [
@@ -921,18 +998,24 @@ describe('POSSalesService', () => {
         ...mockInvoice,
         status: InvoiceStatus.SENT,
         notes: 'Original note',
-        items: [{
-          id: 'item-123',
-          productId: mockProductId,
-          product: { id: mockProductId, name: 'Test Product', sku: 'TEST-001' },
-          quantity: 1,
-          unitPrice: 100,
-          taxRate: 19,
-          discount: 0,
-          subtotal: 100,
-          tax: 19,
-          total: 119,
-        }],
+        items: [
+          {
+            id: 'item-123',
+            productId: mockProductId,
+            product: {
+              id: mockProductId,
+              name: 'Test Product',
+              sku: 'TEST-001',
+            },
+            quantity: 1,
+            unitPrice: 100,
+            taxRate: 19,
+            discount: 0,
+            subtotal: 100,
+            tax: 19,
+            total: 119,
+          },
+        ],
       },
       session: {
         id: mockSessionId,
@@ -949,9 +1032,9 @@ describe('POSSalesService', () => {
     it('should throw NotFoundException when sale not found', async () => {
       (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.voidSale('nonexistent', mockUserId, 'Test reason')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.voidSale('nonexistent', mockUserId, 'Test reason'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException when sale already voided', async () => {
@@ -961,58 +1044,78 @@ describe('POSSalesService', () => {
       };
       (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(voidedSale);
 
-      await expect(service.voidSale('sale-123', mockUserId, 'Test reason')).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.voidSale('sale-123', mockUserId, 'Test reason')).rejects.toThrow(
-        'already been voided',
-      );
+      await expect(
+        service.voidSale('sale-123', mockUserId, 'Test reason'),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.voidSale('sale-123', mockUserId, 'Test reason'),
+      ).rejects.toThrow('already been voided');
     });
 
     it('should throw BadRequestException when sale cancelled', async () => {
       const cancelledSale = {
         ...mockSaleForVoid,
-        invoice: { ...mockSaleForVoid.invoice, status: InvoiceStatus.CANCELLED },
+        invoice: {
+          ...mockSaleForVoid.invoice,
+          status: InvoiceStatus.CANCELLED,
+        },
       };
       (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(cancelledSale);
 
-      await expect(service.voidSale('sale-123', mockUserId, 'Test reason')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.voidSale('sale-123', mockUserId, 'Test reason'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ForbiddenException when session closed and user is not admin', async () => {
       const closedSessionSale = {
         ...mockSaleForVoid,
-        session: { ...mockSaleForVoid.session, status: POSSessionStatus.CLOSED },
+        session: {
+          ...mockSaleForVoid.session,
+          status: POSSessionStatus.CLOSED,
+        },
       };
-      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(closedSessionSale);
-      (prisma.user.findFirst as jest.Mock).mockResolvedValue({ role: 'EMPLOYEE' });
-
-      await expect(service.voidSale('sale-123', 'other-user', 'Test reason')).rejects.toThrow(
-        ForbiddenException,
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(
+        closedSessionSale,
       );
+      (prisma.user.findFirst as jest.Mock).mockResolvedValue({
+        role: 'EMPLOYEE',
+      });
+
+      await expect(
+        service.voidSale('sale-123', 'other-user', 'Test reason'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw ForbiddenException when user not found', async () => {
       const closedSessionSale = {
         ...mockSaleForVoid,
-        session: { ...mockSaleForVoid.session, status: POSSessionStatus.CLOSED },
+        session: {
+          ...mockSaleForVoid.session,
+          status: POSSessionStatus.CLOSED,
+        },
       };
-      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(closedSessionSale);
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(
+        closedSessionSale,
+      );
       (prisma.user.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.voidSale('sale-123', 'other-user', 'Test reason')).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        service.voidSale('sale-123', 'other-user', 'Test reason'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should allow admin to void from closed session', async () => {
       const closedSessionSale = {
         ...mockSaleForVoid,
-        session: { ...mockSaleForVoid.session, status: POSSessionStatus.CLOSED },
+        session: {
+          ...mockSaleForVoid.session,
+          status: POSSessionStatus.CLOSED,
+        },
       };
-      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(closedSessionSale);
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(
+        closedSessionSale,
+      );
       (prisma.user.findFirst as jest.Mock).mockResolvedValue({ role: 'ADMIN' });
 
       const mockTx = createMockTx(prisma);
@@ -1021,21 +1124,34 @@ describe('POSSalesService', () => {
         invoice: { ...mockSaleForVoid.invoice, status: InvoiceStatus.VOID },
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
-      const result = await service.voidSale('sale-123', 'admin-user', 'Test reason');
+      const result = await service.voidSale(
+        'sale-123',
+        'admin-user',
+        'Test reason',
+      );
       expect(result).toBeDefined();
     });
 
     it('should allow manager to void from closed session', async () => {
       const closedSessionSale = {
         ...mockSaleForVoid,
-        session: { ...mockSaleForVoid.session, status: POSSessionStatus.CLOSED },
+        session: {
+          ...mockSaleForVoid.session,
+          status: POSSessionStatus.CLOSED,
+        },
       };
-      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(closedSessionSale);
-      (prisma.user.findFirst as jest.Mock).mockResolvedValue({ role: 'MANAGER' });
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(
+        closedSessionSale,
+      );
+      (prisma.user.findFirst as jest.Mock).mockResolvedValue({
+        role: 'MANAGER',
+      });
 
       const mockTx = createMockTx(prisma);
       mockTx.pOSSale.findFirst.mockResolvedValue({
@@ -1043,16 +1159,24 @@ describe('POSSalesService', () => {
         invoice: { ...mockSaleForVoid.invoice, status: InvoiceStatus.VOID },
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
-      const result = await service.voidSale('sale-123', 'manager-user', 'Test reason');
+      const result = await service.voidSale(
+        'sale-123',
+        'manager-user',
+        'Test reason',
+      );
       expect(result).toBeDefined();
     });
 
     it('should void sale successfully', async () => {
-      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(mockSaleForVoid);
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(
+        mockSaleForVoid,
+      );
 
       const mockTx = createMockTx(prisma);
       mockTx.pOSSale.findFirst.mockResolvedValue({
@@ -1060,11 +1184,17 @@ describe('POSSalesService', () => {
         invoice: { ...mockSaleForVoid.invoice, status: InvoiceStatus.VOID },
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
-      const result = await service.voidSale('sale-123', mockUserId, 'Customer return');
+      const result = await service.voidSale(
+        'sale-123',
+        mockUserId,
+        'Customer return',
+      );
       expect(result).toBeDefined();
     });
 
@@ -1076,7 +1206,9 @@ describe('POSSalesService', () => {
           items: [{ ...mockSaleForVoid.invoice.items[0], productId: null }],
         },
       };
-      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(saleWithNullProduct);
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(
+        saleWithNullProduct,
+      );
 
       const mockTx = createMockTx(prisma);
       mockTx.pOSSale.findFirst.mockResolvedValue({
@@ -1084,9 +1216,11 @@ describe('POSSalesService', () => {
         invoice: { ...saleWithNullProduct.invoice, status: InvoiceStatus.VOID },
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
       const result = await service.voidSale('sale-123', mockUserId, 'reason');
       expect(result).toBeDefined();
@@ -1094,7 +1228,9 @@ describe('POSSalesService', () => {
     });
 
     it('should restore warehouse stock when voiding', async () => {
-      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(mockSaleForVoid);
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(
+        mockSaleForVoid,
+      );
 
       const mockTx = createMockTx(prisma);
       mockTx.pOSSale.findFirst.mockResolvedValue({
@@ -1102,9 +1238,11 @@ describe('POSSalesService', () => {
         invoice: { ...mockSaleForVoid.invoice, status: InvoiceStatus.VOID },
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
       await service.voidSale('sale-123', mockUserId, 'reason');
 
@@ -1121,7 +1259,9 @@ describe('POSSalesService', () => {
           { id: 'payment-2', method: PaymentMethod.CREDIT_CARD, amount: 59 },
         ],
       };
-      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(saleWithMultiplePayments);
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(
+        saleWithMultiplePayments,
+      );
 
       const mockTx = createMockTx(prisma);
       mockTx.pOSSale.findFirst.mockResolvedValue({
@@ -1129,9 +1269,11 @@ describe('POSSalesService', () => {
         invoice: { ...mockSaleForVoid.invoice, status: InvoiceStatus.VOID },
       });
 
-      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (prisma.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          return callback(mockTx);
+        },
+      );
 
       await service.voidSale('sale-123', mockUserId, 'reason');
 

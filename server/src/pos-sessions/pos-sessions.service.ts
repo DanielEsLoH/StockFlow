@@ -16,7 +16,12 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
-import { OpenSessionDto, CloseSessionDto, CashMovementDto, CashMovementAction } from './dto';
+import {
+  OpenSessionDto,
+  CloseSessionDto,
+  CashMovementDto,
+  CashMovementAction,
+} from './dto';
 
 /**
  * Session response with basic info
@@ -140,7 +145,10 @@ export class POSSessionsService {
    * Opens a new POS session for a cash register.
    * Only one active session is allowed per cash register.
    */
-  async openSession(dto: OpenSessionDto, userId: string): Promise<POSSessionWithDetails> {
+  async openSession(
+    dto: OpenSessionDto,
+    userId: string,
+  ): Promise<POSSessionWithDetails> {
     const tenantId = this.tenantContext.requireTenantId();
 
     this.logger.debug(
@@ -251,7 +259,9 @@ export class POSSessionsService {
     }
 
     if (session.status !== POSSessionStatus.ACTIVE) {
-      throw new BadRequestException('Cannot close a session that is not active');
+      throw new BadRequestException(
+        'Cannot close a session that is not active',
+      );
     }
 
     // Only the user who opened the session or a manager/admin can close it
@@ -296,7 +306,9 @@ export class POSSessionsService {
           expectedAmount,
           difference,
           closedAt: new Date(),
-          notes: dto.notes ? `${session.notes || ''}\n${dto.notes}`.trim() : session.notes,
+          notes: dto.notes
+            ? `${session.notes || ''}\n${dto.notes}`.trim()
+            : session.notes,
         },
         include: {
           cashRegister: {
@@ -334,7 +346,9 @@ export class POSSessionsService {
   ): Promise<CashMovementResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.debug(`Registering ${dto.action} movement for session ${sessionId}`);
+    this.logger.debug(
+      `Registering ${dto.action} movement for session ${sessionId}`,
+    );
 
     // Find session
     const session = await this.prisma.pOSSession.findFirst({
@@ -346,7 +360,9 @@ export class POSSessionsService {
     }
 
     if (session.status !== POSSessionStatus.ACTIVE) {
-      throw new BadRequestException('Cannot register movements in a closed session');
+      throw new BadRequestException(
+        'Cannot register movements in a closed session',
+      );
     }
 
     // Verify user has access to this session
@@ -399,7 +415,9 @@ export class POSSessionsService {
   /**
    * Gets the current active session for the user or cash register.
    */
-  async getCurrentSession(userId: string): Promise<POSSessionWithDetails | null> {
+  async getCurrentSession(
+    userId: string,
+  ): Promise<POSSessionWithDetails | null> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const session = await this.prisma.pOSSession.findFirst({
@@ -538,7 +556,9 @@ export class POSSessionsService {
   /**
    * Gets all movements for a session.
    */
-  async getSessionMovements(sessionId: string): Promise<CashMovementResponse[]> {
+  async getSessionMovements(
+    sessionId: string,
+  ): Promise<CashMovementResponse[]> {
     const tenantId = this.tenantContext.requireTenantId();
 
     // Verify session exists
@@ -570,7 +590,9 @@ export class POSSessionsService {
   /**
    * Calculates the expected cash amount in the drawer.
    */
-  private async calculateExpectedCashAmount(sessionId: string): Promise<number> {
+  private async calculateExpectedCashAmount(
+    sessionId: string,
+  ): Promise<number> {
     const movements = await this.prisma.cashRegisterMovement.findMany({
       where: { sessionId },
     });
@@ -609,7 +631,10 @@ export class POSSessionsService {
   /**
    * Generates X or Z report.
    */
-  private async generateReport(sessionId: string, type: 'X' | 'Z'): Promise<XZReport> {
+  private async generateReport(
+    sessionId: string,
+    type: 'X' | 'Z',
+  ): Promise<XZReport> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const session = await this.prisma.pOSSession.findFirst({
@@ -647,7 +672,8 @@ export class POSSessionsService {
     let totalOtherSales = 0;
     let totalCashIn = 0;
     let totalCashOut = 0;
-    const salesByMethod: Map<PaymentMethod, { count: number; total: number }> = new Map();
+    const salesByMethod: Map<PaymentMethod, { count: number; total: number }> =
+      new Map();
 
     // Initialize all payment methods
     Object.values(PaymentMethod).forEach((method) => {
@@ -688,7 +714,10 @@ export class POSSessionsService {
 
     const totalSalesAmount = totalCashSales + totalCardSales + totalOtherSales;
     const expectedCashAmount =
-      Number(session.openingAmount) + totalCashSales + totalCashIn - totalCashOut;
+      Number(session.openingAmount) +
+      totalCashSales +
+      totalCashIn -
+      totalCashOut;
 
     return {
       type,
@@ -780,8 +809,12 @@ export class POSSessionsService {
       userId: session.userId,
       status: session.status,
       openingAmount: Number(session.openingAmount),
-      closingAmount: session.closingAmount ? Number(session.closingAmount) : null,
-      expectedAmount: session.expectedAmount ? Number(session.expectedAmount) : null,
+      closingAmount: session.closingAmount
+        ? Number(session.closingAmount)
+        : null,
+      expectedAmount: session.expectedAmount
+        ? Number(session.expectedAmount)
+        : null,
       difference: session.difference ? Number(session.difference) : null,
       openedAt: session.openedAt,
       closedAt: session.closedAt,

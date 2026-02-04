@@ -89,9 +89,7 @@ export class InvitationsService {
     });
 
     if (existingUser) {
-      this.logger.warn(
-        `User already exists with email: ${normalizedEmail}`,
-      );
+      this.logger.warn(`User already exists with email: ${normalizedEmail}`);
       throw new ConflictException(
         'Ya existe un usuario con este email en la plataforma',
       );

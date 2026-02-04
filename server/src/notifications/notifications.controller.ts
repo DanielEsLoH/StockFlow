@@ -144,7 +144,8 @@ export class NotificationsController {
     name: 'limit',
     required: false,
     type: Number,
-    description: 'Maximum number of notifications to return (default: 5, max: 20)',
+    description:
+      'Maximum number of notifications to return (default: 5, max: 20)',
     example: 5,
   })
   @ApiResponse({
@@ -156,7 +157,9 @@ export class NotificationsController {
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  async findRecent(@Query('limit') limit?: string): Promise<NotificationResponse[]> {
+  async findRecent(
+    @Query('limit') limit?: string,
+  ): Promise<NotificationResponse[]> {
     const limitNum = Math.min(20, Math.max(1, parseInt(limit ?? '5', 10) || 5));
     this.logger.log(`Getting ${limitNum} recent notifications`);
     return this.inAppNotificationsService.findRecent(limitNum);
@@ -346,7 +349,9 @@ export class NotificationsController {
     status: 403,
     description: 'Forbidden - Insufficient permissions',
   })
-  async create(@Body() dto: CreateNotificationDto): Promise<NotificationResponse> {
+  async create(
+    @Body() dto: CreateNotificationDto,
+  ): Promise<NotificationResponse> {
     this.logger.log(`Creating notification: ${dto.title}`);
     return this.inAppNotificationsService.create(dto);
   }
@@ -565,7 +570,9 @@ export class NotificationsController {
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  async markManyAsRead(@Body() dto: BulkNotificationIdsDto): Promise<BulkOperationResult> {
+  async markManyAsRead(
+    @Body() dto: BulkNotificationIdsDto,
+  ): Promise<BulkOperationResult> {
     this.logger.log(`Marking ${dto.ids.length} notifications as read`);
     return this.inAppNotificationsService.markManyAsRead(dto);
   }
@@ -711,7 +718,9 @@ export class NotificationsController {
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  async deleteMany(@Body() dto: BulkNotificationIdsDto): Promise<BulkOperationResult> {
+  async deleteMany(
+    @Body() dto: BulkNotificationIdsDto,
+  ): Promise<BulkOperationResult> {
     this.logger.log(`Deleting ${dto.ids.length} notifications`);
     return this.inAppNotificationsService.deleteMany(dto);
   }
@@ -734,7 +743,10 @@ export class NotificationsController {
     description: 'Notification ID',
     example: 'clx1234567890notif',
   })
-  @ApiResponse({ status: 204, description: 'Notification deleted successfully' })
+  @ApiResponse({
+    status: 204,
+    description: 'Notification deleted successfully',
+  })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',

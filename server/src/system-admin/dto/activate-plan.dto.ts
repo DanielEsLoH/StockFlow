@@ -26,7 +26,8 @@ export class ActivatePlanDto {
    * @example "QUARTERLY"
    */
   @ApiProperty({
-    description: 'The subscription period (MONTHLY = 30 days, QUARTERLY = 90 days, ANNUAL = 365 days)',
+    description:
+      'The subscription period (MONTHLY = 30 days, QUARTERLY = 90 days, ANNUAL = 365 days)',
     enum: SubscriptionPeriod,
     example: 'QUARTERLY',
   })

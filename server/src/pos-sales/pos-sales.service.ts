@@ -117,7 +117,10 @@ export class POSSalesService {
    * Creates a new POS sale with split payment support.
    * This creates an invoice, processes payments, and updates inventory.
    */
-  async createSale(dto: CreateSaleDto, userId: string): Promise<POSSaleWithDetails> {
+  async createSale(
+    dto: CreateSaleDto,
+    userId: string,
+  ): Promise<POSSaleWithDetails> {
     const tenantId = this.tenantContext.requireTenantId();
 
     this.logger.debug(`Creating POS sale by user ${userId}`);
@@ -149,7 +152,9 @@ export class POSSalesService {
       });
 
       if (!customer) {
-        throw new NotFoundException(`Customer with ID ${dto.customerId} not found`);
+        throw new NotFoundException(
+          `Customer with ID ${dto.customerId} not found`,
+        );
       }
     }
 
@@ -170,11 +175,8 @@ export class POSSalesService {
     const productMap = new Map(products.map((p) => [p.id, p]));
 
     // Calculate totals
-    const { subtotal, tax, discount, total, calculatedItems } = this.calculateTotals(
-      dto.items,
-      productMap,
-      dto.discountPercent,
-    );
+    const { subtotal, tax, discount, total, calculatedItems } =
+      this.calculateTotals(dto.items, productMap, dto.discountPercent);
 
     // Validate payments total matches sale total
     const paymentsTotal = dto.payments.reduce((sum, p) => sum + p.amount, 0);
@@ -368,7 +370,11 @@ export class POSSalesService {
   /**
    * Voids a POS sale (reverses all operations).
    */
-  async voidSale(saleId: string, userId: string, reason: string): Promise<POSSaleWithDetails> {
+  async voidSale(
+    saleId: string,
+    userId: string,
+    reason: string,
+  ): Promise<POSSaleWithDetails> {
     const tenantId = this.tenantContext.requireTenantId();
 
     this.logger.debug(`Voiding sale ${saleId}`);
@@ -709,7 +715,8 @@ export class POSSalesService {
 
     // Apply global discount
     if (globalDiscountPercent && globalDiscountPercent > 0) {
-      const globalDiscount = (subtotal - totalDiscount) * (globalDiscountPercent / 100);
+      const globalDiscount =
+        (subtotal - totalDiscount) * (globalDiscountPercent / 100);
       totalDiscount += globalDiscount;
 
       // Recalculate tax after global discount

@@ -244,7 +244,10 @@ export class CashRegistersController {
     description: 'Cash register ID to delete',
     example: 'cmkcykam80004reya0hsdx337',
   })
-  @ApiResponse({ status: 204, description: 'Cash register deleted successfully' })
+  @ApiResponse({
+    status: 204,
+    description: 'Cash register deleted successfully',
+  })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',

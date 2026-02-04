@@ -25,10 +25,16 @@ export class InvoiceStatsDto {
   @ApiProperty({ description: 'Total number of invoices', example: 46 })
   totalInvoices: number;
 
-  @ApiProperty({ description: 'Total revenue from paid invoices', example: 125000.5 })
+  @ApiProperty({
+    description: 'Total revenue from paid invoices',
+    example: 125000.5,
+  })
   totalRevenue: number;
 
-  @ApiProperty({ description: 'Total amount pending payment', example: 35000.0 })
+  @ApiProperty({
+    description: 'Total amount pending payment',
+    example: 35000.0,
+  })
   pendingAmount: number;
 
   @ApiProperty({ description: 'Total amount overdue', example: 8500.0 })

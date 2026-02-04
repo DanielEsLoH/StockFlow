@@ -309,7 +309,9 @@ export class InAppNotificationsService {
   async markAsRead(id: string): Promise<NotificationResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.debug(`Marking notification ${id} as read in tenant ${tenantId}`);
+    this.logger.debug(
+      `Marking notification ${id} as read in tenant ${tenantId}`,
+    );
 
     const notification = await this.prisma.notification.findFirst({
       where: { id, tenantId },
@@ -383,7 +385,9 @@ export class InAppNotificationsService {
    * @param dto - Object containing array of notification IDs
    * @returns Bulk operation result
    */
-  async markManyAsRead(dto: BulkNotificationIdsDto): Promise<BulkOperationResult> {
+  async markManyAsRead(
+    dto: BulkNotificationIdsDto,
+  ): Promise<BulkOperationResult> {
     const tenantId = this.tenantContext.requireTenantId();
 
     this.logger.debug(
@@ -418,7 +422,9 @@ export class InAppNotificationsService {
   async markAllAsRead(): Promise<BulkOperationResult> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.debug(`Marking all notifications as read in tenant ${tenantId}`);
+    this.logger.debug(
+      `Marking all notifications as read in tenant ${tenantId}`,
+    );
 
     const result = await this.prisma.notification.updateMany({
       where: {

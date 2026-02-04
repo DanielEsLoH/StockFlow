@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Logger,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CashRegistersController } from './cash-registers.controller';
 import { CashRegistersService } from './cash-registers.service';
 import type {
@@ -176,7 +181,9 @@ describe('CashRegistersController', () => {
         new NotFoundException('Bodega no encontrada'),
       );
 
-      await expect(controller.create(createDto)).rejects.toThrow(NotFoundException);
+      await expect(controller.create(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should propagate ConflictException for duplicate code', async () => {
@@ -184,7 +191,9 @@ describe('CashRegistersController', () => {
         new ConflictException('El codigo de caja ya existe'),
       );
 
-      await expect(controller.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(controller.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -203,15 +212,18 @@ describe('CashRegistersController', () => {
       const result = await controller.update('cash-register-123', updateDto);
 
       expect(result).toEqual(updatedCashRegister);
-      expect(service.update).toHaveBeenCalledWith('cash-register-123', updateDto);
+      expect(service.update).toHaveBeenCalledWith(
+        'cash-register-123',
+        updateDto,
+      );
     });
 
     it('should propagate NotFoundException', async () => {
       service.update.mockRejectedValue(new NotFoundException());
 
-      await expect(
-        controller.update('nonexistent', updateDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.update('nonexistent', updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should propagate ConflictException', async () => {

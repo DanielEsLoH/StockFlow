@@ -39,7 +39,12 @@ import { NotificationsModule } from '../notifications/notifications.module';
  * ```
  */
 @Module({
-  imports: [ConfigModule, PrismaModule, NotificationsModule, ScheduleModule.forRoot()],
+  imports: [
+    ConfigModule,
+    PrismaModule,
+    NotificationsModule,
+    ScheduleModule.forRoot(),
+  ],
   controllers: [SubscriptionsController, WebhooksController],
   providers: [
     SubscriptionsService,

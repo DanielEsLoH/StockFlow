@@ -1,8 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { POSSalesController } from './pos-sales.controller';
 import { POSSalesService } from './pos-sales.service';
-import type { POSSaleWithDetails, PaginatedSalesResponse } from './pos-sales.service';
+import type {
+  POSSaleWithDetails,
+  PaginatedSalesResponse,
+} from './pos-sales.service';
 import { PaymentMethod, UserRole } from '@prisma/client';
 
 describe('POSSalesController', () => {
@@ -30,28 +38,32 @@ describe('POSSalesController', () => {
       id: 'invoice-123',
       invoiceNumber: 'INV-00001',
       customer: null,
-      items: [{
-        id: 'item-123',
-        productId: 'product-123',
-        productName: 'Test Product',
-        productSku: 'TEST-001',
-        quantity: 1,
-        unitPrice: 100,
-        taxRate: 19,
-        discount: 0,
-        subtotal: 100,
-        tax: 19,
-        total: 119,
-      }],
+      items: [
+        {
+          id: 'item-123',
+          productId: 'product-123',
+          productName: 'Test Product',
+          productSku: 'TEST-001',
+          quantity: 1,
+          unitPrice: 100,
+          taxRate: 19,
+          discount: 0,
+          subtotal: 100,
+          tax: 19,
+          total: 119,
+        },
+      ],
     },
-    payments: [{
-      id: 'payment-123',
-      method: PaymentMethod.CASH,
-      amount: 119,
-      reference: null,
-      cardLastFour: null,
-      createdAt: new Date('2024-01-15'),
-    }],
+    payments: [
+      {
+        id: 'payment-123',
+        method: PaymentMethod.CASH,
+        amount: 119,
+        reference: null,
+        cardLastFour: null,
+        createdAt: new Date('2024-01-15'),
+      },
+    ],
     session: {
       id: 'session-123',
       cashRegister: {
@@ -84,9 +96,7 @@ describe('POSSalesController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [POSSalesController],
-      providers: [
-        { provide: POSSalesService, useValue: mockPOSSalesService },
-      ],
+      providers: [{ provide: POSSalesService, useValue: mockPOSSalesService }],
     }).compile();
 
     controller = module.get<POSSalesController>(POSSalesController);
@@ -128,7 +138,9 @@ describe('POSSalesController', () => {
         new BadRequestException('No active POS session found'),
       );
 
-      await expect(controller.createSale(createDto, mockUser)).rejects.toThrow(BadRequestException);
+      await expect(controller.createSale(createDto, mockUser)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should propagate NotFoundException for missing product', async () => {
@@ -136,7 +148,9 @@ describe('POSSalesController', () => {
         new NotFoundException('Product not found'),
       );
 
-      await expect(controller.createSale(createDto, mockUser)).rejects.toThrow(NotFoundException);
+      await expect(controller.createSale(createDto, mockUser)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -144,18 +158,28 @@ describe('POSSalesController', () => {
     it('should void a sale', async () => {
       service.voidSale.mockResolvedValue(mockSaleWithDetails);
 
-      const result = await controller.voidSale('sale-123', 'Customer return', mockUser);
+      const result = await controller.voidSale(
+        'sale-123',
+        'Customer return',
+        mockUser,
+      );
 
       expect(result).toEqual(mockSaleWithDetails);
-      expect(service.voidSale).toHaveBeenCalledWith('sale-123', mockUser.id, 'Customer return');
+      expect(service.voidSale).toHaveBeenCalledWith(
+        'sale-123',
+        mockUser.id,
+        'Customer return',
+      );
     });
 
     it('should propagate NotFoundException', async () => {
-      service.voidSale.mockRejectedValue(new NotFoundException('Sale not found'));
-
-      await expect(controller.voidSale('nonexistent', 'reason', mockUser)).rejects.toThrow(
-        NotFoundException,
+      service.voidSale.mockRejectedValue(
+        new NotFoundException('Sale not found'),
       );
+
+      await expect(
+        controller.voidSale('nonexistent', 'reason', mockUser),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should propagate BadRequestException for already voided sale', async () => {
@@ -163,19 +187,21 @@ describe('POSSalesController', () => {
         new BadRequestException('This sale has already been voided'),
       );
 
-      await expect(controller.voidSale('sale-123', 'reason', mockUser)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.voidSale('sale-123', 'reason', mockUser),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should propagate ForbiddenException', async () => {
       service.voidSale.mockRejectedValue(
-        new ForbiddenException('Only managers and admins can void sales from closed sessions'),
+        new ForbiddenException(
+          'Only managers and admins can void sales from closed sessions',
+        ),
       );
 
-      await expect(controller.voidSale('sale-123', 'reason', mockUser)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        controller.voidSale('sale-123', 'reason', mockUser),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -192,7 +218,9 @@ describe('POSSalesController', () => {
     it('should propagate NotFoundException', async () => {
       service.findOne.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -203,7 +231,13 @@ describe('POSSalesController', () => {
       const result = await controller.findAll('1', '10');
 
       expect(result).toEqual(mockPaginatedResponse);
-      expect(service.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+      );
     });
 
     it('should use default pagination values', async () => {
@@ -211,7 +245,13 @@ describe('POSSalesController', () => {
 
       await controller.findAll();
 
-      expect(service.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+      );
     });
 
     it('should handle invalid page number by defaulting to 1', async () => {
@@ -219,7 +259,13 @@ describe('POSSalesController', () => {
 
       await controller.findAll('invalid', '10');
 
-      expect(service.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+      );
     });
 
     it('should pass sessionId filter', async () => {
@@ -227,7 +273,13 @@ describe('POSSalesController', () => {
 
       await controller.findAll('1', '10', 'session-123');
 
-      expect(service.findAll).toHaveBeenCalledWith(1, 10, 'session-123', undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        'session-123',
+        undefined,
+        undefined,
+      );
     });
 
     it('should pass date range filters', async () => {

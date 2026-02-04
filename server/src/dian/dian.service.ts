@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TenantContextService } from '../common';
-import { XmlGeneratorService, InvoiceWithDetails } from './services/xml-generator.service';
+import {
+  XmlGeneratorService,
+  InvoiceWithDetails,
+} from './services/xml-generator.service';
 import { CufeGeneratorService } from './services/cufe-generator.service';
 import { DianClientService } from './services/dian-client.service';
 import {
@@ -223,7 +226,10 @@ export class DianService {
   /**
    * Process and send an invoice to DIAN
    */
-  async processInvoice(invoiceId: string, force = false): Promise<ProcessInvoiceResult> {
+  async processInvoice(
+    invoiceId: string,
+    force = false,
+  ): Promise<ProcessInvoiceResult> {
     const tenantId = this.tenantContext.requireTenantId();
 
     this.logger.log(`Processing invoice ${invoiceId} for DIAN`);
@@ -234,19 +240,25 @@ export class DianService {
     });
 
     if (!config) {
-      throw new BadRequestException('Configuracion DIAN no encontrada. Configure primero los datos de facturacion electronica.');
+      throw new BadRequestException(
+        'Configuracion DIAN no encontrada. Configure primero los datos de facturacion electronica.',
+      );
     }
 
     if (!config.softwareId || !config.technicalKey) {
-      throw new BadRequestException('Credenciales de software DIAN no configuradas.');
+      throw new BadRequestException(
+        'Credenciales de software DIAN no configuradas.',
+      );
     }
 
     if (!config.resolutionNumber || !config.resolutionPrefix) {
-      throw new BadRequestException('Resolucion de facturacion no configurada.');
+      throw new BadRequestException(
+        'Resolucion de facturacion no configurada.',
+      );
     }
 
     // Get invoice with details
-    const invoice = await this.prisma.invoice.findFirst({
+    const invoice = (await this.prisma.invoice.findFirst({
       where: { id: invoiceId, tenantId },
       include: {
         customer: true,
@@ -261,7 +273,7 @@ export class DianService {
           },
         },
       },
-    }) as InvoiceWithDetails | null;
+    })) as InvoiceWithDetails | null;
 
     if (!invoice) {
       throw new NotFoundException('Factura no encontrada');
@@ -274,15 +286,26 @@ export class DianService {
     });
 
     if (existingDoc && existingDoc.status === 'ACCEPTED' && !force) {
-      throw new BadRequestException('Esta factura ya fue enviada y aceptada por la DIAN.');
+      throw new BadRequestException(
+        'Esta factura ya fue enviada y aceptada por la DIAN.',
+      );
     }
 
     // Generate CUFE
     const customerDocument = invoice.customer?.documentNumber || '222222222222';
-    const cufe = this.cufeGenerator.generateCufeFromInvoice(invoice, config, customerDocument);
+    const cufe = this.cufeGenerator.generateCufeFromInvoice(
+      invoice,
+      config,
+      customerDocument,
+    );
 
     // Generate QR Code data
-    const qrCode = this.cufeGenerator.generateQrCodeData(invoice, config, cufe, customerDocument);
+    const qrCode = this.cufeGenerator.generateQrCodeData(
+      invoice,
+      config,
+      cufe,
+      customerDocument,
+    );
 
     // Generate XML
     const xml = this.xmlGenerator.generateInvoiceXml({
@@ -321,14 +344,18 @@ export class DianService {
 
     // Send to DIAN
     const fileName = `fv${config.resolutionPrefix}${invoice.invoiceNumber}.xml`;
-    const result = await this.dianClient.sendDocument(config, signedXml, fileName);
+    const result = await this.dianClient.sendDocument(
+      config,
+      signedXml,
+      fileName,
+    );
 
     // Update document with result
     const finalStatus = result.success
       ? DianDocumentStatus.ACCEPTED
       : result.isValid === false
-      ? DianDocumentStatus.REJECTED
-      : DianDocumentStatus.SENT;
+        ? DianDocumentStatus.REJECTED
+        : DianDocumentStatus.SENT;
 
     await this.prisma.dianDocument.update({
       where: { id: document.id },
@@ -380,7 +407,9 @@ export class DianService {
     }
 
     if (!document.dianTrackId && !document.cufe) {
-      throw new BadRequestException('El documento no tiene trackId ni CUFE para consultar');
+      throw new BadRequestException(
+        'El documento no tiene trackId ni CUFE para consultar',
+      );
     }
 
     const config = await this.prisma.tenantDianConfig.findUnique({
@@ -555,7 +584,14 @@ export class DianService {
       this.prisma.dianDocument.count({
         where: {
           tenantId,
-          status: { in: [DianDocumentStatus.PENDING, DianDocumentStatus.GENERATED, DianDocumentStatus.SIGNED, DianDocumentStatus.SENT] },
+          status: {
+            in: [
+              DianDocumentStatus.PENDING,
+              DianDocumentStatus.GENERATED,
+              DianDocumentStatus.SIGNED,
+              DianDocumentStatus.SENT,
+            ],
+          },
         },
       }),
     ]);

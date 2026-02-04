@@ -5,7 +5,12 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { CashRegister, CashRegisterStatus, Prisma, POSSessionStatus } from '@prisma/client';
+import {
+  CashRegister,
+  CashRegisterStatus,
+  Prisma,
+  POSSessionStatus,
+} from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { CreateCashRegisterDto, UpdateCashRegisterDto } from './dto';

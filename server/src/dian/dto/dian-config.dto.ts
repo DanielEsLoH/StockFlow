@@ -13,7 +13,10 @@ import {
 import { TaxResponsibility } from '@prisma/client';
 
 export class CreateDianConfigDto {
-  @ApiProperty({ description: 'NIT de la empresa (sin DV)', example: '900123456' })
+  @ApiProperty({
+    description: 'NIT de la empresa (sin DV)',
+    example: '900123456',
+  })
   @IsString()
   @Matches(/^\d{9,10}$/, { message: 'NIT debe tener 9 o 10 digitos' })
   nit: string;
@@ -27,7 +30,10 @@ export class CreateDianConfigDto {
   @IsString()
   businessName: string;
 
-  @ApiPropertyOptional({ description: 'Nombre comercial', example: 'Mi Tienda' })
+  @ApiPropertyOptional({
+    description: 'Nombre comercial',
+    example: 'Mi Tienda',
+  })
   @IsOptional()
   @IsString()
   tradeName?: string;
@@ -41,7 +47,10 @@ export class CreateDianConfigDto {
   @IsArray()
   taxResponsibilities: TaxResponsibility[];
 
-  @ApiProperty({ description: 'Actividad economica (codigo CIIU)', example: '4711' })
+  @ApiProperty({
+    description: 'Actividad economica (codigo CIIU)',
+    example: '4711',
+  })
   @IsString()
   economicActivity: string;
 
@@ -75,11 +84,17 @@ export class CreateDianConfigDto {
   @IsString()
   phone?: string;
 
-  @ApiProperty({ description: 'Email para notificaciones DIAN', example: 'facturacion@empresa.com' })
+  @ApiProperty({
+    description: 'Email para notificaciones DIAN',
+    example: 'facturacion@empresa.com',
+  })
   @IsEmail()
   email: string;
 
-  @ApiPropertyOptional({ description: 'Modo de pruebas (habilitacion)', default: true })
+  @ApiPropertyOptional({
+    description: 'Modo de pruebas (habilitacion)',
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   testMode?: boolean;
@@ -96,7 +111,11 @@ export class UpdateDianConfigDto {
   @IsString()
   tradeName?: string;
 
-  @ApiPropertyOptional({ description: 'Responsabilidades tributarias', enum: TaxResponsibility, isArray: true })
+  @ApiPropertyOptional({
+    description: 'Responsabilidades tributarias',
+    enum: TaxResponsibility,
+    isArray: true,
+  })
   @IsOptional()
   @IsArray()
   taxResponsibilities?: TaxResponsibility[];
@@ -167,7 +186,10 @@ export class SetDianSoftwareDto {
 }
 
 export class SetDianResolutionDto {
-  @ApiProperty({ description: 'Numero de resolucion DIAN', example: '18760000001' })
+  @ApiProperty({
+    description: 'Numero de resolucion DIAN',
+    example: '18760000001',
+  })
   @IsString()
   resolutionNumber: string;
 

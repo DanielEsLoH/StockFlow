@@ -6,7 +6,10 @@ export class SendInvoiceDto {
   @IsString()
   invoiceId: string;
 
-  @ApiPropertyOptional({ description: 'Forzar reenvio aunque ya este enviada', default: false })
+  @ApiPropertyOptional({
+    description: 'Forzar reenvio aunque ya este enviada',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
   force?: boolean;

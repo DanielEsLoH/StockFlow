@@ -36,7 +36,10 @@ export class PaymentStatsDto {
   @ApiProperty({ description: 'Total number of payments', example: 52 })
   totalPayments: number;
 
-  @ApiProperty({ description: 'Total amount received (completed payments)', example: 85000.0 })
+  @ApiProperty({
+    description: 'Total amount received (completed payments)',
+    example: 85000.0,
+  })
   totalReceived: number;
 
   @ApiProperty({ description: 'Total amount pending', example: 15000.0 })
@@ -72,6 +75,9 @@ export class PaymentStatsDto {
   @ApiProperty({ description: 'Number of payments this week', example: 12 })
   weekPayments: number;
 
-  @ApiProperty({ description: 'Total amount received this week', example: 18500.0 })
+  @ApiProperty({
+    description: 'Total amount received this week',
+    example: 18500.0,
+  })
   weekTotal: number;
 }

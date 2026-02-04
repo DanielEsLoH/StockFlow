@@ -173,9 +173,13 @@ describe('POSSessionsController', () => {
     });
 
     it('should propagate NotFoundException for cash register', async () => {
-      service.openSession.mockRejectedValue(new NotFoundException('Cash register not found'));
+      service.openSession.mockRejectedValue(
+        new NotFoundException('Cash register not found'),
+      );
 
-      await expect(controller.openSession(openDto, mockUser)).rejects.toThrow(NotFoundException);
+      await expect(controller.openSession(openDto, mockUser)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should propagate ConflictException for active session', async () => {
@@ -183,7 +187,9 @@ describe('POSSessionsController', () => {
         new ConflictException('Cash register already has an active session'),
       );
 
-      await expect(controller.openSession(openDto, mockUser)).rejects.toThrow(ConflictException);
+      await expect(controller.openSession(openDto, mockUser)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -203,18 +209,26 @@ describe('POSSessionsController', () => {
       };
       service.closeSession.mockResolvedValue(closedSession);
 
-      const result = await controller.closeSession('session-123', closeDto, mockUser);
+      const result = await controller.closeSession(
+        'session-123',
+        closeDto,
+        mockUser,
+      );
 
       expect(result.status).toBe(POSSessionStatus.CLOSED);
-      expect(service.closeSession).toHaveBeenCalledWith('session-123', closeDto, mockUser.id);
+      expect(service.closeSession).toHaveBeenCalledWith(
+        'session-123',
+        closeDto,
+        mockUser.id,
+      );
     });
 
     it('should propagate NotFoundException', async () => {
       service.closeSession.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.closeSession('nonexistent', closeDto, mockUser)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        controller.closeSession('nonexistent', closeDto, mockUser),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should propagate BadRequestException for inactive session', async () => {
@@ -222,19 +236,21 @@ describe('POSSessionsController', () => {
         new BadRequestException('Cannot close a session that is not active'),
       );
 
-      await expect(controller.closeSession('session-123', closeDto, mockUser)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.closeSession('session-123', closeDto, mockUser),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should propagate ForbiddenException', async () => {
       service.closeSession.mockRejectedValue(
-        new ForbiddenException('Only the session owner or a manager/admin can close this session'),
+        new ForbiddenException(
+          'Only the session owner or a manager/admin can close this session',
+        ),
       );
 
-      await expect(controller.closeSession('session-123', closeDto, mockUser)).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(
+        controller.closeSession('session-123', closeDto, mockUser),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -248,7 +264,11 @@ describe('POSSessionsController', () => {
     it('should register a cash movement', async () => {
       service.registerCashMovement.mockResolvedValue(mockCashMovement);
 
-      const result = await controller.registerCashMovement('session-123', movementDto, mockUser);
+      const result = await controller.registerCashMovement(
+        'session-123',
+        movementDto,
+        mockUser,
+      );
 
       expect(result).toEqual(mockCashMovement);
       expect(service.registerCashMovement).toHaveBeenCalledWith(
@@ -268,7 +288,9 @@ describe('POSSessionsController', () => {
 
     it('should propagate BadRequestException for inactive session', async () => {
       service.registerCashMovement.mockRejectedValue(
-        new BadRequestException('Cannot register movements in a closed session'),
+        new BadRequestException(
+          'Cannot register movements in a closed session',
+        ),
       );
 
       await expect(
@@ -309,7 +331,9 @@ describe('POSSessionsController', () => {
     it('should propagate NotFoundException', async () => {
       service.findOne.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -409,7 +433,9 @@ describe('POSSessionsController', () => {
     it('should propagate NotFoundException', async () => {
       service.getSessionMovements.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.getMovements('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(controller.getMovements('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -426,7 +452,9 @@ describe('POSSessionsController', () => {
     it('should propagate NotFoundException', async () => {
       service.generateXReport.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.generateXReport('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(controller.generateXReport('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -444,15 +472,21 @@ describe('POSSessionsController', () => {
     it('should propagate NotFoundException', async () => {
       service.generateZReport.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.generateZReport('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(controller.generateZReport('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should propagate BadRequestException for unclosed session', async () => {
       service.generateZReport.mockRejectedValue(
-        new BadRequestException('Z report can only be generated for closed sessions'),
+        new BadRequestException(
+          'Z report can only be generated for closed sessions',
+        ),
       );
 
-      await expect(controller.generateZReport('session-123')).rejects.toThrow(BadRequestException);
+      await expect(controller.generateZReport('session-123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

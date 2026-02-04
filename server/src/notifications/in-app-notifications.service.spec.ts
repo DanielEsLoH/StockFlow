@@ -1,17 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { NotificationType, NotificationPriority } from '@prisma/client';
 import { InAppNotificationsService } from './in-app-notifications.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common/services';
-import {
-  CreateNotificationDto,
-  BulkNotificationIdsDto,
-} from './dto';
+import { CreateNotificationDto, BulkNotificationIdsDto } from './dto';
 
 describe('InAppNotificationsService', () => {
   let service: InAppNotificationsService;
@@ -164,7 +157,9 @@ describe('InAppNotificationsService', () => {
 
       expect(prismaService.notification.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ priority: NotificationPriority.HIGH }),
+          where: expect.objectContaining({
+            priority: NotificationPriority.HIGH,
+          }),
         }),
       );
     });
@@ -291,7 +286,10 @@ describe('InAppNotificationsService', () => {
     const unreadNotifications = [
       { type: NotificationType.LOW_STOCK, priority: NotificationPriority.HIGH },
       { type: NotificationType.LOW_STOCK, priority: NotificationPriority.HIGH },
-      { type: NotificationType.NEW_INVOICE, priority: NotificationPriority.MEDIUM },
+      {
+        type: NotificationType.NEW_INVOICE,
+        priority: NotificationPriority.MEDIUM,
+      },
     ];
 
     beforeEach(() => {
@@ -375,7 +373,9 @@ describe('InAppNotificationsService', () => {
     });
 
     it('should throw NotFoundException when notification not found', async () => {
-      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       await expect(service.findOne('nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -383,7 +383,9 @@ describe('InAppNotificationsService', () => {
     });
 
     it('should throw NotFoundException with correct message', async () => {
-      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       await expect(service.findOne('nonexistent')).rejects.toThrow(
         'Notification with ID nonexistent not found',
@@ -471,7 +473,9 @@ describe('InAppNotificationsService', () => {
 
       expect(prismaService.notification.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ priority: NotificationPriority.MEDIUM }),
+          data: expect.objectContaining({
+            priority: NotificationPriority.MEDIUM,
+          }),
         }),
       );
     });
@@ -570,7 +574,9 @@ describe('InAppNotificationsService', () => {
     });
 
     it('should throw NotFoundException when notification not found', async () => {
-      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       await expect(service.markAsRead('nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -601,7 +607,11 @@ describe('InAppNotificationsService', () => {
   // ============================================================================
 
   describe('markAsUnread', () => {
-    const readNotification = { ...mockNotification, read: true, readAt: new Date() };
+    const readNotification = {
+      ...mockNotification,
+      read: true,
+      readAt: new Date(),
+    };
 
     beforeEach(() => {
       (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(
@@ -628,7 +638,9 @@ describe('InAppNotificationsService', () => {
     });
 
     it('should throw NotFoundException when notification not found', async () => {
-      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       await expect(service.markAsUnread('nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -772,7 +784,9 @@ describe('InAppNotificationsService', () => {
     });
 
     it('should throw NotFoundException when notification not found', async () => {
-      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       await expect(service.delete('nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -780,7 +794,9 @@ describe('InAppNotificationsService', () => {
     });
 
     it('should throw NotFoundException with correct message', async () => {
-      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       await expect(service.delete('nonexistent')).rejects.toThrow(
         'Notification with ID nonexistent not found',
@@ -1027,7 +1043,9 @@ describe('InAppNotificationsService', () => {
 
       await service.markAsRead('notif-123');
 
-      expect(logSpy).toHaveBeenCalledWith('Notification marked as read: notif-123');
+      expect(logSpy).toHaveBeenCalledWith(
+        'Notification marked as read: notif-123',
+      );
     });
 
     it('should log when notification is deleted', async () => {
@@ -1046,7 +1064,9 @@ describe('InAppNotificationsService', () => {
 
     it('should log warning when notification not found', async () => {
       const warnSpy = jest.spyOn(Logger.prototype, 'warn');
-      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.notification.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       try {
         await service.findOne('nonexistent');
@@ -1054,7 +1074,9 @@ describe('InAppNotificationsService', () => {
         // Expected
       }
 
-      expect(warnSpy).toHaveBeenCalledWith('Notification not found: nonexistent');
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Notification not found: nonexistent',
+      );
     });
   });
 });

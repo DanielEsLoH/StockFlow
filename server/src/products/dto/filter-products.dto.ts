@@ -44,7 +44,10 @@ export class FilterProductsDto extends PaginationDto {
   })
   @Transform(({ value }) => {
     // Convert string query param to ProductStatus enum value
-    if (typeof value === 'string' && Object.values(ProductStatus).includes(value as ProductStatus)) {
+    if (
+      typeof value === 'string' &&
+      Object.values(ProductStatus).includes(value as ProductStatus)
+    ) {
       return value as ProductStatus;
     }
     return value;

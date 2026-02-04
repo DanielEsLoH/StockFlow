@@ -112,7 +112,11 @@ export class PaymentsService {
 
     // Get date boundaries
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const startOfWeek = new Date(startOfToday);
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
 
@@ -176,7 +180,8 @@ export class PaymentsService {
     }
 
     const totalPayments = payments.length;
-    const averagePaymentValue = totalPayments > 0 ? totalReceived / totalPayments : 0;
+    const averagePaymentValue =
+      totalPayments > 0 ? totalReceived / totalPayments : 0;
 
     return {
       totalPayments,

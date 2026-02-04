@@ -72,7 +72,8 @@ export class POSSalesController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - No active session, insufficient stock, or payment mismatch',
+    description:
+      'Bad Request - No active session, insufficient stock, or payment mismatch',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Product or customer not found' })
@@ -136,7 +137,8 @@ export class POSSalesController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get sale by ID',
-    description: 'Returns a single sale with full details including items and payments.',
+    description:
+      'Returns a single sale with full details including items and payments.',
   })
   @ApiParam({ name: 'id', description: 'Sale ID' })
   @ApiResponse({
@@ -178,7 +180,10 @@ export class POSSalesController {
     @Query('toDate') toDate?: string,
   ): Promise<PaginatedSalesResponse> {
     const pageNum = Math.max(1, parseInt(page ?? '1', 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit ?? '10', 10) || 10));
+    const limitNum = Math.min(
+      100,
+      Math.max(1, parseInt(limit ?? '10', 10) || 10),
+    );
 
     this.logger.log(`Listing sales - page: ${pageNum}, limit: ${limitNum}`);
 

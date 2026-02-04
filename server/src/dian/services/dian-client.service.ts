@@ -54,7 +54,9 @@ export class DianClientService {
   ): Promise<DianSendResult> {
     const urls = config.testMode ? DIAN_URLS.test : DIAN_URLS.production;
 
-    this.logger.log(`Sending document to DIAN: ${fileName} (testMode: ${config.testMode})`);
+    this.logger.log(
+      `Sending document to DIAN: ${fileName} (testMode: ${config.testMode})`,
+    );
 
     try {
       // Convert XML to Base64
@@ -64,7 +66,11 @@ export class DianClientService {
       const soapEnvelope = this.buildSendDocumentEnvelope(xmlBase64, fileName);
 
       // Send request
-      const response = await this.sendSoapRequest(urls.endpoint, soapEnvelope, 'SendBillSync');
+      const response = await this.sendSoapRequest(
+        urls.endpoint,
+        soapEnvelope,
+        'SendBillSync',
+      );
 
       return this.parseSendResponse(response);
     } catch (error) {
@@ -72,7 +78,8 @@ export class DianClientService {
       return {
         success: false,
         statusCode: 'ERROR',
-        statusDescription: error instanceof Error ? error.message : 'Unknown error',
+        statusDescription:
+          error instanceof Error ? error.message : 'Unknown error',
         errors: [error instanceof Error ? error.message : 'Unknown error'],
       };
     }
@@ -89,12 +96,22 @@ export class DianClientService {
   ): Promise<DianSendResult> {
     const urls = config.testMode ? DIAN_URLS.test : DIAN_URLS.production;
 
-    this.logger.log(`Sending test set document to DIAN: ${fileName}, testSetId: ${testSetId}`);
+    this.logger.log(
+      `Sending test set document to DIAN: ${fileName}, testSetId: ${testSetId}`,
+    );
 
     try {
       const xmlBase64 = Buffer.from(signedXml, 'utf-8').toString('base64');
-      const soapEnvelope = this.buildSendTestSetEnvelope(xmlBase64, fileName, testSetId);
-      const response = await this.sendSoapRequest(urls.endpoint, soapEnvelope, 'SendTestSetAsync');
+      const soapEnvelope = this.buildSendTestSetEnvelope(
+        xmlBase64,
+        fileName,
+        testSetId,
+      );
+      const response = await this.sendSoapRequest(
+        urls.endpoint,
+        soapEnvelope,
+        'SendTestSetAsync',
+      );
 
       return this.parseSendResponse(response);
     } catch (error) {
@@ -102,7 +119,8 @@ export class DianClientService {
       return {
         success: false,
         statusCode: 'ERROR',
-        statusDescription: error instanceof Error ? error.message : 'Unknown error',
+        statusDescription:
+          error instanceof Error ? error.message : 'Unknown error',
         errors: [error instanceof Error ? error.message : 'Unknown error'],
       };
     }
@@ -121,7 +139,11 @@ export class DianClientService {
 
     try {
       const soapEnvelope = this.buildGetStatusEnvelope(trackId);
-      const response = await this.sendSoapRequest(urls.endpoint, soapEnvelope, 'GetStatus');
+      const response = await this.sendSoapRequest(
+        urls.endpoint,
+        soapEnvelope,
+        'GetStatus',
+      );
 
       return this.parseStatusResponse(response);
     } catch (error) {
@@ -129,7 +151,8 @@ export class DianClientService {
       return {
         success: false,
         statusCode: 'ERROR',
-        statusDescription: error instanceof Error ? error.message : 'Unknown error',
+        statusDescription:
+          error instanceof Error ? error.message : 'Unknown error',
         errors: [error instanceof Error ? error.message : 'Unknown error'],
       };
     }
@@ -144,11 +167,17 @@ export class DianClientService {
   ): Promise<DianStatusResult> {
     const urls = config.testMode ? DIAN_URLS.test : DIAN_URLS.production;
 
-    this.logger.log(`Checking document status by CUFE: ${cufe.substring(0, 20)}...`);
+    this.logger.log(
+      `Checking document status by CUFE: ${cufe.substring(0, 20)}...`,
+    );
 
     try {
       const soapEnvelope = this.buildGetStatusByCufeEnvelope(cufe);
-      const response = await this.sendSoapRequest(urls.endpoint, soapEnvelope, 'GetStatusZip');
+      const response = await this.sendSoapRequest(
+        urls.endpoint,
+        soapEnvelope,
+        'GetStatusZip',
+      );
 
       return this.parseStatusResponse(response);
     } catch (error) {
@@ -156,7 +185,8 @@ export class DianClientService {
       return {
         success: false,
         statusCode: 'ERROR',
-        statusDescription: error instanceof Error ? error.message : 'Unknown error',
+        statusDescription:
+          error instanceof Error ? error.message : 'Unknown error',
         errors: [error instanceof Error ? error.message : 'Unknown error'],
       };
     }
@@ -164,7 +194,10 @@ export class DianClientService {
 
   // SOAP envelope builders
 
-  private buildSendDocumentEnvelope(xmlBase64: string, fileName: string): string {
+  private buildSendDocumentEnvelope(
+    xmlBase64: string,
+    fileName: string,
+  ): string {
     return `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:wcf="http://wcf.dian.colombia">
   <soap:Header/>
@@ -177,7 +210,11 @@ export class DianClientService {
 </soap:Envelope>`;
   }
 
-  private buildSendTestSetEnvelope(xmlBase64: string, fileName: string, testSetId: string): string {
+  private buildSendTestSetEnvelope(
+    xmlBase64: string,
+    fileName: string,
+    testSetId: string,
+  ): string {
     return `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:wcf="http://wcf.dian.colombia">
   <soap:Header/>
@@ -233,7 +270,7 @@ export class DianClientService {
         headers: {
           'Content-Type': 'application/soap+xml; charset=utf-8',
           'Content-Length': Buffer.byteLength(soapEnvelope),
-          'SOAPAction': `http://wcf.dian.colombia/IWcfDianCustomerServices/${action}`,
+          SOAPAction: `http://wcf.dian.colombia/IWcfDianCustomerServices/${action}`,
         },
         rejectUnauthorized: true,
       };
@@ -275,10 +312,13 @@ export class DianClientService {
       // Simple XML parsing for DIAN response
       const isValid = this.extractXmlValue(xmlResponse, 'IsValid') === 'true';
       const statusCode = this.extractXmlValue(xmlResponse, 'StatusCode') || '';
-      const statusDescription = this.extractXmlValue(xmlResponse, 'StatusDescription') || '';
-      const statusMessage = this.extractXmlValue(xmlResponse, 'StatusMessage') || '';
+      const statusDescription =
+        this.extractXmlValue(xmlResponse, 'StatusDescription') || '';
+      const statusMessage =
+        this.extractXmlValue(xmlResponse, 'StatusMessage') || '';
       const trackId = this.extractXmlValue(xmlResponse, 'TrackId') || '';
-      const xmlBase64Bytes = this.extractXmlValue(xmlResponse, 'XmlBase64Bytes') || '';
+      const xmlBase64Bytes =
+        this.extractXmlValue(xmlResponse, 'XmlBase64Bytes') || '';
 
       // Extract errors and warnings
       const errors = this.extractXmlArray(xmlResponse, 'ErrorMessage');
@@ -301,7 +341,9 @@ export class DianClientService {
         success: false,
         statusCode: 'PARSE_ERROR',
         statusDescription: 'Failed to parse DIAN response',
-        errors: [error instanceof Error ? error.message : 'Unknown parse error'],
+        errors: [
+          error instanceof Error ? error.message : 'Unknown parse error',
+        ],
       };
     }
   }
@@ -310,9 +352,12 @@ export class DianClientService {
     try {
       const isValid = this.extractXmlValue(xmlResponse, 'IsValid') === 'true';
       const statusCode = this.extractXmlValue(xmlResponse, 'StatusCode') || '';
-      const statusDescription = this.extractXmlValue(xmlResponse, 'StatusDescription') || '';
-      const statusMessage = this.extractXmlValue(xmlResponse, 'StatusMessage') || '';
-      const documentStatus = this.extractXmlValue(xmlResponse, 'DocumentStatus') || '';
+      const statusDescription =
+        this.extractXmlValue(xmlResponse, 'StatusDescription') || '';
+      const statusMessage =
+        this.extractXmlValue(xmlResponse, 'StatusMessage') || '';
+      const documentStatus =
+        this.extractXmlValue(xmlResponse, 'DocumentStatus') || '';
 
       const errors = this.extractXmlArray(xmlResponse, 'ErrorMessage');
 
@@ -331,7 +376,9 @@ export class DianClientService {
         success: false,
         statusCode: 'PARSE_ERROR',
         statusDescription: 'Failed to parse status response',
-        errors: [error instanceof Error ? error.message : 'Unknown parse error'],
+        errors: [
+          error instanceof Error ? error.message : 'Unknown parse error',
+        ],
       };
     }
   }

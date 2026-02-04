@@ -440,7 +440,9 @@ describe('SystemAdminService', () => {
       ).rejects.toThrow(BadRequestException);
       await expect(
         service.approveUser(mockUser.id, mockSystemAdmin.id),
-      ).rejects.toThrow('No se puede aprobar un usuario que no ha verificado su correo electrónico');
+      ).rejects.toThrow(
+        'No se puede aprobar un usuario que no ha verificado su correo electrónico',
+      );
     });
   });
 

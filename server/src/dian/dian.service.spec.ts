@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DianService } from './dian.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TenantContextService } from '../common';
@@ -68,18 +64,20 @@ describe('DianService', () => {
       name: 'Test Customer',
       documentNumber: '123456789',
     },
-    items: [{
-      id: 'item-123',
-      productId: 'product-123',
-      product: { id: 'product-123', name: 'Test Product' },
-      quantity: 1,
-      unitPrice: 100000,
-      taxRate: 19,
-      discount: 0,
-      subtotal: 100000,
-      tax: 19000,
-      total: 119000,
-    }],
+    items: [
+      {
+        id: 'item-123',
+        productId: 'product-123',
+        product: { id: 'product-123', name: 'Test Product' },
+        quantity: 1,
+        unitPrice: 100000,
+        taxRate: 19,
+        discount: 0,
+        subtotal: 100000,
+        tax: 19000,
+        total: 119000,
+      },
+    ],
   };
 
   const mockDianDocument = {
@@ -190,7 +188,9 @@ describe('DianService', () => {
 
   describe('getConfig', () => {
     it('should return config without sensitive data', async () => {
-      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(mockDianConfig);
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
 
       const result = await service.getConfig();
 
@@ -249,8 +249,12 @@ describe('DianService', () => {
     });
 
     it('should update existing config', async () => {
-      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(mockDianConfig);
-      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(mockDianConfig);
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
 
       const result = await service.createConfig(createDto);
 
@@ -281,7 +285,9 @@ describe('DianService', () => {
         softwarePin: 'new-pin',
         technicalKey: 'new-key',
       };
-      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(mockDianConfig);
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
 
       const result = await service.setSoftwareCredentials(dto);
 
@@ -306,7 +312,9 @@ describe('DianService', () => {
         resolutionRangeFrom: 1,
         resolutionRangeTo: 5000000,
       };
-      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(mockDianConfig);
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
 
       const result = await service.setResolution(dto);
 
@@ -319,7 +327,9 @@ describe('DianService', () => {
     it('should upload certificate', async () => {
       const file = Buffer.from('certificate-content');
       const password = 'cert-password';
-      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(mockDianConfig);
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
 
       const result = await service.uploadCertificate(file, password);
 
@@ -332,39 +342,65 @@ describe('DianService', () => {
     it('should throw BadRequestException when no config', async () => {
       (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.processInvoice('invoice-123')).rejects.toThrow(BadRequestException);
+      await expect(service.processInvoice('invoice-123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when no software credentials', async () => {
-      const configNoSoftware = { ...mockDianConfig, softwareId: null, technicalKey: null };
-      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(configNoSoftware);
+      const configNoSoftware = {
+        ...mockDianConfig,
+        softwareId: null,
+        technicalKey: null,
+      };
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        configNoSoftware,
+      );
 
-      await expect(service.processInvoice('invoice-123')).rejects.toThrow(BadRequestException);
+      await expect(service.processInvoice('invoice-123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when no resolution', async () => {
-      const configNoResolution = { ...mockDianConfig, resolutionNumber: null, resolutionPrefix: null };
-      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(configNoResolution);
+      const configNoResolution = {
+        ...mockDianConfig,
+        resolutionNumber: null,
+        resolutionPrefix: null,
+      };
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        configNoResolution,
+      );
 
-      await expect(service.processInvoice('invoice-123')).rejects.toThrow(BadRequestException);
+      await expect(service.processInvoice('invoice-123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException when invoice not found', async () => {
-      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(mockDianConfig);
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
       (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.processInvoice('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.processInvoice('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when invoice already accepted', async () => {
-      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(mockDianConfig);
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
       (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(mockInvoice);
       (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue({
         ...mockDianDocument,
         status: 'ACCEPTED',
       });
 
-      await expect(service.processInvoice('invoice-123', false)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.processInvoice('invoice-123', false),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -372,20 +408,28 @@ describe('DianService', () => {
     it('should throw NotFoundException when document not found', async () => {
       (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.checkDocumentStatus('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.checkDocumentStatus('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when no trackId or cufe', async () => {
       const docNoTrack = { ...mockDianDocument, dianTrackId: null, cufe: null };
-      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(docNoTrack);
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(
+        docNoTrack,
+      );
 
-      await expect(service.checkDocumentStatus('document-123')).rejects.toThrow(BadRequestException);
+      await expect(service.checkDocumentStatus('document-123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
   describe('listDocuments', () => {
     it('should return paginated documents', async () => {
-      (prisma.dianDocument.findMany as jest.Mock).mockResolvedValue([mockDianDocument]);
+      (prisma.dianDocument.findMany as jest.Mock).mockResolvedValue([
+        mockDianDocument,
+      ]);
       (prisma.dianDocument.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.listDocuments(1, 10);
@@ -435,7 +479,9 @@ describe('DianService', () => {
   describe('getDocument', () => {
     it('should return document with invoice', async () => {
       const docWithInvoice = { ...mockDianDocument, invoice: mockInvoice };
-      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(docWithInvoice);
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(
+        docWithInvoice,
+      );
 
       const result = await service.getDocument('document-123');
 
@@ -446,13 +492,17 @@ describe('DianService', () => {
     it('should throw NotFoundException when document not found', async () => {
       (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.getDocument('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.getDocument('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('downloadXml', () => {
     it('should return xml content', async () => {
-      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(mockDianDocument);
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(
+        mockDianDocument,
+      );
 
       const result = await service.downloadXml('document-123');
 
@@ -463,14 +513,22 @@ describe('DianService', () => {
     it('should throw NotFoundException when document not found', async () => {
       (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.downloadXml('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.downloadXml('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when no xml content', async () => {
-      const docNoXml = { ...mockDianDocument, xmlContent: null, signedXml: null };
+      const docNoXml = {
+        ...mockDianDocument,
+        xmlContent: null,
+        signedXml: null,
+      };
       (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(docNoXml);
 
-      await expect(service.downloadXml('document-123')).rejects.toThrow(BadRequestException);
+      await expect(service.downloadXml('document-123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -478,10 +536,12 @@ describe('DianService', () => {
     it('should return statistics', async () => {
       (prisma.dianDocument.count as jest.Mock)
         .mockResolvedValueOnce(100) // total
-        .mockResolvedValueOnce(80)  // accepted
-        .mockResolvedValueOnce(10)  // rejected
+        .mockResolvedValueOnce(80) // accepted
+        .mockResolvedValueOnce(10) // rejected
         .mockResolvedValueOnce(10); // pending
-      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(mockDianConfig);
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
 
       const result = await service.getStats();
 

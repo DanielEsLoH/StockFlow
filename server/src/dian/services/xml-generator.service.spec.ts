@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
-import { XmlGeneratorService, XmlGeneratorConfig, InvoiceWithDetails } from './xml-generator.service';
+import {
+  XmlGeneratorService,
+  XmlGeneratorConfig,
+  InvoiceWithDetails,
+} from './xml-generator.service';
 import type { TenantDianConfig, Customer } from '@prisma/client';
 import { PaymentMethod } from '@prisma/client';
 
@@ -101,7 +105,9 @@ describe('XmlGeneratorService', () => {
   };
 
   const mockCufe = 'a'.repeat(96);
-  const mockQrCode = 'https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=' + mockCufe;
+  const mockQrCode =
+    'https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=' +
+    mockCufe;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -155,9 +161,15 @@ describe('XmlGeneratorService', () => {
 
       const xml = service.generateInvoiceXml(config);
 
-      expect(xml).toContain('xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"');
-      expect(xml).toContain('xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"');
-      expect(xml).toContain('xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"');
+      expect(xml).toContain(
+        'xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"',
+      );
+      expect(xml).toContain(
+        'xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"',
+      );
+      expect(xml).toContain(
+        'xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"',
+      );
     });
 
     it('should include DIAN extensions', () => {
@@ -173,7 +185,9 @@ describe('XmlGeneratorService', () => {
       expect(xml).toContain('<ext:UBLExtensions>');
       expect(xml).toContain('<sts:DianExtensions>');
       expect(xml).toContain('<sts:InvoiceControl>');
-      expect(xml).toContain('<sts:InvoiceAuthorization>18760000001</sts:InvoiceAuthorization>');
+      expect(xml).toContain(
+        '<sts:InvoiceAuthorization>18760000001</sts:InvoiceAuthorization>',
+      );
     });
 
     it('should include resolution information', () => {
@@ -202,7 +216,9 @@ describe('XmlGeneratorService', () => {
       const xml = service.generateInvoiceXml(config);
 
       expect(xml).toContain('<cbc:ID>SETT100</cbc:ID>');
-      expect(xml).toContain(`<cbc:UUID schemeID="2" schemeName="CUFE-SHA384">${mockCufe}</cbc:UUID>`);
+      expect(xml).toContain(
+        `<cbc:UUID schemeID="2" schemeName="CUFE-SHA384">${mockCufe}</cbc:UUID>`,
+      );
     });
 
     it('should use production profile execution ID when not in test mode', () => {
@@ -216,7 +232,9 @@ describe('XmlGeneratorService', () => {
 
       const xml = service.generateInvoiceXml(config);
 
-      expect(xml).toContain('<cbc:ProfileExecutionID>1</cbc:ProfileExecutionID>');
+      expect(xml).toContain(
+        '<cbc:ProfileExecutionID>1</cbc:ProfileExecutionID>',
+      );
       expect(xml).toContain('schemeID="1"');
     });
 
@@ -232,7 +250,9 @@ describe('XmlGeneratorService', () => {
 
       expect(xml).toContain('<cac:AccountingSupplierParty>');
       expect(xml).toContain('<cbc:Name>Test Company</cbc:Name>');
-      expect(xml).toContain('<cbc:RegistrationName>Test Company S.A.S</cbc:RegistrationName>');
+      expect(xml).toContain(
+        '<cbc:RegistrationName>Test Company S.A.S</cbc:RegistrationName>',
+      );
       expect(xml).toContain('>900123456<');
     });
 
@@ -277,7 +297,9 @@ describe('XmlGeneratorService', () => {
       const xml = service.generateInvoiceXml(config);
 
       expect(xml).toContain('<cac:TaxTotal>');
-      expect(xml).toContain('<cbc:TaxAmount currencyID="COP">19000.00</cbc:TaxAmount>');
+      expect(xml).toContain(
+        '<cbc:TaxAmount currencyID="COP">19000.00</cbc:TaxAmount>',
+      );
     });
 
     it('should include legal monetary total', () => {
@@ -291,8 +313,12 @@ describe('XmlGeneratorService', () => {
       const xml = service.generateInvoiceXml(config);
 
       expect(xml).toContain('<cac:LegalMonetaryTotal>');
-      expect(xml).toContain('<cbc:LineExtensionAmount currencyID="COP">100000.00</cbc:LineExtensionAmount>');
-      expect(xml).toContain('<cbc:PayableAmount currencyID="COP">119000.00</cbc:PayableAmount>');
+      expect(xml).toContain(
+        '<cbc:LineExtensionAmount currencyID="COP">100000.00</cbc:LineExtensionAmount>',
+      );
+      expect(xml).toContain(
+        '<cbc:PayableAmount currencyID="COP">119000.00</cbc:PayableAmount>',
+      );
     });
 
     it('should include invoice lines', () => {
@@ -306,8 +332,12 @@ describe('XmlGeneratorService', () => {
       const xml = service.generateInvoiceXml(config);
 
       expect(xml).toContain('<cac:InvoiceLine>');
-      expect(xml).toContain('<cbc:InvoicedQuantity unitCode="EA">2</cbc:InvoicedQuantity>');
-      expect(xml).toContain('<cbc:Description>Test Product Name</cbc:Description>');
+      expect(xml).toContain(
+        '<cbc:InvoicedQuantity unitCode="EA">2</cbc:InvoicedQuantity>',
+      );
+      expect(xml).toContain(
+        '<cbc:Description>Test Product Name</cbc:Description>',
+      );
     });
 
     it('should include QR code', () => {
@@ -383,7 +413,9 @@ describe('XmlGeneratorService', () => {
 
       const xml = service.generateInvoiceXml(config);
 
-      expect(xml).toContain('Test &amp; Company &lt;S.A.S&gt; &quot;Special&quot;');
+      expect(xml).toContain(
+        'Test &amp; Company &lt;S.A.S&gt; &quot;Special&quot;',
+      );
     });
 
     it('should include line count', () => {
@@ -478,7 +510,11 @@ describe('XmlGeneratorService', () => {
         qrCode: mockQrCode,
       };
 
-      const xml = service.generateCreditNoteXml(config, originalInvoice, 'Devolucion de mercancia');
+      const xml = service.generateCreditNoteXml(
+        config,
+        originalInvoice,
+        'Devolucion de mercancia',
+      );
 
       expect(xml).toBeDefined();
       expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>');
@@ -494,7 +530,11 @@ describe('XmlGeneratorService', () => {
         qrCode: mockQrCode,
       };
 
-      const xml = service.generateCreditNoteXml(config, originalInvoice, 'Devolucion');
+      const xml = service.generateCreditNoteXml(
+        config,
+        originalInvoice,
+        'Devolucion',
+      );
 
       expect(xml).toContain('schemeName="CUDE-SHA384"');
     });
@@ -507,12 +547,18 @@ describe('XmlGeneratorService', () => {
         qrCode: mockQrCode,
       };
 
-      const xml = service.generateCreditNoteXml(config, originalInvoice, 'Devolucion de mercancia');
+      const xml = service.generateCreditNoteXml(
+        config,
+        originalInvoice,
+        'Devolucion de mercancia',
+      );
 
       expect(xml).toContain('<cac:DiscrepancyResponse>');
       expect(xml).toContain('<cbc:ReferenceID>SETT099</cbc:ReferenceID>');
       expect(xml).toContain('<cbc:ResponseCode>2</cbc:ResponseCode>');
-      expect(xml).toContain('<cbc:Description>Devolucion de mercancia</cbc:Description>');
+      expect(xml).toContain(
+        '<cbc:Description>Devolucion de mercancia</cbc:Description>',
+      );
     });
 
     it('should include billing reference to original invoice', () => {
@@ -523,12 +569,18 @@ describe('XmlGeneratorService', () => {
         qrCode: mockQrCode,
       };
 
-      const xml = service.generateCreditNoteXml(config, originalInvoice, 'Anulacion');
+      const xml = service.generateCreditNoteXml(
+        config,
+        originalInvoice,
+        'Anulacion',
+      );
 
       expect(xml).toContain('<cac:BillingReference>');
       expect(xml).toContain('<cac:InvoiceDocumentReference>');
       expect(xml).toContain('<cbc:ID>SETT099</cbc:ID>');
-      expect(xml).toContain(`schemeName="CUFE-SHA384">${'b'.repeat(96)}</cbc:UUID>`);
+      expect(xml).toContain(
+        `schemeName="CUFE-SHA384">${'b'.repeat(96)}</cbc:UUID>`,
+      );
     });
 
     it('should include credit note lines instead of invoice lines', () => {
@@ -539,7 +591,11 @@ describe('XmlGeneratorService', () => {
         qrCode: mockQrCode,
       };
 
-      const xml = service.generateCreditNoteXml(config, originalInvoice, 'Devolucion');
+      const xml = service.generateCreditNoteXml(
+        config,
+        originalInvoice,
+        'Devolucion',
+      );
 
       expect(xml).toContain('<cac:CreditNoteLine>');
       expect(xml).toContain('<cbc:CreditedQuantity unitCode="EA">');
@@ -554,9 +610,15 @@ describe('XmlGeneratorService', () => {
         qrCode: mockQrCode,
       };
 
-      const xml = service.generateCreditNoteXml(config, originalInvoice, 'Devolucion');
+      const xml = service.generateCreditNoteXml(
+        config,
+        originalInvoice,
+        'Devolucion',
+      );
 
-      expect(xml).toContain('<cbc:CreditNoteTypeCode>91</cbc:CreditNoteTypeCode>');
+      expect(xml).toContain(
+        '<cbc:CreditNoteTypeCode>91</cbc:CreditNoteTypeCode>',
+      );
     });
 
     it('should use customization ID 20 for credit notes', () => {
@@ -567,7 +629,11 @@ describe('XmlGeneratorService', () => {
         qrCode: mockQrCode,
       };
 
-      const xml = service.generateCreditNoteXml(config, originalInvoice, 'Devolucion');
+      const xml = service.generateCreditNoteXml(
+        config,
+        originalInvoice,
+        'Devolucion',
+      );
 
       expect(xml).toContain('<cbc:CustomizationID>20</cbc:CustomizationID>');
     });
@@ -581,7 +647,11 @@ describe('XmlGeneratorService', () => {
         qrCode: mockQrCode,
       };
 
-      const xml = service.generateCreditNoteXml(config, originalWithoutCufe, 'Devolucion');
+      const xml = service.generateCreditNoteXml(
+        config,
+        originalWithoutCufe,
+        'Devolucion',
+      );
 
       expect(xml).toContain('schemeName="CUFE-SHA384"></cbc:UUID>');
     });
@@ -678,7 +748,9 @@ describe('XmlGeneratorService', () => {
 
       const xml = service.generateInvoiceXml(config);
 
-      expect(xml).toContain('<cbc:TaxAmount currencyID="COP">0.00</cbc:TaxAmount>');
+      expect(xml).toContain(
+        '<cbc:TaxAmount currencyID="COP">0.00</cbc:TaxAmount>',
+      );
     });
 
     it('should handle null tax responsibilities', () => {
@@ -742,7 +814,11 @@ describe('XmlGeneratorService', () => {
     });
 
     it('should handle config without software ID', () => {
-      const configNoSoftware = { ...mockDianConfig, softwareId: null, softwarePin: null };
+      const configNoSoftware = {
+        ...mockDianConfig,
+        softwareId: null,
+        softwarePin: null,
+      };
       const config: XmlGeneratorConfig = {
         dianConfig: configNoSoftware as TenantDianConfig,
         invoice: mockInvoice,
@@ -774,7 +850,9 @@ describe('XmlGeneratorService', () => {
       const xml = service.generateInvoiceXml(config);
 
       expect(xml).toBeDefined();
-      expect(xml).toContain('<sts:InvoiceAuthorization></sts:InvoiceAuthorization>');
+      expect(xml).toContain(
+        '<sts:InvoiceAuthorization></sts:InvoiceAuthorization>',
+      );
     });
 
     it('should handle config without postal code', () => {

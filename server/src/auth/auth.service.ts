@@ -193,17 +193,13 @@ export class AuthService {
     // PENDING status - check email verification first
     if (user.status === UserStatus.PENDING) {
       if (!user.emailVerified) {
-        this.logger.warn(
-          `Access denied - email not verified: ${user.email}`,
-        );
+        this.logger.warn(`Access denied - email not verified: ${user.email}`);
         throw new ForbiddenException(
           'Por favor verifica tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.',
         );
       }
       // Email verified but not approved by admin
-      this.logger.warn(
-        `Access denied - pending admin approval: ${user.email}`,
-      );
+      this.logger.warn(`Access denied - pending admin approval: ${user.email}`);
       throw new ForbiddenException(
         'Tu cuenta está pendiente de aprobación por un administrador. Te notificaremos por correo cuando sea aprobada.',
       );

@@ -163,7 +163,8 @@ export class POSSessionsController {
   @Get('current')
   @ApiOperation({
     summary: 'Get current active session',
-    description: 'Returns the current active session for the authenticated user.',
+    description:
+      'Returns the current active session for the authenticated user.',
   })
   @ApiResponse({
     status: 200,
@@ -212,7 +213,10 @@ export class POSSessionsController {
     @Query('toDate') toDate?: string,
   ): Promise<PaginatedSessionsResponse> {
     const pageNum = Math.max(1, parseInt(page ?? '1', 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit ?? '10', 10) || 10));
+    const limitNum = Math.min(
+      100,
+      Math.max(1, parseInt(limit ?? '10', 10) || 10),
+    );
 
     this.logger.log(`Listing sessions - page: ${pageNum}, limit: ${limitNum}`);
 

@@ -343,7 +343,9 @@ describe('CufeGeneratorService', () => {
     });
 
     it('should return true for mixed case valid CUFE', () => {
-      const validCufe = 'aAbBcCdDeEfF01234567890'.repeat(4) + 'aAbBcCdDeEfF01234567890'.slice(0, 4);
+      const validCufe =
+        'aAbBcCdDeEfF01234567890'.repeat(4) +
+        'aAbBcCdDeEfF01234567890'.slice(0, 4);
       // Need exactly 96 characters
       const cufe96 = 'a1b2c3d4e5f6'.repeat(8);
       expect(service.validateCufe(cufe96)).toBe(true);

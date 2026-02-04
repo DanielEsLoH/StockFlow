@@ -1,5 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { TenantDianConfig, Invoice, InvoiceItem, Customer, PaymentMethod, Product } from '@prisma/client';
+import {
+  TenantDianConfig,
+  Invoice,
+  InvoiceItem,
+  Customer,
+  PaymentMethod,
+  Product,
+} from '@prisma/client';
 
 export interface InvoiceItemWithProduct extends InvoiceItem {
   product: Pick<Product, 'id' | 'name'> | null;
@@ -27,10 +34,13 @@ export class XmlGeneratorService {
 
   // Colombian UBL 2.1 namespaces
   private readonly namespaces = {
-    'xmlns': 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
-    'xmlns:cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
-    'xmlns:cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
-    'xmlns:ext': 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2',
+    xmlns: 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
+    'xmlns:cac':
+      'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
+    'xmlns:cbc':
+      'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
+    'xmlns:ext':
+      'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2',
     'xmlns:sts': 'dian:gov:co:facturaelectronica:Structures-2-1',
     'xmlns:xades': 'http://uri.etsi.org/01903/v1.3.2#',
     'xmlns:xades141': 'http://uri.etsi.org/01903/v1.4.1#',
@@ -141,7 +151,9 @@ ${this.generateInvoiceLines(invoice.items)}
   ): string {
     const { dianConfig, invoice, cufe, qrCode } = config;
 
-    this.logger.log(`Generating Credit Note XML for invoice ${invoice.invoiceNumber}`);
+    this.logger.log(
+      `Generating Credit Note XML for invoice ${invoice.invoiceNumber}`,
+    );
 
     const issueDate = new Date();
 
@@ -220,7 +232,10 @@ ${this.generateCreditNoteLines(invoice.items)}
     return result;
   }
 
-  private generateSoftwareSecurityCode(config: TenantDianConfig, invoiceNumber: string): string {
+  private generateSoftwareSecurityCode(
+    config: TenantDianConfig,
+    invoiceNumber: string,
+  ): string {
     // Software security code = SHA384(SoftwareID + PIN + InvoiceNumber)
     const crypto = require('crypto');
     const data = `${config.softwareId || ''}${config.softwarePin || ''}${invoiceNumber}`;
@@ -385,7 +400,9 @@ ${this.generateCreditNoteLines(invoice.items)}
   private generatePaymentMeans(invoice: Invoice): string {
     // Invoice doesn't store payment method - default to cash (10)
     const paymentCode = '10';
-    const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : new Date(invoice.issueDate);
+    const dueDate = invoice.dueDate
+      ? new Date(invoice.dueDate)
+      : new Date(invoice.issueDate);
 
     return `  <cac:PaymentMeans>
     <cbc:ID>1</cbc:ID>
@@ -397,7 +414,8 @@ ${this.generateCreditNoteLines(invoice.items)}
   private generateTaxTotal(invoice: Invoice): string {
     const tax = Number(invoice.tax) || 0;
     const subtotal = Number(invoice.subtotal) || 0;
-    const taxPercent = subtotal > 0 ? ((tax / subtotal) * 100).toFixed(2) : '19.00';
+    const taxPercent =
+      subtotal > 0 ? ((tax / subtotal) * 100).toFixed(2) : '19.00';
 
     return `  <cac:TaxTotal>
     <cbc:TaxAmount currencyID="COP">${tax.toFixed(2)}</cbc:TaxAmount>

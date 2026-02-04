@@ -212,7 +212,9 @@ describe('SubscriptionExpiryService', () => {
 
       await service.handleSubscriptionExpiry();
 
-      expect(mockBrevoService.sendSubscriptionExpiringEmail).toHaveBeenCalledWith({
+      expect(
+        mockBrevoService.sendSubscriptionExpiringEmail,
+      ).toHaveBeenCalledWith({
         to: mockUser.email,
         firstName: mockUser.firstName,
         planName: PLAN_LIMITS[SubscriptionPlan.PYME].displayName,
@@ -245,7 +247,9 @@ describe('SubscriptionExpiryService', () => {
 
       await service.handleSubscriptionExpiry();
 
-      expect(mockBrevoService.sendSubscriptionExpiringEmail).toHaveBeenCalledTimes(2);
+      expect(
+        mockBrevoService.sendSubscriptionExpiringEmail,
+      ).toHaveBeenCalledTimes(2);
     });
 
     it('should log warning when email sending fails', async () => {
@@ -321,7 +325,9 @@ describe('SubscriptionExpiryService', () => {
 
       await service.handleSubscriptionExpiry();
 
-      expect(mockBrevoService.sendSubscriptionExpiringEmail).toHaveBeenCalledWith(
+      expect(
+        mockBrevoService.sendSubscriptionExpiringEmail,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           daysRemaining: 1,
         }),
@@ -402,7 +408,9 @@ describe('SubscriptionExpiryService', () => {
 
       await service.handleSubscriptionExpiry();
 
-      expect(mockBrevoService.sendSubscriptionExpiredEmail).toHaveBeenCalledWith({
+      expect(
+        mockBrevoService.sendSubscriptionExpiredEmail,
+      ).toHaveBeenCalledWith({
         to: mockUser.email,
         firstName: mockUser.firstName,
         planName: PLAN_LIMITS[SubscriptionPlan.PYME].displayName,
@@ -586,7 +594,9 @@ describe('SubscriptionExpiryService', () => {
 
       await service.handleSubscriptionExpiry();
 
-      expect(mockBrevoService.sendSubscriptionExpiringEmail).not.toHaveBeenCalled();
+      expect(
+        mockBrevoService.sendSubscriptionExpiringEmail,
+      ).not.toHaveBeenCalled();
     });
 
     it('should continue sending to other users if one fails', async () => {
@@ -611,7 +621,9 @@ describe('SubscriptionExpiryService', () => {
 
       await service.handleSubscriptionExpiry();
 
-      expect(mockBrevoService.sendSubscriptionExpiringEmail).toHaveBeenCalledTimes(2);
+      expect(
+        mockBrevoService.sendSubscriptionExpiringEmail,
+      ).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -642,7 +654,9 @@ describe('SubscriptionExpiryService', () => {
 
       await service.handleSubscriptionExpiry();
 
-      expect(mockBrevoService.sendSubscriptionExpiredEmail).toHaveBeenCalledWith(
+      expect(
+        mockBrevoService.sendSubscriptionExpiredEmail,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           planName: PLAN_LIMITS[SubscriptionPlan.PRO].displayName,
         }),
@@ -744,7 +758,9 @@ describe('SubscriptionExpiryService', () => {
 
       await service.handleSubscriptionExpiry();
 
-      expect(mockBrevoService.sendSubscriptionExpiringEmail).toHaveBeenCalledTimes(2);
+      expect(
+        mockBrevoService.sendSubscriptionExpiringEmail,
+      ).toHaveBeenCalledTimes(2);
     });
 
     it('should process multiple expired subscriptions', async () => {
@@ -784,7 +800,9 @@ describe('SubscriptionExpiryService', () => {
       await service.handleSubscriptionExpiry();
 
       expect(mockPrismaTransaction).toHaveBeenCalledTimes(2);
-      expect(mockBrevoService.sendSubscriptionExpiredEmail).toHaveBeenCalledTimes(2);
+      expect(
+        mockBrevoService.sendSubscriptionExpiredEmail,
+      ).toHaveBeenCalledTimes(2);
     });
   });
 

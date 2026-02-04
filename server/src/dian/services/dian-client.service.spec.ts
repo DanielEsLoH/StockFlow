@@ -9,7 +9,9 @@ jest.mock('https');
 
 describe('DianClientService', () => {
   let service: DianClientService;
-  const mockHttpsRequest = https.request as jest.MockedFunction<typeof https.request>;
+  const mockHttpsRequest = https.request as jest.MockedFunction<
+    typeof https.request
+  >;
 
   const mockDianConfig = {
     id: 'config-123',
@@ -196,7 +198,8 @@ describe('DianClientService', () => {
       );
 
       expect(mockHttpsRequest).toHaveBeenCalled();
-      const callArgs = mockHttpsRequest.mock.calls[0][0] as https.RequestOptions;
+      const callArgs = mockHttpsRequest.mock
+        .calls[0][0] as https.RequestOptions;
       expect(callArgs.hostname).toBe('vpfe.dian.gov.co');
     });
 
@@ -210,7 +213,8 @@ describe('DianClientService', () => {
       );
 
       expect(mockHttpsRequest).toHaveBeenCalled();
-      const callArgs = mockHttpsRequest.mock.calls[0][0] as https.RequestOptions;
+      const callArgs = mockHttpsRequest.mock
+        .calls[0][0] as https.RequestOptions;
       expect(callArgs.hostname).toBe('vpfe-hab.dian.gov.co');
     });
   });

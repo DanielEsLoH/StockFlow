@@ -276,9 +276,12 @@ export class POSSalesService {
         ),
       );
 
-      // Create invoice payments (for compatibility with existing payment tracking)
-      await Promise.all(
-        dto.payments.map((payment) =>
+      // Execute all payment and stock operations in parallel for better performance
+      const warehouseId = session.cashRegister.warehouseId;
+
+      await Promise.all([
+        // Create invoice payments (for compatibility with existing payment tracking)
+        ...dto.payments.map((payment) =>
           tx.payment.create({
             data: {
               tenantId,
@@ -290,66 +293,67 @@ export class POSSalesService {
             },
           }),
         ),
-      );
 
-      // Create cash register movements for each payment
-      for (const payment of dto.payments) {
-        await tx.cashRegisterMovement.create({
-          data: {
-            tenantId,
-            sessionId: session.id,
-            saleId: posSale.id,
-            type: CashMovementType.SALE,
-            amount: payment.amount,
-            method: payment.method,
-            reference: payment.reference,
-          },
-        });
-      }
-
-      // Update product stock and create stock movements
-      for (const item of dto.items) {
-        const product = productMap.get(item.productId)!;
-
-        // Decrement stock
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
-        });
-
-        // Update warehouse stock if applicable
-        if (session.cashRegister.warehouseId) {
-          await tx.warehouseStock.upsert({
-            where: {
-              warehouseId_productId: {
-                warehouseId: session.cashRegister.warehouseId,
-                productId: item.productId,
-              },
-            },
-            update: { quantity: { decrement: item.quantity } },
-            create: {
+        // Create cash register movements for each payment
+        ...dto.payments.map((payment) =>
+          tx.cashRegisterMovement.create({
+            data: {
               tenantId,
-              warehouseId: session.cashRegister.warehouseId,
-              productId: item.productId,
-              quantity: -item.quantity, // Will be negative if not exists
+              sessionId: session.id,
+              saleId: posSale.id,
+              type: CashMovementType.SALE,
+              amount: payment.amount,
+              method: payment.method,
+              reference: payment.reference,
             },
-          });
-        }
+          }),
+        ),
 
-        // Create stock movement
-        await tx.stockMovement.create({
-          data: {
-            tenantId,
-            productId: item.productId,
-            warehouseId: session.cashRegister.warehouseId,
-            userId,
-            type: MovementType.SALE,
-            quantity: -item.quantity,
-            reason: `POS Sale ${saleNumber}`,
-            invoiceId: invoice.id,
-          },
-        });
-      }
+        // Decrement product stock for all items
+        ...dto.items.map((item) =>
+          tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: item.quantity } },
+          }),
+        ),
+
+        // Update warehouse stock for all items (if applicable)
+        ...(warehouseId
+          ? dto.items.map((item) =>
+              tx.warehouseStock.upsert({
+                where: {
+                  warehouseId_productId: {
+                    warehouseId,
+                    productId: item.productId,
+                  },
+                },
+                update: { quantity: { decrement: item.quantity } },
+                create: {
+                  tenantId,
+                  warehouseId,
+                  productId: item.productId,
+                  quantity: -item.quantity,
+                },
+              }),
+            )
+          : []),
+
+        // Create stock movements for all items
+        ...dto.items.map((item) =>
+          tx.stockMovement.create({
+            data: {
+              tenantId,
+              productId: item.productId,
+              warehouseId,
+              userId,
+              type: MovementType.SALE,
+              quantity: -item.quantity,
+              reason: `POS Sale ${saleNumber}`,
+              invoiceId: invoice.id,
+            },
+          }),
+        ),
+      ]);
 
       return {
         ...posSale,
@@ -433,70 +437,80 @@ export class POSSalesService {
       }
     }
 
-    // Void in a transaction
+    // Void in a transaction - optimized to use Promise.all for parallel operations
     const voidedSale = await this.prisma.$transaction(async (tx) => {
-      // Update invoice status
-      await tx.invoice.update({
-        where: { id: sale.invoiceId },
-        data: {
-          status: InvoiceStatus.VOID,
-          paymentStatus: PaymentStatus.UNPAID,
-          notes: `${sale.invoice.notes || ''}\nVOIDED: ${reason}`.trim(),
-        },
-      });
+      // Prepare items that need stock restoration (filter once)
+      const itemsWithProductId = sale.invoice.items.filter(
+        (item: any) => item.productId,
+      );
+      const warehouseId = sale.session.cashRegister.warehouseId;
 
-      // Create refund movements
-      for (const payment of sale.payments) {
-        await tx.cashRegisterMovement.create({
+      // Execute all independent operations in parallel
+      await Promise.all([
+        // Update invoice status
+        tx.invoice.update({
+          where: { id: sale.invoiceId },
           data: {
-            tenantId,
-            sessionId: sale.sessionId,
-            saleId: sale.id,
-            type: CashMovementType.REFUND,
-            amount: payment.amount,
-            method: payment.method,
-            notes: `Refund for voided sale: ${reason}`,
+            status: InvoiceStatus.VOID,
+            paymentStatus: PaymentStatus.UNPAID,
+            notes: `${sale.invoice.notes || ''}\nVOIDED: ${reason}`.trim(),
           },
-        });
-      }
+        }),
 
-      // Restore product stock
-      for (const item of sale.invoice.items) {
-        if (!item.productId) continue;
-
-        // Increment stock
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { increment: item.quantity } },
-        });
-
-        // Update warehouse stock
-        if (sale.session.cashRegister.warehouseId) {
-          await tx.warehouseStock.update({
-            where: {
-              warehouseId_productId: {
-                warehouseId: sale.session.cashRegister.warehouseId,
-                productId: item.productId,
-              },
+        // Create refund movements for all payments in parallel
+        ...sale.payments.map((payment: any) =>
+          tx.cashRegisterMovement.create({
+            data: {
+              tenantId,
+              sessionId: sale.sessionId,
+              saleId: sale.id,
+              type: CashMovementType.REFUND,
+              amount: payment.amount,
+              method: payment.method,
+              notes: `Refund for voided sale: ${reason}`,
             },
-            data: { quantity: { increment: item.quantity } },
-          });
-        }
+          }),
+        ),
 
-        // Create return movement
-        await tx.stockMovement.create({
-          data: {
-            tenantId,
-            productId: item.productId,
-            warehouseId: sale.session.cashRegister.warehouseId,
-            userId,
-            type: MovementType.RETURN,
-            quantity: item.quantity,
-            reason: `Voided POS Sale ${sale.saleNumber}: ${reason}`,
-            invoiceId: sale.invoiceId,
-          },
-        });
-      }
+        // Restore product stock for all items in parallel
+        ...itemsWithProductId.map((item: any) =>
+          tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } },
+          }),
+        ),
+
+        // Update warehouse stock for all items in parallel (if applicable)
+        ...(warehouseId
+          ? itemsWithProductId.map((item: any) =>
+              tx.warehouseStock.update({
+                where: {
+                  warehouseId_productId: {
+                    warehouseId,
+                    productId: item.productId,
+                  },
+                },
+                data: { quantity: { increment: item.quantity } },
+              }),
+            )
+          : []),
+
+        // Create return movements for all items in parallel
+        ...itemsWithProductId.map((item: any) =>
+          tx.stockMovement.create({
+            data: {
+              tenantId,
+              productId: item.productId,
+              warehouseId,
+              userId,
+              type: MovementType.RETURN,
+              quantity: item.quantity,
+              reason: `Voided POS Sale ${sale.saleNumber}: ${reason}`,
+              invoiceId: sale.invoiceId,
+            },
+          }),
+        ),
+      ]);
 
       // Return updated sale
       return tx.pOSSale.findFirst({

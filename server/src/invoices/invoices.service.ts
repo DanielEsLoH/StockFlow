@@ -432,32 +432,35 @@ export class InvoicesService {
         })),
       });
 
-      // Reduce stock and create stock movements
-      for (const item of itemsData) {
-        // Update product stock
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
+      // Reduce stock and create stock movements in parallel
+      await Promise.all([
+        // Update product stock for all items
+        ...itemsData.map((item) =>
+          tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
             },
-          },
-        });
-
-        // Create stock movement record
-        await tx.stockMovement.create({
-          data: {
-            tenantId,
-            productId: item.productId,
-            userId,
-            type: 'SALE',
-            quantity: -item.quantity,
-            reason: `Venta - Factura ${invoiceNumber}`,
-            notes: `Item de factura: ${item.productName}`,
-            invoiceId: newInvoice.id,
-          },
-        });
-      }
+          }),
+        ),
+        // Create stock movement records for all items
+        ...itemsData.map((item) =>
+          tx.stockMovement.create({
+            data: {
+              tenantId,
+              productId: item.productId,
+              userId,
+              type: 'SALE',
+              quantity: -item.quantity,
+              reason: `Venta - Factura ${invoiceNumber}`,
+              notes: `Item de factura: ${item.productName}`,
+              invoiceId: newInvoice.id,
+            },
+          }),
+        ),
+      ]);
 
       // Fetch the complete invoice with items
       return tx.invoice.findUnique({
@@ -584,43 +587,48 @@ export class InvoicesService {
       );
     }
 
-    // Delete within a transaction to restore stock
+    // Delete within a transaction to restore stock - optimized for parallel operations
     await this.prisma.$transaction(async (tx) => {
-      // Restore stock for each item (only if productId exists)
-      for (const item of invoice.items) {
-        if (item.productId) {
-          await tx.product.update({
-            where: { id: item.productId },
+      // Filter items that have productId
+      const itemsWithProduct = invoice.items.filter((item) => item.productId);
+
+      // Restore stock and create movements in parallel
+      await Promise.all([
+        // Restore stock for all items
+        ...itemsWithProduct.map((item) =>
+          tx.product.update({
+            where: { id: item.productId! },
             data: {
               stock: {
                 increment: item.quantity,
               },
             },
-          });
-
-          // Create return stock movement
-          await tx.stockMovement.create({
+          }),
+        ),
+        // Create return stock movements for all items
+        ...itemsWithProduct.map((item) =>
+          tx.stockMovement.create({
             data: {
               tenantId,
-              productId: item.productId,
+              productId: item.productId!,
               type: 'RETURN',
               quantity: item.quantity,
               reason: `Eliminación de factura borrador ${invoice.invoiceNumber}`,
               invoiceId: invoice.id,
             },
-          });
-        }
-      }
+          }),
+        ),
+      ]);
 
-      // Delete invoice items first
-      await tx.invoiceItem.deleteMany({
-        where: { invoiceId: id },
-      });
-
-      // Delete stock movements associated with this invoice
-      await tx.stockMovement.deleteMany({
-        where: { invoiceId: id },
-      });
+      // Delete related records and invoice in parallel
+      await Promise.all([
+        tx.invoiceItem.deleteMany({
+          where: { invoiceId: id },
+        }),
+        tx.stockMovement.deleteMany({
+          where: { invoiceId: id },
+        }),
+      ]);
 
       // Delete the invoice
       await tx.invoice.delete({ where: { id } });
@@ -724,26 +732,30 @@ export class InvoicesService {
       throw new BadRequestException('La factura ya está cancelada o anulada');
     }
 
-    // Cancel within a transaction to restore stock
+    // Cancel within a transaction to restore stock - optimized for parallel operations
     const cancelledInvoice = await this.prisma.$transaction(async (tx) => {
-      // Restore stock for each item (only if productId exists)
-      for (const item of invoice.items) {
-        if (item.productId) {
-          // Update product stock
-          await tx.product.update({
-            where: { id: item.productId },
+      // Filter items that have productId
+      const itemsWithProduct = invoice.items.filter((item) => item.productId);
+
+      // Restore stock and create movements in parallel
+      await Promise.all([
+        // Restore stock for all items
+        ...itemsWithProduct.map((item) =>
+          tx.product.update({
+            where: { id: item.productId! },
             data: {
               stock: {
                 increment: item.quantity,
               },
             },
-          });
-
-          // Create return stock movement
-          await tx.stockMovement.create({
+          }),
+        ),
+        // Create return stock movements for all items
+        ...itemsWithProduct.map((item) =>
+          tx.stockMovement.create({
             data: {
               tenantId,
-              productId: item.productId,
+              productId: item.productId!,
               userId,
               type: 'RETURN',
               quantity: item.quantity,
@@ -751,9 +763,9 @@ export class InvoicesService {
               notes: `Devolución por cancelación: ${item.product?.name ?? item.productId}`,
               invoiceId: invoice.id,
             },
-          });
-        }
-      }
+          }),
+        ),
+      ]);
 
       // Update invoice status to CANCELLED
       return tx.invoice.update({

@@ -390,10 +390,11 @@ export class DashboardService {
   /**
    * Calculates product metrics for the tenant.
    * Includes low stock and out of stock counts, plus top selling products.
+   * Optimized to use SQL for low stock count instead of loading all products in memory.
    */
   async getProductMetrics(tenantId: string): Promise<ProductMetrics> {
-    // Get all product counts in parallel
-    const [total, outOfStock, topSelling] = await Promise.all([
+    // Get all product counts in parallel, including low stock using raw SQL
+    const [total, outOfStock, lowStockResult, topSelling] = await Promise.all([
       this.prisma.product.count({
         where: { tenantId },
       }),
@@ -403,29 +404,20 @@ export class DashboardService {
           stock: 0,
         },
       }),
+      // Use raw SQL to count low stock products where stock < minStock AND stock > 0
+      this.prisma.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(*) as count
+        FROM products
+        WHERE tenant_id = ${tenantId}
+          AND stock > 0
+          AND stock < min_stock
+      `,
       this.getTopSellingProducts(tenantId),
     ]);
 
-    // For low stock, we need products where stock < minStock AND stock > 0
-    // This requires raw query or fetching all products
-    const lowStockProducts = await this.prisma.product.findMany({
-      where: {
-        tenantId,
-        stock: { gt: 0 },
-      },
-      select: {
-        stock: true,
-        minStock: true,
-      },
-    });
-
-    const lowStock = lowStockProducts.filter(
-      (p) => p.stock < p.minStock,
-    ).length;
-
     return {
       total,
-      lowStock,
+      lowStock: Number(lowStockResult[0]?.count ?? 0),
       outOfStock,
       topSelling,
     };
@@ -703,77 +695,50 @@ export class DashboardService {
 
   /**
    * Gets sales aggregated by category.
+   * Optimized to use a single SQL query with JOINs instead of loading all items in memory.
    */
   async getSalesByCategory(tenantId: string): Promise<SalesByCategory[]> {
-    // Get total sales first
-    const totalSales = await this.prisma.invoice.aggregate({
-      where: {
-        tenantId,
-        status: {
-          not: InvoiceStatus.CANCELLED,
-        },
-      },
-      _sum: { total: true },
-    });
+    // Use raw SQL to aggregate by category in the database instead of memory
+    const salesByCategory = await this.prisma.$queryRaw<
+      Array<{
+        category_id: string | null;
+        category_name: string | null;
+        total: bigint | null;
+      }>
+    >`
+      SELECT
+        p.category_id,
+        COALESCE(c.name, 'Sin categoria') as category_name,
+        COALESCE(SUM(ii.total), 0) as total
+      FROM invoice_items ii
+      JOIN invoices i ON ii.invoice_id = i.id
+      LEFT JOIN products p ON ii.product_id = p.id
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE i.tenant_id = ${tenantId}
+        AND i.status != 'CANCELLED'
+      GROUP BY p.category_id, c.name
+      ORDER BY total DESC
+    `;
 
-    const totalAmount = Number(totalSales._sum.total ?? 0);
+    // Calculate total for percentages
+    const totalAmount = salesByCategory.reduce(
+      (sum, cat) => sum + Number(cat.total ?? 0),
+      0,
+    );
 
-    // Get all invoice items with their products and categories
-    const invoiceItems = await this.prisma.invoiceItem.findMany({
-      where: {
-        invoice: {
-          tenantId,
-          status: {
-            not: InvoiceStatus.CANCELLED,
-          },
-        },
-      },
-      include: {
-        product: {
-          include: {
-            category: true,
-          },
-        },
-      },
-    });
-
-    // Aggregate by category
-    const categoryMap = new Map<
-      string | null,
-      { name: string; amount: number }
-    >();
-
-    for (const item of invoiceItems) {
-      const categoryId = item.product?.categoryId ?? null;
-      const categoryName = item.product?.category?.name ?? 'Sin categoria';
-      const itemTotal = Number(item.total);
-
-      const existing = categoryMap.get(categoryId);
-      if (existing) {
-        existing.amount += itemTotal;
-      } else {
-        categoryMap.set(categoryId, { name: categoryName, amount: itemTotal });
-      }
-    }
-
-    // Convert to array and calculate percentages
-    const result: SalesByCategory[] = [];
-    for (const [categoryId, data] of categoryMap.entries()) {
-      result.push({
-        categoryId,
-        categoryName: data.name,
-        amount: Math.round(data.amount * 100) / 100,
+    // Map to response format
+    return salesByCategory.map((cat) => {
+      const amount = Number(cat.total ?? 0);
+      return {
+        categoryId: cat.category_id,
+        categoryName: cat.category_name ?? 'Sin categoria',
+        amount: Math.round(amount * 100) / 100,
         percentage:
           totalAmount > 0
-            ? Math.round((data.amount / totalAmount) * 10000) / 100
+            ? Math.round((amount / totalAmount) * 10000) / 100
             : 0,
-      });
-    }
-
-    // Sort by amount descending
-    result.sort((a, b) => b.amount - a.amount);
-
-    return result;
+      };
+    });
   }
 
   // ============================================
@@ -882,6 +847,32 @@ export class DashboardService {
       }),
     ]);
 
+    // Execute the remaining queries in parallel
+    const [thisMonthProducts, thisMonthInvoices, thisMonthCustomers] =
+      await Promise.all([
+        // Products this month
+        this.prisma.product.count({
+          where: {
+            tenantId,
+            createdAt: { gte: startOfMonth },
+          },
+        }),
+        // Invoices this month
+        this.prisma.invoice.count({
+          where: {
+            ...baseInvoiceWhere,
+            issueDate: { gte: startOfMonth },
+          },
+        }),
+        // Customers this month
+        this.prisma.customer.count({
+          where: {
+            tenantId,
+            createdAt: { gte: startOfMonth },
+          },
+        }),
+      ]);
+
     // Calculate totals and growth percentages
     const thisMonthSalesTotal = Number(thisMonthSales._sum.total ?? 0);
     const lastMonthSalesTotal = Number(lastMonthSales._sum.total ?? 0);
@@ -889,38 +880,14 @@ export class DashboardService {
       thisMonthSalesTotal,
       lastMonthSalesTotal,
     );
-
-    // Products this month
-    const thisMonthProducts = await this.prisma.product.count({
-      where: {
-        tenantId,
-        createdAt: { gte: startOfMonth },
-      },
-    });
     const productsGrowth = this.calculateGrowth(
       thisMonthProducts,
       lastMonthProducts,
     );
-
-    // Invoices this month
-    const thisMonthInvoices = await this.prisma.invoice.count({
-      where: {
-        ...baseInvoiceWhere,
-        issueDate: { gte: startOfMonth },
-      },
-    });
     const invoicesGrowth = this.calculateGrowth(
       thisMonthInvoices,
       lastMonthInvoices,
     );
-
-    // Customers this month
-    const thisMonthCustomers = await this.prisma.customer.count({
-      where: {
-        tenantId,
-        createdAt: { gte: startOfMonth },
-      },
-    });
     const customersGrowth = this.calculateGrowth(
       thisMonthCustomers,
       lastMonthCustomers,

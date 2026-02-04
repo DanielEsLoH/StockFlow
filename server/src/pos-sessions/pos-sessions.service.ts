@@ -470,6 +470,7 @@ export class POSSessionsService {
 
   /**
    * Lists sessions with pagination and filters.
+   * Optimized to avoid N+1 queries by batching all summary data in single queries.
    */
   async findAll(
     page = 1,
@@ -516,9 +517,139 @@ export class POSSessionsService {
       this.prisma.pOSSession.count({ where }),
     ]);
 
-    const data = await Promise.all(
-      sessions.map((s) => this.buildSessionWithDetails(s)),
+    if (sessions.length === 0) {
+      return {
+        data: [],
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      };
+    }
+
+    // Batch load all summary data in single queries to avoid N+1
+    const sessionIds = sessions.map((s) => s.id);
+
+    const [salesSummaries, movements, salePayments] = await Promise.all([
+      // Get sales summaries for all sessions in one query
+      this.prisma.pOSSale.groupBy({
+        by: ['sessionId'],
+        where: { sessionId: { in: sessionIds } },
+        _count: { id: true },
+        _sum: { total: true },
+      }),
+      // Get all movements for all sessions in one query
+      this.prisma.cashRegisterMovement.findMany({
+        where: { sessionId: { in: sessionIds } },
+        select: {
+          sessionId: true,
+          type: true,
+          amount: true,
+        },
+      }),
+      // Get all sale payments for all sessions in one query
+      this.prisma.salePayment.findMany({
+        where: {
+          sale: { sessionId: { in: sessionIds } },
+        },
+        select: {
+          method: true,
+          amount: true,
+          sale: { select: { sessionId: true } },
+        },
+      }),
+    ]);
+
+    // Create lookup maps for O(1) access
+    const salesSummaryMap = new Map(
+      salesSummaries.map((s) => [
+        s.sessionId,
+        { count: s._count.id, total: Number(s._sum.total) || 0 },
+      ]),
     );
+
+    // Process movements into per-session summaries
+    const movementsSummaryMap = new Map<
+      string,
+      { totalCashIn: number; totalCashOut: number }
+    >();
+    for (const m of movements) {
+      let summary = movementsSummaryMap.get(m.sessionId);
+      if (!summary) {
+        summary = { totalCashIn: 0, totalCashOut: 0 };
+        movementsSummaryMap.set(m.sessionId, summary);
+      }
+      const amount = Number(m.amount);
+      if (m.type === CashMovementType.CASH_IN) {
+        summary.totalCashIn += amount;
+      } else if (m.type === CashMovementType.CASH_OUT) {
+        summary.totalCashOut += amount;
+      }
+    }
+
+    // Process payments into per-session sales by method
+    const salesByMethodMap = new Map<string, Record<PaymentMethod, number>>();
+    for (const payment of salePayments) {
+      const sessionId = payment.sale.sessionId;
+      let methodSummary = salesByMethodMap.get(sessionId);
+      if (!methodSummary) {
+        methodSummary = {} as Record<PaymentMethod, number>;
+        Object.values(PaymentMethod).forEach((method) => {
+          methodSummary![method] = 0;
+        });
+        salesByMethodMap.set(sessionId, methodSummary);
+      }
+      methodSummary[payment.method] += Number(payment.amount);
+    }
+
+    // Build response using pre-loaded data
+    const data: POSSessionWithDetails[] = sessions.map((session) => {
+      const salesSummary = salesSummaryMap.get(session.id) || {
+        count: 0,
+        total: 0,
+      };
+      const movementsSummary = movementsSummaryMap.get(session.id) || {
+        totalCashIn: 0,
+        totalCashOut: 0,
+      };
+      const salesByMethod =
+        salesByMethodMap.get(session.id) ||
+        (Object.fromEntries(
+          Object.values(PaymentMethod).map((method) => [method, 0]),
+        ) as Record<PaymentMethod, number>);
+
+      return {
+        id: session.id,
+        tenantId: session.tenantId,
+        cashRegisterId: session.cashRegisterId,
+        userId: session.userId,
+        status: session.status,
+        openingAmount: Number(session.openingAmount),
+        closingAmount: session.closingAmount
+          ? Number(session.closingAmount)
+          : null,
+        expectedAmount: session.expectedAmount
+          ? Number(session.expectedAmount)
+          : null,
+        difference: session.difference ? Number(session.difference) : null,
+        openedAt: session.openedAt,
+        closedAt: session.closedAt,
+        notes: session.notes,
+        createdAt: session.createdAt,
+        updatedAt: session.updatedAt,
+        cashRegister: session.cashRegister,
+        user: session.user,
+        summary: {
+          totalSales: salesSummary.count,
+          totalSalesAmount: salesSummary.total,
+          totalCashIn: movementsSummary.totalCashIn,
+          totalCashOut: movementsSummary.totalCashOut,
+          salesByMethod,
+        },
+      };
+    });
 
     return {
       data,

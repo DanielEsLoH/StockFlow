@@ -87,6 +87,7 @@ describe('POSSessionsService', () => {
     pOSSale: {
       findMany: jest.fn(),
       aggregate: jest.fn(),
+      groupBy: jest.fn(),
     },
     salePayment: {
       findMany: jest.fn(),
@@ -118,6 +119,7 @@ describe('POSSessionsService', () => {
       pOSSale: {
         findMany: jest.fn(),
         aggregate: jest.fn(),
+        groupBy: jest.fn(),
       },
       salePayment: {
         findMany: jest.fn(),
@@ -206,10 +208,9 @@ describe('POSSessionsService', () => {
         mockSession,
       ]);
       (prisma.pOSSession.count as jest.Mock).mockResolvedValue(1);
-      (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
-        _count: { id: 0 },
-        _sum: { total: 0 },
-      });
+      (prisma.pOSSale.groupBy as jest.Mock).mockResolvedValue([
+        { sessionId: mockSessionId, _count: { id: 0 }, _sum: { total: 0 } },
+      ]);
       (prisma.cashRegisterMovement.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([]);
 
@@ -343,10 +344,9 @@ describe('POSSessionsService', () => {
         mockSession,
       ]);
       (prisma.pOSSession.count as jest.Mock).mockResolvedValue(25);
-      (prisma.pOSSale.aggregate as jest.Mock).mockResolvedValue({
-        _count: { id: 0 },
-        _sum: { total: 0 },
-      });
+      (prisma.pOSSale.groupBy as jest.Mock).mockResolvedValue([
+        { sessionId: mockSessionId, _count: { id: 0 }, _sum: { total: 0 } },
+      ]);
       (prisma.cashRegisterMovement.findMany as jest.Mock).mockResolvedValue([]);
       (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([]);
 

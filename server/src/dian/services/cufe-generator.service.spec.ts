@@ -39,7 +39,7 @@ describe('CufeGeneratorService', () => {
     countryCode: 'CO',
     createdAt: new Date(),
     updatedAt: new Date(),
-  } as TenantDianConfig;
+  } as unknown as TenantDianConfig;
 
   const mockInvoice = {
     id: 'invoice-123',
@@ -60,7 +60,7 @@ describe('CufeGeneratorService', () => {
     dianCufe: null,
     createdAt: new Date(),
     updatedAt: new Date(),
-  } as Invoice;
+  } as unknown as Invoice;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

@@ -46,7 +46,7 @@ describe('DianClientService', () => {
     countryCode: 'CO',
     createdAt: new Date(),
     updatedAt: new Date(),
-  } as TenantDianConfig;
+  } as unknown as TenantDianConfig;
 
   const mockSuccessResponse = `<?xml version="1.0" encoding="utf-8"?>
     <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
@@ -102,7 +102,7 @@ describe('DianClientService', () => {
       destroy: jest.fn(),
     };
 
-    mockHttpsRequest.mockImplementation((options, callback) => {
+    mockHttpsRequest.mockImplementation(((options: any, callback: any) => {
       const mockRes = {
         statusCode: 200,
         on: jest.fn((event, handler) => {
@@ -117,7 +117,7 @@ describe('DianClientService', () => {
       };
       callback?.(mockRes as any);
       return mockReq as any;
-    });
+    }) as any);
   };
 
   // Helper to mock failed HTTP request
@@ -388,7 +388,7 @@ describe('DianClientService', () => {
         destroy: jest.fn(),
       };
 
-      mockHttpsRequest.mockImplementation((options, callback) => {
+      mockHttpsRequest.mockImplementation(((options: any, callback: any) => {
         const mockRes = {
           statusCode: 500,
           on: jest.fn((event, handler) => {
@@ -403,7 +403,7 @@ describe('DianClientService', () => {
         };
         callback?.(mockRes as any);
         return mockReq as any;
-      });
+      }) as any);
 
       const result = await service.sendDocument(
         mockDianConfig,

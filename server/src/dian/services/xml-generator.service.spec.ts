@@ -44,9 +44,9 @@ describe('XmlGeneratorService', () => {
     countryCode: 'CO',
     createdAt: new Date(),
     updatedAt: new Date(),
-  } as TenantDianConfig;
+  } as unknown as TenantDianConfig;
 
-  const mockCustomer: Customer = {
+  const mockCustomer = {
     id: 'customer-123',
     tenantId: 'tenant-123',
     name: 'Juan Perez',
@@ -60,9 +60,9 @@ describe('XmlGeneratorService', () => {
     documentNumber: '1234567890',
     createdAt: new Date(),
     updatedAt: new Date(),
-  };
+  } as unknown as Customer;
 
-  const mockInvoice: InvoiceWithDetails = {
+  const mockInvoice = {
     id: 'invoice-123',
     tenantId: 'tenant-123',
     customerId: 'customer-123',
@@ -102,7 +102,7 @@ describe('XmlGeneratorService', () => {
         },
       },
     ],
-  };
+  } as unknown as InvoiceWithDetails;
 
   const mockCufe = 'a'.repeat(96);
   const mockQrCode =
@@ -676,7 +676,7 @@ describe('XmlGeneratorService', () => {
       const invoiceNIT = { ...mockInvoice, customer: customerNIT };
       const config: XmlGeneratorConfig = {
         dianConfig: mockDianConfig,
-        invoice: invoiceNIT,
+        invoice: invoiceNIT as unknown as InvoiceWithDetails,
         cufe: mockCufe,
         qrCode: mockQrCode,
       };
@@ -691,7 +691,7 @@ describe('XmlGeneratorService', () => {
       const invoiceCE = { ...mockInvoice, customer: customerCE };
       const config: XmlGeneratorConfig = {
         dianConfig: mockDianConfig,
-        invoice: invoiceCE,
+        invoice: invoiceCE as unknown as InvoiceWithDetails,
         cufe: mockCufe,
         qrCode: mockQrCode,
       };
@@ -706,7 +706,7 @@ describe('XmlGeneratorService', () => {
       const invoicePP = { ...mockInvoice, customer: customerPP };
       const config: XmlGeneratorConfig = {
         dianConfig: mockDianConfig,
-        invoice: invoicePP,
+        invoice: invoicePP as unknown as InvoiceWithDetails,
         cufe: mockCufe,
         qrCode: mockQrCode,
       };
@@ -721,7 +721,7 @@ describe('XmlGeneratorService', () => {
       const invoiceUnknown = { ...mockInvoice, customer: customerUnknown };
       const config: XmlGeneratorConfig = {
         dianConfig: mockDianConfig,
-        invoice: invoiceUnknown,
+        invoice: invoiceUnknown as unknown as InvoiceWithDetails,
         cufe: mockCufe,
         qrCode: mockQrCode,
       };
@@ -756,7 +756,7 @@ describe('XmlGeneratorService', () => {
     it('should handle null tax responsibilities', () => {
       const configNoTaxResp = { ...mockDianConfig, taxResponsibilities: null };
       const config: XmlGeneratorConfig = {
-        dianConfig: configNoTaxResp as TenantDianConfig,
+        dianConfig: configNoTaxResp as unknown as TenantDianConfig,
         invoice: mockInvoice,
         cufe: mockCufe,
         qrCode: mockQrCode,

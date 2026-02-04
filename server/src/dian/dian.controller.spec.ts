@@ -127,7 +127,7 @@ describe('DianController', () => {
 
   describe('getConfig', () => {
     it('should return config', async () => {
-      service.getConfig.mockResolvedValue(mockDianConfig);
+      service.getConfig.mockResolvedValue(mockDianConfig as any);
 
       const result = await controller.getConfig();
 
@@ -164,9 +164,9 @@ describe('DianController', () => {
     };
 
     it('should create config', async () => {
-      service.createConfig.mockResolvedValue(mockDianConfig);
+      service.createConfig.mockResolvedValue(mockDianConfig as any);
 
-      const result = await controller.createConfig(createDto);
+      const result = await controller.createConfig(createDto as any);
 
       expect(result).toEqual(mockDianConfig);
       expect(service.createConfig).toHaveBeenCalledWith(createDto);
@@ -179,7 +179,7 @@ describe('DianController', () => {
       service.updateConfig.mockResolvedValue({
         ...mockDianConfig,
         ...updateDto,
-      });
+      } as any);
 
       const result = await controller.updateConfig(updateDto);
 
@@ -299,7 +299,7 @@ describe('DianController', () => {
         documentId: 'document-123',
         success: true,
         isValid: true,
-      });
+      } as any);
 
       const result = await controller.checkStatus(dto);
 
@@ -319,7 +319,7 @@ describe('DianController', () => {
 
   describe('listDocuments', () => {
     it('should return paginated documents', async () => {
-      service.listDocuments.mockResolvedValue(mockPaginatedDocuments);
+      service.listDocuments.mockResolvedValue(mockPaginatedDocuments as any);
 
       const result = await controller.listDocuments('1', '10');
 
@@ -334,7 +334,7 @@ describe('DianController', () => {
     });
 
     it('should handle invalid page number by defaulting to 1', async () => {
-      service.listDocuments.mockResolvedValue(mockPaginatedDocuments);
+      service.listDocuments.mockResolvedValue(mockPaginatedDocuments as any);
 
       await controller.listDocuments('invalid', '10');
 
@@ -348,7 +348,7 @@ describe('DianController', () => {
     });
 
     it('should pass status filter', async () => {
-      service.listDocuments.mockResolvedValue(mockPaginatedDocuments);
+      service.listDocuments.mockResolvedValue(mockPaginatedDocuments as any);
 
       await controller.listDocuments('1', '10', DianDocumentStatus.ACCEPTED);
 
@@ -362,7 +362,7 @@ describe('DianController', () => {
     });
 
     it('should pass date range filters', async () => {
-      service.listDocuments.mockResolvedValue(mockPaginatedDocuments);
+      service.listDocuments.mockResolvedValue(mockPaginatedDocuments as any);
 
       await controller.listDocuments(
         '1',
@@ -384,7 +384,7 @@ describe('DianController', () => {
 
   describe('getDocument', () => {
     it('should return document', async () => {
-      service.getDocument.mockResolvedValue(mockDianDocument);
+      service.getDocument.mockResolvedValue(mockDianDocument as any);
 
       const result = await controller.getDocument('document-123');
 

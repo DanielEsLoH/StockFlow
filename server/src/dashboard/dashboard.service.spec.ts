@@ -1150,7 +1150,11 @@ describe('DashboardService', () => {
 
     it('should cycle through colors for many categories', async () => {
       // Create 10 different categories to test color cycling
-      const categories = [];
+      const categories: Array<{
+        category_id: string;
+        category_name: string;
+        total: bigint;
+      }> = [];
       for (let i = 0; i < 10; i++) {
         categories.push({
           category_id: `cat-${i}`,

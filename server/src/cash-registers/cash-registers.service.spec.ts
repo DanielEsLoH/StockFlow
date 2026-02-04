@@ -25,7 +25,7 @@ describe('CashRegistersService', () => {
     warehouseId: mockWarehouseId,
     name: 'Caja Principal',
     code: 'CAJA-001',
-    status: CashRegisterStatus.ACTIVE,
+    status: CashRegisterStatus.OPEN,
     createdAt: new Date('2024-01-15'),
     updatedAt: new Date('2024-01-15'),
   };

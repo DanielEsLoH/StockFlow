@@ -242,7 +242,7 @@ describe('DianService', () => {
         resolutionPrefix: null,
       });
 
-      const result = await service.createConfig(createDto);
+      const result = await service.createConfig(createDto as any);
 
       expect(result).toBeDefined();
       expect(prisma.tenantDianConfig.create).toHaveBeenCalled();
@@ -256,7 +256,7 @@ describe('DianService', () => {
         mockDianConfig,
       );
 
-      const result = await service.createConfig(createDto);
+      const result = await service.createConfig(createDto as any);
 
       expect(result).toBeDefined();
       expect(prisma.tenantDianConfig.update).toHaveBeenCalled();

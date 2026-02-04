@@ -168,4 +168,32 @@ export const queryKeys = {
       [...queryKeys.invitations.all, "list", filters] as const,
     detail: (id: string) => [...queryKeys.invitations.all, id] as const,
   },
+
+  // Cash Registers
+  cashRegisters: {
+    all: ["cashRegisters"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.cashRegisters.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.cashRegisters.all, id] as const,
+  },
+
+  // POS Sessions
+  posSessions: {
+    all: ["posSessions"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.posSessions.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.posSessions.all, id] as const,
+    current: () => [...queryKeys.posSessions.all, "current"] as const,
+    movements: (id: string) => [...queryKeys.posSessions.all, id, "movements"] as const,
+    xReport: (id: string) => [...queryKeys.posSessions.all, id, "x-report"] as const,
+    zReport: (id: string) => [...queryKeys.posSessions.all, id, "z-report"] as const,
+  },
+
+  // POS Sales
+  posSales: {
+    all: ["posSales"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.posSales.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.posSales.all, id] as const,
+  },
 };

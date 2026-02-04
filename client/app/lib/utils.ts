@@ -38,6 +38,21 @@ export function formatDate(
 }
 
 /**
+ * Format date and time
+ */
+export function formatDateTime(
+  date: Date | string,
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  return new Intl.DateTimeFormat("es-CO", {
+    dateStyle: "short",
+    timeStyle: "short",
+    ...options,
+  }).format(d);
+}
+
+/**
  * Format relative time
  */
 export function formatRelativeTime(date: Date | string): string {

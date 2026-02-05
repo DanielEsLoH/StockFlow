@@ -1264,4 +1264,419 @@ describe('BrevoService', () => {
       expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
     });
   });
+
+  describe('subscription email methods', () => {
+    let brevoServiceConfigured: BrevoService;
+
+    beforeEach(async () => {
+      const mockConfigServiceConfigured = {
+        get: jest.fn().mockImplementation((key: string) => {
+          if (key === 'BREVO_API_KEY') return 'test-api-key';
+          if (key === 'BREVO_SENDER_EMAIL') return 'noreply@stockflow.com';
+          if (key === 'BREVO_SENDER_NAME') return 'StockFlow';
+          if (key === 'app.frontendUrl') return 'https://app.stockflow.com';
+          if (key === 'app.appUrl') return 'https://api.stockflow.com';
+          if (key === 'ADMIN_EMAIL') return 'admin@stockflow.com';
+          return undefined;
+        }),
+      };
+
+      const MockTransactionalEmailsApi =
+        Brevo.TransactionalEmailsApi as jest.Mock;
+      mockApiInstance = {
+        sendTransacEmail: jest.fn().mockResolvedValue(mockSendResult),
+        setApiKey: jest.fn(),
+      };
+      MockTransactionalEmailsApi.mockImplementation(() => mockApiInstance);
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          BrevoService,
+          { provide: ConfigService, useValue: mockConfigServiceConfigured },
+        ],
+      }).compile();
+
+      brevoServiceConfigured = module.get<BrevoService>(BrevoService);
+    });
+
+    describe('sendAccountApprovedEmail', () => {
+      it('should send account approved email successfully', async () => {
+        const result = await brevoServiceConfigured.sendAccountApprovedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          tenantName: 'Acme Corp',
+        });
+
+        expect(result.success).toBe(true);
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include welcome message in email', async () => {
+        await brevoServiceConfigured.sendAccountApprovedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          tenantName: 'Acme Corp',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.subject).toContain('Bienvenido');
+        expect(callArgs.htmlContent).toContain('John');
+        expect(callArgs.htmlContent).toContain('Acme Corp');
+      });
+    });
+
+    describe('sendAdminUserVerifiedEmail', () => {
+      it('should send admin notification email successfully', async () => {
+        const result =
+          await brevoServiceConfigured.sendAdminUserVerifiedEmail({
+            userEmail: 'newuser@example.com',
+            userName: 'John Doe',
+            tenantName: 'Acme Corp',
+            verificationDate: new Date('2024-01-15'),
+          });
+
+        expect(result.success).toBe(true);
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include user details in email', async () => {
+        await brevoServiceConfigured.sendAdminUserVerifiedEmail({
+          userEmail: 'newuser@example.com',
+          userName: 'John Doe',
+          tenantName: 'Acme Corp',
+          verificationDate: new Date('2024-01-15'),
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.subject).toContain('Usuario verificado');
+        expect(callArgs.htmlContent).toContain('John Doe');
+        expect(callArgs.htmlContent).toContain('newuser@example.com');
+        expect(callArgs.htmlContent).toContain('Acme Corp');
+      });
+    });
+
+    describe('sendSubscriptionExpiringEmail', () => {
+      it('should send expiring email successfully', async () => {
+        const result =
+          await brevoServiceConfigured.sendSubscriptionExpiringEmail({
+            to: 'user@example.com',
+            firstName: 'John',
+            planName: 'PRO',
+            expiryDate: new Date('2024-02-01'),
+            daysRemaining: 5,
+            tenantName: 'Acme Corp',
+          });
+
+        expect(result.success).toBe(true);
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include days remaining in subject', async () => {
+        await brevoServiceConfigured.sendSubscriptionExpiringEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          planName: 'PRO',
+          expiryDate: new Date('2024-02-01'),
+          daysRemaining: 5,
+          tenantName: 'Acme Corp',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.subject).toContain('5');
+        expect(callArgs.subject).toContain('dias');
+      });
+
+      it('should use singular day when 1 day remaining', async () => {
+        await brevoServiceConfigured.sendSubscriptionExpiringEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          planName: 'PRO',
+          expiryDate: new Date('2024-02-01'),
+          daysRemaining: 1,
+          tenantName: 'Acme Corp',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.subject).toContain('1 dia');
+        expect(callArgs.subject).not.toContain('dias');
+      });
+
+      it('should use red color when 3 days or less remaining', async () => {
+        await brevoServiceConfigured.sendSubscriptionExpiringEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          planName: 'PRO',
+          expiryDate: new Date('2024-02-01'),
+          daysRemaining: 3,
+          tenantName: 'Acme Corp',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('#dc2626'); // Red color
+      });
+
+      it('should use amber color when more than 3 days remaining', async () => {
+        await brevoServiceConfigured.sendSubscriptionExpiringEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          planName: 'PRO',
+          expiryDate: new Date('2024-02-01'),
+          daysRemaining: 7,
+          tenantName: 'Acme Corp',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('#f59e0b'); // Amber color
+      });
+    });
+
+    describe('sendSubscriptionExpiredEmail', () => {
+      it('should send expired email successfully', async () => {
+        const result =
+          await brevoServiceConfigured.sendSubscriptionExpiredEmail({
+            to: 'user@example.com',
+            firstName: 'John',
+            planName: 'PRO',
+            expiryDate: new Date('2024-01-15'),
+            tenantName: 'Acme Corp',
+          });
+
+        expect(result.success).toBe(true);
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include suspended badge', async () => {
+        await brevoServiceConfigured.sendSubscriptionExpiredEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          planName: 'PRO',
+          expiryDate: new Date('2024-01-15'),
+          tenantName: 'Acme Corp',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('SUSPENDIDO');
+      });
+
+      it('should mention 30-day data retention', async () => {
+        await brevoServiceConfigured.sendSubscriptionExpiredEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          planName: 'PRO',
+          expiryDate: new Date('2024-01-15'),
+          tenantName: 'Acme Corp',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('30 dias');
+      });
+    });
+
+    describe('sendSubscriptionActivatedEmail', () => {
+      it('should send activated email successfully', async () => {
+        const result =
+          await brevoServiceConfigured.sendSubscriptionActivatedEmail({
+            to: 'user@example.com',
+            firstName: 'John',
+            planName: 'PRO',
+            period: 'MONTHLY',
+            endDate: new Date('2024-02-15'),
+            features: ['Feature 1', 'Feature 2', 'Feature 3'],
+          });
+
+        expect(result.success).toBe(true);
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should display features as list items', async () => {
+        await brevoServiceConfigured.sendSubscriptionActivatedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          planName: 'PRO',
+          period: 'MONTHLY',
+          endDate: new Date('2024-02-15'),
+          features: ['Feature 1', 'Feature 2'],
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('<li');
+        expect(callArgs.htmlContent).toContain('Feature 1');
+        expect(callArgs.htmlContent).toContain('Feature 2');
+      });
+
+      it('should display period in Spanish for MONTHLY', async () => {
+        await brevoServiceConfigured.sendSubscriptionActivatedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          planName: 'PRO',
+          period: 'MONTHLY',
+          endDate: new Date('2024-02-15'),
+          features: ['Feature 1'],
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('Mensual');
+      });
+
+      it('should display period in Spanish for QUARTERLY', async () => {
+        await brevoServiceConfigured.sendSubscriptionActivatedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          planName: 'PRO',
+          period: 'QUARTERLY',
+          endDate: new Date('2024-05-15'),
+          features: ['Feature 1'],
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('Trimestral');
+      });
+
+      it('should display period in Spanish for ANNUAL', async () => {
+        await brevoServiceConfigured.sendSubscriptionActivatedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          planName: 'PRO',
+          period: 'ANNUAL',
+          endDate: new Date('2025-02-15'),
+          features: ['Feature 1'],
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('Anual');
+      });
+    });
+
+    describe('sendSubscriptionSuspendedEmail', () => {
+      it('should send suspended email successfully', async () => {
+        const result =
+          await brevoServiceConfigured.sendSubscriptionSuspendedEmail({
+            to: 'user@example.com',
+            firstName: 'John',
+            reason: 'Payment overdue',
+          });
+
+        expect(result.success).toBe(true);
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include suspension reason', async () => {
+        await brevoServiceConfigured.sendSubscriptionSuspendedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          reason: 'Payment overdue',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('Payment overdue');
+      });
+
+      it('should include suspended badge', async () => {
+        await brevoServiceConfigured.sendSubscriptionSuspendedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          reason: 'Payment overdue',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('SUSPENDIDO');
+      });
+
+      it('should mention support contact', async () => {
+        await brevoServiceConfigured.sendSubscriptionSuspendedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          reason: 'Payment overdue',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('support@stockflow.com');
+      });
+    });
+
+    describe('sendSubscriptionChangedEmail', () => {
+      it('should send plan changed email successfully', async () => {
+        const result =
+          await brevoServiceConfigured.sendSubscriptionChangedEmail({
+            to: 'user@example.com',
+            firstName: 'John',
+            oldPlanName: 'EMPRENDEDOR',
+            newPlanName: 'PRO',
+            newFeatures: ['Feature 1', 'Feature 2'],
+          });
+
+        expect(result.success).toBe(true);
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include old plan with strikethrough styling', async () => {
+        await brevoServiceConfigured.sendSubscriptionChangedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          oldPlanName: 'EMPRENDEDOR',
+          newPlanName: 'PRO',
+          newFeatures: ['Feature 1'],
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('line-through');
+        expect(callArgs.htmlContent).toContain('EMPRENDEDOR');
+      });
+
+      it('should highlight new plan name', async () => {
+        await brevoServiceConfigured.sendSubscriptionChangedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          oldPlanName: 'EMPRENDEDOR',
+          newPlanName: 'PRO',
+          newFeatures: ['Feature 1'],
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('#2563eb'); // Blue color for new plan
+        expect(callArgs.htmlContent).toContain('PRO');
+      });
+
+      it('should include new features as list items', async () => {
+        await brevoServiceConfigured.sendSubscriptionChangedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          oldPlanName: 'EMPRENDEDOR',
+          newPlanName: 'PRO',
+          newFeatures: ['New Feature A', 'New Feature B'],
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('<li');
+        expect(callArgs.htmlContent).toContain('New Feature A');
+        expect(callArgs.htmlContent).toContain('New Feature B');
+      });
+
+      it('should include new plan in subject', async () => {
+        await brevoServiceConfigured.sendSubscriptionChangedEmail({
+          to: 'user@example.com',
+          firstName: 'John',
+          oldPlanName: 'EMPRENDEDOR',
+          newPlanName: 'PRO',
+          newFeatures: ['Feature 1'],
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.subject).toContain('PRO');
+      });
+
+      it('should handle empty features array', async () => {
+        const result =
+          await brevoServiceConfigured.sendSubscriptionChangedEmail({
+            to: 'user@example.com',
+            firstName: 'John',
+            oldPlanName: 'PRO',
+            newPlanName: 'EMPRENDEDOR',
+            newFeatures: [],
+          });
+
+        expect(result.success).toBe(true);
+      });
+    });
+  });
 });

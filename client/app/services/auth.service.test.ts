@@ -236,6 +236,32 @@ describe("authService", () => {
 
       expect(result).toEqual(mockAuthResponse);
     });
+
+    it("should set refresh token when present in response", async () => {
+      const responseWithRefresh = {
+        ...mockAuthResponse,
+        refreshToken: "new-refresh-token",
+      };
+      vi.mocked(api.get).mockResolvedValueOnce({ data: responseWithRefresh });
+
+      await authService.getMe();
+
+      expect(setRefreshToken).toHaveBeenCalledWith("new-refresh-token");
+    });
+
+    it("should not set refresh token when not present in response", async () => {
+      const responseWithoutRefresh = {
+        user: mockUser,
+        tenant: mockTenant,
+        accessToken: "mock-access-token",
+        // Sin refreshToken
+      };
+      vi.mocked(api.get).mockResolvedValueOnce({ data: responseWithoutRefresh });
+
+      await authService.getMe();
+
+      expect(setRefreshToken).not.toHaveBeenCalled();
+    });
   });
 
   describe("refreshToken", () => {

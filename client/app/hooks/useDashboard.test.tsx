@@ -18,6 +18,12 @@ import type {
   LowStockAlert,
   RecentActivity,
 } from "~/services/dashboard.service";
+import { useAuthStore } from "~/stores/auth.store";
+
+// Mock the auth store to enable queries
+vi.mock("~/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
+}));
 
 // Mock the dashboard service
 vi.mock("~/services/dashboard.service", () => ({
@@ -137,6 +143,26 @@ function createWrapper() {
 describe("useDashboard hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Mock auth store to return authenticated and initialized state
+    // This is required because useIsQueryEnabled() checks both isAuthenticated and isInitialized
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      const state = {
+        isAuthenticated: true,
+        isInitialized: true, // Critical: queries are only enabled when this is true
+        user: null,
+        tenant: null,
+        isLoading: false,
+        userPermissions: [],
+        setUser: vi.fn(),
+        setTenant: vi.fn(),
+        setUserPermissions: vi.fn(),
+        setLoading: vi.fn(),
+        setInitialized: vi.fn(),
+        logout: vi.fn(),
+      };
+      return selector(state as never);
+    });
   });
 
   afterEach(() => {

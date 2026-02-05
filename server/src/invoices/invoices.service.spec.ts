@@ -114,6 +114,16 @@ describe('InvoicesService', () => {
     maxInvoices: 100,
   };
 
+  // Mock warehouse for default warehouse lookup
+  const mockWarehouse = {
+    id: 'warehouse-123',
+    tenantId: mockTenantId,
+    name: 'Main Warehouse',
+    code: 'ALM-01',
+    isMain: true,
+    status: 'ACTIVE',
+  };
+
   // Mock transaction helper
   const createMockTransaction = () => {
     const txMock = {
@@ -139,6 +149,13 @@ describe('InvoicesService', () => {
       stockMovement: {
         create: jest.fn(),
         deleteMany: jest.fn(),
+      },
+      warehouse: {
+        findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+      },
+      warehouseStock: {
+        findUnique: jest.fn().mockResolvedValue({ quantity: 100 }),
+        upsert: jest.fn().mockResolvedValue({ quantity: 98 }),
       },
     };
     return txMock;

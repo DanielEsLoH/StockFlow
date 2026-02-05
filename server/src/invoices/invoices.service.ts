@@ -14,6 +14,7 @@ import {
   Customer,
   User,
   Product,
+  WarehouseStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
@@ -432,9 +433,12 @@ export class InvoicesService {
         })),
       });
 
+      // Get default warehouse for stock operations
+      const warehouseId = await this.getDefaultWarehouseId(tx, tenantId);
+
       // Reduce stock and create stock movements in parallel
       await Promise.all([
-        // Update product stock for all items
+        // Update product stock for all items (global)
         ...itemsData.map((item) =>
           tx.product.update({
             where: { id: item.productId },
@@ -445,12 +449,31 @@ export class InvoicesService {
             },
           }),
         ),
+        // Update warehouse stock for all items (per-warehouse)
+        ...itemsData.map((item) =>
+          tx.warehouseStock.upsert({
+            where: {
+              warehouseId_productId: {
+                warehouseId,
+                productId: item.productId,
+              },
+            },
+            update: { quantity: { decrement: item.quantity } },
+            create: {
+              tenantId,
+              warehouseId,
+              productId: item.productId,
+              quantity: -item.quantity,
+            },
+          }),
+        ),
         // Create stock movement records for all items
         ...itemsData.map((item) =>
           tx.stockMovement.create({
             data: {
               tenantId,
               productId: item.productId,
+              warehouseId,
               userId,
               type: 'SALE',
               quantity: -item.quantity,
@@ -592,9 +615,12 @@ export class InvoicesService {
       // Filter items that have productId
       const itemsWithProduct = invoice.items.filter((item) => item.productId);
 
+      // Get default warehouse for stock operations
+      const warehouseId = await this.getDefaultWarehouseId(tx, tenantId);
+
       // Restore stock and create movements in parallel
       await Promise.all([
-        // Restore stock for all items
+        // Restore product stock for all items (global)
         ...itemsWithProduct.map((item) =>
           tx.product.update({
             where: { id: item.productId! },
@@ -605,12 +631,31 @@ export class InvoicesService {
             },
           }),
         ),
+        // Restore warehouse stock for all items (per-warehouse)
+        ...itemsWithProduct.map((item) =>
+          tx.warehouseStock.upsert({
+            where: {
+              warehouseId_productId: {
+                warehouseId,
+                productId: item.productId!,
+              },
+            },
+            update: { quantity: { increment: item.quantity } },
+            create: {
+              tenantId,
+              warehouseId,
+              productId: item.productId!,
+              quantity: item.quantity,
+            },
+          }),
+        ),
         // Create return stock movements for all items
         ...itemsWithProduct.map((item) =>
           tx.stockMovement.create({
             data: {
               tenantId,
               productId: item.productId!,
+              warehouseId,
               type: 'RETURN',
               quantity: item.quantity,
               reason: `Eliminación de factura borrador ${invoice.invoiceNumber}`,
@@ -737,9 +782,12 @@ export class InvoicesService {
       // Filter items that have productId
       const itemsWithProduct = invoice.items.filter((item) => item.productId);
 
+      // Get default warehouse for stock operations
+      const warehouseId = await this.getDefaultWarehouseId(tx, tenantId);
+
       // Restore stock and create movements in parallel
       await Promise.all([
-        // Restore stock for all items
+        // Restore product stock for all items (global)
         ...itemsWithProduct.map((item) =>
           tx.product.update({
             where: { id: item.productId! },
@@ -750,12 +798,31 @@ export class InvoicesService {
             },
           }),
         ),
+        // Restore warehouse stock for all items (per-warehouse)
+        ...itemsWithProduct.map((item) =>
+          tx.warehouseStock.upsert({
+            where: {
+              warehouseId_productId: {
+                warehouseId,
+                productId: item.productId!,
+              },
+            },
+            update: { quantity: { increment: item.quantity } },
+            create: {
+              tenantId,
+              warehouseId,
+              productId: item.productId!,
+              quantity: item.quantity,
+            },
+          }),
+        ),
         // Create return stock movements for all items
         ...itemsWithProduct.map((item) =>
           tx.stockMovement.create({
             data: {
               tenantId,
               productId: item.productId!,
+              warehouseId,
               userId,
               type: 'RETURN',
               quantity: item.quantity,
@@ -856,6 +923,9 @@ export class InvoicesService {
 
     // Execute within a transaction
     const updatedInvoice = await this.prisma.$transaction(async (tx) => {
+      // Get default warehouse for stock operations
+      const warehouseId = await this.getDefaultWarehouseId(tx, tenantId);
+
       // Create the invoice item
       await tx.invoiceItem.create({
         data: {
@@ -871,29 +941,49 @@ export class InvoicesService {
         },
       });
 
-      // Decrement product stock
-      await tx.product.update({
-        where: { id: dto.productId },
-        data: {
-          stock: {
-            decrement: dto.quantity,
+      await Promise.all([
+        // Decrement product stock (global)
+        tx.product.update({
+          where: { id: dto.productId },
+          data: {
+            stock: {
+              decrement: dto.quantity,
+            },
           },
-        },
-      });
+        }),
 
-      // Create stock movement
-      await tx.stockMovement.create({
-        data: {
-          tenantId,
-          productId: dto.productId,
-          userId,
-          type: 'SALE',
-          quantity: -dto.quantity,
-          reason: `Venta - Item agregado a factura ${invoice.invoiceNumber}`,
-          notes: `Producto: ${product.name}`,
-          invoiceId,
-        },
-      });
+        // Decrement warehouse stock (per-warehouse)
+        tx.warehouseStock.upsert({
+          where: {
+            warehouseId_productId: {
+              warehouseId,
+              productId: dto.productId,
+            },
+          },
+          update: { quantity: { decrement: dto.quantity } },
+          create: {
+            tenantId,
+            warehouseId,
+            productId: dto.productId,
+            quantity: -dto.quantity,
+          },
+        }),
+
+        // Create stock movement
+        tx.stockMovement.create({
+          data: {
+            tenantId,
+            productId: dto.productId,
+            warehouseId,
+            userId,
+            type: 'SALE',
+            quantity: -dto.quantity,
+            reason: `Venta - Item agregado a factura ${invoice.invoiceNumber}`,
+            notes: `Producto: ${product.name}`,
+            invoiceId,
+          },
+        }),
+      ]);
 
       // Recalculate invoice totals
       const allItems = await tx.invoiceItem.findMany({
@@ -1023,6 +1113,9 @@ export class InvoicesService {
 
     // Execute within a transaction
     const updatedInvoice = await this.prisma.$transaction(async (tx) => {
+      // Get default warehouse for stock operations
+      const warehouseId = await this.getDefaultWarehouseId(tx, tenantId);
+
       // Update the invoice item
       await tx.invoiceItem.update({
         where: { id: itemId },
@@ -1042,23 +1135,57 @@ export class InvoicesService {
         // If quantity increased, decrement stock by the difference
         // If quantity decreased, increment stock by the absolute difference
         if (quantityDiff > 0) {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: quantityDiff,
+          await Promise.all([
+            tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  decrement: quantityDiff,
+                },
               },
-            },
-          });
+            }),
+            tx.warehouseStock.upsert({
+              where: {
+                warehouseId_productId: {
+                  warehouseId,
+                  productId: item.productId,
+                },
+              },
+              update: { quantity: { decrement: quantityDiff } },
+              create: {
+                tenantId,
+                warehouseId,
+                productId: item.productId,
+                quantity: -quantityDiff,
+              },
+            }),
+          ]);
         } else {
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                increment: Math.abs(quantityDiff),
+          await Promise.all([
+            tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  increment: Math.abs(quantityDiff),
+                },
               },
-            },
-          });
+            }),
+            tx.warehouseStock.upsert({
+              where: {
+                warehouseId_productId: {
+                  warehouseId,
+                  productId: item.productId,
+                },
+              },
+              update: { quantity: { increment: Math.abs(quantityDiff) } },
+              create: {
+                tenantId,
+                warehouseId,
+                productId: item.productId,
+                quantity: Math.abs(quantityDiff),
+              },
+            }),
+          ]);
         }
 
         // Create stock movement for the adjustment
@@ -1066,6 +1193,7 @@ export class InvoicesService {
           data: {
             tenantId,
             productId: item.productId,
+            warehouseId,
             userId,
             type: 'ADJUSTMENT',
             quantity: -quantityDiff, // Negative if increased, positive if decreased
@@ -1172,30 +1300,54 @@ export class InvoicesService {
 
     // Execute within a transaction
     const updatedInvoice = await this.prisma.$transaction(async (tx) => {
+      // Get default warehouse for stock operations
+      const warehouseId = await this.getDefaultWarehouseId(tx, tenantId);
+
       // Restore product stock if product exists
       if (item.productId) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              increment: item.quantity,
+        await Promise.all([
+          // Restore product stock (global)
+          tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                increment: item.quantity,
+              },
             },
-          },
-        });
+          }),
 
-        // Create stock movement for the restoration
-        await tx.stockMovement.create({
-          data: {
-            tenantId,
-            productId: item.productId,
-            userId,
-            type: 'RETURN',
-            quantity: item.quantity,
-            reason: `Devolución - Item eliminado de factura ${invoice.invoiceNumber}`,
-            notes: `Producto: ${item.product?.name ?? item.productId}`,
-            invoiceId,
-          },
-        });
+          // Restore warehouse stock (per-warehouse)
+          tx.warehouseStock.upsert({
+            where: {
+              warehouseId_productId: {
+                warehouseId,
+                productId: item.productId,
+              },
+            },
+            update: { quantity: { increment: item.quantity } },
+            create: {
+              tenantId,
+              warehouseId,
+              productId: item.productId,
+              quantity: item.quantity,
+            },
+          }),
+
+          // Create stock movement for the restoration
+          tx.stockMovement.create({
+            data: {
+              tenantId,
+              productId: item.productId,
+              warehouseId,
+              userId,
+              type: 'RETURN',
+              quantity: item.quantity,
+              reason: `Devolución - Item eliminado de factura ${invoice.invoiceNumber}`,
+              notes: `Producto: ${item.product?.name ?? item.productId}`,
+              invoiceId,
+            },
+          }),
+        ]);
       }
 
       // Delete the item
@@ -1384,6 +1536,37 @@ export class InvoicesService {
     } catch {
       return undefined;
     }
+  }
+
+  /**
+   * Gets the default warehouse ID for a tenant.
+   * Returns the main warehouse or the first active warehouse.
+   *
+   * @param tx - Prisma transaction client
+   * @param tenantId - Tenant ID
+   * @returns Default warehouse ID
+   * @throws BadRequestException if no active warehouses found
+   */
+  private async getDefaultWarehouseId(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+  ): Promise<string> {
+    const warehouse =
+      (await tx.warehouse.findFirst({
+        where: { tenantId, isMain: true, status: WarehouseStatus.ACTIVE },
+      })) ??
+      (await tx.warehouse.findFirst({
+        where: { tenantId, status: WarehouseStatus.ACTIVE },
+        orderBy: { createdAt: 'asc' },
+      }));
+
+    if (!warehouse) {
+      throw new BadRequestException(
+        'No hay bodegas activas. Cree una bodega primero.',
+      );
+    }
+
+    return warehouse.id;
   }
 
   /**

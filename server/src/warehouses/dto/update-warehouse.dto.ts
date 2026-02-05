@@ -103,4 +103,16 @@ export class UpdateWarehouseDto {
   })
   @IsOptional()
   status?: WarehouseStatus;
+
+  /**
+   * Whether the warehouse is active (alternative to status)
+   * @example true
+   */
+  @ApiPropertyOptional({
+    description: 'Whether the warehouse is active',
+    example: true,
+  })
+  @IsBoolean({ message: 'isActive must be a boolean' })
+  @IsOptional()
+  isActive?: boolean;
 }

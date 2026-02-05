@@ -22,6 +22,7 @@ export interface WarehouseResponse {
   phone: string | null;
   isDefault: boolean;
   status: WarehouseStatus;
+  isActive: boolean;
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -320,6 +321,13 @@ export class WarehousesService {
       updateData.status = dto.status;
     }
 
+    // Handle isActive (convert to status)
+    if (dto.isActive !== undefined && dto.status === undefined) {
+      updateData.status = dto.isActive
+        ? WarehouseStatus.ACTIVE
+        : WarehouseStatus.INACTIVE;
+    }
+
     // Handle default warehouse change
     if (dto.isDefault !== undefined) {
       if (dto.isDefault && !warehouse.isMain) {
@@ -482,6 +490,7 @@ export class WarehousesService {
       phone: warehouse.phone,
       isDefault: warehouse.isMain,
       status: warehouse.status,
+      isActive: warehouse.status === WarehouseStatus.ACTIVE,
       tenantId: warehouse.tenantId,
       createdAt: warehouse.createdAt,
       updatedAt: warehouse.updatedAt,

@@ -928,9 +928,24 @@ describe('WarehousesService', () => {
       expect(result).toHaveProperty('phone');
       expect(result).toHaveProperty('isDefault');
       expect(result).toHaveProperty('status');
+      expect(result).toHaveProperty('isActive');
       expect(result).toHaveProperty('tenantId');
       expect(result).toHaveProperty('createdAt');
       expect(result).toHaveProperty('updatedAt');
+    });
+
+    it('should derive isActive from status', async () => {
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
+      (prismaService.warehouseStock.aggregate as jest.Mock).mockResolvedValue({
+        _count: { productId: 0 },
+        _sum: { quantity: null },
+      });
+
+      const result = await service.findOne('warehouse-123');
+
+      expect(result.isActive).toBe(true); // status is ACTIVE in mockWarehouse
     });
   });
 

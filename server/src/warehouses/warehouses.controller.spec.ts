@@ -26,6 +26,7 @@ describe('WarehousesController', () => {
     phone: '+57 1 234 5678',
     isDefault: true,
     status: WarehouseStatus.ACTIVE,
+    isActive: true,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };
@@ -616,12 +617,14 @@ describe('WarehousesController', () => {
       const updatedWarehouse = {
         ...mockWarehouse,
         status: WarehouseStatus.INACTIVE,
+        isActive: false,
       };
       warehousesService.update.mockResolvedValue(updatedWarehouse);
 
       const result = await controller.update('warehouse-123', statusDto);
 
       expect(result.status).toBe(WarehouseStatus.INACTIVE);
+      expect(result.isActive).toBe(false);
       expect(warehousesService.update).toHaveBeenCalledWith(
         'warehouse-123',
         statusDto,

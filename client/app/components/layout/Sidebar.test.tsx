@@ -441,16 +441,17 @@ describe("Sidebar", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("should hide Team item for manager users", () => {
+    it("should show Team item for manager users (has USERS_VIEW permission)", () => {
       useAuthStore.setState({
         user: { ...mockUser, role: "MANAGER" },
       });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
+      // MANAGER role has USERS_VIEW permission by default, so they can see the Team item
       expect(
-        screen.queryByRole("link", { name: /equipo/i }),
-      ).not.toBeInTheDocument();
+        screen.getByRole("link", { name: /equipo/i }),
+      ).toBeInTheDocument();
     });
   });
 });

@@ -26,13 +26,15 @@ import { cn, getInitials } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
 import { useAuthStore } from "~/stores/auth.store";
 import { useAuth } from "~/hooks/useAuth";
+import { usePermissions } from "~/hooks/usePermissions";
+import { Permission } from "~/types/permissions";
 import { Button } from "~/components/ui/Button";
 
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  adminOnly?: boolean;
+  permission?: Permission;
 }
 
 interface NavSection {
@@ -44,33 +46,100 @@ interface NavSection {
 const navSections: NavSection[] = [
   {
     label: null,
-    items: [{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard }],
+    items: [
+      {
+        name: "Dashboard",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+        permission: Permission.DASHBOARD_VIEW,
+      },
+    ],
   },
   {
     label: "Inventario",
     items: [
-      { name: "Productos", href: "/products", icon: Package },
-      { name: "Categorias", href: "/categories", icon: FolderTree },
-      { name: "Bodegas", href: "/warehouses", icon: Warehouse },
-      { name: "Movimientos", href: "/inventory/movements", icon: ArrowUpDown },
-      { name: "Transferencias", href: "/inventory/transfers", icon: ArrowLeftRight },
+      {
+        name: "Productos",
+        href: "/products",
+        icon: Package,
+        permission: Permission.PRODUCTS_VIEW,
+      },
+      {
+        name: "Categorias",
+        href: "/categories",
+        icon: FolderTree,
+        permission: Permission.CATEGORIES_VIEW,
+      },
+      {
+        name: "Bodegas",
+        href: "/warehouses",
+        icon: Warehouse,
+        permission: Permission.WAREHOUSES_VIEW,
+      },
+      {
+        name: "Movimientos",
+        href: "/inventory/movements",
+        icon: ArrowUpDown,
+        permission: Permission.INVENTORY_VIEW,
+      },
+      {
+        name: "Transferencias",
+        href: "/inventory/transfers",
+        icon: ArrowLeftRight,
+        permission: Permission.INVENTORY_TRANSFER,
+      },
     ],
   },
   {
     label: "Ventas",
     items: [
-      { name: "Facturas", href: "/invoices", icon: FileText },
-      { name: "Pagos", href: "/payments", icon: CreditCard },
-      { name: "Clientes", href: "/customers", icon: Users },
+      {
+        name: "Facturas",
+        href: "/invoices",
+        icon: FileText,
+        permission: Permission.INVOICES_VIEW,
+      },
+      {
+        name: "Pagos",
+        href: "/payments",
+        icon: CreditCard,
+        permission: Permission.PAYMENTS_VIEW,
+      },
+      {
+        name: "Clientes",
+        href: "/customers",
+        icon: Users,
+        permission: Permission.CUSTOMERS_VIEW,
+      },
     ],
   },
   {
     label: "Administracion",
     items: [
-      { name: "Equipo", href: "/team", icon: UsersRound, adminOnly: true },
-      { name: "Reportes", href: "/reports", icon: BarChart3 },
-      { name: "DIAN", href: "/dian", icon: Building },
-      { name: "Configuracion", href: "/settings", icon: Settings },
+      {
+        name: "Equipo",
+        href: "/team",
+        icon: UsersRound,
+        permission: Permission.USERS_VIEW,
+      },
+      {
+        name: "Reportes",
+        href: "/reports",
+        icon: BarChart3,
+        permission: Permission.REPORTS_VIEW,
+      },
+      {
+        name: "DIAN",
+        href: "/dian",
+        icon: Building,
+        permission: Permission.DIAN_VIEW,
+      },
+      {
+        name: "Configuracion",
+        href: "/settings",
+        icon: Settings,
+        permission: Permission.SETTINGS_VIEW,
+      },
     ],
   },
 ];
@@ -219,6 +288,7 @@ function SidebarContent({
   const location = useLocation();
   const { user, tenant } = useAuthStore();
   const { logout, isLoggingOut } = useAuth();
+  const { hasPermission } = usePermissions();
 
   const userName = user ? `${user.firstName} ${user.lastName}` : "Usuario";
   const userEmail = user?.email || "usuario@email.com";
@@ -325,12 +395,12 @@ function SidebarContent({
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
         {navSections.map((section, sectionIndex) => {
-          // Filter items based on admin status
+          // Filter items based on permissions
           const filteredItems = section.items.filter((item) => {
-            if (item.adminOnly) {
-              return user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
-            }
-            return true;
+            // If no permission required, show to everyone
+            if (!item.permission) return true;
+            // Check if user has the required permission
+            return hasPermission(item.permission);
           });
 
           if (filteredItems.length === 0) return null;

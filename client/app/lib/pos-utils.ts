@@ -140,11 +140,17 @@ export function canAddToCart(
 
 /**
  * Create a new cart item from product
+ * @param product - The product to add to cart
+ * @param quantity - Initial quantity (default: 1)
+ * @param ivaEnabled - Whether IVA tax is enabled (default: true)
  */
 export function createCartItem(
   product: Product,
   quantity: number = 1,
+  ivaEnabled: boolean = true,
 ): POSCartItem {
+  // Use product's tax rate if available, otherwise use default Colombia VAT
+  const taxRate = ivaEnabled ? (product.taxRate ?? COLOMBIA_VAT_RATE) : 0;
   return {
     id: `cart-${product.id}-${Date.now()}`,
     productId: product.id,
@@ -152,7 +158,7 @@ export function createCartItem(
     quantity,
     unitPrice: product.salePrice,
     discount: 0,
-    tax: COLOMBIA_VAT_RATE,
+    tax: taxRate,
   };
 }
 

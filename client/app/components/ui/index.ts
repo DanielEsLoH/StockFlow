@@ -8,6 +8,7 @@ export * from "./Modal";
 export * from "./Pagination";
 export * from "./Select";
 export * from "./Skeleton";
+export * from "./Switch";
 export * from "./Table";
 export * from "./ThemeToggle";
 export * from "./Toast";

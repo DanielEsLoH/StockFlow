@@ -90,6 +90,7 @@ export default function POSPage() {
     isProcessing,
     notes,
     globalDiscount,
+    ivaEnabled,
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -98,6 +99,7 @@ export default function POSPage() {
     updateDiscount,
     updateUnitPrice,
     setGlobalDiscount,
+    setIvaEnabled,
     clearCart,
     setCustomer,
     setWarehouse,
@@ -525,6 +527,7 @@ export default function POSPage() {
               canCheckout={canCheckout}
               customer={selectedCustomer}
               globalDiscount={globalDiscount}
+              ivaEnabled={ivaEnabled}
               onUpdateQuantity={updateQuantity}
               onUpdatePrice={updateUnitPrice}
               onUpdateItemDiscount={updateDiscount}
@@ -534,6 +537,7 @@ export default function POSPage() {
               onClearCart={handleClearCart}
               onSetNotes={setNotes}
               onSetGlobalDiscount={setGlobalDiscount}
+              onSetIvaEnabled={setIvaEnabled}
               onSelectCustomer={() => {
                 const customerSelect = document.querySelector(
                   "[data-customer-select]",
@@ -637,6 +641,7 @@ export default function POSPage() {
                     canCheckout={canCheckout}
                     customer={selectedCustomer}
                     globalDiscount={globalDiscount}
+                    ivaEnabled={ivaEnabled}
                     onUpdateQuantity={updateQuantity}
                     onUpdatePrice={updateUnitPrice}
                     onUpdateItemDiscount={updateDiscount}
@@ -646,6 +651,7 @@ export default function POSPage() {
                     onClearCart={handleClearCart}
                     onSetNotes={setNotes}
                     onSetGlobalDiscount={setGlobalDiscount}
+                    onSetIvaEnabled={setIvaEnabled}
                     onSelectCustomer={() => setMobileTab("products")}
                     onCheckout={handleCheckout}
                     className="flex h-full flex-col"

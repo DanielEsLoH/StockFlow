@@ -31,6 +31,7 @@ import { POSSalesModule } from './pos-sales';
 import { DianModule } from './dian';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
+import { PermissionsModule } from './common/permissions';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { TenantMiddleware } from './common/middleware';
     }),
     PrismaModule,
     CommonModule,
+    PermissionsModule,
     CacheModule,
     ThrottlerModule,
     ArcjetModule,

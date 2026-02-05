@@ -24,9 +24,31 @@ export {
   Public,
   IS_PUBLIC_KEY,
 } from './decorators';
+export {
+  RequirePermissions,
+  RequireAllPermissions,
+  RequireAnyPermission,
+  PERMISSIONS_KEY,
+} from './decorators/require-permissions.decorator';
+export type { PermissionRequirement } from './decorators/require-permissions.decorator';
 
 // Guards
 export { SubscriptionGuard } from './guards';
+export { PermissionsGuard } from './guards/permissions.guard';
+
+// Permissions
+export {
+  Permission,
+  PERMISSION_CATEGORIES,
+  PERMISSION_LABELS,
+  DEFAULT_ROLE_PERMISSIONS,
+  roleHasPermission,
+  getRolePermissions,
+  getMissingPermissions,
+  PermissionsService,
+  PermissionsModule,
+} from './permissions';
+export type { UserPermissions, PermissionOverrideDto } from './permissions';
 
 // Filters
 export {

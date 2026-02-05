@@ -313,6 +313,119 @@ describe('ProductsService', () => {
         expect(result.meta.totalPages).toBe(0);
       });
     });
+
+    describe('warehouseId filter', () => {
+      const mockWarehouse = {
+        id: 'warehouse-123',
+        tenantId: mockTenantId,
+        name: 'Main Warehouse',
+        code: 'ALM-01',
+      };
+
+      beforeEach(() => {
+        // Add warehouse mock to prismaService
+        (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse = {
+          findFirst: jest.fn(),
+        };
+      });
+
+      it('should return warehouse-specific stock when warehouseId is provided', async () => {
+        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        warehouseFindFirst.mockResolvedValue(mockWarehouse);
+
+        const productsWithWarehouseStock = [
+          { ...mockProduct, warehouseStock: [{ quantity: 25 }] },
+          { ...mockProduct2, warehouseStock: [{ quantity: 10 }] },
+        ];
+        (prismaService.product.findMany as jest.Mock).mockResolvedValue(productsWithWarehouseStock);
+        (prismaService.product.count as jest.Mock).mockResolvedValue(2);
+
+        const result = await service.findAll({ warehouseId: 'warehouse-123' });
+
+        expect(result.data[0].stock).toBe(25);
+        expect(result.data[1].stock).toBe(10);
+      });
+
+      it('should return stock as 0 for products not in the warehouse', async () => {
+        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        warehouseFindFirst.mockResolvedValue(mockWarehouse);
+
+        const productsWithNoWarehouseStock = [
+          { ...mockProduct, warehouseStock: [] },
+        ];
+        (prismaService.product.findMany as jest.Mock).mockResolvedValue(productsWithNoWarehouseStock);
+        (prismaService.product.count as jest.Mock).mockResolvedValue(1);
+
+        const result = await service.findAll({ warehouseId: 'warehouse-123' });
+
+        expect(result.data[0].stock).toBe(0);
+      });
+
+      it('should throw NotFoundException when warehouse does not exist', async () => {
+        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        warehouseFindFirst.mockResolvedValue(null);
+
+        await expect(
+          service.findAll({ warehouseId: 'invalid-warehouse' }),
+        ).rejects.toThrow(NotFoundException);
+      });
+
+      it('should throw NotFoundException with Spanish message when warehouse not found', async () => {
+        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        warehouseFindFirst.mockResolvedValue(null);
+
+        await expect(
+          service.findAll({ warehouseId: 'invalid-warehouse' }),
+        ).rejects.toThrow('Bodega no encontrada');
+      });
+
+      it('should return global stock when warehouseId is not provided', async () => {
+        (prismaService.product.findMany as jest.Mock).mockResolvedValue([mockProduct, mockProduct2]);
+        (prismaService.product.count as jest.Mock).mockResolvedValue(2);
+
+        const result = await service.findAll({});
+
+        expect(result.data[0].stock).toBe(100); // Global stock from mockProduct
+        expect(result.data[1].stock).toBe(5); // Global stock from mockProduct2
+      });
+
+      it('should verify warehouse belongs to tenant', async () => {
+        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        warehouseFindFirst.mockResolvedValue(mockWarehouse);
+
+        const productsWithWarehouseStock = [{ ...mockProduct, warehouseStock: [{ quantity: 50 }] }];
+        (prismaService.product.findMany as jest.Mock).mockResolvedValue(productsWithWarehouseStock);
+        (prismaService.product.count as jest.Mock).mockResolvedValue(1);
+
+        await service.findAll({ warehouseId: 'warehouse-123' });
+
+        expect(warehouseFindFirst).toHaveBeenCalledWith({
+          where: { id: 'warehouse-123', tenantId: mockTenantId },
+        });
+      });
+
+      it('should include warehouseStock in query when warehouseId is provided', async () => {
+        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        warehouseFindFirst.mockResolvedValue(mockWarehouse);
+
+        const productsWithWarehouseStock = [{ ...mockProduct, warehouseStock: [{ quantity: 50 }] }];
+        (prismaService.product.findMany as jest.Mock).mockResolvedValue(productsWithWarehouseStock);
+        (prismaService.product.count as jest.Mock).mockResolvedValue(1);
+
+        await service.findAll({ warehouseId: 'warehouse-123' });
+
+        expect(prismaService.product.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            include: {
+              warehouseStock: {
+                where: { warehouseId: 'warehouse-123' },
+                select: { quantity: true },
+              },
+            },
+          }),
+        );
+      });
+    });
   });
 
   describe('findLowStock', () => {

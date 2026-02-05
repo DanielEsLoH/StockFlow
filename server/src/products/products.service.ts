@@ -74,6 +74,7 @@ export class ProductsService {
 
   /**
    * Lists all products within the current tenant with filtering and pagination.
+   * When warehouseId is provided, returns warehouse-specific stock instead of global stock.
    *
    * @param filters - Filter and pagination options
    * @returns Paginated list of products
@@ -89,12 +90,24 @@ export class ProductsService {
       categoryId,
       status,
       lowStock,
+      warehouseId,
     } = filters;
     const skip = (page - 1) * limit;
 
     this.logger.debug(
-      `Listing products for tenant ${tenantId}, page ${page}, limit ${limit}`,
+      `Listing products for tenant ${tenantId}, page ${page}, limit ${limit}${warehouseId ? `, warehouse ${warehouseId}` : ''}`,
     );
+
+    // If warehouseId is provided, verify it exists and belongs to the tenant
+    if (warehouseId) {
+      const warehouse = await this.prisma.warehouse.findFirst({
+        where: { id: warehouseId, tenantId },
+      });
+      if (!warehouse) {
+        this.logger.warn(`Warehouse not found: ${warehouseId}`);
+        throw new NotFoundException('Bodega no encontrada');
+      }
+    }
 
     // Build where clause
     const where: Prisma.ProductWhereInput = { tenantId };
@@ -126,15 +139,36 @@ export class ProductsService {
       return this.filterAndPaginateLowStock(allProducts, page, limit);
     }
 
+    // Include warehouseStock when warehouseId is provided
+    const includeWarehouseStock = warehouseId
+      ? {
+          warehouseStock: {
+            where: { warehouseId },
+            select: { quantity: true },
+          },
+        }
+      : undefined;
+
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
         skip,
         take: limit,
         orderBy: { name: 'asc' },
+        include: includeWarehouseStock,
       }),
       this.prisma.product.count({ where }),
     ]);
+
+    // If warehouseId is provided, use warehouse-specific stock
+    if (warehouseId) {
+      return this.buildPaginatedResponseWithWarehouseStock(
+        products as (Product & { warehouseStock: { quantity: number }[] })[],
+        total,
+        page,
+        limit,
+      );
+    }
 
     return this.buildPaginatedResponse(products, total, page, limit);
   }
@@ -663,6 +697,31 @@ export class ProductsService {
   ): PaginatedProductsResponse {
     return {
       data: products.map((product) => this.mapToProductResponse(product)),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: total > 0 ? Math.ceil(total / limit) : 0,
+      },
+    };
+  }
+
+  /**
+   * Builds a paginated response with warehouse-specific stock.
+   * Uses the warehouseStock quantity instead of the global product stock.
+   */
+  private buildPaginatedResponseWithWarehouseStock(
+    products: (Product & { warehouseStock: { quantity: number }[] })[],
+    total: number,
+    page: number,
+    limit: number,
+  ): PaginatedProductsResponse {
+    return {
+      data: products.map((product) => ({
+        ...this.mapToProductResponse(product),
+        // Override stock with warehouse-specific quantity (0 if not in warehouse)
+        stock: product.warehouseStock[0]?.quantity ?? 0,
+      })),
       meta: {
         total,
         page,

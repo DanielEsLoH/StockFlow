@@ -76,4 +76,19 @@ export class FilterProductsDto extends PaginationDto {
   })
   @IsOptional()
   lowStock?: boolean;
+
+  /**
+   * Filter by warehouse ID to get warehouse-specific stock.
+   * When provided, the stock field will reflect the quantity in the specified warehouse
+   * instead of the global stock.
+   * @example "clx1234567890abcdef"
+   */
+  @ApiPropertyOptional({
+    description:
+      'Filter by warehouse ID to get warehouse-specific stock instead of global stock',
+    example: 'clx1234567890abcdef',
+  })
+  @IsString({ message: 'Warehouse ID must be a string' })
+  @IsOptional()
+  warehouseId?: string;
 }

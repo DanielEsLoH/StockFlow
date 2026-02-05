@@ -5,10 +5,12 @@ import { UsersService } from './users.service';
 import type { UserResponse, PaginatedUsersResponse } from './users.service';
 import { CreateUserDto, UpdateUserDto, ChangePasswordDto } from './dto';
 import { UserRole, UserStatus } from '@prisma/client';
+import { PermissionsService, Permission } from '../common/permissions';
 
 describe('UsersController', () => {
   let controller: UsersController;
   let usersService: jest.Mocked<UsersService>;
+  let permissionsService: jest.Mocked<PermissionsService>;
 
   // Test data
   const mockTenantId = 'tenant-123';
@@ -95,13 +97,34 @@ describe('UsersController', () => {
       suspend: jest.fn(),
     };
 
+    const mockPermissionsService = {
+      getUserPermissions: jest.fn().mockResolvedValue([]),
+      getUserPermissionsDetail: jest.fn().mockResolvedValue({
+        role: UserRole.EMPLOYEE,
+        permissions: [],
+        overrides: { granted: [], revoked: [] },
+      }),
+      hasPermission: jest.fn().mockResolvedValue(true),
+      hasAllPermissions: jest.fn().mockResolvedValue(true),
+      hasAnyPermission: jest.fn().mockResolvedValue(true),
+      grantPermission: jest.fn().mockResolvedValue(undefined),
+      revokePermission: jest.fn().mockResolvedValue(undefined),
+      removeOverride: jest.fn().mockResolvedValue(undefined),
+      removeAllOverrides: jest.fn().mockResolvedValue(undefined),
+      clearCache: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
-      providers: [{ provide: UsersService, useValue: mockUsersService }],
+      providers: [
+        { provide: UsersService, useValue: mockUsersService },
+        { provide: PermissionsService, useValue: mockPermissionsService },
+      ],
     }).compile();
 
     controller = module.get<UsersController>(UsersController);
     usersService = module.get(UsersService);
+    permissionsService = module.get(PermissionsService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -862,6 +885,353 @@ describe('UsersController', () => {
       expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining('Suspending user'),
       );
+    });
+  });
+
+  describe('permissions endpoints', () => {
+    describe('getMyPermissions', () => {
+      it('should return current user permissions', async () => {
+        permissionsService.getUserPermissions.mockResolvedValue([
+          Permission.POS_SELL,
+          Permission.INVENTORY_VIEW,
+        ]);
+
+        const result = await controller.getMyPermissions(employeeCurrentUser);
+
+        expect(result).toEqual({
+          permissions: [Permission.POS_SELL, Permission.INVENTORY_VIEW],
+        });
+        expect(permissionsService.getUserPermissions).toHaveBeenCalledWith(
+          employeeCurrentUser.userId,
+          employeeCurrentUser.role,
+          employeeCurrentUser.tenantId,
+        );
+      });
+
+      it('should return empty permissions array when user has none', async () => {
+        permissionsService.getUserPermissions.mockResolvedValue([]);
+
+        const result = await controller.getMyPermissions(employeeCurrentUser);
+
+        expect(result).toEqual({ permissions: [] });
+      });
+    });
+
+    describe('getUserPermissions', () => {
+      it('should return user permissions detail for admin', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+        permissionsService.getUserPermissionsDetail.mockResolvedValue({
+          role: UserRole.EMPLOYEE,
+          permissions: [Permission.POS_SELL, Permission.INVENTORY_VIEW],
+          overrides: {
+            granted: [Permission.POS_REFUND],
+            revoked: [],
+          },
+        });
+
+        const result = await controller.getUserPermissions(
+          'user-123',
+          adminCurrentUser,
+        );
+
+        expect(result.role).toBe(UserRole.EMPLOYEE);
+        expect(result.permissions).toContain(Permission.POS_SELL);
+        expect(result.overrides.granted).toContain(Permission.POS_REFUND);
+      });
+
+      it('should verify user exists before getting permissions', async () => {
+        const error = new Error('User not found');
+        usersService.findOne.mockRejectedValue(error);
+
+        await expect(
+          controller.getUserPermissions('invalid-id', adminCurrentUser),
+        ).rejects.toThrow(error);
+      });
+
+      it('should use correct tenant from current user', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+        permissionsService.getUserPermissionsDetail.mockResolvedValue({
+          role: UserRole.EMPLOYEE,
+          permissions: [],
+          overrides: { granted: [], revoked: [] },
+        });
+
+        await controller.getUserPermissions('user-123', adminCurrentUser);
+
+        expect(permissionsService.getUserPermissionsDetail).toHaveBeenCalledWith(
+          'user-123',
+          mockUser.role,
+          adminCurrentUser.tenantId,
+        );
+      });
+    });
+
+    describe('grantPermission', () => {
+      it('should grant permission successfully', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+        permissionsService.grantPermission.mockResolvedValue(undefined);
+
+        const result = await controller.grantPermission(
+          'user-123',
+          { permission: Permission.POS_REFUND },
+          adminCurrentUser,
+        );
+
+        expect(result.message).toBe('Permission granted successfully');
+        expect(result.permission).toBe(Permission.POS_REFUND);
+        expect(permissionsService.grantPermission).toHaveBeenCalledWith(
+          'user-123',
+          adminCurrentUser.tenantId,
+          Permission.POS_REFUND,
+          adminCurrentUser.userId,
+          undefined,
+        );
+      });
+
+      it('should grant permission with reason', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+
+        await controller.grantPermission(
+          'user-123',
+          { permission: Permission.POS_REFUND, reason: 'Promoted to cashier lead' },
+          adminCurrentUser,
+        );
+
+        expect(permissionsService.grantPermission).toHaveBeenCalledWith(
+          'user-123',
+          adminCurrentUser.tenantId,
+          Permission.POS_REFUND,
+          adminCurrentUser.userId,
+          'Promoted to cashier lead',
+        );
+      });
+
+      it('should reject invalid permission', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+
+        await expect(
+          controller.grantPermission(
+            'user-123',
+            { permission: 'invalid:permission' },
+            adminCurrentUser,
+          ),
+        ).rejects.toThrow('Invalid permission: invalid:permission');
+      });
+
+      it('should verify user exists before granting', async () => {
+        const error = new Error('User not found');
+        usersService.findOne.mockRejectedValue(error);
+
+        await expect(
+          controller.grantPermission(
+            'invalid-id',
+            { permission: Permission.POS_REFUND },
+            adminCurrentUser,
+          ),
+        ).rejects.toThrow(error);
+      });
+    });
+
+    describe('revokePermission', () => {
+      it('should revoke permission successfully', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+        permissionsService.revokePermission.mockResolvedValue(undefined);
+
+        const result = await controller.revokePermission(
+          'user-123',
+          { permission: Permission.POS_SELL },
+          adminCurrentUser,
+        );
+
+        expect(result.message).toBe('Permission revoked successfully');
+        expect(result.permission).toBe(Permission.POS_SELL);
+      });
+
+      it('should revoke permission with reason', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+
+        await controller.revokePermission(
+          'user-123',
+          { permission: Permission.POS_DISCOUNT, reason: 'Abuse of discount' },
+          adminCurrentUser,
+        );
+
+        expect(permissionsService.revokePermission).toHaveBeenCalledWith(
+          'user-123',
+          adminCurrentUser.tenantId,
+          Permission.POS_DISCOUNT,
+          adminCurrentUser.userId,
+          'Abuse of discount',
+        );
+      });
+
+      it('should reject invalid permission', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+
+        await expect(
+          controller.revokePermission(
+            'user-123',
+            { permission: 'invalid:perm' },
+            adminCurrentUser,
+          ),
+        ).rejects.toThrow('Invalid permission: invalid:perm');
+      });
+    });
+
+    describe('removePermissionOverride', () => {
+      it('should remove permission override successfully', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+        permissionsService.removeOverride.mockResolvedValue(undefined);
+
+        await expect(
+          controller.removePermissionOverride(
+            'user-123',
+            Permission.POS_REFUND,
+            adminCurrentUser,
+          ),
+        ).resolves.toBeUndefined();
+
+        expect(permissionsService.removeOverride).toHaveBeenCalledWith(
+          'user-123',
+          adminCurrentUser.tenantId,
+          Permission.POS_REFUND,
+        );
+      });
+
+      it('should reject invalid permission', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+
+        await expect(
+          controller.removePermissionOverride(
+            'user-123',
+            'invalid:permission',
+            adminCurrentUser,
+          ),
+        ).rejects.toThrow('Invalid permission: invalid:permission');
+      });
+
+      it('should verify user exists before removing override', async () => {
+        const error = new Error('User not found');
+        usersService.findOne.mockRejectedValue(error);
+
+        await expect(
+          controller.removePermissionOverride(
+            'invalid-id',
+            Permission.POS_SELL,
+            adminCurrentUser,
+          ),
+        ).rejects.toThrow(error);
+      });
+    });
+
+    describe('resetPermissions', () => {
+      it('should reset all permission overrides successfully', async () => {
+        usersService.findOne.mockResolvedValue(mockUser);
+        permissionsService.removeAllOverrides.mockResolvedValue(undefined);
+
+        await expect(
+          controller.resetPermissions('user-123', adminCurrentUser),
+        ).resolves.toBeUndefined();
+
+        expect(permissionsService.removeAllOverrides).toHaveBeenCalledWith(
+          'user-123',
+          adminCurrentUser.tenantId,
+        );
+      });
+
+      it('should verify user exists before resetting', async () => {
+        const error = new Error('User not found');
+        usersService.findOne.mockRejectedValue(error);
+
+        await expect(
+          controller.resetPermissions('invalid-id', adminCurrentUser),
+        ).rejects.toThrow(error);
+      });
+    });
+
+    describe('permissions logging', () => {
+      it('should log when getting own permissions', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        permissionsService.getUserPermissions.mockResolvedValue([]);
+
+        await controller.getMyPermissions(employeeCurrentUser);
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Getting permissions for user'),
+        );
+      });
+
+      it('should log when getting user permissions', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        usersService.findOne.mockResolvedValue(mockUser);
+        permissionsService.getUserPermissionsDetail.mockResolvedValue({
+          role: UserRole.EMPLOYEE,
+          permissions: [],
+          overrides: { granted: [], revoked: [] },
+        });
+
+        await controller.getUserPermissions('user-123', adminCurrentUser);
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Getting permissions for user'),
+        );
+      });
+
+      it('should log when granting permission', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        usersService.findOne.mockResolvedValue(mockUser);
+
+        await controller.grantPermission(
+          'user-123',
+          { permission: Permission.POS_REFUND },
+          adminCurrentUser,
+        );
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Granting permission'),
+        );
+      });
+
+      it('should log when revoking permission', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        usersService.findOne.mockResolvedValue(mockUser);
+
+        await controller.revokePermission(
+          'user-123',
+          { permission: Permission.POS_SELL },
+          adminCurrentUser,
+        );
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Revoking permission'),
+        );
+      });
+
+      it('should log when removing permission override', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        usersService.findOne.mockResolvedValue(mockUser);
+
+        await controller.removePermissionOverride(
+          'user-123',
+          Permission.POS_REFUND,
+          adminCurrentUser,
+        );
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Removing permission override'),
+        );
+      });
+
+      it('should log when resetting permissions', async () => {
+        const logSpy = jest.spyOn(Logger.prototype, 'log');
+        usersService.findOne.mockResolvedValue(mockUser);
+
+        await controller.resetPermissions('user-123', adminCurrentUser);
+
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Resetting all permission overrides'),
+        );
+      });
     });
   });
 });

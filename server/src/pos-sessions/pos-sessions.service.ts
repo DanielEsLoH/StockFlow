@@ -428,7 +428,13 @@ export class POSSessionsService {
       },
       include: {
         cashRegister: {
-          select: { id: true, name: true, code: true },
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            warehouseId: true,
+            warehouse: { select: { id: true, name: true } },
+          },
         },
         user: {
           select: { id: true, firstName: true, lastName: true, email: true },

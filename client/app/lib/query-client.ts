@@ -199,4 +199,16 @@ export const queryKeys = {
       [...queryKeys.posSales.all, "list", filters] as const,
     detail: (id: string) => [...queryKeys.posSales.all, id] as const,
   },
+
+  // Stock Movements
+  stockMovements: {
+    all: ["stockMovements"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.stockMovements.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.stockMovements.all, id] as const,
+    byProduct: (productId: string) =>
+      [...queryKeys.stockMovements.all, "product", productId] as const,
+    byWarehouse: (warehouseId: string) =>
+      [...queryKeys.stockMovements.all, "warehouse", warehouseId] as const,
+  },
 };

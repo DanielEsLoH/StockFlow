@@ -44,6 +44,10 @@ export default [
     route("warehouses/:id", "routes/_app.warehouses.$id.tsx"),
     route("warehouses/:id/edit", "routes/_app.warehouses.$id.edit.tsx"),
 
+    // Inventory module
+    route("inventory/movements", "routes/_app.inventory.movements.tsx"),
+    route("inventory/transfers", "routes/_app.inventory.transfers.tsx"),
+
     // Customers module
     route("customers", "routes/_app.customers.tsx"),
     route("customers/new", "routes/_app.customers.new.tsx"),

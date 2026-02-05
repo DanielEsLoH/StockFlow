@@ -42,9 +42,15 @@ export default function POSPage() {
   const navigate = useNavigate();
   const [isMounted, setIsMounted] = useState(false);
   const { data: session, isLoading: isSessionLoading } = useCurrentSession();
+
+  // Get warehouseId from the cash register's assigned warehouse
+  const warehouseId = session?.cashRegister?.warehouseId;
+
+  // Fetch products with warehouse-specific stock when warehouseId is available
   const { data: productsData, isLoading: isProductsLoading } = useProducts({
     status: "ACTIVE",
     limit: 500,
+    ...(warehouseId && { warehouseId }),
   });
   const createSaleMutation = useCreateSale();
 

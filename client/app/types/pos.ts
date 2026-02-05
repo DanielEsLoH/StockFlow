@@ -100,6 +100,7 @@ export interface POSSessionWithDetails extends POSSession {
     id: string;
     name: string;
     code: string;
+    warehouseId?: string;
     warehouse?: {
       id: string;
       name: string;

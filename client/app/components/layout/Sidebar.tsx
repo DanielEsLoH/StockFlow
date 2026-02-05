@@ -19,6 +19,8 @@ import {
   Building,
   TrendingUp,
   Receipt,
+  ArrowUpDown,
+  ArrowLeftRight,
 } from "lucide-react";
 import { cn, getInitials } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
@@ -50,6 +52,8 @@ const navSections: NavSection[] = [
       { name: "Productos", href: "/products", icon: Package },
       { name: "Categorias", href: "/categories", icon: FolderTree },
       { name: "Bodegas", href: "/warehouses", icon: Warehouse },
+      { name: "Movimientos", href: "/inventory/movements", icon: ArrowUpDown },
+      { name: "Transferencias", href: "/inventory/transfers", icon: ArrowLeftRight },
     ],
   },
   {

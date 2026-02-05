@@ -65,21 +65,7 @@ export default function POSPage() {
     payments: { method: string; amount: number }[];
   } | null>(null);
 
-  // Data queries
-  const { data: customersData, isLoading: isLoadingCustomers } = useCustomers({
-    limit: 100,
-  });
-  const { data: productsData, isLoading: isLoadingProducts } = useProducts({
-    limit: 100,
-    status: "ACTIVE",
-  });
-  const { data: categoriesData, isLoading: isLoadingCategories } =
-    useCategories();
-  const { data: warehousesData, isLoading: isLoadingWarehouses } =
-    useWarehouses();
-  const createInvoice = useCreateInvoice();
-
-  // POS Cart hook
+  // POS Cart hook - must be before useProducts to have selectedWarehouseId available
   const {
     cart,
     totals,
@@ -111,6 +97,21 @@ export default function POSPage() {
     getCartQuantity,
     canCheckout,
   } = usePOSCart();
+
+  // Data queries
+  const { data: customersData, isLoading: isLoadingCustomers } = useCustomers({
+    limit: 100,
+  });
+  const { data: productsData, isLoading: isLoadingProducts } = useProducts({
+    limit: 100,
+    status: "ACTIVE",
+    ...(selectedWarehouseId && { warehouseId: selectedWarehouseId }),
+  });
+  const { data: categoriesData, isLoading: isLoadingCategories } =
+    useCategories();
+  const { data: warehousesData, isLoading: isLoadingWarehouses } =
+    useWarehouses();
+  const createInvoice = useCreateInvoice();
 
   // Set mounted state for SSR safety
   useEffect(() => {
@@ -280,12 +281,8 @@ export default function POSPage() {
   const categories = categoriesData ?? [];
   const warehouses = warehousesData ?? [];
 
-  // Filter products by warehouse stock
-  const availableProducts = useMemo(() => {
-    const products = productsData?.data ?? [];
-    if (!selectedWarehouseId) return products;
-    return products;
-  }, [productsData?.data, selectedWarehouseId]);
+  // Products are already filtered by warehouse from the backend when warehouseId is provided
+  const availableProducts = productsData?.data ?? [];
 
   // Current time display
   const [currentTime, setCurrentTime] = useState(new Date());

@@ -294,16 +294,36 @@ model User {
   updatedAt                DateTime      @updatedAt @map("updated_at")
   lastLoginAt              DateTime?     @map("last_login_at")
 
-  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoices      Invoice[]
-  movements     StockMovement[]
-  auditLogs     AuditLog[]
-  invitations   Invitation[]
-  notifications Notification[]
-  posSessions   POSSession[]
+  tenant              Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoices            Invoice[]
+  movements           StockMovement[]
+  auditLogs           AuditLog[]
+  invitations         Invitation[]
+  notifications       Notification[]
+  posSessions         POSSession[]
+  permissionOverrides UserPermissionOverride[]
 
   @@index([tenantId])
   @@map("users")
+}
+
+model UserPermissionOverride {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  tenantId   String   @map("tenant_id")
+  permission String // e.g., "pos:refund", "inventory:adjust"
+  granted    Boolean  @default(true) // true = grant permission, false = revoke permission
+  grantedBy  String?  @map("granted_by") // User ID who granted this override
+  reason     String? // Optional reason for audit trail
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("user_permission_overrides")
 }
 
 model Category {

@@ -703,6 +703,13 @@ describe('StockMovementsService', () => {
             product: {
               update: jest.fn().mockResolvedValue(mockProduct),
             },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 60 }),
+            },
             stockMovement: {
               create: jest.fn().mockResolvedValue(mockStockMovement),
             },
@@ -751,15 +758,58 @@ describe('StockMovementsService', () => {
     });
 
     it('should verify warehouse exists when warehouseId provided', async () => {
+      let warehouseFindFirstCalled = false;
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback: (tx: typeof prismaService) => Promise<unknown>) => {
+          const txMock = {
+            product: {
+              update: jest.fn().mockResolvedValue(mockProduct),
+            },
+            warehouse: {
+              findFirst: jest.fn().mockImplementation(() => {
+                warehouseFindFirstCalled = true;
+                return mockWarehouse;
+              }),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 60 }),
+            },
+            stockMovement: {
+              create: jest.fn().mockResolvedValue(mockStockMovement),
+            },
+          };
+          return callback(txMock as unknown as typeof prismaService);
+        },
+      );
+
       await service.create(createDto, mockUserId);
 
-      expect(prismaService.warehouse.findFirst).toHaveBeenCalledWith({
-        where: { id: 'warehouse-123', tenantId: mockTenantId },
-      });
+      // Warehouse verification happens inside the transaction
+      expect(warehouseFindFirstCalled).toBe(true);
     });
 
     it('should throw NotFoundException when warehouse not found', async () => {
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback: (tx: typeof prismaService) => Promise<unknown>) => {
+          const txMock = {
+            product: {
+              update: jest.fn().mockResolvedValue(mockProduct),
+            },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(null),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue(null),
+              upsert: jest.fn().mockResolvedValue({ quantity: 10 }),
+            },
+            stockMovement: {
+              create: jest.fn().mockResolvedValue(mockStockMovement),
+            },
+          };
+          return callback(txMock as unknown as typeof prismaService);
+        },
+      );
 
       await expect(service.create(createDto, mockUserId)).rejects.toThrow(
         NotFoundException,
@@ -767,14 +817,55 @@ describe('StockMovementsService', () => {
     });
 
     it('should throw NotFoundException with Spanish message when warehouse not found', async () => {
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback: (tx: typeof prismaService) => Promise<unknown>) => {
+          const txMock = {
+            product: {
+              update: jest.fn().mockResolvedValue(mockProduct),
+            },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(null),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue(null),
+              upsert: jest.fn().mockResolvedValue({ quantity: 10 }),
+            },
+            stockMovement: {
+              create: jest.fn().mockResolvedValue(mockStockMovement),
+            },
+          };
+          return callback(txMock as unknown as typeof prismaService);
+        },
+      );
 
       await expect(service.create(createDto, mockUserId)).rejects.toThrow(
         'Almacen no encontrado',
       );
     });
 
-    it('should not verify warehouse when warehouseId not provided', async () => {
+    it('should use default warehouse when warehouseId not provided', async () => {
+      // When warehouseId is not provided, the service finds the default warehouse in the transaction
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback: (tx: typeof prismaService) => Promise<unknown>) => {
+          const txMock = {
+            product: {
+              update: jest.fn().mockResolvedValue(mockProduct),
+            },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 60 }),
+            },
+            stockMovement: {
+              create: jest.fn().mockResolvedValue(mockStockMovement),
+            },
+          };
+          return callback(txMock as unknown as typeof prismaService);
+        },
+      );
+
       const dtoWithoutWarehouse: CreateMovementDto = {
         productId: 'product-123',
         quantity: 10,
@@ -783,6 +874,8 @@ describe('StockMovementsService', () => {
 
       await service.create(dtoWithoutWarehouse, mockUserId);
 
+      // When no warehouseId is provided, prismaService.warehouse.findFirst is NOT called
+      // directly (the call happens inside the transaction to get the default warehouse)
       expect(prismaService.warehouse.findFirst).not.toHaveBeenCalled();
     });
 
@@ -811,6 +904,28 @@ describe('StockMovementsService', () => {
     });
 
     it('should allow adjustment that brings stock to exactly zero', async () => {
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback: (tx: typeof prismaService) => Promise<unknown>) => {
+          const txMock = {
+            product: {
+              update: jest.fn().mockResolvedValue(mockProduct),
+            },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              // The warehouse has exactly 100 units to allow -100 adjustment
+              findUnique: jest.fn().mockResolvedValue({ quantity: 100 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 0 }),
+            },
+            stockMovement: {
+              create: jest.fn().mockResolvedValue(mockStockMovement),
+            },
+          };
+          return callback(txMock as unknown as typeof prismaService);
+        },
+      );
+
       const exactZeroDto: CreateMovementDto = {
         productId: 'product-123',
         quantity: -100, // Exactly current stock
@@ -863,6 +978,13 @@ describe('StockMovementsService', () => {
                 return mockProduct;
               }),
             },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 60 }),
+            },
             stockMovement: {
               create: jest.fn().mockResolvedValue(mockStockMovement),
             },
@@ -889,6 +1011,13 @@ describe('StockMovementsService', () => {
                 productUpdateData = data;
                 return mockProduct;
               }),
+            },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 75 }),
             },
             stockMovement: {
               create: jest.fn().mockResolvedValue(mockStockMovement),
@@ -924,6 +1053,13 @@ describe('StockMovementsService', () => {
                 return mockProduct;
               }),
             },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 20 }),
+            },
             stockMovement: {
               create: jest.fn().mockResolvedValue(mockStockMovement),
             },
@@ -955,6 +1091,13 @@ describe('StockMovementsService', () => {
             product: {
               update: jest.fn().mockResolvedValue(mockProduct),
             },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 60 }),
+            },
             stockMovement: {
               create: jest.fn().mockImplementation((data: unknown) => {
                 movementCreateData = data;
@@ -984,13 +1127,20 @@ describe('StockMovementsService', () => {
       );
     });
 
-    it('should set warehouseId to null when not provided', async () => {
+    it('should use default warehouse when not provided', async () => {
       let movementCreateData: { data: { warehouseId: string | null } };
       (prismaService.$transaction as jest.Mock).mockImplementation(
         async (callback: (tx: typeof prismaService) => Promise<unknown>) => {
           const txMock = {
             product: {
               update: jest.fn().mockResolvedValue(mockProduct),
+            },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 60 }),
             },
             stockMovement: {
               create: jest.fn().mockImplementation((data: unknown) => {
@@ -1013,7 +1163,8 @@ describe('StockMovementsService', () => {
 
       await service.create(dtoWithoutWarehouse, mockUserId);
 
-      expect(movementCreateData!.data.warehouseId).toBeNull();
+      // When no warehouse is provided, it uses the default warehouse
+      expect(movementCreateData!.data.warehouseId).toBe('warehouse-123');
     });
 
     it('should set userId to null when not provided', async () => {
@@ -1023,6 +1174,13 @@ describe('StockMovementsService', () => {
           const txMock = {
             product: {
               update: jest.fn().mockResolvedValue(mockProduct),
+            },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 60 }),
             },
             stockMovement: {
               create: jest.fn().mockImplementation((data: unknown) => {
@@ -1049,6 +1207,13 @@ describe('StockMovementsService', () => {
           const txMock = {
             product: {
               update: jest.fn().mockResolvedValue(mockProduct),
+            },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 60 }),
             },
             stockMovement: {
               create: jest.fn().mockImplementation((data: unknown) => {
@@ -1080,6 +1245,13 @@ describe('StockMovementsService', () => {
             product: {
               update: jest.fn().mockResolvedValue(mockProduct),
             },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 60 }),
+            },
             stockMovement: {
               create: jest.fn().mockImplementation((data: unknown) => {
                 movementCreateData = data as { data: { type: MovementType } };
@@ -1103,6 +1275,13 @@ describe('StockMovementsService', () => {
           const txMock = {
             product: {
               update: jest.fn().mockResolvedValue(mockProduct),
+            },
+            warehouse: {
+              findFirst: jest.fn().mockResolvedValue(mockWarehouse),
+            },
+            warehouseStock: {
+              findUnique: jest.fn().mockResolvedValue({ quantity: 50 }),
+              upsert: jest.fn().mockResolvedValue({ quantity: 60 }),
             },
             stockMovement: {
               create: jest.fn().mockImplementation((data: unknown) => {

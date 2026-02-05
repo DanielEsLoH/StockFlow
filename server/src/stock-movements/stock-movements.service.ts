@@ -11,10 +11,11 @@ import {
   Product,
   Warehouse,
   User,
+  WarehouseStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
-import { CreateMovementDto, FilterMovementsDto } from './dto';
+import { CreateMovementDto, CreateTransferDto, FilterMovementsDto } from './dto';
 
 /**
  * Stock movement data returned in responses
@@ -59,6 +60,14 @@ export interface PaginatedMovementsResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+/**
+ * Transfer response containing both movements
+ */
+export interface TransferResponse {
+  outMovement: StockMovementResponse;
+  inMovement: StockMovementResponse;
 }
 
 /**
@@ -297,8 +306,8 @@ export class StockMovementsService {
    * 1. Only allows ADJUSTMENT type for manual creation
    * 2. Verify product exists and belongs to tenant
    * 3. Verify warehouse (if provided) exists and belongs to tenant
-   * 4. Update product stock based on quantity
-   * 5. Create StockMovement record
+   * 4. Update product stock AND warehouse stock based on quantity
+   * 5. Create StockMovement record with warehouseId
    * All operations are performed within a transaction.
    *
    * @param dto - Movement creation data
@@ -327,18 +336,6 @@ export class StockMovementsService {
       throw new NotFoundException('Producto no encontrado');
     }
 
-    // Verify warehouse if provided
-    if (dto.warehouseId) {
-      const warehouse = await this.prisma.warehouse.findFirst({
-        where: { id: dto.warehouseId, tenantId },
-      });
-
-      if (!warehouse) {
-        this.logger.warn(`Warehouse not found: ${dto.warehouseId}`);
-        throw new NotFoundException('Almacen no encontrado');
-      }
-    }
-
     // Calculate new stock
     const newStock = product.stock + dto.quantity;
 
@@ -354,18 +351,76 @@ export class StockMovementsService {
 
     // Create movement and update stock within a transaction
     const movement = await this.prisma.$transaction(async (tx) => {
-      // Update product stock
-      await tx.product.update({
-        where: { id: dto.productId },
-        data: { stock: newStock },
+      // Get warehouse ID (provided or default)
+      const warehouseId =
+        dto.warehouseId ?? (await this.getDefaultWarehouseId(tx, tenantId));
+
+      // Verify warehouse exists if provided explicitly
+      if (dto.warehouseId) {
+        const warehouse = await tx.warehouse.findFirst({
+          where: { id: dto.warehouseId, tenantId },
+        });
+
+        if (!warehouse) {
+          this.logger.warn(`Warehouse not found: ${dto.warehouseId}`);
+          throw new NotFoundException('Almacen no encontrado');
+        }
+      }
+
+      // Get current warehouse stock to validate
+      const currentWarehouseStock = await tx.warehouseStock.findUnique({
+        where: {
+          warehouseId_productId: {
+            warehouseId,
+            productId: dto.productId,
+          },
+        },
       });
+
+      const currentQty = currentWarehouseStock?.quantity ?? 0;
+      const newWarehouseQty = currentQty + dto.quantity;
+
+      // Verify warehouse stock won't go negative
+      if (newWarehouseQty < 0) {
+        this.logger.warn(
+          `Stock adjustment would result in negative warehouse stock: current ${currentQty}, adjustment ${dto.quantity}`,
+        );
+        throw new BadRequestException(
+          `El ajuste resultaria en stock negativo en la bodega. Stock actual: ${currentQty}, ajuste: ${dto.quantity}`,
+        );
+      }
+
+      await Promise.all([
+        // Update Product.stock (global)
+        tx.product.update({
+          where: { id: dto.productId },
+          data: { stock: newStock },
+        }),
+
+        // Update WarehouseStock (per-warehouse)
+        tx.warehouseStock.upsert({
+          where: {
+            warehouseId_productId: {
+              warehouseId,
+              productId: dto.productId,
+            },
+          },
+          update: { quantity: { increment: dto.quantity } },
+          create: {
+            tenantId,
+            warehouseId,
+            productId: dto.productId,
+            quantity: dto.quantity,
+          },
+        }),
+      ]);
 
       // Create the movement record
       const newMovement = await tx.stockMovement.create({
         data: {
           tenantId,
           productId: dto.productId,
-          warehouseId: dto.warehouseId ?? null,
+          warehouseId,
           userId: userId ?? null,
           type: MovementType.ADJUSTMENT,
           quantity: dto.quantity,
@@ -405,6 +460,204 @@ export class StockMovementsService {
     );
 
     return this.mapToMovementResponse(movement);
+  }
+
+  /**
+   * Creates a stock transfer between two warehouses.
+   *
+   * Business logic:
+   * 1. Verify product exists and belongs to tenant
+   * 2. Verify both warehouses exist and belong to tenant
+   * 3. Verify source warehouse has sufficient stock
+   * 4. Decrement source warehouse stock
+   * 5. Increment destination warehouse stock
+   * 6. Create two movement records (out and in)
+   * Product.stock remains unchanged (net zero).
+   *
+   * @param dto - Transfer data
+   * @param userId - ID of the user creating the transfer
+   * @returns Both movement records
+   * @throws NotFoundException if product or warehouses not found
+   * @throws BadRequestException if insufficient stock or same warehouse
+   */
+  async createTransfer(
+    dto: CreateTransferDto,
+    userId?: string,
+  ): Promise<TransferResponse> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(
+      `Creating transfer for product ${dto.productId} from ${dto.sourceWarehouseId} to ${dto.destinationWarehouseId}`,
+    );
+
+    // Validate source and destination are different
+    if (dto.sourceWarehouseId === dto.destinationWarehouseId) {
+      throw new BadRequestException(
+        'La bodega origen y destino no pueden ser la misma',
+      );
+    }
+
+    // Verify product exists and belongs to tenant
+    const product = await this.prisma.product.findFirst({
+      where: { id: dto.productId, tenantId },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+
+    // Verify both warehouses exist
+    const [sourceWarehouse, destinationWarehouse] = await Promise.all([
+      this.prisma.warehouse.findFirst({
+        where: { id: dto.sourceWarehouseId, tenantId },
+      }),
+      this.prisma.warehouse.findFirst({
+        where: { id: dto.destinationWarehouseId, tenantId },
+      }),
+    ]);
+
+    if (!sourceWarehouse) {
+      throw new NotFoundException('Bodega origen no encontrada');
+    }
+
+    if (!destinationWarehouse) {
+      throw new NotFoundException('Bodega destino no encontrada');
+    }
+
+    // Execute transfer within transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Check source warehouse stock
+      const sourceStock = await tx.warehouseStock.findUnique({
+        where: {
+          warehouseId_productId: {
+            warehouseId: dto.sourceWarehouseId,
+            productId: dto.productId,
+          },
+        },
+      });
+
+      if (!sourceStock || sourceStock.quantity < dto.quantity) {
+        const available = sourceStock?.quantity ?? 0;
+        throw new BadRequestException(
+          `Stock insuficiente en bodega origen. Disponible: ${available}, solicitado: ${dto.quantity}`,
+        );
+      }
+
+      await Promise.all([
+        // Decrement source warehouse stock
+        tx.warehouseStock.update({
+          where: {
+            warehouseId_productId: {
+              warehouseId: dto.sourceWarehouseId,
+              productId: dto.productId,
+            },
+          },
+          data: { quantity: { decrement: dto.quantity } },
+        }),
+
+        // Increment destination warehouse stock (upsert)
+        tx.warehouseStock.upsert({
+          where: {
+            warehouseId_productId: {
+              warehouseId: dto.destinationWarehouseId,
+              productId: dto.productId,
+            },
+          },
+          update: { quantity: { increment: dto.quantity } },
+          create: {
+            tenantId,
+            warehouseId: dto.destinationWarehouseId,
+            productId: dto.productId,
+            quantity: dto.quantity,
+          },
+        }),
+      ]);
+
+      // Create movement records
+      const reason =
+        dto.reason ?? `Transferencia de ${sourceWarehouse.name} a ${destinationWarehouse.name}`;
+
+      const [outMovement, inMovement] = await Promise.all([
+        tx.stockMovement.create({
+          data: {
+            tenantId,
+            productId: dto.productId,
+            warehouseId: dto.sourceWarehouseId,
+            userId: userId ?? null,
+            type: MovementType.TRANSFER,
+            quantity: -dto.quantity,
+            reason: `Salida: ${reason}`,
+            notes: dto.notes ?? null,
+          },
+          include: {
+            product: { select: { id: true, sku: true, name: true } },
+            warehouse: { select: { id: true, code: true, name: true } },
+            user: { select: { id: true, firstName: true, lastName: true } },
+          },
+        }),
+        tx.stockMovement.create({
+          data: {
+            tenantId,
+            productId: dto.productId,
+            warehouseId: dto.destinationWarehouseId,
+            userId: userId ?? null,
+            type: MovementType.TRANSFER,
+            quantity: dto.quantity,
+            reason: `Entrada: ${reason}`,
+            notes: dto.notes ?? null,
+          },
+          include: {
+            product: { select: { id: true, sku: true, name: true } },
+            warehouse: { select: { id: true, code: true, name: true } },
+            user: { select: { id: true, firstName: true, lastName: true } },
+          },
+        }),
+      ]);
+
+      // Product.stock stays the same (net zero change)
+
+      return { outMovement, inMovement };
+    });
+
+    this.logger.log(
+      `Transfer created: ${dto.quantity} units of ${product.sku} from ${sourceWarehouse.name} to ${destinationWarehouse.name}`,
+    );
+
+    return {
+      outMovement: this.mapToMovementResponse(result.outMovement),
+      inMovement: this.mapToMovementResponse(result.inMovement),
+    };
+  }
+
+  /**
+   * Gets the default warehouse ID for a tenant.
+   * Returns the main warehouse or the first active warehouse.
+   *
+   * @param tx - Prisma transaction client
+   * @param tenantId - Tenant ID
+   * @returns Default warehouse ID
+   * @throws BadRequestException if no active warehouses found
+   */
+  private async getDefaultWarehouseId(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+  ): Promise<string> {
+    const warehouse =
+      (await tx.warehouse.findFirst({
+        where: { tenantId, isMain: true, status: WarehouseStatus.ACTIVE },
+      })) ??
+      (await tx.warehouse.findFirst({
+        where: { tenantId, status: WarehouseStatus.ACTIVE },
+        orderBy: { createdAt: 'asc' },
+      }));
+
+    if (!warehouse) {
+      throw new BadRequestException(
+        'No hay bodegas activas. Cree una bodega primero.',
+      );
+    }
+
+    return warehouse.id;
   }
 
   /**

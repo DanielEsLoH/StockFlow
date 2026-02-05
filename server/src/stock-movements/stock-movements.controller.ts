@@ -22,13 +22,15 @@ import { StockMovementsService } from './stock-movements.service';
 import type {
   StockMovementResponse,
   PaginatedMovementsResponse,
+  TransferResponse,
 } from './stock-movements.service';
-import { CreateMovementDto, FilterMovementsDto } from './dto';
+import { CreateMovementDto, CreateTransferDto, FilterMovementsDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { Roles, CurrentUser } from '../common/decorators';
 import {
   StockMovementEntity,
   PaginatedStockMovementsEntity,
+  TransferResponseEntity,
 } from './entities/stock-movement.entity';
 
 /**
@@ -183,6 +185,74 @@ export class StockMovementsController {
     );
 
     return this.stockMovementsService.create(dto, userId);
+  }
+
+  /**
+   * Creates a stock transfer between two warehouses.
+   * Only ADMIN and MANAGER users can create transfers.
+   *
+   * Business logic:
+   * - Validates both warehouses exist and belong to tenant
+   * - Validates source warehouse has sufficient stock
+   * - Decrements source warehouse stock
+   * - Increments destination warehouse stock
+   * - Creates two movement records (out and in)
+   * - Product global stock remains unchanged
+   *
+   * @param dto - Transfer data
+   * @param userId - ID of the authenticated user (from JWT)
+   * @returns Both movement records (out and in)
+   *
+   * @example
+   * POST /stock-movements/transfers
+   * {
+   *   "productId": "clxxxxxxxxxxxxxxxxxxxxxxxxx",
+   *   "sourceWarehouseId": "clxxxxxxxxxxxxxxxxxxxxxxxxx",
+   *   "destinationWarehouseId": "clxxxxxxxxxxxxxxxxxxxxxxxxx",
+   *   "quantity": 10,
+   *   "reason": "Reposicion de sucursal",
+   *   "notes": "Solicitado por gerente"
+   * }
+   */
+  @Post('transfers')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create stock transfer between warehouses',
+    description:
+      'Creates a stock transfer between two warehouses. Decrements stock in source and increments in destination. Global product stock remains unchanged. Only ADMIN and MANAGER users can create transfers.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Stock transfer created successfully',
+    type: TransferResponseEntity,
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad Request - Invalid input data, insufficient stock, or same source/destination',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Product or warehouse not found',
+  })
+  async createTransfer(
+    @Body() dto: CreateTransferDto,
+    @CurrentUser('userId') userId: string,
+  ): Promise<TransferResponse> {
+    this.logger.log(
+      `Creating transfer for product ${dto.productId}: ${dto.quantity} units from ${dto.sourceWarehouseId} to ${dto.destinationWarehouseId}`,
+    );
+
+    return this.stockMovementsService.createTransfer(dto, userId);
   }
 }
 

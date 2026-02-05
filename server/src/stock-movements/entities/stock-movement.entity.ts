@@ -112,3 +112,20 @@ export class PaginatedStockMovementsEntity {
   })
   totalPages: number;
 }
+
+/**
+ * Transfer response entity for Swagger documentation
+ */
+export class TransferResponseEntity {
+  @ApiProperty({
+    description: 'Outbound movement from source warehouse',
+    type: StockMovementEntity,
+  })
+  outMovement: StockMovementEntity;
+
+  @ApiProperty({
+    description: 'Inbound movement to destination warehouse',
+    type: StockMovementEntity,
+  })
+  inMovement: StockMovementEntity;
+}

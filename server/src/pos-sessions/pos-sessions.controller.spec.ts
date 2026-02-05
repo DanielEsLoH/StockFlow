@@ -27,7 +27,7 @@ describe('POSSessionsController', () => {
   let service: jest.Mocked<POSSessionsService>;
 
   const mockUser = {
-    id: 'user-123',
+    userId: 'user-123',
     tenantId: 'tenant-123',
     role: UserRole.ADMIN,
   };
@@ -169,7 +169,7 @@ describe('POSSessionsController', () => {
       const result = await controller.openSession(openDto, mockUser);
 
       expect(result).toEqual(mockSessionWithDetails);
-      expect(service.openSession).toHaveBeenCalledWith(openDto, mockUser.id);
+      expect(service.openSession).toHaveBeenCalledWith(openDto, mockUser.userId);
     });
 
     it('should propagate NotFoundException for cash register', async () => {
@@ -219,7 +219,7 @@ describe('POSSessionsController', () => {
       expect(service.closeSession).toHaveBeenCalledWith(
         'session-123',
         closeDto,
-        mockUser.id,
+        mockUser.userId,
       );
     });
 
@@ -274,7 +274,7 @@ describe('POSSessionsController', () => {
       expect(service.registerCashMovement).toHaveBeenCalledWith(
         'session-123',
         movementDto,
-        mockUser.id,
+        mockUser.userId,
       );
     });
 
@@ -306,7 +306,7 @@ describe('POSSessionsController', () => {
       const result = await controller.getCurrentSession(mockUser);
 
       expect(result).toEqual(mockSessionWithDetails);
-      expect(service.getCurrentSession).toHaveBeenCalledWith(mockUser.id);
+      expect(service.getCurrentSession).toHaveBeenCalledWith(mockUser.userId);
     });
 
     it('should return null when no active session', async () => {

@@ -37,7 +37,7 @@ import {
 } from './entities/pos-session.entity';
 
 interface JwtUser {
-  id: string;
+  userId: string;
   tenantId: string;
   role: UserRole;
 }
@@ -85,7 +85,7 @@ export class POSSessionsController {
     @CurrentUser() user: JwtUser,
   ): Promise<POSSessionWithDetails> {
     this.logger.log(`Opening session for cash register: ${dto.cashRegisterId}`);
-    return this.posSessionsService.openSession(dto, user.id);
+    return this.posSessionsService.openSession(dto, user.userId);
   }
 
   /**
@@ -121,7 +121,7 @@ export class POSSessionsController {
     @CurrentUser() user: JwtUser,
   ): Promise<POSSessionWithDetails> {
     this.logger.log(`Closing session: ${id}`);
-    return this.posSessionsService.closeSession(id, dto, user.id);
+    return this.posSessionsService.closeSession(id, dto, user.userId);
   }
 
   /**
@@ -154,7 +154,7 @@ export class POSSessionsController {
     @CurrentUser() user: JwtUser,
   ): Promise<CashMovementResponse> {
     this.logger.log(`Registering cash movement for session: ${id}`);
-    return this.posSessionsService.registerCashMovement(id, dto, user.id);
+    return this.posSessionsService.registerCashMovement(id, dto, user.userId);
   }
 
   /**
@@ -175,8 +175,8 @@ export class POSSessionsController {
   async getCurrentSession(
     @CurrentUser() user: JwtUser,
   ): Promise<POSSessionWithDetails | null> {
-    this.logger.log(`Getting current session for user: ${user.id}`);
-    return this.posSessionsService.getCurrentSession(user.id);
+    this.logger.log(`Getting current session for user: ${user.userId}`);
+    return this.posSessionsService.getCurrentSession(user.userId);
   }
 
   /**

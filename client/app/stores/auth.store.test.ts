@@ -34,6 +34,7 @@ describe("useAuthStore", () => {
       tenant: null,
       isAuthenticated: false,
       isLoading: true,
+      isInitialized: false,
     });
   });
 
@@ -170,12 +171,57 @@ describe("useAuthStore", () => {
     });
   });
 
+  describe("setUserPermissions", () => {
+    it("should update user permissions when user exists", () => {
+      const { setUser, setUserPermissions } = useAuthStore.getState();
+
+      setUser(mockUser);
+      setUserPermissions(["pos:sell", "inventory:view"]);
+
+      const state = useAuthStore.getState();
+      expect(state.user?.permissions).toEqual(["pos:sell", "inventory:view"]);
+    });
+
+    it("should not update permissions when user is null", () => {
+      const { setUserPermissions } = useAuthStore.getState();
+
+      // User is null initially
+      setUserPermissions(["pos:sell"]);
+
+      const state = useAuthStore.getState();
+      expect(state.user).toBeNull();
+    });
+  });
+
+  describe("setInitialized", () => {
+    it("should set isInitialized to true", () => {
+      const { setInitialized } = useAuthStore.getState();
+
+      expect(useAuthStore.getState().isInitialized).toBe(false);
+
+      setInitialized(true);
+
+      expect(useAuthStore.getState().isInitialized).toBe(true);
+    });
+
+    it("should set isInitialized to false", () => {
+      const { setInitialized } = useAuthStore.getState();
+
+      setInitialized(true);
+      expect(useAuthStore.getState().isInitialized).toBe(true);
+
+      setInitialized(false);
+      expect(useAuthStore.getState().isInitialized).toBe(false);
+    });
+  });
+
   describe("persistence", () => {
-    it("should partialize state correctly (exclude isLoading)", () => {
-      const { setUser, setTenant } = useAuthStore.getState();
+    it("should partialize state correctly (exclude isLoading and isInitialized)", () => {
+      const { setUser, setTenant, setInitialized } = useAuthStore.getState();
 
       setUser(mockUser);
       setTenant(mockTenant);
+      setInitialized(true);
 
       // The persist middleware should only store user, tenant, and isAuthenticated
       // This test verifies the store configuration is correct
@@ -183,8 +229,9 @@ describe("useAuthStore", () => {
       expect(state.user).toEqual(mockUser);
       expect(state.tenant).toEqual(mockTenant);
       expect(state.isAuthenticated).toBe(true);
-      // isLoading should exist but not be persisted (this is a config check)
+      // isLoading and isInitialized should exist but not be persisted (this is a config check)
       expect(state.isLoading).toBe(false);
+      expect(state.isInitialized).toBe(true);
     });
   });
 });

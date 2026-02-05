@@ -11,6 +11,8 @@ export interface User {
   status: "ACTIVE" | "PENDING" | "SUSPENDED";
   tenantId: string;
   avatarUrl?: string;
+  /** Effective permissions loaded from server (role defaults + overrides) */
+  permissions?: string[];
 }
 
 export interface Tenant {
@@ -27,11 +29,15 @@ interface AuthState {
   tenant: Tenant | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** True after AuthInitializer has completed (success or failure) */
+  isInitialized: boolean;
 
   // Actions
   setUser: (user: User | null) => void;
   setTenant: (tenant: Tenant | null) => void;
+  setUserPermissions: (permissions: string[]) => void;
   setLoading: (loading: boolean) => void;
+  setInitialized: (initialized: boolean) => void;
   logout: () => void;
 }
 
@@ -42,6 +48,7 @@ export const useAuthStore = create<AuthState>()(
       tenant: null,
       isAuthenticated: false,
       isLoading: false, // Start as false - AuthInitializer will set loading state if needed
+      isInitialized: false, // Start as false - set to true after AuthInitializer completes
 
       setUser: (user) =>
         set({
@@ -52,7 +59,14 @@ export const useAuthStore = create<AuthState>()(
 
       setTenant: (tenant) => set({ tenant }),
 
+      setUserPermissions: (permissions) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, permissions } : null,
+        })),
+
       setLoading: (isLoading) => set({ isLoading }),
+
+      setInitialized: (isInitialized) => set({ isInitialized }),
 
       logout: () => {
         // Clear ALL auth data (tokens, localStorage, sessionStorage, cookies)
@@ -64,11 +78,13 @@ export const useAuthStore = create<AuthState>()(
           tenant: null,
           isAuthenticated: false,
           isLoading: false,
+          isInitialized: false,
         });
       },
     }),
     {
       name: "auth-storage",
+      // Don't persist isInitialized or isLoading - they should reset on page load
       partialize: (state) => ({
         user: state.user,
         tenant: state.tenant,

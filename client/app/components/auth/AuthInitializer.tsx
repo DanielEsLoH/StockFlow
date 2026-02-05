@@ -8,8 +8,10 @@ import {
   getAccessToken,
   completeAuthInit,
   isAuthInitializing,
+  startAuthInit,
 } from "~/lib/api";
 import { useAuthStore } from "~/stores/auth.store";
+import { permissionsService } from "~/services/permissions.service";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -36,7 +38,9 @@ interface AuthInitializerProps {
 export function AuthInitializer({ children }: AuthInitializerProps) {
   const setUser = useAuthStore((state) => state.setUser);
   const setTenant = useAuthStore((state) => state.setTenant);
+  const setUserPermissions = useAuthStore((state) => state.setUserPermissions);
   const setLoading = useAuthStore((state) => state.setLoading);
+  const setInitialized = useAuthStore((state) => state.setInitialized);
   const initRef = useRef(false);
 
   useEffect(() => {
@@ -48,24 +52,34 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
     initRef.current = true;
 
     async function initializeAuth() {
-      // Check if auth init was started (by api.ts module load)
-      const needsCompletion = isAuthInitializing();
-
-      // If we already have an access token, just complete the init
-      if (getAccessToken()) {
-        if (needsCompletion) {
-          completeAuthInit();
-        }
-        setLoading(false);
-        return;
-      }
-
       // Check for refresh token
       let refreshToken: string | null = null;
       try {
         refreshToken = getRefreshToken();
       } catch {
         // localStorage might not be available in some edge cases
+        completeAuthInit();
+        setLoading(false);
+        return;
+      }
+
+      // If we have a refresh token but no access token, we need to refresh
+      // Set loading to true to prevent queries from firing prematurely
+      if (refreshToken && !getAccessToken()) {
+        setLoading(true);
+      }
+
+      // Ensure auth init is started if we have a refresh token but no access token
+      // This handles the case where the module-level startAuthInit didn't run (e.g., SSR hydration)
+      if (refreshToken && !getAccessToken() && !isAuthInitializing()) {
+        startAuthInit();
+      }
+
+      // Check if auth init was started (by api.ts module load or above)
+      const needsCompletion = isAuthInitializing();
+
+      // If we already have an access token, just complete the init
+      if (getAccessToken()) {
         if (needsCompletion) {
           completeAuthInit();
         }
@@ -112,6 +126,15 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
         if (tenant) {
           setTenant(tenant);
         }
+
+        // Load user permissions after token refresh
+        try {
+          const { permissions } = await permissionsService.getMyPermissions();
+          setUserPermissions(permissions);
+        } catch {
+          // Permissions will fall back to role defaults
+          console.warn('[AuthInitializer] Failed to load permissions, using defaults');
+        }
       } catch (error) {
         // Refresh failed - clear all auth data
         // This prevents stale tokens from causing issues
@@ -123,11 +146,12 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
         // Always complete auth init to unblock requests
         completeAuthInit();
         setLoading(false);
+        setInitialized(true);
       }
     }
 
     initializeAuth();
-  }, [setUser, setTenant, setLoading]);
+  }, [setUser, setTenant, setUserPermissions, setLoading, setInitialized]);
 
   // Always render children to preserve SSR hydration
   // Auth initialization happens as a side effect

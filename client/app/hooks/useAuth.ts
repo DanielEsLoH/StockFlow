@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { authService } from "~/services/auth.service";
+import { permissionsService } from "~/services/permissions.service";
 import { useAuthStore } from "~/stores/auth.store";
 import { queryKeys } from "~/lib/query-client";
 import { getAccessToken } from "~/lib/api";
@@ -15,7 +16,18 @@ import type {
 export function useAuth() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { setUser, setTenant, logout: clearAuth } = useAuthStore();
+  const { setUser, setTenant, setUserPermissions, logout: clearAuth } = useAuthStore();
+
+  // Helper to load user permissions after auth
+  const loadPermissions = async () => {
+    try {
+      const { permissions } = await permissionsService.getMyPermissions();
+      setUserPermissions(permissions);
+    } catch (error) {
+      // Permissions will fall back to role defaults in usePermissions hook
+      console.error('Failed to load permissions:', error);
+    }
+  };
 
   // Get current user - only fetch if access token exists to prevent unnecessary 401 errors
   const {
@@ -34,10 +46,12 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginCredentials) =>
       authService.login(credentials),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setUser(data.user);
       setTenant(data.tenant);
       queryClient.setQueryData(queryKeys.auth.me(), data);
+      // Load permissions after successful login
+      await loadPermissions();
       toast.success(`Bienvenido, ${data.user.firstName}!`);
       navigate("/dashboard");
     },
@@ -155,10 +169,12 @@ export function useAuth() {
   const acceptInvitationMutation = useMutation({
     mutationFn: (data: AcceptInvitationData) =>
       authService.acceptInvitation(data),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setUser(data.user);
       setTenant(data.tenant);
       queryClient.setQueryData(queryKeys.auth.me(), data);
+      // Load permissions after accepting invitation
+      await loadPermissions();
       toast.success(
         `Bienvenido a ${data.tenant.name}, ${data.user.firstName}!`,
       );

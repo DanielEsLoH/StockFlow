@@ -862,4 +862,450 @@ describe('SystemAdminService', () => {
       expect(result.success).toBe(true);
     });
   });
+
+  describe('activateTenantPlan', () => {
+    let subscriptionManagementService: jest.Mocked<SubscriptionManagementService>;
+
+    beforeEach(async () => {
+      const mockResult = {
+        tenant: mockTenant,
+        subscription: {
+          id: 'sub-1',
+          tenantId: mockTenant.id,
+          plan: SubscriptionPlan.PRO,
+          endDate: new Date('2025-01-01'),
+        },
+        message: 'Plan activated successfully',
+      };
+
+      const mockSubscriptionManagementService = {
+        activatePlan: jest.fn().mockResolvedValue(mockResult),
+        suspendPlan: jest.fn(),
+        changePlan: jest.fn(),
+        reactivatePlan: jest.fn(),
+        getSubscription: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          SystemAdminService,
+          { provide: PrismaService, useValue: prismaService },
+          { provide: JwtService, useValue: jwtService },
+          {
+            provide: ConfigService,
+            useValue: {
+              get: jest.fn((key: string) => {
+                const config: Record<string, string> = {
+                  SYSTEM_ADMIN_JWT_SECRET: 'test-secret',
+                  SYSTEM_ADMIN_JWT_EXPIRATION: '15m',
+                  SYSTEM_ADMIN_JWT_REFRESH_SECRET: 'test-refresh-secret',
+                  SYSTEM_ADMIN_JWT_REFRESH_EXPIRATION: '7d',
+                };
+                return config[key];
+              }),
+            },
+          },
+          {
+            provide: BrevoService,
+            useValue: { sendAccountApprovedEmail: jest.fn() },
+          },
+          {
+            provide: SubscriptionManagementService,
+            useValue: mockSubscriptionManagementService,
+          },
+        ],
+      }).compile();
+
+      service = module.get<SystemAdminService>(SystemAdminService);
+      subscriptionManagementService = module.get(SubscriptionManagementService);
+    });
+
+    it('should activate a plan for a tenant successfully', async () => {
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
+
+      const result = await service.activateTenantPlan(
+        mockTenant.id,
+        SubscriptionPlan.PRO,
+        'MONTHLY' as any,
+        mockSystemAdmin.id,
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.action).toBe('activate_plan');
+      expect(result.newPlan).toBe(SubscriptionPlan.PRO);
+      expect(result.endDate).toBeDefined();
+    });
+
+    it('should call subscriptionManagementService.activatePlan', async () => {
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
+
+      await service.activateTenantPlan(
+        mockTenant.id,
+        SubscriptionPlan.PRO,
+        'MONTHLY' as any,
+        mockSystemAdmin.id,
+      );
+
+      expect(subscriptionManagementService.activatePlan).toHaveBeenCalledWith(
+        mockTenant.id,
+        SubscriptionPlan.PRO,
+        'MONTHLY',
+        mockSystemAdmin.id,
+      );
+    });
+
+    it('should create audit log when activating plan', async () => {
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
+
+      await service.activateTenantPlan(
+        mockTenant.id,
+        SubscriptionPlan.PRO,
+        'MONTHLY' as any,
+        mockSystemAdmin.id,
+      );
+
+      expect(prismaService.systemAdminAuditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          adminId: mockSystemAdmin.id,
+          action: 'ACTIVATE_TENANT_PLAN',
+          entityType: 'Tenant',
+          entityId: mockTenant.id,
+        }),
+      });
+    });
+  });
+
+  describe('suspendTenantPlan', () => {
+    let subscriptionManagementService: jest.Mocked<SubscriptionManagementService>;
+
+    beforeEach(async () => {
+      const mockResult = {
+        tenant: mockTenant,
+        subscription: {
+          id: 'sub-1',
+          tenantId: mockTenant.id,
+          plan: SubscriptionPlan.PRO,
+          status: 'SUSPENDED',
+        },
+        message: 'Plan suspended successfully',
+      };
+
+      const mockSubscriptionManagementService = {
+        activatePlan: jest.fn(),
+        suspendPlan: jest.fn().mockResolvedValue(mockResult),
+        changePlan: jest.fn(),
+        reactivatePlan: jest.fn(),
+        getSubscription: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          SystemAdminService,
+          { provide: PrismaService, useValue: prismaService },
+          { provide: JwtService, useValue: jwtService },
+          {
+            provide: ConfigService,
+            useValue: {
+              get: jest.fn((key: string) => {
+                const config: Record<string, string> = {
+                  SYSTEM_ADMIN_JWT_SECRET: 'test-secret',
+                  SYSTEM_ADMIN_JWT_EXPIRATION: '15m',
+                  SYSTEM_ADMIN_JWT_REFRESH_SECRET: 'test-refresh-secret',
+                  SYSTEM_ADMIN_JWT_REFRESH_EXPIRATION: '7d',
+                };
+                return config[key];
+              }),
+            },
+          },
+          {
+            provide: BrevoService,
+            useValue: { sendAccountApprovedEmail: jest.fn() },
+          },
+          {
+            provide: SubscriptionManagementService,
+            useValue: mockSubscriptionManagementService,
+          },
+        ],
+      }).compile();
+
+      service = module.get<SystemAdminService>(SystemAdminService);
+      subscriptionManagementService = module.get(SubscriptionManagementService);
+    });
+
+    it('should suspend a tenant plan successfully', async () => {
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
+
+      const result = await service.suspendTenantPlan(
+        mockTenant.id,
+        'Payment overdue',
+        mockSystemAdmin.id,
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.action).toBe('suspend_plan');
+    });
+
+    it('should call subscriptionManagementService.suspendPlan', async () => {
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
+
+      await service.suspendTenantPlan(
+        mockTenant.id,
+        'Payment overdue',
+        mockSystemAdmin.id,
+      );
+
+      expect(subscriptionManagementService.suspendPlan).toHaveBeenCalledWith(
+        mockTenant.id,
+        'Payment overdue',
+        mockSystemAdmin.id,
+      );
+    });
+
+    it('should create audit log with suspension reason', async () => {
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
+
+      await service.suspendTenantPlan(
+        mockTenant.id,
+        'Payment overdue',
+        mockSystemAdmin.id,
+      );
+
+      expect(prismaService.systemAdminAuditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'SUSPEND_TENANT_PLAN',
+          details: expect.objectContaining({
+            reason: 'Payment overdue',
+          }),
+        }),
+      });
+    });
+  });
+
+  describe('reactivateTenantPlan', () => {
+    let subscriptionManagementService: jest.Mocked<SubscriptionManagementService>;
+
+    beforeEach(async () => {
+      const mockResult = {
+        tenant: mockTenant,
+        subscription: {
+          id: 'sub-1',
+          tenantId: mockTenant.id,
+          plan: SubscriptionPlan.PRO,
+          status: 'ACTIVE',
+        },
+        message: 'Plan reactivated successfully',
+      };
+
+      const mockSubscriptionManagementService = {
+        activatePlan: jest.fn(),
+        suspendPlan: jest.fn(),
+        changePlan: jest.fn(),
+        reactivatePlan: jest.fn().mockResolvedValue(mockResult),
+        getSubscription: jest.fn(),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          SystemAdminService,
+          { provide: PrismaService, useValue: prismaService },
+          { provide: JwtService, useValue: jwtService },
+          {
+            provide: ConfigService,
+            useValue: {
+              get: jest.fn((key: string) => {
+                const config: Record<string, string> = {
+                  SYSTEM_ADMIN_JWT_SECRET: 'test-secret',
+                  SYSTEM_ADMIN_JWT_EXPIRATION: '15m',
+                  SYSTEM_ADMIN_JWT_REFRESH_SECRET: 'test-refresh-secret',
+                  SYSTEM_ADMIN_JWT_REFRESH_EXPIRATION: '7d',
+                };
+                return config[key];
+              }),
+            },
+          },
+          {
+            provide: BrevoService,
+            useValue: { sendAccountApprovedEmail: jest.fn() },
+          },
+          {
+            provide: SubscriptionManagementService,
+            useValue: mockSubscriptionManagementService,
+          },
+        ],
+      }).compile();
+
+      service = module.get<SystemAdminService>(SystemAdminService);
+      subscriptionManagementService = module.get(SubscriptionManagementService);
+    });
+
+    it('should reactivate a suspended tenant plan', async () => {
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
+
+      const result = await service.reactivateTenantPlan(
+        mockTenant.id,
+        mockSystemAdmin.id,
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.action).toBe('reactivate_plan');
+    });
+
+    it('should call subscriptionManagementService.reactivatePlan', async () => {
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
+
+      await service.reactivateTenantPlan(mockTenant.id, mockSystemAdmin.id);
+
+      expect(subscriptionManagementService.reactivatePlan).toHaveBeenCalledWith(
+        mockTenant.id,
+        mockSystemAdmin.id,
+      );
+    });
+
+    it('should create audit log when reactivating plan', async () => {
+      prismaService.systemAdminAuditLog.create = jest
+        .fn()
+        .mockResolvedValue({});
+
+      await service.reactivateTenantPlan(mockTenant.id, mockSystemAdmin.id);
+
+      expect(prismaService.systemAdminAuditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'REACTIVATE_TENANT_PLAN',
+          entityType: 'Tenant',
+          entityId: mockTenant.id,
+        }),
+      });
+    });
+  });
+
+  describe('getTenantSubscription', () => {
+    let subscriptionManagementService: jest.Mocked<SubscriptionManagementService>;
+
+    beforeEach(async () => {
+      const mockSubscription = {
+        id: 'sub-1',
+        tenantId: mockTenant.id,
+        plan: SubscriptionPlan.PRO,
+        status: 'ACTIVE',
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2025-01-01'),
+      };
+
+      const mockSubscriptionManagementService = {
+        activatePlan: jest.fn(),
+        suspendPlan: jest.fn(),
+        changePlan: jest.fn(),
+        reactivatePlan: jest.fn(),
+        getSubscription: jest.fn().mockResolvedValue(mockSubscription),
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          SystemAdminService,
+          { provide: PrismaService, useValue: prismaService },
+          { provide: JwtService, useValue: jwtService },
+          {
+            provide: ConfigService,
+            useValue: {
+              get: jest.fn((key: string) => {
+                const config: Record<string, string> = {
+                  SYSTEM_ADMIN_JWT_SECRET: 'test-secret',
+                  SYSTEM_ADMIN_JWT_EXPIRATION: '15m',
+                  SYSTEM_ADMIN_JWT_REFRESH_SECRET: 'test-refresh-secret',
+                  SYSTEM_ADMIN_JWT_REFRESH_EXPIRATION: '7d',
+                };
+                return config[key];
+              }),
+            },
+          },
+          {
+            provide: BrevoService,
+            useValue: { sendAccountApprovedEmail: jest.fn() },
+          },
+          {
+            provide: SubscriptionManagementService,
+            useValue: mockSubscriptionManagementService,
+          },
+        ],
+      }).compile();
+
+      service = module.get<SystemAdminService>(SystemAdminService);
+      subscriptionManagementService = module.get(SubscriptionManagementService);
+    });
+
+    it('should return tenant subscription details', async () => {
+      const result = await service.getTenantSubscription(mockTenant.id);
+
+      expect(result).toBeDefined();
+      expect(result).not.toBeNull();
+      expect(result!.plan).toBe(SubscriptionPlan.PRO);
+      expect(subscriptionManagementService.getSubscription).toHaveBeenCalledWith(
+        mockTenant.id,
+      );
+    });
+
+    it('should return null if no subscription found', async () => {
+      subscriptionManagementService.getSubscription = jest
+        .fn()
+        .mockResolvedValue(null);
+
+      const result = await service.getTenantSubscription('nonexistent-tenant');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getAllPlanLimits', () => {
+    it('should return PLAN_LIMITS constant', () => {
+      const result = service.getAllPlanLimits();
+
+      expect(result).toBeDefined();
+      expect(result).toHaveProperty('EMPRENDEDOR');
+      expect(result).toHaveProperty('PYME');
+      expect(result).toHaveProperty('PRO');
+      expect(result).toHaveProperty('PLUS');
+    });
+
+    it('should return limits with expected structure', () => {
+      const result = service.getAllPlanLimits();
+
+      // Check structure of a plan limit
+      const emprendedorPlan = result.EMPRENDEDOR;
+      expect(emprendedorPlan).toHaveProperty('maxUsers');
+      expect(emprendedorPlan).toHaveProperty('maxProducts');
+      expect(emprendedorPlan).toHaveProperty('maxWarehouses');
+      expect(emprendedorPlan).toHaveProperty('maxInvoices');
+    });
+
+    it('should return correct values for EMPRENDEDOR plan', () => {
+      const result = service.getAllPlanLimits();
+
+      expect(result.EMPRENDEDOR.maxUsers).toBe(2);
+      expect(result.EMPRENDEDOR.maxWarehouses).toBe(1);
+      expect(result.EMPRENDEDOR.maxProducts).toBe(-1); // unlimited
+    });
+
+    it('should return correct values for PRO plan', () => {
+      const result = service.getAllPlanLimits();
+
+      expect(result.PRO.maxUsers).toBe(4);
+      expect(result.PRO.maxWarehouses).toBe(10);
+    });
+  });
 });

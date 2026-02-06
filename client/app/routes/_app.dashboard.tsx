@@ -59,6 +59,7 @@ import { StatCard } from "~/components/ui/StatCard";
 import { Badge, StatusBadge } from "~/components/ui/Badge";
 import { Alert, AlertTitle, AlertDescription } from "~/components/ui/Alert";
 import { useAuthStore } from "~/stores/auth.store";
+import { usePermissions } from "~/hooks/usePermissions";
 import type { ActivityType } from "~/services/dashboard.service";
 
 // Meta for SEO
@@ -291,6 +292,7 @@ function QuickActionCard({
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
+  const { canCreateProducts, canViewReports } = usePermissions();
   const {
     stats,
     charts,
@@ -458,7 +460,7 @@ export default function DashboardPage() {
         </motion.div>
       )}
 
-      {/* Quick Actions - Gradient Cards */}
+      {/* Quick Actions - Gradient Cards (filtered by permissions) */}
       <motion.div variants={itemVariants}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <QuickActionCard
@@ -468,20 +470,24 @@ export default function DashboardPage() {
             description="Crear venta rapida"
             gradient="from-primary-600 to-primary-500"
           />
-          <QuickActionCard
-            to="/products/new"
-            icon={Package}
-            label="Agregar Producto"
-            description="Nuevo al inventario"
-            gradient="from-success-600 to-success-500"
-          />
-          <QuickActionCard
-            to="/reports"
-            icon={FileBarChart}
-            label="Generar Reporte"
-            description="Analisis detallado"
-            gradient="from-accent-600 to-accent-500"
-          />
+          {canCreateProducts && (
+            <QuickActionCard
+              to="/products/new"
+              icon={Package}
+              label="Agregar Producto"
+              description="Nuevo al inventario"
+              gradient="from-success-600 to-success-500"
+            />
+          )}
+          {canViewReports && (
+            <QuickActionCard
+              to="/reports"
+              icon={FileBarChart}
+              label="Generar Reporte"
+              description="Analisis detallado"
+              gradient="from-accent-600 to-accent-500"
+            />
+          )}
           <QuickActionCard
             to="/customers/new"
             icon={UserPlus}

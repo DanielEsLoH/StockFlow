@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { Route } from "./+types/_app.team";
 import { cn } from "~/lib/utils";
-import { useAuth } from "~/hooks/useAuth";
+import { useAuthStore } from "~/stores/auth.store";
 import { useTeamMembers } from "~/hooks/useTeamMembers";
 import {
   useInvitations,
@@ -149,7 +149,7 @@ function formatDate(dateString: string): string {
 type TabType = "members" | "invitations";
 
 export default function TeamPage() {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState<TabType>("members");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [cancellingInvitationId, setCancellingInvitationId] = useState<

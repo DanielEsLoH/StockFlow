@@ -8,9 +8,12 @@ import {
   Download,
   FileText,
   Clock,
+  ShieldX,
 } from "lucide-react";
 import type { Route } from "./+types/_app.reports";
 import { cn, formatDate, formatFileSize } from "~/lib/utils";
+import { usePermissions } from "~/hooks/usePermissions";
+import { Permission } from "~/types/permissions";
 import {
   useGenerateSalesReport,
   useGenerateInventoryReport,
@@ -591,7 +594,38 @@ function RecentReportsTable() {
   );
 }
 
+// Access Denied component for unauthorized users
+function AccessDenied() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="p-4 rounded-full bg-error-100 dark:bg-error-900/30 mb-6">
+        <ShieldX className="h-12 w-12 text-error-500 dark:text-error-400" />
+      </div>
+      <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white mb-2">
+        Acceso Denegado
+      </h1>
+      <p className="text-neutral-500 dark:text-neutral-400 max-w-md mb-6">
+        No tienes permisos para acceder a esta seccion. Si crees que esto es un
+        error, contacta a tu administrador.
+      </p>
+      <a
+        href="/dashboard"
+        className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors"
+      >
+        Volver al Dashboard
+      </a>
+    </div>
+  );
+}
+
 export default function ReportsPage() {
+  const { hasPermission } = usePermissions();
+
+  // Check if user has permission to view reports
+  if (!hasPermission(Permission.REPORTS_VIEW)) {
+    return <AccessDenied />;
+  }
+
   return (
     <motion.div
       variants={containerVariants}

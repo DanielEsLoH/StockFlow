@@ -15,6 +15,7 @@ import {
   getDianStats,
   type ListDocumentsParams,
 } from "~/services/dian.service";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   CreateDianConfigDto,
   UpdateDianConfigDto,
@@ -38,9 +39,11 @@ export const dianKeys = {
 
 // Configuration Hooks
 export function useDianConfig() {
+  const enabled = useIsQueryEnabled();
   return useQuery({
     queryKey: dianKeys.config(),
     queryFn: getDianConfig,
+    enabled,
   });
 }
 
@@ -164,17 +167,20 @@ export function useCheckDocumentStatus() {
 
 // Document Listing Hooks
 export function useDianDocuments(params: ListDocumentsParams = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery({
     queryKey: dianKeys.documentList(params),
     queryFn: () => listDianDocuments(params),
+    enabled,
   });
 }
 
 export function useDianDocument(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery({
     queryKey: dianKeys.documentDetail(id),
     queryFn: () => getDianDocument(id),
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 
@@ -203,8 +209,10 @@ export function useDownloadDianXml() {
 
 // Statistics Hook
 export function useDianStats() {
+  const enabled = useIsQueryEnabled();
   return useQuery({
     queryKey: dianKeys.stats(),
     queryFn: getDianStats,
+    enabled,
   });
 }

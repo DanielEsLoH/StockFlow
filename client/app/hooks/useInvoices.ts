@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { invoicesService } from "~/services/invoices.service";
 import { queryKeys } from "~/lib/query-client";
 import { toast } from "~/components/ui/Toast";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   Invoice,
   InvoiceFilters,
@@ -23,11 +24,13 @@ import type {
  * Paginated invoices list with filters
  */
 export function useInvoices(filters: InvoiceFilters = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery<InvoicesResponse>({
     queryKey: queryKeys.invoices.list(filters as Record<string, unknown>),
     queryFn: () => invoicesService.getInvoices(filters),
     staleTime: 1000 * 60 * 2, // 2 minutes
     placeholderData: (previousData) => previousData,
+    enabled,
   });
 }
 
@@ -35,11 +38,12 @@ export function useInvoices(filters: InvoiceFilters = {}) {
  * Single invoice detail by ID
  */
 export function useInvoice(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Invoice>({
     queryKey: queryKeys.invoices.detail(id),
     queryFn: () => invoicesService.getInvoice(id),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 
@@ -47,11 +51,12 @@ export function useInvoice(id: string) {
  * Invoices for a specific customer
  */
 export function useInvoicesByCustomer(customerId: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Invoice[]>({
     queryKey: queryKeys.invoices.byCustomer(customerId),
     queryFn: () => invoicesService.getInvoicesByCustomer(customerId),
     staleTime: 1000 * 60 * 2, // 2 minutes
-    enabled: !!customerId,
+    enabled: enabled && !!customerId,
   });
 }
 
@@ -59,10 +64,12 @@ export function useInvoicesByCustomer(customerId: string) {
  * Recent invoices for dashboard (limited)
  */
 export function useRecentInvoices(limit: number = 5) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Invoice[]>({
     queryKey: queryKeys.invoices.recent(limit),
     queryFn: () => invoicesService.getRecentInvoices(limit),
     staleTime: 1000 * 60 * 2, // 2 minutes
+    enabled,
   });
 }
 
@@ -70,10 +77,12 @@ export function useRecentInvoices(limit: number = 5) {
  * Invoice statistics
  */
 export function useInvoiceStats() {
+  const enabled = useIsQueryEnabled();
   return useQuery<InvoiceStats>({
     queryKey: queryKeys.invoices.stats(),
     queryFn: () => invoicesService.getInvoiceStats(),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled,
   });
 }
 

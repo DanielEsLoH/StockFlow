@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "~/lib/query-client";
 import { dashboardService } from "~/services/dashboard.service";
-import { useAuthStore } from "~/stores/auth.store";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   DashboardStats,
   DashboardCharts,
@@ -9,25 +9,6 @@ import type {
   LowStockAlert,
   RecentActivity,
 } from "~/services/dashboard.service";
-
-/**
- * Custom hook to check if queries should be enabled.
- * Waits for AuthInitializer to complete before enabling queries.
- * This prevents race conditions where queries fire before the token is refreshed.
- */
-function useIsQueryEnabled(): boolean {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isInitialized = useAuthStore((state) => state.isInitialized);
-
-  // On SSR, we can't check tokens - enable if authenticated in store
-  if (typeof window === "undefined") {
-    return isAuthenticated;
-  }
-
-  // Only enable queries after auth initialization is complete AND user is authenticated
-  // isInitialized is set to true by AuthInitializer after it finishes (success or failure)
-  return isInitialized && isAuthenticated;
-}
 
 export function useDashboardStats() {
   const enabled = useIsQueryEnabled();

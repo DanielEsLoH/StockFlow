@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { notificationsService } from "~/services/notifications.service";
 import { queryKeys } from "~/lib/query-client";
 import { toast } from "~/components/ui/Toast";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   Notification,
   NotificationSummary,
@@ -20,11 +21,13 @@ import type {
  * Paginated notifications list with filters
  */
 export function useNotifications(filters: NotificationFilters = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery<NotificationsResponse>({
     queryKey: queryKeys.notifications.list(filters as Record<string, unknown>),
     queryFn: () => notificationsService.getNotifications(filters),
     staleTime: 1000 * 60 * 1, // 1 minute (notifications should be fresh)
     placeholderData: (previousData) => previousData,
+    enabled,
   });
 }
 
@@ -32,11 +35,12 @@ export function useNotifications(filters: NotificationFilters = {}) {
  * Single notification detail by ID
  */
 export function useNotification(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Notification>({
     queryKey: queryKeys.notifications.detail(id),
     queryFn: () => notificationsService.getNotification(id),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 
@@ -44,10 +48,12 @@ export function useNotification(id: string) {
  * Recent notifications (for dropdown)
  */
 export function useRecentNotifications(limit: number = 5) {
+  const enabled = useIsQueryEnabled();
   return useQuery<NotificationSummary[]>({
     queryKey: queryKeys.notifications.recent(limit),
     queryFn: () => notificationsService.getRecentNotifications(limit),
     staleTime: 1000 * 30, // 30 seconds (dropdown should be fresh)
+    enabled,
   });
 }
 
@@ -55,11 +61,13 @@ export function useRecentNotifications(limit: number = 5) {
  * Unread notifications count
  */
 export function useUnreadCount() {
+  const enabled = useIsQueryEnabled();
   return useQuery<UnreadCountResponse>({
     queryKey: queryKeys.notifications.unreadCount(),
     queryFn: () => notificationsService.getUnreadCount(),
     staleTime: 1000 * 30, // 30 seconds (badge should update frequently)
     refetchInterval: 1000 * 60, // Poll every minute
+    enabled,
   });
 }
 

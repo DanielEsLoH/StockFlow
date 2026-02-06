@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { paymentsService } from "~/services/payments.service";
 import { queryKeys } from "~/lib/query-client";
 import { toast } from "~/components/ui/Toast";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   Payment,
   PaymentFilters,
@@ -21,11 +22,13 @@ import type {
  * Paginated payments list with filters
  */
 export function usePayments(filters: PaymentFilters = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery<PaymentsResponse>({
     queryKey: queryKeys.payments.list(filters as Record<string, unknown>),
     queryFn: () => paymentsService.getPayments(filters),
     staleTime: 1000 * 60 * 2, // 2 minutes
     placeholderData: (previousData) => previousData,
+    enabled,
   });
 }
 
@@ -33,11 +36,12 @@ export function usePayments(filters: PaymentFilters = {}) {
  * Single payment detail by ID
  */
 export function usePayment(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Payment>({
     queryKey: queryKeys.payments.detail(id),
     queryFn: () => paymentsService.getPayment(id),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 
@@ -45,11 +49,12 @@ export function usePayment(id: string) {
  * Payments for a specific invoice
  */
 export function usePaymentsByInvoice(invoiceId: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Payment[]>({
     queryKey: queryKeys.payments.byInvoice(invoiceId),
     queryFn: () => paymentsService.getPaymentsByInvoice(invoiceId),
     staleTime: 1000 * 60 * 2, // 2 minutes
-    enabled: !!invoiceId,
+    enabled: enabled && !!invoiceId,
   });
 }
 
@@ -57,11 +62,12 @@ export function usePaymentsByInvoice(invoiceId: string) {
  * Payments for a specific customer
  */
 export function usePaymentsByCustomer(customerId: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Payment[]>({
     queryKey: queryKeys.payments.byCustomer(customerId),
     queryFn: () => paymentsService.getPaymentsByCustomer(customerId),
     staleTime: 1000 * 60 * 2, // 2 minutes
-    enabled: !!customerId,
+    enabled: enabled && !!customerId,
   });
 }
 
@@ -69,10 +75,12 @@ export function usePaymentsByCustomer(customerId: string) {
  * Recent payments for dashboard (limited)
  */
 export function useRecentPayments(limit: number = 5) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Payment[]>({
     queryKey: queryKeys.payments.recent(limit),
     queryFn: () => paymentsService.getRecentPayments(limit),
     staleTime: 1000 * 60 * 2, // 2 minutes
+    enabled,
   });
 }
 
@@ -80,10 +88,12 @@ export function useRecentPayments(limit: number = 5) {
  * Payment statistics
  */
 export function usePaymentStats() {
+  const enabled = useIsQueryEnabled();
   return useQuery<PaymentStats>({
     queryKey: queryKeys.payments.stats(),
     queryFn: () => paymentsService.getPaymentStats(),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled,
   });
 }
 

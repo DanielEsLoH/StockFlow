@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { categoriesService } from "~/services/categories.service";
 import { queryKeys } from "~/lib/query-client";
 import { toast } from "~/components/ui/Toast";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   Category,
   CategoryFilters,
@@ -12,30 +13,35 @@ import type {
 
 // Categories list hook with filters (paginated)
 export function useCategoriesWithFilters(filters: CategoryFilters = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery<CategoriesResponse>({
     queryKey: queryKeys.categories.list(filters as Record<string, unknown>),
     queryFn: () => categoriesService.getCategoriesWithFilters(filters),
     staleTime: 1000 * 60 * 5, // 5 minutes
     placeholderData: (previousData) => previousData,
+    enabled,
   });
 }
 
 // All categories hook (for dropdowns)
 export function useCategories() {
+  const enabled = useIsQueryEnabled();
   return useQuery<Category[]>({
     queryKey: queryKeys.categories.all,
     queryFn: () => categoriesService.getCategories(),
     staleTime: 1000 * 60 * 10, // 10 minutes - categories don't change often
+    enabled,
   });
 }
 
 // Single category hook
 export function useCategory(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Category>({
     queryKey: queryKeys.categories.detail(id),
     queryFn: () => categoriesService.getCategory(id),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 

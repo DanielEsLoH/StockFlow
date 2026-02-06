@@ -5,6 +5,7 @@ import { categoriesService } from "~/services/categories.service";
 import { warehousesService } from "~/services/warehouses.service";
 import { queryKeys } from "~/lib/query-client";
 import { toast } from "~/components/ui/Toast";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   Product,
   ProductFilters,
@@ -18,21 +19,24 @@ import type {
 
 // Products list hook with filters
 export function useProducts(filters: ProductFilters = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery<ProductsResponse>({
     queryKey: queryKeys.products.list(filters as Record<string, unknown>),
     queryFn: () => productsService.getProducts(filters),
     staleTime: 1000 * 60 * 2, // 2 minutes
     placeholderData: (previousData) => previousData, // Keep previous data while fetching
+    enabled,
   });
 }
 
 // Single product hook
 export function useProduct(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Product>({
     queryKey: queryKeys.products.detail(id),
     queryFn: () => productsService.getProduct(id),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 
@@ -98,28 +102,34 @@ export function useDeleteProduct() {
 
 // Low stock products hook
 export function useLowStockProducts() {
+  const enabled = useIsQueryEnabled();
   return useQuery<LowStockProduct[]>({
     queryKey: queryKeys.products.lowStock(),
     queryFn: () => productsService.getLowStockProducts(),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled,
   });
 }
 
 // Categories hook
 export function useCategories() {
+  const enabled = useIsQueryEnabled();
   return useQuery<Category[]>({
     queryKey: queryKeys.categories.list(),
     queryFn: () => categoriesService.getCategories(),
     staleTime: 1000 * 60 * 10, // 10 minutes - categories don't change often
+    enabled,
   });
 }
 
 // Warehouses hook
 export function useWarehouses() {
+  const enabled = useIsQueryEnabled();
   return useQuery<Warehouse[]>({
     queryKey: queryKeys.warehouses.list(),
     queryFn: () => warehousesService.getWarehouses(),
     staleTime: 1000 * 60 * 10, // 10 minutes - warehouses don't change often
+    enabled,
   });
 }
 

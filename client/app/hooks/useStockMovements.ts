@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { stockMovementsService } from "~/services/stock-movements.service";
 import { queryKeys } from "~/lib/query-client";
 import { toast } from "~/components/ui/Toast";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   StockMovement,
   StockMovementFilters,
@@ -19,11 +20,13 @@ import type {
  * Paginated stock movements list with filters
  */
 export function useStockMovements(filters: StockMovementFilters = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery<StockMovementsResponse>({
     queryKey: queryKeys.stockMovements.list(filters as Record<string, unknown>),
     queryFn: () => stockMovementsService.getMovements(filters),
     staleTime: 1000 * 60 * 2, // 2 minutes
     placeholderData: (previousData) => previousData,
+    enabled,
   });
 }
 
@@ -31,11 +34,12 @@ export function useStockMovements(filters: StockMovementFilters = {}) {
  * Single stock movement detail by ID
  */
 export function useStockMovement(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<StockMovement>({
     queryKey: queryKeys.stockMovements.detail(id),
     queryFn: () => stockMovementsService.getMovement(id),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 
@@ -46,11 +50,12 @@ export function useStockMovementsByProduct(
   productId: string,
   filters: StockMovementFilters = {},
 ) {
+  const enabled = useIsQueryEnabled();
   return useQuery<StockMovementsResponse>({
     queryKey: queryKeys.stockMovements.byProduct(productId),
     queryFn: () => stockMovementsService.getMovementsByProduct(productId, filters),
     staleTime: 1000 * 60 * 2, // 2 minutes
-    enabled: !!productId,
+    enabled: enabled && !!productId,
   });
 }
 
@@ -61,12 +66,13 @@ export function useStockMovementsByWarehouse(
   warehouseId: string,
   filters: StockMovementFilters = {},
 ) {
+  const enabled = useIsQueryEnabled();
   return useQuery<StockMovementsResponse>({
     queryKey: queryKeys.stockMovements.byWarehouse(warehouseId),
     queryFn: () =>
       stockMovementsService.getMovementsByWarehouse(warehouseId, filters),
     staleTime: 1000 * 60 * 2, // 2 minutes
-    enabled: !!warehouseId,
+    enabled: enabled && !!warehouseId,
   });
 }
 

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { reportsService } from "~/services/reports.service";
 import { queryKeys } from "~/lib/query-client";
 import { toast } from "~/components/ui/Toast";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   RecentReport,
   SalesReportParams,
@@ -17,10 +18,12 @@ import type {
  * Fetch recent reports list
  */
 export function useRecentReports(limit: number = 10) {
+  const enabled = useIsQueryEnabled();
   return useQuery<RecentReport[]>({
     queryKey: queryKeys.reports.recent(limit),
     queryFn: () => reportsService.getRecentReports(),
     staleTime: 1000 * 60 * 2, // 2 minutes
+    enabled,
   });
 }
 

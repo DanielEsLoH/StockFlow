@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { customersService } from "~/services/customers.service";
 import { queryKeys } from "~/lib/query-client";
 import { toast } from "~/components/ui/Toast";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   Customer,
   CustomerFilters,
@@ -14,40 +15,46 @@ import type {
 
 // Customers list hook with filters
 export function useCustomers(filters: CustomerFilters = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery<CustomersResponse>({
     queryKey: queryKeys.customers.list(filters as Record<string, unknown>),
     queryFn: () => customersService.getCustomers(filters),
     staleTime: 1000 * 60 * 2, // 2 minutes
     placeholderData: (previousData) => previousData,
+    enabled,
   });
 }
 
 // Single customer hook
 export function useCustomer(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<Customer>({
     queryKey: queryKeys.customers.detail(id),
     queryFn: () => customersService.getCustomer(id),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 
 // Customer stats hook
 export function useCustomerStats(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<CustomerStats>({
     queryKey: [...queryKeys.customers.detail(id), "stats"],
     queryFn: () => customersService.getCustomerStats(id),
     staleTime: 1000 * 60 * 2, // 2 minutes
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 
 // Cities for filter dropdown
 export function useCustomerCities() {
+  const enabled = useIsQueryEnabled();
   return useQuery<string[]>({
     queryKey: [...queryKeys.customers.all, "cities"],
     queryFn: () => customersService.getCities(),
     staleTime: 1000 * 60 * 30, // 30 minutes
+    enabled,
   });
 }
 

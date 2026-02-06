@@ -7,6 +7,7 @@ import {
 } from "~/services/pos.service";
 import { queryKeys } from "~/lib/query-client";
 import { toast } from "~/components/ui/Toast";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
   CashRegister,
   CashRegisterWithWarehouse,
@@ -34,21 +35,24 @@ import type {
 
 // Cash registers list with filters (paginated)
 export function useCashRegisters(filters: CashRegisterFilters = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery<CashRegistersResponse>({
     queryKey: queryKeys.cashRegisters.list(filters as Record<string, unknown>),
     queryFn: () => cashRegistersService.getAll(filters),
     staleTime: 1000 * 60 * 5, // 5 minutes
     placeholderData: (previousData) => previousData,
+    enabled,
   });
 }
 
 // Single cash register
 export function useCashRegister(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<CashRegisterWithWarehouse>({
     queryKey: queryKeys.cashRegisters.detail(id),
     queryFn: () => cashRegistersService.getById(id),
     staleTime: 1000 * 60 * 5,
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 
@@ -120,61 +124,69 @@ export function useDeleteCashRegister() {
 
 // Sessions list with filters (paginated)
 export function usePOSSessions(filters: POSSessionFilters = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery<POSSessionsResponse>({
     queryKey: queryKeys.posSessions.list(filters as Record<string, unknown>),
     queryFn: () => posSessionsService.getAll(filters),
     staleTime: 1000 * 60 * 2, // 2 minutes
     placeholderData: (previousData) => previousData,
+    enabled,
   });
 }
 
 // Single session
 export function usePOSSession(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<POSSessionWithDetails>({
     queryKey: queryKeys.posSessions.detail(id),
     queryFn: () => posSessionsService.getById(id),
     staleTime: 1000 * 60 * 2,
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 
 // Current active session
 export function useCurrentSession() {
+  const enabled = useIsQueryEnabled();
   return useQuery<POSSessionWithDetails | null>({
     queryKey: queryKeys.posSessions.current(),
     queryFn: () => posSessionsService.getCurrent(),
     staleTime: 1000 * 30, // 30 seconds - check frequently
     refetchInterval: 1000 * 60, // Refetch every minute
+    enabled,
   });
 }
 
 // Session movements
 export function useSessionMovements(sessionId: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<CashMovement[]>({
     queryKey: queryKeys.posSessions.movements(sessionId),
     queryFn: () => posSessionsService.getMovements(sessionId),
     staleTime: 1000 * 60,
-    enabled: !!sessionId,
+    enabled: enabled && !!sessionId,
   });
 }
 
 // X Report (intraday)
 export function useXReport(sessionId: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<XZReport>({
     queryKey: queryKeys.posSessions.xReport(sessionId),
     queryFn: () => posSessionsService.getXReport(sessionId),
     staleTime: 1000 * 30, // 30 seconds
-    enabled: !!sessionId,
+    enabled: enabled && !!sessionId,
   });
 }
 
 // Z Report (closing)
 export function useZReport(sessionId: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<XZReport>({
     queryKey: queryKeys.posSessions.zReport(sessionId),
     queryFn: () => posSessionsService.getZReport(sessionId),
     staleTime: 1000 * 30,
-    enabled: !!sessionId,
+    enabled: enabled && !!sessionId,
   });
 }
 
@@ -278,21 +290,24 @@ export function useCashMovement() {
 
 // Sales list with filters (paginated)
 export function usePOSSales(filters: POSSaleFilters = {}) {
+  const enabled = useIsQueryEnabled();
   return useQuery<POSSalesResponse>({
     queryKey: queryKeys.posSales.list(filters as Record<string, unknown>),
     queryFn: () => posSalesService.getAll(filters),
     staleTime: 1000 * 60, // 1 minute
     placeholderData: (previousData) => previousData,
+    enabled,
   });
 }
 
 // Single sale
 export function usePOSSale(id: string) {
+  const enabled = useIsQueryEnabled();
   return useQuery<POSSaleWithDetails>({
     queryKey: queryKeys.posSales.detail(id),
     queryFn: () => posSalesService.getById(id),
     staleTime: 1000 * 60 * 5,
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }
 

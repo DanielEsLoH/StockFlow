@@ -9,6 +9,7 @@ import {
 import { useAuthStore } from "~/stores/auth.store";
 import { queryKeys } from "~/lib/query-client";
 import { toast } from "~/components/ui/Toast";
+import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type { PasswordStrength } from "~/types/settings";
 
 // ============================================================================
@@ -19,10 +20,12 @@ import type { PasswordStrength } from "~/types/settings";
  * Query for fetching user preferences
  */
 export function useUserPreferences() {
+  const enabled = useIsQueryEnabled();
   return useQuery<UserPreferences>({
     queryKey: queryKeys.settings.preferences(),
     queryFn: () => settingsService.getPreferences(),
     staleTime: Infinity, // Preferences rarely change
+    enabled,
   });
 }
 

@@ -17,7 +17,10 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
+  ShieldX,
 } from "lucide-react";
+import { usePermissions } from "~/hooks/usePermissions";
+import { Permission } from "~/types/permissions";
 import { cn, formatDate } from "~/lib/utils";
 import { useStockMovements } from "~/hooks/useStockMovements";
 import { useProducts } from "~/hooks/useProducts";
@@ -118,7 +121,25 @@ function QuantityBadge({ quantity }: { quantity: number }) {
   );
 }
 
+// Access Denied component
+function AccessDenied() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="p-4 rounded-full bg-error-100 dark:bg-error-900/30 mb-6">
+        <ShieldX className="h-12 w-12 text-error-500 dark:text-error-400" />
+      </div>
+      <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white mb-2">
+        Acceso Denegado
+      </h1>
+      <p className="text-neutral-500 dark:text-neutral-400 max-w-md">
+        No tienes permisos para ver los movimientos de inventario. Contacta a tu administrador si necesitas acceso.
+      </p>
+    </div>
+  );
+}
+
 export default function InventoryMovementsPage() {
+  const { hasPermission } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -131,7 +152,10 @@ export default function InventoryMovementsPage() {
     setIsMounted(true);
   }, []);
 
-  // Queries
+  // Store permission check result - must be before any early returns
+  const canViewInventory = hasPermission(Permission.INVENTORY_VIEW);
+
+  // Queries - must be called before any early returns to maintain hook order
   const { data: movementsData, isLoading, isError } = useStockMovements(filters);
   const { data: productsData } = useProducts({ limit: 100 });
   const { data: warehousesData } = useWarehouses();
@@ -174,6 +198,11 @@ export default function InventoryMovementsPage() {
 
     return { totalIn, totalOut, adjustments, sales };
   }, [movementsData]);
+
+  // Check permissions after all hooks
+  if (!canViewInventory) {
+    return <AccessDenied />;
+  }
 
   const movements = movementsData?.data || [];
   const paginationMeta = movementsData?.meta;

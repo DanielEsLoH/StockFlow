@@ -13,7 +13,10 @@ import {
   Clock,
   RefreshCcw,
   CheckCircle,
+  ShieldX,
 } from "lucide-react";
+import { usePermissions } from "~/hooks/usePermissions";
+import { Permission } from "~/types/permissions";
 import type { Route } from "./+types/_app.payments";
 import { cn, debounce, formatCurrency, formatDate } from "~/lib/utils";
 import {
@@ -139,7 +142,25 @@ function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
   );
 }
 
+// Access Denied component
+function AccessDenied() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="p-4 rounded-full bg-error-100 dark:bg-error-900/30 mb-6">
+        <ShieldX className="h-12 w-12 text-error-500 dark:text-error-400" />
+      </div>
+      <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white mb-2">
+        Acceso Denegado
+      </h1>
+      <p className="text-neutral-500 dark:text-neutral-400 max-w-md">
+        No tienes permisos para ver los pagos. Contacta a tu administrador si necesitas acceso.
+      </p>
+    </div>
+  );
+}
+
 export default function PaymentsPage() {
+  const { hasPermission } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingPayment, setDeletingPayment] = useState<PaymentSummary | null>(
     null,
@@ -155,7 +176,10 @@ export default function PaymentsPage() {
     setIsMounted(true);
   }, []);
 
-  // Queries
+  // Store permission check result - must be before any early returns
+  const canViewPayments = hasPermission(Permission.PAYMENTS_VIEW);
+
+  // Queries - must be called before any early returns to maintain hook order
   const { data: paymentsData, isLoading, isError } = usePayments(filters);
   const { data: stats } = usePaymentStats();
   const { data: customersData } = useCustomers({ limit: 100 });
@@ -186,6 +210,11 @@ export default function PaymentsPage() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);
   };
+
+  // Check permissions after all hooks
+  if (!canViewPayments) {
+    return <AccessDenied />;
+  }
 
   // Handle delete
   const handleDelete = async () => {

@@ -16,7 +16,10 @@ import {
   Package,
   CheckCircle,
   XCircle,
+  ShieldX,
 } from "lucide-react";
+import { usePermissions } from "~/hooks/usePermissions";
+import { Permission } from "~/types/permissions";
 import type { Route } from "./+types/_app.warehouses";
 import { cn, debounce } from "~/lib/utils";
 import {
@@ -74,7 +77,25 @@ const warehouseFiltersParser = {
   }),
 };
 
+// Access Denied component
+function AccessDenied() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="p-4 rounded-full bg-error-100 dark:bg-error-900/30 mb-6">
+        <ShieldX className="h-12 w-12 text-error-500 dark:text-error-400" />
+      </div>
+      <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white mb-2">
+        Acceso Denegado
+      </h1>
+      <p className="text-neutral-500 dark:text-neutral-400 max-w-md">
+        No tienes permisos para ver las bodegas. Contacta a tu administrador si necesitas acceso.
+      </p>
+    </div>
+  );
+}
+
 export default function WarehousesPage() {
+  const { hasPermission } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingWarehouse, setDeletingWarehouse] =
     useState<WarehouseType | null>(null);
@@ -89,7 +110,10 @@ export default function WarehousesPage() {
     setIsMounted(true);
   }, []);
 
-  // Queries
+  // Store permission check result - must be before any early returns
+  const canViewWarehouses = hasPermission(Permission.WAREHOUSES_VIEW);
+
+  // Queries - must be called before any early returns to maintain hook order
   const {
     data: warehousesData,
     isLoading,
@@ -98,7 +122,7 @@ export default function WarehousesPage() {
   const { data: cities = [] } = useWarehouseCities();
   const deleteWarehouse = useDeleteWarehouse();
 
-  // City options
+  // City options - useMemo must be called before early returns
   const cityOptions = useMemo(
     () => [
       { value: "", label: "Todas las ciudades" },
@@ -107,7 +131,7 @@ export default function WarehousesPage() {
     [cities],
   );
 
-  // Debounced search
+  // Debounced search - useMemo must be called before early returns
   const debouncedSearch = useMemo(
     () =>
       debounce(
@@ -116,6 +140,11 @@ export default function WarehousesPage() {
       ),
     [updateFilters],
   );
+
+  // Check permissions after all hooks
+  if (!canViewWarehouses) {
+    return <AccessDenied />;
+  }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);

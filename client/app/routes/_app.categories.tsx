@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, Tags, Pencil, Trash2, X, Package } from "lucide-react";
+import { Search, Plus, Tags, Pencil, Trash2, X, Package, ShieldX } from "lucide-react";
+import { usePermissions } from "~/hooks/usePermissions";
+import { Permission } from "~/types/permissions";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -82,7 +84,25 @@ const categoryFiltersParser = {
   }),
 };
 
+// Access Denied component
+function AccessDenied() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="p-4 rounded-full bg-error-100 dark:bg-error-900/30 mb-6">
+        <ShieldX className="h-12 w-12 text-error-500 dark:text-error-400" />
+      </div>
+      <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white mb-2">
+        Acceso Denegado
+      </h1>
+      <p className="text-neutral-500 dark:text-neutral-400 max-w-md">
+        No tienes permisos para ver las categorías. Contacta a tu administrador si necesitas acceso.
+      </p>
+    </div>
+  );
+}
+
 export default function CategoriesPage() {
+  const { hasPermission } = usePermissions();
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(
@@ -99,7 +119,10 @@ export default function CategoriesPage() {
     setIsMounted(true);
   }, []);
 
-  // Queries
+  // Store permission check result - must be before any early returns
+  const canViewCategories = hasPermission(Permission.CATEGORIES_VIEW);
+
+  // Queries - must be called before any early returns to maintain hook order
   const {
     data: categoriesData,
     isLoading,
@@ -137,7 +160,7 @@ export default function CategoriesPage() {
     }
   }, [editingCategory, reset]);
 
-  // Debounced search
+  // Debounced search - useMemo must be called before early returns
   const debouncedSearch = useMemo(
     () =>
       debounce(
@@ -146,6 +169,11 @@ export default function CategoriesPage() {
       ),
     [updateFilters],
   );
+
+  // Check permissions after all hooks
+  if (!canViewCategories) {
+    return <AccessDenied />;
+  }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);

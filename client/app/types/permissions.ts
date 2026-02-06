@@ -209,32 +209,19 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 
   EMPLOYEE: [
-    // Dashboard
+    // Dashboard - basic overview
     Permission.DASHBOARD_VIEW,
-    // POS - Basic sales only
+    // POS - primary function for sales staff
     Permission.POS_SELL,
-    // Inventory - View only
-    Permission.INVENTORY_VIEW,
-    // Products - View only
+    // Products - view only (to check prices when selling)
     Permission.PRODUCTS_VIEW,
-    // Categories - View only
-    Permission.CATEGORIES_VIEW,
-    // Warehouses - View only
-    Permission.WAREHOUSES_VIEW,
-    // Invoices - Create only
+    // Invoices - view and create (for processing sales)
     Permission.INVOICES_VIEW,
     Permission.INVOICES_CREATE,
-    // Payments - View only
-    Permission.PAYMENTS_VIEW,
-    // Customers - View and create
+    // Customers - view and create (to register new customers during sales)
     Permission.CUSTOMERS_VIEW,
     Permission.CUSTOMERS_CREATE,
-    // DIAN - View only
-    Permission.DIAN_VIEW,
-    // Settings - View only
-    Permission.SETTINGS_VIEW,
-    // Cash Registers - View only
-    Permission.CASH_REGISTERS_VIEW,
+    // --- RESTRICTED: No access to inventory, categories, warehouses, payments, DIAN, settings, cash registers ---
   ],
 };
 

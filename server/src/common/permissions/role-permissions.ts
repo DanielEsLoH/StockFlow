@@ -176,68 +176,43 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 
   /**
-   * EMPLOYEE: Basic operational access
-   * Can perform sales, view products, create invoices
-   * Limited to day-to-day tasks without management capabilities
+   * EMPLOYEE: Minimal operational access for sales staff
+   * Can perform sales in POS, view products (for pricing), and create invoices/customers
+   * Restricted from inventory management, warehouses, categories, and admin features
    */
   [UserRole.EMPLOYEE]: [
-    // Dashboard
+    // Dashboard - basic overview
     Permission.DASHBOARD_VIEW,
 
-    // POS - Basic sales only
+    // POS - primary function for sales staff
     Permission.POS_SELL,
     // Note: Cannot refund, discount, open drawer, view/close sessions
 
-    // Inventory - View only
-    Permission.INVENTORY_VIEW,
-    // Note: Cannot adjust or transfer stock
-
-    // Products - View only
+    // Products - view only (to check prices when selling)
     Permission.PRODUCTS_VIEW,
     // Note: Cannot create, edit, or delete products
 
-    // Categories - View only
-    Permission.CATEGORIES_VIEW,
-    // Note: Cannot manage categories
-
-    // Warehouses - View only
-    Permission.WAREHOUSES_VIEW,
-    // Note: Cannot manage warehouses
-
-    // Invoices - Create only
+    // Invoices - view and create (for processing sales)
     Permission.INVOICES_VIEW,
     Permission.INVOICES_CREATE,
     // Note: Cannot edit, send, or cancel invoices
 
-    // Payments - View only
-    Permission.PAYMENTS_VIEW,
-    // Note: Cannot create or delete payments
-
-    // Customers - View and create
+    // Customers - view and create (to register new customers during sales)
     Permission.CUSTOMERS_VIEW,
     Permission.CUSTOMERS_CREATE,
     // Note: Cannot edit or delete customers
 
-    // Reports - No access
-    // Note: Cannot view or export reports
-
-    // DIAN - View only
-    Permission.DIAN_VIEW,
-    // Note: Cannot configure or send to DIAN
-
-    // Users - No access
-    // Note: Cannot view, manage, or invite users
-
-    // Settings - View only
-    Permission.SETTINGS_VIEW,
-    // Note: Cannot manage settings
-
-    // Audit - No access
-    // Note: Cannot view or export audit logs
-
-    // Cash Registers - View only
-    Permission.CASH_REGISTERS_VIEW,
-    // Note: Cannot manage cash registers
+    // --- RESTRICTED AREAS ---
+    // Inventory: No access (cannot view stock movements)
+    // Categories: No access (not needed for sales)
+    // Warehouses: No access (not needed for sales)
+    // Payments: No access (handled by admin/manager)
+    // Reports: No access
+    // DIAN: No access (electronic invoicing is admin responsibility)
+    // Users: No access
+    // Settings: No access
+    // Audit: No access
+    // Cash Registers: No access (uses POS directly)
   ],
 };
 

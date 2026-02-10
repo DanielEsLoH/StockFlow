@@ -134,6 +134,9 @@ export class ProductsService {
       const allProducts = await this.prisma.product.findMany({
         where,
         orderBy: { name: 'asc' },
+        include: {
+          category: { select: { id: true, name: true, color: true } },
+        },
       });
 
       return this.filterAndPaginateLowStock(allProducts, page, limit);
@@ -155,7 +158,10 @@ export class ProductsService {
         skip,
         take: limit,
         orderBy: { name: 'asc' },
-        include: includeWarehouseStock,
+        include: {
+          category: { select: { id: true, name: true, color: true } },
+          ...includeWarehouseStock,
+        },
       }),
       this.prisma.product.count({ where }),
     ]);

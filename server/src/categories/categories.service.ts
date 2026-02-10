@@ -21,6 +21,7 @@ export interface CategoryResponse {
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;
+  productCount?: number;
 }
 
 /**
@@ -73,6 +74,9 @@ export class CategoriesService {
         skip,
         take: limit,
         orderBy: { name: 'asc' },
+        include: {
+          _count: { select: { products: true } },
+        },
       }),
       this.prisma.category.count({ where: { tenantId } }),
     ]);
@@ -278,7 +282,9 @@ export class CategoriesService {
    * @param category - The category entity to map
    * @returns CategoryResponse object
    */
-  private mapToCategoryResponse(category: Category): CategoryResponse {
+  private mapToCategoryResponse(
+    category: Category & { _count?: { products: number } },
+  ): CategoryResponse {
     return {
       id: category.id,
       name: category.name,
@@ -287,6 +293,7 @@ export class CategoriesService {
       tenantId: category.tenantId,
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
+      productCount: category._count?.products,
     };
   }
 }

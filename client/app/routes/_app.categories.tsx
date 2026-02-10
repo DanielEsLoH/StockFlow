@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Plus, Tags, Pencil, Trash2, X, Package, ShieldX } from "lucide-react";
 import { usePermissions } from "~/hooks/usePermissions";

@@ -2,7 +2,7 @@ import { useAuthStore } from '~/stores/auth.store';
 
 /**
  * Custom hook to check if queries should be enabled.
- * Waits for AuthInitializer to complete before enabling queries.
+ * Waits for Zustand to rehydrate from localStorage and AuthInitializer to complete.
  * This prevents race conditions where queries fire before the token is refreshed.
  *
  * Use this in any hook that makes authenticated API calls to ensure
@@ -23,13 +23,11 @@ import { useAuthStore } from '~/stores/auth.store';
 export function useIsQueryEnabled(): boolean {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isInitialized = useAuthStore((state) => state.isInitialized);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
 
-  // On SSR, we can't check tokens - enable if authenticated in store
-  if (typeof window === 'undefined') {
-    return isAuthenticated;
-  }
-
-  // Only enable queries after auth initialization is complete AND user is authenticated
-  // isInitialized is set to true by AuthInitializer after it finishes (success or failure)
-  return isInitialized && isAuthenticated;
+  // Only enable queries after:
+  // 1. Zustand has rehydrated from localStorage (hasHydrated)
+  // 2. Auth initialization is complete (isInitialized) - persisted in localStorage
+  // 3. User is authenticated (isAuthenticated) - persisted in localStorage
+  return hasHydrated && isInitialized && isAuthenticated;
 }

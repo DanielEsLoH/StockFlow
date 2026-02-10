@@ -16,7 +16,7 @@ import type {
 export function useAuth() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { setUser, setTenant, setUserPermissions, logout: clearAuth } = useAuthStore();
+  const { setUser, setTenant, setUserPermissions, setInitialized, logout: clearAuth } = useAuthStore();
 
   // Helper to load user permissions after auth
   const loadPermissions = async () => {
@@ -49,6 +49,7 @@ export function useAuth() {
     onSuccess: async (data) => {
       setUser(data.user);
       setTenant(data.tenant);
+      setInitialized(true); // Enable queries after successful login
       queryClient.setQueryData(queryKeys.auth.me(), data);
       // Load permissions after successful login
       await loadPermissions();
@@ -172,6 +173,7 @@ export function useAuth() {
     onSuccess: async (data) => {
       setUser(data.user);
       setTenant(data.tenant);
+      setInitialized(true); // Enable queries after accepting invitation
       queryClient.setQueryData(queryKeys.auth.me(), data);
       // Load permissions after accepting invitation
       await loadPermissions();

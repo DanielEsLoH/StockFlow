@@ -60,6 +60,7 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
         // localStorage might not be available in some edge cases
         completeAuthInit();
         setLoading(false);
+        setInitialized(true);
         return;
       }
 
@@ -84,6 +85,7 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
           completeAuthInit();
         }
         setLoading(false);
+        setInitialized(true);
         return;
       }
 
@@ -93,6 +95,7 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
           completeAuthInit();
         }
         setLoading(false);
+        setInitialized(true);
         return;
       }
 

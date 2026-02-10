@@ -40,6 +40,12 @@ yarn-error.log*
 /.claude
 /client/.claude
 
+# Agents
+.agents/
+
+# GitHub Actions (deploy via Railway, not needed)
+.github/
+
 # Documentation (optional - uncomment to ignore)
 ROADMAP_BACKEND_STOCKFLOW_ENGLISH.md
 ROADMAP_FRONTEND_STOCKFLOW_ENGLISH.md

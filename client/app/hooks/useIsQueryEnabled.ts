@@ -23,11 +23,9 @@ import { useAuthStore } from '~/stores/auth.store';
 export function useIsQueryEnabled(): boolean {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isInitialized = useAuthStore((state) => state.isInitialized);
-  const hasHydrated = useAuthStore((state) => state._hasHydrated);
 
   // Only enable queries after:
-  // 1. Zustand has rehydrated from localStorage (hasHydrated)
-  // 2. Auth initialization is complete (isInitialized) - persisted in localStorage
-  // 3. User is authenticated (isAuthenticated) - persisted in localStorage
-  return hasHydrated && isInitialized && isAuthenticated;
+  // 1. Auth initialization is complete (isInitialized) - persisted in localStorage
+  // 2. User is authenticated (isAuthenticated) - persisted in localStorage
+  return isInitialized && isAuthenticated;
 }

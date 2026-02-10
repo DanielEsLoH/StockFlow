@@ -130,7 +130,13 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
           setTenant(tenant);
         }
 
-        // Load user permissions after token refresh
+        // Unblock the api request interceptor BEFORE loading permissions,
+        // since permissionsService uses the api instance which awaits authInitPromise.
+        completeAuthInit();
+        setLoading(false);
+        setInitialized(true);
+
+        // Load user permissions after unblocking requests
         try {
           const { permissions } = await permissionsService.getMyPermissions();
           setUserPermissions(permissions);
@@ -145,8 +151,6 @@ export function AuthInitializer({ children }: AuthInitializerProps) {
           "[AuthInitializer] Token refresh failed, clearing auth data",
         );
         clearAllAuthData();
-      } finally {
-        // Always complete auth init to unblock requests
         completeAuthInit();
         setLoading(false);
         setInitialized(true);

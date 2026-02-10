@@ -31,16 +31,12 @@ interface AuthState {
   isLoading: boolean;
   /** True after AuthInitializer has completed (success or failure) */
   isInitialized: boolean;
-  /** True after Zustand has rehydrated from localStorage */
-  _hasHydrated: boolean;
-
   // Actions
   setUser: (user: User | null) => void;
   setTenant: (tenant: Tenant | null) => void;
   setUserPermissions: (permissions: string[]) => void;
   setLoading: (loading: boolean) => void;
   setInitialized: (initialized: boolean) => void;
-  setHasHydrated: (hydrated: boolean) => void;
   logout: () => void;
 }
 
@@ -52,7 +48,6 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false, // Start as false - AuthInitializer will set loading state if needed
       isInitialized: false, // Start as false - set to true after AuthInitializer completes
-      _hasHydrated: false, // Track Zustand rehydration from localStorage
 
       setUser: (user) =>
         set({
@@ -71,8 +66,6 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (isLoading) => set({ isLoading }),
 
       setInitialized: (isInitialized) => set({ isInitialized }),
-
-      setHasHydrated: (_hasHydrated) => set({ _hasHydrated }),
 
       logout: () => {
         // Clear ALL auth data (tokens, localStorage, sessionStorage, cookies)
@@ -98,10 +91,6 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         isInitialized: state.isInitialized,
       }),
-      onRehydrateStorage: () => (state) => {
-        // Called when Zustand finishes rehydrating from localStorage
-        state?.setHasHydrated(true);
-      },
     },
   ),
 );

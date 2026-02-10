@@ -65,12 +65,38 @@ export const invoicesService = {
     return data;
   },
 
-  // Update invoice status only
+  // Update invoice status using the appropriate endpoint
   async updateInvoiceStatus(
     id: string,
     status: InvoiceStatus,
   ): Promise<Invoice> {
-    const { data } = await api.patch<Invoice>(`/invoices/${id}`, { status });
+    if (status === "PAID") {
+      // Use mark-paid endpoint which records a payment
+      const { data } = await api.patch<Invoice>(`/invoices/${id}/mark-paid`, {
+        paymentMethod: "CASH",
+      });
+      return data;
+    }
+    if (status === "CANCELLED") {
+      const { data } = await api.patch<Invoice>(`/invoices/${id}/cancel`);
+      return data;
+    }
+    // PENDING/SENT — send the invoice
+    const { data } = await api.patch<Invoice>(`/invoices/${id}/send`);
+    return data;
+  },
+
+  // POS Checkout: create + mark SENT + optional payment
+  async checkoutInvoice(
+    invoiceData: CreateInvoiceData & {
+      immediatePayment?: boolean;
+      paymentMethod?: string;
+    },
+  ): Promise<Invoice> {
+    const { data } = await api.post<Invoice>(
+      "/invoices/checkout",
+      invoiceData,
+    );
     return data;
   },
 
@@ -83,6 +109,17 @@ export const invoicesService = {
   // Cancel invoice
   async cancelInvoice(id: string): Promise<Invoice> {
     const { data } = await api.patch<Invoice>(`/invoices/${id}/cancel`);
+    return data;
+  },
+
+  // Mark invoice as paid
+  async markInvoiceAsPaid(
+    id: string,
+    paymentMethod: string = "CASH",
+  ): Promise<Invoice> {
+    const { data } = await api.patch<Invoice>(`/invoices/${id}/mark-paid`, {
+      paymentMethod,
+    });
     return data;
   },
 

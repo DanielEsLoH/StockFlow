@@ -183,9 +183,11 @@ function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
   > = {
     DRAFT: { label: "Borrador", variant: "secondary" },
     PENDING: { label: "Pendiente", variant: "warning" },
+    SENT: { label: "Enviada", variant: "primary" },
     PAID: { label: "Pagada", variant: "success" },
     OVERDUE: { label: "Vencida", variant: "error" },
     CANCELLED: { label: "Cancelada", variant: "secondary" },
+    VOID: { label: "Anulada", variant: "secondary" },
   };
 
   const { label, variant } = config[status];

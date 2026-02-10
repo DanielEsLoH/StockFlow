@@ -67,9 +67,11 @@ const statusOptions = [
   { value: "", label: "Todos los estados" },
   { value: "DRAFT", label: "Borrador" },
   { value: "PENDING", label: "Pendiente" },
+  { value: "SENT", label: "Enviada" },
   { value: "PAID", label: "Pagada" },
   { value: "OVERDUE", label: "Vencida" },
   { value: "CANCELLED", label: "Cancelada" },
+  { value: "VOID", label: "Anulada" },
 ];
 
 // Source options for filter

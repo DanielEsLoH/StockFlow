@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsDate,
   IsEnum,
   IsNumber,
@@ -13,7 +14,7 @@ import {
   ArrayMinSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { InvoiceSource } from '@prisma/client';
+import { InvoiceSource, PaymentMethod } from '@prisma/client';
 
 // CUID pattern: starts with 'c' followed by lowercase letters and numbers, typically 25 chars
 // Example: clh1234567890abcdefghijkl or cmkcykam80004reya0hsdx337
@@ -174,4 +175,36 @@ export class CreateInvoiceDto {
   })
   @IsOptional()
   source?: InvoiceSource = InvoiceSource.MANUAL;
+}
+
+/**
+ * DTO for POS checkout — creates invoice, marks as SENT, and optionally records payment.
+ */
+export class CheckoutInvoiceDto extends CreateInvoiceDto {
+  /**
+   * Whether to record an immediate payment for the full amount
+   */
+  @ApiPropertyOptional({
+    description: 'Record immediate full payment (POS cash sale)',
+    example: true,
+    default: false,
+  })
+  @IsBoolean({ message: 'immediatePayment debe ser un booleano' })
+  @IsOptional()
+  immediatePayment?: boolean = false;
+
+  /**
+   * Payment method when immediatePayment is true
+   */
+  @ApiPropertyOptional({
+    description: 'Payment method for immediate payment',
+    enum: PaymentMethod,
+    example: 'CASH',
+    default: 'CASH',
+  })
+  @IsEnum(PaymentMethod, {
+    message: 'El metodo de pago no es valido',
+  })
+  @IsOptional()
+  paymentMethod?: PaymentMethod = PaymentMethod.CASH;
 }

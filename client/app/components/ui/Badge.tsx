@@ -200,9 +200,11 @@ type StatusType =
   | "LOW_STOCK"
   | "PAID"
   | "PENDING"
+  | "SENT"
   | "OVERDUE"
   | "CANCELLED"
   | "DRAFT"
+  | "VOID"
   | "PROCESSING"
   | "SHIPPED"
   | "DELIVERED"
@@ -226,6 +228,8 @@ const statusConfig: Record<
   OVERDUE: { label: "Vencida", variant: "error", dot: true },
   CANCELLED: { label: "Cancelada", variant: "secondary", dot: true },
   DRAFT: { label: "Borrador", variant: "secondary", dot: true },
+  SENT: { label: "Enviada", variant: "primary", dot: true },
+  VOID: { label: "Anulada", variant: "secondary", dot: true },
   PROCESSING: { label: "Procesando", variant: "primary", dot: true },
   SHIPPED: { label: "Enviado", variant: "primary", dot: true },
   DELIVERED: { label: "Entregado", variant: "success", dot: true },

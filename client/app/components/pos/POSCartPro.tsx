@@ -49,6 +49,7 @@ interface POSCartProProps {
   onSetIvaEnabled: (enabled: boolean) => void;
   onSelectCustomer: () => void;
   onCheckout: (status: "PENDING" | "PAID") => void;
+  invoiceMode?: "POS" | "MANUAL";
   className?: string;
 }
 
@@ -281,6 +282,7 @@ export function POSCartPro({
   onSetIvaEnabled,
   onSelectCustomer,
   onCheckout,
+  invoiceMode = "POS",
   className,
 }: POSCartProProps) {
   const [showNotes, setShowNotes] = useState(false);
@@ -639,28 +641,31 @@ export function POSCartPro({
           {/* ACTION BUTTONS */}
           {/* ================================================================== */}
           <div className="space-y-2">
-            <Button
-              type="button"
-              onClick={() => onCheckout("PAID")}
-              disabled={!canCheckout || isProcessing}
-              isLoading={isProcessing}
-              className="w-full"
-              size="lg"
-            >
-              <CreditCard className="mr-2 h-5 w-5" />
-              Cobrar (F4)
-            </Button>
+            {invoiceMode === "POS" && (
+              <Button
+                type="button"
+                onClick={() => onCheckout("PAID")}
+                disabled={!canCheckout || isProcessing}
+                isLoading={isProcessing}
+                className="w-full"
+                size="lg"
+              >
+                <CreditCard className="mr-2 h-5 w-5" />
+                Cobrar (F4)
+              </Button>
+            )}
 
             <Button
               type="button"
-              variant="outline"
+              variant={invoiceMode === "MANUAL" ? "primary" : "outline"}
               onClick={() => onCheckout("PENDING")}
               disabled={!canCheckout || isProcessing}
+              isLoading={invoiceMode === "MANUAL" && isProcessing}
               className="w-full"
-              size="sm"
+              size={invoiceMode === "MANUAL" ? "lg" : "sm"}
             >
-              <FileText className="mr-2 h-4 w-4" />
-              Guardar Pendiente (F8)
+              <FileText className={cn("mr-2", invoiceMode === "MANUAL" ? "h-5 w-5" : "h-4 w-4")} />
+              {invoiceMode === "MANUAL" ? "Guardar Factura (F8)" : "Guardar Pendiente (F8)"}
             </Button>
 
             {/* Warning message when checkout is disabled */}

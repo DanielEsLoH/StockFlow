@@ -15,7 +15,7 @@ import { Link } from "react-router";
 import type { Route } from "./+types/_app.invoices.new";
 import { cn, formatCurrency } from "~/lib/utils";
 import { getDateFromNow } from "~/lib/pos-utils";
-import { useCreateInvoice } from "~/hooks/useInvoices";
+import { useCheckoutInvoice } from "~/hooks/useInvoices";
 import { useCustomers } from "~/hooks/useCustomers";
 import { useProducts } from "~/hooks/useProducts";
 import { useCategories } from "~/hooks/useCategories";
@@ -50,6 +50,9 @@ export const meta: Route.MetaFunction = () => {
 // Mobile tab type
 type MobileTab = "products" | "cart";
 
+// Invoice mode type
+type InvoiceMode = "POS" | "MANUAL";
+
 export default function POSPage() {
   // SSR-safe state for client-only features
   const [isMounted, setIsMounted] = useState(false);
@@ -57,6 +60,7 @@ export default function POSPage() {
   const [mobileTab, setMobileTab] = useState<MobileTab>("products");
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [invoiceMode, setInvoiceMode] = useState<InvoiceMode>("POS");
   const [lastInvoice, setLastInvoice] = useState<{
     invoiceNumber: string;
     items: typeof cart;
@@ -111,7 +115,7 @@ export default function POSPage() {
     useCategories();
   const { data: warehousesData, isLoading: isLoadingWarehouses } =
     useWarehouses();
-  const createInvoice = useCreateInvoice();
+  const checkoutInvoice = useCheckoutInvoice();
 
   // Set mounted state for SSR safety
   useEffect(() => {
@@ -168,12 +172,14 @@ export default function POSPage() {
       const totalsSnapshot = { ...totals };
       const customerSnapshot = selectedCustomer;
 
-      createInvoice.mutate(
+      checkoutInvoice.mutate(
         {
           customerId: selectedCustomerId!,
           dueDate: getDateFromNow(30),
           notes: notes || undefined,
-          source: "POS",
+          source: invoiceMode,
+          immediatePayment: status === "PAID",
+          paymentMethod: "CASH",
           items: cart.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
@@ -215,7 +221,8 @@ export default function POSPage() {
       cart,
       totals,
       notes,
-      createInvoice,
+      invoiceMode,
+      checkoutInvoice,
       setProcessing,
       resetState,
     ],
@@ -242,7 +249,9 @@ export default function POSPage() {
       switch (e.key) {
         case "F4":
           e.preventDefault();
-          handleCheckout("PAID");
+          if (invoiceMode === "POS") {
+            handleCheckout("PAID");
+          }
           break;
         case "F8":
           e.preventDefault();
@@ -275,6 +284,7 @@ export default function POSPage() {
     cart.length,
     searchQuery,
     setSearchQuery,
+    invoiceMode,
   ]);
 
   // Get data arrays
@@ -378,8 +388,35 @@ export default function POSPage() {
           </div>
         </div>
 
-        {/* Row 2: Warehouse + Customer selects */}
+        {/* Row 2: Mode toggle + Warehouse + Customer selects */}
         <div className="flex items-center gap-3 px-3 pb-3 sm:px-4">
+          {/* Invoice Mode Toggle */}
+          <div className="flex items-center rounded-lg border border-neutral-200 dark:border-neutral-700 overflow-hidden shrink-0">
+            <button
+              type="button"
+              onClick={() => setInvoiceMode("POS")}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium transition-colors",
+                invoiceMode === "POS"
+                  ? "bg-primary-500 text-white"
+                  : "bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700",
+              )}
+            >
+              POS
+            </button>
+            <button
+              type="button"
+              onClick={() => setInvoiceMode("MANUAL")}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium transition-colors",
+                invoiceMode === "MANUAL"
+                  ? "bg-primary-500 text-white"
+                  : "bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700",
+              )}
+            >
+              Manual
+            </button>
+          </div>
           <WarehouseSelect
             warehouses={warehouses}
             selectedWarehouseId={selectedWarehouseId}
@@ -398,18 +435,20 @@ export default function POSPage() {
 
           {/* Quick Action Buttons - Desktop only */}
           <div className="hidden lg:flex items-center gap-2 ml-auto">
-            <Button
-              variant="soft-success"
-              size="sm"
-              onClick={() => handleCheckout("PAID")}
-              disabled={!canCheckout || isProcessing}
-              className="gap-2"
-            >
-              <kbd className="px-1.5 py-0.5 rounded bg-success-600/20 text-[10px] font-mono">
-                F4
-              </kbd>
-              Cobrar
-            </Button>
+            {invoiceMode === "POS" && (
+              <Button
+                variant="soft-success"
+                size="sm"
+                onClick={() => handleCheckout("PAID")}
+                disabled={!canCheckout || isProcessing}
+                className="gap-2"
+              >
+                <kbd className="px-1.5 py-0.5 rounded bg-success-600/20 text-[10px] font-mono">
+                  F4
+                </kbd>
+                Cobrar
+              </Button>
+            )}
             <Button
               variant="soft-warning"
               size="sm"
@@ -455,14 +494,16 @@ export default function POSPage() {
                     Buscar
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <kbd className="px-2 py-1 rounded bg-success-100 dark:bg-success-900/30 border border-success-200 dark:border-success-700 font-mono text-success-700 dark:text-success-300">
-                    F4
-                  </kbd>
-                  <span className="text-neutral-600 dark:text-neutral-300">
-                    Cobrar
-                  </span>
-                </div>
+                {invoiceMode === "POS" && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <kbd className="px-2 py-1 rounded bg-success-100 dark:bg-success-900/30 border border-success-200 dark:border-success-700 font-mono text-success-700 dark:text-success-300">
+                      F4
+                    </kbd>
+                    <span className="text-neutral-600 dark:text-neutral-300">
+                      Cobrar
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-xs">
                   <kbd className="px-2 py-1 rounded bg-warning-100 dark:bg-warning-900/30 border border-warning-200 dark:border-warning-700 font-mono text-warning-700 dark:text-warning-300">
                     F8
@@ -544,6 +585,7 @@ export default function POSPage() {
                 }
               }}
               onCheckout={handleCheckout}
+              invoiceMode={invoiceMode}
               className="flex-1"
             />
           </div>
@@ -651,6 +693,7 @@ export default function POSPage() {
                     onSetIvaEnabled={setIvaEnabled}
                     onSelectCustomer={() => setMobileTab("products")}
                     onCheckout={handleCheckout}
+                    invoiceMode={invoiceMode}
                     className="flex h-full flex-col"
                   />
                 </motion.div>

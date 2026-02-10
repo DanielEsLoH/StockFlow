@@ -28,6 +28,7 @@ import type {
 } from './invoices.service';
 import {
   CreateInvoiceDto,
+  CheckoutInvoiceDto,
   UpdateInvoiceDto,
   FilterInvoicesDto,
   AddInvoiceItemDto,
@@ -229,6 +230,62 @@ export class InvoicesController {
     this.logger.log(`Creating invoice by user ${user.userId}`);
 
     return this.invoicesService.create(dto, user.userId);
+  }
+
+  /**
+   * POS Checkout: creates invoice, marks as SENT, and optionally records payment.
+   *
+   * @param dto - Checkout data with optional immediate payment
+   * @param user - Current authenticated user
+   * @returns Created invoice data
+   */
+  @Post('checkout')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.EMPLOYEE)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'POS Checkout',
+    description:
+      'Creates invoice, marks as SENT, and optionally records immediate payment. Used by the POS system for quick sales.',
+  })
+  @ApiResponse({ status: 201, description: 'Checkout completed successfully', type: InvoiceEntity })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async checkout(
+    @Body() dto: CheckoutInvoiceDto,
+    @CurrentUser() user: RequestUser,
+  ): Promise<InvoiceResponse> {
+    this.logger.log(
+      `Checkout by user ${user.userId}, immediatePayment: ${dto.immediatePayment ?? false}`,
+    );
+
+    return this.invoicesService.checkout(dto, user.userId);
+  }
+
+  /**
+   * Marks an invoice as fully paid by recording a payment for the remaining balance.
+   *
+   * @param id - Invoice ID
+   * @returns Updated invoice data
+   */
+  @Patch(':id/mark-paid')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Mark invoice as paid',
+    description:
+      'Records a payment for the remaining balance and updates payment status to PAID. If the invoice is DRAFT, it is first moved to SENT.',
+  })
+  @ApiParam({ name: 'id', description: 'Invoice ID' })
+  @ApiResponse({ status: 200, description: 'Invoice marked as paid', type: InvoiceEntity })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 404, description: 'Invoice not found' })
+  async markAsPaid(
+    @Param('id') id: string,
+    @Body() body: { paymentMethod?: string },
+  ): Promise<InvoiceResponse> {
+    this.logger.log(`Marking invoice ${id} as paid`);
+
+    return this.invoicesService.markAsPaid(id, body?.paymentMethod);
   }
 
   /**

@@ -120,6 +120,36 @@ export function useCreateInvoice() {
 }
 
 /**
+ * POS Checkout: create invoice + mark as SENT + optional immediate payment.
+ * Does NOT navigate (POS handles its own flow with ticket modal).
+ */
+export function useCheckoutInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (
+      data: CreateInvoiceData & {
+        immediatePayment?: boolean;
+        paymentMethod?: string;
+      },
+    ) => invoicesService.checkoutInvoice(data),
+    onSuccess: (invoice) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.invoices.byCustomer(invoice.customerId),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payments.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+
+      toast.success(`Factura "${invoice.invoiceNumber}" procesada`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al procesar la factura");
+    },
+  });
+}
+
+/**
  * Update an existing invoice
  */
 export function useUpdateInvoice() {
@@ -237,9 +267,11 @@ export function useUpdateInvoiceStatus() {
       const statusMessages: Record<InvoiceStatus, string> = {
         DRAFT: "marcada como borrador",
         PENDING: "marcada como pendiente",
+        SENT: "enviada",
         PAID: "marcada como pagada",
         OVERDUE: "marcada como vencida",
         CANCELLED: "cancelada",
+        VOID: "anulada",
       };
 
       toast.success(

@@ -20,6 +20,7 @@ import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import {
   CreateInvoiceDto,
+  CheckoutInvoiceDto,
   UpdateInvoiceDto,
   FilterInvoicesDto,
   AddInvoiceItemDto,
@@ -509,6 +510,164 @@ export class InvoicesService {
     );
 
     return this.mapToInvoiceResponse(invoice);
+  }
+
+  /**
+   * Creates an invoice and immediately marks it as SENT.
+   * Optionally records an immediate full payment (for POS cash sales).
+   *
+   * @param dto - Checkout data (extends CreateInvoiceDto with payment options)
+   * @param userId - ID of the user creating the invoice
+   * @returns Created invoice data
+   */
+  async checkout(
+    dto: CheckoutInvoiceDto,
+    userId: string,
+  ): Promise<InvoiceResponse> {
+    // First, create the invoice using the existing create method
+    const createdInvoice = await this.create(dto, userId);
+
+    const tenantId = this.tenantContext.requireTenantId();
+
+    // Now update status to SENT and optionally record payment in a transaction
+    const updatedInvoice = await this.prisma.$transaction(async (tx) => {
+      // Mark as SENT
+      await tx.invoice.update({
+        where: { id: createdInvoice.id },
+        data: { status: InvoiceStatus.SENT },
+      });
+
+      // Record immediate payment if requested
+      if (dto.immediatePayment) {
+        await tx.payment.create({
+          data: {
+            tenantId,
+            invoiceId: createdInvoice.id,
+            amount: createdInvoice.total,
+            method: dto.paymentMethod ?? 'CASH',
+            paymentDate: new Date(),
+            notes: 'Pago inmediato - POS',
+          },
+        });
+
+        // Update payment status to PAID
+        await tx.invoice.update({
+          where: { id: createdInvoice.id },
+          data: { paymentStatus: PaymentStatus.PAID },
+        });
+      }
+
+      // Fetch the complete updated invoice
+      return tx.invoice.findUnique({
+        where: { id: createdInvoice.id },
+        include: {
+          items: { include: { product: true } },
+          customer: true,
+          user: true,
+        },
+      });
+    });
+
+    if (!updatedInvoice) {
+      throw new BadRequestException('Error al procesar el checkout');
+    }
+
+    this.logger.log(
+      `Checkout completed: ${updatedInvoice.invoiceNumber} (${updatedInvoice.id}), paid: ${dto.immediatePayment ?? false}`,
+    );
+
+    return this.mapToInvoiceResponse(updatedInvoice);
+  }
+
+  /**
+   * Marks an invoice as paid by recording a payment for the remaining balance.
+   * If the invoice is in DRAFT status, it is first moved to SENT.
+   *
+   * @param id - Invoice ID
+   * @param paymentMethod - Payment method (default: CASH)
+   * @returns Updated invoice data
+   */
+  async markAsPaid(
+    id: string,
+    paymentMethod: string = 'CASH',
+  ): Promise<InvoiceResponse> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(`Marking invoice ${id} as paid in tenant ${tenantId}`);
+
+    // Find the invoice with existing payments
+    const invoice = await this.prisma.invoice.findFirst({
+      where: { id, tenantId },
+      include: { payments: true },
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Factura no encontrada');
+    }
+
+    if (
+      invoice.status === InvoiceStatus.CANCELLED ||
+      invoice.status === InvoiceStatus.VOID
+    ) {
+      throw new BadRequestException(
+        'No se puede marcar como pagada una factura cancelada o anulada',
+      );
+    }
+
+    if (invoice.paymentStatus === PaymentStatus.PAID) {
+      throw new BadRequestException('La factura ya esta pagada');
+    }
+
+    // Calculate remaining balance
+    const totalPaid = invoice.payments.reduce(
+      (sum, p) => sum + Number(p.amount),
+      0,
+    );
+    const remaining = Number(invoice.total) - totalPaid;
+
+    if (remaining <= 0) {
+      throw new BadRequestException('No hay saldo pendiente en esta factura');
+    }
+
+    // Update in a transaction
+    const updatedInvoice = await this.prisma.$transaction(async (tx) => {
+      // If DRAFT, move to SENT first
+      if (invoice.status === InvoiceStatus.DRAFT) {
+        await tx.invoice.update({
+          where: { id },
+          data: { status: InvoiceStatus.SENT },
+        });
+      }
+
+      // Record the payment for the remaining balance
+      await tx.payment.create({
+        data: {
+          tenantId,
+          invoiceId: id,
+          amount: remaining,
+          method: paymentMethod as never,
+          paymentDate: new Date(),
+          notes: 'Pago completo registrado manualmente',
+        },
+      });
+
+      // Update payment status
+      return tx.invoice.update({
+        where: { id },
+        data: { paymentStatus: PaymentStatus.PAID },
+        include: {
+          items: { include: { product: true } },
+          customer: true,
+          user: true,
+        },
+      });
+    });
+
+    this.logger.log(
+      `Invoice marked as paid: ${updatedInvoice.invoiceNumber} (${updatedInvoice.id})`,
+    );
+
+    return this.mapToInvoiceResponse(updatedInvoice);
   }
 
   /**

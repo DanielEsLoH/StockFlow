@@ -7,9 +7,11 @@ import type { Product } from "./product";
 export type InvoiceStatus =
   | "DRAFT"
   | "PENDING"
+  | "SENT"
   | "PAID"
   | "OVERDUE"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "VOID";
 
 // Invoice Source
 export type InvoiceSource = "MANUAL" | "POS";
@@ -18,9 +20,11 @@ export type InvoiceSource = "MANUAL" | "POS";
 export const InvoiceStatusLabels: Record<InvoiceStatus, string> = {
   DRAFT: "Borrador",
   PENDING: "Pendiente",
+  SENT: "Enviada",
   PAID: "Pagada",
   OVERDUE: "Vencida",
   CANCELLED: "Cancelada",
+  VOID: "Anulada",
 };
 
 // Invoice Item (line item)

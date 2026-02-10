@@ -108,6 +108,11 @@ function InvoiceStatusBadge({
       variant: "warning",
       icon: <Clock className="h-3 w-3" />,
     },
+    SENT: {
+      label: "Enviada",
+      variant: "primary",
+      icon: <Send className="h-3 w-3" />,
+    },
     PAID: {
       label: "Pagada",
       variant: "success",
@@ -120,6 +125,11 @@ function InvoiceStatusBadge({
     },
     CANCELLED: {
       label: "Cancelada",
+      variant: "secondary",
+      icon: <XCircle className="h-3 w-3" />,
+    },
+    VOID: {
+      label: "Anulada",
       variant: "secondary",
       icon: <XCircle className="h-3 w-3" />,
     },
@@ -210,6 +220,11 @@ function StatusActions({
           { status: "CANCELLED", label: "Cancelar" },
         ];
       case "PENDING":
+        return [
+          { status: "PAID", label: "Marcar como pagada" },
+          { status: "CANCELLED", label: "Cancelar" },
+        ];
+      case "SENT":
         return [
           { status: "PAID", label: "Marcar como pagada" },
           { status: "CANCELLED", label: "Cancelar" },

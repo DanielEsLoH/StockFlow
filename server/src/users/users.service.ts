@@ -455,12 +455,48 @@ export class UsersService {
     return this.mapToUserResponse(updatedUser);
   }
 
-  /**
-   * Maps a User entity to a UserResponse object (excludes sensitive fields)
-   *
-   * @param user - The user entity to map
-   * @returns UserResponse object
-   */
+  async updateAvatar(userId: string, avatarUrl: string): Promise<UserResponse> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, tenantId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatar: avatarUrl },
+    });
+
+    this.logger.log(`Avatar updated for user: ${updatedUser.email}`);
+    return this.mapToUserResponse(updatedUser);
+  }
+
+  async removeAvatar(userId: string): Promise<{ previousUrl: string | null }> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, tenantId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const previousUrl = user.avatar;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatar: null },
+    });
+
+    this.logger.log(`Avatar removed for user: ${user.email}`);
+    return { previousUrl };
+  }
+
   private mapToUserResponse(user: User): UserResponse {
     return {
       id: user.id,

@@ -10,6 +10,9 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import {
@@ -19,7 +22,11 @@ import {
   ApiParam,
   ApiQuery,
   ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { UserRole } from '@prisma/client';
 import { UsersService } from './users.service';
 import type { UserResponse, PaginatedUsersResponse } from './users.service';
@@ -28,6 +35,7 @@ import { UserEntity, PaginatedUsersEntity } from './entities';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { Roles, CurrentUser } from '../common/decorators';
 import { PermissionsService, Permission } from '../common/permissions';
+import { UploadService } from '../upload/upload.service';
 
 /**
  * Current user context from JWT authentication.
@@ -64,6 +72,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly permissionsService: PermissionsService,
+    private readonly uploadService: UploadService,
   ) {}
 
   /**
@@ -140,6 +149,72 @@ export class UsersController {
   ): Promise<UserResponse> {
     this.logger.log(`Getting profile for user: ${currentUser.userId}`);
     return this.usersService.findOne(currentUser.userId);
+  }
+
+  @Post('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  @ApiOperation({ summary: 'Upload current user avatar' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({ status: 200, type: UserEntity })
+  @ApiResponse({ status: 400 })
+  async uploadMyAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() currentUser: CurrentUserContext,
+  ): Promise<UserResponse> {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+
+    this.logger.log(`Uploading avatar for user: ${currentUser.userId}`);
+
+    // Delete old avatar if exists
+    const existingUser = await this.usersService.findOne(currentUser.userId);
+    if (existingUser.avatar) {
+      await this.uploadService.deleteByUrl(existingUser.avatar);
+    }
+
+    // Upload new avatar
+    const { url } = await this.uploadService.uploadAvatar(
+      file,
+      currentUser.tenantId,
+      currentUser.userId,
+    );
+
+    // Update user record
+    return this.usersService.updateAvatar(currentUser.userId, url);
+  }
+
+  @Delete('me/avatar')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete current user avatar' })
+  @ApiResponse({ status: 204 })
+  async deleteMyAvatar(
+    @CurrentUser() currentUser: CurrentUserContext,
+  ): Promise<void> {
+    this.logger.log(`Deleting avatar for user: ${currentUser.userId}`);
+
+    const { previousUrl } = await this.usersService.removeAvatar(
+      currentUser.userId,
+    );
+
+    if (previousUrl) {
+      await this.uploadService.deleteByUrl(previousUrl);
+    }
   }
 
   /**

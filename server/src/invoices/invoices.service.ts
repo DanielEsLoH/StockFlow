@@ -14,7 +14,9 @@ import {
   Customer,
   User,
   Product,
+  Warehouse,
   WarehouseStatus,
+  UserRole,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
@@ -57,6 +59,7 @@ export interface InvoiceResponse {
   tenantId: string;
   customerId: string | null;
   userId: string | null;
+  warehouseId: string | null;
   invoiceNumber: string;
   subtotal: number;
   tax: number;
@@ -85,6 +88,11 @@ export interface InvoiceResponse {
     name: string;
     email: string;
   };
+  warehouse?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
 }
 
 /**
@@ -108,6 +116,7 @@ type InvoiceWithRelations = Invoice & {
   items?: (InvoiceItem & { product?: Product | null })[];
   customer?: Customer | null;
   user?: User | null;
+  warehouse?: Warehouse | null;
 };
 
 /**
@@ -275,6 +284,7 @@ export class InvoicesService {
         include: {
           customer: true,
           user: true,
+          warehouse: true,
         },
       }),
       this.prisma.invoice.count({ where }),
@@ -306,6 +316,7 @@ export class InvoicesService {
         },
         customer: true,
         user: true,
+        warehouse: true,
       },
     });
 
@@ -340,6 +351,13 @@ export class InvoicesService {
 
     // Check monthly invoice limit
     await this.checkMonthlyLimit();
+
+    // Resolve warehouse: use dto.warehouseId, fallback to user's assigned warehouse
+    const invoiceWarehouseId = await this.resolveWarehouseForInvoice(
+      dto.warehouseId,
+      userId,
+      tenantId,
+    );
 
     // Validate customer if provided
     if (dto.customerId) {
@@ -401,6 +419,7 @@ export class InvoicesService {
           tenantId,
           userId,
           customerId: dto.customerId ?? null,
+          warehouseId: invoiceWarehouseId,
           invoiceNumber,
           subtotal: invoiceSubtotal,
           tax: invoiceTax,
@@ -416,6 +435,7 @@ export class InvoicesService {
         include: {
           customer: true,
           user: true,
+          warehouse: true,
         },
       });
 
@@ -434,8 +454,10 @@ export class InvoicesService {
         })),
       });
 
-      // Get default warehouse for stock operations
-      const warehouseId = await this.getDefaultWarehouseId(tx, tenantId);
+      // Use the resolved warehouse for stock operations
+      const warehouseId =
+        invoiceWarehouseId ??
+        (await this.getDefaultWarehouseId(tx, tenantId));
 
       // Reduce stock and create stock movements in parallel
       await Promise.all([
@@ -497,6 +519,7 @@ export class InvoicesService {
           },
           customer: true,
           user: true,
+          warehouse: true,
         },
       });
     });
@@ -564,6 +587,7 @@ export class InvoicesService {
           items: { include: { product: true } },
           customer: true,
           user: true,
+          warehouse: true,
         },
       });
     });
@@ -659,6 +683,7 @@ export class InvoicesService {
           items: { include: { product: true } },
           customer: true,
           user: true,
+          warehouse: true,
         },
       });
     });
@@ -725,6 +750,7 @@ export class InvoicesService {
         },
         customer: true,
         user: true,
+        warehouse: true,
       },
     });
 
@@ -887,6 +913,7 @@ export class InvoicesService {
         },
         customer: true,
         user: true,
+        warehouse: true,
       },
     });
 
@@ -1007,6 +1034,7 @@ export class InvoicesService {
           },
           customer: true,
           user: true,
+          warehouse: true,
         },
       });
     });
@@ -1180,6 +1208,7 @@ export class InvoicesService {
           },
           customer: true,
           user: true,
+          warehouse: true,
         },
       });
     });
@@ -1396,6 +1425,7 @@ export class InvoicesService {
           },
           customer: true,
           user: true,
+          warehouse: true,
         },
       });
     });
@@ -1550,6 +1580,7 @@ export class InvoicesService {
           },
           customer: true,
           user: true,
+          warehouse: true,
         },
       });
     });
@@ -1698,6 +1729,77 @@ export class InvoicesService {
   }
 
   /**
+   * Resolves which warehouse should be assigned to an invoice.
+   *
+   * Priority:
+   * 1. If dto.warehouseId is provided (only ADMIN can specify a different warehouse)
+   * 2. If the user has an assigned warehouse, use that
+   * 3. Fall back to the default warehouse (for ADMIN users without assigned warehouse)
+   *
+   * @param dtoWarehouseId - Warehouse ID from the request (optional)
+   * @param userId - User creating the invoice
+   * @param tenantId - Tenant ID
+   * @returns Resolved warehouse ID, or null if none can be resolved
+   */
+  private async resolveWarehouseForInvoice(
+    dtoWarehouseId: string | undefined,
+    userId: string,
+    tenantId: string,
+  ): Promise<string | null> {
+    // Fetch the user with their assigned warehouse
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, tenantId },
+      select: { warehouseId: true, role: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Non-admin users: MUST use their assigned warehouse
+    if (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN) {
+      if (!user.warehouseId) {
+        throw new BadRequestException(
+          'No tiene una bodega asignada. Contacte al administrador.',
+        );
+      }
+
+      // If a warehouseId was provided in the DTO, it must match the user's warehouse
+      if (dtoWarehouseId && dtoWarehouseId !== user.warehouseId) {
+        throw new ForbiddenException(
+          'Solo puede facturar desde su bodega asignada',
+        );
+      }
+
+      return user.warehouseId;
+    }
+
+    // ADMIN users: use dto.warehouseId if provided, else user.warehouseId, else default
+    if (dtoWarehouseId) {
+      // Validate the warehouse exists and belongs to the tenant
+      const warehouse = await this.prisma.warehouse.findFirst({
+        where: { id: dtoWarehouseId, tenantId, status: WarehouseStatus.ACTIVE },
+      });
+
+      if (!warehouse) {
+        throw new NotFoundException(
+          `Bodega no encontrada o inactiva: ${dtoWarehouseId}`,
+        );
+      }
+
+      return dtoWarehouseId;
+    }
+
+    // Admin with assigned warehouse
+    if (user.warehouseId) {
+      return user.warehouseId;
+    }
+
+    // Admin without warehouse — will use default in transaction
+    return null;
+  }
+
+  /**
    * Gets the default warehouse ID for a tenant.
    * Returns the main warehouse or the first active warehouse.
    *
@@ -1740,6 +1842,7 @@ export class InvoicesService {
       tenantId: invoice.tenantId,
       customerId: invoice.customerId,
       userId: invoice.userId,
+      warehouseId: invoice.warehouseId,
       invoiceNumber: invoice.invoiceNumber,
       subtotal: Number(invoice.subtotal),
       tax: Number(invoice.tax),
@@ -1798,6 +1901,15 @@ export class InvoicesService {
         id: invoice.user.id,
         name: `${invoice.user.firstName} ${invoice.user.lastName}`,
         email: invoice.user.email,
+      };
+    }
+
+    // Map warehouse if included
+    if (invoice.warehouse) {
+      response.warehouse = {
+        id: invoice.warehouse.id,
+        name: invoice.warehouse.name,
+        code: invoice.warehouse.code,
       };
     }
 

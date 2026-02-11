@@ -601,6 +601,28 @@ export default function InvoiceDetailPage() {
                     <InvoiceStatusBadge status={invoice.status} />
                   </div>
                 </div>
+
+                {invoice.warehouse && (
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Bodega
+                    </p>
+                    <p className="font-medium text-neutral-900 dark:text-white mt-1">
+                      {invoice.warehouse.name}
+                    </p>
+                  </div>
+                )}
+
+                {invoice.user && (
+                  <div>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Facturado por
+                    </p>
+                    <p className="font-medium text-neutral-900 dark:text-white mt-1">
+                      {invoice.user.name}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Totals */}

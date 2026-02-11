@@ -4,6 +4,8 @@ export interface Invitation {
   id: string;
   email: string;
   role: string;
+  warehouseId: string | null;
+  warehouse: { id: string; name: string; code: string } | null;
   status: "PENDING" | "ACCEPTED" | "EXPIRED" | "CANCELLED";
   createdAt: string;
   expiresAt: string;
@@ -17,6 +19,7 @@ export interface Invitation {
 export interface CreateInvitationData {
   email: string;
   role?: string;
+  warehouseId?: string;
 }
 
 export const invitationsService = {

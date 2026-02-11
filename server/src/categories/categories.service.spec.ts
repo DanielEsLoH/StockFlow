@@ -117,6 +117,7 @@ describe('CategoriesService', () => {
         skip: 0,
         take: 10,
         orderBy: { name: 'asc' },
+        include: { _count: { select: { products: true } } },
       });
     });
 

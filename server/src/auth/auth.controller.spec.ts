@@ -229,6 +229,8 @@ describe('AuthController', () => {
     status: UserStatus.ACTIVE,
     tenantId: 'tenant-123',
     avatar: null as string | null,
+    warehouseId: null,
+    warehouse: null,
   };
 
   const mockTenant = {

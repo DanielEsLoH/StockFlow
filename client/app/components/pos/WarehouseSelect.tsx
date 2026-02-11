@@ -11,6 +11,8 @@ interface WarehouseSelectProps {
   isLoading?: boolean;
   className?: string;
   compact?: boolean;
+  /** When true, the selector is locked and cannot be changed */
+  disabled?: boolean;
 }
 
 export function WarehouseSelect({
@@ -20,6 +22,7 @@ export function WarehouseSelect({
   isLoading = false,
   className,
   compact = false,
+  disabled = false,
 }: WarehouseSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -66,8 +69,8 @@ export function WarehouseSelect({
     <div ref={containerRef} className={cn("relative", className)}>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        disabled={isLoading}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={isLoading || disabled}
         className={cn(
           "flex items-center gap-1.5 sm:gap-2 rounded-lg border transition-colors",
           "border-neutral-300 bg-white hover:bg-neutral-50",
@@ -76,7 +79,7 @@ export function WarehouseSelect({
           // Touch-friendly minimum height (44px)
           "min-h-[44px]",
           compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm",
-          isLoading && "cursor-not-allowed opacity-50",
+          (isLoading || disabled) && "cursor-not-allowed opacity-60",
         )}
       >
         {isLoading ? (
@@ -101,13 +104,15 @@ export function WarehouseSelect({
         >
           {selectedWarehouse?.name || "Bodega"}
         </span>
-        <ChevronDown
-          className={cn(
-            "shrink-0 text-neutral-400 transition-transform",
-            compact ? "h-3.5 w-3.5" : "h-4 w-4",
-            isOpen && "rotate-180",
-          )}
-        />
+        {!disabled && (
+          <ChevronDown
+            className={cn(
+              "shrink-0 text-neutral-400 transition-transform",
+              compact ? "h-3.5 w-3.5" : "h-4 w-4",
+              isOpen && "rotate-180",
+            )}
+          />
+        )}
       </button>
 
       <AnimatePresence>

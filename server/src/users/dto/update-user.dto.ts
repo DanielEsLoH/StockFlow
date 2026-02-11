@@ -4,9 +4,14 @@ import {
   IsOptional,
   IsEnum,
   MinLength,
+  Matches,
+  ValidateIf,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole, UserStatus } from '@prisma/client';
+
+// CUID pattern: starts with 'c' followed by lowercase letters and numbers
+const CUID_PATTERN = /^c[a-z0-9]{24,}$/;
 
 /**
  * Data transfer object for updating an existing user.
@@ -107,4 +112,22 @@ export class UpdateUserDto {
   @IsString({ message: 'Avatar must be a string' })
   @IsOptional()
   avatar?: string | null;
+
+  /**
+   * Warehouse ID to assign the user to (required for MANAGER and EMPLOYEE roles, null to clear)
+   * @example "cmkcykam80004reya0hsdx337"
+   */
+  @ApiPropertyOptional({
+    description:
+      'Warehouse ID to assign the user to (required for MANAGER and EMPLOYEE, null to clear for ADMIN)',
+    example: 'cmkcykam80004reya0hsdx337',
+    nullable: true,
+  })
+  @ValidateIf((o) => o.warehouseId !== null)
+  @IsString({ message: 'Warehouse ID must be a string' })
+  @Matches(CUID_PATTERN, {
+    message: 'Warehouse ID must be a valid CUID',
+  })
+  @IsOptional()
+  warehouseId?: string | null;
 }

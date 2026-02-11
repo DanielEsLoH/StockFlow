@@ -12,11 +12,13 @@ import {
   X,
   RefreshCw,
   ShieldAlert,
+  Warehouse,
 } from "lucide-react";
 import type { Route } from "./+types/_app.team";
 import { cn } from "~/lib/utils";
 import { useAuthStore } from "~/stores/auth.store";
 import { useTeamMembers } from "~/hooks/useTeamMembers";
+import { useWarehouses } from "~/hooks/useWarehouses";
 import {
   useInvitations,
   useCreateInvitation,
@@ -83,10 +85,24 @@ const itemVariants = {
 };
 
 // Invitation form schema
-const invitationSchema = z.object({
-  email: z.email({ message: "Ingresa un email valido" }),
-  role: z.enum(["EMPLOYEE", "MANAGER", "ADMIN"]),
-});
+const invitationSchema = z
+  .object({
+    email: z.email({ message: "Ingresa un email valido" }),
+    role: z.enum(["EMPLOYEE", "MANAGER", "ADMIN"]),
+    warehouseId: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.role === "EMPLOYEE" || data.role === "MANAGER") {
+        return !!data.warehouseId;
+      }
+      return true;
+    },
+    {
+      message: "Debes seleccionar una bodega para este rol",
+      path: ["warehouseId"],
+    },
+  );
 
 type InvitationFormData = z.infer<typeof invitationSchema>;
 
@@ -114,6 +130,7 @@ const userStatusConfig: Record<
   { variant: "success" | "warning" | "error"; label: string }
 > = {
   ACTIVE: { variant: "success", label: "Activo" },
+  INACTIVE: { variant: "error", label: "Inactivo" },
   PENDING: { variant: "warning", label: "Pendiente" },
   SUSPENDED: { variant: "error", label: "Suspendido" },
 };
@@ -175,6 +192,7 @@ export default function TeamPage() {
     isLoading: isLoadingInvitations,
     isError: isErrorInvitations,
   } = useInvitations();
+  const { data: warehouses = [] } = useWarehouses();
 
   // Mutations
   const createInvitation = useCreateInvitation();
@@ -194,15 +212,37 @@ export default function TeamPage() {
     defaultValues: {
       email: "",
       role: "EMPLOYEE",
+      warehouseId: "",
     },
   });
 
   const selectedRole = watch("role");
 
+  // Clear warehouseId when role changes to ADMIN
+  useEffect(() => {
+    if (selectedRole === "ADMIN") {
+      setValue("warehouseId", "");
+    }
+  }, [selectedRole, setValue]);
+
+  // Whether current role requires warehouse selection
+  const requiresWarehouse =
+    selectedRole === "EMPLOYEE" || selectedRole === "MANAGER";
+
+  // Warehouse options for the select
+  const warehouseOptions = warehouses.map((w) => ({
+    value: w.id,
+    label: `${w.name} (${w.code})`,
+  }));
+
   // Handle invitation submit
   const onSubmitInvitation = (data: InvitationFormData) => {
     createInvitation.mutate(
-      { email: data.email, role: data.role },
+      {
+        email: data.email,
+        role: data.role,
+        ...(data.warehouseId ? { warehouseId: data.warehouseId } : {}),
+      },
       {
         onSuccess: () => {
           setIsInviteModalOpen(false);
@@ -331,6 +371,7 @@ export default function TeamPage() {
                     <TableHead>Nombre</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Rol</TableHead>
+                    <TableHead>Bodega</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="hidden sm:table-cell">
                       Fecha de ingreso
@@ -339,7 +380,7 @@ export default function TeamPage() {
                 </TableHeader>
                 <TableBody>
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <SkeletonTableRow key={i} columns={5} />
+                    <SkeletonTableRow key={i} columns={6} />
                   ))}
                 </TableBody>
               </Table>
@@ -381,6 +422,9 @@ export default function TeamPage() {
                       Email
                     </TableHead>
                     <TableHead>Rol</TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      Bodega
+                    </TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="hidden sm:table-cell">
                       Fecha de ingreso
@@ -423,6 +467,23 @@ export default function TeamPage() {
                           >
                             {roleLabels[member.role] || member.role}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {member.warehouse ? (
+                            <div className="flex items-center gap-1.5">
+                              <Warehouse className="h-3.5 w-3.5 text-neutral-400" />
+                              <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                                {member.warehouse.name}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-neutral-400 dark:text-neutral-500">
+                              {member.role === "ADMIN" ||
+                              member.role === "SUPER_ADMIN"
+                                ? "Todas"
+                                : "Sin asignar"}
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusInfo.variant}>
@@ -758,19 +819,47 @@ export default function TeamPage() {
                 options={roleOptions}
                 value={selectedRole}
                 onChange={(value) =>
-                  setValue("role", value as "EMPLOYEE" | "MANAGER" | "ADMIN")
+                  setValue("role", value as "EMPLOYEE" | "MANAGER" | "ADMIN", {
+                    shouldValidate: true,
+                  })
                 }
                 placeholder="Selecciona un rol"
               />
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 {selectedRole === "ADMIN" &&
-                  "Los administradores pueden gestionar usuarios e invitaciones."}
+                  "Acceso total a todas las bodegas y configuracion del sistema."}
                 {selectedRole === "MANAGER" &&
-                  "Los gerentes pueden gestionar inventario y reportes."}
+                  "Gestiona inventario y reportes de su bodega asignada."}
                 {selectedRole === "EMPLOYEE" &&
-                  "Los empleados tienen acceso basico al sistema."}
+                  "Acceso basico para vender y facturar en su bodega asignada."}
               </p>
             </div>
+
+            {/* Warehouse field - only for MANAGER and EMPLOYEE */}
+            {requiresWarehouse && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  Bodega asignada <span className="text-error-500">*</span>
+                </label>
+                <Select
+                  options={warehouseOptions}
+                  value={watch("warehouseId") || ""}
+                  onChange={(value) =>
+                    setValue("warehouseId", value, { shouldValidate: true })
+                  }
+                  placeholder="Selecciona una bodega"
+                  error={!!errors.warehouseId}
+                />
+                {errors.warehouseId && (
+                  <p className="text-sm text-error-500">
+                    {errors.warehouseId.message}
+                  </p>
+                )}
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  El usuario solo podra operar en esta bodega.
+                </p>
+              </div>
+            )}
 
             <DialogFooter>
               <Button

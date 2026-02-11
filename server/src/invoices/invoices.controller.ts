@@ -35,7 +35,7 @@ import {
   UpdateInvoiceItemDto,
 } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
-import { Roles, CurrentUser } from '../common/decorators';
+import { Roles, CurrentUser, WarehouseScoped } from '../common/decorators';
 import type { RequestUser } from '../auth/types';
 import { PaymentsService } from '../payments';
 import type { PaymentResponse } from '../payments';
@@ -197,7 +197,8 @@ export class InvoicesController {
    * }
    */
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.EMPLOYEE)
+  @WarehouseScoped()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new invoice',
@@ -241,6 +242,7 @@ export class InvoicesController {
    */
   @Post('checkout')
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.EMPLOYEE)
+  @WarehouseScoped()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'POS Checkout',
@@ -599,7 +601,8 @@ export class InvoicesController {
    * }
    */
   @Post(':id/items')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.EMPLOYEE)
+  @WarehouseScoped()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Add item to invoice',

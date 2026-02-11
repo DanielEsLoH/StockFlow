@@ -96,14 +96,16 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 
   /**
-   * MANAGER: Operational access
-   * Can manage day-to-day operations, view reports, but cannot manage users or settings
+   * MANAGER: Operational access within their assigned warehouse
+   * Can manage day-to-day operations, view reports for their warehouse,
+   * but cannot transfer stock, manage users, settings, or DIAN config.
+   * All inventory/invoicing operations are scoped to their assigned warehouse.
    */
   [UserRole.MANAGER]: [
-    // Dashboard
+    // Dashboard - scoped to their warehouse
     Permission.DASHBOARD_VIEW,
 
-    // POS - Operational access (can refund, discount, manage sessions)
+    // POS - Full operational access within their warehouse
     Permission.POS_SELL,
     Permission.POS_REFUND,
     Permission.POS_DISCOUNT,
@@ -112,63 +114,54 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.POS_CASH_MOVEMENT,
     // Note: Cannot open drawer without sale (security)
 
-    // Inventory - Operational access
+    // Inventory - Adjust within their warehouse only
     Permission.INVENTORY_VIEW,
     Permission.INVENTORY_ADJUST,
-    Permission.INVENTORY_TRANSFER,
+    // Note: Cannot transfer between warehouses (ADMIN only)
 
-    // Products - Create/Edit but not delete
+    // Products - View all, edit within their warehouse
     Permission.PRODUCTS_VIEW,
     Permission.PRODUCTS_CREATE,
     Permission.PRODUCTS_EDIT,
     // Note: Cannot delete products
 
-    // Categories - Full access
+    // Categories - View only
     Permission.CATEGORIES_VIEW,
-    Permission.CATEGORIES_MANAGE,
+    // Note: Cannot manage categories (ADMIN only)
 
-    // Warehouses - View only
+    // Warehouses - View all
     Permission.WAREHOUSES_VIEW,
     // Note: Cannot manage warehouses
 
-    // Invoices - Operational access (no cancel)
+    // Invoices - Create/view/edit/send within their warehouse
     Permission.INVOICES_VIEW,
     Permission.INVOICES_CREATE,
     Permission.INVOICES_EDIT,
     Permission.INVOICES_SEND,
-    // Note: Cannot cancel invoices
+    // Note: Cannot cancel invoices (ADMIN only)
 
-    // Payments - Create but not delete
+    // Payments - View and create within their warehouse
     Permission.PAYMENTS_VIEW,
     Permission.PAYMENTS_CREATE,
     // Note: Cannot delete payments
 
-    // Customers - Full access
+    // Customers - Full CRUD
     Permission.CUSTOMERS_VIEW,
     Permission.CUSTOMERS_CREATE,
     Permission.CUSTOMERS_EDIT,
     // Note: Cannot delete customers
 
-    // Reports - View only (no export)
+    // Reports - View their warehouse only
     Permission.REPORTS_VIEW,
     // Note: Cannot export reports
 
-    // DIAN - View and send
+    // DIAN - View only
     Permission.DIAN_VIEW,
-    Permission.DIAN_SEND,
-    // Note: Cannot configure DIAN
+    // Note: Cannot configure or send to DIAN (ADMIN only)
 
-    // Users - View only
+    // Users - View team only
     Permission.USERS_VIEW,
     // Note: Cannot manage or invite users
-
-    // Settings - View only
-    Permission.SETTINGS_VIEW,
-    // Note: Cannot manage settings
-
-    // Audit - View only
-    Permission.AUDIT_VIEW,
-    // Note: Cannot export audit logs
 
     // Cash Registers - View only
     Permission.CASH_REGISTERS_VIEW,
@@ -176,15 +169,16 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 
   /**
-   * EMPLOYEE: Minimal operational access for sales staff
-   * Can perform sales in POS, view products (for pricing), and create invoices/customers
-   * Restricted from inventory management, warehouses, categories, and admin features
+   * EMPLOYEE: Sales-focused access within their assigned warehouse
+   * Can sell via POS, create invoices, view products and categories.
+   * All operations are strictly scoped to their assigned warehouse.
+   * Cannot access inventory, reports, settings, users, or admin features.
    */
   [UserRole.EMPLOYEE]: [
-    // Dashboard - basic overview
+    // Dashboard - basic overview of their warehouse
     Permission.DASHBOARD_VIEW,
 
-    // POS - primary function for sales staff
+    // POS - primary function: sell within their warehouse
     Permission.POS_SELL,
     // Note: Cannot refund, discount, open drawer, view/close sessions
 
@@ -192,7 +186,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.PRODUCTS_VIEW,
     // Note: Cannot create, edit, or delete products
 
-    // Invoices - view and create (for processing sales)
+    // Categories - view only (to filter products when selling)
+    Permission.CATEGORIES_VIEW,
+    // Note: Cannot manage categories
+
+    // Invoices - view and create within their warehouse
     Permission.INVOICES_VIEW,
     Permission.INVOICES_CREATE,
     // Note: Cannot edit, send, or cancel invoices
@@ -203,12 +201,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Note: Cannot edit or delete customers
 
     // --- RESTRICTED AREAS ---
-    // Inventory: No access (cannot view stock movements)
-    // Categories: No access (not needed for sales)
-    // Warehouses: No access (not needed for sales)
+    // Inventory: No access (cannot view or adjust stock)
+    // Warehouses: No access (locked to assigned warehouse)
     // Payments: No access (handled by admin/manager)
     // Reports: No access
-    // DIAN: No access (electronic invoicing is admin responsibility)
+    // DIAN: No access
     // Users: No access
     // Settings: No access
     // Audit: No access

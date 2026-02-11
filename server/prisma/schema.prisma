@@ -288,6 +288,7 @@ model User {
   refreshToken             String?       @map("refresh_token")
   resetToken               String?       @map("reset_token")
   resetTokenExpiry         DateTime?     @map("reset_token_expiry")
+  warehouseId              String?       @map("warehouse_id")
   approvedAt               DateTime?     @map("approved_at")
   approvedById             String?       @map("approved_by_id")
   createdAt                DateTime      @default(now()) @map("created_at")
@@ -295,6 +296,7 @@ model User {
   lastLoginAt              DateTime?     @map("last_login_at")
 
   tenant              Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  warehouse           Warehouse?               @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   invoices            Invoice[]
   movements           StockMovement[]
   auditLogs           AuditLog[]
@@ -304,6 +306,7 @@ model User {
   permissionOverrides UserPermissionOverride[]
 
   @@index([tenantId])
+  @@index([warehouseId])
   @@map("users")
 }
 
@@ -393,6 +396,9 @@ model Warehouse {
   updatedAt DateTime        @updatedAt @map("updated_at")
 
   tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users         User[]
+  invoices      Invoice[]
+  invitations   Invitation[]
   stocks        WarehouseStock[]
   movements     StockMovement[]
   cashRegisters CashRegister[]
@@ -493,6 +499,7 @@ model Invoice {
   status        InvoiceStatus @default(DRAFT)
   paymentStatus PaymentStatus @default(UNPAID) @map("payment_status")
   notes         String?
+  warehouseId   String?       @map("warehouse_id")
   dianCufe      String?       @map("dian_cufe")
   dianXml       String?       @map("dian_xml")
   dianPdf       String?       @map("dian_pdf")
@@ -502,6 +509,7 @@ model Invoice {
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   customer      Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
   user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  warehouse     Warehouse?     @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   items         InvoiceItem[]
   payments      Payment[]
   posSale       POSSale?
@@ -515,6 +523,7 @@ model Invoice {
   @@index([tenantId, issueDate])
   @@index([tenantId, createdAt])
   @@index([tenantId, source])
+  @@index([warehouseId])
   @@map("invoices")
 }
 
@@ -590,6 +599,8 @@ model Invitation {
   tenantId    String           @map("tenant_id")
   tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   role        UserRole         @default(EMPLOYEE)
+  warehouseId String?          @map("warehouse_id")
+  warehouse   Warehouse?       @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   token       String           @unique
   expiresAt   DateTime         @map("expires_at")
   invitedById String           @map("invited_by_id")

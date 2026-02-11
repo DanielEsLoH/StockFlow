@@ -19,6 +19,8 @@ import {
   Store,
   TrendingUp,
   Receipt,
+  Warehouse,
+  User,
 } from "lucide-react";
 import type { Route } from "./+types/_app.invoices";
 import { cn, debounce, formatCurrency, formatDate } from "~/lib/utils";
@@ -119,6 +121,8 @@ function InvoiceTableHeader() {
       <TableRow>
         <TableHead>No. Factura</TableHead>
         <TableHead>Cliente</TableHead>
+        <TableHead className="hidden xl:table-cell">Bodega</TableHead>
+        <TableHead className="hidden xl:table-cell">Facturado por</TableHead>
         <TableHead className="hidden md:table-cell">Fecha Emision</TableHead>
         <TableHead className="hidden sm:table-cell">
           Fecha Vencimiento
@@ -455,7 +459,7 @@ export default function InvoicesPage() {
               <InvoiceTableHeader />
               <TableBody>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <SkeletonTableRow key={i} columns={9} />
+                  <SkeletonTableRow key={i} columns={11} />
                 ))}
               </TableBody>
             </Table>
@@ -519,6 +523,30 @@ export default function InvoicesPage() {
                               {invoice.itemCount === 1 ? "item" : "items"}
                             </p>
                           </div>
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                          {invoice.warehouse ? (
+                            <div className="flex items-center gap-1.5">
+                              <Warehouse className="h-3.5 w-3.5 text-neutral-400" />
+                              <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                                {invoice.warehouse.name}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-neutral-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                          {invoice.user ? (
+                            <div className="flex items-center gap-1.5">
+                              <User className="h-3.5 w-3.5 text-neutral-400" />
+                              <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                                {invoice.user.name}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-neutral-400">—</span>
+                          )}
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <div className="flex items-center gap-1.5 text-sm text-neutral-700 dark:text-neutral-300">

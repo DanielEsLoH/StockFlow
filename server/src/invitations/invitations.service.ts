@@ -11,7 +11,13 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../prisma';
 import { BrevoService } from '../notifications/mail/brevo.service';
 import { CreateInvitationDto } from './dto';
-import { User, UserRole, Invitation, InvitationStatus } from '@prisma/client';
+import {
+  User,
+  UserRole,
+  Invitation,
+  InvitationStatus,
+  WarehouseStatus,
+} from '@prisma/client';
 
 /**
  * Response structure for invitation data
@@ -20,6 +26,8 @@ export interface InvitationResponse {
   id: string;
   email: string;
   role: UserRole;
+  warehouseId: string | null;
+  warehouse: { id: string; name: string; code: string } | null;
   status: InvitationStatus;
   expiresAt: Date;
   createdAt: Date;
@@ -81,6 +89,32 @@ export class InvitationsService {
       );
     }
 
+    // Validate warehouse assignment based on role
+    if (role === UserRole.MANAGER || role === UserRole.EMPLOYEE) {
+      if (!dto.warehouseId) {
+        throw new BadRequestException(
+          `Los usuarios con rol ${role} deben tener una bodega asignada`,
+        );
+      }
+      // Verify warehouse exists, belongs to tenant, and is active
+      const warehouse = await this.prisma.warehouse.findFirst({
+        where: {
+          id: dto.warehouseId,
+          tenantId,
+          status: WarehouseStatus.ACTIVE,
+        },
+      });
+      if (!warehouse) {
+        throw new BadRequestException(
+          'La bodega seleccionada no existe, no pertenece a tu organizacion, o no esta activa',
+        );
+      }
+    } else if (role === UserRole.ADMIN && dto.warehouseId) {
+      throw new BadRequestException(
+        'Los administradores no deben tener una bodega asignada (acceso total)',
+      );
+    }
+
     // Check if user already exists (email is now globally unique)
     const existingUser = await this.prisma.user.findUnique({
       where: {
@@ -134,6 +168,10 @@ export class InvitationsService {
         email: normalizedEmail,
         tenantId,
         role,
+        warehouseId:
+          role === UserRole.MANAGER || role === UserRole.EMPLOYEE
+            ? dto.warehouseId
+            : null,
         token,
         expiresAt,
         invitedById: adminUser.id,
@@ -146,6 +184,13 @@ export class InvitationsService {
             firstName: true,
             lastName: true,
             email: true,
+          },
+        },
+        warehouse: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
           },
         },
         tenant: {
@@ -194,6 +239,13 @@ export class InvitationsService {
             firstName: true,
             lastName: true,
             email: true,
+          },
+        },
+        warehouse: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
           },
         },
       },
@@ -328,6 +380,13 @@ export class InvitationsService {
             email: true,
           },
         },
+        warehouse: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
         tenant: {
           select: {
             name: true,
@@ -364,6 +423,13 @@ export class InvitationsService {
             firstName: true,
             lastName: true,
             email: true,
+          },
+        },
+        warehouse: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
           },
         },
       },
@@ -542,12 +608,15 @@ export class InvitationsService {
         lastName: string;
         email: string;
       };
+      warehouse?: { id: string; name: string; code: string } | null;
     },
   ): InvitationResponse {
     return {
       id: invitation.id,
       email: invitation.email,
       role: invitation.role,
+      warehouseId: invitation.warehouseId,
+      warehouse: invitation.warehouse ?? null,
       status: invitation.status,
       expiresAt: invitation.expiresAt,
       createdAt: invitation.createdAt,

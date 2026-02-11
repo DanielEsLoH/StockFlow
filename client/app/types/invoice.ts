@@ -51,6 +51,10 @@ export interface Invoice {
   invoiceNumber: string;
   customerId: string;
   customer?: Customer;
+  userId?: string;
+  user?: { id: string; name: string; email: string } | null;
+  warehouseId?: string | null;
+  warehouse?: { id: string; name: string; code: string } | null;
   status: InvoiceStatus;
   source: InvoiceSource;
   issueDate: string;
@@ -77,6 +81,10 @@ export interface InvoiceSummary {
   invoiceNumber: string;
   customerId: string;
   customer?: Customer;
+  userId?: string;
+  user?: { id: string; name: string; email: string } | null;
+  warehouseId?: string | null;
+  warehouse?: { id: string; name: string; code: string } | null;
   status: InvoiceStatus;
   source: InvoiceSource;
   issueDate: string;
@@ -141,6 +149,7 @@ export interface CreateInvoiceData {
   items: CreateInvoiceItemData[];
   notes?: string;
   source?: InvoiceSource;
+  warehouseId?: string;
 }
 
 // Update invoice data

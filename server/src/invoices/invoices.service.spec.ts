@@ -198,6 +198,12 @@ describe('InvoicesService', () => {
         create: jest.fn(),
         deleteMany: jest.fn(),
       },
+      user: {
+        findFirst: jest.fn(),
+      },
+      warehouse: {
+        findFirst: jest.fn(),
+      },
       $transaction: jest.fn(),
     };
 
@@ -432,6 +438,7 @@ describe('InvoicesService', () => {
           include: {
             customer: true,
             user: true,
+            warehouse: true,
           },
         }),
       );
@@ -473,6 +480,7 @@ describe('InvoicesService', () => {
           },
           customer: true,
           user: true,
+          warehouse: true,
         },
       });
     });
@@ -557,6 +565,11 @@ describe('InvoicesService', () => {
     };
 
     beforeEach(() => {
+      // Mock user warehouse resolution
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: null,
+        role: 'ADMIN',
+      });
       // Mock customer validation
       (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
         mockCustomer,
@@ -1511,6 +1524,10 @@ describe('InvoicesService', () => {
     });
 
     it('should scope create product validation to tenant', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: null,
+        role: 'ADMIN',
+      });
       (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
         mockCustomer,
       );
@@ -1659,6 +1676,10 @@ describe('InvoicesService', () => {
 
     it('should log when invoice is created', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: null,
+        role: 'ADMIN',
+      });
       (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
         mockCustomer,
       );

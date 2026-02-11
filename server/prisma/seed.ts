@@ -46,6 +46,17 @@ async function main() {
   // STEP 1: Clean existing data
   // ============================================================================
   console.log('🗑️  Limpiando datos existentes...');
+  // POS & DIAN models (children first)
+  await prisma.salePayment.deleteMany();
+  await prisma.cashRegisterMovement.deleteMany();
+  await prisma.pOSSale.deleteMany();
+  await prisma.pOSSession.deleteMany();
+  await prisma.cashRegister.deleteMany();
+  await prisma.dianDocument.deleteMany();
+  await prisma.tenantDianConfig.deleteMany();
+  await prisma.userPermissionOverride.deleteMany();
+  await prisma.subscription.deleteMany();
+  // Core models
   await prisma.notification.deleteMany();
   await prisma.invitation.deleteMany();
   await prisma.auditLog.deleteMany();
@@ -125,7 +136,7 @@ async function main() {
     },
   });
 
-  await prisma.tenant.create({
+  const tenantDistribuidora = await prisma.tenant.create({
     data: {
       name: 'Distribuidora Nacional',
       slug: 'distribuidora-nacional',
@@ -238,8 +249,97 @@ async function main() {
     },
   });
 
-  const users = [adminDemo, managerDemo, employeeDemo, employee2Demo];
-  console.log('   ✅ 4 Usuarios creados');
+  const managerSouthDemo = await prisma.user.create({
+    data: {
+      tenantId: tenantDemo.id,
+      email: 'gerente.sur@tienda-demo.com',
+      password: hashedPassword,
+      firstName: 'Camilo',
+      lastName: 'Restrepo',
+      phone: '+57 300 444 4444',
+      role: 'MANAGER',
+      status: 'ACTIVE',
+      emailVerified: true,
+      lastLoginAt: daysAgo(2),
+    },
+  });
+
+  const employeePosDemo = await prisma.user.create({
+    data: {
+      tenantId: tenantDemo.id,
+      email: 'cajero@tienda-demo.com',
+      password: hashedPassword,
+      firstName: 'Sofía',
+      lastName: 'Herrera',
+      phone: '+57 300 555 5555',
+      role: 'EMPLOYEE',
+      status: 'ACTIVE',
+      emailVerified: true,
+      lastLoginAt: daysAgo(0),
+    },
+  });
+
+  const employeeSouthDemo = await prisma.user.create({
+    data: {
+      tenantId: tenantDemo.id,
+      email: 'bodeguero@tienda-demo.com',
+      password: hashedPassword,
+      firstName: 'Ricardo',
+      lastName: 'Salazar',
+      phone: '+57 300 666 6666',
+      role: 'EMPLOYEE',
+      status: 'ACTIVE',
+      emailVerified: true,
+      lastLoginAt: daysAgo(1),
+    },
+  });
+
+  const suspendedUserDemo = await prisma.user.create({
+    data: {
+      tenantId: tenantDemo.id,
+      email: 'suspendido@tienda-demo.com',
+      password: hashedPassword,
+      firstName: 'Fernando',
+      lastName: 'Arias',
+      phone: '+57 300 777 7777',
+      role: 'EMPLOYEE',
+      status: 'SUSPENDED',
+      emailVerified: true,
+      lastLoginAt: daysAgo(30),
+    },
+  });
+
+  const pendingUserDemo = await prisma.user.create({
+    data: {
+      tenantId: tenantDemo.id,
+      email: 'pendiente@tienda-demo.com',
+      password: hashedPassword,
+      firstName: 'Carolina',
+      lastName: 'Muñoz',
+      phone: '+57 300 888 8888',
+      role: 'EMPLOYEE',
+      status: 'PENDING',
+      emailVerified: false,
+    },
+  });
+
+  const inactiveUserDemo = await prisma.user.create({
+    data: {
+      tenantId: tenantDemo.id,
+      email: 'inactivo@tienda-demo.com',
+      password: hashedPassword,
+      firstName: 'Miguel',
+      lastName: 'Ospina',
+      phone: '+57 300 999 0000',
+      role: 'MANAGER',
+      status: 'INACTIVE',
+      emailVerified: true,
+      lastLoginAt: daysAgo(60),
+    },
+  });
+
+  const users = [adminDemo, managerDemo, employeeDemo, employee2Demo, managerSouthDemo, employeePosDemo, employeeSouthDemo];
+  console.log('   ✅ 10 Usuarios creados (4 activos principales + 3 activos adicionales + 1 suspendido + 1 pendiente + 1 inactivo)');
 
   // ============================================================================
   // STEP 5: Categories (15 categorías)
@@ -520,6 +620,71 @@ async function main() {
   const activeWarehouses = [warehouseMain, warehouseNorth, warehouseSouth, warehouseBogota, warehouseStore];
   console.log('   ✅ 6 Bodegas creadas');
 
+  // ── Assign warehouses to non-admin users ──
+  console.log('🔗 Asignando bodegas a usuarios...');
+
+  await prisma.user.update({
+    where: { id: managerDemo.id },
+    data: { warehouseId: warehouseMain.id },
+  });
+
+  await prisma.user.update({
+    where: { id: employeeDemo.id },
+    data: { warehouseId: warehouseNorth.id },
+  });
+
+  await prisma.user.update({
+    where: { id: employee2Demo.id },
+    data: { warehouseId: warehouseStore.id },
+  });
+
+  await prisma.user.update({
+    where: { id: managerSouthDemo.id },
+    data: { warehouseId: warehouseSouth.id },
+  });
+
+  await prisma.user.update({
+    where: { id: employeePosDemo.id },
+    data: { warehouseId: warehouseStore.id },
+  });
+
+  await prisma.user.update({
+    where: { id: employeeSouthDemo.id },
+    data: { warehouseId: warehouseSouth.id },
+  });
+
+  await prisma.user.update({
+    where: { id: suspendedUserDemo.id },
+    data: { warehouseId: warehouseNorth.id },
+  });
+
+  await prisma.user.update({
+    where: { id: pendingUserDemo.id },
+    data: { warehouseId: warehouseStore.id },
+  });
+
+  await prisma.user.update({
+    where: { id: inactiveUserDemo.id },
+    data: { warehouseId: warehouseMain.id },
+  });
+
+  console.log('   ✅ Bodegas asignadas a 9 usuarios (admin sin bodega = acceso total)');
+
+  // ── Permission Overrides ──
+  console.log('🔑 Creando Permission Overrides...');
+  await prisma.userPermissionOverride.createMany({
+    data: [
+      { userId: employee2Demo.id, tenantId: tenantDemo.id, permission: 'pos:refund', granted: true, grantedBy: adminDemo.id, reason: 'Autorizado para procesar devoluciones en POS Centro' },
+      { userId: employee2Demo.id, tenantId: tenantDemo.id, permission: 'pos:discount', granted: true, grantedBy: adminDemo.id, reason: 'Puede aplicar descuentos hasta 10%' },
+      { userId: employeePosDemo.id, tenantId: tenantDemo.id, permission: 'pos:refund', granted: true, grantedBy: adminDemo.id, reason: 'Cajera principal - autorizada para devoluciones' },
+      { userId: employeeSouthDemo.id, tenantId: tenantDemo.id, permission: 'inventory:view', granted: true, grantedBy: adminDemo.id, reason: 'Necesita ver inventario para recibir mercancía' },
+      { userId: managerDemo.id, tenantId: tenantDemo.id, permission: 'inventory:transfer', granted: true, grantedBy: adminDemo.id, reason: 'Autorizada para transferencias entre bodegas' },
+      { userId: managerDemo.id, tenantId: tenantDemo.id, permission: 'reports:export', granted: true, grantedBy: adminDemo.id, reason: 'Necesita exportar reportes mensuales' },
+      { userId: managerSouthDemo.id, tenantId: tenantDemo.id, permission: 'invoices:cancel', granted: false, grantedBy: adminDemo.id, reason: 'Restricción temporal - investigación de facturación' },
+    ],
+  });
+  console.log('   ✅ 7 Permission Overrides creados');
+
   // ============================================================================
   // STEP 8: Warehouse Stock Distribution
   // ============================================================================
@@ -631,15 +796,18 @@ async function main() {
   const invoices: InvoiceWithItems[] = [];
   let invoiceCounter = 1;
 
-  // Función auxiliar para crear factura
+  // Función auxiliar para crear factura (determinista: userId y warehouseId explícitos)
   async function createInvoice(config: {
     status: 'DRAFT' | 'PENDING' | 'SENT' | 'OVERDUE' | 'CANCELLED';
     paymentStatus: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID';
     daysAgoIssued: number;
     daysUntilDue?: number;
+    userId: string;
+    warehouseId: string;
+    source?: 'MANUAL' | 'POS';
   }) {
     const customer = pickRandom(activeCustomers);
-    const user = pickRandom(users);
+    const invoiceWarehouseId = config.warehouseId;
     const numItems = randomInt(1, 4);
     const selectedProducts: { product: typeof products[0]; quantity: number }[] = [];
 
@@ -687,8 +855,10 @@ async function main() {
       data: {
         tenantId: tenantDemo.id,
         customerId: customer.id,
-        userId: user.id,
+        userId: config.userId,
+        warehouseId: invoiceWarehouseId,
         invoiceNumber,
+        source: config.source || 'MANUAL',
         subtotal,
         tax,
         discount: 0,
@@ -729,35 +899,59 @@ async function main() {
     return invoice;
   }
 
-  // 20 PAID invoices (60-90 days ago)
-  for (let i = 0; i < 20; i++) {
-    await createInvoice({ status: 'SENT', paymentStatus: 'PAID', daysAgoIssued: randomInt(30, 90), daysUntilDue: 30 });
+  // ── Lote 1: Admin multi-bodega (12 facturas) ──
+  const adminWarehouses = [warehouseMain, warehouseNorth, warehouseSouth, warehouseStore];
+  for (const wh of adminWarehouses) {
+    await createInvoice({ status: 'SENT', paymentStatus: 'PAID', daysAgoIssued: randomInt(60, 90), daysUntilDue: 30, userId: adminDemo.id, warehouseId: wh.id });
+    await createInvoice({ status: 'SENT', paymentStatus: 'PARTIALLY_PAID', daysAgoIssued: randomInt(30, 50), daysUntilDue: 30, userId: adminDemo.id, warehouseId: wh.id });
+    await createInvoice({ status: 'OVERDUE', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(50, 75), daysUntilDue: 15, userId: adminDemo.id, warehouseId: wh.id });
   }
 
-  // 8 PARTIALLY_PAID invoices (15-45 days ago)
-  for (let i = 0; i < 8; i++) {
-    await createInvoice({ status: 'SENT', paymentStatus: 'PARTIALLY_PAID', daysAgoIssued: randomInt(15, 45), daysUntilDue: 30 });
+  // ── Lote 2: Gerente Principal → Almacén Principal (8 facturas) ──
+  for (let i = 0; i < 5; i++) {
+    await createInvoice({ status: 'SENT', paymentStatus: 'PAID', daysAgoIssued: randomInt(30, 80), daysUntilDue: 30, userId: managerDemo.id, warehouseId: warehouseMain.id });
+  }
+  await createInvoice({ status: 'SENT', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(3, 12), daysUntilDue: 30, userId: managerDemo.id, warehouseId: warehouseMain.id });
+  await createInvoice({ status: 'SENT', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(5, 14), daysUntilDue: 30, userId: managerDemo.id, warehouseId: warehouseMain.id });
+  await createInvoice({ status: 'OVERDUE', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(45, 70), daysUntilDue: 15, userId: managerDemo.id, warehouseId: warehouseMain.id });
+
+  // ── Lote 3: Gerente Sur → Bodega Sur (6 facturas) ──
+  for (let i = 0; i < 4; i++) {
+    await createInvoice({ status: 'SENT', paymentStatus: 'PAID', daysAgoIssued: randomInt(20, 70), daysUntilDue: 30, userId: managerSouthDemo.id, warehouseId: warehouseSouth.id });
+  }
+  await createInvoice({ status: 'SENT', paymentStatus: 'PARTIALLY_PAID', daysAgoIssued: randomInt(15, 35), daysUntilDue: 30, userId: managerSouthDemo.id, warehouseId: warehouseSouth.id });
+  await createInvoice({ status: 'DRAFT', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(0, 2), userId: managerSouthDemo.id, warehouseId: warehouseSouth.id });
+
+  // ── Lote 4: Empleado Norte → Bodega Norte (8 facturas) ──
+  for (let i = 0; i < 5; i++) {
+    await createInvoice({ status: 'SENT', paymentStatus: 'PAID', daysAgoIssued: randomInt(20, 75), daysUntilDue: 30, userId: employeeDemo.id, warehouseId: warehouseNorth.id });
+  }
+  await createInvoice({ status: 'SENT', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(2, 10), daysUntilDue: 30, userId: employeeDemo.id, warehouseId: warehouseNorth.id });
+  await createInvoice({ status: 'SENT', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(5, 14), daysUntilDue: 30, userId: employeeDemo.id, warehouseId: warehouseNorth.id });
+  await createInvoice({ status: 'OVERDUE', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(45, 65), daysUntilDue: 15, userId: employeeDemo.id, warehouseId: warehouseNorth.id });
+
+  // ── Lote 5: Vendedor POS Centro → Punto de Venta Centro (8 facturas) ──
+  for (let i = 0; i < 6; i++) {
+    await createInvoice({ status: 'SENT', paymentStatus: 'PAID', daysAgoIssued: randomInt(10, 60), daysUntilDue: 30, userId: employee2Demo.id, warehouseId: warehouseStore.id });
+  }
+  await createInvoice({ status: 'SENT', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(1, 7), daysUntilDue: 30, userId: employee2Demo.id, warehouseId: warehouseStore.id });
+  await createInvoice({ status: 'SENT', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(3, 10), daysUntilDue: 30, userId: employee2Demo.id, warehouseId: warehouseStore.id });
+
+  // ── Lote 6: Cajera POS → Punto de Venta Centro (6 facturas POS, todas PAID) ──
+  const posInvoices: InvoiceWithItems[] = [];
+  for (let i = 0; i < 6; i++) {
+    const inv = await createInvoice({ status: 'SENT', paymentStatus: 'PAID', daysAgoIssued: randomInt(0, 5), daysUntilDue: 30, userId: employeePosDemo.id, warehouseId: warehouseStore.id, source: 'POS' });
+    if (inv) posInvoices.push(invoices[invoices.length - 1]);
   }
 
-  // 10 PENDING/SENT invoices (1-14 days ago)
-  for (let i = 0; i < 10; i++) {
-    await createInvoice({ status: 'SENT', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(1, 14), daysUntilDue: 30 });
-  }
+  // ── Lote 7: Bodeguero Sur → Bodega Sur (2 facturas) ──
+  await createInvoice({ status: 'SENT', paymentStatus: 'PAID', daysAgoIssued: randomInt(10, 30), daysUntilDue: 30, userId: employeeSouthDemo.id, warehouseId: warehouseSouth.id });
+  await createInvoice({ status: 'SENT', paymentStatus: 'PAID', daysAgoIssued: randomInt(15, 40), daysUntilDue: 30, userId: employeeSouthDemo.id, warehouseId: warehouseSouth.id });
 
-  // 7 OVERDUE invoices (45-75 days ago, due date passed)
-  for (let i = 0; i < 7; i++) {
-    await createInvoice({ status: 'OVERDUE', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(45, 75), daysUntilDue: 15 });
-  }
-
-  // 3 DRAFT invoices (recent)
-  for (let i = 0; i < 3; i++) {
-    await createInvoice({ status: 'DRAFT', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(0, 3) });
-  }
-
-  // 2 CANCELLED invoices
-  for (let i = 0; i < 2; i++) {
-    await createInvoice({ status: 'CANCELLED', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(30, 60), daysUntilDue: 30 });
-  }
+  // ── Extra: 2 DRAFT y 2 CANCELLED (admin) ──
+  await createInvoice({ status: 'DRAFT', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(0, 3), userId: adminDemo.id, warehouseId: warehouseMain.id });
+  await createInvoice({ status: 'CANCELLED', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(30, 60), daysUntilDue: 30, userId: adminDemo.id, warehouseId: warehouseMain.id });
+  await createInvoice({ status: 'CANCELLED', paymentStatus: 'UNPAID', daysAgoIssued: randomInt(40, 70), daysUntilDue: 30, userId: adminDemo.id, warehouseId: warehouseNorth.id });
 
   console.log(`   ✅ ${invoices.length} Facturas creadas`);
 
@@ -878,39 +1072,60 @@ async function main() {
     }
   }
 
-  // TRANSFER movements (15)
-  for (let i = 0; i < 15; i++) {
-    const product = pickRandom(products.filter(p => p.stock > 5));
-    const fromWarehouse = pickRandom(activeWarehouses);
-    const toWarehouse = pickRandom(activeWarehouses.filter(w => w.id !== fromWarehouse.id));
-    const qty = randomInt(5, 15);
+  // TRANSFER movements (5 named pairs = 10 movements)
+  const transfers = [
+    { productName: 'Laptop Dell Inspiron 15', qty: 5, from: warehouseMain, to: warehouseNorth, days: 10, reason: 'Reposición de stock Bodega Norte' },
+    { productName: 'iPhone 15 Pro 256GB', qty: 3, from: warehouseMain, to: warehouseStore, days: 7, reason: 'Surtir punto de venta para temporada' },
+    { productName: 'Café Juan Valdez 500g', qty: 20, from: warehouseNorth, to: warehouseSouth, days: 5, reason: 'Redistribución zona sur' },
+    { productName: 'Samsung Galaxy S24 Ultra', qty: 10, from: warehouseBogota, to: warehouseMain, days: 3, reason: 'Recepción de centro de distribución' },
+    { productName: 'Set Mancuernas 20kg', qty: 8, from: warehouseMain, to: warehouseBogota, days: 15, reason: 'Envío a centro de distribución Bogotá' },
+  ];
 
-    // Out from source
+  for (const t of transfers) {
+    const product = products.find(p => p.name === t.productName) || pickRandom(products);
+    const transferDate = daysAgo(t.days);
+
     await prisma.stockMovement.create({
       data: {
         tenantId: tenantDemo.id,
         productId: product.id,
-        warehouseId: fromWarehouse.id,
-        userId: managerDemo.id,
+        warehouseId: t.from.id,
+        userId: adminDemo.id,
         type: 'TRANSFER',
-        quantity: -qty,
-        reason: `Transferencia a ${toWarehouse.name}`,
-        createdAt: daysAgo(randomInt(5, 30)),
+        quantity: -t.qty,
+        reason: `Transferencia a ${t.to.name}: ${t.reason}`,
+        createdAt: transferDate,
       },
     });
 
-    // In to destination
     await prisma.stockMovement.create({
       data: {
         tenantId: tenantDemo.id,
         productId: product.id,
-        warehouseId: toWarehouse.id,
-        userId: managerDemo.id,
+        warehouseId: t.to.id,
+        userId: adminDemo.id,
         type: 'TRANSFER',
-        quantity: qty,
-        reason: `Recepción de ${fromWarehouse.name}`,
-        createdAt: daysAgo(randomInt(5, 30)),
+        quantity: t.qty,
+        reason: `Recepción de ${t.from.name}: ${t.reason}`,
+        createdAt: transferDate,
       },
+    });
+    movementCount += 2;
+  }
+
+  // Additional random TRANSFER pairs (5 more)
+  for (let i = 0; i < 5; i++) {
+    const product = pickRandom(products.filter(p => p.stock > 5));
+    const fromWarehouse = pickRandom(activeWarehouses);
+    const toWarehouse = pickRandom(activeWarehouses.filter(w => w.id !== fromWarehouse.id));
+    const qty = randomInt(3, 12);
+    const transferDate = daysAgo(randomInt(8, 25));
+
+    await prisma.stockMovement.create({
+      data: { tenantId: tenantDemo.id, productId: product.id, warehouseId: fromWarehouse.id, userId: adminDemo.id, type: 'TRANSFER', quantity: -qty, reason: `Transferencia a ${toWarehouse.name}`, createdAt: transferDate },
+    });
+    await prisma.stockMovement.create({
+      data: { tenantId: tenantDemo.id, productId: product.id, warehouseId: toWarehouse.id, userId: adminDemo.id, type: 'TRANSFER', quantity: qty, reason: `Recepción de ${fromWarehouse.name}`, createdAt: transferDate },
     });
     movementCount += 2;
   }
@@ -1119,21 +1334,47 @@ async function main() {
   console.log(`   ✅ ${notificationCount} Notificaciones creadas`);
 
   // ============================================================================
-  // STEP 14: Audit Logs
+  // STEP 14: Audit Logs (~25 entries)
   // ============================================================================
   console.log('📝 Creando Audit Logs...');
 
+  const ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36';
   await prisma.auditLog.createMany({
     data: [
-      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'LOGIN', entityType: 'User', entityId: adminDemo.id, ipAddress: '192.168.1.100', createdAt: daysAgo(0) },
-      { tenantId: tenantDemo.id, userId: managerDemo.id, action: 'LOGIN', entityType: 'User', entityId: managerDemo.id, ipAddress: '192.168.1.101', createdAt: daysAgo(1) },
-      { tenantId: tenantDemo.id, userId: employeeDemo.id, action: 'LOGIN', entityType: 'User', entityId: employeeDemo.id, ipAddress: '192.168.1.102', createdAt: daysAgo(0) },
-      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'CREATE', entityType: 'Product', entityId: products[0].id, newValues: { name: products[0].name }, createdAt: daysAgo(30) },
-      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'EXPORT', entityType: 'Report', entityId: 'inventory-report', metadata: { format: 'PDF', records: products.length }, createdAt: daysAgo(7) },
+      // LOGIN (6)
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'LOGIN', entityType: 'User', entityId: adminDemo.id, ipAddress: '192.168.1.100', userAgent: ua, createdAt: daysAgo(0) },
+      { tenantId: tenantDemo.id, userId: managerDemo.id, action: 'LOGIN', entityType: 'User', entityId: managerDemo.id, ipAddress: '192.168.1.101', userAgent: ua, createdAt: daysAgo(1) },
+      { tenantId: tenantDemo.id, userId: employeeDemo.id, action: 'LOGIN', entityType: 'User', entityId: employeeDemo.id, ipAddress: '192.168.1.102', userAgent: ua, createdAt: daysAgo(0) },
+      { tenantId: tenantDemo.id, userId: employee2Demo.id, action: 'LOGIN', entityType: 'User', entityId: employee2Demo.id, ipAddress: '192.168.1.103', userAgent: ua, createdAt: daysAgo(0) },
+      { tenantId: tenantDemo.id, userId: employeePosDemo.id, action: 'LOGIN', entityType: 'User', entityId: employeePosDemo.id, ipAddress: '192.168.1.104', userAgent: ua, createdAt: daysAgo(0) },
+      { tenantId: tenantDemo.id, userId: managerSouthDemo.id, action: 'LOGIN', entityType: 'User', entityId: managerSouthDemo.id, ipAddress: '192.168.1.105', userAgent: ua, createdAt: daysAgo(2) },
+      // CREATE (6)
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'CREATE', entityType: 'Product', entityId: products[0].id, newValues: { name: products[0].name, sku: products[0].sku }, createdAt: daysAgo(30) },
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'CREATE', entityType: 'Customer', entityId: customers[0].id, newValues: { name: customers[0].name }, createdAt: daysAgo(25) },
+      { tenantId: tenantDemo.id, userId: managerDemo.id, action: 'CREATE', entityType: 'Invoice', entityId: invoices[0]?.id || 'inv-1', newValues: { invoiceNumber: invoices[0]?.invoiceNumber }, createdAt: daysAgo(15) },
+      { tenantId: tenantDemo.id, userId: employeeDemo.id, action: 'CREATE', entityType: 'Invoice', entityId: invoices[1]?.id || 'inv-2', newValues: { invoiceNumber: invoices[1]?.invoiceNumber }, createdAt: daysAgo(10) },
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'CREATE', entityType: 'User', entityId: suspendedUserDemo.id, newValues: { email: 'suspendido@tienda-demo.com', role: 'EMPLOYEE' }, createdAt: daysAgo(45) },
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'CREATE', entityType: 'Warehouse', entityId: warehouseMain.id, newValues: { name: 'Almacén Principal', code: 'BOD-001' }, createdAt: daysAgo(60) },
+      // UPDATE (5)
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'UPDATE', entityType: 'Product', entityId: products[0].id, oldValues: { salePrice: 1800000 }, newValues: { salePrice: products[0].salePrice }, createdAt: daysAgo(7) },
+      { tenantId: tenantDemo.id, userId: managerDemo.id, action: 'UPDATE', entityType: 'Invoice', entityId: invoices[0]?.id || 'inv-1', oldValues: { status: 'DRAFT' }, newValues: { status: 'SENT' }, createdAt: daysAgo(5) },
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'UPDATE', entityType: 'User', entityId: suspendedUserDemo.id, oldValues: { status: 'ACTIVE' }, newValues: { status: 'SUSPENDED' }, createdAt: daysAgo(10) },
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'UPDATE', entityType: 'Tenant', entityId: tenantDemo.id, oldValues: { plan: 'PYME' }, newValues: { plan: 'PRO' }, createdAt: daysAgo(20) },
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'UPDATE', entityType: 'User', entityId: inactiveUserDemo.id, oldValues: { status: 'ACTIVE' }, newValues: { status: 'INACTIVE' }, createdAt: daysAgo(15) },
+      // DELETE (2)
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'DELETE', entityType: 'Product', entityId: 'deleted-product-001', oldValues: { name: 'Producto de prueba', sku: 'TEST-001' }, createdAt: daysAgo(15) },
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'DELETE', entityType: 'Invoice', entityId: 'deleted-draft-001', oldValues: { invoiceNumber: 'INV-DRAFT-DEL', status: 'DRAFT' }, createdAt: daysAgo(12) },
+      // EXPORT (3)
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'EXPORT', entityType: 'Report', entityId: 'inventory-report', metadata: { format: 'PDF', records: products.length, reportType: 'inventario' }, createdAt: daysAgo(7) },
+      { tenantId: tenantDemo.id, userId: managerDemo.id, action: 'EXPORT', entityType: 'Report', entityId: 'sales-report', metadata: { format: 'XLSX', records: invoices.length, reportType: 'ventas' }, createdAt: daysAgo(3) },
+      { tenantId: tenantDemo.id, userId: adminDemo.id, action: 'EXPORT', entityType: 'Report', entityId: 'customers-report', metadata: { format: 'CSV', records: customers.length, reportType: 'clientes' }, createdAt: daysAgo(1) },
+      // LOGOUT (2)
+      { tenantId: tenantDemo.id, userId: managerDemo.id, action: 'LOGOUT', entityType: 'User', entityId: managerDemo.id, ipAddress: '192.168.1.101', createdAt: daysAgo(1) },
+      { tenantId: tenantDemo.id, userId: employeeDemo.id, action: 'LOGOUT', entityType: 'User', entityId: employeeDemo.id, ipAddress: '192.168.1.102', createdAt: daysAgo(2) },
     ],
   });
 
-  console.log('   ✅ 5 Audit logs creados');
+  console.log('   ✅ 25 Audit logs creados');
 
   // ============================================================================
   // STEP 15: System Admin Audit Logs
@@ -1151,19 +1392,402 @@ async function main() {
   console.log('   ✅ 3 System Admin audit logs creados');
 
   // ============================================================================
-  // STEP 16: Invitations
+  // STEP 16: Invitations (7 — all statuses)
   // ============================================================================
   console.log('📧 Creando Invitaciones...');
 
   await prisma.invitation.createMany({
     data: [
-      { email: 'nuevoempleado@gmail.com', tenantId: tenantDemo.id, role: 'EMPLOYEE', token: 'inv-token-001', expiresAt: daysFromNow(7), invitedById: adminDemo.id, status: 'PENDING' },
-      { email: 'nuevogerente@empresa.com', tenantId: tenantDemo.id, role: 'MANAGER', token: 'inv-token-002', expiresAt: daysFromNow(5), invitedById: adminDemo.id, status: 'PENDING' },
-      { email: 'invitacion.expirada@test.com', tenantId: tenantDemo.id, role: 'EMPLOYEE', token: 'inv-token-003', expiresAt: daysAgo(2), invitedById: adminDemo.id, status: 'EXPIRED' },
+      { email: 'nuevoempleado@gmail.com', tenantId: tenantDemo.id, role: 'EMPLOYEE', token: 'inv-token-001', expiresAt: daysFromNow(7), invitedById: adminDemo.id, status: 'PENDING', warehouseId: warehouseNorth.id },
+      { email: 'nuevogerente@empresa.com', tenantId: tenantDemo.id, role: 'MANAGER', token: 'inv-token-002', expiresAt: daysFromNow(5), invitedById: adminDemo.id, status: 'PENDING', warehouseId: warehouseMain.id },
+      { email: 'nuevoadmin@empresa.com', tenantId: tenantDemo.id, role: 'ADMIN', token: 'inv-token-003', expiresAt: daysFromNow(7), invitedById: adminDemo.id, status: 'PENDING' },
+      { email: 'invitacion.expirada@test.com', tenantId: tenantDemo.id, role: 'EMPLOYEE', token: 'inv-token-004', expiresAt: daysAgo(2), invitedById: adminDemo.id, status: 'EXPIRED', warehouseId: warehouseSouth.id },
+      { email: 'invitacion.cancelada@test.com', tenantId: tenantDemo.id, role: 'EMPLOYEE', token: 'inv-token-005', expiresAt: daysFromNow(3), invitedById: adminDemo.id, status: 'CANCELLED', warehouseId: warehouseStore.id },
+      { email: 'aceptada.empleado@test.com', tenantId: tenantDemo.id, role: 'EMPLOYEE', token: 'inv-token-006', expiresAt: daysAgo(5), invitedById: adminDemo.id, status: 'ACCEPTED', warehouseId: warehouseNorth.id, acceptedAt: daysAgo(15) },
+      { email: 'aceptada.gerente@test.com', tenantId: tenantDemo.id, role: 'MANAGER', token: 'inv-token-007', expiresAt: daysAgo(20), invitedById: adminDemo.id, status: 'ACCEPTED', warehouseId: warehouseSouth.id, acceptedAt: daysAgo(30) },
     ],
   });
 
-  console.log('   ✅ 3 Invitaciones creadas');
+  console.log('   ✅ 7 Invitaciones creadas (2 PENDING, 1 ADMIN, 1 EXPIRED, 1 CANCELLED, 2 ACCEPTED)');
+
+  // ============================================================================
+  // STEP 17: DIAN Configuration
+  // ============================================================================
+  console.log('📑 Creando Configuración DIAN...');
+
+  await prisma.tenantDianConfig.create({
+    data: {
+      tenantId: tenantDemo.id,
+      nit: '900123456',
+      dv: '7',
+      businessName: 'Tienda Demo SAS',
+      tradeName: 'Tienda Demo',
+      taxResponsibilities: ['O_47'],
+      economicActivity: '4719',
+      address: 'Calle 10 #43-67, El Poblado',
+      city: 'Medellín',
+      cityCode: '05001',
+      department: 'Antioquia',
+      departmentCode: '05',
+      country: 'CO',
+      countryCode: 'CO',
+      postalCode: '050021',
+      phone: '+57 300 123 4567',
+      email: 'facturacion@tienda-demo.com',
+      testMode: true,
+      softwareId: 'test-software-id-001',
+      softwarePin: '12345',
+      technicalKey: 'test-technical-key-abcdef',
+      resolutionNumber: '18760000001',
+      resolutionDate: daysAgo(180),
+      resolutionPrefix: 'FE',
+      resolutionRangeFrom: 1,
+      resolutionRangeTo: 5000,
+      currentNumber: invoices.length + 1,
+    },
+  });
+
+  // DianDocuments (8 documents)
+  const paidInvoiceIds = invoices.filter(i => i.paymentStatus === 'PAID').slice(0, 6);
+  const dianDocs = [
+    // 3 ACCEPTED
+    ...paidInvoiceIds.slice(0, 3).map((inv, idx) => ({
+      tenantId: tenantDemo.id, invoiceId: inv.id, documentType: 'FACTURA_ELECTRONICA' as const,
+      documentNumber: `FE-${String(idx + 1).padStart(5, '0')}`, cufe: `cufe-test-${String(idx + 1).padStart(5, '0')}`,
+      status: 'ACCEPTED' as const, sentAt: daysAgo(60 - idx * 10), createdAt: daysAgo(65 - idx * 10),
+      dianTrackId: `track-${String(idx + 1).padStart(5, '0')}`, dianResponse: { statusCode: 200, statusDescription: 'Documento validado por la DIAN' },
+    })),
+    // 2 SENT
+    ...paidInvoiceIds.slice(3, 5).map((inv, idx) => ({
+      tenantId: tenantDemo.id, invoiceId: inv.id, documentType: 'FACTURA_ELECTRONICA' as const,
+      documentNumber: `FE-${String(idx + 4).padStart(5, '0')}`,
+      status: 'SENT' as const, sentAt: daysAgo(5 - idx), createdAt: daysAgo(6 - idx),
+      dianTrackId: `track-${String(idx + 4).padStart(5, '0')}`,
+    })),
+    // 1 REJECTED
+    { tenantId: tenantDemo.id, invoiceId: paidInvoiceIds[5]?.id, documentType: 'FACTURA_ELECTRONICA' as const,
+      documentNumber: 'FE-00006', status: 'REJECTED' as const, sentAt: daysAgo(10), createdAt: daysAgo(11),
+      errorMessage: 'NIT del receptor no válido - No se encuentra registrado en el RUT', dianTrackId: 'track-00006' },
+    // 1 ERROR
+    { tenantId: tenantDemo.id, documentType: 'FACTURA_ELECTRONICA' as const,
+      documentNumber: 'FE-00007', status: 'ERROR' as const, createdAt: daysAgo(8),
+      errorMessage: 'Error de conexión con DIAN - Timeout después de 30 segundos' },
+    // 1 NOTA_CREDITO ACCEPTED
+    { tenantId: tenantDemo.id, documentType: 'NOTA_CREDITO' as const,
+      documentNumber: 'NC-00001', cude: 'cude-test-nc-00001', status: 'ACCEPTED' as const,
+      sentAt: daysAgo(20), createdAt: daysAgo(22), dianTrackId: 'track-nc-00001',
+      dianResponse: { statusCode: 200, statusDescription: 'Nota crédito validada' } },
+  ];
+
+  for (const doc of dianDocs) {
+    await prisma.dianDocument.create({ data: doc as any });
+  }
+
+  console.log('   ✅ 1 Config DIAN + 8 Documentos electrónicos creados');
+
+  // ============================================================================
+  // STEP 18: POS Infrastructure
+  // ============================================================================
+  console.log('🏪 Creando Infraestructura POS...');
+
+  // Cash Registers (6)
+  const cashRegisters = await Promise.all([
+    prisma.cashRegister.create({ data: { tenantId: tenantDemo.id, warehouseId: warehouseMain.id, name: 'Caja 1 - Principal', code: 'CAJA-001', status: 'CLOSED' } }),
+    prisma.cashRegister.create({ data: { tenantId: tenantDemo.id, warehouseId: warehouseMain.id, name: 'Caja 2 - Principal', code: 'CAJA-002', status: 'CLOSED' } }),
+    prisma.cashRegister.create({ data: { tenantId: tenantDemo.id, warehouseId: warehouseStore.id, name: 'Caja 1 - POS Centro', code: 'CAJA-003', status: 'CLOSED' } }),
+    prisma.cashRegister.create({ data: { tenantId: tenantDemo.id, warehouseId: warehouseStore.id, name: 'Caja 2 - POS Centro', code: 'CAJA-004', status: 'CLOSED' } }),
+    prisma.cashRegister.create({ data: { tenantId: tenantDemo.id, warehouseId: warehouseNorth.id, name: 'Caja 1 - Bodega Norte', code: 'CAJA-005', status: 'CLOSED' } }),
+    prisma.cashRegister.create({ data: { tenantId: tenantDemo.id, warehouseId: warehouseSouth.id, name: 'Caja 1 - Bodega Sur', code: 'CAJA-006', status: 'CLOSED' } }),
+  ]);
+
+  console.log('   ✅ 6 Cajas registradoras creadas');
+
+  // POS Sessions (6 — 5 CLOSED + 1 ACTIVE)
+  const sessionConfigs = [
+    { register: cashRegisters[2], user: employee2Demo, opening: 200000, closing: 850000, expected: 845000, daysAgo: 5, notes: 'Turno mañana - buena jornada' },
+    { register: cashRegisters[2], user: employeePosDemo, opening: 150000, closing: 720000, expected: 718000, daysAgo: 3, notes: 'Turno tarde' },
+    { register: cashRegisters[0], user: managerDemo, opening: 500000, closing: 1200000, expected: 1195000, daysAgo: 2, notes: 'Apertura extraordinaria almacén principal' },
+    { register: cashRegisters[3], user: employeePosDemo, opening: 200000, closing: 450000, expected: 452000, daysAgo: 1, notes: 'Turno corto - festivo' },
+    { register: cashRegisters[4], user: employeeDemo, opening: 100000, closing: 380000, expected: 375000, daysAgo: 1, notes: 'Venta en Bodega Norte' },
+  ];
+
+  const posSessions: { id: string; cashRegisterId: string; userId: string; daysAgo: number }[] = [];
+  for (const sc of sessionConfigs) {
+    const openedAt = daysAgo(sc.daysAgo);
+    const closedAt = new Date(openedAt.getTime() + 8 * 60 * 60 * 1000); // 8 hours later
+    const session = await prisma.pOSSession.create({
+      data: {
+        tenantId: tenantDemo.id,
+        cashRegisterId: sc.register.id,
+        userId: sc.user.id,
+        status: 'CLOSED',
+        openingAmount: sc.opening,
+        closingAmount: sc.closing,
+        expectedAmount: sc.expected,
+        difference: sc.closing - sc.expected,
+        openedAt,
+        closedAt,
+        notes: sc.notes,
+      },
+    });
+    posSessions.push({ id: session.id, cashRegisterId: sc.register.id, userId: sc.user.id, daysAgo: sc.daysAgo });
+  }
+
+  // Active session (today)
+  const activeSession = await prisma.pOSSession.create({
+    data: {
+      tenantId: tenantDemo.id,
+      cashRegisterId: cashRegisters[2].id,
+      userId: employee2Demo.id,
+      status: 'ACTIVE',
+      openingAmount: 300000,
+      openedAt: daysAgo(0),
+      notes: 'Sesión activa actual',
+    },
+  });
+  posSessions.push({ id: activeSession.id, cashRegisterId: cashRegisters[2].id, userId: employee2Demo.id, daysAgo: 0 });
+
+  console.log('   ✅ 6 Sesiones POS creadas (5 cerradas + 1 activa)');
+
+  // POS Sales — link to posInvoices created in Lote 6
+  let posCounter = 1;
+  const payMethodRotation: ('CASH' | 'NEQUI' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'DAVIPLATA')[] = ['CASH', 'NEQUI', 'CASH', 'CREDIT_CARD', 'CASH', 'DAVIPLATA'];
+
+  for (const posInv of posInvoices) {
+    const sessionIdx = Math.min(posCounter - 1, posSessions.length - 2); // spread across sessions, avoid active
+    const session = posSessions[sessionIdx];
+    const saleNumber = `POS-${String(posCounter++).padStart(5, '0')}`;
+
+    const sale = await prisma.pOSSale.create({
+      data: {
+        tenantId: tenantDemo.id,
+        sessionId: session.id,
+        invoiceId: posInv.id,
+        saleNumber,
+        subtotal: posInv.total * 0.84, // approximate subtotal before tax
+        tax: posInv.total * 0.16,
+        discount: 0,
+        total: posInv.total,
+      },
+    });
+
+    // SalePayments — some split, most single
+    const method = payMethodRotation[(posCounter - 2) % payMethodRotation.length];
+    if (posCounter % 3 === 0 && posInv.total > 50000) {
+      // Split payment
+      const cashAmount = Math.round(posInv.total * 0.6);
+      const electronicAmount = posInv.total - cashAmount;
+      await prisma.salePayment.create({ data: { saleId: sale.id, method: 'CASH', amount: cashAmount } });
+      await prisma.salePayment.create({ data: { saleId: sale.id, method: 'NEQUI', amount: electronicAmount, reference: `NEQ-${randomInt(100000, 999999)}` } });
+    } else {
+      await prisma.salePayment.create({ data: { saleId: sale.id, method, amount: posInv.total, reference: method !== 'CASH' ? `REF-${randomInt(100000, 999999)}` : undefined } });
+    }
+
+    // CashRegisterMovement for the sale
+    await prisma.cashRegisterMovement.create({
+      data: { tenantId: tenantDemo.id, sessionId: session.id, saleId: sale.id, type: 'SALE', amount: posInv.total, method, createdAt: daysAgo(session.daysAgo) },
+    });
+  }
+
+  // OPENING movements for each session
+  for (const session of posSessions) {
+    await prisma.cashRegisterMovement.create({
+      data: { tenantId: tenantDemo.id, sessionId: session.id, type: 'OPENING', amount: session.daysAgo === 0 ? 300000 : 200000, notes: 'Apertura de caja', createdAt: daysAgo(session.daysAgo) },
+    });
+  }
+
+  // CLOSING movements for closed sessions
+  for (const session of posSessions.slice(0, 5)) {
+    await prisma.cashRegisterMovement.create({
+      data: { tenantId: tenantDemo.id, sessionId: session.id, type: 'CLOSING', amount: 0, notes: 'Cierre de caja', createdAt: daysAgo(Math.max(0, session.daysAgo - 0)) },
+    });
+  }
+
+  // A couple of CASH_IN / CASH_OUT movements
+  await prisma.cashRegisterMovement.create({
+    data: { tenantId: tenantDemo.id, sessionId: posSessions[0].id, type: 'CASH_IN', amount: 50000, notes: 'Cambio adicional para billete de 50mil', createdAt: daysAgo(5) },
+  });
+  await prisma.cashRegisterMovement.create({
+    data: { tenantId: tenantDemo.id, sessionId: posSessions[2].id, type: 'CASH_OUT', amount: 100000, notes: 'Retiro para consignación bancaria', createdAt: daysAgo(2) },
+  });
+
+  const posMovementCount = await prisma.cashRegisterMovement.count({ where: { tenantId: tenantDemo.id } });
+  console.log(`   ✅ ${posInvoices.length} Ventas POS + ${posMovementCount} Movimientos de caja creados`);
+
+  // ============================================================================
+  // STEP 19: Subscriptions
+  // ============================================================================
+  console.log('💳 Creando Suscripciones...');
+
+  await prisma.subscription.create({
+    data: {
+      tenantId: tenantDemo.id,
+      plan: 'PRO',
+      status: 'ACTIVE',
+      startDate: daysAgo(90),
+      endDate: daysFromNow(275),
+      periodType: 'ANNUAL',
+    },
+  });
+
+  await prisma.subscription.create({
+    data: {
+      tenantId: tenantDistribuidora.id,
+      plan: 'PLUS',
+      status: 'ACTIVE',
+      startDate: daysAgo(15),
+      endDate: daysFromNow(15),
+      periodType: 'MONTHLY',
+    },
+  });
+
+  console.log('   ✅ 2 Suscripciones creadas');
+
+  // ============================================================================
+  // STEP 20: Second Tenant - Distribuidora Nacional (minimal data)
+  // ============================================================================
+  console.log('🏢 Creando datos para Distribuidora Nacional...');
+
+  const dnAdmin = await prisma.user.create({
+    data: {
+      tenantId: tenantDistribuidora.id,
+      email: 'admin@distribuidoranacional.com',
+      password: hashedPassword,
+      firstName: 'Roberto',
+      lastName: 'Camacho',
+      phone: '+57 1 555 0001',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      emailVerified: true,
+      lastLoginAt: daysAgo(1),
+    },
+  });
+
+  const dnEmployee = await prisma.user.create({
+    data: {
+      tenantId: tenantDistribuidora.id,
+      email: 'empleado@distribuidoranacional.com',
+      password: hashedPassword,
+      firstName: 'Diana',
+      lastName: 'Acosta',
+      phone: '+57 1 555 0002',
+      role: 'EMPLOYEE',
+      status: 'ACTIVE',
+      emailVerified: true,
+      lastLoginAt: daysAgo(0),
+    },
+  });
+
+  const dnWarehouse = await prisma.warehouse.create({
+    data: {
+      tenantId: tenantDistribuidora.id,
+      name: 'Bodega Central Distribuidora',
+      code: 'DN-001',
+      address: 'Cra 7 #72-13 Chapinero',
+      city: 'Bogotá',
+      phone: '+57 1 555 0003',
+      isMain: true,
+      status: 'ACTIVE',
+    },
+  });
+
+  // Assign warehouse to employee
+  await prisma.user.update({ where: { id: dnEmployee.id }, data: { warehouseId: dnWarehouse.id } });
+
+  // Categories
+  const dnCategories: Record<string, { id: string }> = {};
+  for (const cat of [
+    { name: 'Productos de Aseo', description: 'Limpieza y aseo personal', color: '#10b981' },
+    { name: 'Alimentos Distribución', description: 'Alimentos al por mayor', color: '#f59e0b' },
+    { name: 'Bebidas', description: 'Bebidas no alcohólicas', color: '#3b82f6' },
+  ]) {
+    const created = await prisma.category.create({ data: { tenantId: tenantDistribuidora.id, ...cat } });
+    dnCategories[cat.name] = created;
+  }
+
+  // Products
+  const dnProducts: any[] = [];
+  for (const p of [
+    { sku: 'DN-001', name: 'Jabón Líquido 5L', costPrice: 15000, salePrice: 22000, taxRate: 19, stock: 200, minStock: 50, brand: 'Fabuloso', categoryId: dnCategories['Productos de Aseo'].id },
+    { sku: 'DN-002', name: 'Arroz Diana 25kg', costPrice: 65000, salePrice: 85000, taxRate: 0, stock: 150, minStock: 40, brand: 'Diana', categoryId: dnCategories['Alimentos Distribución'].id },
+    { sku: 'DN-003', name: 'Aceite Girasol 20L', costPrice: 80000, salePrice: 110000, taxRate: 5, stock: 80, minStock: 20, brand: 'Girasoli', categoryId: dnCategories['Alimentos Distribución'].id },
+    { sku: 'DN-004', name: 'Gaseosa Postobon 1.5L x12', costPrice: 28000, salePrice: 38000, taxRate: 19, stock: 300, minStock: 100, brand: 'Postobón', categoryId: dnCategories['Bebidas'].id },
+    { sku: 'DN-005', name: 'Agua Cristal 600ml x24', costPrice: 18000, salePrice: 26000, taxRate: 19, stock: 250, minStock: 80, brand: 'Cristal', categoryId: dnCategories['Bebidas'].id },
+  ]) {
+    const created = await prisma.product.create({
+      data: { tenantId: tenantDistribuidora.id, ...p, unit: 'unit', status: 'ACTIVE' },
+    });
+    dnProducts.push(created);
+
+    // Warehouse stock
+    await prisma.warehouseStock.create({
+      data: { tenantId: tenantDistribuidora.id, warehouseId: dnWarehouse.id, productId: created.id, quantity: p.stock },
+    });
+  }
+
+  // Customers
+  const dnCustomers: any[] = [];
+  for (const c of [
+    { documentType: 'NIT' as const, documentNumber: '800111999-1', name: 'Supermercado La Canasta', email: 'compras@lacanasta.co', phone: '+57 1 600 1111', city: 'Bogotá', state: 'Cundinamarca' },
+    { documentType: 'NIT' as const, documentNumber: '900222888-2', name: 'Tienda El Vecino LTDA', email: 'pedidos@elvecino.co', phone: '+57 1 600 2222', city: 'Bogotá', state: 'Cundinamarca' },
+    { documentType: 'CC' as const, documentNumber: '51234567', name: 'Gloria Esperanza Rojas', email: 'gloria.rojas@gmail.com', phone: '+57 310 600 3333', city: 'Soacha', state: 'Cundinamarca' },
+  ]) {
+    const created = await prisma.customer.create({
+      data: { tenantId: tenantDistribuidora.id, ...c, address: `Dirección en ${c.city}`, status: 'ACTIVE' },
+    });
+    dnCustomers.push(created);
+  }
+
+  // 2 Invoices for Distribuidora
+  for (let i = 0; i < 2; i++) {
+    const product = dnProducts[i];
+    const customer = dnCustomers[i];
+    const qty = randomInt(5, 20);
+    const itemSubtotal = product.salePrice * qty;
+    const itemTax = itemSubtotal * (product.taxRate / 100);
+    const total = itemSubtotal + itemTax;
+
+    const inv = await prisma.invoice.create({
+      data: {
+        tenantId: tenantDistribuidora.id,
+        customerId: customer.id,
+        userId: dnAdmin.id,
+        warehouseId: dnWarehouse.id,
+        invoiceNumber: `DN-INV-${String(i + 1).padStart(5, '0')}`,
+        subtotal: itemSubtotal,
+        tax: itemTax,
+        discount: 0,
+        total,
+        issueDate: daysAgo(randomInt(5, 20)),
+        dueDate: daysFromNow(30),
+        status: 'SENT',
+        paymentStatus: i === 0 ? 'PAID' : 'UNPAID',
+      },
+    });
+
+    await prisma.invoiceItem.create({
+      data: {
+        invoiceId: inv.id,
+        productId: product.id,
+        quantity: qty,
+        unitPrice: product.salePrice,
+        taxRate: product.taxRate,
+        discount: 0,
+        subtotal: itemSubtotal,
+        tax: itemTax,
+        total,
+      },
+    });
+
+    // Payment for first invoice
+    if (i === 0) {
+      await prisma.payment.create({
+        data: { tenantId: tenantDistribuidora.id, invoiceId: inv.id, amount: total, method: 'BANK_TRANSFER', paymentDate: daysAgo(3), reference: 'TRF-DN-001', notes: 'Transferencia Bancolombia' },
+      });
+    }
+  }
+
+  console.log('   ✅ Distribuidora Nacional: 2 usuarios + 1 bodega + 3 categorías + 5 productos + 3 clientes + 2 facturas');
 
   // ============================================================================
   // DONE - Summary
@@ -1172,27 +1796,70 @@ async function main() {
   console.log('🎉 SEED COMPLETADO EXITOSAMENTE');
   console.log('='.repeat(60));
 
+  const totalInvoices = invoices.length;
+  const totalPosMovements = await prisma.cashRegisterMovement.count();
+  const totalPosSales = await prisma.pOSSale.count();
+
   console.log('\n📊 RESUMEN DE DATOS CREADOS:');
   console.log('─'.repeat(40));
   console.log(`   System Admins:      3`);
   console.log(`   Tenants:            4`);
-  console.log(`   Usuarios:           4`);
-  console.log(`   Categorías:         ${Object.keys(categories).length}`);
-  console.log(`   Productos:          ${products.length}`);
-  console.log(`   Bodegas:            6`);
-  console.log(`   Clientes:           ${customers.length}`);
-  console.log(`   Facturas:           ${invoices.length}`);
-  console.log(`   Pagos:              ${paymentCount}`);
+  console.log(`   Usuarios:           12 (10 Tienda Demo + 2 Distribuidora)`);
+  console.log(`   Categorías:         ${Object.keys(categories).length + 3}`);
+  console.log(`   Productos:          ${products.length + 5}`);
+  console.log(`   Bodegas:            7 (6 + 1 Distribuidora)`);
+  console.log(`   Clientes:           ${customers.length + 3}`);
+  console.log(`   Facturas:           ${totalInvoices + 2}`);
+  console.log(`   Pagos:              ${paymentCount + 1}`);
   console.log(`   Mov. de Stock:      ${movementCount}`);
   console.log(`   Notificaciones:     ${notificationCount}`);
+  console.log(`   Permission Overrides: 7`);
+  console.log(`   Invitaciones:       7`);
+  console.log(`   Cajas registradoras: 6`);
+  console.log(`   Sesiones POS:       ${posSessions.length}`);
+  console.log(`   Ventas POS:         ${totalPosSales}`);
+  console.log(`   Mov. de caja:       ${totalPosMovements}`);
+  console.log(`   DIAN Documents:     8`);
+  console.log(`   Suscripciones:      2`);
+  console.log(`   Audit Logs:         25`);
 
   console.log('\n🔐 CREDENCIALES DE ACCESO:');
   console.log('─'.repeat(40));
-  console.log('   TENANT ADMIN:');
+  console.log('   ── TIENDA DEMO ──');
+  console.log('   ADMIN (acceso total):');
   console.log('   Email:    admin@tienda-demo.com');
   console.log('   Password: password123');
+  console.log('   Bodega:   Todas (sin restricción)');
   console.log('');
-  console.log('   SYSTEM ADMIN:');
+  console.log('   MANAGER (Almacén Principal):');
+  console.log('   Email:    gerente@tienda-demo.com');
+  console.log('');
+  console.log('   MANAGER (Bodega Sur):');
+  console.log('   Email:    gerente.sur@tienda-demo.com');
+  console.log('');
+  console.log('   EMPLOYEE (Bodega Norte):');
+  console.log('   Email:    empleado@tienda-demo.com');
+  console.log('');
+  console.log('   EMPLOYEE (POS Centro):');
+  console.log('   Email:    vendedor@tienda-demo.com');
+  console.log('');
+  console.log('   EMPLOYEE (Cajera POS Centro):');
+  console.log('   Email:    cajero@tienda-demo.com');
+  console.log('');
+  console.log('   EMPLOYEE (Bodega Sur):');
+  console.log('   Email:    bodeguero@tienda-demo.com');
+  console.log('');
+  console.log('   SUSPENDED:  suspendido@tienda-demo.com');
+  console.log('   PENDING:    pendiente@tienda-demo.com');
+  console.log('   INACTIVE:   inactivo@tienda-demo.com');
+  console.log('');
+  console.log('   ── DISTRIBUIDORA NACIONAL ──');
+  console.log('   ADMIN:    admin@distribuidoranacional.com');
+  console.log('   EMPLOYEE: empleado@distribuidoranacional.com');
+  console.log('');
+  console.log('   Password para todos: password123');
+  console.log('');
+  console.log('   ── SYSTEM ADMIN ──');
   console.log('   Email:    superadmin@stockflow.com');
   console.log('   Password: admin123!');
   console.log('   URL:      /system-admin/login');

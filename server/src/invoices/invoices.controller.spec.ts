@@ -18,6 +18,7 @@ import type { RequestUser } from '../auth';
 import { PaymentsService } from '../payments';
 import type { PaymentResponse } from '../payments';
 import { DianService } from '../dian/dian.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 describe('InvoicesController', () => {
   let controller: InvoicesController;
@@ -38,6 +39,7 @@ describe('InvoicesController', () => {
     tenantId: 'tenant-123',
     customerId: 'customer-123',
     userId: 'user-123',
+    warehouseId: null,
     invoiceNumber: 'INV-00001',
     subtotal: 100,
     tax: 19,
@@ -183,12 +185,17 @@ describe('InvoicesController', () => {
       validateCufe: jest.fn(),
     };
 
+    const mockPrismaService = {
+      user: { findFirst: jest.fn() },
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [InvoicesController],
       providers: [
         { provide: InvoicesService, useValue: mockInvoicesService },
         { provide: PaymentsService, useValue: mockPaymentsService },
         { provide: DianService, useValue: mockDianService },
+        { provide: PrismaService, useValue: mockPrismaService },
       ],
     }).compile();
 

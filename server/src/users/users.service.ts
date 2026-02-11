@@ -7,7 +7,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { User, UserRole, UserStatus } from '@prisma/client';
+import { User, UserRole, UserStatus, WarehouseStatus } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common/services';
 import { CreateUserDto, UpdateUserDto, ChangePasswordDto } from './dto';
@@ -25,6 +25,12 @@ export interface UserResponse {
   role: UserRole;
   status: UserStatus;
   tenantId: string;
+  warehouseId: string | null;
+  warehouse?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt: Date | null;
@@ -81,6 +87,11 @@ export class UsersService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          warehouse: {
+            select: { id: true, name: true, code: true },
+          },
+        },
       }),
       this.prisma.user.count({ where: { tenantId } }),
     ]);
@@ -110,6 +121,11 @@ export class UsersService {
 
     const user = await this.prisma.user.findFirst({
       where: { id, tenantId },
+      include: {
+        warehouse: {
+          select: { id: true, name: true, code: true },
+        },
+      },
     });
 
     if (!user) {
@@ -152,6 +168,14 @@ export class UsersService {
       );
     }
 
+    // Validate warehouse assignment based on role
+    const effectiveRole = dto.role ?? UserRole.EMPLOYEE;
+    await this.validateWarehouseAssignment(
+      effectiveRole,
+      dto.warehouseId,
+      tenantId,
+    );
+
     // Hash password
     const hashedPassword = await bcrypt.hash(dto.password, this.saltRounds);
 
@@ -163,9 +187,15 @@ export class UsersService {
         firstName: dto.firstName,
         lastName: dto.lastName,
         phone: dto.phone,
-        role: dto.role ?? UserRole.EMPLOYEE,
+        role: effectiveRole,
         status: UserStatus.ACTIVE,
         tenantId,
+        warehouseId: dto.warehouseId ?? null,
+      },
+      include: {
+        warehouse: {
+          select: { id: true, name: true, code: true },
+        },
       },
     });
 
@@ -267,10 +297,45 @@ export class UsersService {
       updateData.status = dto.status;
     }
 
+    // Warehouse assignment changes require ADMIN privileges
+    if (dto.warehouseId !== undefined) {
+      if (!isAdmin) {
+        throw new ForbiddenException(
+          'Only administrators can change warehouse assignments',
+        );
+      }
+
+      // Determine the effective role (could be changing role AND warehouse at the same time)
+      const effectiveRole = dto.role ?? user.role;
+      await this.validateWarehouseAssignment(
+        effectiveRole,
+        dto.warehouseId ?? undefined,
+        tenantId,
+      );
+
+      updateData.warehouseId = dto.warehouseId;
+    }
+
+    // If role is changing but warehouseId is not provided, validate current assignment
+    if (dto.role !== undefined && dto.warehouseId === undefined) {
+      const requiresWarehouse =
+        dto.role === UserRole.MANAGER || dto.role === UserRole.EMPLOYEE;
+      if (requiresWarehouse && !user.warehouseId) {
+        throw new BadRequestException(
+          'Los usuarios con rol MANAGER o EMPLOYEE deben tener una bodega asignada. Incluya warehouseId.',
+        );
+      }
+    }
+
     // Update the user
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: updateData,
+      include: {
+        warehouse: {
+          select: { id: true, name: true, code: true },
+        },
+      },
     });
 
     this.logger.log(`User updated: ${updatedUser.email} (${updatedUser.id})`);
@@ -497,7 +562,57 @@ export class UsersService {
     return { previousUrl };
   }
 
-  private mapToUserResponse(user: User): UserResponse {
+  /**
+   * Validates that warehouse assignment is correct for the given role.
+   * MANAGER and EMPLOYEE must have a warehouse. ADMIN and SUPER_ADMIN must not.
+   * The warehouse must belong to the same tenant and be ACTIVE.
+   */
+  private async validateWarehouseAssignment(
+    role: UserRole,
+    warehouseId: string | undefined,
+    tenantId: string,
+  ): Promise<void> {
+    const requiresWarehouse =
+      role === UserRole.MANAGER || role === UserRole.EMPLOYEE;
+
+    if (requiresWarehouse && !warehouseId) {
+      throw new BadRequestException(
+        'Los usuarios con rol MANAGER o EMPLOYEE deben tener una bodega asignada',
+      );
+    }
+
+    if (
+      !requiresWarehouse &&
+      warehouseId &&
+      (role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN)
+    ) {
+      throw new BadRequestException(
+        'Los usuarios con rol ADMIN o SUPER_ADMIN no deben tener bodega asignada',
+      );
+    }
+
+    if (warehouseId) {
+      const warehouse = await this.prisma.warehouse.findFirst({
+        where: { id: warehouseId, tenantId },
+      });
+
+      if (!warehouse) {
+        throw new NotFoundException(
+          `Bodega no encontrada: ${warehouseId}`,
+        );
+      }
+
+      if (warehouse.status !== WarehouseStatus.ACTIVE) {
+        throw new BadRequestException(
+          'La bodega asignada debe estar activa',
+        );
+      }
+    }
+  }
+
+  private mapToUserResponse(
+    user: User & { warehouse?: { id: string; name: string; code: string } | null },
+  ): UserResponse {
     return {
       id: user.id,
       email: user.email,
@@ -508,6 +623,8 @@ export class UsersService {
       role: user.role,
       status: user.status,
       tenantId: user.tenantId,
+      warehouseId: user.warehouseId,
+      warehouse: user.warehouse ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       lastLoginAt: user.lastLoginAt,

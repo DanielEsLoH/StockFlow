@@ -16,3 +16,6 @@ export { CurrentTenant } from './current-tenant.decorator';
 
 // Limit check decorator for resource limits
 export { CheckLimit, CHECK_LIMIT_KEY } from './check-limit.decorator';
+
+// Warehouse scope decorator for warehouse-restricted endpoints
+export { WarehouseScoped } from './warehouse-scoped.decorator';

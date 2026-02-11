@@ -11,6 +11,12 @@ export interface User {
   status: "ACTIVE" | "PENDING" | "SUSPENDED";
   tenantId: string;
   avatar?: string | null;
+  warehouseId?: string | null;
+  warehouse?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
   /** Effective permissions loaded from server (role defaults + overrides) */
   permissions?: string[];
 }

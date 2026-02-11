@@ -55,6 +55,22 @@ export class AuthUserEntity {
     example: 'clx1234567890tenant',
   })
   tenantId: string;
+
+  @ApiProperty({
+    description: 'Assigned warehouse ID (null for ADMIN users)',
+    example: 'clx1234567890warehouse',
+    nullable: true,
+    required: false,
+  })
+  warehouseId: string | null;
+
+  @ApiProperty({
+    description: 'Assigned warehouse details (null for ADMIN users)',
+    nullable: true,
+    required: false,
+    example: { id: 'clx123', name: 'Almacén Principal', code: 'ALM-001' },
+  })
+  warehouse: { id: string; name: string; code: string } | null;
 }
 
 /**

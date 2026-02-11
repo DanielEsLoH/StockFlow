@@ -6,6 +6,7 @@ import type { UserResponse, PaginatedUsersResponse } from './users.service';
 import { CreateUserDto, UpdateUserDto, ChangePasswordDto } from './dto';
 import { UserRole, UserStatus } from '@prisma/client';
 import { PermissionsService, Permission } from '../common/permissions';
+import { UploadService } from '../upload/upload.service';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -25,6 +26,7 @@ describe('UsersController', () => {
     avatar: null,
     role: UserRole.EMPLOYEE,
     status: UserStatus.ACTIVE,
+    warehouseId: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
     lastLoginAt: null,
@@ -114,11 +116,17 @@ describe('UsersController', () => {
       clearCache: jest.fn(),
     };
 
+    const mockUploadService = {
+      uploadAvatar: jest.fn(),
+      deleteAvatar: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
       providers: [
         { provide: UsersService, useValue: mockUsersService },
         { provide: PermissionsService, useValue: mockPermissionsService },
+        { provide: UploadService, useValue: mockUploadService },
       ],
     }).compile();
 

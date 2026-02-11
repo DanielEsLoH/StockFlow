@@ -24,6 +24,18 @@ describe('UsersService', () => {
   // Test data
   const mockTenantId = 'tenant-123';
 
+  const warehouseInclude = {
+    warehouse: { select: { id: true, name: true, code: true } },
+  };
+
+  const mockWarehouse = {
+    id: 'warehouse-123',
+    name: 'Test Warehouse',
+    code: 'WH-001',
+    tenantId: mockTenantId,
+    status: 'ACTIVE',
+  };
+
   const mockUser = {
     id: 'user-123',
     tenantId: mockTenantId,
@@ -35,6 +47,8 @@ describe('UsersService', () => {
     avatar: null,
     role: UserRole.EMPLOYEE,
     status: UserStatus.ACTIVE,
+    warehouseId: 'warehouse-123',
+    warehouse: { id: 'warehouse-123', name: 'Test Warehouse', code: 'WH-001' },
     refreshToken: null,
     resetToken: null,
     resetTokenExpiry: null,
@@ -82,6 +96,9 @@ describe('UsersService', () => {
       },
       tenant: {
         findUnique: jest.fn(),
+      },
+      warehouse: {
+        findFirst: jest.fn(),
       },
     };
 
@@ -146,6 +163,7 @@ describe('UsersService', () => {
         skip: 0,
         take: 10,
         orderBy: { createdAt: 'desc' },
+        include: warehouseInclude,
       });
     });
 
@@ -194,6 +212,7 @@ describe('UsersService', () => {
       expect(result.email).toBe('test@example.com');
       expect(prismaService.user.findFirst).toHaveBeenCalledWith({
         where: { id: 'user-123', tenantId: mockTenantId },
+        include: warehouseInclude,
       });
     });
 
@@ -231,6 +250,7 @@ describe('UsersService', () => {
       lastName: 'Smith',
       phone: '+0987654321',
       role: UserRole.EMPLOYEE,
+      warehouseId: 'warehouse-123',
     };
 
     const newUser = {
@@ -246,6 +266,7 @@ describe('UsersService', () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
       (prismaService.user.create as jest.Mock).mockResolvedValue(newUser);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
     });
 
     it('should create a new user', async () => {
@@ -295,6 +316,7 @@ describe('UsersService', () => {
       const dtoWithRole = {
         ...createDto,
         role: UserRole.MANAGER,
+        warehouseId: 'warehouse-123',
       };
       (prismaService.user.create as jest.Mock).mockResolvedValue({
         ...newUser,
@@ -316,6 +338,7 @@ describe('UsersService', () => {
       const dtoWithoutRole = {
         ...createDto,
         role: undefined,
+        warehouseId: 'warehouse-123',
       };
 
       await service.create(dtoWithoutRole);
@@ -364,7 +387,7 @@ describe('UsersService', () => {
     });
 
     it('should check for existing user with globally unique email', async () => {
-      await service.create(createDto);
+      await service.create({ ...createDto, warehouseId: 'warehouse-123' });
 
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: {
@@ -480,6 +503,7 @@ describe('UsersService', () => {
           ...mockUser,
           role: UserRole.MANAGER,
         });
+        // mockUser already has warehouseId, so MANAGER is valid
 
         const result = await service.update(
           'user-123',
@@ -588,6 +612,7 @@ describe('UsersService', () => {
         expect(prismaService.user.update).toHaveBeenCalledWith({
           where: { id: 'user-123' },
           data: { phone: '+9876543210' },
+          include: warehouseInclude,
         });
       });
 
@@ -603,6 +628,7 @@ describe('UsersService', () => {
         expect(prismaService.user.update).toHaveBeenCalledWith({
           where: { id: 'user-123' },
           data: { phone: null },
+          include: warehouseInclude,
         });
       });
     });
@@ -620,6 +646,7 @@ describe('UsersService', () => {
         expect(prismaService.user.update).toHaveBeenCalledWith({
           where: { id: 'user-123' },
           data: { avatar: 'https://example.com/avatar.png' },
+          include: warehouseInclude,
         });
       });
 
@@ -635,6 +662,7 @@ describe('UsersService', () => {
         expect(prismaService.user.update).toHaveBeenCalledWith({
           where: { id: 'user-123' },
           data: { avatar: null },
+          include: warehouseInclude,
         });
       });
     });
@@ -662,6 +690,7 @@ describe('UsersService', () => {
             phone: '+9876543210',
             avatar: 'https://example.com/new-avatar.png',
           },
+          include: warehouseInclude,
         });
       });
     });
@@ -997,12 +1026,14 @@ describe('UsersService', () => {
         ...mockUser,
         id: 'new-id',
       });
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
 
       await service.create({
         email: 'new@example.com',
         password: 'password123',
         firstName: 'New',
         lastName: 'User',
+        warehouseId: 'warehouse-123',
       });
 
       expect(logSpy).toHaveBeenCalledWith(

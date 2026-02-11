@@ -175,6 +175,22 @@ export class CreateInvoiceDto {
   })
   @IsOptional()
   source?: InvoiceSource = InvoiceSource.MANUAL;
+
+  /**
+   * Warehouse ID for the invoice (optional — inferred from user's assigned warehouse if not provided)
+   * @example "cmkcykam80004reya0hsdx337"
+   */
+  @ApiPropertyOptional({
+    description:
+      'Warehouse ID for the invoice (optional — inferred from user warehouse if not provided)',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @IsString({ message: 'El ID de la bodega debe ser una cadena de texto' })
+  @Matches(CUID_PATTERN, {
+    message: 'El ID de la bodega debe ser un CUID valido',
+  })
+  @IsOptional()
+  warehouseId?: string;
 }
 
 /**

@@ -20,6 +20,7 @@ import { useCustomers } from "~/hooks/useCustomers";
 import { useProducts } from "~/hooks/useProducts";
 import { useCategories } from "~/hooks/useCategories";
 import { useWarehouses } from "~/hooks/useWarehouses";
+import { useAuthStore } from "~/stores/auth.store";
 import { usePOSCart } from "~/hooks/usePOSCart";
 import { Button } from "~/components/ui/Button";
 import { Badge } from "~/components/ui/Badge";
@@ -102,6 +103,19 @@ export default function POSPage() {
     canCheckout,
   } = usePOSCart();
 
+  // Auth store — check if user has an assigned warehouse
+  const authUser = useAuthStore((state) => state.user);
+  const userWarehouseId = authUser?.warehouseId ?? null;
+  const isAdmin =
+    authUser?.role === "ADMIN" || authUser?.role === "SUPER_ADMIN";
+
+  // Lock warehouse to user's assigned warehouse for non-admin users
+  useEffect(() => {
+    if (userWarehouseId && !isAdmin && selectedWarehouseId !== userWarehouseId) {
+      setWarehouse(userWarehouseId);
+    }
+  }, [userWarehouseId, isAdmin, selectedWarehouseId, setWarehouse]);
+
   // Data queries
   const { data: customersData, isLoading: isLoadingCustomers } = useCustomers({
     limit: 100,
@@ -178,6 +192,7 @@ export default function POSPage() {
           dueDate: getDateFromNow(30),
           notes: notes || undefined,
           source: invoiceMode,
+          warehouseId: selectedWarehouseId || undefined,
           immediatePayment: status === "PAID",
           paymentMethod: "CASH",
           items: cart.map((item) => ({
@@ -424,6 +439,7 @@ export default function POSPage() {
             isLoading={isLoadingWarehouses}
             className="flex-1 sm:flex-none sm:w-56"
             compact
+            disabled={!isAdmin && !!userWarehouseId}
           />
           <CustomerSelect
             customers={customers}

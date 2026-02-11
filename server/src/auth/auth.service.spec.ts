@@ -84,6 +84,8 @@ describe('AuthService', () => {
     avatar: null,
     role: UserRole.EMPLOYEE,
     status: UserStatus.ACTIVE,
+    warehouseId: null,
+    warehouse: null,
     refreshToken: null,
     resetToken: null,
     resetTokenExpiry: null,
@@ -110,9 +112,12 @@ describe('AuthService', () => {
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
+    avatar: user.avatar ?? null,
     role: user.role,
     status: user.status,
     tenantId: user.tenantId,
+    warehouseId: user.warehouseId ?? null,
+    warehouse: user.warehouse ?? null,
   });
 
   // Helper function to get expected tenant response structure
@@ -271,7 +276,7 @@ describe('AuthService', () => {
       expect(result).toEqual(mockUserWithTenant);
       expect(prismaService.user.findFirst).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
-        include: { tenant: true },
+        include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
       });
       expect(bcrypt.compare).toHaveBeenCalledWith(
         'password123',
@@ -312,7 +317,7 @@ describe('AuthService', () => {
 
       expect(prismaService.user.findFirst).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
-        include: { tenant: true },
+        include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
       });
     });
   });
@@ -1376,7 +1381,7 @@ describe('AuthService', () => {
 
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        include: { tenant: true },
+        include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
       });
     });
 
@@ -1670,7 +1675,7 @@ describe('AuthService', () => {
 
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { verificationToken: validToken },
-        include: { tenant: true },
+        include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
       });
     });
   });
@@ -1957,6 +1962,7 @@ describe('AuthService', () => {
         firstName: 'Admin',
         lastName: 'User',
       },
+      warehouseId: null,
     };
 
     const acceptDto: AcceptInvitationDto = {
@@ -2083,7 +2089,7 @@ describe('AuthService', () => {
           status: UserStatus.ACTIVE,
           emailVerified: true,
         }),
-        include: { tenant: true },
+        include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
       });
     });
 

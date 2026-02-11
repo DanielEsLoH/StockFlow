@@ -5,9 +5,13 @@ import {
   MinLength,
   IsOptional,
   IsEnum,
+  Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
+
+// CUID pattern: starts with 'c' followed by lowercase letters and numbers
+const CUID_PATTERN = /^c[a-z0-9]{24,}$/;
 
 /**
  * Data transfer object for creating a new user.
@@ -90,4 +94,20 @@ export class CreateUserDto {
   @IsEnum(UserRole, { message: 'Role must be a valid UserRole' })
   @IsOptional()
   role?: UserRole = UserRole.EMPLOYEE;
+
+  /**
+   * Warehouse ID to assign the user to (required for MANAGER and EMPLOYEE roles)
+   * @example "cmkcykam80004reya0hsdx337"
+   */
+  @ApiPropertyOptional({
+    description:
+      'Warehouse ID to assign the user to (required for MANAGER and EMPLOYEE roles)',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @IsString({ message: 'Warehouse ID must be a string' })
+  @Matches(CUID_PATTERN, {
+    message: 'Warehouse ID must be a valid CUID',
+  })
+  @IsOptional()
+  warehouseId?: string;
 }

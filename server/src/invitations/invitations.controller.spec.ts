@@ -49,6 +49,8 @@ describe('InvitationsController', () => {
     id: 'invitation-123',
     email: 'invitee@example.com',
     role: UserRole.EMPLOYEE,
+    warehouseId: null,
+    warehouse: null,
     status: InvitationStatus.PENDING,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     createdAt: new Date(),

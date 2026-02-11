@@ -38,6 +38,14 @@ import { BrevoService } from '../notifications/mail/brevo.service';
 export type { JwtPayload } from './types';
 
 /**
+ * User with tenant and warehouse relations loaded
+ */
+type UserWithRelations = User & {
+  tenant: Tenant;
+  warehouse?: { id: string; name: string; code: string } | null;
+};
+
+/**
  * User data returned after successful authentication
  */
 export interface AuthUser {
@@ -49,6 +57,12 @@ export interface AuthUser {
   role: UserRole;
   status: UserStatus;
   tenantId: string;
+  warehouseId: string | null;
+  warehouse: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
 }
 
 /**
@@ -217,12 +231,15 @@ export class AuthService {
   async validateUser(
     email: string,
     password: string,
-  ): Promise<(User & { tenant: Tenant }) | null> {
+  ): Promise<(UserWithRelations) | null> {
     this.logger.debug(`Validating user: ${email}`);
 
     const user = await this.prisma.user.findFirst({
       where: { email: email.toLowerCase() },
-      include: { tenant: true },
+      include: {
+        tenant: true,
+        warehouse: { select: { id: true, name: true, code: true } },
+      },
     });
 
     if (!user) {
@@ -487,7 +504,10 @@ export class AuthService {
     // Find user by verification token with tenant info
     const user = await this.prisma.user.findUnique({
       where: { verificationToken: token },
-      include: { tenant: true },
+      include: {
+        tenant: true,
+        warehouse: { select: { id: true, name: true, code: true } },
+      },
     });
 
     if (!user) {
@@ -550,7 +570,7 @@ export class AuthService {
    * @param user - The user who verified their email
    */
   private async sendAdminUserVerifiedNotification(
-    user: User & { tenant: Tenant },
+    user: UserWithRelations,
   ): Promise<void> {
     const userName = `${user.firstName} ${user.lastName}`;
 
@@ -694,7 +714,10 @@ export class AuthService {
     // Find the user and verify the stored refresh token matches
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      include: { tenant: true },
+      include: {
+        tenant: true,
+        warehouse: { select: { id: true, name: true, code: true } },
+      },
     });
 
     if (!user) {
@@ -783,7 +806,10 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { tenant: true },
+      include: {
+        tenant: true,
+        warehouse: { select: { id: true, name: true, code: true } },
+      },
     });
 
     if (!user) {
@@ -883,7 +909,9 @@ export class AuthService {
    * @param user - The user entity to map
    * @returns AuthUser object with safe user data
    */
-  private mapToAuthUser(user: User): AuthUser {
+  private mapToAuthUser(
+    user: User & { warehouse?: { id: string; name: string; code: string } | null },
+  ): AuthUser {
     return {
       id: user.id,
       email: user.email,
@@ -893,6 +921,8 @@ export class AuthService {
       role: user.role,
       status: user.status,
       tenantId: user.tenantId,
+      warehouseId: user.warehouseId,
+      warehouse: user.warehouse ?? null,
     };
   }
 
@@ -977,7 +1007,7 @@ export class AuthService {
 
     // Create user and update invitation in a transaction
     const result = await this.prisma.$transaction(async (tx) => {
-      // Create user with invitation's tenantId and role
+      // Create user with invitation's tenantId, role, and warehouse
       const user = await tx.user.create({
         data: {
           email: invitation.email.toLowerCase(),
@@ -986,10 +1016,14 @@ export class AuthService {
           lastName,
           tenantId: invitation.tenantId,
           role: invitation.role,
+          warehouseId: invitation.warehouseId ?? undefined,
           status: UserStatus.ACTIVE, // Invited users are active immediately
           emailVerified: true, // Email is verified since they received the invitation
         },
-        include: { tenant: true },
+        include: {
+        tenant: true,
+        warehouse: { select: { id: true, name: true, code: true } },
+      },
       });
 
       // Update invitation status to ACCEPTED
@@ -1074,14 +1108,20 @@ export class AuthService {
       // First, try to find user by OAuth ID
       let user = await this.prisma.user.findFirst({
         where: { [oauthIdField]: oauthId },
-        include: { tenant: true },
+        include: {
+        tenant: true,
+        warehouse: { select: { id: true, name: true, code: true } },
+      },
       });
 
       // If not found by OAuth ID, try to find by email
       if (!user) {
         user = await this.prisma.user.findFirst({
           where: { email: oauthUser.email.toLowerCase() },
-          include: { tenant: true },
+          include: {
+        tenant: true,
+        warehouse: { select: { id: true, name: true, code: true } },
+      },
         });
       }
 
@@ -1118,7 +1158,7 @@ export class AuthService {
    * @returns OAuthLoginResult
    */
   private async handleExistingOAuthUser(
-    user: User & { tenant: Tenant },
+    user: UserWithRelations,
     oauthUser: OAuthUserDto,
     provider: AuthProvider,
   ): Promise<OAuthLoginResult> {

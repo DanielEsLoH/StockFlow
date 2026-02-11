@@ -1,5 +1,8 @@
-import { IsEmail, IsEnum, IsOptional } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import { UserRole } from '@prisma/client';
+
+// CUID pattern: starts with 'c' followed by lowercase letters and numbers, typically 25 chars
+const CUID_PATTERN = /^c[a-z0-9]{24,}$/;
 
 /**
  * DTO for creating a new invitation to join a tenant.
@@ -23,4 +26,16 @@ export class CreateInvitationDto {
   @IsEnum(UserRole, { message: 'Rol invalido' })
   @IsOptional()
   role?: UserRole;
+
+  /**
+   * Warehouse ID to assign the invited user to.
+   * Required for MANAGER and EMPLOYEE roles.
+   * ADMIN users should NOT have a warehouse assigned.
+   */
+  @IsString({ message: 'El ID de la bodega debe ser una cadena de texto' })
+  @Matches(CUID_PATTERN, {
+    message: 'El ID de la bodega debe ser un CUID valido',
+  })
+  @IsOptional()
+  warehouseId?: string;
 }

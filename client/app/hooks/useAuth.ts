@@ -89,7 +89,7 @@ export function useAuth() {
     onSuccess: () => {
       clearAuth();
       queryClient.clear();
-      navigate("/login");
+      navigate("/");
       toast.success("Sesion cerrada");
     },
   });

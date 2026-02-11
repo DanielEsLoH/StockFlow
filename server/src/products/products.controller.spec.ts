@@ -38,6 +38,7 @@ describe('ProductsController', () => {
     unit: 'unit',
     imageUrl: null,
     status: ProductStatus.ACTIVE,
+    category: { id: 'category-123', name: 'Electronics', color: null },
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };

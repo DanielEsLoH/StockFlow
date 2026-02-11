@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
-import { toast, Toaster } from "sonner";
+import { Toaster } from "sonner";
 import { useAuth } from "~/hooks/useAuth";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/Input";
@@ -78,13 +78,8 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginForm) => {
-    try {
-      login(data);
-      toast.success("Iniciando sesion...");
-    } catch {
-      toast.error("Error al iniciar sesion. Intenta de nuevo.");
-    }
+  const onSubmit = (data: LoginForm) => {
+    login(data);
   };
 
   return (

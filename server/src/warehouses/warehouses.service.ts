@@ -23,6 +23,8 @@ export interface WarehouseResponse {
   isDefault: boolean;
   status: WarehouseStatus;
   isActive: boolean;
+  productCount: number;
+  manager: string | null;
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -135,6 +137,14 @@ export class WarehousesService {
         skip,
         take: limit,
         orderBy: [{ isMain: 'desc' }, { name: 'asc' }],
+        include: {
+          _count: { select: { stocks: true } },
+          users: {
+            where: { role: { in: ['ADMIN', 'MANAGER'] } },
+            select: { firstName: true, lastName: true },
+            take: 1,
+          },
+        },
       }),
       this.prisma.warehouse.count({ where }),
     ]);
@@ -480,7 +490,12 @@ export class WarehousesService {
    * @param warehouse - The warehouse entity to map
    * @returns WarehouseResponse object
    */
-  private mapToWarehouseResponse(warehouse: Warehouse): WarehouseResponse {
+  private mapToWarehouseResponse(
+    warehouse: Warehouse & {
+      _count?: { stocks: number };
+      users?: { firstName: string; lastName: string }[];
+    },
+  ): WarehouseResponse {
     return {
       id: warehouse.id,
       name: warehouse.name,
@@ -491,6 +506,10 @@ export class WarehousesService {
       isDefault: warehouse.isMain,
       status: warehouse.status,
       isActive: warehouse.status === WarehouseStatus.ACTIVE,
+      productCount: warehouse._count?.stocks ?? 0,
+      manager: warehouse.users?.[0]
+        ? `${warehouse.users[0].firstName} ${warehouse.users[0].lastName}`
+        : null,
       tenantId: warehouse.tenantId,
       createdAt: warehouse.createdAt,
       updatedAt: warehouse.updatedAt,
@@ -501,7 +520,10 @@ export class WarehousesService {
    * Builds a paginated response from warehouses and pagination params
    */
   private buildPaginatedResponse(
-    warehouses: Warehouse[],
+    warehouses: (Warehouse & {
+      _count?: { stocks: number };
+      users?: { firstName: string; lastName: string }[];
+    })[],
     total: number,
     page: number,
     limit: number,

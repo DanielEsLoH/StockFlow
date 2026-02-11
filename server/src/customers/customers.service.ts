@@ -27,6 +27,9 @@ export interface CustomerResponse {
   taxId: string | null;
   notes: string | null;
   status: CustomerStatus;
+  isActive: boolean;
+  totalPurchases: number;
+  totalSpent: number;
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -106,6 +109,11 @@ export class CustomersService {
         skip,
         take: limit,
         orderBy: { name: 'asc' },
+        include: {
+          invoices: {
+            select: { total: true },
+          },
+        },
       }),
       this.prisma.customer.count({ where }),
     ]);
@@ -147,6 +155,11 @@ export class CustomersService {
         skip,
         take: limit,
         orderBy: { name: 'asc' },
+        include: {
+          invoices: {
+            select: { total: true },
+          },
+        },
       }),
       this.prisma.customer.count({ where }),
     ]);
@@ -373,7 +386,9 @@ export class CustomersService {
    * @param customer - The customer entity to map
    * @returns CustomerResponse object
    */
-  private mapToCustomerResponse(customer: Customer): CustomerResponse {
+  private mapToCustomerResponse(
+    customer: Customer & { invoices?: { total: any }[] },
+  ): CustomerResponse {
     return {
       id: customer.id,
       name: customer.name,
@@ -388,6 +403,12 @@ export class CustomersService {
       taxId: customer.taxId,
       notes: customer.notes,
       status: customer.status,
+      isActive: customer.status === CustomerStatus.ACTIVE,
+      totalPurchases: customer.invoices?.length ?? 0,
+      totalSpent: customer.invoices?.reduce(
+        (sum, inv) => sum + Number(inv.total),
+        0,
+      ) ?? 0,
       tenantId: customer.tenantId,
       createdAt: customer.createdAt,
       updatedAt: customer.updatedAt,
@@ -398,7 +419,7 @@ export class CustomersService {
    * Builds a paginated response from customers and pagination params
    */
   private buildPaginatedResponse(
-    customers: Customer[],
+    customers: (Customer & { invoices?: { total: any }[] })[],
     total: number,
     page: number,
     limit: number,

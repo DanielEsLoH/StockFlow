@@ -37,6 +37,7 @@ export interface ProductResponse {
   unit: string;
   imageUrl: string | null;
   status: ProductStatus;
+  category: { id: string; name: string; color: string | null } | null;
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -678,7 +679,11 @@ export class ProductsService {
    * @param product - The product entity to map
    * @returns ProductResponse object
    */
-  private mapToProductResponse(product: Product): ProductResponse {
+  private mapToProductResponse(
+    product: Product & {
+      category?: { id: string; name: string; color: string | null } | null;
+    },
+  ): ProductResponse {
     return {
       id: product.id,
       sku: product.sku,
@@ -696,6 +701,7 @@ export class ProductsService {
       unit: product.unit,
       imageUrl: product.imageUrl,
       status: product.status,
+      category: product.category ?? null,
       tenantId: product.tenantId,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,

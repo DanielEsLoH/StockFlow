@@ -155,7 +155,18 @@ export function getErrorMessage(
   if (typeof error === "string") {
     errorMessage = error;
   } else if (error instanceof Error) {
-    errorMessage = error.message;
+    // Handle AxiosError — extract server message from response.data
+    const axiosData = (error as any).response?.data;
+    if (axiosData?.message) {
+      errorMessage =
+        typeof axiosData.message === "string"
+          ? axiosData.message
+          : Array.isArray(axiosData.message)
+            ? axiosData.message[0]
+            : error.message;
+    } else {
+      errorMessage = error.message;
+    }
   } else if (error && typeof error === "object" && "message" in error) {
     errorMessage = String((error as { message: unknown }).message);
   } else {

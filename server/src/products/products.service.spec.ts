@@ -416,12 +416,12 @@ describe('ProductsService', () => {
 
         expect(prismaService.product.findMany).toHaveBeenCalledWith(
           expect.objectContaining({
-            include: {
+            include: expect.objectContaining({
               warehouseStock: {
                 where: { warehouseId: 'warehouse-123' },
                 select: { quantity: true },
               },
-            },
+            }),
           }),
         );
       });

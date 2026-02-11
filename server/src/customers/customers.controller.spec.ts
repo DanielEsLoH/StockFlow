@@ -29,6 +29,9 @@ describe('CustomersController', () => {
     taxId: null,
     notes: 'Cliente preferencial',
     status: CustomerStatus.ACTIVE,
+    isActive: true,
+    totalPurchases: 0,
+    totalSpent: 0,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
   };

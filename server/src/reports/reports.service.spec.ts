@@ -206,16 +206,16 @@ describe('ReportsService', () => {
 
       expect(mockPrismaInvoice.findFirst).toHaveBeenCalledWith({
         where: { id: 'invoice-123', tenantId: mockTenantId },
-        include: {
+        include: expect.objectContaining({
           customer: true,
           user: true,
-          items: {
-            include: {
-              product: true,
-            },
-          },
-          tenant: true,
-        },
+          items: { include: { product: true } },
+          tenant: expect.objectContaining({
+            include: expect.objectContaining({
+              dianConfig: true,
+            }),
+          }),
+        }),
       });
     });
 

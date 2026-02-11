@@ -81,6 +81,10 @@ describe('InvoicesController', () => {
       name: 'Test Customer',
       email: 'customer@example.com',
       phone: '+1234567890',
+      documentType: 'CC',
+      documentNumber: '123456789',
+      address: null,
+      city: null,
     },
     user: {
       id: 'user-123',

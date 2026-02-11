@@ -45,6 +45,23 @@ export interface InvoiceItem {
   updatedAt: string;
 }
 
+// Tenant/Issuer data included in invoice responses
+export interface InvoiceTenant {
+  name: string;
+  email: string;
+  phone?: string | null;
+  businessName?: string | null;
+  nit?: string | null;
+  dv?: string | null;
+  address?: string | null;
+  city?: string | null;
+  resolutionNumber?: string | null;
+  resolutionPrefix?: string | null;
+  resolutionRangeFrom?: number | null;
+  resolutionRangeTo?: number | null;
+  resolutionDate?: string | null;
+}
+
 // Main Invoice entity
 export interface Invoice {
   id: string;
@@ -55,6 +72,7 @@ export interface Invoice {
   user?: { id: string; name: string; email: string } | null;
   warehouseId?: string | null;
   warehouse?: { id: string; name: string; code: string } | null;
+  tenant?: InvoiceTenant;
   status: InvoiceStatus;
   source: InvoiceSource;
   issueDate: string;

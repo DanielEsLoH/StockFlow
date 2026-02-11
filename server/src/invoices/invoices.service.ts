@@ -17,6 +17,8 @@ import {
   Warehouse,
   WarehouseStatus,
   UserRole,
+  Tenant,
+  TenantDianConfig,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
@@ -82,6 +84,10 @@ export interface InvoiceResponse {
     name: string;
     email: string | null;
     phone: string | null;
+    documentType: string | null;
+    documentNumber: string | null;
+    address: string | null;
+    city: string | null;
   } | null;
   user?: {
     id: string;
@@ -93,6 +99,21 @@ export interface InvoiceResponse {
     name: string;
     code: string;
   } | null;
+  tenant?: {
+    name: string;
+    email: string;
+    phone: string | null;
+    businessName: string | null;
+    nit: string | null;
+    dv: string | null;
+    address: string | null;
+    city: string | null;
+    resolutionNumber: string | null;
+    resolutionPrefix: string | null;
+    resolutionRangeFrom: number | null;
+    resolutionRangeTo: number | null;
+    resolutionDate: Date | null;
+  };
 }
 
 /**
@@ -117,6 +138,7 @@ type InvoiceWithRelations = Invoice & {
   customer?: Customer | null;
   user?: User | null;
   warehouse?: Warehouse | null;
+  tenant?: (Tenant & { dianConfig?: TenantDianConfig | null }) | null;
 };
 
 /**
@@ -285,6 +307,11 @@ export class InvoicesService {
           customer: true,
           user: true,
           warehouse: true,
+          tenant: {
+            include: {
+              dianConfig: true,
+            },
+          },
         },
       }),
       this.prisma.invoice.count({ where }),
@@ -317,6 +344,11 @@ export class InvoicesService {
         customer: true,
         user: true,
         warehouse: true,
+        tenant: {
+          include: {
+            dianConfig: true,
+          },
+        },
       },
     });
 
@@ -436,6 +468,11 @@ export class InvoicesService {
           customer: true,
           user: true,
           warehouse: true,
+          tenant: {
+            include: {
+              dianConfig: true,
+            },
+          },
         },
       });
 
@@ -520,6 +557,11 @@ export class InvoicesService {
           customer: true,
           user: true,
           warehouse: true,
+          tenant: {
+            include: {
+              dianConfig: true,
+            },
+          },
         },
       });
     });
@@ -588,6 +630,11 @@ export class InvoicesService {
           customer: true,
           user: true,
           warehouse: true,
+          tenant: {
+            include: {
+              dianConfig: true,
+            },
+          },
         },
       });
     });
@@ -684,6 +731,11 @@ export class InvoicesService {
           customer: true,
           user: true,
           warehouse: true,
+          tenant: {
+            include: {
+              dianConfig: true,
+            },
+          },
         },
       });
     });
@@ -751,6 +803,11 @@ export class InvoicesService {
         customer: true,
         user: true,
         warehouse: true,
+        tenant: {
+          include: {
+            dianConfig: true,
+          },
+        },
       },
     });
 
@@ -914,6 +971,11 @@ export class InvoicesService {
         customer: true,
         user: true,
         warehouse: true,
+        tenant: {
+          include: {
+            dianConfig: true,
+          },
+        },
       },
     });
 
@@ -1035,6 +1097,11 @@ export class InvoicesService {
           customer: true,
           user: true,
           warehouse: true,
+          tenant: {
+            include: {
+              dianConfig: true,
+            },
+          },
         },
       });
     });
@@ -1209,6 +1276,11 @@ export class InvoicesService {
           customer: true,
           user: true,
           warehouse: true,
+          tenant: {
+            include: {
+              dianConfig: true,
+            },
+          },
         },
       });
     });
@@ -1426,6 +1498,11 @@ export class InvoicesService {
           customer: true,
           user: true,
           warehouse: true,
+          tenant: {
+            include: {
+              dianConfig: true,
+            },
+          },
         },
       });
     });
@@ -1581,6 +1658,11 @@ export class InvoicesService {
           customer: true,
           user: true,
           warehouse: true,
+          tenant: {
+            include: {
+              dianConfig: true,
+            },
+          },
         },
       });
     });
@@ -1892,6 +1974,10 @@ export class InvoicesService {
         name: invoice.customer.name,
         email: invoice.customer.email,
         phone: invoice.customer.phone,
+        documentType: invoice.customer.documentType,
+        documentNumber: invoice.customer.documentNumber,
+        address: invoice.customer.address,
+        city: invoice.customer.city,
       };
     }
 
@@ -1910,6 +1996,26 @@ export class InvoicesService {
         id: invoice.warehouse.id,
         name: invoice.warehouse.name,
         code: invoice.warehouse.code,
+      };
+    }
+
+    // Map tenant with DIAN config if included
+    if (invoice.tenant) {
+      const dian = invoice.tenant.dianConfig;
+      response.tenant = {
+        name: invoice.tenant.name,
+        email: invoice.tenant.email,
+        phone: invoice.tenant.phone,
+        businessName: dian?.businessName ?? null,
+        nit: dian?.nit ?? null,
+        dv: dian?.dv ?? null,
+        address: dian?.address ?? null,
+        city: dian?.city ?? null,
+        resolutionNumber: dian?.resolutionNumber ?? null,
+        resolutionPrefix: dian?.resolutionPrefix ?? null,
+        resolutionRangeFrom: dian?.resolutionRangeFrom ?? null,
+        resolutionRangeTo: dian?.resolutionRangeTo ?? null,
+        resolutionDate: dian?.resolutionDate ?? null,
       };
     }
 

@@ -26,6 +26,13 @@ export interface POSTicketProps {
   businessAddress?: string;
   businessPhone?: string;
 
+  // Resolution info
+  resolutionNumber?: string;
+  resolutionPrefix?: string;
+  resolutionRangeFrom?: number;
+  resolutionRangeTo?: number;
+  resolutionDate?: string;
+
   // Invoice info
   invoiceNumber: string;
   date: string;
@@ -36,6 +43,8 @@ export interface POSTicketProps {
   customerName?: string;
   customerDocument?: string;
   customerDocumentType?: string;
+  customerPhone?: string;
+  customerAddress?: string;
 
   // Items
   items: POSTicketItem[];
@@ -104,6 +113,11 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
       businessNit,
       businessAddress,
       businessPhone,
+      resolutionNumber,
+      resolutionPrefix,
+      resolutionRangeFrom,
+      resolutionRangeTo,
+      resolutionDate,
       invoiceNumber,
       date,
       cashierName,
@@ -111,6 +125,8 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
       customerName,
       customerDocument,
       customerDocumentType,
+      customerPhone,
+      customerAddress,
       items,
       subtotal,
       discountAmount,
@@ -148,6 +164,16 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
           )}
           {businessPhone && (
             <div className="text-[7pt]">Tel: {businessPhone}</div>
+          )}
+          {resolutionNumber && (
+            <div className="text-[6pt] mt-1">
+              Res. DIAN No. {resolutionNumber}
+              {resolutionDate && ` del ${formatTicketDate(resolutionDate).split(",")[0]}`}
+              {resolutionPrefix && `, Pref. ${resolutionPrefix}`}
+              {resolutionRangeFrom != null &&
+                resolutionRangeTo != null &&
+                `, del ${resolutionRangeFrom} al ${resolutionRangeTo}`}
+            </div>
           )}
         </div>
 
@@ -191,6 +217,17 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
               <div className="flex justify-between">
                 <span>{customerDocumentType || "Doc"}:</span>
                 <span>{customerDocument}</span>
+              </div>
+            )}
+            {customerPhone && (
+              <div className="flex justify-between">
+                <span>Tel:</span>
+                <span>{customerPhone}</span>
+              </div>
+            )}
+            {customerAddress && (
+              <div className="text-[7pt]">
+                {truncateText(customerAddress, 40)}
               </div>
             )}
           </div>

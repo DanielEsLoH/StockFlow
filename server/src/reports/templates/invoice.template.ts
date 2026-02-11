@@ -8,11 +8,21 @@ import type {
  * Invoice data structure for PDF generation
  */
 export interface InvoiceTemplateData {
-  // Tenant info
+  // Tenant / Issuer info
   tenant: {
     name: string;
     email: string;
     phone?: string | null;
+    businessName?: string | null;
+    nit?: string | null;
+    dv?: string | null;
+    address?: string | null;
+    city?: string | null;
+    resolutionNumber?: string | null;
+    resolutionPrefix?: string | null;
+    resolutionRangeFrom?: number | null;
+    resolutionRangeTo?: number | null;
+    resolutionDate?: Date | null;
   };
   // Invoice info
   invoice: {
@@ -22,6 +32,7 @@ export interface InvoiceTemplateData {
     status: string;
     paymentStatus: string;
     notes?: string | null;
+    dianCufe?: string | null;
   };
   // Customer info
   customer?: {
@@ -112,58 +123,95 @@ export function createInvoiceTemplate(
 ): TDocumentDefinitions {
   const content: Content[] = [];
 
+  const hasDianConfig = !!data.tenant.nit;
+  const companyName = data.tenant.businessName || data.tenant.name;
+
   // Header with company info and invoice details
+  const companyStack: Content[] = [
+    { text: companyName, style: 'companyName' },
+  ];
+  if (data.tenant.nit) {
+    companyStack.push({
+      text: `NIT: ${data.tenant.nit}-${data.tenant.dv || ''}`,
+      style: 'companyInfo',
+    });
+  }
+  if (data.tenant.address) {
+    companyStack.push({
+      text: `${data.tenant.address}${data.tenant.city ? `, ${data.tenant.city}` : ''}`,
+      style: 'companyInfo',
+    });
+  }
+  if (data.tenant.phone) {
+    companyStack.push({
+      text: `Tel: ${data.tenant.phone}`,
+      style: 'companyInfo',
+    });
+  }
+  companyStack.push({ text: data.tenant.email, style: 'companyInfo' });
+
+  const invoiceStack: Content[] = [
+    {
+      text: hasDianConfig
+        ? 'FACTURA ELECTRÓNICA DE VENTA'
+        : 'FACTURA',
+      style: 'invoiceTitle',
+    },
+    { text: data.invoice.invoiceNumber, style: 'invoiceNumber' },
+    {
+      text: `Fecha: ${formatDate(data.invoice.issueDate)}`,
+      style: 'invoiceInfo',
+    },
+  ];
+  if (data.invoice.dueDate) {
+    invoiceStack.push({
+      text: `Vence: ${formatDate(data.invoice.dueDate)}`,
+      style: 'invoiceInfo',
+    });
+  }
+  invoiceStack.push(
+    {
+      text: `Estado: ${translateStatus(data.invoice.status)}`,
+      style: 'invoiceInfo',
+    },
+    {
+      text: `Pago: ${translatePaymentStatus(data.invoice.paymentStatus)}`,
+      style: 'invoiceInfo',
+    },
+  );
+
   content.push({
     columns: [
-      // Company info
-      {
-        width: '*',
-        stack: [
-          {
-            text: data.tenant.name,
-            style: 'companyName',
-          },
-          { text: data.tenant.email, style: 'companyInfo' },
-          data.tenant.phone
-            ? { text: `Tel: ${data.tenant.phone}`, style: 'companyInfo' }
-            : { text: '', style: 'companyInfo' },
-        ],
-      },
-      // Invoice info
+      { width: '*', stack: companyStack },
       {
         width: 'auto',
         alignment: 'right' as const,
-        stack: [
-          {
-            text: 'FACTURA',
-            style: 'invoiceTitle',
-          },
-          {
-            text: data.invoice.invoiceNumber,
-            style: 'invoiceNumber',
-          },
-          {
-            text: `Fecha: ${formatDate(data.invoice.issueDate)}`,
-            style: 'invoiceInfo',
-          },
-          data.invoice.dueDate
-            ? {
-                text: `Vence: ${formatDate(data.invoice.dueDate)}`,
-                style: 'invoiceInfo',
-              }
-            : { text: '', style: 'invoiceInfo' },
-          {
-            text: `Estado: ${translateStatus(data.invoice.status)}`,
-            style: 'invoiceInfo',
-          },
-          {
-            text: `Pago: ${translatePaymentStatus(data.invoice.paymentStatus)}`,
-            style: 'invoiceInfo',
-          },
-        ],
+        stack: invoiceStack,
       },
     ],
   });
+
+  // Resolution info
+  if (data.tenant.resolutionNumber) {
+    let resText = `Resolución DIAN No. ${data.tenant.resolutionNumber}`;
+    if (data.tenant.resolutionDate) {
+      resText += ` del ${formatDate(data.tenant.resolutionDate)}`;
+    }
+    if (data.tenant.resolutionPrefix) {
+      resText += `, Prefijo ${data.tenant.resolutionPrefix}`;
+    }
+    if (
+      data.tenant.resolutionRangeFrom != null &&
+      data.tenant.resolutionRangeTo != null
+    ) {
+      resText += `, del ${data.tenant.resolutionRangeFrom} al ${data.tenant.resolutionRangeTo}`;
+    }
+    content.push({
+      text: resText,
+      style: 'resolution',
+      margin: [0, 5, 0, 0],
+    });
+  }
 
   // Divider
   content.push({
@@ -330,6 +378,22 @@ export function createInvoiceTemplate(
     });
   }
 
+  // CUFE section (if electronic invoice)
+  if (data.invoice.dianCufe) {
+    content.push({
+      margin: [0, 20, 0, 0],
+      stack: [
+        { text: 'CUFE', style: 'sectionTitle' },
+        {
+          text: data.invoice.dianCufe,
+          fontSize: 7,
+          color: '#666666',
+          font: 'Courier',
+        },
+      ],
+    });
+  }
+
   // Footer
   content.push({
     margin: [0, 40, 0, 0],
@@ -415,6 +479,11 @@ export function createInvoiceTemplate(
       },
       notes: {
         fontSize: 10,
+        color: '#666666',
+        italics: true,
+      },
+      resolution: {
+        fontSize: 8,
         color: '#666666',
         italics: true,
       },

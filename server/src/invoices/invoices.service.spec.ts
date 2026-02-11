@@ -435,11 +435,16 @@ describe('InvoicesService', () => {
 
       expect(prismaService.invoice.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          include: {
+          include: expect.objectContaining({
             customer: true,
             user: true,
             warehouse: true,
-          },
+            tenant: expect.objectContaining({
+              include: expect.objectContaining({
+                dianConfig: true,
+              }),
+            }),
+          }),
         }),
       );
     });
@@ -472,16 +477,17 @@ describe('InvoicesService', () => {
       expect(result.items).toHaveLength(1);
       expect(prismaService.invoice.findFirst).toHaveBeenCalledWith({
         where: { id: 'invoice-123', tenantId: mockTenantId },
-        include: {
-          items: {
-            include: {
-              product: true,
-            },
-          },
+        include: expect.objectContaining({
+          items: { include: { product: true } },
           customer: true,
           user: true,
           warehouse: true,
-        },
+          tenant: expect.objectContaining({
+            include: expect.objectContaining({
+              dianConfig: true,
+            }),
+          }),
+        }),
       });
     });
 

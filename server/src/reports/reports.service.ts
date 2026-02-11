@@ -76,7 +76,11 @@ export class ReportsService {
             product: true,
           },
         },
-        tenant: true,
+        tenant: {
+          include: {
+            dianConfig: true,
+          },
+        },
       },
     });
 
@@ -85,12 +89,24 @@ export class ReportsService {
       throw new NotFoundException('Factura no encontrada');
     }
 
+    const dian = invoice.tenant.dianConfig;
+
     // Build template data
     const templateData: InvoiceTemplateData = {
       tenant: {
         name: invoice.tenant.name,
         email: invoice.tenant.email,
         phone: invoice.tenant.phone,
+        businessName: dian?.businessName ?? null,
+        nit: dian?.nit ?? null,
+        dv: dian?.dv ?? null,
+        address: dian?.address ?? null,
+        city: dian?.city ?? null,
+        resolutionNumber: dian?.resolutionNumber ?? null,
+        resolutionPrefix: dian?.resolutionPrefix ?? null,
+        resolutionRangeFrom: dian?.resolutionRangeFrom ?? null,
+        resolutionRangeTo: dian?.resolutionRangeTo ?? null,
+        resolutionDate: dian?.resolutionDate ?? null,
       },
       invoice: {
         invoiceNumber: invoice.invoiceNumber,
@@ -99,6 +115,7 @@ export class ReportsService {
         status: invoice.status,
         paymentStatus: invoice.paymentStatus,
         notes: invoice.notes,
+        dianCufe: invoice.dianCufe,
       },
       customer: invoice.customer
         ? {

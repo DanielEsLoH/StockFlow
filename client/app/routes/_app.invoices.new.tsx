@@ -68,6 +68,21 @@ export default function POSPage() {
     totals: typeof totals;
     customer: Customer | null;
     payments: { method: string; amount: number }[];
+    tenant?: {
+      name: string;
+      email: string;
+      phone?: string | null;
+      businessName?: string | null;
+      nit?: string | null;
+      dv?: string | null;
+      address?: string | null;
+      city?: string | null;
+      resolutionNumber?: string | null;
+      resolutionPrefix?: string | null;
+      resolutionRangeFrom?: number | null;
+      resolutionRangeTo?: number | null;
+      resolutionDate?: string | null;
+    };
   } | null>(null);
 
   // POS Cart hook - must be before useProducts to have selectedWarehouseId available
@@ -214,6 +229,7 @@ export default function POSPage() {
                 status === "PAID"
                   ? [{ method: "CASH", amount: totalsSnapshot.total }]
                   : [],
+              tenant: data.tenant,
             });
 
             resetState();
@@ -768,11 +784,33 @@ export default function POSPage() {
         <POSTicketModal
           isOpen={showTicketModal}
           onClose={() => setShowTicketModal(false)}
-          businessName="Mi Negocio"
+          businessName={
+            lastInvoice.tenant?.businessName ||
+            lastInvoice.tenant?.name ||
+            "Mi Negocio"
+          }
+          businessNit={
+            lastInvoice.tenant?.nit
+              ? `${lastInvoice.tenant.nit}-${lastInvoice.tenant.dv}`
+              : undefined
+          }
+          businessAddress={
+            lastInvoice.tenant?.address
+              ? `${lastInvoice.tenant.address}${lastInvoice.tenant.city ? `, ${lastInvoice.tenant.city}` : ""}`
+              : undefined
+          }
+          businessPhone={lastInvoice.tenant?.phone ?? undefined}
+          resolutionNumber={lastInvoice.tenant?.resolutionNumber ?? undefined}
+          resolutionPrefix={lastInvoice.tenant?.resolutionPrefix ?? undefined}
+          resolutionRangeFrom={lastInvoice.tenant?.resolutionRangeFrom ?? undefined}
+          resolutionRangeTo={lastInvoice.tenant?.resolutionRangeTo ?? undefined}
+          resolutionDate={lastInvoice.tenant?.resolutionDate ?? undefined}
           invoiceNumber={lastInvoice.invoiceNumber}
           date={new Date().toLocaleString("es-CO")}
           customerName={lastInvoice.customer?.name}
           customerDocument={lastInvoice.customer?.document}
+          customerPhone={lastInvoice.customer?.phone ?? undefined}
+          customerAddress={lastInvoice.customer?.address ?? undefined}
           items={lastInvoice.items.map((item) => ({
             name: item.product.name,
             quantity: item.quantity,

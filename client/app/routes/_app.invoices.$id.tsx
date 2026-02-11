@@ -32,7 +32,7 @@ import {
   useUpdateInvoiceStatus,
   useSendInvoiceToDian,
 } from "~/hooks/useInvoices";
-import { useDianConfig, useDownloadDianXml } from "~/hooks/useDian";
+import { useDownloadDianXml } from "~/hooks/useDian";
 import { Button } from "~/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
 import { Badge } from "~/components/ui/Badge";
@@ -48,7 +48,6 @@ import {
 } from "~/components/ui/Table";
 import type { InvoiceStatus, InvoiceSource } from "~/types/invoice";
 import { POSTicketModal } from "~/components/pos";
-import { useAuthStore } from "~/stores/auth.store";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -306,7 +305,6 @@ export default function InvoiceDetailPage() {
   const [showTicketModal, setShowTicketModal] = useState(false);
 
   const { data: invoice, isLoading, isError } = useInvoice(id!);
-  const { data: dianConfig } = useDianConfig();
   const deleteInvoice = useDeleteInvoice();
   const updateStatus = useUpdateInvoiceStatus();
   const sendToDian = useSendInvoiceToDian();
@@ -348,9 +346,9 @@ export default function InvoiceDetailPage() {
     invoice && invoice.status !== "PAID" && invoice.status !== "CANCELLED";
   const canDelete = invoice && invoice.status === "DRAFT";
 
-  // Can send to DIAN if: has DIAN config, invoice is PENDING or PAID, and no CUFE yet
+  // Can send to DIAN if: has DIAN config (tenant.nit), invoice is PENDING or PAID, and no CUFE yet
   const canSendToDian =
-    dianConfig &&
+    invoice?.tenant?.nit &&
     invoice &&
     (invoice.status === "PENDING" || invoice.status === "PAID") &&
     !invoice.dianCufe;
@@ -446,10 +444,78 @@ export default function InvoiceDetailPage() {
         </div>
       </PageSection>
 
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Emisor & Cliente */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Issuer / Emisor */}
+        <PageSection>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary-500" />
+                Emisor
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="font-semibold text-neutral-900 dark:text-white">
+                  {invoice.tenant?.businessName || invoice.tenant?.name || "Sin configurar"}
+                </p>
+                {invoice.tenant?.nit && (
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    NIT: {invoice.tenant.nit}-{invoice.tenant.dv}
+                  </p>
+                )}
+              </div>
+
+              {invoice.tenant?.address && (
+                <div className="flex items-start gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-neutral-400 mt-0.5" />
+                  <span className="text-neutral-700 dark:text-neutral-300">
+                    {invoice.tenant.address}
+                    {invoice.tenant.city && `, ${invoice.tenant.city}`}
+                  </span>
+                </div>
+              )}
+
+              {invoice.tenant?.phone && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 text-neutral-400" />
+                  <span className="text-neutral-700 dark:text-neutral-300">
+                    {invoice.tenant.phone}
+                  </span>
+                </div>
+              )}
+
+              {invoice.tenant?.email && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="h-4 w-4 text-neutral-400" />
+                  <span className="text-neutral-700 dark:text-neutral-300">
+                    {invoice.tenant.email}
+                  </span>
+                </div>
+              )}
+
+              {invoice.tenant?.resolutionNumber && (
+                <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <FileText className="inline h-3 w-3 mr-1" />
+                    Resolución DIAN No. {invoice.tenant.resolutionNumber}
+                    {invoice.tenant.resolutionDate &&
+                      ` del ${formatDate(invoice.tenant.resolutionDate)}`}
+                    {invoice.tenant.resolutionPrefix &&
+                      `, Prefijo ${invoice.tenant.resolutionPrefix}`}
+                    {invoice.tenant.resolutionRangeFrom != null &&
+                      invoice.tenant.resolutionRangeTo != null &&
+                      `, del ${invoice.tenant.resolutionRangeFrom} al ${invoice.tenant.resolutionRangeTo}`}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </PageSection>
+
         {/* Customer Information */}
-        <PageSection className="lg:col-span-1">
+        <PageSection>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -461,14 +527,14 @@ export default function InvoiceDetailPage() {
                 Cliente
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div>
                 <p className="font-semibold text-neutral-900 dark:text-white">
                   {invoice.customer?.name || "Cliente desconocido"}
                 </p>
-                {invoice.customer?.document && (
+                {invoice.customer?.documentNumber && (
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    {invoice.customer.documentType}: {invoice.customer.document}
+                    {invoice.customer.documentType || "Doc"}: {invoice.customer.documentNumber}
                   </p>
                 )}
               </div>
@@ -501,17 +567,21 @@ export default function InvoiceDetailPage() {
                 </div>
               )}
 
-              <Link to={`/customers/${invoice.customerId}`}>
-                <Button variant="ghost" size="sm" className="w-full mt-2">
-                  Ver cliente
-                </Button>
-              </Link>
+              {invoice.customerId && (
+                <Link to={`/customers/${invoice.customerId}`}>
+                  <Button variant="ghost" size="sm" className="w-full mt-2">
+                    Ver cliente
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         </PageSection>
+      </div>
 
-        {/* Invoice Details */}
-        <PageSection className="lg:col-span-2">
+      {/* Invoice Details */}
+      <div className="grid grid-cols-1 gap-6">
+        <PageSection>
           <Card>
             <CardHeader>
               <CardTitle>Detalles de la Factura</CardTitle>
@@ -802,30 +872,38 @@ export default function InvoiceDetailPage() {
         <POSTicketModal
           isOpen={showTicketModal}
           onClose={() => setShowTicketModal(false)}
-          // Datos del negocio - usar DianConfig si existe, fallback a tenant name
+          // Datos del negocio desde invoice.tenant
           businessName={
-            dianConfig?.businessName ||
-            useAuthStore.getState().tenant?.name ||
+            invoice.tenant?.businessName ||
+            invoice.tenant?.name ||
             "Mi Empresa"
           }
           businessNit={
-            dianConfig?.nit
-              ? `NIT: ${dianConfig.nit}-${dianConfig.dv}`
+            invoice.tenant?.nit
+              ? `${invoice.tenant.nit}-${invoice.tenant.dv}`
               : undefined
           }
           businessAddress={
-            dianConfig?.address
-              ? `${dianConfig.address}, ${dianConfig.city}`
+            invoice.tenant?.address
+              ? `${invoice.tenant.address}${invoice.tenant.city ? `, ${invoice.tenant.city}` : ""}`
               : undefined
           }
-          businessPhone={dianConfig?.phone}
+          businessPhone={invoice.tenant?.phone ?? undefined}
+          // Resolución
+          resolutionNumber={invoice.tenant?.resolutionNumber ?? undefined}
+          resolutionPrefix={invoice.tenant?.resolutionPrefix ?? undefined}
+          resolutionRangeFrom={invoice.tenant?.resolutionRangeFrom ?? undefined}
+          resolutionRangeTo={invoice.tenant?.resolutionRangeTo ?? undefined}
+          resolutionDate={invoice.tenant?.resolutionDate ?? undefined}
           // Datos de la factura
           invoiceNumber={invoice.invoiceNumber}
           date={invoice.issueDate}
           // Datos del cliente
           customerName={invoice.customer?.name}
-          customerDocument={invoice.customer?.document}
-          customerDocumentType={invoice.customer?.documentType}
+          customerDocument={invoice.customer?.documentNumber}
+          customerDocumentType={invoice.customer?.documentType ?? undefined}
+          customerPhone={invoice.customer?.phone ?? undefined}
+          customerAddress={invoice.customer?.address ?? undefined}
           // Items
           items={
             invoice.items?.map((item) => ({

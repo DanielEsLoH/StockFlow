@@ -57,7 +57,7 @@ const productSchema = z.object({
     .int()
     .min(0, "El stock minimo debe ser mayor o igual a 0"),
   maxStock: z.preprocess(
-    (val) => (val === "" || Number.isNaN(val) ? undefined : Number(val)),
+    (val) => (val === "" || val === undefined || Number.isNaN(val) ? undefined : Number(val)),
     z
       .number()
       .int()

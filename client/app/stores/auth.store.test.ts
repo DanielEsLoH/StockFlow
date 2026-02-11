@@ -14,7 +14,7 @@ const mockUser: User = {
   role: "ADMIN",
   status: "ACTIVE",
   tenantId: "tenant-1",
-  avatarUrl: "https://example.com/avatar.jpg",
+  avatar: "https://example.com/avatar.jpg",
 };
 
 const mockTenant: Tenant = {

@@ -45,6 +45,7 @@ export interface AuthUser {
   email: string;
   firstName: string;
   lastName: string;
+  avatar: string | null;
   role: UserRole;
   status: UserStatus;
   tenantId: string;
@@ -888,6 +889,7 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      avatar: user.avatar,
       role: user.role,
       status: user.status,
       tenantId: user.tenantId,

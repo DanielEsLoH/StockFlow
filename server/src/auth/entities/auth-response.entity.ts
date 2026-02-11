@@ -29,6 +29,14 @@ export class AuthUserEntity {
   lastName: string;
 
   @ApiProperty({
+    description: 'User avatar URL',
+    example: 'https://pub-xxx.r2.dev/avatars/tenant-1/user-1/avatar-123.jpg',
+    nullable: true,
+    required: false,
+  })
+  avatar: string | null;
+
+  @ApiProperty({
     description: 'User role within the tenant',
     enum: ['ADMIN', 'MANAGER', 'EMPLOYEE'],
     example: 'ADMIN',

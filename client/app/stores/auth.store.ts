@@ -10,7 +10,7 @@ export interface User {
   role: "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "EMPLOYEE";
   status: "ACTIVE" | "PENDING" | "SUSPENDED";
   tenantId: string;
-  avatarUrl?: string;
+  avatar?: string | null;
   /** Effective permissions loaded from server (role defaults + overrides) */
   permissions?: string[];
 }

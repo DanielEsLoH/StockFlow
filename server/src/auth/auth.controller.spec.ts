@@ -228,6 +228,7 @@ describe('AuthController', () => {
     role: UserRole.ADMIN,
     status: UserStatus.ACTIVE,
     tenantId: 'tenant-123',
+    avatar: null as string | null,
   };
 
   const mockTenant = {

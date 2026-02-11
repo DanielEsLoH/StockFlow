@@ -69,9 +69,10 @@ export class FilterProductsDto extends PaginationDto {
     type: Boolean,
   })
   @IsBoolean({ message: 'lowStock must be a boolean' })
-  @Transform(({ value }): boolean | undefined => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
+  @Transform(({ obj, key }): boolean | undefined => {
+    const raw = obj[key];
+    if (raw === 'true' || raw === true) return true;
+    if (raw === 'false' || raw === false) return false;
     return undefined;
   })
   @IsOptional()

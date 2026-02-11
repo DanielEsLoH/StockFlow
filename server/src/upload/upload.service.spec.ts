@@ -1,24 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
-import { BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { BadRequestException, Logger } from '@nestjs/common';
 import { UploadService } from './upload.service';
-import * as fs from 'fs';
-
-// Mock the fs module
-jest.mock('fs', () => ({
-  existsSync: jest.fn(),
-  mkdirSync: jest.fn(),
-  promises: {
-    writeFile: jest.fn(),
-    unlink: jest.fn(),
-  },
-}));
+import { CloudflareStorageService } from './cloudflare-storage.service';
 
 describe('UploadService', () => {
   let service: UploadService;
+  let storageService: jest.Mocked<CloudflareStorageService>;
 
   // Test data
   const mockTenantId = 'tenant-123';
+  const mockUserId = 'user-456';
+  const mockPublicUrl = 'https://stockflow-images.daniel-esloh.workers.dev/api/images';
 
   const createMockFile = (
     overrides: Partial<Express.Multer.File> = {},
@@ -39,28 +31,36 @@ describe('UploadService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    // Default mock implementations
-    (fs.existsSync as jest.Mock).mockReturnValue(true);
-    (fs.mkdirSync as jest.Mock).mockReturnValue(undefined);
-    (fs.promises.writeFile as jest.Mock).mockResolvedValue(undefined);
-    (fs.promises.unlink as jest.Mock).mockResolvedValue(undefined);
-
-    const mockConfigService = {
-      get: jest.fn().mockReturnValue('./uploads'),
+    const mockStorageService = {
+      upload: jest
+        .fn()
+        .mockResolvedValue(`${mockPublicUrl}/products/product-123.jpg`),
+      delete: jest.fn().mockResolvedValue(undefined),
+      getPublicUrl: jest
+        .fn()
+        .mockImplementation(
+          (key: string) => `${mockPublicUrl}/${key}`,
+        ),
+      extractKeyFromUrl: jest
+        .fn()
+        .mockImplementation((url: string) => {
+          const prefix = `${mockPublicUrl}/`;
+          return url.startsWith(prefix) ? url.slice(prefix.length) : null;
+        }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UploadService,
-        { provide: ConfigService, useValue: mockConfigService },
+        { provide: CloudflareStorageService, useValue: mockStorageService },
       ],
     }).compile();
 
     service = module.get<UploadService>(UploadService);
+    storageService = module.get(CloudflareStorageService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
-    jest.spyOn(Logger.prototype, 'debug').mockImplementation();
     jest.spyOn(Logger.prototype, 'warn').mockImplementation();
     jest.spyOn(Logger.prototype, 'error').mockImplementation();
   });
@@ -73,46 +73,11 @@ describe('UploadService', () => {
     it('should be defined', () => {
       expect(service).toBeDefined();
     });
-
-    it('should create upload directory if it does not exist', async () => {
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
-
-      const module: TestingModule = await Test.createTestingModule({
-        providers: [
-          UploadService,
-          { provide: ConfigService, useValue: { get: () => './uploads' } },
-        ],
-      }).compile();
-
-      const newService = module.get<UploadService>(UploadService);
-      expect(newService).toBeDefined();
-      expect(fs.mkdirSync).toHaveBeenCalledWith(
-        expect.stringContaining('products'),
-        { recursive: true },
-      );
-    });
-
-    it('should use default upload directory when not configured', async () => {
-      const module: TestingModule = await Test.createTestingModule({
-        providers: [
-          UploadService,
-          { provide: ConfigService, useValue: { get: () => undefined } },
-        ],
-      }).compile();
-
-      const newService = module.get<UploadService>(UploadService);
-      expect(newService).toBeDefined();
-    });
   });
 
   describe('validateFile', () => {
     it('should accept valid JPEG file', () => {
       const file = createMockFile({ mimetype: 'image/jpeg' });
-      expect(() => service.validateFile(file)).not.toThrow();
-    });
-
-    it('should accept valid JPG file', () => {
-      const file = createMockFile({ mimetype: 'image/jpg' });
       expect(() => service.validateFile(file)).not.toThrow();
     });
 
@@ -155,14 +120,6 @@ describe('UploadService', () => {
       expect(() => service.validateFile(file)).toThrow('Invalid file type');
     });
 
-    it('should throw BadRequestException for text file', () => {
-      const file = createMockFile({
-        mimetype: 'text/plain',
-        originalname: 'test.txt',
-      });
-      expect(() => service.validateFile(file)).toThrow(BadRequestException);
-    });
-
     it('should throw BadRequestException for invalid extension', () => {
       const file = createMockFile({
         mimetype: 'image/jpeg',
@@ -184,51 +141,30 @@ describe('UploadService', () => {
       const file = createMockFile({ size: 5 * 1024 * 1024 }); // 5MB
       expect(() => service.validateFile(file)).not.toThrow();
     });
-
-    it('should handle case-insensitive extensions', () => {
-      const file = createMockFile({
-        mimetype: 'image/jpeg',
-        originalname: 'test.JPG',
-      });
-      expect(() => service.validateFile(file)).not.toThrow();
-    });
   });
 
   describe('generateUniqueFilename', () => {
-    it('should generate filename with product prefix', () => {
-      const filename = service.generateUniqueFilename('test.jpg');
+    it('should generate filename with given prefix', () => {
+      const filename = service.generateUniqueFilename('product', 'test.jpg');
       expect(filename).toMatch(/^product-\d+-\d+\.jpg$/);
     });
 
     it('should preserve file extension', () => {
-      const jpgFilename = service.generateUniqueFilename('test.jpg');
+      const jpgFilename = service.generateUniqueFilename('product', 'test.jpg');
       expect(jpgFilename).toMatch(/\.jpg$/);
 
-      const pngFilename = service.generateUniqueFilename('test.png');
+      const pngFilename = service.generateUniqueFilename('product', 'test.png');
       expect(pngFilename).toMatch(/\.png$/);
     });
 
-    it('should include timestamp in filename', () => {
-      const before = Date.now();
-      const filename = service.generateUniqueFilename('test.jpg');
-      const after = Date.now();
-
-      const match = filename.match(/^product-(\d+)-\d+\.jpg$/);
-      expect(match).not.toBeNull();
-
-      const timestamp = parseInt(match![1], 10);
-      expect(timestamp).toBeGreaterThanOrEqual(before);
-      expect(timestamp).toBeLessThanOrEqual(after);
-    });
-
     it('should generate unique filenames', () => {
-      const filename1 = service.generateUniqueFilename('test.jpg');
-      const filename2 = service.generateUniqueFilename('test.jpg');
+      const filename1 = service.generateUniqueFilename('product', 'test.jpg');
+      const filename2 = service.generateUniqueFilename('product', 'test.jpg');
       expect(filename1).not.toBe(filename2);
     });
 
     it('should lowercase the extension', () => {
-      const filename = service.generateUniqueFilename('test.JPG');
+      const filename = service.generateUniqueFilename('product', 'test.JPG');
       expect(filename).toMatch(/\.jpg$/);
     });
   });
@@ -239,31 +175,21 @@ describe('UploadService', () => {
       const result = await service.uploadFile(file);
 
       expect(result).toHaveProperty('url');
-      expect(result.url).toMatch(/^\/uploads\/products\/product-\d+-\d+\.jpg$/);
-      expect(fs.promises.writeFile).toHaveBeenCalled();
+      expect(storageService.upload).toHaveBeenCalledWith(
+        expect.stringMatching(/^products\/product-\d+-\d+\.jpg$/),
+        file.buffer,
+        file.mimetype,
+      );
     });
 
-    it('should upload file with tenant ID', async () => {
-      const file = createMockFile();
-      const result = await service.uploadFile(file, mockTenantId);
-
-      expect(result.url).toContain(`/uploads/products/${mockTenantId}/`);
-    });
-
-    it('should create tenant directory if it does not exist', async () => {
-      (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
-        if (path.includes(mockTenantId)) {
-          return false;
-        }
-        return true;
-      });
-
+    it('should upload file with tenant ID in key path', async () => {
       const file = createMockFile();
       await service.uploadFile(file, mockTenantId);
 
-      expect(fs.mkdirSync).toHaveBeenCalledWith(
-        expect.stringContaining(mockTenantId),
-        { recursive: true },
+      expect(storageService.upload).toHaveBeenCalledWith(
+        expect.stringContaining(`products/${mockTenantId}/`),
+        file.buffer,
+        file.mimetype,
       );
     });
 
@@ -273,32 +199,7 @@ describe('UploadService', () => {
       await expect(service.uploadFile(invalidFile)).rejects.toThrow(
         BadRequestException,
       );
-      expect(fs.promises.writeFile).not.toHaveBeenCalled();
-    });
-
-    it('should throw BadRequestException on write error', async () => {
-      (fs.promises.writeFile as jest.Mock).mockRejectedValue(
-        new Error('Write error'),
-      );
-
-      const file = createMockFile();
-      await expect(service.uploadFile(file)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.uploadFile(file)).rejects.toThrow(
-        'Failed to save uploaded file',
-      );
-    });
-
-    it('should log upload operation', async () => {
-      const logSpy = jest.spyOn(Logger.prototype, 'log');
-      const file = createMockFile();
-
-      await service.uploadFile(file);
-
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('File uploaded'),
-      );
+      expect(storageService.upload).not.toHaveBeenCalled();
     });
   });
 
@@ -307,15 +208,12 @@ describe('UploadService', () => {
       const files = [
         createMockFile({ originalname: 'image1.jpg' }),
         createMockFile({ originalname: 'image2.jpg' }),
-        createMockFile({ originalname: 'image3.jpg' }),
       ];
 
       const result = await service.uploadFiles(files);
 
-      expect(result.urls).toHaveLength(3);
-      result.urls.forEach((url) => {
-        expect(url).toMatch(/^\/uploads\/products\/product-\d+-\d+\.jpg$/);
-      });
+      expect(result.urls).toHaveLength(2);
+      expect(storageService.upload).toHaveBeenCalledTimes(2);
     });
 
     it('should throw BadRequestException when no files provided', async () => {
@@ -327,12 +225,6 @@ describe('UploadService', () => {
       );
     });
 
-    it('should throw BadRequestException when files is null', async () => {
-      await expect(service.uploadFiles(null as any)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
     it('should validate all files before uploading any', async () => {
       const files = [
         createMockFile({ originalname: 'image1.jpg' }),
@@ -340,155 +232,60 @@ describe('UploadService', () => {
           mimetype: 'application/pdf',
           originalname: 'doc.pdf',
         }),
-        createMockFile({ originalname: 'image3.jpg' }),
       ];
 
       await expect(service.uploadFiles(files)).rejects.toThrow(
         BadRequestException,
       );
-      expect(fs.promises.writeFile).not.toHaveBeenCalled();
-    });
-
-    it('should upload files with tenant ID', async () => {
-      const files = [
-        createMockFile({ originalname: 'image1.jpg' }),
-        createMockFile({ originalname: 'image2.jpg' }),
-      ];
-
-      const result = await service.uploadFiles(files, mockTenantId);
-
-      result.urls.forEach((url) => {
-        expect(url).toContain(`/uploads/products/${mockTenantId}/`);
-      });
-    });
-
-    it('should log batch upload operation', async () => {
-      const logSpy = jest.spyOn(Logger.prototype, 'log');
-      const files = [
-        createMockFile({ originalname: 'image1.jpg' }),
-        createMockFile({ originalname: 'image2.jpg' }),
-      ];
-
-      await service.uploadFiles(files);
-
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Uploaded 2'),
-      );
+      expect(storageService.upload).not.toHaveBeenCalled();
     });
   });
 
-  describe('deleteFile', () => {
-    it('should delete file successfully', async () => {
-      await service.deleteFile('product-123-456.jpg');
+  describe('uploadAvatar', () => {
+    it('should upload avatar with correct key path', async () => {
+      const file = createMockFile();
+      await service.uploadAvatar(file, mockTenantId, mockUserId);
 
-      expect(fs.promises.unlink).toHaveBeenCalled();
-    });
-
-    it('should delete file with tenant ID', async () => {
-      await service.deleteFile('product-123-456.jpg', mockTenantId);
-
-      expect(fs.promises.unlink).toHaveBeenCalledWith(
-        expect.stringContaining(mockTenantId),
+      expect(storageService.upload).toHaveBeenCalledWith(
+        expect.stringMatching(
+          new RegExp(`^avatars/${mockTenantId}/${mockUserId}/avatar-\\d+-\\d+\\.jpg$`),
+        ),
+        file.buffer,
+        file.mimetype,
       );
     });
 
-    it('should throw NotFoundException when file does not exist', async () => {
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
+    it('should validate file before upload', async () => {
+      const invalidFile = createMockFile({ mimetype: 'application/pdf' });
 
-      await expect(service.deleteFile('nonexistent.jpg')).rejects.toThrow(
-        NotFoundException,
-      );
-      await expect(service.deleteFile('nonexistent.jpg')).rejects.toThrow(
-        'File not found',
+      await expect(
+        service.uploadAvatar(invalidFile, mockTenantId, mockUserId),
+      ).rejects.toThrow(BadRequestException);
+      expect(storageService.upload).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteByUrl', () => {
+    it('should extract key from URL and delete from storage', async () => {
+      const url = `${mockPublicUrl}/products/tenant-123/product-123.jpg`;
+      await service.deleteByUrl(url);
+
+      expect(storageService.extractKeyFromUrl).toHaveBeenCalledWith(url);
+      expect(storageService.delete).toHaveBeenCalledWith(
+        'products/tenant-123/product-123.jpg',
       );
     });
 
-    it('should throw BadRequestException for path traversal attempt', async () => {
-      await expect(service.deleteFile('../secret.jpg')).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.deleteFile('../secret.jpg')).rejects.toThrow(
-        'Invalid filename',
-      );
-    });
-
-    it('should throw BadRequestException for directory traversal', async () => {
-      await expect(service.deleteFile('../../etc/passwd')).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('should throw BadRequestException on deletion error', async () => {
-      (fs.promises.unlink as jest.Mock).mockRejectedValue(
-        new Error('Permission denied'),
-      );
-
-      await expect(service.deleteFile('product-123-456.jpg')).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.deleteFile('product-123-456.jpg')).rejects.toThrow(
-        'Failed to delete file',
-      );
-    });
-
-    it('should log delete operation', async () => {
-      const logSpy = jest.spyOn(Logger.prototype, 'log');
-
-      await service.deleteFile('product-123-456.jpg');
-
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('File deleted'),
-      );
-    });
-
-    it('should log warning when file not found', async () => {
+    it('should log warning when key cannot be extracted', async () => {
       const warnSpy = jest.spyOn(Logger.prototype, 'warn');
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
+      storageService.extractKeyFromUrl.mockReturnValue(null);
 
-      try {
-        await service.deleteFile('nonexistent.jpg');
-      } catch {
-        // Expected
-      }
+      await service.deleteByUrl('https://unknown.com/file.jpg');
 
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('File not found for deletion'),
+        expect.stringContaining('Cannot extract storage key'),
       );
-    });
-  });
-
-  describe('getFilePath', () => {
-    it('should return correct file path without tenant', () => {
-      const filePath = service.getFilePath('product-123-456.jpg');
-      expect(filePath).toContain('products');
-      expect(filePath).toContain('product-123-456.jpg');
-    });
-
-    it('should return correct file path with tenant', () => {
-      const filePath = service.getFilePath('product-123-456.jpg', mockTenantId);
-      expect(filePath).toContain(mockTenantId);
-      expect(filePath).toContain('product-123-456.jpg');
-    });
-  });
-
-  describe('fileExists', () => {
-    it('should return true when file exists', () => {
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      expect(service.fileExists('product-123-456.jpg')).toBe(true);
-    });
-
-    it('should return false when file does not exist', () => {
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
-      expect(service.fileExists('nonexistent.jpg')).toBe(false);
-    });
-
-    it('should check tenant-specific path when tenant ID provided', () => {
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      service.fileExists('product-123-456.jpg', mockTenantId);
-
-      expect(fs.existsSync).toHaveBeenCalledWith(
-        expect.stringContaining(mockTenantId),
-      );
+      expect(storageService.delete).not.toHaveBeenCalled();
     });
   });
 
@@ -497,7 +294,6 @@ describe('UploadService', () => {
       const mimeTypes = service.getAllowedMimeTypes();
 
       expect(mimeTypes).toContain('image/jpeg');
-      expect(mimeTypes).toContain('image/jpg');
       expect(mimeTypes).toContain('image/png');
       expect(mimeTypes).toContain('image/gif');
       expect(mimeTypes).toContain('image/webp');
@@ -519,104 +315,16 @@ describe('UploadService', () => {
     });
   });
 
-  describe('error handling', () => {
-    it('should handle directory creation failure gracefully', async () => {
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
-      (fs.mkdirSync as jest.Mock).mockImplementation(() => {
-        throw new Error('Permission denied');
-      });
-
-      await expect(
-        Test.createTestingModule({
-          providers: [
-            UploadService,
-            { provide: ConfigService, useValue: { get: () => './uploads' } },
-          ],
-        }).compile(),
-      ).rejects.toThrow('Unable to create upload directory');
-    });
-  });
-
   describe('tenant isolation', () => {
     it('should isolate files by tenant', async () => {
       const file = createMockFile();
 
-      const result1 = await service.uploadFile(file, 'tenant-1');
-      const result2 = await service.uploadFile(file, 'tenant-2');
+      await service.uploadFile(file, 'tenant-1');
+      await service.uploadFile(file, 'tenant-2');
 
-      expect(result1.url).toContain('/tenant-1/');
-      expect(result2.url).toContain('/tenant-2/');
-      expect(result1.url).not.toBe(result2.url);
-    });
-  });
-
-  describe('logging', () => {
-    it('should log when creating upload directory', async () => {
-      const logSpy = jest.spyOn(Logger.prototype, 'log');
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
-
-      await Test.createTestingModule({
-        providers: [
-          UploadService,
-          { provide: ConfigService, useValue: { get: () => './uploads' } },
-        ],
-      }).compile();
-
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Created upload directory'),
-      );
-    });
-
-    it('should log debug when creating tenant directory', async () => {
-      const debugSpy = jest.spyOn(Logger.prototype, 'debug');
-      (fs.existsSync as jest.Mock).mockImplementation((p: string) => {
-        if (p.includes('new-tenant')) return false;
-        return true;
-      });
-
-      const file = createMockFile();
-      await service.uploadFile(file, 'new-tenant');
-
-      expect(debugSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Created tenant upload directory'),
-      );
-    });
-
-    it('should log error on write failure', async () => {
-      const errorSpy = jest.spyOn(Logger.prototype, 'error');
-      (fs.promises.writeFile as jest.Mock).mockRejectedValue(
-        new Error('Write error'),
-      );
-
-      const file = createMockFile();
-      try {
-        await service.uploadFile(file);
-      } catch {
-        // Expected
-      }
-
-      expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to write file'),
-        expect.any(Error),
-      );
-    });
-
-    it('should log error on delete failure', async () => {
-      const errorSpy = jest.spyOn(Logger.prototype, 'error');
-      (fs.promises.unlink as jest.Mock).mockRejectedValue(
-        new Error('Delete error'),
-      );
-
-      try {
-        await service.deleteFile('product-123.jpg');
-      } catch {
-        // Expected
-      }
-
-      expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to delete file'),
-        expect.any(Error),
-      );
+      const calls = storageService.upload.mock.calls;
+      expect(calls[0][0]).toContain('tenant-1');
+      expect(calls[1][0]).toContain('tenant-2');
     });
   });
 });

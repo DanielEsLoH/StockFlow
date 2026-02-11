@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { join } from 'path';
+
 import compression from 'compression';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -142,11 +142,6 @@ async function bootstrap() {
   // Enable graceful shutdown hooks for clean resource cleanup
   // Handles SIGTERM/SIGINT signals for proper container orchestration
   app.enableShutdownHooks();
-
-  // Serve static files from the uploads directory
-  // Files will be accessible at /uploads/* URL paths
-  const uploadsPath = join(__dirname, '..', 'uploads');
-  app.useStaticAssets(uploadsPath, { prefix: '/uploads/' });
 
   // Global exception filters
   // Order matters: filters are applied in reverse order (last registered catches first)

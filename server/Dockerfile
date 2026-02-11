@@ -153,11 +153,6 @@ COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nestjs:nodejs /app/scripts/startup.sh ./scripts/startup.sh
 RUN chmod +x ./scripts/startup.sh
 
-# Create uploads directory with proper permissions
-# This directory is used for user-uploaded files
-RUN mkdir -p /app/uploads/products && \
-    chown -R nestjs:nodejs /app/uploads
-
 # Document the port (Railway will override with dynamic PORT)
 # Using a variable-friendly approach
 EXPOSE 3000

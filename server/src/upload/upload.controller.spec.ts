@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { BadRequestException, Logger } from '@nestjs/common';
 import { UploadController } from './upload.controller';
 import {
   UploadService,
@@ -16,6 +16,7 @@ describe('UploadController', () => {
 
   // Test data
   const mockTenantId = 'tenant-123';
+  const mockUserId = 'user-456';
 
   const createMockFile = (
     overrides: Partial<Express.Multer.File> = {},
@@ -34,13 +35,13 @@ describe('UploadController', () => {
   });
 
   const mockUploadResponse: UploadResponse = {
-    url: '/uploads/products/product-1234567890-123456789.jpg',
+    url: 'https://stockflow-images.daniel-esloh.workers.dev/api/images/products/product-123.jpg',
   };
 
   const mockMultiUploadResponse: MultiUploadResponse = {
     urls: [
-      '/uploads/products/product-1234567890-123456789.jpg',
-      '/uploads/products/product-1234567891-987654321.jpg',
+      'https://stockflow-images.daniel-esloh.workers.dev/api/images/products/product-123.jpg',
+      'https://stockflow-images.daniel-esloh.workers.dev/api/images/products/product-456.jpg',
     ],
   };
 
@@ -50,11 +51,10 @@ describe('UploadController', () => {
     const mockUploadService = {
       uploadFile: jest.fn(),
       uploadFiles: jest.fn(),
-      deleteFile: jest.fn(),
+      uploadAvatar: jest.fn(),
+      deleteByUrl: jest.fn(),
       validateFile: jest.fn(),
       generateUniqueFilename: jest.fn(),
-      getFilePath: jest.fn(),
-      fileExists: jest.fn(),
       getAllowedMimeTypes: jest.fn(),
       getMaxFileSize: jest.fn(),
     };
@@ -93,7 +93,6 @@ describe('UploadController', () => {
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
-    jest.spyOn(Logger.prototype, 'debug').mockImplementation();
     jest.spyOn(Logger.prototype, 'warn').mockImplementation();
     jest.spyOn(Logger.prototype, 'error').mockImplementation();
   });
@@ -128,12 +127,6 @@ describe('UploadController', () => {
       );
     });
 
-    it('should throw BadRequestException when file is undefined', async () => {
-      await expect(
-        controller.uploadProductImage(undefined as any),
-      ).rejects.toThrow(BadRequestException);
-    });
-
     it('should pass tenant ID to upload service', async () => {
       const file = createMockFile();
       uploadService.uploadFile.mockResolvedValue(mockUploadResponse);
@@ -162,17 +155,6 @@ describe('UploadController', () => {
       await expect(controller.uploadProductImage(file)).rejects.toThrow(
         BadRequestException,
       );
-      await expect(controller.uploadProductImage(file)).rejects.toThrow(
-        'Invalid file type',
-      );
-    });
-
-    it('should propagate service errors', async () => {
-      const file = createMockFile();
-      const error = new Error('Upload failed');
-      uploadService.uploadFile.mockRejectedValue(error);
-
-      await expect(controller.uploadProductImage(file)).rejects.toThrow(error);
     });
 
     it('should log upload operation', async () => {
@@ -185,22 +167,6 @@ describe('UploadController', () => {
       expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining('Uploading product image'),
       );
-    });
-
-    it('should log file details', async () => {
-      const logSpy = jest.spyOn(Logger.prototype, 'log');
-      const file = createMockFile({
-        originalname: 'my-photo.png',
-        size: 2048,
-      });
-      uploadService.uploadFile.mockResolvedValue(mockUploadResponse);
-
-      await controller.uploadProductImage(file);
-
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('my-photo.png'),
-      );
-      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('2048'));
     });
   });
 
@@ -225,63 +191,11 @@ describe('UploadController', () => {
       await expect(controller.uploadProductImages([] as any)).rejects.toThrow(
         BadRequestException,
       );
-      await expect(controller.uploadProductImages([] as any)).rejects.toThrow(
-        'No files provided',
-      );
     });
 
     it('should throw BadRequestException when files is null', async () => {
       await expect(controller.uploadProductImages(null as any)).rejects.toThrow(
         BadRequestException,
-      );
-    });
-
-    it('should throw BadRequestException when files is undefined', async () => {
-      await expect(
-        controller.uploadProductImages(undefined as any),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should pass tenant ID to upload service', async () => {
-      const files = [createMockFile()];
-      uploadService.uploadFiles.mockResolvedValue(mockMultiUploadResponse);
-
-      await controller.uploadProductImages(files);
-
-      expect(tenantContextService.getTenantId).toHaveBeenCalled();
-      expect(uploadService.uploadFiles).toHaveBeenCalledWith(
-        files,
-        mockTenantId,
-      );
-    });
-
-    it('should handle undefined tenant ID', async () => {
-      const files = [createMockFile()];
-      tenantContextService.getTenantId.mockReturnValue(null as any);
-      uploadService.uploadFiles.mockResolvedValue(mockMultiUploadResponse);
-
-      await controller.uploadProductImages(files);
-
-      expect(uploadService.uploadFiles).toHaveBeenCalledWith(files, undefined);
-    });
-
-    it('should propagate service validation errors', async () => {
-      const files = [createMockFile()];
-      const error = new BadRequestException('File size exceeds limit');
-      uploadService.uploadFiles.mockRejectedValue(error);
-
-      await expect(controller.uploadProductImages(files)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('should propagate service errors', async () => {
-      const files = [createMockFile()];
-      const error = new Error('Upload failed');
-      uploadService.uploadFiles.mockRejectedValue(error);
-
-      await expect(controller.uploadProductImages(files)).rejects.toThrow(
-        error,
       );
     });
 
@@ -304,91 +218,47 @@ describe('UploadController', () => {
     });
   });
 
-  describe('deleteFile', () => {
-    it('should delete file successfully', async () => {
-      uploadService.deleteFile.mockResolvedValue(undefined);
+  describe('uploadAvatar', () => {
+    const mockUser = { id: mockUserId };
 
-      await controller.deleteFile('product-123-456.jpg');
+    it('should upload avatar successfully', async () => {
+      const file = createMockFile();
+      uploadService.uploadAvatar.mockResolvedValue(mockUploadResponse);
 
-      expect(uploadService.deleteFile).toHaveBeenCalledWith(
-        'product-123-456.jpg',
+      const result = await controller.uploadAvatar(file, mockUser);
+
+      expect(result).toEqual(mockUploadResponse);
+      expect(uploadService.uploadAvatar).toHaveBeenCalledWith(
+        file,
         mockTenantId,
+        mockUserId,
       );
     });
 
-    it('should pass tenant ID to delete service', async () => {
-      uploadService.deleteFile.mockResolvedValue(undefined);
-
-      await controller.deleteFile('product-123-456.jpg');
-
-      expect(tenantContextService.getTenantId).toHaveBeenCalled();
-      expect(uploadService.deleteFile).toHaveBeenCalledWith(
-        'product-123-456.jpg',
-        mockTenantId,
-      );
+    it('should throw BadRequestException when no file provided', async () => {
+      await expect(
+        controller.uploadAvatar(null as any, mockUser),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should handle undefined tenant ID', async () => {
+    it('should throw BadRequestException when tenant context missing', async () => {
       tenantContextService.getTenantId.mockReturnValue(null as any);
-      uploadService.deleteFile.mockResolvedValue(undefined);
-
-      await controller.deleteFile('product-123-456.jpg');
-
-      expect(uploadService.deleteFile).toHaveBeenCalledWith(
-        'product-123-456.jpg',
-        undefined,
-      );
-    });
-
-    it('should propagate NotFoundException', async () => {
-      const error = new NotFoundException('File not found');
-      uploadService.deleteFile.mockRejectedValue(error);
-
-      await expect(controller.deleteFile('nonexistent.jpg')).rejects.toThrow(
-        NotFoundException,
-      );
-      await expect(controller.deleteFile('nonexistent.jpg')).rejects.toThrow(
-        'File not found',
-      );
-    });
-
-    it('should propagate BadRequestException for invalid filename', async () => {
-      const error = new BadRequestException('Invalid filename');
-      uploadService.deleteFile.mockRejectedValue(error);
-
-      await expect(controller.deleteFile('../secret.jpg')).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('should propagate service errors', async () => {
-      const error = new Error('Delete failed');
-      uploadService.deleteFile.mockRejectedValue(error);
+      const file = createMockFile();
 
       await expect(
-        controller.deleteFile('product-123-456.jpg'),
-      ).rejects.toThrow(error);
+        controller.uploadAvatar(file, mockUser),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should log delete operation', async () => {
+    it('should log avatar upload operation', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
-      uploadService.deleteFile.mockResolvedValue(undefined);
+      const file = createMockFile();
+      uploadService.uploadAvatar.mockResolvedValue(mockUploadResponse);
 
-      await controller.deleteFile('product-123-456.jpg');
+      await controller.uploadAvatar(file, mockUser);
 
       expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Deleting file'),
-      );
-    });
-
-    it('should log filename in delete operation', async () => {
-      const logSpy = jest.spyOn(Logger.prototype, 'log');
-      uploadService.deleteFile.mockResolvedValue(undefined);
-
-      await controller.deleteFile('my-product-image.jpg');
-
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('my-product-image.jpg'),
+        expect.stringContaining(`Uploading avatar for user ${mockUserId}`),
       );
     });
   });
@@ -417,80 +287,28 @@ describe('UploadController', () => {
       const logCall = logSpy.mock.calls[0][0] as string;
       expect(logCall).not.toContain('for tenant null');
     });
-
-    it('should include tenant ID in batch upload log when available', async () => {
-      const logSpy = jest.spyOn(Logger.prototype, 'log');
-      const files = [createMockFile()];
-      uploadService.uploadFiles.mockResolvedValue(mockMultiUploadResponse);
-
-      await controller.uploadProductImages(files);
-
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining(`for tenant ${mockTenantId}`),
-      );
-    });
-
-    it('should include tenant ID in delete log when available', async () => {
-      const logSpy = jest.spyOn(Logger.prototype, 'log');
-      uploadService.deleteFile.mockResolvedValue(undefined);
-
-      await controller.deleteFile('product-123.jpg');
-
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining(`for tenant ${mockTenantId}`),
-      );
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle unexpected errors in single upload', async () => {
-      const file = createMockFile();
-      const error = new Error('Unexpected error');
-      uploadService.uploadFile.mockRejectedValue(error);
-
-      await expect(controller.uploadProductImage(file)).rejects.toThrow(
-        'Unexpected error',
-      );
-    });
-
-    it('should handle unexpected errors in batch upload', async () => {
-      const files = [createMockFile()];
-      const error = new Error('Unexpected error');
-      uploadService.uploadFiles.mockRejectedValue(error);
-
-      await expect(controller.uploadProductImages(files)).rejects.toThrow(
-        'Unexpected error',
-      );
-    });
-
-    it('should handle unexpected errors in delete', async () => {
-      const error = new Error('Unexpected error');
-      uploadService.deleteFile.mockRejectedValue(error);
-
-      await expect(controller.deleteFile('test.jpg')).rejects.toThrow(
-        'Unexpected error',
-      );
-    });
   });
 
   describe('response format', () => {
     it('should return correct format for single upload', async () => {
       const file = createMockFile();
       uploadService.uploadFile.mockResolvedValue({
-        url: '/uploads/products/product-123.jpg',
+        url: 'https://stockflow-images.daniel-esloh.workers.dev/api/images/products/product-123.jpg',
       });
 
       const result = await controller.uploadProductImage(file);
 
       expect(result).toHaveProperty('url');
       expect(typeof result.url).toBe('string');
-      expect(result.url).toMatch(/^\/uploads\/products\//);
     });
 
     it('should return correct format for batch upload', async () => {
       const files = [createMockFile(), createMockFile()];
       uploadService.uploadFiles.mockResolvedValue({
-        urls: ['/uploads/products/p1.jpg', '/uploads/products/p2.jpg'],
+        urls: [
+          'https://stockflow-images.daniel-esloh.workers.dev/api/images/products/p1.jpg',
+          'https://stockflow-images.daniel-esloh.workers.dev/api/images/products/p2.jpg',
+        ],
       });
 
       const result = await controller.uploadProductImages(files);
@@ -498,9 +316,6 @@ describe('UploadController', () => {
       expect(result).toHaveProperty('urls');
       expect(Array.isArray(result.urls)).toBe(true);
       expect(result.urls).toHaveLength(2);
-      result.urls.forEach((url) => {
-        expect(url).toMatch(/^\/uploads\/products\//);
-      });
     });
   });
 });

@@ -297,7 +297,7 @@ export class ProductsService {
     // Enforce tenant product limit
     await this.tenantContext.enforceLimit('products');
 
-    const normalizedSku = dto.sku.trim();
+    const normalizedSku = dto.sku?.trim() || (await this.generateSku(tenantId));
     const normalizedBarcode = dto.barcode?.trim() || null;
 
     this.logger.debug(
@@ -671,6 +671,39 @@ export class ProductsService {
     await this.invalidateProductCaches(tenantId, id);
 
     return this.mapToProductResponse(updatedProduct);
+  }
+
+  /**
+   * Generates a unique SKU for a tenant using a sequential counter.
+   * Format: PROD-00001, PROD-00002, etc.
+   */
+  private async generateSku(tenantId: string): Promise<string> {
+    const lastProduct = await this.prisma.product.findFirst({
+      where: { tenantId, sku: { startsWith: 'PROD-' } },
+      orderBy: { sku: 'desc' },
+      select: { sku: true },
+    });
+
+    let nextNumber = 1;
+    if (lastProduct) {
+      const match = lastProduct.sku.match(/PROD-(\d+)/);
+      if (match) {
+        nextNumber = parseInt(match[1], 10) + 1;
+      }
+    }
+
+    const sku = `PROD-${String(nextNumber).padStart(5, '0')}`;
+
+    // Verify uniqueness (edge case: manual SKU with same format)
+    const exists = await this.prisma.product.findUnique({
+      where: { tenantId_sku: { tenantId, sku } },
+    });
+
+    if (exists) {
+      return this.generateSku(tenantId);
+    }
+
+    return sku;
   }
 
   /**

@@ -15,15 +15,18 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
  */
 export class CreateProductDto {
   /**
-   * Stock Keeping Unit - unique identifier within the tenant
+   * Stock Keeping Unit - unique identifier within the tenant.
+   * Optional: if not provided, a SKU will be auto-generated.
    * @example "SKU-001"
    */
-  @ApiProperty({
-    description: 'Stock Keeping Unit - unique identifier within the tenant',
+  @ApiPropertyOptional({
+    description:
+      'Stock Keeping Unit - unique identifier within the tenant. Auto-generated if not provided.',
     example: 'SKU-001',
   })
   @IsString({ message: 'SKU must be a string' })
-  sku: string;
+  @IsOptional()
+  sku?: string;
 
   /**
    * Product name (minimum 2 characters)

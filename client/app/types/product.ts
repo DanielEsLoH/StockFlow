@@ -72,7 +72,7 @@ export interface ProductFilters {
 export interface CreateProductData {
   name: string;
   description?: string;
-  sku: string;
+  sku?: string;
   barcode?: string;
   salePrice: number;
   costPrice: number;

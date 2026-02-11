@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import { useForm, Controller } from "react-hook-form";
@@ -12,6 +13,8 @@ import {
   Layers,
   ImagePlus,
   ShieldX,
+  X,
+  Loader2,
 } from "lucide-react";
 import type { Route } from "./+types/_app.products.new";
 import { cn } from "~/lib/utils";
@@ -23,6 +26,8 @@ import { Input } from "~/components/ui/Input";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
 import { Select } from "~/components/ui/Select";
 import { Skeleton } from "~/components/ui/Skeleton";
+import { toast } from "~/components/ui/Toast";
+import { productsService } from "~/services/products.service";
 import type { CreateProductData } from "~/types/product";
 
 // Meta for SEO
@@ -50,11 +55,14 @@ const productSchema = z.object({
     .number()
     .int()
     .min(0, "El stock minimo debe ser mayor o igual a 0"),
-  maxStock: z
-    .number()
-    .int()
-    .min(0, "El stock maximo debe ser mayor o igual a 0")
-    .optional(),
+  maxStock: z.preprocess(
+    (val) => (val === "" || Number.isNaN(val) ? undefined : Number(val)),
+    z
+      .number()
+      .int()
+      .min(0, "El stock maximo debe ser mayor o igual a 0")
+      .optional(),
+  ),
   categoryId: z.string().optional(),
   brand: z.string().max(100).optional(),
   unit: z.string().max(20).optional(),
@@ -125,6 +133,41 @@ export default function NewProductPage() {
     return <AccessDenied />;
   }
 
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Solo se permiten archivos de imagen");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen no puede superar 5MB");
+      return;
+    }
+    setIsUploading(true);
+    try {
+      const { url } = await productsService.uploadProductImage(file);
+      setImageUrl(url);
+    } catch {
+      toast.error("Error al subir la imagen");
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const file = e.dataTransfer.files[0];
+      if (file) handleImageUpload(file);
+    },
+    [handleImageUpload],
+  );
+
   const {
     register,
     handleSubmit,
@@ -157,6 +200,7 @@ export default function NewProductPage() {
       description: data.description || undefined,
       barcode: data.barcode || undefined,
       maxStock: data.maxStock || undefined,
+      imageUrl: imageUrl || undefined,
     };
     createProduct.mutate(productData);
   };
@@ -557,19 +601,69 @@ export default function NewProductPage() {
               </CardContent>
             </Card>
 
-            {/* Image upload placeholder */}
+            {/* Image upload */}
             <Card>
               <CardHeader>
-                <CardTitle>Imagenes</CardTitle>
+                <CardTitle>Imagen</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-neutral-200 bg-neutral-50 p-8 dark:border-neutral-700 dark:bg-neutral-800/50">
-                  <ImagePlus className="mb-3 h-10 w-10 text-neutral-400" />
-                  <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                    Subir imagenes
-                  </p>
-                  <p className="mt-1 text-xs text-neutral-400">Proximamente</p>
-                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+                {imageUrl ? (
+                  <div className="relative aspect-square overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                    <img
+                      src={imageUrl}
+                      alt="Producto"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setImageUrl(null)}
+                      className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-white transition-colors hover:bg-black/80"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                    disabled={isUploading}
+                    className={cn(
+                      "flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-colors",
+                      isDragging
+                        ? "border-primary-400 bg-primary-50 dark:border-primary-500 dark:bg-primary-900/20"
+                        : "border-neutral-200 bg-neutral-50 hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800/50 dark:hover:border-neutral-600",
+                    )}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="mb-3 h-10 w-10 animate-spin text-primary-500" />
+                    ) : (
+                      <ImagePlus className="mb-3 h-10 w-10 text-neutral-400" />
+                    )}
+                    <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                      {isUploading ? "Subiendo..." : "Click o arrastra una imagen"}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-400">
+                      JPG, PNG, GIF o WebP. Max 5MB
+                    </p>
+                  </button>
+                )}
               </CardContent>
             </Card>
 

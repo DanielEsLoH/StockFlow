@@ -83,6 +83,7 @@ export interface CreateProductData {
   categoryId?: string;
   brand?: string;
   unit?: string;
+  imageUrl?: string;
   status?: ProductStatus;
 }
 

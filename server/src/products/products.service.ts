@@ -363,9 +363,11 @@ export class ProductsService {
         taxRate: dto.taxRate ?? 19,
         stock: dto.stock ?? 0,
         minStock: dto.minStock ?? 0,
+        maxStock: dto.maxStock,
         barcode: normalizedBarcode,
         brand: dto.brand,
         unit: dto.unit ?? 'UND',
+        imageUrl: dto.imageUrl,
         status: ProductStatus.ACTIVE,
       },
     });
@@ -494,6 +496,14 @@ export class ProductsService {
 
     if (dto.minStock !== undefined) {
       updateData.minStock = dto.minStock;
+    }
+
+    if (dto.maxStock !== undefined) {
+      updateData.maxStock = dto.maxStock;
+    }
+
+    if (dto.imageUrl !== undefined) {
+      updateData.imageUrl = dto.imageUrl;
     }
 
     if (dto.brand !== undefined) {

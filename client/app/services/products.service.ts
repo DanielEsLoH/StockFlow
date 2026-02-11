@@ -13,7 +13,7 @@ export const productsService = {
   async getProducts(filters: ProductFilters = {}): Promise<ProductsResponse> {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
+      if (value !== undefined && value !== null && value !== false) {
         params.append(key, String(value));
       }
     });
@@ -66,6 +66,19 @@ export const productsService = {
       quantity,
       warehouseId,
     });
+    return data;
+  },
+
+  async uploadProductImage(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data } = await api.post<{ url: string }>(
+      "/upload/product-image",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
     return data;
   },
 };

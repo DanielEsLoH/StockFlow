@@ -3,7 +3,6 @@ import {
   IsOptional,
   IsNumber,
   IsInt,
-  IsUUID,
   Min,
   Max,
   MinLength,
@@ -59,7 +58,7 @@ export class CreateProductDto {
     description: 'Category ID for the product',
     example: 'clx1234567890abcdef',
   })
-  @IsUUID('all', { message: 'Category ID must be a valid UUID' })
+  @IsString({ message: 'Category ID must be a string' })
   @IsOptional()
   categoryId?: string;
 
@@ -135,6 +134,32 @@ export class CreateProductDto {
   @Min(0, { message: 'Minimum stock must be at least 0' })
   @IsOptional()
   minStock?: number = 0;
+
+  /**
+   * Maximum stock level (optional)
+   * @example 100
+   */
+  @ApiPropertyOptional({
+    description: 'Maximum stock level',
+    example: 100,
+    minimum: 0,
+  })
+  @IsInt({ message: 'Maximum stock must be an integer' })
+  @Min(0, { message: 'Maximum stock must be at least 0' })
+  @IsOptional()
+  maxStock?: number;
+
+  /**
+   * Product image URL (optional)
+   * @example "https://example.com/images/product.jpg"
+   */
+  @ApiPropertyOptional({
+    description: 'Product image URL',
+    example: 'https://example.com/images/product.jpg',
+  })
+  @IsString({ message: 'Image URL must be a string' })
+  @IsOptional()
+  imageUrl?: string;
 
   /**
    * Barcode (optional, must be unique within tenant if provided)

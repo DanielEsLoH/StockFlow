@@ -18,6 +18,7 @@ import {
   useRemoveInvoiceItem,
 } from "./useInvoices";
 import { invoicesService } from "~/services/invoices.service";
+import { useAuthStore } from "~/stores/auth.store";
 import type {
   Invoice,
   InvoicesResponse,
@@ -61,6 +62,10 @@ vi.mock("react-router", async () => {
     useNavigate: () => mockNavigate,
   };
 });
+
+vi.mock("~/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
+}));
 
 // Mock data
 const mockInvoiceItem: InvoiceItem = {
@@ -188,6 +193,23 @@ function createWrapper() {
 describe("useInvoices hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      const state = {
+        isAuthenticated: true,
+        isInitialized: true,
+        user: null,
+        tenant: null,
+        isLoading: false,
+        userPermissions: [],
+        setUser: vi.fn(),
+        setTenant: vi.fn(),
+        setUserPermissions: vi.fn(),
+        setLoading: vi.fn(),
+        setInitialized: vi.fn(),
+        logout: vi.fn(),
+      };
+      return selector(state as never);
+    });
   });
 
   afterEach(() => {

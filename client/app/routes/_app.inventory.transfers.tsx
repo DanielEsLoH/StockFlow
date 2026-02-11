@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
-import { motion } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   ArrowLeftRight,
   Package,
@@ -193,14 +192,9 @@ export default function InventoryTransfersPage() {
   const isLoading = isLoadingProducts || isLoadingWarehouses;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-center gap-3">
+      <PageSection className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
           <ArrowLeftRight className="h-5 w-5 text-primary-600 dark:text-primary-400" />
         </div>
@@ -212,10 +206,10 @@ export default function InventoryTransfersPage() {
             Transferir productos entre bodegas
           </p>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Form Card */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Product Selection */}
@@ -475,7 +469,7 @@ export default function InventoryTransfersPage() {
             </div>
           </form>
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }

@@ -1,7 +1,9 @@
 import * as React from "react";
+import { motion } from "framer-motion";
 import { Package, FileText, Search, AlertCircle, Plus } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button } from "./Button";
+import { fadeInVariants } from "~/lib/animations";
 
 type EmptyStateType = "products" | "search" | "error" | "default";
 
@@ -57,16 +59,23 @@ export function EmptyState({
   const config = defaultConfigs[type];
 
   return (
-    <div
+    <motion.div
+      variants={fadeInVariants}
+      initial="hidden"
+      animate="visible"
       className={cn(
         "flex flex-col items-center justify-center py-16 text-center",
         className,
       )}
     >
-      {/* Icon */}
-      <div className="mb-6 text-neutral-300 dark:text-neutral-600">
+      {/* Icon with floating animation */}
+      <motion.div
+        className="mb-6 text-neutral-300 dark:text-neutral-600"
+        animate={{ y: [0, -6, 0] }}
+        transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+      >
         {icon || config.icon}
-      </div>
+      </motion.div>
 
       {/* Title */}
       <h3 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-white">
@@ -87,7 +96,7 @@ export function EmptyState({
           {action.label}
         </Button>
       )}
-    </div>
+    </motion.div>
   );
 }
 

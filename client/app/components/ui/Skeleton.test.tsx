@@ -17,16 +17,16 @@ describe("Skeleton", () => {
       expect(skeleton.tagName).toBe("DIV");
     });
 
-    it("should have animate-pulse class", () => {
+    it("should have animate-shimmer class", () => {
       render(<Skeleton data-testid="skeleton" />);
       const skeleton = screen.getByTestId("skeleton");
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("animate-shimmer");
     });
 
-    it("should have background color classes", () => {
+    it("should have gradient background classes", () => {
       render(<Skeleton data-testid="skeleton" />);
       const skeleton = screen.getByTestId("skeleton");
-      expect(skeleton).toHaveClass("bg-neutral-200");
+      expect(skeleton).toHaveClass("bg-gradient-to-r");
     });
   });
 
@@ -62,7 +62,7 @@ describe("Skeleton", () => {
       render(<Skeleton data-testid="skeleton" className="h-10" />);
       const skeleton = screen.getByTestId("skeleton");
       expect(skeleton).toHaveClass("h-10");
-      expect(skeleton).toHaveClass("animate-pulse");
+      expect(skeleton).toHaveClass("animate-shimmer");
     });
   });
 });
@@ -70,25 +70,25 @@ describe("Skeleton", () => {
 describe("SkeletonText", () => {
   it("should render default 3 lines", () => {
     const { container } = render(<SkeletonText />);
-    const lines = container.querySelectorAll('[class*="animate-pulse"]');
+    const lines = container.querySelectorAll('[class*="animate-shimmer"]');
     expect(lines.length).toBe(3);
   });
 
   it("should render specified number of lines", () => {
     const { container } = render(<SkeletonText lines={5} />);
-    const lines = container.querySelectorAll('[class*="animate-pulse"]');
+    const lines = container.querySelectorAll('[class*="animate-shimmer"]');
     expect(lines.length).toBe(5);
   });
 
   it("should render single line", () => {
     const { container } = render(<SkeletonText lines={1} />);
-    const lines = container.querySelectorAll('[class*="animate-pulse"]');
+    const lines = container.querySelectorAll('[class*="animate-shimmer"]');
     expect(lines.length).toBe(1);
   });
 
   it("should make last line shorter when multiple lines", () => {
     const { container } = render(<SkeletonText lines={3} />);
-    const lines = container.querySelectorAll('[class*="animate-pulse"]');
+    const lines = container.querySelectorAll('[class*="animate-shimmer"]');
     const lastLine = lines[lines.length - 1];
     expect(lastLine).toHaveClass("w-3/4");
   });
@@ -108,7 +108,7 @@ describe("SkeletonCard", () => {
 
   it("should contain skeleton elements", () => {
     const { container } = render(<SkeletonCard />);
-    const skeletons = container.querySelectorAll('[class*="animate-pulse"]');
+    const skeletons = container.querySelectorAll('[class*="animate-shimmer"]');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
@@ -177,7 +177,7 @@ describe("SkeletonTableRow", () => {
     );
 
     const row = container.querySelector("tr");
-    const skeletons = row?.querySelectorAll('[class*="animate-pulse"]');
+    const skeletons = row?.querySelectorAll('[class*="animate-shimmer"]');
     expect(skeletons?.length).toBe(5);
   });
 
@@ -276,7 +276,7 @@ describe("SkeletonProductCard", () => {
 
   it("should contain multiple skeleton elements for product details", () => {
     const { container } = render(<SkeletonProductCard />);
-    const skeletons = container.querySelectorAll('[class*="animate-pulse"]');
+    const skeletons = container.querySelectorAll('[class*="animate-shimmer"]');
     // Image, title, SKU, price, stock
     expect(skeletons.length).toBeGreaterThanOrEqual(4);
   });

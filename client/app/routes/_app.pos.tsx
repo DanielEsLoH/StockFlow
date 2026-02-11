@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
-import { motion } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   ShoppingCart,
   DollarSign,
@@ -40,7 +39,6 @@ export const meta: Route.MetaFunction = () => {
 
 export default function POSPage() {
   const navigate = useNavigate();
-  const [isMounted, setIsMounted] = useState(false);
   const { data: session, isLoading: isSessionLoading } = useCurrentSession();
 
   // Get warehouseId from the cash register's assigned warehouse
@@ -64,10 +62,6 @@ export default function POSPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const products = productsData?.data || [];
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Redirect to open session if no active session
   useEffect(() => {
@@ -258,14 +252,9 @@ export default function POSPage() {
   const minutes = sessionDuration % 60;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="h-[calc(100vh-8rem)] flex flex-col gap-4"
-    >
+    <PageWrapper className="h-[calc(100vh-8rem)] flex flex-col gap-4">
       {/* Session Status Header */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card className="bg-gradient-to-r from-primary-500 to-primary-600 text-white">
           <div className="p-4">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -322,11 +311,10 @@ export default function POSPage() {
             </div>
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Main POS Interface */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0"
       >
         {/* Product Search & Catalog */}
@@ -434,7 +422,7 @@ export default function POSPage() {
             isProcessing={createSaleMutation.isPending}
           />
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Payment Modal */}
       <POSSplitPaymentModal
@@ -444,6 +432,6 @@ export default function POSPage() {
         total={cartTotal}
         isProcessing={createSaleMutation.isPending}
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

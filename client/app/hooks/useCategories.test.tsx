@@ -12,6 +12,7 @@ import {
   useDeleteCategory,
 } from "./useCategories";
 import { categoriesService } from "~/services/categories.service";
+import { useAuthStore } from "~/stores/auth.store";
 import type { Category, CategoriesResponse } from "~/types/category";
 
 // Mock dependencies
@@ -43,6 +44,10 @@ vi.mock("react-router", async () => {
     useNavigate: () => mockNavigate,
   };
 });
+
+vi.mock("~/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
+}));
 
 // Mock data
 const mockCategory: Category = {
@@ -107,6 +112,23 @@ function createWrapper() {
 describe("useCategories hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      const state = {
+        isAuthenticated: true,
+        isInitialized: true,
+        user: null,
+        tenant: null,
+        isLoading: false,
+        userPermissions: [],
+        setUser: vi.fn(),
+        setTenant: vi.fn(),
+        setUserPermissions: vi.fn(),
+        setLoading: vi.fn(),
+        setInitialized: vi.fn(),
+        logout: vi.fn(),
+      };
+      return selector(state as never);
+    });
   });
 
   afterEach(() => {

@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router";
-import { motion } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   ArrowLeft,
   Clock,
@@ -90,7 +89,6 @@ const paymentMethodLabels: Record<string, string> = {
 
 export default function POSSessionDetailPage() {
   const { id } = useParams();
-  const [isMounted, setIsMounted] = useState(false);
 
   const {
     data: session,
@@ -101,10 +99,6 @@ export default function POSSessionDetailPage() {
   const { data: movements, isLoading: loadingMovements } = useSessionMovements(
     id!,
   );
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   if (loadingSession) {
     return (
@@ -156,15 +150,9 @@ export default function POSSessionDetailPage() {
   const hasDifference = session.status === "CLOSED" && session.difference !== 0;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="max-w-5xl mx-auto space-y-6"
-    >
+    <PageWrapper className="max-w-5xl mx-auto">
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="flex items-center justify-between"
       >
         <div className="flex items-center gap-4">
@@ -193,10 +181,10 @@ export default function POSSessionDetailPage() {
             </Button>
           </Link>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Session Stats */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card padding="md">
             <div className="flex items-center gap-3">
@@ -262,11 +250,11 @@ export default function POSSessionDetailPage() {
             </div>
           </Card>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Difference Alert (for closed sessions) */}
       {hasDifference && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card
             className={
               session.difference! > 0
@@ -313,11 +301,11 @@ export default function POSSessionDetailPage() {
               </span>
             </div>
           </Card>
-        </motion.div>
+        </PageSection>
       )}
 
       {/* Report Details */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Session Info */}
           <Card padding="md">
@@ -439,10 +427,10 @@ export default function POSSessionDetailPage() {
             )}
           </Card>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Movements */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
@@ -524,7 +512,7 @@ export default function POSSessionDetailPage() {
             </div>
           )}
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }

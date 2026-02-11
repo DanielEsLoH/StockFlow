@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Search,
   Plus,
@@ -41,6 +41,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { DeleteModal } from "~/components/ui/DeleteModal";
@@ -89,16 +90,10 @@ export default function CustomersPage() {
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(
     null,
   );
-  const [isMounted, setIsMounted] = useState(false);
-
   const { filters, updateFilters, clearFilters } =
     useUrlFilters<CustomerFilters>({
       parserConfig: customerFiltersParser,
     });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Queries
   const { data: customersData, isLoading, isError } = useCustomers(filters);
@@ -149,17 +144,9 @@ export default function CustomersPage() {
   const businessCount = customers.filter((c) => c.type === "BUSINESS").length;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-500/20 to-primary-500/10 dark:from-accent-500/20 dark:to-primary-900/30">
             <Users className="h-7 w-7 text-accent-600 dark:text-accent-400" />
@@ -181,10 +168,10 @@ export default function CustomersPage() {
             Nuevo Cliente
           </Button>
         </Link>
-      </motion.div>
+      </PageSection>
 
       {/* Quick Stats */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card variant="soft-primary" padding="sm">
             <div className="flex items-center gap-3">
@@ -247,10 +234,10 @@ export default function CustomersPage() {
             </div>
           </Card>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Search and Filters */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card variant="elevated" padding="md">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -342,10 +329,10 @@ export default function CustomersPage() {
             </AnimatePresence>
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Table */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card variant="elevated">
           {isLoading ? (
             <Table>
@@ -415,15 +402,8 @@ export default function CustomersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <AnimatePresence mode="popLayout">
-                    {customers.map((customer) => (
-                      <motion.tr
-                        key={customer.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="group border-b border-neutral-200 dark:border-neutral-700 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
-                      >
+                  {customers.map((customer, i) => (
+                    <AnimatedTableRow key={customer.id} index={i} className="group">
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div
@@ -556,9 +536,8 @@ export default function CustomersPage() {
                             </Button>
                           </div>
                         </TableCell>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
+                    </AnimatedTableRow>
+                  ))}
                 </TableBody>
               </Table>
 
@@ -580,7 +559,7 @@ export default function CustomersPage() {
             </>
           )}
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Delete Modal */}
       <DeleteModal
@@ -591,6 +570,6 @@ export default function CustomersPage() {
         onConfirm={handleDelete}
         isLoading={deleteCustomer.isPending}
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

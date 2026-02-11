@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   TrendingUp,
   Package,
@@ -58,24 +58,6 @@ export const meta: Route.MetaFunction = () => {
       content: "Genera y descarga reportes de tu negocio",
     },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Date range preset options for select
@@ -627,15 +609,9 @@ export default function ReportsPage() {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <div>
@@ -646,19 +622,19 @@ export default function ReportsPage() {
             Genera y descarga reportes de tu negocio
           </p>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Report Cards Grid */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <SalesReportCard />
           <InventoryReportCard />
           <CustomersReportCard />
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Recent Reports Section */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           <CardHeader className="border-b border-neutral-200 dark:border-neutral-700">
             <CardTitle>Reportes Recientes</CardTitle>
@@ -670,7 +646,7 @@ export default function ReportsPage() {
             <RecentReportsTable />
           </CardContent>
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }

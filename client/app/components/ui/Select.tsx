@@ -1,4 +1,5 @@
 import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Check, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 
@@ -220,41 +221,49 @@ export function MultiSelect({
         />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
-          {options.map((option) => {
-            const isSelected = value.includes(option.value);
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => toggleOption(option.value)}
-                disabled={option.disabled}
-                className={cn(
-                  "flex w-full items-center gap-2 px-4 py-2 text-left text-sm",
-                  "hover:bg-neutral-50 dark:hover:bg-neutral-800",
-                  isSelected && "bg-primary-50 dark:bg-primary-900/20",
-                  option.disabled && "cursor-not-allowed opacity-50",
-                )}
-              >
-                <span
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+          >
+            {options.map((option) => {
+              const isSelected = value.includes(option.value);
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => toggleOption(option.value)}
+                  disabled={option.disabled}
                   className={cn(
-                    "flex h-4 w-4 items-center justify-center rounded border",
-                    isSelected
-                      ? "border-primary-500 bg-primary-500 text-white"
-                      : "border-neutral-300 dark:border-neutral-600",
+                    "flex w-full items-center gap-2 px-4 py-2 text-left text-sm",
+                    "hover:bg-neutral-50 dark:hover:bg-neutral-800",
+                    isSelected && "bg-primary-50 dark:bg-primary-900/20",
+                    option.disabled && "cursor-not-allowed opacity-50",
                   )}
                 >
-                  {isSelected && <Check className="h-3 w-3" />}
-                </span>
-                <span className="text-neutral-900 dark:text-white">
-                  {option.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+                  <span
+                    className={cn(
+                      "flex h-4 w-4 items-center justify-center rounded border",
+                      isSelected
+                        ? "border-primary-500 bg-primary-500 text-white"
+                        : "border-neutral-300 dark:border-neutral-600",
+                    )}
+                  >
+                    {isSelected && <Check className="h-3 w-3" />}
+                  </span>
+                  <span className="text-neutral-900 dark:text-white">
+                    {option.label}
+                  </span>
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

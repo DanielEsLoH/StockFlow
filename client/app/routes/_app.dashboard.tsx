@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Package,
   FileText,
@@ -68,26 +69,6 @@ export const meta: Route.MetaFunction = () => {
     { title: "Dashboard - StockFlow" },
     { name: "description", content: "Panel de control de StockFlow" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
-  },
 };
 
 // Date range options
@@ -304,12 +285,6 @@ export default function DashboardPage() {
   } = useDashboard();
 
   const [dateRange, setDateRange] = useState<string>("30d");
-  const [isMounted, setIsMounted] = useState(false);
-
-  // SSR-safe mounting
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const userName = user?.firstName || "Usuario";
 
@@ -375,15 +350,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate={isMounted ? "visible" : "hidden"}
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header with greeting and Date Range Filter */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div>
@@ -423,11 +392,11 @@ export default function DashboardPage() {
             <span className="hidden sm:inline">Actualizar</span>
           </Button>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Alert Banner */}
       {hasAlerts && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Alert variant="warning" className="border-l-4 border-l-warning-500">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning-100 dark:bg-warning-900/30 shrink-0">
@@ -457,11 +426,11 @@ export default function DashboardPage() {
               </div>
             </div>
           </Alert>
-        </motion.div>
+        </PageSection>
       )}
 
       {/* Quick Actions - Gradient Cards (filtered by permissions) */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <QuickActionCard
             to="/invoices/new"
@@ -496,11 +465,10 @@ export default function DashboardPage() {
             gradient="from-warning-600 to-warning-500"
           />
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Stats Grid - Premium Gradient Cards */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
       >
         <StatCard
@@ -543,11 +511,10 @@ export default function DashboardPage() {
           animate
           animationDelay={0.3}
         />
-      </motion.div>
+      </PageSection>
 
       {/* Charts Row */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
         {/* Sales Area Chart */}
@@ -700,11 +667,10 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Middle Row - Products Chart and Low Stock Alerts */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
         {/* Top Products Bar Chart */}
@@ -850,11 +816,10 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Bottom Row - Recent Invoices and Recent Activity */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
         {/* Recent Invoices Table */}
@@ -1070,7 +1035,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }

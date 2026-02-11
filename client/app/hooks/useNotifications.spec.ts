@@ -20,6 +20,7 @@ import {
 import { notificationsService } from "~/services/notifications.service";
 import { toast } from "~/components/ui/Toast";
 import { queryKeys } from "~/lib/query-client";
+import { useAuthStore } from "~/stores/auth.store";
 import type {
   Notification,
   NotificationSummary,
@@ -35,6 +36,9 @@ vi.mock("~/services/notifications.service");
 vi.mock("~/components/ui/Toast");
 vi.mock("react-router", () => ({
   useNavigate: () => mockNavigate,
+}));
+vi.mock("~/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
 }));
 
 const mockNavigate = vi.fn();
@@ -211,6 +215,24 @@ describe("useNotifications hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockNavigate.mockClear();
+
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      const state = {
+        isAuthenticated: true,
+        isInitialized: true,
+        user: null,
+        tenant: null,
+        isLoading: false,
+        userPermissions: [],
+        setUser: vi.fn(),
+        setTenant: vi.fn(),
+        setUserPermissions: vi.fn(),
+        setLoading: vi.fn(),
+        setInitialized: vi.fn(),
+        logout: vi.fn(),
+      };
+      return selector(state as never);
+    });
   });
 
   afterEach(() => {

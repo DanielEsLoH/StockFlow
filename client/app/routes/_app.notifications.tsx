@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Search,
   Filter,
@@ -55,6 +55,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
 import type {
@@ -259,16 +260,11 @@ export default function NotificationsPage() {
   const [deletingNotification, setDeletingNotification] =
     useState<NotificationSummary | null>(null);
   const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
 
   const { filters, updateFilters, clearFilters } =
     useUrlFilters<NotificationFilters>({
       parserConfig: notificationFiltersParser,
     });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Queries
   const {
@@ -395,17 +391,9 @@ export default function NotificationsPage() {
     filters.read !== undefined;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Notificaciones
@@ -448,10 +436,10 @@ export default function NotificationsPage() {
             Limpiar leidas
           </Button>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Search and Filters */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card padding="md">
           <div className="flex flex-col gap-4">
             {/* Search row */}
@@ -554,7 +542,7 @@ export default function NotificationsPage() {
             </AnimatePresence>
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Bulk actions bar */}
       <AnimatePresence>
@@ -610,7 +598,7 @@ export default function NotificationsPage() {
       </AnimatePresence>
 
       {/* Notifications Table */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card padding="none">
           {isLoading ? (
             <Table>
@@ -664,20 +652,16 @@ export default function NotificationsPage() {
                   onSelectAll={selectAll}
                 />
                 <TableBody>
-                  <AnimatePresence mode="popLayout">
-                    {notifications.map((notification) => {
+                    {notifications.map((notification, i) => {
                       const category =
                         NotificationTypeToCategory[notification.type] || "info";
                       const colors = getCategoryColors(category);
                       const isSelected = selectedIds.has(notification.id);
 
                       return (
-                        <motion.tr
+                        <AnimatedTableRow
                           key={notification.id}
-                          layout
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
+                          index={i}
                           className={cn(
                             "border-b border-neutral-100 transition-colors dark:border-neutral-800",
                             !notification.read &&
@@ -807,10 +791,9 @@ export default function NotificationsPage() {
                               </Button>
                             </div>
                           </TableCell>
-                        </motion.tr>
+                        </AnimatedTableRow>
                       );
                     })}
-                  </AnimatePresence>
                 </TableBody>
               </Table>
 
@@ -842,7 +825,7 @@ export default function NotificationsPage() {
             </>
           )}
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Delete Single Notification Modal */}
       <DeleteModal
@@ -865,6 +848,6 @@ export default function NotificationsPage() {
         onConfirm={handleDeleteSelected}
         isLoading={deleteMultiple.isPending}
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

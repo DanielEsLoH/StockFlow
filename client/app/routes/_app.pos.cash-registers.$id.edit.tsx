@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router";
-import { motion } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { ArrowLeft, Banknote } from "lucide-react";
 import type { Route } from "./+types/_app.pos.cash-registers.$id.edit";
 import { useCashRegister, useUpdateCashRegister } from "~/hooks/usePOS";
@@ -28,7 +27,6 @@ const statusOptions = [
 export default function EditCashRegisterPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [isMounted, setIsMounted] = useState(false);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
@@ -44,10 +42,6 @@ export default function EditCashRegisterPage() {
   const updateRegister = useUpdateCashRegister();
   const { data: warehouses = [], isLoading: loadingWarehouses } =
     useWarehouses();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Initialize form when register is loaded
   useEffect(() => {
@@ -108,14 +102,9 @@ export default function EditCashRegisterPage() {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="max-w-2xl mx-auto space-y-6"
-    >
+    <PageWrapper className="max-w-2xl mx-auto">
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-center gap-4">
+      <PageSection className="flex items-center gap-4">
         <Link to="/pos/cash-registers">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-5 w-5" />
@@ -129,10 +118,10 @@ export default function EditCashRegisterPage() {
             Modifica la configuracion de la caja
           </p>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Form */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Icon */}
@@ -230,7 +219,7 @@ export default function EditCashRegisterPage() {
             </div>
           </form>
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }

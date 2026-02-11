@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Filter,
   Clock,
@@ -30,6 +30,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
@@ -63,16 +64,11 @@ const sessionsFiltersParser = {
 
 export default function POSSessionsPage() {
   const [showFilters, setShowFilters] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
 
   const { filters, updateFilters, clearFilters } =
     useUrlFilters<POSSessionFilters>({
       parserConfig: sessionsFiltersParser,
     });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const { data: sessionsData, isLoading, isError } = usePOSSessions(filters);
 
@@ -109,17 +105,9 @@ export default function POSSessionsPage() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Sesiones de Caja
@@ -134,10 +122,10 @@ export default function POSSessionsPage() {
             Abrir Nuevo Turno
           </Button>
         </Link>
-      </motion.div>
+      </PageSection>
 
       {/* Filters */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card padding="md">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -220,10 +208,10 @@ export default function POSSessionsPage() {
             </AnimatePresence>
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Table */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           {isLoading ? (
             <Table>
@@ -302,13 +290,10 @@ export default function POSSessionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <AnimatePresence mode="popLayout">
-                    {sessions.map((session) => (
-                      <motion.tr
+                    {sessions.map((session, i) => (
+                      <AnimatedTableRow
                         key={session.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        index={i}
                         className="border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                       >
                         <TableCell>
@@ -364,9 +349,8 @@ export default function POSSessionsPage() {
                             </Button>
                           </Link>
                         </TableCell>
-                      </motion.tr>
+                      </AnimatedTableRow>
                     ))}
-                  </AnimatePresence>
                 </TableBody>
               </Table>
 
@@ -387,7 +371,7 @@ export default function POSSessionsPage() {
             </>
           )}
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }

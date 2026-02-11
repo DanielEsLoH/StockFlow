@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Link } from "react-router";
-import { motion } from "framer-motion";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   ArrowLeft,
   User,
@@ -38,24 +38,6 @@ export const meta: Route.MetaFunction = () => {
     { title: "Mi Perfil - StockFlow" },
     { name: "description", content: "Gestiona tu informacion personal" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Form schema
@@ -229,14 +211,9 @@ export default function ProfilePage() {
   const initials = getInitials(fullName);
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex items-center gap-4">
           <Link to="/settings">
             <Button variant="ghost" size="icon">
@@ -252,11 +229,11 @@ export default function ProfilePage() {
             </p>
           </div>
         </div>
-      </motion.div>
+      </PageSection>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Header Card */}
-        <motion.div variants={itemVariants} className="lg:col-span-1">
+        <PageSection className="lg:col-span-1">
           <Card>
             <CardContent className="p-6">
               <div className="flex flex-col items-center text-center">
@@ -363,10 +340,10 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
 
         {/* Profile Information Form Card */}
-        <motion.div variants={itemVariants} className="lg:col-span-2">
+        <PageSection className="lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -484,11 +461,11 @@ export default function ProfilePage() {
               </form>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
       </div>
 
       {/* Account Information Card */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -544,7 +521,7 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }

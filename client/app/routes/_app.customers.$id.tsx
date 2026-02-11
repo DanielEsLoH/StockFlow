@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Users,
@@ -19,6 +18,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import type { Route } from "./+types/_app.customers.$id";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { formatDate, formatCurrency } from "~/lib/utils";
 import {
   useCustomer,
@@ -38,24 +38,6 @@ export const meta: Route.MetaFunction = () => {
     { title: "Cliente - StockFlow" },
     { name: "description", content: "Detalles del cliente" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Loading skeleton
@@ -129,14 +111,9 @@ export default function CustomerDetailPage() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             <Link to="/customers">
@@ -201,10 +178,10 @@ export default function CustomerDetailPage() {
             </Button>
           </div>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Stats */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={ShoppingCart}
@@ -236,12 +213,12 @@ export default function CustomerDetailPage() {
             color="primary"
           />
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Contact Info */}
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card>
             <CardHeader>
               <CardTitle>Informacion de Contacto</CardTitle>
@@ -301,10 +278,10 @@ export default function CustomerDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
 
         {/* Additional Info */}
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card>
             <CardHeader>
               <CardTitle>Informacion Adicional</CardTitle>
@@ -360,12 +337,12 @@ export default function CustomerDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
       </div>
 
       {/* Notes */}
       {customer.notes && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card>
             <CardHeader>
               <CardTitle>Notas</CardTitle>
@@ -376,7 +353,7 @@ export default function CustomerDetailPage() {
               </p>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
       )}
 
       {/* Delete Modal */}
@@ -388,6 +365,6 @@ export default function CustomerDetailPage() {
         onConfirm={handleDelete}
         isLoading={deleteCustomer.isPending}
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

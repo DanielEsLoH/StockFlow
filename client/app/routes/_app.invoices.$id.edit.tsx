@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Link, useParams } from "react-router";
-import { motion } from "framer-motion";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   ArrowLeft,
   Save,
@@ -32,24 +32,6 @@ export const meta: Route.MetaFunction = () => {
     { title: "Editar Factura - StockFlow" },
     { name: "description", content: "Editar factura existente" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Line item schema
@@ -212,14 +194,9 @@ function ReadOnlyView({
   id: string;
 }) {
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex items-center gap-4">
           <Link to={`/invoices/${id}`}>
             <Button variant="ghost" size="icon">
@@ -238,10 +215,10 @@ function ReadOnlyView({
             </p>
           </div>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Warning Card */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card className="border-warning-200 bg-warning-50 dark:border-warning-800 dark:bg-warning-900/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
@@ -259,10 +236,10 @@ function ReadOnlyView({
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Invoice Summary */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           <CardHeader>
             <CardTitle>Resumen de la Factura</CardTitle>
@@ -331,10 +308,10 @@ function ReadOnlyView({
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Actions */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex gap-3">
           <Link to={`/invoices/${id}`}>
             <Button variant="outline">
@@ -349,8 +326,8 @@ function ReadOnlyView({
             </Button>
           </Link>
         </div>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }
 
@@ -543,14 +520,9 @@ export default function EditInvoicePage() {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex items-center gap-4">
           <Link to={`/invoices/${id}`}>
             <Button variant="ghost" size="icon">
@@ -569,7 +541,7 @@ export default function EditInvoicePage() {
             </p>
           </div>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -577,7 +549,7 @@ export default function EditInvoicePage() {
           {/* Main form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Customer & Dates */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Informacion de la Factura</CardTitle>
@@ -641,10 +613,10 @@ export default function EditInvoicePage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Line Items */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -857,10 +829,10 @@ export default function EditInvoicePage() {
                   )}
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Notes */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Notas</CardTitle>
@@ -885,13 +857,13 @@ export default function EditInvoicePage() {
                   )}
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Totals Summary */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Resumen</CardTitle>
@@ -933,10 +905,10 @@ export default function EditInvoicePage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Current Status */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Estado Actual</CardTitle>
@@ -950,10 +922,10 @@ export default function EditInvoicePage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Actions */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardContent className="p-4 space-y-3">
                   <Button
@@ -990,10 +962,10 @@ export default function EditInvoicePage() {
                   </Link>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Help Info */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardContent className="p-4">
                   <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-2">
@@ -1006,10 +978,10 @@ export default function EditInvoicePage() {
                   </ul>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
           </div>
         </div>
       </form>
-    </motion.div>
+    </PageWrapper>
   );
 }

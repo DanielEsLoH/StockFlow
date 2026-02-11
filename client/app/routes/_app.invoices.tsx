@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Search,
   Plus,
@@ -43,6 +43,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { DeleteModal } from "~/components/ui/DeleteModal";
@@ -212,16 +213,10 @@ export default function InvoicesPage() {
   const [deletingInvoice, setDeletingInvoice] = useState<InvoiceSummary | null>(
     null,
   );
-  const [isMounted, setIsMounted] = useState(false);
-
   const { filters, updateFilters, clearFilters } =
     useUrlFilters<InvoiceFilters>({
       parserConfig: invoiceFiltersParser,
     });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Queries
   const { data: invoicesData, isLoading, isError } = useInvoices(filters);
@@ -274,17 +269,9 @@ export default function InvoicesPage() {
     filters.endDate;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500/20 to-accent-500/10 dark:from-primary-500/20 dark:to-accent-900/30">
             <Receipt className="h-7 w-7 text-primary-600 dark:text-primary-400" />
@@ -303,10 +290,10 @@ export default function InvoicesPage() {
             Nueva Factura
           </Button>
         </Link>
-      </motion.div>
+      </PageSection>
 
       {/* Stats Cards */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={Clock}
@@ -346,10 +333,10 @@ export default function InvoicesPage() {
             animationDelay={0.3}
           />
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Search and Filters */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card variant="elevated" padding="md">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -449,10 +436,10 @@ export default function InvoicesPage() {
             </AnimatePresence>
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Table */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card variant="elevated">
           {isLoading ? (
             <Table>
@@ -496,13 +483,10 @@ export default function InvoicesPage() {
               <Table>
                 <InvoiceTableHeader />
                 <TableBody>
-                  <AnimatePresence mode="popLayout">
-                    {invoices.map((invoice) => (
-                      <motion.tr
+                    {invoices.map((invoice, i) => (
+                      <AnimatedTableRow
                         key={invoice.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        index={i}
                         className="group border-b border-neutral-200 dark:border-neutral-700 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
                       >
                         <TableCell>
@@ -616,9 +600,8 @@ export default function InvoicesPage() {
                             )}
                           </div>
                         </TableCell>
-                      </motion.tr>
+                      </AnimatedTableRow>
                     ))}
-                  </AnimatePresence>
                 </TableBody>
               </Table>
 
@@ -650,7 +633,7 @@ export default function InvoicesPage() {
             </>
           )}
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Delete Modal */}
       <DeleteModal
@@ -661,6 +644,6 @@ export default function InvoicesPage() {
         onConfirm={handleDelete}
         isLoading={deleteInvoice.isPending}
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

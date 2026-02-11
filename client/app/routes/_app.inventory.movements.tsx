@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Search,
   Filter,
@@ -40,6 +40,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { EmptyState } from "~/components/ui/EmptyState";
@@ -141,16 +142,11 @@ function AccessDenied() {
 export default function InventoryMovementsPage() {
   const { hasPermission } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
 
   const { filters, updateFilters, clearFilters } =
     useUrlFilters<StockMovementFilters>({
       parserConfig: movementFiltersParser,
     });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Store permission check result - must be before any early returns
   const canViewInventory = hasPermission(Permission.INVENTORY_VIEW);
@@ -214,17 +210,9 @@ export default function InventoryMovementsPage() {
     filters.toDate;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Movimientos de Inventario
@@ -239,10 +227,10 @@ export default function InventoryMovementsPage() {
             Nuevo Ajuste
           </Button>
         </Link>
-      </motion.div>
+      </PageSection>
 
       {/* Stats Cards */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={TrendingUp}
@@ -273,10 +261,10 @@ export default function InventoryMovementsPage() {
             color="primary"
           />
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Filters */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card padding="md">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -385,10 +373,10 @@ export default function InventoryMovementsPage() {
             </AnimatePresence>
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Table */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           {isLoading ? (
             <Table>
@@ -455,13 +443,10 @@ export default function InventoryMovementsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <AnimatePresence mode="popLayout">
-                    {movements.map((movement) => (
-                      <motion.tr
+                    {movements.map((movement, i) => (
+                      <AnimatedTableRow
                         key={movement.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        index={i}
                         className="border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                       >
                         <TableCell>
@@ -531,9 +516,8 @@ export default function InventoryMovementsPage() {
                             </Button>
                           </Link>
                         </TableCell>
-                      </motion.tr>
+                      </AnimatedTableRow>
                     ))}
-                  </AnimatePresence>
                 </TableBody>
               </Table>
 
@@ -565,7 +549,7 @@ export default function InventoryMovementsPage() {
             </>
           )}
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }

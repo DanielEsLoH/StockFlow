@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Search,
   Plus,
@@ -40,6 +40,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { DeleteModal } from "~/components/ui/DeleteModal";
@@ -99,16 +100,10 @@ export default function WarehousesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [deletingWarehouse, setDeletingWarehouse] =
     useState<WarehouseType | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
-
   const { filters, updateFilters, clearFilters } =
     useUrlFilters<WarehouseFilters>({
       parserConfig: warehouseFiltersParser,
     });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Store permission check result - must be before any early returns
   const canViewWarehouses = hasPermission(Permission.WAREHOUSES_VIEW);
@@ -164,17 +159,9 @@ export default function WarehousesPage() {
     filters.search || filters.city || filters.isActive !== undefined;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Bodegas
@@ -186,10 +173,10 @@ export default function WarehousesPage() {
         <Link to="/warehouses/new">
           <Button leftIcon={<Plus className="h-4 w-4" />}>Nueva Bodega</Button>
         </Link>
-      </motion.div>
+      </PageSection>
 
       {/* Search and Filters */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card padding="md">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -273,10 +260,10 @@ export default function WarehousesPage() {
             </AnimatePresence>
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Table */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           {isLoading ? (
             <Table>
@@ -357,15 +344,8 @@ export default function WarehousesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <AnimatePresence mode="popLayout">
-                    {warehouses.map((warehouse) => (
-                      <motion.tr
-                        key={warehouse.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="border-b border-neutral-200 dark:border-neutral-700 last:border-0"
-                      >
+                  {warehouses.map((warehouse, i) => (
+                    <AnimatedTableRow key={warehouse.id} index={i}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/20">
@@ -447,9 +427,8 @@ export default function WarehousesPage() {
                             </Button>
                           </div>
                         </TableCell>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
+                    </AnimatedTableRow>
+                  ))}
                 </TableBody>
               </Table>
 
@@ -471,7 +450,7 @@ export default function WarehousesPage() {
             </>
           )}
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Delete Modal */}
       <DeleteModal
@@ -482,6 +461,6 @@ export default function WarehousesPage() {
         onConfirm={handleDelete}
         isLoading={deleteWarehouse.isPending}
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

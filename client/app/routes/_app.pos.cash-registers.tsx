@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Plus,
   Warehouse,
@@ -27,6 +26,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { DeleteModal } from "~/components/ui/DeleteModal";
@@ -55,15 +55,10 @@ export default function CashRegistersPage() {
   const [deletingRegister, setDeletingRegister] = useState<CashRegister | null>(
     null,
   );
-  const [isMounted, setIsMounted] = useState(false);
 
   const { filters, updateFilters } = useUrlFilters<CashRegisterFilters>({
     parserConfig: registersFiltersParser,
   });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const { data: registersData, isLoading, isError } = useCashRegisters(filters);
   const deleteRegister = useDeleteCashRegister();
@@ -107,17 +102,9 @@ export default function CashRegistersPage() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Cajas Registradoras
@@ -129,10 +116,10 @@ export default function CashRegistersPage() {
         <Link to="/pos/cash-registers/new">
           <Button leftIcon={<Plus className="h-4 w-4" />}>Nueva Caja</Button>
         </Link>
-      </motion.div>
+      </PageSection>
 
       {/* Table */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           {isLoading ? (
             <Table>
@@ -198,13 +185,10 @@ export default function CashRegistersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <AnimatePresence mode="popLayout">
-                    {registers.map((register) => (
-                      <motion.tr
+                    {registers.map((register, i) => (
+                      <AnimatedTableRow
                         key={register.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        index={i}
                         className="border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                       >
                         <TableCell>
@@ -260,9 +244,8 @@ export default function CashRegistersPage() {
                             </Button>
                           </div>
                         </TableCell>
-                      </motion.tr>
+                      </AnimatedTableRow>
                     ))}
-                  </AnimatePresence>
                 </TableBody>
               </Table>
 
@@ -283,7 +266,7 @@ export default function CashRegistersPage() {
             </>
           )}
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Delete Modal */}
       <DeleteModal
@@ -294,6 +277,6 @@ export default function CashRegistersPage() {
         onConfirm={handleDelete}
         isLoading={deleteRegister.isPending}
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

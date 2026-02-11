@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Search,
   Plus,
@@ -34,6 +34,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import {
   SkeletonProductCard,
@@ -81,16 +82,11 @@ const productFiltersParser = {
 export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [showFilters, setShowFilters] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
 
   const { filters, updateFilters, clearFilters } =
     useUrlFilters<ProductFilters>({
       parserConfig: productFiltersParser,
     });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Queries
   const {
@@ -147,17 +143,9 @@ export default function ProductsPage() {
   const meta = productsData?.meta;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-600/10 dark:from-primary-500/20 dark:to-primary-900/30">
@@ -178,10 +166,10 @@ export default function ProductsPage() {
             Nuevo Producto
           </Button>
         </Link>
-      </motion.div>
+      </PageSection>
 
       {/* Search and Filters */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card variant="elevated" padding="md">
           <div className="flex flex-col gap-4">
             {/* Search row */}
@@ -329,11 +317,11 @@ export default function ProductsPage() {
             </AnimatePresence>
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Error state */}
       {isError && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <EmptyState
             type="error"
             title="Error al cargar productos"
@@ -345,12 +333,12 @@ export default function ProductsPage() {
               onClick: () => window.location.reload(),
             }}
           />
-        </motion.div>
+        </PageSection>
       )}
 
       {/* Loading state */}
       {isLoading && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           {viewMode === "table" ? (
             <Card variant="elevated" padding="none">
               <Table>
@@ -379,12 +367,12 @@ export default function ProductsPage() {
               ))}
             </div>
           )}
-        </motion.div>
+        </PageSection>
       )}
 
       {/* Empty state */}
       {!isLoading && !isError && products.length === 0 && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card variant="elevated" padding="none">
             <EmptyState
               type={hasActiveFilters ? "search" : "products"}
@@ -398,14 +386,14 @@ export default function ProductsPage() {
               }
             />
           </Card>
-        </motion.div>
+        </PageSection>
       )}
 
       {/* Products list/grid */}
       {!isLoading && !isError && products.length > 0 && (
         <>
           {viewMode === "table" ? (
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card
                 variant="elevated"
                 padding="none"
@@ -428,15 +416,10 @@ export default function ProductsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <AnimatePresence mode="popLayout">
                       {products.map((product, index) => (
-                        <motion.tr
+                        <AnimatedTableRow
                           key={product.id}
-                          layout
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ delay: index * 0.03 }}
+                          index={index}
                           className="border-b border-neutral-100 dark:border-neutral-800 transition-colors hover:bg-neutral-50/80 dark:hover:bg-neutral-800/50 group"
                         >
                           {/* Image */}
@@ -533,16 +516,14 @@ export default function ProductsPage() {
                               </Link>
                             </div>
                           </TableCell>
-                        </motion.tr>
+                        </AnimatedTableRow>
                       ))}
-                    </AnimatePresence>
                   </TableBody>
                 </Table>
               </Card>
-            </motion.div>
+            </PageSection>
           ) : (
-            <motion.div
-              variants={containerVariants}
+            <div
               className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             >
               <AnimatePresence mode="popLayout">
@@ -659,13 +640,12 @@ export default function ProductsPage() {
                   </motion.div>
                 ))}
               </AnimatePresence>
-            </motion.div>
+            </div>
           )}
 
           {/* Pagination */}
           {meta && meta.totalPages > 1 && (
-            <motion.div
-              variants={itemVariants}
+            <PageSection
               className="flex flex-col items-center justify-between gap-4 sm:flex-row"
             >
               <div className="flex items-center gap-4">
@@ -688,10 +668,10 @@ export default function ProductsPage() {
                 totalPages={meta.totalPages}
                 onPageChange={(page) => updateFilters({ page })}
               />
-            </motion.div>
+            </PageSection>
           )}
         </>
       )}
-    </motion.div>
+    </PageWrapper>
   );
 }

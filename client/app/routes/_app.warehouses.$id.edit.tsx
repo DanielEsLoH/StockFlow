@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link, useParams } from "react-router";
-import { motion } from "framer-motion";
 import { ArrowLeft, Warehouse, Save } from "lucide-react";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,24 +19,6 @@ export const meta: Route.MetaFunction = () => {
     { title: "Editar Bodega - StockFlow" },
     { name: "description", content: "Editar informacion de la bodega" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Form schema
@@ -166,14 +148,9 @@ export default function EditWarehousePage() {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex items-center gap-4">
           <Link to={`/warehouses/${id}`}>
             <Button variant="ghost" size="icon">
@@ -189,7 +166,7 @@ export default function EditWarehousePage() {
             </p>
           </div>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -197,7 +174,7 @@ export default function EditWarehousePage() {
           {/* Main form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Info */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Informacion Basica</CardTitle>
@@ -253,10 +230,10 @@ export default function EditWarehousePage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Contact Info */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Informacion de Contacto</CardTitle>
@@ -313,10 +290,10 @@ export default function EditWarehousePage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Capacity */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Capacidad</CardTitle>
@@ -344,13 +321,13 @@ export default function EditWarehousePage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Status */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Estado</CardTitle>
@@ -372,10 +349,10 @@ export default function EditWarehousePage() {
                   </p>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Actions */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardContent className="p-4 space-y-3">
                   <Button
@@ -394,10 +371,10 @@ export default function EditWarehousePage() {
                   </Link>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
           </div>
         </div>
       </form>
-    </motion.div>
+    </PageWrapper>
   );
 }

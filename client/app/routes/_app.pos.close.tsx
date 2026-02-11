@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { motion } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   LogOut,
   DollarSign,
@@ -31,7 +30,6 @@ export const meta: Route.MetaFunction = () => {
 
 export default function POSClosePage() {
   const navigate = useNavigate();
-  const [isMounted, setIsMounted] = useState(false);
   const [closingAmount, setClosingAmount] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -40,10 +38,6 @@ export default function POSClosePage() {
     session?.id || "",
   );
   const closeSession = useCloseSession();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!loadingSession && !session) {
@@ -78,14 +72,9 @@ export default function POSClosePage() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="max-w-3xl mx-auto space-y-6"
-    >
+    <PageWrapper className="max-w-3xl mx-auto">
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-center gap-4">
+      <PageSection className="flex items-center gap-4">
         <Link to="/pos">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-5 w-5" />
@@ -99,10 +88,10 @@ export default function POSClosePage() {
             Arqueo y cierre de {session.cashRegister?.name}
           </p>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Session Summary */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           <div className="p-6">
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
@@ -205,10 +194,10 @@ export default function POSClosePage() {
             )}
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Expected Cash */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card className="border-primary-200 dark:border-primary-800">
           <div className="p-6">
             <div className="flex items-center justify-between">
@@ -232,10 +221,10 @@ export default function POSClosePage() {
             </p>
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Close Form */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
@@ -345,7 +334,7 @@ export default function POSClosePage() {
             </div>
           </form>
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }

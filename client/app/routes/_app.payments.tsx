@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Search,
   Filter,
@@ -40,6 +40,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { DeleteModal } from "~/components/ui/DeleteModal";
@@ -165,16 +166,10 @@ export default function PaymentsPage() {
   const [deletingPayment, setDeletingPayment] = useState<PaymentSummary | null>(
     null,
   );
-  const [isMounted, setIsMounted] = useState(false);
-
   const { filters, updateFilters, clearFilters } =
     useUrlFilters<PaymentFilters>({
       parserConfig: paymentFiltersParser,
     });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Store permission check result - must be before any early returns
   const canViewPayments = hasPermission(Permission.PAYMENTS_VIEW);
@@ -240,17 +235,9 @@ export default function PaymentsPage() {
     filters.endDate;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Pagos
@@ -259,10 +246,10 @@ export default function PaymentsPage() {
             Gestiona los pagos recibidos
           </p>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Stats Cards */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={CheckCircle}
@@ -290,10 +277,10 @@ export default function PaymentsPage() {
             color="primary"
           />
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Search and Filters */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card padding="md">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -415,10 +402,10 @@ export default function PaymentsPage() {
             </AnimatePresence>
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Table */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           {isLoading ? (
             <Table>
@@ -489,15 +476,8 @@ export default function PaymentsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <AnimatePresence mode="popLayout">
-                    {payments.map((payment) => (
-                      <motion.tr
-                        key={payment.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="border-b border-neutral-200 dark:border-neutral-700 last:border-0"
-                      >
+                  {payments.map((payment, i) => (
+                    <AnimatedTableRow key={payment.id} index={i}>
                         <TableCell>
                           <Link
                             to={`/payments/${payment.id}`}
@@ -566,9 +546,8 @@ export default function PaymentsPage() {
                             )}
                           </div>
                         </TableCell>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
+                    </AnimatedTableRow>
+                  ))}
                 </TableBody>
               </Table>
 
@@ -600,7 +579,7 @@ export default function PaymentsPage() {
             </>
           )}
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Delete Modal */}
       <DeleteModal
@@ -611,6 +590,6 @@ export default function PaymentsPage() {
         onConfirm={handleDelete}
         isLoading={deletePayment.isPending}
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

@@ -13,6 +13,7 @@ import {
   useDeleteCustomer,
 } from "./useCustomers";
 import { customersService } from "~/services/customers.service";
+import { useAuthStore } from "~/stores/auth.store";
 import type {
   Customer,
   CustomersResponse,
@@ -49,6 +50,10 @@ vi.mock("react-router", async () => {
     useNavigate: () => mockNavigate,
   };
 });
+
+vi.mock("~/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
+}));
 
 // Mock data
 const mockCustomer: Customer = {
@@ -128,6 +133,23 @@ function createWrapper() {
 describe("useCustomers hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      const state = {
+        isAuthenticated: true,
+        isInitialized: true,
+        user: null,
+        tenant: null,
+        isLoading: false,
+        userPermissions: [],
+        setUser: vi.fn(),
+        setTenant: vi.fn(),
+        setUserPermissions: vi.fn(),
+        setLoading: vi.fn(),
+        setInitialized: vi.fn(),
+        logout: vi.fn(),
+      };
+      return selector(state as never);
+    });
   });
 
   afterEach(() => {

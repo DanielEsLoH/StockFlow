@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
-import { motion } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Play,
   DollarSign,
@@ -29,7 +28,6 @@ export const meta: Route.MetaFunction = () => {
 };
 
 export default function POSOpenPage() {
-  const [isMounted, setIsMounted] = useState(false);
   const [selectedRegister, setSelectedRegister] = useState("");
   const [openingAmount, setOpeningAmount] = useState("");
   const [notes, setNotes] = useState("");
@@ -42,10 +40,6 @@ export default function POSOpenPage() {
   const { data: currentSession, isLoading: loadingSession } =
     useCurrentSession();
   const openSession = useOpenSession();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const availableRegisters =
     registersData?.data.filter((r) => r.status === "OPEN") || [];
@@ -73,14 +67,9 @@ export default function POSOpenPage() {
   const hasActiveSession = !!currentSession;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="max-w-2xl mx-auto space-y-6"
-    >
+    <PageWrapper className="max-w-2xl mx-auto">
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-center gap-4">
+      <PageSection className="flex items-center gap-4">
         <Link to="/dashboard">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-5 w-5" />
@@ -94,11 +83,11 @@ export default function POSOpenPage() {
             Inicia tu sesion de trabajo
           </p>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Active Session Warning */}
       {hasActiveSession && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card className="border-warning-200 bg-warning-50 dark:border-warning-800 dark:bg-warning-900/20">
             <div className="p-4 flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-warning-500 mt-0.5" />
@@ -117,12 +106,12 @@ export default function POSOpenPage() {
               </div>
             </div>
           </Card>
-        </motion.div>
+        </PageSection>
       )}
 
       {/* Open Session Form */}
       {!hasActiveSession && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card>
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Cash Register Selection */}
@@ -227,12 +216,12 @@ export default function POSOpenPage() {
               </div>
             </form>
           </Card>
-        </motion.div>
+        </PageSection>
       )}
 
       {/* No Registers Available */}
       {!isLoading && availableRegisters.length === 0 && !hasActiveSession && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card padding="lg">
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <div className="mb-6 text-neutral-300 dark:text-neutral-600">
@@ -250,8 +239,8 @@ export default function POSOpenPage() {
               </Link>
             </div>
           </Card>
-        </motion.div>
+        </PageSection>
       )}
-    </motion.div>
+    </PageWrapper>
   );
 }

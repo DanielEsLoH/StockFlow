@@ -12,6 +12,7 @@ import {
 import { reportsService } from "~/services/reports.service";
 import { toast } from "~/components/ui/Toast";
 import { queryKeys } from "~/lib/query-client";
+import { useAuthStore } from "~/stores/auth.store";
 import type {
   RecentReport,
   SalesReportParams,
@@ -22,6 +23,9 @@ import type {
 // Mock dependencies
 vi.mock("~/services/reports.service");
 vi.mock("~/components/ui/Toast");
+vi.mock("~/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
+}));
 
 // Mock data
 const mockRecentReports: RecentReport[] = [
@@ -141,6 +145,24 @@ function createWrapperWithClient() {
 describe("useReports hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      const state = {
+        isAuthenticated: true,
+        isInitialized: true,
+        user: null,
+        tenant: null,
+        isLoading: false,
+        userPermissions: [],
+        setUser: vi.fn(),
+        setTenant: vi.fn(),
+        setUserPermissions: vi.fn(),
+        setLoading: vi.fn(),
+        setInitialized: vi.fn(),
+        logout: vi.fn(),
+      };
+      return selector(state as never);
+    });
   });
 
   afterEach(() => {

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router";
-import { motion } from "framer-motion";
 import { ArrowLeft, CreditCard, FileText, AlertCircle } from "lucide-react";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,24 +24,6 @@ export const meta: Route.MetaFunction = () => {
     { title: "Nuevo Pago - StockFlow" },
     { name: "description", content: "Registrar un nuevo pago" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Form schema
@@ -206,14 +188,9 @@ export default function NewPaymentPage() {
     : null;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex items-center gap-4">
           <Link to="/payments">
             <Button variant="ghost" size="icon">
@@ -229,7 +206,7 @@ export default function NewPaymentPage() {
             </p>
           </div>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -237,7 +214,7 @@ export default function NewPaymentPage() {
           {/* Main form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Invoice Selection */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Seleccionar Factura</CardTitle>
@@ -290,11 +267,11 @@ export default function NewPaymentPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Invoice Summary (shown when invoice is selected) */}
             {selectedInvoice && invoiceBalance && (
-              <motion.div variants={itemVariants}>
+              <PageSection>
                 <Card className="border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/20">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -347,11 +324,11 @@ export default function NewPaymentPage() {
                     )}
                   </CardContent>
                 </Card>
-              </motion.div>
+              </PageSection>
             )}
 
             {/* Payment Details */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Detalles del Pago</CardTitle>
@@ -440,10 +417,10 @@ export default function NewPaymentPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Notes */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Notas</CardTitle>
@@ -468,13 +445,13 @@ export default function NewPaymentPage() {
                   )}
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Payment Summary */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Resumen del Pago</CardTitle>
@@ -518,10 +495,10 @@ export default function NewPaymentPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Actions */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardContent className="p-4 space-y-3">
                   <Button
@@ -540,10 +517,10 @@ export default function NewPaymentPage() {
                   </Link>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Help Info */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardContent className="p-4">
                   <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-2">
@@ -560,10 +537,10 @@ export default function NewPaymentPage() {
                   </ul>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
           </div>
         </div>
       </form>
-    </motion.div>
+    </PageWrapper>
   );
 }

@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
-import { motion } from "framer-motion";
-import { containerVariants, itemVariants } from "~/lib/animations";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { ArrowLeft, Banknote, Warehouse } from "lucide-react";
 import type { Route } from "./+types/_app.pos.cash-registers.new";
 import { useCreateCashRegister } from "~/hooks/usePOS";
@@ -26,7 +25,6 @@ const statusOptions = [
 ];
 
 export default function NewCashRegisterPage() {
-  const [isMounted, setIsMounted] = useState(false);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
@@ -36,10 +34,6 @@ export default function NewCashRegisterPage() {
   const createRegister = useCreateCashRegister();
   const { data: warehouses = [], isLoading: loadingWarehouses } =
     useWarehouses();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const warehouseOptions = [
     { value: "", label: "Seleccionar bodega..." },
@@ -63,14 +57,9 @@ export default function NewCashRegisterPage() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="max-w-2xl mx-auto space-y-6"
-    >
+    <PageWrapper className="max-w-2xl mx-auto">
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-center gap-4">
+      <PageSection className="flex items-center gap-4">
         <Link to="/pos/cash-registers">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-5 w-5" />
@@ -84,10 +73,10 @@ export default function NewCashRegisterPage() {
             Configura una nueva caja para el punto de venta
           </p>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Form */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Icon */}
@@ -185,7 +174,7 @@ export default function NewCashRegisterPage() {
             </div>
           </form>
         </Card>
-      </motion.div>
-    </motion.div>
+      </PageSection>
+    </PageWrapper>
   );
 }

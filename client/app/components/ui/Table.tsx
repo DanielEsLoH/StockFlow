@@ -1,5 +1,7 @@
 import * as React from "react";
+import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
+import { tableRowVariants } from "~/lib/animations";
 
 // Table
 type TableProps = React.HTMLAttributes<HTMLTableElement>;
@@ -148,6 +150,34 @@ const TableCaption = React.forwardRef<
 });
 TableCaption.displayName = "TableCaption";
 
+// AnimatedTableRow - opt-in staggered entrance animation
+interface AnimatedTableRowProps {
+  index?: number;
+  className?: string;
+  children?: React.ReactNode;
+}
+
+const AnimatedTableRow = React.forwardRef<HTMLTableRowElement, AnimatedTableRowProps>(
+  ({ className, index = 0, children }, ref) => {
+    return (
+      <motion.tr
+        ref={ref}
+        variants={tableRowVariants}
+        initial="hidden"
+        animate="visible"
+        custom={index}
+        className={cn(
+          "border-b border-neutral-100 transition-colors hover:bg-neutral-50/50 dark:border-neutral-800 dark:hover:bg-neutral-800/50",
+          className,
+        )}
+      >
+        {children}
+      </motion.tr>
+    );
+  },
+);
+AnimatedTableRow.displayName = "AnimatedTableRow";
+
 export {
   Table,
   TableHeader,
@@ -157,4 +187,5 @@ export {
   TableRow,
   TableCell,
   TableCaption,
+  AnimatedTableRow,
 };

@@ -1,6 +1,6 @@
 import { Link } from "react-router";
-import { motion } from "framer-motion";
 import { ArrowLeft, Save } from "lucide-react";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,24 +18,6 @@ export const meta: Route.MetaFunction = () => {
     { title: "Nuevo Cliente - StockFlow" },
     { name: "description", content: "Crear un nuevo cliente" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Form schema
@@ -113,14 +95,9 @@ export default function NewCustomerPage() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex items-center gap-4">
           <Link to="/customers">
             <Button variant="ghost" size="icon">
@@ -136,7 +113,7 @@ export default function NewCustomerPage() {
             </p>
           </div>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -144,7 +121,7 @@ export default function NewCustomerPage() {
           {/* Main form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Info */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Informacion Basica</CardTitle>
@@ -211,10 +188,10 @@ export default function NewCustomerPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Contact Info */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Informacion de Contacto</CardTitle>
@@ -288,10 +265,10 @@ export default function NewCustomerPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Notes */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Notas Adicionales</CardTitle>
@@ -316,13 +293,13 @@ export default function NewCustomerPage() {
                   )}
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Type */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Tipo de Cliente</CardTitle>
@@ -346,10 +323,10 @@ export default function NewCustomerPage() {
                   </p>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Status */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardHeader>
                   <CardTitle>Estado</CardTitle>
@@ -368,10 +345,10 @@ export default function NewCustomerPage() {
                   />
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
 
             {/* Actions */}
-            <motion.div variants={itemVariants}>
+            <PageSection>
               <Card>
                 <CardContent className="p-4 space-y-3">
                   <Button
@@ -389,10 +366,10 @@ export default function NewCustomerPage() {
                   </Link>
                 </CardContent>
               </Card>
-            </motion.div>
+            </PageSection>
           </div>
         </div>
       </form>
-    </motion.div>
+    </PageWrapper>
   );
 }

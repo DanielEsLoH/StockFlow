@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -25,6 +25,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import type { Route } from "./+types/_app.payments.$id";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { cn, formatDate, formatCurrency } from "~/lib/utils";
 import {
   usePayment,
@@ -50,23 +51,6 @@ export const meta: Route.MetaFunction = () => {
 };
 
 // Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
-};
-
 const modalVariants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: { opacity: 1, scale: 1 },
@@ -492,11 +476,6 @@ export default function PaymentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const { data: payment, isLoading, isError } = usePayment(id!);
   const deletePayment = useDeletePayment();
@@ -552,14 +531,9 @@ export default function PaymentDetailPage() {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             <Link to="/payments">
@@ -602,12 +576,12 @@ export default function PaymentDetailPage() {
             )}
           </div>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Payment Details */}
-        <motion.div variants={itemVariants} className="lg:col-span-2">
+        <PageSection className="lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>Detalles del Pago</CardTitle>
@@ -681,10 +655,10 @@ export default function PaymentDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
 
         {/* Customer Information */}
-        <motion.div variants={itemVariants} className="lg:col-span-1">
+        <PageSection className="lg:col-span-1">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -743,11 +717,11 @@ export default function PaymentDetailPage() {
               </Link>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
       </div>
 
       {/* Related Invoice */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -795,11 +769,11 @@ export default function PaymentDetailPage() {
             )}
           </CardContent>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Notes */}
       {payment.notes && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card>
             <CardHeader>
               <CardTitle>Notas</CardTitle>
@@ -810,7 +784,7 @@ export default function PaymentDetailPage() {
               </p>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
       )}
 
       {/* Delete Modal */}
@@ -833,6 +807,6 @@ export default function PaymentDetailPage() {
           isLoading={refundPayment.isPending}
         />
       )}
-    </motion.div>
+    </PageWrapper>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router";
-import { motion } from "framer-motion";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -71,26 +71,6 @@ const productSchema = z.object({
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4 },
-  },
-};
 
 // Status options
 const statusOptions = [
@@ -263,15 +243,9 @@ export default function EditProductPage() {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <div className="flex items-center gap-4">
@@ -296,14 +270,13 @@ export default function EditProductPage() {
             Tienes cambios sin guardar
           </div>
         )}
-      </motion.div>
+      </PageSection>
 
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main form */}
-          <motion.div
-            variants={itemVariants}
+          <PageSection
             className="space-y-6 lg:col-span-2"
           >
             {/* Basic info */}
@@ -610,10 +583,10 @@ export default function EditProductPage() {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </PageSection>
 
           {/* Sidebar */}
-          <motion.div variants={itemVariants} className="space-y-6">
+          <PageSection className="space-y-6">
             {/* Status */}
             <Card>
               <CardHeader>
@@ -722,9 +695,9 @@ export default function EditProductPage() {
                 </Button>
               </div>
             </Card>
-          </motion.div>
+          </PageSection>
         </div>
       </form>
-    </motion.div>
+    </PageWrapper>
   );
 }

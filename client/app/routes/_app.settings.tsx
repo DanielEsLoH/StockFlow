@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { Link } from "react-router";
 import {
   User,
@@ -63,24 +64,6 @@ export const meta: Route.MetaFunction = () => {
     { title: "Configuracion - StockFlow" },
     { name: "description", content: "Personaliza tu experiencia en StockFlow" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Tab content container variants - propagates to children
@@ -913,11 +896,6 @@ function AccountTabContent() {
 // Main Settings Page
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -935,19 +913,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex flex-col gap-4"
-      >
+      <PageSection className="flex flex-col gap-4">
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Configuracion
@@ -956,14 +924,10 @@ export default function SettingsPage() {
             Personaliza tu experiencia
           </p>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Tab Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
+      <PageSection>
         <div className="flex flex-wrap gap-2 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl">
           {tabs.map((tab) => (
             <button
@@ -983,10 +947,10 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Tab Content */}
       <div key={activeTab}>{renderTabContent()}</div>
-    </motion.div>
+    </PageWrapper>
   );
 }

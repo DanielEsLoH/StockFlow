@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Card,
   CardContent,
@@ -29,18 +30,19 @@ export default function DianPage() {
     config?.hasCertificate;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+    <PageWrapper>
+      <PageSection>
+        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
           Facturacion Electronica DIAN
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
+        <p className="text-neutral-500 dark:text-neutral-400 mt-2">
           Gestiona tus facturas electronicas y notas credito
         </p>
-      </div>
+      </PageSection>
 
       {/* Configuration Status */}
-      <Card className="mb-8">
+      <PageSection>
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
@@ -53,13 +55,13 @@ export default function DianPage() {
         <CardContent>
           {configLoading ? (
             <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-4 bg-neutral-200 rounded w-1/2"></div>
+              <div className="h-4 bg-neutral-200 rounded w-1/3"></div>
             </div>
           ) : !config ? (
             <div className="text-center py-8">
-              <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
+              <AlertTriangle className="h-12 w-12 text-warning-500 mx-auto mb-4" />
+              <p className="text-neutral-600 dark:text-neutral-300 mb-4">
                 No hay configuracion DIAN. Configura tus datos para empezar a
                 facturar electronicamente.
               </p>
@@ -70,29 +72,29 @@ export default function DianPage() {
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-3 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
                   {config.hasSoftwareConfig ? (
-                    <CheckCircle className="h-6 w-6 text-green-500" />
+                    <CheckCircle className="h-6 w-6 text-success-500" />
                   ) : (
-                    <XCircle className="h-6 w-6 text-red-500" />
+                    <XCircle className="h-6 w-6 text-error-500" />
                   )}
                   <div>
                     <p className="font-medium">Credenciales de Software</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-neutral-500">
                       {config.hasSoftwareConfig ? "Configuradas" : "Pendiente"}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-3 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
                   {config.hasResolution ? (
-                    <CheckCircle className="h-6 w-6 text-green-500" />
+                    <CheckCircle className="h-6 w-6 text-success-500" />
                   ) : (
-                    <XCircle className="h-6 w-6 text-red-500" />
+                    <XCircle className="h-6 w-6 text-error-500" />
                   )}
                   <div>
                     <p className="font-medium">Resolucion DIAN</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-neutral-500">
                       {config.hasResolution
                         ? `${config.resolutionPrefix}${config.resolutionRangeFrom}-${config.resolutionRangeTo}`
                         : "Pendiente"}
@@ -100,15 +102,15 @@ export default function DianPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center gap-3 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
                   {config.hasCertificate ? (
-                    <CheckCircle className="h-6 w-6 text-green-500" />
+                    <CheckCircle className="h-6 w-6 text-success-500" />
                   ) : (
-                    <XCircle className="h-6 w-6 text-red-500" />
+                    <XCircle className="h-6 w-6 text-error-500" />
                   )}
                   <div>
                     <p className="font-medium">Certificado Digital</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-neutral-500">
                       {config.hasCertificate ? "Cargado" : "Pendiente"}
                     </p>
                   </div>
@@ -117,7 +119,7 @@ export default function DianPage() {
 
               <div className="flex items-center justify-between pt-4 border-t">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">Modo:</span>
+                  <span className="text-sm text-neutral-500">Modo:</span>
                   <Badge variant={config.testMode ? "warning" : "success"}>
                     {config.testMode ? "Pruebas/Habilitacion" : "Produccion"}
                   </Badge>
@@ -130,20 +132,21 @@ export default function DianPage() {
           )}
         </CardContent>
       </Card>
+      </PageSection>
 
       {/* Statistics */}
       {isConfigured && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <PageSection className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Total Documentos</p>
+                  <p className="text-sm text-neutral-500">Total Documentos</p>
                   <p className="text-2xl font-bold">
                     {statsLoading ? "..." : stats?.total || 0}
                   </p>
                 </div>
-                <FileText className="h-8 w-8 text-blue-500" />
+                <FileText className="h-8 w-8 text-primary-500" />
               </div>
             </CardContent>
           </Card>
@@ -152,12 +155,12 @@ export default function DianPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Aceptados</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm text-neutral-500">Aceptados</p>
+                  <p className="text-2xl font-bold text-success-600">
                     {statsLoading ? "..." : stats?.accepted || 0}
                   </p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle className="h-8 w-8 text-success-500" />
               </div>
             </CardContent>
           </Card>
@@ -166,12 +169,12 @@ export default function DianPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Rechazados</p>
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="text-sm text-neutral-500">Rechazados</p>
+                  <p className="text-2xl font-bold text-error-600">
                     {statsLoading ? "..." : stats?.rejected || 0}
                   </p>
                 </div>
-                <XCircle className="h-8 w-8 text-red-500" />
+                <XCircle className="h-8 w-8 text-error-500" />
               </div>
             </CardContent>
           </Card>
@@ -180,31 +183,31 @@ export default function DianPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Pendientes</p>
-                  <p className="text-2xl font-bold text-yellow-600">
+                  <p className="text-sm text-neutral-500">Pendientes</p>
+                  <p className="text-2xl font-bold text-warning-600">
                     {statsLoading ? "..." : stats?.pending || 0}
                   </p>
                 </div>
-                <Clock className="h-8 w-8 text-yellow-500" />
+                <Clock className="h-8 w-8 text-warning-500" />
               </div>
             </CardContent>
           </Card>
-        </div>
+        </PageSection>
       )}
 
       {/* Additional Stats */}
       {isConfigured && stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <PageSection className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Tasa de Aceptacion</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-sm text-neutral-500">Tasa de Aceptacion</p>
+                  <p className="text-2xl font-bold text-primary-600">
                     {stats.acceptanceRate}%
                   </p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-blue-500" />
+                <TrendingUp className="h-8 w-8 text-primary-500" />
               </div>
             </CardContent>
           </Card>
@@ -213,21 +216,22 @@ export default function DianPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Numeracion Disponible</p>
+                  <p className="text-sm text-neutral-500">Numeracion Disponible</p>
                   <p className="text-2xl font-bold">{stats.remainingNumbers}</p>
                   {stats.remainingNumbers < 100 &&
                     stats.remainingNumbers > 0 && (
-                      <p className="text-xs text-yellow-600">Renovar pronto</p>
+                      <p className="text-xs text-warning-600">Renovar pronto</p>
                     )}
                 </div>
-                <FileText className="h-8 w-8 text-gray-500" />
+                <FileText className="h-8 w-8 text-neutral-500" />
               </div>
             </CardContent>
           </Card>
-        </div>
+        </PageSection>
       )}
 
       {/* Quick Actions */}
+      <PageSection>
       <Card>
         <CardHeader>
           <CardTitle>Acciones Rapidas</CardTitle>
@@ -266,6 +270,7 @@ export default function DianPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </PageSection>
+    </PageWrapper>
   );
 }

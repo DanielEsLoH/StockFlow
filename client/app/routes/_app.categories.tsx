@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { Search, Plus, Tags, Pencil, Trash2, X, Package, ShieldX } from "lucide-react";
 import { usePermissions } from "~/hooks/usePermissions";
 import { Permission } from "~/types/permissions";
@@ -26,6 +27,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { DeleteModal } from "~/components/ui/DeleteModal";
@@ -41,23 +43,6 @@ export const meta: Route.MetaFunction = () => {
 };
 
 // Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
-};
-
 const modalVariants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: { opacity: 1, scale: 1 },
@@ -108,16 +93,10 @@ export default function CategoriesPage() {
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(
     null,
   );
-  const [isMounted, setIsMounted] = useState(false);
-
   const { filters, updateFilters, clearFilters } =
     useUrlFilters<CategoryFilters>({
       parserConfig: categoryFiltersParser,
     });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Store permission check result - must be before any early returns
   const canViewCategories = hasPermission(Permission.CATEGORIES_VIEW);
@@ -221,17 +200,9 @@ export default function CategoriesPage() {
   const hasActiveFilters = !!filters.search;
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-      >
+      <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
             Categorias
@@ -243,10 +214,10 @@ export default function CategoriesPage() {
         <Button leftIcon={<Plus className="h-4 w-4" />} onClick={handleCreate}>
           Nueva Categoria
         </Button>
-      </motion.div>
+      </PageSection>
 
       {/* Search */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card padding="md">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-md">
@@ -266,10 +237,10 @@ export default function CategoriesPage() {
             )}
           </div>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Table */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           {isLoading ? (
             <Table>
@@ -348,15 +319,8 @@ export default function CategoriesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <AnimatePresence mode="popLayout">
-                    {categories.map((category) => (
-                      <motion.tr
-                        key={category.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="border-b border-neutral-200 dark:border-neutral-700 last:border-0"
-                      >
+                  {categories.map((category, i) => (
+                    <AnimatedTableRow key={category.id} index={i}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/20">
@@ -404,9 +368,8 @@ export default function CategoriesPage() {
                             </Button>
                           </div>
                         </TableCell>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
+                    </AnimatedTableRow>
+                  ))}
                 </TableBody>
               </Table>
 
@@ -428,7 +391,7 @@ export default function CategoriesPage() {
             </>
           )}
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* Create/Edit Modal */}
       <AnimatePresence>
@@ -537,6 +500,6 @@ export default function CategoriesPage() {
         onConfirm={handleDelete}
         isLoading={deleteCategory.isPending}
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import { motion } from "framer-motion";
 import {
   ArrowLeft,
   FileText,
@@ -25,6 +24,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { Route } from "./+types/_app.invoices.$id";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { cn, formatDate, formatCurrency } from "~/lib/utils";
 import {
   useInvoice,
@@ -56,24 +56,6 @@ export const meta: Route.MetaFunction = () => {
     { title: "Factura - StockFlow" },
     { name: "description", content: "Detalles de la factura" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Status badge component with icon
@@ -398,14 +380,9 @@ export default function InvoiceDetailPage() {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             <Link to="/invoices">
@@ -467,12 +444,12 @@ export default function InvoiceDetailPage() {
             )}
           </div>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Customer Information */}
-        <motion.div variants={itemVariants} className="lg:col-span-1">
+        <PageSection className="lg:col-span-1">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -531,10 +508,10 @@ export default function InvoiceDetailPage() {
               </Link>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
 
         {/* Invoice Details */}
-        <motion.div variants={itemVariants} className="lg:col-span-2">
+        <PageSection className="lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>Detalles de la Factura</CardTitle>
@@ -666,11 +643,11 @@ export default function InvoiceDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
       </div>
 
       {/* Line Items */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <Card>
           <CardHeader>
             <CardTitle>Items de la Factura</CardTitle>
@@ -737,11 +714,11 @@ export default function InvoiceDetailPage() {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </PageSection>
 
       {/* DIAN Section */}
       {invoice.dianCufe && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -791,12 +768,12 @@ export default function InvoiceDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
       )}
 
       {/* Notes */}
       {invoice.notes && (
-        <motion.div variants={itemVariants}>
+        <PageSection>
           <Card>
             <CardHeader>
               <CardTitle>Notas</CardTitle>
@@ -807,7 +784,7 @@ export default function InvoiceDetailPage() {
               </p>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
       )}
 
       {/* Delete Modal */}
@@ -870,6 +847,6 @@ export default function InvoiceDetailPage() {
           footerMessage="¡Gracias por su compra!"
         />
       )}
-    </motion.div>
+    </PageWrapper>
   );
 }

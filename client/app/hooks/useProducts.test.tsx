@@ -17,6 +17,7 @@ import {
 import { productsService } from "~/services/products.service";
 import { categoriesService } from "~/services/categories.service";
 import { warehousesService } from "~/services/warehouses.service";
+import { useAuthStore } from "~/stores/auth.store";
 import type {
   Product,
   ProductsResponse,
@@ -66,6 +67,10 @@ vi.mock("react-router", async () => {
     useNavigate: () => mockNavigate,
   };
 });
+
+vi.mock("~/stores/auth.store", () => ({
+  useAuthStore: vi.fn(),
+}));
 
 // Mock data
 const mockProduct: Product = {
@@ -170,6 +175,23 @@ function createWrapper() {
 describe("useProducts hooks", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuthStore).mockImplementation((selector) => {
+      const state = {
+        isAuthenticated: true,
+        isInitialized: true,
+        user: null,
+        tenant: null,
+        isLoading: false,
+        userPermissions: [],
+        setUser: vi.fn(),
+        setTenant: vi.fn(),
+        setUserPermissions: vi.fn(),
+        setLoading: vi.fn(),
+        setInitialized: vi.fn(),
+        logout: vi.fn(),
+      };
+      return selector(state as never);
+    });
   });
 
   afterEach(() => {

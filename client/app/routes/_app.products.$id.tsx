@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router";
-import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Pencil,
@@ -12,6 +11,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import type { Route } from "./+types/_app.products.$id";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { cn, formatCurrency, formatDate } from "~/lib/utils";
 import { useProduct, useDeleteProduct } from "~/hooks/useProducts";
 import { Button } from "~/components/ui/Button";
@@ -27,26 +27,6 @@ export const meta: Route.MetaFunction = ({ params }) => {
     { title: `Producto ${params.id} - StockFlow` },
     { name: "description", content: "Detalles del producto" },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4 },
-  },
 };
 
 // Info row component
@@ -149,15 +129,9 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <div className="flex items-center gap-4">
@@ -193,12 +167,12 @@ export default function ProductDetailPage() {
             Eliminar
           </Button>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Content grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Product image */}
-        <motion.div variants={itemVariants} className="lg:col-span-1">
+        <PageSection className="lg:col-span-1">
           <Card padding="none" className="overflow-hidden">
             <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-800">
               {product.imageUrl ? (
@@ -214,10 +188,10 @@ export default function ProductDetailPage() {
               )}
             </div>
           </Card>
-        </motion.div>
+        </PageSection>
 
         {/* Product info */}
-        <motion.div variants={itemVariants} className="space-y-6 lg:col-span-2">
+        <PageSection className="space-y-6 lg:col-span-2">
           {/* Description */}
           {product.description && (
             <Card>
@@ -384,7 +358,7 @@ export default function ProductDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </PageSection>
       </div>
 
       {/* Delete Modal */}
@@ -395,6 +369,6 @@ export default function ProductDetailPage() {
         onConfirm={handleDelete}
         isLoading={deleteProduct.isPending}
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

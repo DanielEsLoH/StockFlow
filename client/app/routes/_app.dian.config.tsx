@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { useForm } from "react-hook-form";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Card,
   CardContent,
@@ -52,7 +53,7 @@ export default function DianConfigPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-neutral-500" />
         </div>
       </div>
     );
@@ -86,27 +87,27 @@ export default function DianConfigPage() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <PageWrapper>
       {/* Header */}
-      <div className="mb-8">
+      <PageSection>
         <Link
           to="/dian"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+          className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700 mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver a DIAN
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
           Configuracion DIAN
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">
+        <p className="text-neutral-500 dark:text-neutral-400 mt-2">
           Configura los datos necesarios para la facturacion electronica
         </p>
-      </div>
+      </PageSection>
 
       {/* Environment Badge */}
       {config && (
-        <div className="mb-6">
+        <PageSection>
           <Badge
             variant={config.testMode ? "warning" : "success"}
             className="text-sm"
@@ -115,27 +116,29 @@ export default function DianConfigPage() {
               ? "Ambiente de Pruebas/Habilitacion"
               : "Ambiente de Produccion"}
           </Badge>
-        </div>
+        </PageSection>
       )}
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <PageSection>
+      <div className="flex flex-wrap gap-2">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               activeTab === tab.id
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                ? "bg-primary-600 text-white"
+                : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700"
             }`}
           >
             <tab.icon className="h-4 w-4" />
             {tab.label}
-            {tab.complete && <CheckCircle className="h-4 w-4 text-green-400" />}
+            {tab.complete && <CheckCircle className="h-4 w-4 text-success-400" />}
           </button>
         ))}
       </div>
+      </PageSection>
 
       {/* Tab Content */}
       {activeTab === "company" && (
@@ -183,7 +186,7 @@ export default function DianConfigPage() {
           isLoading={uploadCertificate.isPending}
         />
       )}
-    </div>
+    </PageWrapper>
   );
 }
 
@@ -235,7 +238,7 @@ function CompanyDataForm({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-3">
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="nit"
               >
                 NIT
@@ -246,14 +249,14 @@ function CompanyDataForm({
                 placeholder="900123456"
               />
               {errors.nit && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-sm text-error-500 mt-1">
                   {errors.nit.message}
                 </p>
               )}
             </div>
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="dv"
               >
                 DV
@@ -271,7 +274,7 @@ function CompanyDataForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="businessName"
               >
                 Razon Social
@@ -286,7 +289,7 @@ function CompanyDataForm({
             </div>
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="tradeName"
               >
                 Nombre Comercial (Opcional)
@@ -302,7 +305,7 @@ function CompanyDataForm({
           {/* Economic Activity */}
           <div>
             <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
               htmlFor="economicActivity"
             >
               Actividad Economica (Codigo CIIU)
@@ -320,7 +323,7 @@ function CompanyDataForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="address"
               >
                 Direccion
@@ -333,7 +336,7 @@ function CompanyDataForm({
             </div>
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="city"
               >
                 Ciudad
@@ -346,7 +349,7 @@ function CompanyDataForm({
             </div>
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="cityCode"
               >
                 Codigo Ciudad
@@ -361,7 +364,7 @@ function CompanyDataForm({
             </div>
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="department"
               >
                 Departamento
@@ -376,7 +379,7 @@ function CompanyDataForm({
             </div>
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="departmentCode"
               >
                 Codigo Departamento
@@ -391,7 +394,7 @@ function CompanyDataForm({
             </div>
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="postalCode"
               >
                 Codigo Postal
@@ -408,7 +411,7 @@ function CompanyDataForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="phone"
               >
                 Telefono
@@ -421,7 +424,7 @@ function CompanyDataForm({
             </div>
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="email"
               >
                 Correo Electronico
@@ -444,7 +447,7 @@ function CompanyDataForm({
               className="h-4 w-4"
             />
             <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
               htmlFor="testMode"
             >
               Modo de Pruebas/Habilitacion (desmarcar para produccion)
@@ -481,7 +484,7 @@ function SoftwareCredentialsForm({
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <p className="text-gray-500">
+          <p className="text-neutral-500">
             Primero debes configurar los datos de la empresa
           </p>
         </CardContent>
@@ -501,7 +504,7 @@ function SoftwareCredentialsForm({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
             <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
               htmlFor="softwareId"
             >
               ID del Software
@@ -514,7 +517,7 @@ function SoftwareCredentialsForm({
               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
             />
             {errors.softwareId && (
-              <p className="text-sm text-red-500 mt-1">
+              <p className="text-sm text-error-500 mt-1">
                 {errors.softwareId.message}
               </p>
             )}
@@ -522,7 +525,7 @@ function SoftwareCredentialsForm({
 
           <div>
             <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
               htmlFor="softwarePin"
             >
               PIN del Software
@@ -537,7 +540,7 @@ function SoftwareCredentialsForm({
 
           <div>
             <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
               htmlFor="technicalKey"
             >
               Clave Tecnica
@@ -592,7 +595,7 @@ function ResolutionForm({
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <p className="text-gray-500">
+          <p className="text-neutral-500">
             Primero debes configurar los datos de la empresa
           </p>
         </CardContent>
@@ -613,7 +616,7 @@ function ResolutionForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="resolutionNumber"
               >
                 Numero de Resolucion
@@ -628,7 +631,7 @@ function ResolutionForm({
             </div>
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="resolutionDate"
               >
                 Fecha de Resolucion
@@ -645,7 +648,7 @@ function ResolutionForm({
 
           <div>
             <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
               htmlFor="resolutionPrefix"
             >
               Prefijo
@@ -662,7 +665,7 @@ function ResolutionForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="resolutionRangeFrom"
               >
                 Rango Desde
@@ -679,7 +682,7 @@ function ResolutionForm({
             </div>
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
                 htmlFor="resolutionRangeTo"
               >
                 Rango Hasta
@@ -725,7 +728,7 @@ function CertificateUploadForm({
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <p className="text-gray-500">
+          <p className="text-neutral-500">
             Primero debes configurar los datos de la empresa
           </p>
         </CardContent>
@@ -752,9 +755,9 @@ function CertificateUploadForm({
       </CardHeader>
       <CardContent>
         {hasCertificate && (
-          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center gap-3">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            <span className="text-green-700 dark:text-green-400">
+          <div className="mb-6 p-4 bg-success-50 dark:bg-success-900/20 rounded-lg flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-success-500" />
+            <span className="text-success-700 dark:text-success-400">
               Certificado cargado correctamente
             </span>
           </div>
@@ -763,7 +766,7 @@ function CertificateUploadForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
               htmlFor="certificate"
             >
               Archivo del Certificado (.p12 o .pfx)
@@ -775,14 +778,14 @@ function CertificateUploadForm({
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               className="mt-1"
             />
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-neutral-500 mt-1">
               Formatos aceptados: .p12, .pfx
             </p>
           </div>
 
           <div>
             <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
               htmlFor="certificatePassword"
             >
               Contrasena del Certificado

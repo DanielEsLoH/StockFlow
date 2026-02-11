@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { motion } from "framer-motion";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Users,
   UserPlus,
@@ -43,6 +43,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import {
@@ -64,24 +65,6 @@ export const meta: Route.MetaFunction = () => {
       content: "Gestion de usuarios e invitaciones del equipo",
     },
   ];
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3 },
-  },
 };
 
 // Invitation form schema
@@ -172,12 +155,6 @@ export default function TeamPage() {
   const [cancellingInvitationId, setCancellingInvitationId] = useState<
     string | null
   >(null);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   // Check if user has permission to access this page
   const hasPermission = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
@@ -290,15 +267,9 @@ export default function TeamPage() {
   );
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isMounted ? "hidden" : false}
-      animate="visible"
-      className="space-y-6"
-    >
+    <PageWrapper>
       {/* Header */}
-      <motion.div
-        variants={itemVariants}
+      <PageSection
         className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <div>
@@ -315,10 +286,10 @@ export default function TeamPage() {
         >
           Invitar Usuario
         </Button>
-      </motion.div>
+      </PageSection>
 
       {/* Tab Navigation */}
-      <motion.div variants={itemVariants}>
+      <PageSection>
         <div className="flex gap-2 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-xl w-fit">
           <button
             onClick={() => setActiveTab("members")}
@@ -353,15 +324,10 @@ export default function TeamPage() {
             )}
           </button>
         </div>
-      </motion.div>
+      </PageSection>
 
       {/* Tab Content */}
-      <motion.div
-        key={activeTab}
-        initial={isMounted ? { opacity: 0, y: 10 } : false}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
+      <PageSection key={activeTab}>
         {activeTab === "members" ? (
           <Card>
             {isLoadingMembers ? (
@@ -432,12 +398,12 @@ export default function TeamPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {members.map((member) => {
+                  {members.map((member, index) => {
                     const statusInfo =
                       userStatusConfig[member.status] ||
                       userStatusConfig.ACTIVE;
                     return (
-                      <TableRow key={member.id}>
+                      <AnimatedTableRow key={member.id} index={index}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-medium text-sm">
@@ -497,7 +463,7 @@ export default function TeamPage() {
                               : "-"}
                           </span>
                         </TableCell>
-                      </TableRow>
+                      </AnimatedTableRow>
                     );
                   })}
                 </TableBody>
@@ -776,7 +742,7 @@ export default function TeamPage() {
             </Card>
           </div>
         )}
-      </motion.div>
+      </PageSection>
 
       {/* Invite User Modal */}
       <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
@@ -896,6 +862,6 @@ export default function TeamPage() {
         isLoading={cancelInvitation.isPending}
         variant="warning"
       />
-    </motion.div>
+    </PageWrapper>
   );
 }

@@ -34,7 +34,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
-    "@arcjet/nest": "^1.0.0-beta.16",
+    "@arcjet/nest": "^1.0.0",
     "@arcjet/node": "^1.0.0-beta.16",
     "@getbrevo/brevo": "^3.0.1",
     "@nestjs-modules/mailer": "^2.0.2",

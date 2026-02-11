@@ -37,7 +37,7 @@ const mockUser: User = {
   role: "ADMIN",
   status: "ACTIVE",
   tenantId: "tenant-1",
-  avatarUrl: "https://example.com/avatar.jpg",
+  avatar: "https://example.com/avatar.jpg",
 };
 
 const mockPreferences: UserPreferences = {
@@ -466,9 +466,7 @@ describe("useSettings hooks", () => {
         confirmPassword: "newSecurePassword123!",
       };
 
-      vi.mocked(settingsService.changePassword).mockResolvedValue({
-        message: "Contrasena actualizada exitosamente",
-      });
+      vi.mocked(settingsService.changePassword).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useChangePassword(), {
         wrapper: createWrapper(),
@@ -495,9 +493,7 @@ describe("useSettings hooks", () => {
         confirmPassword: "newSecurePassword123!",
       };
 
-      vi.mocked(settingsService.changePassword).mockResolvedValue({
-        message: "Contrasena actualizada exitosamente",
-      });
+      vi.mocked(settingsService.changePassword).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useChangePassword(), {
         wrapper: createWrapper(),
@@ -564,9 +560,7 @@ describe("useSettings hooks", () => {
     });
 
     it("should get user from auth store getState", async () => {
-      vi.mocked(settingsService.changePassword).mockResolvedValue({
-        message: "Contrasena actualizada exitosamente",
-      });
+      vi.mocked(settingsService.changePassword).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useChangePassword(), {
         wrapper: createWrapper(),
@@ -591,9 +585,7 @@ describe("useSettings hooks", () => {
     it("should handle user with no id", async () => {
       mockGetState.mockReturnValue({ user: null });
 
-      vi.mocked(settingsService.changePassword).mockResolvedValue({
-        message: "Contrasena actualizada exitosamente",
-      });
+      vi.mocked(settingsService.changePassword).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useChangePassword(), {
         wrapper: createWrapper(),
@@ -905,9 +897,9 @@ describe("useSettings hooks", () => {
   describe("useUploadAvatar", () => {
     it("should upload avatar successfully", async () => {
       const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
-      const response = {
-        url: "https://example.com/new-avatar.jpg",
-        filename: "avatar.jpg",
+      const response: User = {
+        ...mockUser,
+        avatar: "https://example.com/new-avatar.jpg",
       };
 
       vi.mocked(settingsService.uploadAvatar).mockResolvedValue(response);
@@ -929,9 +921,9 @@ describe("useSettings hooks", () => {
 
     it("should update auth store on success", async () => {
       const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
-      const response = {
-        url: "https://example.com/new-avatar.jpg",
-        filename: "avatar.jpg",
+      const response: User = {
+        ...mockUser,
+        avatar: "https://example.com/new-avatar.jpg",
       };
 
       vi.mocked(settingsService.uploadAvatar).mockResolvedValue(response);
@@ -948,17 +940,14 @@ describe("useSettings hooks", () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockSetUser).toHaveBeenCalledWith({
-        ...mockUser,
-        avatarUrl: response.url,
-      });
+      expect(mockSetUser).toHaveBeenCalledWith(response);
     });
 
     it('should show success toast "Foto de perfil actualizada"', async () => {
       const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
-      const response = {
-        url: "https://example.com/new-avatar.jpg",
-        filename: "avatar.jpg",
+      const response: User = {
+        ...mockUser,
+        avatar: "https://example.com/new-avatar.jpg",
       };
 
       vi.mocked(settingsService.uploadAvatar).mockResolvedValue(response);
@@ -1023,9 +1012,9 @@ describe("useSettings hooks", () => {
 
     it("should update auth query cache on success", async () => {
       const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
-      const response = {
-        url: "https://example.com/new-avatar.jpg",
-        filename: "avatar.jpg",
+      const response: User = {
+        ...mockUser,
+        avatar: "https://example.com/new-avatar.jpg",
       };
 
       vi.mocked(settingsService.uploadAvatar).mockResolvedValue(response);
@@ -1049,7 +1038,7 @@ describe("useSettings hooks", () => {
       const authData = queryClient.getQueryData(queryKeys.auth.me()) as {
         user: User;
       };
-      expect(authData.user.avatarUrl).toBe(response.url);
+      expect(authData.user.avatar).toBe(response.avatar);
     });
 
     it("should not update auth store when user is null", async () => {
@@ -1065,9 +1054,9 @@ describe("useSettings hooks", () => {
       });
 
       const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
-      const response = {
-        url: "https://example.com/new-avatar.jpg",
-        filename: "avatar.jpg",
+      const response: User = {
+        ...mockUser,
+        avatar: "https://example.com/new-avatar.jpg",
       };
 
       vi.mocked(settingsService.uploadAvatar).mockResolvedValue(response);
@@ -1092,12 +1081,10 @@ describe("useSettings hooks", () => {
 
     it("should return loading state while uploading", async () => {
       const file = new File(["test"], "avatar.jpg", { type: "image/jpeg" });
-      let resolvePromise: (value: { url: string; filename: string }) => void;
-      const promise = new Promise<{ url: string; filename: string }>(
-        (resolve) => {
-          resolvePromise = resolve;
-        },
-      );
+      let resolvePromise: (value: User) => void;
+      const promise = new Promise<User>((resolve) => {
+        resolvePromise = resolve;
+      });
 
       vi.mocked(settingsService.uploadAvatar).mockReturnValue(promise);
 
@@ -1116,8 +1103,8 @@ describe("useSettings hooks", () => {
 
       // Resolve the promise to clean up
       resolvePromise!({
-        url: "https://example.com/new-avatar.jpg",
-        filename: "avatar.jpg",
+        ...mockUser,
+        avatar: "https://example.com/new-avatar.jpg",
       });
 
       await waitFor(() => {
@@ -1128,9 +1115,7 @@ describe("useSettings hooks", () => {
 
   describe("useDeleteAvatar", () => {
     it("should delete avatar successfully", async () => {
-      vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: "Avatar eliminado exitosamente",
-      });
+      vi.mocked(settingsService.deleteAvatar).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useDeleteAvatar(), {
         wrapper: createWrapper(),
@@ -1144,13 +1129,11 @@ describe("useSettings hooks", () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(settingsService.deleteAvatar).toHaveBeenCalledWith(mockUser.id);
+      expect(settingsService.deleteAvatar).toHaveBeenCalled();
     });
 
     it("should update auth store on success", async () => {
-      vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: "Avatar eliminado exitosamente",
-      });
+      vi.mocked(settingsService.deleteAvatar).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useDeleteAvatar(), {
         wrapper: createWrapper(),
@@ -1166,14 +1149,12 @@ describe("useSettings hooks", () => {
 
       expect(mockSetUser).toHaveBeenCalledWith({
         ...mockUser,
-        avatarUrl: undefined,
+        avatar: undefined,
       });
     });
 
     it('should show success toast "Foto de perfil eliminada"', async () => {
-      vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: "Avatar eliminado exitosamente",
-      });
+      vi.mocked(settingsService.deleteAvatar).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useDeleteAvatar(), {
         wrapper: createWrapper(),
@@ -1232,9 +1213,7 @@ describe("useSettings hooks", () => {
     });
 
     it("should update auth query cache on success", async () => {
-      vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: "Avatar eliminado exitosamente",
-      });
+      vi.mocked(settingsService.deleteAvatar).mockResolvedValue(undefined);
 
       const { wrapper, queryClient } = createWrapperWithClient();
 
@@ -1251,11 +1230,11 @@ describe("useSettings hooks", () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      // Verify auth cache was updated with avatarUrl removed
+      // Verify auth cache was updated with avatar removed
       const authData = queryClient.getQueryData(queryKeys.auth.me()) as {
         user: User;
       };
-      expect(authData.user.avatarUrl).toBeUndefined();
+      expect(authData.user.avatar).toBeUndefined();
     });
 
     it("should not update auth store when user is null", async () => {
@@ -1270,9 +1249,7 @@ describe("useSettings hooks", () => {
         logout: vi.fn(),
       });
 
-      vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: "Avatar eliminado exitosamente",
-      });
+      vi.mocked(settingsService.deleteAvatar).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useDeleteAvatar(), {
         wrapper: createWrapper(),
@@ -1304,9 +1281,7 @@ describe("useSettings hooks", () => {
         logout: vi.fn(),
       });
 
-      vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: "Avatar eliminado exitosamente",
-      });
+      vi.mocked(settingsService.deleteAvatar).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useDeleteAvatar(), {
         wrapper: createWrapper(),
@@ -1498,9 +1473,7 @@ describe("useSettings hooks", () => {
       const updatedUser: User = { ...mockUser, firstName: "Carlos" };
 
       vi.mocked(settingsService.updateProfile).mockResolvedValue(updatedUser);
-      vi.mocked(settingsService.deleteAvatar).mockResolvedValue({
-        message: "Avatar eliminado exitosamente",
-      });
+      vi.mocked(settingsService.deleteAvatar).mockResolvedValue(undefined);
 
       const { result: profileResult } = renderHook(() => useUpdateProfile(), {
         wrapper: createWrapper(),

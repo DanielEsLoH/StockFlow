@@ -472,9 +472,9 @@ describe("Header", () => {
       expect(screen.getByText("JD")).toBeInTheDocument();
     });
 
-    it("should display avatar when user has avatarUrl", () => {
+    it("should display avatar when user has avatar", () => {
       useAuthStore.setState({
-        user: { ...mockUser, avatarUrl: "https://example.com/avatar.jpg" },
+        user: { ...mockUser, avatar: "https://example.com/avatar.jpg" },
       });
 
       render(<Header />, { wrapper: createWrapper() });

@@ -500,9 +500,9 @@ export function Header() {
                   "transition-colors",
                 )}
               >
-                {user?.avatarUrl ? (
+                {user?.avatar ? (
                   <img
-                    src={user.avatarUrl}
+                    src={user.avatar}
                     alt={userName}
                     className="h-9 w-9 rounded-xl object-cover ring-2 ring-white dark:ring-neutral-800 shadow-sm"
                   />
@@ -545,9 +545,9 @@ export function Header() {
                     {/* User info */}
                     <div className="px-4 py-4 border-b border-neutral-100 dark:border-neutral-800 bg-gradient-to-br from-neutral-50 to-neutral-100/50 dark:from-neutral-800/50 dark:to-neutral-900">
                       <div className="flex items-center gap-3">
-                        {user?.avatarUrl ? (
+                        {user?.avatar ? (
                           <img
-                            src={user.avatarUrl}
+                            src={user.avatar}
                             alt={userName}
                             className="h-12 w-12 rounded-xl object-cover ring-2 ring-white dark:ring-neutral-700 shadow-md"
                           />

@@ -269,9 +269,9 @@ describe("Sidebar", () => {
       expect(screen.getByText("JD")).toBeInTheDocument();
     });
 
-    it("should render avatar when user has avatarUrl", () => {
+    it("should render avatar when user has avatar", () => {
       useAuthStore.setState({
-        user: { ...mockUser, avatarUrl: "https://example.com/avatar.jpg" },
+        user: { ...mockUser, avatar: "https://example.com/avatar.jpg" },
       });
 
       render(<Sidebar />, { wrapper: createWrapper() });

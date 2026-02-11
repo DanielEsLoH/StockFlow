@@ -146,19 +146,14 @@ export function useUploadAvatar() {
 
   return useMutation({
     mutationFn: (file: File) => settingsService.uploadAvatar(file),
-    onSuccess: (response) => {
-      // Update auth store with new avatar URL
-      if (user) {
-        const updatedUser = { ...user, avatarUrl: response.url };
-        setUser(updatedUser);
-        // Update auth query cache
-        queryClient.setQueryData(queryKeys.auth.me(), (oldData: unknown) => {
-          if (oldData && typeof oldData === "object" && "user" in oldData) {
-            return { ...oldData, user: updatedUser };
-          }
-          return oldData;
-        });
-      }
+    onSuccess: (updatedUser) => {
+      setUser(updatedUser);
+      queryClient.setQueryData(queryKeys.auth.me(), (oldData: unknown) => {
+        if (oldData && typeof oldData === "object" && "user" in oldData) {
+          return { ...oldData, user: updatedUser };
+        }
+        return oldData;
+      });
       toast.success("Foto de perfil actualizada");
     },
     onError: (error: Error) => {
@@ -175,11 +170,11 @@ export function useDeleteAvatar() {
   const { user, setUser } = useAuthStore();
 
   return useMutation({
-    mutationFn: () => settingsService.deleteAvatar(user?.id || ""),
+    mutationFn: () => settingsService.deleteAvatar(),
     onSuccess: () => {
       // Update auth store by removing avatar URL
       if (user) {
-        const updatedUser = { ...user, avatarUrl: undefined };
+        const updatedUser = { ...user, avatar: undefined };
         setUser(updatedUser);
         // Update auth query cache
         queryClient.setQueryData(queryKeys.auth.me(), (oldData: unknown) => {

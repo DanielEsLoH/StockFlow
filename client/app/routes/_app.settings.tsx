@@ -340,9 +340,9 @@ function ProfileTabContent() {
           <div className="flex flex-col sm:flex-row items-center gap-6">
             {/* Avatar */}
             <div className="relative">
-              {user?.avatarUrl ? (
+              {user?.avatar ? (
                 <img
-                  src={user.avatarUrl}
+                  src={user.avatar}
                   alt={fullName}
                   className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-neutral-800 shadow-lg"
                 />

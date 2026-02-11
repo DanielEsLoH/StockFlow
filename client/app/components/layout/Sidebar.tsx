@@ -499,9 +499,9 @@ function SidebarContent({
         >
           {/* Avatar */}
           <div className="relative flex-shrink-0">
-            {user?.avatarUrl ? (
+            {user?.avatar ? (
               <img
-                src={user.avatarUrl}
+                src={user.avatar}
                 alt={userName}
                 className="h-10 w-10 rounded-full object-cover ring-2 ring-white dark:ring-neutral-800"
               />

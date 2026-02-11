@@ -262,9 +262,9 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center text-center">
                 {/* Avatar */}
                 <div className="relative group">
-                  {user.avatarUrl ? (
+                  {user.avatar ? (
                     <img
-                      src={user.avatarUrl}
+                      src={user.avatar}
                       alt={fullName}
                       className="h-24 w-24 rounded-full object-cover border-4 border-white dark:border-neutral-800 shadow-lg"
                     />
@@ -341,9 +341,9 @@ export default function ProfilePage() {
                     disabled={uploadAvatar.isPending}
                   >
                     <Camera className="h-4 w-4 mr-2" />
-                    {user.avatarUrl ? "Cambiar foto" : "Subir foto"}
+                    {user.avatar ? "Cambiar foto" : "Subir foto"}
                   </Button>
-                  {user.avatarUrl && (
+                  {user.avatar && (
                     <Button
                       variant="ghost"
                       size="sm"

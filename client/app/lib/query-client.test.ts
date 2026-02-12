@@ -427,11 +427,29 @@ describe("Query Keys", () => {
     });
 
     it("generates stats key", () => {
-      expect(queryKeys.dashboard.stats()).toEqual(["dashboard", "stats"]);
+      expect(queryKeys.dashboard.stats()).toEqual([
+        "dashboard",
+        "stats",
+        undefined,
+      ]);
+      expect(queryKeys.dashboard.stats(7)).toEqual([
+        "dashboard",
+        "stats",
+        7,
+      ]);
     });
 
     it("generates charts key", () => {
-      expect(queryKeys.dashboard.charts()).toEqual(["dashboard", "charts"]);
+      expect(queryKeys.dashboard.charts()).toEqual([
+        "dashboard",
+        "charts",
+        undefined,
+      ]);
+      expect(queryKeys.dashboard.charts(30)).toEqual([
+        "dashboard",
+        "charts",
+        30,
+      ]);
     });
   });
 

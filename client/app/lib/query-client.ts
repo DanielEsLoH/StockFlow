@@ -119,8 +119,10 @@ export const queryKeys = {
   // Dashboard
   dashboard: {
     all: ["dashboard"] as const,
-    stats: () => [...queryKeys.dashboard.all, "stats"] as const,
-    charts: () => [...queryKeys.dashboard.all, "charts"] as const,
+    stats: (days?: number) =>
+      [...queryKeys.dashboard.all, "stats", days] as const,
+    charts: (days?: number) =>
+      [...queryKeys.dashboard.all, "charts", days] as const,
     activity: () => [...queryKeys.dashboard.all, "activity"] as const,
   },
 

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Logger } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Logger } from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -25,6 +25,7 @@ import {
   LowStockAlertEntity,
   RecentActivityEntity,
 } from './entities/dashboard.entity';
+import { DashboardQueryDto } from './dto/dashboard-query.dto';
 
 /**
  * DashboardController handles the dashboard analytics endpoint.
@@ -103,12 +104,15 @@ export class DashboardController {
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  async getStats(@CurrentUser() user: RequestUser): Promise<DashboardStats> {
+  async getStats(
+    @CurrentUser() user: RequestUser,
+    @Query() query: DashboardQueryDto,
+  ): Promise<DashboardStats> {
     this.logger.log(
       `Fetching dashboard stats for tenant ${user.tenantId} by user ${user.userId}`,
     );
 
-    return this.dashboardService.getStats();
+    return this.dashboardService.getStats(query.days);
   }
 
   /**
@@ -135,12 +139,15 @@ export class DashboardController {
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  async getCharts(@CurrentUser() user: RequestUser): Promise<DashboardCharts> {
+  async getCharts(
+    @CurrentUser() user: RequestUser,
+    @Query() query: DashboardQueryDto,
+  ): Promise<DashboardCharts> {
     this.logger.log(
       `Fetching dashboard charts for tenant ${user.tenantId} by user ${user.userId}`,
     );
 
-    return this.dashboardService.getCharts();
+    return this.dashboardService.getCharts(query.days);
   }
 
   /**

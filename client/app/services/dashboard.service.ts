@@ -87,13 +87,17 @@ export interface DashboardData {
 
 // Service - Real API calls
 export const dashboardService = {
-  async getStats(): Promise<DashboardStats> {
-    const { data } = await api.get<DashboardStats>("/dashboard/stats");
+  async getStats(days?: number): Promise<DashboardStats> {
+    const { data } = await api.get<DashboardStats>("/dashboard/stats", {
+      params: days ? { days } : undefined,
+    });
     return data;
   },
 
-  async getCharts(): Promise<DashboardCharts> {
-    const { data } = await api.get<DashboardCharts>("/dashboard/charts");
+  async getCharts(days?: number): Promise<DashboardCharts> {
+    const { data } = await api.get<DashboardCharts>("/dashboard/charts", {
+      params: days ? { days } : undefined,
+    });
     return data;
   },
 

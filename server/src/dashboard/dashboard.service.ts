@@ -751,14 +751,22 @@ export class DashboardService {
    * Gets dashboard stats for the frontend stats cards.
    * Aggregates sales, products, invoices, and customers metrics.
    */
-  async getStats(): Promise<DashboardStats> {
+  async getStats(days = 30): Promise<DashboardStats> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    // Dynamic period based on days parameter
+    const startOfPeriod = new Date(now);
+    startOfPeriod.setDate(now.getDate() - days);
+    startOfPeriod.setHours(0, 0, 0, 0);
+
+    // Previous period for growth comparison (same length, immediately before)
+    const startOfPreviousPeriod = new Date(startOfPeriod);
+    startOfPreviousPeriod.setDate(startOfPreviousPeriod.getDate() - days);
+    const endOfPreviousPeriod = new Date(startOfPeriod);
+    endOfPreviousPeriod.setMilliseconds(endOfPreviousPeriod.getMilliseconds() - 1);
 
     // Base where clause excluding cancelled invoices
     const baseInvoiceWhere = {
@@ -782,21 +790,21 @@ export class DashboardService {
       totalCustomers,
       lastMonthCustomers,
     ] = await Promise.all([
-      // This month sales
+      // Current period sales
       this.prisma.invoice.aggregate({
         where: {
           ...baseInvoiceWhere,
-          issueDate: { gte: startOfMonth },
+          issueDate: { gte: startOfPeriod },
         },
         _sum: { total: true },
       }),
-      // Last month sales
+      // Previous period sales
       this.prisma.invoice.aggregate({
         where: {
           ...baseInvoiceWhere,
           issueDate: {
-            gte: startOfLastMonth,
-            lte: endOfLastMonth,
+            gte: startOfPreviousPeriod,
+            lte: endOfPreviousPeriod,
           },
         },
         _sum: { total: true },
@@ -820,13 +828,13 @@ export class DashboardService {
       this.prisma.product.count({
         where: { tenantId },
       }),
-      // Products created last month (for growth calculation)
+      // Products created in previous period (for growth calculation)
       this.prisma.product.count({
         where: {
           tenantId,
           createdAt: {
-            gte: startOfLastMonth,
-            lte: endOfLastMonth,
+            gte: startOfPreviousPeriod,
+            lte: endOfPreviousPeriod,
           },
         },
       }),
@@ -834,13 +842,13 @@ export class DashboardService {
       this.prisma.invoice.count({
         where: baseInvoiceWhere,
       }),
-      // Invoices last month
+      // Invoices in previous period
       this.prisma.invoice.count({
         where: {
           ...baseInvoiceWhere,
           issueDate: {
-            gte: startOfLastMonth,
-            lte: endOfLastMonth,
+            gte: startOfPreviousPeriod,
+            lte: endOfPreviousPeriod,
           },
         },
       }),
@@ -855,66 +863,66 @@ export class DashboardService {
       this.prisma.customer.count({
         where: { tenantId },
       }),
-      // Customers created last month
+      // Customers created in previous period
       this.prisma.customer.count({
         where: {
           tenantId,
           createdAt: {
-            gte: startOfLastMonth,
-            lte: endOfLastMonth,
+            gte: startOfPreviousPeriod,
+            lte: endOfPreviousPeriod,
           },
         },
       }),
     ]);
 
     // Execute the remaining queries in parallel
-    const [thisMonthProducts, thisMonthInvoices, thisMonthCustomers] =
+    const [thisPeriodProducts, thisPeriodInvoices, thisPeriodCustomers] =
       await Promise.all([
-        // Products this month
+        // Products this period
         this.prisma.product.count({
           where: {
             tenantId,
-            createdAt: { gte: startOfMonth },
+            createdAt: { gte: startOfPeriod },
           },
         }),
-        // Invoices this month
+        // Invoices this period
         this.prisma.invoice.count({
           where: {
             ...baseInvoiceWhere,
-            issueDate: { gte: startOfMonth },
+            issueDate: { gte: startOfPeriod },
           },
         }),
-        // Customers this month
+        // Customers this period
         this.prisma.customer.count({
           where: {
             tenantId,
-            createdAt: { gte: startOfMonth },
+            createdAt: { gte: startOfPeriod },
           },
         }),
       ]);
 
     // Calculate totals and growth percentages
-    const thisMonthSalesTotal = Number(thisMonthSales._sum.total ?? 0);
-    const lastMonthSalesTotal = Number(lastMonthSales._sum.total ?? 0);
+    const thisPeriodSalesTotal = Number(thisMonthSales._sum.total ?? 0);
+    const previousPeriodSalesTotal = Number(lastMonthSales._sum.total ?? 0);
     const salesGrowth = this.calculateGrowth(
-      thisMonthSalesTotal,
-      lastMonthSalesTotal,
+      thisPeriodSalesTotal,
+      previousPeriodSalesTotal,
     );
     const productsGrowth = this.calculateGrowth(
-      thisMonthProducts,
+      thisPeriodProducts,
       lastMonthProducts,
     );
     const invoicesGrowth = this.calculateGrowth(
-      thisMonthInvoices,
+      thisPeriodInvoices,
       lastMonthInvoices,
     );
     const customersGrowth = this.calculateGrowth(
-      thisMonthCustomers,
+      thisPeriodCustomers,
       lastMonthCustomers,
     );
 
     return {
-      totalSales: thisMonthSalesTotal,
+      totalSales: thisPeriodSalesTotal,
       salesGrowth,
       totalProducts,
       productsGrowth,
@@ -931,11 +939,11 @@ export class DashboardService {
   /**
    * Gets chart data for the frontend dashboard charts.
    */
-  async getCharts(): Promise<DashboardCharts> {
+  async getCharts(days = 7): Promise<DashboardCharts> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const [salesChart, categoryDistribution, topProducts] = await Promise.all([
-      this.getSalesChartData(tenantId),
+      this.getSalesChartData(tenantId, days),
       this.getCategoryDistribution(tenantId),
       this.getTopProductsForCharts(tenantId),
     ]);

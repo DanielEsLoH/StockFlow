@@ -347,7 +347,7 @@ describe('DashboardController', () => {
     it('should return dashboard stats from service', async () => {
       dashboardService.getStats.mockResolvedValue(mockDashboardStats);
 
-      const result = await controller.getStats(mockUser);
+      const result = await controller.getStats(mockUser, {});
 
       expect(result).toEqual(mockDashboardStats);
       expect(dashboardService.getStats).toHaveBeenCalledTimes(1);
@@ -357,25 +357,33 @@ describe('DashboardController', () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
       dashboardService.getStats.mockResolvedValue(mockDashboardStats);
 
-      await controller.getStats(mockUser);
+      await controller.getStats(mockUser, {});
 
       expect(logSpy).toHaveBeenCalledWith(
         `Fetching dashboard stats for tenant ${mockUser.tenantId} by user ${mockUser.userId}`,
       );
     });
 
-    it('should call service.getStats without arguments', async () => {
+    it('should pass days to service when provided', async () => {
       dashboardService.getStats.mockResolvedValue(mockDashboardStats);
 
-      await controller.getStats(mockUser);
+      await controller.getStats(mockUser, { days: 7 });
 
-      expect(dashboardService.getStats).toHaveBeenCalledWith();
+      expect(dashboardService.getStats).toHaveBeenCalledWith(7);
+    });
+
+    it('should pass undefined days when not provided', async () => {
+      dashboardService.getStats.mockResolvedValue(mockDashboardStats);
+
+      await controller.getStats(mockUser, {});
+
+      expect(dashboardService.getStats).toHaveBeenCalledWith(undefined);
     });
 
     it('should return complete stats structure', async () => {
       dashboardService.getStats.mockResolvedValue(mockDashboardStats);
 
-      const result = await controller.getStats(mockUser);
+      const result = await controller.getStats(mockUser, {});
 
       expect(result).toHaveProperty('totalSales');
       expect(result).toHaveProperty('salesGrowth');
@@ -392,7 +400,7 @@ describe('DashboardController', () => {
       const error = new Error('Database error');
       dashboardService.getStats.mockRejectedValue(error);
 
-      await expect(controller.getStats(mockUser)).rejects.toThrow(error);
+      await expect(controller.getStats(mockUser, {})).rejects.toThrow(error);
     });
   });
 
@@ -400,7 +408,7 @@ describe('DashboardController', () => {
     it('should return dashboard charts from service', async () => {
       dashboardService.getCharts.mockResolvedValue(mockDashboardCharts);
 
-      const result = await controller.getCharts(mockUser);
+      const result = await controller.getCharts(mockUser, {});
 
       expect(result).toEqual(mockDashboardCharts);
       expect(dashboardService.getCharts).toHaveBeenCalledTimes(1);
@@ -410,25 +418,33 @@ describe('DashboardController', () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
       dashboardService.getCharts.mockResolvedValue(mockDashboardCharts);
 
-      await controller.getCharts(mockUser);
+      await controller.getCharts(mockUser, {});
 
       expect(logSpy).toHaveBeenCalledWith(
         `Fetching dashboard charts for tenant ${mockUser.tenantId} by user ${mockUser.userId}`,
       );
     });
 
-    it('should call service.getCharts without arguments', async () => {
+    it('should pass days to service when provided', async () => {
       dashboardService.getCharts.mockResolvedValue(mockDashboardCharts);
 
-      await controller.getCharts(mockUser);
+      await controller.getCharts(mockUser, { days: 30 });
 
-      expect(dashboardService.getCharts).toHaveBeenCalledWith();
+      expect(dashboardService.getCharts).toHaveBeenCalledWith(30);
+    });
+
+    it('should pass undefined days when not provided', async () => {
+      dashboardService.getCharts.mockResolvedValue(mockDashboardCharts);
+
+      await controller.getCharts(mockUser, {});
+
+      expect(dashboardService.getCharts).toHaveBeenCalledWith(undefined);
     });
 
     it('should return complete charts structure', async () => {
       dashboardService.getCharts.mockResolvedValue(mockDashboardCharts);
 
-      const result = await controller.getCharts(mockUser);
+      const result = await controller.getCharts(mockUser, {});
 
       expect(result).toHaveProperty('salesChart');
       expect(result).toHaveProperty('categoryDistribution');
@@ -442,7 +458,7 @@ describe('DashboardController', () => {
       const error = new Error('Database error');
       dashboardService.getCharts.mockRejectedValue(error);
 
-      await expect(controller.getCharts(mockUser)).rejects.toThrow(error);
+      await expect(controller.getCharts(mockUser, {})).rejects.toThrow(error);
     });
   });
 

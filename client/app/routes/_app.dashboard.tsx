@@ -274,6 +274,10 @@ function QuickActionCard({
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const { canCreateProducts, canViewReports } = usePermissions();
+
+  const [dateRange, setDateRange] = useState<string>("30d");
+  const days = parseInt(dateRange) || 30;
+
   const {
     stats,
     charts,
@@ -282,9 +286,7 @@ export default function DashboardPage() {
     recentActivity,
     isLoading,
     refetch,
-  } = useDashboard();
-
-  const [dateRange, setDateRange] = useState<string>("30d");
+  } = useDashboard(days);
 
   const userName = user?.firstName || "Usuario";
 

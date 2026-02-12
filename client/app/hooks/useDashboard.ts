@@ -10,22 +10,22 @@ import type {
   RecentActivity,
 } from "~/services/dashboard.service";
 
-export function useDashboardStats() {
+export function useDashboardStats(days?: number) {
   const enabled = useIsQueryEnabled();
   return useQuery<DashboardStats>({
-    queryKey: queryKeys.dashboard.stats(),
-    queryFn: dashboardService.getStats,
+    queryKey: queryKeys.dashboard.stats(days),
+    queryFn: () => dashboardService.getStats(days),
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
     enabled,
   });
 }
 
-export function useDashboardCharts() {
+export function useDashboardCharts(days?: number) {
   const enabled = useIsQueryEnabled();
   return useQuery<DashboardCharts>({
-    queryKey: queryKeys.dashboard.charts(),
-    queryFn: dashboardService.getCharts,
+    queryKey: queryKeys.dashboard.charts(days),
+    queryFn: () => dashboardService.getCharts(days),
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled,
   });
@@ -61,9 +61,9 @@ export function useRecentActivity() {
   });
 }
 
-export function useDashboard() {
-  const statsQuery = useDashboardStats();
-  const chartsQuery = useDashboardCharts();
+export function useDashboard(days?: number) {
+  const statsQuery = useDashboardStats(days);
+  const chartsQuery = useDashboardCharts(days);
   const invoicesQuery = useRecentInvoices();
   const alertsQuery = useLowStockAlerts();
   const activityQuery = useRecentActivity();

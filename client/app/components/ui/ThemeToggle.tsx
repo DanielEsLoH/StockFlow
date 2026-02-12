@@ -1,29 +1,24 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { useTheme } from "~/hooks/useTheme";
-import type { Theme } from "~/lib/theme";
-
-const icons: Record<Theme, React.ReactNode> = {
-  light: <Sun className="h-5 w-5" />,
-  dark: <Moon className="h-5 w-5" />,
-  system: <Monitor className="h-5 w-5" />,
-};
-
-const labels: Record<Theme, string> = {
-  light: "Light mode",
-  dark: "Dark mode",
-  system: "System",
-};
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
-  // Track if component has mounted to avoid SSR hydration issues with animations
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Show the opposite icon: moon when light (click to go dark), sun when dark (click to go light)
+  const icon =
+    theme === "light" ? (
+      <Moon className="h-5 w-5" />
+    ) : (
+      <Sun className="h-5 w-5" />
+    );
+  const label = theme === "light" ? "Modo oscuro" : "Modo claro";
 
   return (
     <motion.button
@@ -35,7 +30,7 @@ export function ThemeToggle() {
                  hover:bg-neutral-200 hover:text-neutral-900
                  dark:bg-neutral-800 dark:text-neutral-400
                  dark:hover:bg-neutral-700 dark:hover:text-neutral-100"
-      title={labels[theme]}
+      title={label}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
@@ -45,7 +40,7 @@ export function ThemeToggle() {
           exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
           transition={{ duration: 0.2 }}
         >
-          {icons[theme]}
+          {icon}
         </motion.div>
       </AnimatePresence>
     </motion.button>

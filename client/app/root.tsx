@@ -30,13 +30,13 @@ export const links: Route.LinksFunction = () => [
   { rel: "manifest", href: "/manifest.json" },
 ];
 
-// Theme initialization script to prevent flash
+// Theme initialization script to prevent flash — session choice first, then system
 const themeScript = `
   (function() {
-    const theme = localStorage.getItem('theme') || 'system';
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = theme === 'dark' || (theme === 'system' && systemDark);
-    document.documentElement.classList.add(isDark ? 'dark' : 'light');
+    var s = sessionStorage.getItem('theme');
+    var t = (s === 'light' || s === 'dark') ? s
+      : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.classList.add(t);
   })();
 `;
 

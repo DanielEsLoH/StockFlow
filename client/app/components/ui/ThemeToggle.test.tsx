@@ -5,7 +5,7 @@ import { ThemeToggle } from "./ThemeToggle";
 
 // Mock useTheme hook
 const mockToggleTheme = vi.fn();
-const mockTheme = { current: "light" as "light" | "dark" | "system" };
+const mockTheme = { current: "light" as "light" | "dark" };
 
 vi.mock("~/hooks/useTheme", () => ({
   useTheme: () => ({
@@ -25,22 +25,16 @@ describe("ThemeToggle", () => {
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
 
-  it("displays correct title for light theme", () => {
+  it('displays "Modo oscuro" title when in light theme', () => {
     mockTheme.current = "light";
     render(<ThemeToggle />);
-    expect(screen.getByTitle("Light mode")).toBeInTheDocument();
+    expect(screen.getByTitle("Modo oscuro")).toBeInTheDocument();
   });
 
-  it("displays correct title for dark theme", () => {
+  it('displays "Modo claro" title when in dark theme', () => {
     mockTheme.current = "dark";
     render(<ThemeToggle />);
-    expect(screen.getByTitle("Dark mode")).toBeInTheDocument();
-  });
-
-  it("displays correct title for system theme", () => {
-    mockTheme.current = "system";
-    render(<ThemeToggle />);
-    expect(screen.getByTitle("System")).toBeInTheDocument();
+    expect(screen.getByTitle("Modo claro")).toBeInTheDocument();
   });
 
   it("calls toggleTheme when clicked", async () => {

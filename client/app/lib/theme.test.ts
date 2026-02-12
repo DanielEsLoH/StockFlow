@@ -1,20 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   getSystemTheme,
-  getStoredTheme,
-  setStoredTheme,
+  getSessionTheme,
+  setSessionTheme,
+  clearSessionTheme,
   applyTheme,
   initializeTheme,
 } from "./theme";
 
 describe("theme utilities", () => {
   beforeEach(() => {
-    // Reset DOM
     document.documentElement.classList.remove("light", "dark");
-    // Reset localStorage mock
-    vi.mocked(localStorage.getItem).mockClear();
-    vi.mocked(localStorage.setItem).mockClear();
-    vi.mocked(localStorage.clear).mockClear();
+    sessionStorage.clear();
   });
 
   describe("SSR environment (window undefined)", () => {
@@ -24,16 +21,6 @@ describe("theme utilities", () => {
 
       const { getSystemTheme } = await import("./theme");
       expect(getSystemTheme()).toBe("light");
-
-      vi.unstubAllGlobals();
-    });
-
-    it('getStoredTheme returns "system" when window is undefined', async () => {
-      vi.resetModules();
-      vi.stubGlobal("window", undefined);
-
-      const { getStoredTheme } = await import("./theme");
-      expect(getStoredTheme()).toBe("system");
 
       vi.unstubAllGlobals();
     });
@@ -73,43 +60,28 @@ describe("theme utilities", () => {
     });
   });
 
-  describe("getStoredTheme", () => {
-    it("returns stored theme from localStorage", () => {
-      vi.mocked(localStorage.getItem).mockReturnValue("dark");
-      expect(getStoredTheme()).toBe("dark");
-      expect(localStorage.getItem).toHaveBeenCalledWith("theme");
+  describe("session theme", () => {
+    it("returns null when no session theme is stored", () => {
+      expect(getSessionTheme()).toBeNull();
     });
 
-    it('returns "system" when no theme is stored', () => {
-      vi.mocked(localStorage.getItem).mockReturnValue(null);
-      expect(getStoredTheme()).toBe("system");
+    it("stores and retrieves theme from sessionStorage", () => {
+      setSessionTheme("dark");
+      expect(getSessionTheme()).toBe("dark");
+
+      setSessionTheme("light");
+      expect(getSessionTheme()).toBe("light");
     });
 
-    it("returns stored light theme", () => {
-      vi.mocked(localStorage.getItem).mockReturnValue("light");
-      expect(getStoredTheme()).toBe("light");
+    it("clears session theme", () => {
+      setSessionTheme("dark");
+      clearSessionTheme();
+      expect(getSessionTheme()).toBeNull();
     });
 
-    it("returns stored system theme", () => {
-      vi.mocked(localStorage.getItem).mockReturnValue("system");
-      expect(getStoredTheme()).toBe("system");
-    });
-  });
-
-  describe("setStoredTheme", () => {
-    it("stores dark theme in localStorage", () => {
-      setStoredTheme("dark");
-      expect(localStorage.setItem).toHaveBeenCalledWith("theme", "dark");
-    });
-
-    it("stores light theme in localStorage", () => {
-      setStoredTheme("light");
-      expect(localStorage.setItem).toHaveBeenCalledWith("theme", "light");
-    });
-
-    it("stores system theme in localStorage", () => {
-      setStoredTheme("system");
-      expect(localStorage.setItem).toHaveBeenCalledWith("theme", "system");
+    it("ignores invalid values in sessionStorage", () => {
+      sessionStorage.setItem("theme", "invalid");
+      expect(getSessionTheme()).toBeNull();
     });
   });
 
@@ -126,76 +98,18 @@ describe("theme utilities", () => {
       expect(document.documentElement.classList.contains("dark")).toBe(false);
     });
 
-    it("applies system theme based on dark preference", () => {
-      Object.defineProperty(window, "matchMedia", {
-        writable: true,
-        value: vi.fn().mockImplementation((query: string) => ({
-          matches: query === "(prefers-color-scheme: dark)",
-          media: query,
-          onchange: null,
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
-      applyTheme("system");
-      expect(document.documentElement.classList.contains("dark")).toBe(true);
-    });
-
-    it("applies system theme based on light preference", () => {
-      Object.defineProperty(window, "matchMedia", {
-        writable: true,
-        value: vi.fn().mockImplementation(() => ({
-          matches: false,
-          media: "",
-          onchange: null,
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
-      applyTheme("system");
-      expect(document.documentElement.classList.contains("light")).toBe(true);
-    });
-
     it("removes existing theme class before applying new one", () => {
       document.documentElement.classList.add("dark");
       applyTheme("light");
       expect(document.documentElement.classList.contains("dark")).toBe(false);
       expect(document.documentElement.classList.contains("light")).toBe(true);
     });
-
-    it("handles switching between themes", () => {
-      applyTheme("dark");
-      expect(document.documentElement.classList.contains("dark")).toBe(true);
-
-      applyTheme("light");
-      expect(document.documentElement.classList.contains("light")).toBe(true);
-      expect(document.documentElement.classList.contains("dark")).toBe(false);
-
-      applyTheme("dark");
-      expect(document.documentElement.classList.contains("dark")).toBe(true);
-      expect(document.documentElement.classList.contains("light")).toBe(false);
-    });
   });
 
   describe("initializeTheme", () => {
-    it("applies stored dark theme on initialization", () => {
-      vi.mocked(localStorage.getItem).mockReturnValue("dark");
-      initializeTheme();
-      expect(document.documentElement.classList.contains("dark")).toBe(true);
-    });
+    it("uses session theme when available", () => {
+      setSessionTheme("dark");
 
-    it("applies stored light theme on initialization", () => {
-      vi.mocked(localStorage.getItem).mockReturnValue("light");
-      initializeTheme();
-      expect(document.documentElement.classList.contains("light")).toBe(true);
-    });
-
-    it('applies system theme when stored theme is "system"', () => {
-      vi.mocked(localStorage.getItem).mockReturnValue("system");
       Object.defineProperty(window, "matchMedia", {
         writable: true,
         value: vi.fn().mockImplementation(() => ({
@@ -209,77 +123,10 @@ describe("theme utilities", () => {
       });
 
       initializeTheme();
-      expect(document.documentElement.classList.contains("light")).toBe(true);
+      expect(document.documentElement.classList.contains("dark")).toBe(true);
     });
 
-    it('sets up listener for system theme changes when theme is "system"', () => {
-      const addEventListenerMock = vi.fn();
-      vi.mocked(localStorage.getItem).mockReturnValue("system");
-      Object.defineProperty(window, "matchMedia", {
-        writable: true,
-        value: vi.fn().mockImplementation(() => ({
-          matches: false,
-          media: "",
-          onchange: null,
-          addEventListener: addEventListenerMock,
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
-      initializeTheme();
-      expect(addEventListenerMock).toHaveBeenCalledWith(
-        "change",
-        expect.any(Function),
-      );
-    });
-
-    it('does not set up listener when theme is not "system"', () => {
-      const addEventListenerMock = vi.fn();
-      vi.mocked(localStorage.getItem).mockReturnValue("dark");
-      Object.defineProperty(window, "matchMedia", {
-        writable: true,
-        value: vi.fn().mockImplementation(() => ({
-          matches: false,
-          media: "",
-          onchange: null,
-          addEventListener: addEventListenerMock,
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
-      initializeTheme();
-      expect(addEventListenerMock).not.toHaveBeenCalled();
-    });
-
-    it("reapplies system theme when system preference changes", () => {
-      let changeCallback: (() => void) | null = null;
-      const addEventListenerMock = vi.fn(
-        (event: string, callback: () => void) => {
-          if (event === "change") {
-            changeCallback = callback;
-          }
-        },
-      );
-
-      vi.mocked(localStorage.getItem).mockReturnValue("system");
-      Object.defineProperty(window, "matchMedia", {
-        writable: true,
-        value: vi.fn().mockImplementation(() => ({
-          matches: false,
-          media: "",
-          onchange: null,
-          addEventListener: addEventListenerMock,
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        })),
-      });
-
-      initializeTheme();
-      expect(document.documentElement.classList.contains("light")).toBe(true);
-
-      // Simulate system theme change to dark
+    it("falls back to system theme when no session theme", () => {
       Object.defineProperty(window, "matchMedia", {
         writable: true,
         value: vi.fn().mockImplementation((query: string) => ({
@@ -292,12 +139,8 @@ describe("theme utilities", () => {
         })),
       });
 
-      // Invoke the change callback (line 34)
-      expect(changeCallback).not.toBeNull();
-      changeCallback!();
-
+      initializeTheme();
       expect(document.documentElement.classList.contains("dark")).toBe(true);
-      expect(document.documentElement.classList.contains("light")).toBe(false);
     });
   });
 });

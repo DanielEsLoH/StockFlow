@@ -65,13 +65,12 @@ export const PasswordStrengthColors: Record<PasswordStrength, string> = {
 };
 
 // Theme options
-export type ThemeOption = "light" | "dark" | "system";
+export type ThemeOption = "light" | "dark";
 
 // Theme option labels in Spanish
 export const ThemeOptionLabels: Record<ThemeOption, string> = {
   light: "Claro",
   dark: "Oscuro",
-  system: "Sistema",
 };
 
 // Language options

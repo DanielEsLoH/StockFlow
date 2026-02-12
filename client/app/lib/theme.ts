@@ -1,37 +1,36 @@
-export type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark";
 
-export function getSystemTheme(): "light" | "dark" {
+const SESSION_KEY = "theme";
+
+export function getSystemTheme(): Theme {
   if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 }
 
-export function getStoredTheme(): Theme {
-  if (typeof window === "undefined") return "system";
-  return (localStorage.getItem("theme") as Theme) || "system";
+export function getSessionTheme(): Theme | null {
+  if (typeof window === "undefined") return null;
+  const stored = sessionStorage.getItem(SESSION_KEY);
+  return stored === "light" || stored === "dark" ? stored : null;
 }
 
-export function setStoredTheme(theme: Theme): void {
-  localStorage.setItem("theme", theme);
+export function setSessionTheme(theme: Theme): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(SESSION_KEY, theme);
+}
+
+export function clearSessionTheme(): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(SESSION_KEY);
 }
 
 export function applyTheme(theme: Theme): void {
   const root = document.documentElement;
-  const resolvedTheme = theme === "system" ? getSystemTheme() : theme;
-
   root.classList.remove("light", "dark");
-  root.classList.add(resolvedTheme);
+  root.classList.add(theme);
 }
 
 export function initializeTheme(): void {
-  const theme = getStoredTheme();
-  applyTheme(theme);
-
-  // Listen for system theme changes
-  if (theme === "system") {
-    window
-      .matchMedia("(prefers-color-scheme: dark)")
-      .addEventListener("change", () => applyTheme("system"));
-  }
+  applyTheme(getSessionTheme() ?? getSystemTheme());
 }

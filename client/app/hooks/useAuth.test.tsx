@@ -31,6 +31,12 @@ vi.mock("~/lib/api", () => ({
 
 import { getAccessToken } from "~/lib/api";
 
+vi.mock("~/lib/theme", () => ({
+  clearSessionTheme: vi.fn(),
+  applyTheme: vi.fn(),
+  getSystemTheme: vi.fn(() => "light"),
+}));
+
 vi.mock("~/components/ui/Toast", () => ({
   toast: {
     success: vi.fn(),
@@ -491,7 +497,7 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith("/login");
+        expect(mockNavigate).toHaveBeenCalledWith("/");
       });
     });
 

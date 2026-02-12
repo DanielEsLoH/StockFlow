@@ -7,6 +7,7 @@ import { queryKeys } from "~/lib/query-client";
 import { getAccessToken } from "~/lib/api";
 import { getErrorMessage } from "~/lib/error-messages";
 import { toast } from "~/components/ui/Toast";
+import { clearSessionTheme, applyTheme, getSystemTheme } from "~/lib/theme";
 import type {
   LoginCredentials,
   RegisterData,
@@ -88,6 +89,8 @@ export function useAuth() {
     mutationFn: authService.logout,
     onSuccess: () => {
       clearAuth();
+      clearSessionTheme();
+      applyTheme(getSystemTheme());
       queryClient.clear();
       navigate("/");
       toast.success("Sesion cerrada");

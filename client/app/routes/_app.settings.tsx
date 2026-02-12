@@ -29,6 +29,7 @@ import type { Route } from "./+types/_app.settings";
 import { cn, getInitials } from "~/lib/utils";
 import { useAuth } from "~/hooks/useAuth";
 import { useTheme } from "~/hooks/useTheme";
+import { getSystemTheme } from "~/lib/theme";
 import {
   useChangePassword,
   useUpdatePreferences,
@@ -122,7 +123,7 @@ function ThemeOption({
   isSelected,
   onSelect,
 }: {
-  value: "light" | "dark" | "system";
+  value: "light" | "dark";
   label: string;
   icon: React.ReactNode;
   isSelected: boolean;
@@ -640,7 +641,7 @@ function PreferencesTabContent() {
           </div>
         </CardHeader>
         <CardContent className="pt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ThemeOption
               value="light"
               label={ThemeOptionLabels.light}
@@ -655,14 +656,12 @@ function PreferencesTabContent() {
               isSelected={theme === "dark"}
               onSelect={() => setTheme("dark")}
             />
-            <ThemeOption
-              value="system"
-              label={ThemeOptionLabels.system}
-              icon={<Monitor className="h-5 w-5" />}
-              isSelected={theme === "system"}
-              onSelect={() => setTheme("system")}
-            />
           </div>
+          <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+            <Monitor className="h-3.5 w-3.5" />
+            Tu sistema esta configurado en modo{" "}
+            {getSystemTheme() === "dark" ? "oscuro" : "claro"}
+          </p>
         </CardContent>
       </Card>
 

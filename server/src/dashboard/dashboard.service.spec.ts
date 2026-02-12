@@ -1007,6 +1007,7 @@ describe('DashboardService', () => {
         _sum: { total: 0 },
       });
       (prismaService.invoice.count as jest.Mock)
+        .mockResolvedValueOnce(3) // today invoice count
         .mockResolvedValueOnce(50) // total invoices
         .mockResolvedValueOnce(10) // last month invoices
         .mockResolvedValueOnce(5) // overdue invoices

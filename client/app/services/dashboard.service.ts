@@ -11,6 +11,8 @@ export interface DashboardStats {
   totalCustomers: number;
   customersGrowth: number;
   overdueInvoicesCount: number;
+  todaySales: number;
+  todayInvoiceCount: number;
 }
 
 export interface SalesChartData {

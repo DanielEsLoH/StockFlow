@@ -125,6 +125,8 @@ export interface DashboardStats {
   totalCustomers: number;
   customersGrowth: number;
   overdueInvoicesCount: number;
+  todaySales: number;
+  todayInvoiceCount: number;
 }
 
 /**
@@ -753,6 +755,7 @@ export class DashboardService {
     const tenantId = this.tenantContext.requireTenantId();
 
     const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -769,6 +772,8 @@ export class DashboardService {
     const [
       thisMonthSales,
       lastMonthSales,
+      todaySalesAgg,
+      todayInvoiceCount,
       totalProducts,
       lastMonthProducts,
       totalInvoices,
@@ -795,6 +800,21 @@ export class DashboardService {
           },
         },
         _sum: { total: true },
+      }),
+      // Today's sales
+      this.prisma.invoice.aggregate({
+        where: {
+          ...baseInvoiceWhere,
+          issueDate: { gte: startOfToday },
+        },
+        _sum: { total: true },
+      }),
+      // Today's invoice count
+      this.prisma.invoice.count({
+        where: {
+          ...baseInvoiceWhere,
+          issueDate: { gte: startOfToday },
+        },
       }),
       // Total products
       this.prisma.product.count({
@@ -903,6 +923,8 @@ export class DashboardService {
       totalCustomers,
       customersGrowth,
       overdueInvoicesCount: overdueInvoices,
+      todaySales: Number(todaySalesAgg._sum.total ?? 0),
+      todayInvoiceCount,
     };
   }
 

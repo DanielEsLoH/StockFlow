@@ -22,11 +22,12 @@ import {
   ArrowUpDown,
   ArrowLeftRight,
 } from "lucide-react";
-import { cn, getInitials } from "~/lib/utils";
+import { cn, getInitials, formatCurrency } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
 import { useAuthStore } from "~/stores/auth.store";
 import { useAuth } from "~/hooks/useAuth";
 import { usePermissions } from "~/hooks/usePermissions";
+import { useDashboardStats } from "~/hooks/useDashboard";
 import { Permission } from "~/types/permissions";
 import { Button } from "~/components/ui/Button";
 
@@ -235,34 +236,45 @@ function CajaQuickAccess({
   );
 }
 
-// Quick Stats Component
+// Quick Stats Component — daily pulse indicator
 function QuickStats({ isCollapsed }: { isCollapsed: boolean }) {
+  const { data: stats } = useDashboardStats();
+
   if (isCollapsed) return null;
+
+  const todaySales = stats?.todaySales ?? 0;
+  const todayCount = stats?.todayInvoiceCount ?? 0;
 
   return (
     <motion.div
       variants={itemVariants}
       animate={isCollapsed ? "collapsed" : "expanded"}
-      className="mx-3 mb-4 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50"
+      className="mx-3 mb-3"
     >
-      <div className="flex items-center gap-2 mb-2">
-        <TrendingUp className="h-4 w-4 text-success-500" />
-        <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <TrendingUp className="h-3.5 w-3.5 text-success-500" />
+        <span className="text-[11px] font-medium text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
           Resumen del dia
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="text-center p-2 rounded-lg bg-white dark:bg-neutral-800">
-          <p className="text-lg font-bold text-neutral-900 dark:text-white">
-            $0
-          </p>
-          <p className="text-[10px] text-neutral-500">Ventas hoy</p>
+      <div className="space-y-1.5">
+        {/* Sales row */}
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            Ventas hoy
+          </span>
+          <span className="text-sm font-semibold text-neutral-900 dark:text-white tabular-nums">
+            {formatCurrency(todaySales)}
+          </span>
         </div>
-        <div className="text-center p-2 rounded-lg bg-white dark:bg-neutral-800">
-          <p className="text-lg font-bold text-neutral-900 dark:text-white">
-            0
-          </p>
-          <p className="text-[10px] text-neutral-500">Facturas</p>
+        {/* Invoices row */}
+        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            Facturas
+          </span>
+          <span className="text-sm font-semibold text-neutral-900 dark:text-white tabular-nums">
+            {todayCount}
+          </span>
         </div>
       </div>
     </motion.div>

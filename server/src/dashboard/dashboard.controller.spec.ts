@@ -85,6 +85,8 @@ describe('DashboardController', () => {
     totalCustomers: 89,
     customersGrowth: 15.0,
     overdueInvoicesCount: 3,
+    todaySales: 1500000,
+    todayInvoiceCount: 5,
   };
 
   const mockDashboardCharts: DashboardCharts = {

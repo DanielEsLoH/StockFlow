@@ -182,11 +182,13 @@ export class SubscriptionsController {
     @Body() dto: VerifyPaymentDto,
   ): Promise<SubscriptionStatusResponse> {
     this.logger.log(
-      `Verifying payment for tenant ${tenantId} - transaction: ${dto.transactionId}`,
+      `Verifying payment for tenant ${tenantId} - transaction: ${dto.transactionId}, plan: ${dto.plan}, period: ${dto.period}`,
     );
     return this.subscriptionsService.verifyPayment(
       tenantId,
       dto.transactionId,
+      dto.plan,
+      dto.period,
     );
   }
 

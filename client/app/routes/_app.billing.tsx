@@ -488,7 +488,11 @@ function PlanGrid({
       });
 
       if (result.id) {
-        await verifyPayment.mutateAsync({ transactionId: result.id });
+        await verifyPayment.mutateAsync({
+          transactionId: result.id,
+          plan,
+          period,
+        });
         toast.success("Tu suscripcion ha sido actualizada exitosamente");
       }
     } catch (error) {

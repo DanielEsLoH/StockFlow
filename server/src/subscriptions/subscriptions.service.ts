@@ -305,9 +305,11 @@ export class SubscriptionsService {
   async verifyPayment(
     tenantId: string,
     transactionId: string,
+    plan: SubscriptionPlan,
+    period: SubscriptionPeriod,
   ): Promise<SubscriptionStatusResponse> {
     this.logger.log(
-      `Verifying payment for tenant ${tenantId} - transaction: ${transactionId}`,
+      `Verifying payment for tenant ${tenantId} - transaction: ${transactionId}, plan: ${plan}, period: ${period}`,
     );
 
     const tenant = await this.prisma.tenant.findUnique({
@@ -332,8 +334,6 @@ export class SubscriptionsService {
     }
 
     const billingStatus = WOMPI_STATUS_MAP[wompiTx.status] ?? BillingStatus.ERROR;
-    const plan = this.extractPlanFromMetadata(wompiTx);
-    const period = this.extractPeriodFromMetadata(wompiTx);
 
     // Create BillingTransaction record
     const billingTransaction = await this.prisma.billingTransaction.create({
@@ -341,8 +341,8 @@ export class SubscriptionsService {
         tenantId,
         wompiTransactionId: wompiTx.id,
         wompiReference: wompiTx.reference,
-        plan: plan ?? tenant.plan ?? SubscriptionPlan.EMPRENDEDOR,
-        period: period ?? SubscriptionPeriod.MONTHLY,
+        plan,
+        period,
         amountInCents: wompiTx.amount_in_cents,
         currency: wompiTx.currency,
         status: billingStatus,
@@ -353,7 +353,7 @@ export class SubscriptionsService {
     });
 
     // If approved, activate the subscription
-    if (billingStatus === BillingStatus.APPROVED && plan && period) {
+    if (billingStatus === BillingStatus.APPROVED) {
       await this.activateSubscription(
         tenantId,
         plan,
@@ -790,36 +790,4 @@ export class SubscriptionsService {
     }
   }
 
-  /**
-   * Extracts the target plan from a Wompi transaction's metadata, if present.
-   */
-  private extractPlanFromMetadata(
-    transaction: WompiTransaction & { metadata?: Record<string, string> },
-  ): SubscriptionPlan | null {
-    const plan = (transaction as any).metadata?.plan as string | undefined;
-    if (
-      plan &&
-      Object.values(SubscriptionPlan).includes(plan as SubscriptionPlan)
-    ) {
-      return plan as SubscriptionPlan;
-    }
-    return null;
-  }
-
-  /**
-   * Extracts the subscription period from a Wompi transaction's metadata,
-   * if present.
-   */
-  private extractPeriodFromMetadata(
-    transaction: WompiTransaction & { metadata?: Record<string, string> },
-  ): SubscriptionPeriod | null {
-    const period = (transaction as any).metadata?.period as string | undefined;
-    if (
-      period &&
-      Object.values(SubscriptionPeriod).includes(period as SubscriptionPeriod)
-    ) {
-      return period as SubscriptionPeriod;
-    }
-    return null;
-  }
 }

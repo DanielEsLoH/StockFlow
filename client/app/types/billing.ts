@@ -94,6 +94,8 @@ export interface CheckoutConfigRequest {
 
 export interface VerifyPaymentRequest {
   transactionId: string;
+  plan: SubscriptionPlan;
+  period: SubscriptionPeriod;
 }
 
 export interface CreatePaymentSourceRequest {

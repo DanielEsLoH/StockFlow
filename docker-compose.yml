@@ -148,9 +148,20 @@ services:
       # CORS Configuration
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
 
-      # Stripe Integration (optional)
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      # Wompi Payment Gateway (optional)
+      WOMPI_PUBLIC_KEY: ${WOMPI_PUBLIC_KEY:-}
+      WOMPI_PRIVATE_KEY: ${WOMPI_PRIVATE_KEY:-}
+      WOMPI_EVENT_SECRET: ${WOMPI_EVENT_SECRET:-}
+      WOMPI_INTEGRITY_SECRET: ${WOMPI_INTEGRITY_SECRET:-}
+
+      # Email (Brevo)
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL:-noreply@stockflow.com}
+      BREVO_SENDER_NAME: ${BREVO_SENDER_NAME:-StockFlow}
+
+      # Admin
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@stockflow.com}
+      APP_URL: ${APP_URL:-http://localhost}
 
       # Arcjet Rate Limiting (optional)
       ARCJET_KEY: ${ARCJET_KEY:-}

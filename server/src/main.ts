@@ -19,7 +19,7 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // Enable rawBody for Stripe webhook signature verification
+  // Enable rawBody for webhook signature verification
   // This preserves the raw Buffer on req.rawBody for specific routes
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
@@ -86,7 +86,12 @@ async function bootstrap() {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            "'unsafe-eval'",
+            'https://checkout.wompi.co',
+          ],
           styleSrc: [
             "'self'",
             "'unsafe-inline'",
@@ -95,7 +100,7 @@ async function bootstrap() {
           fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
           imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
           connectSrc: ["'self'", 'https:', 'wss:'],
-          frameSrc: ["'self'"],
+          frameSrc: ["'self'", 'https://checkout.wompi.co'],
           objectSrc: ["'none'"],
           upgradeInsecureRequests: isProduction ? [] : null,
         },

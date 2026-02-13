@@ -28,7 +28,7 @@ declare global {
       amountInCents: number;
       reference: string;
       publicKey: string;
-      signatureIntegrity: string;
+      "signature:integrity": string;
       redirectUrl: string;
       customerData?: WompiWidgetConfig["customerData"];
     }) => {
@@ -94,7 +94,7 @@ export async function openWompiCheckout(
       amountInCents: config.amountInCents,
       reference: config.reference,
       publicKey: config.publicKey,
-      signatureIntegrity: config.signatureIntegrity,
+      "signature:integrity": config.signatureIntegrity,
       redirectUrl: config.redirectUrl,
       customerData: config.customerData,
     });

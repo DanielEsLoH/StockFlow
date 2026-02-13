@@ -78,6 +78,9 @@ export default [
     route("settings", "routes/_app.settings.tsx"),
     route("profile", "routes/_app.profile.tsx"),
 
+    // Billing
+    route("billing", "routes/_app.billing.tsx"),
+
     // POS module
     route("pos", "routes/_app.pos.tsx"),
     route("pos/open", "routes/_app.pos.open.tsx"),

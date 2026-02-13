@@ -213,4 +213,12 @@ export const queryKeys = {
     byWarehouse: (warehouseId: string) =>
       [...queryKeys.stockMovements.all, "warehouse", warehouseId] as const,
   },
+
+  // Billing
+  billing: {
+    all: ["billing"] as const,
+    status: () => [...queryKeys.billing.all, "status"] as const,
+    plans: () => [...queryKeys.billing.all, "plans"] as const,
+    history: () => [...queryKeys.billing.all, "history"] as const,
+  },
 };

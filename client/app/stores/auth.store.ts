@@ -25,7 +25,7 @@ export interface Tenant {
   id: string;
   name: string;
   slug: string;
-  plan: "FREE" | "BASIC" | "PRO" | "ENTERPRISE";
+  plan: "EMPRENDEDOR" | "PYME" | "PRO" | "PLUS" | null;
   status: "ACTIVE" | "SUSPENDED";
   logoUrl?: string;
 }

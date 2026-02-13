@@ -773,12 +773,11 @@ function AccountTabContent() {
   const { user, tenant, logout, isLoggingOut } = useAuth();
 
   const planColors: Record<string, string> = {
-    FREE: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
-    BASIC:
-      "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300",
+    EMPRENDEDOR:
+      "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
+    PYME: "bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300",
     PRO: "bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300",
-    ENTERPRISE:
-      "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300",
+    PLUS: "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300",
   };
 
   return (
@@ -836,11 +835,21 @@ function AccountTabContent() {
               <span
                 className={cn(
                   "inline-flex px-3 py-1 rounded-full text-sm font-medium",
-                  planColors[tenant?.plan || "FREE"],
+                  planColors[tenant?.plan || "EMPRENDEDOR"],
                 )}
               >
-                {tenant?.plan || "FREE"}
+                {tenant?.plan || "Sin plan"}
               </span>
+              <Link to="/billing">
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  className="ml-3"
+                  rightIcon={<ChevronRight className="h-3.5 w-3.5" />}
+                >
+                  Gestionar Suscripcion
+                </Button>
+              </Link>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-neutral-500 dark:text-neutral-400">

@@ -136,6 +136,12 @@ const navSections: NavSection[] = [
         permission: Permission.DIAN_VIEW,
       },
       {
+        name: "Facturacion",
+        href: "/billing",
+        icon: Receipt,
+        permission: Permission.SETTINGS_MANAGE,
+      },
+      {
         name: "Configuracion",
         href: "/settings",
         icon: Settings,

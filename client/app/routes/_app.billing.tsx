@@ -246,7 +246,7 @@ function CurrentPlanCard({
               </div>
             </div>
           )}
-          {plan && plan !== "EMPRENDEDOR" && (
+          {plan && (
             <Button
               variant="outline-primary"
               size="sm"

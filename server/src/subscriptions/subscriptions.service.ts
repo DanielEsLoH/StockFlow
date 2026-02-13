@@ -242,12 +242,6 @@ export class SubscriptionsService {
       `Generating checkout config for tenant ${tenantId} - plan: ${plan}, period: ${period}`,
     );
 
-    if (plan === SubscriptionPlan.EMPRENDEDOR) {
-      throw new BadRequestException(
-        'Cannot create checkout for EMPRENDEDOR plan - it is the base plan',
-      );
-    }
-
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
     });
@@ -357,9 +351,7 @@ export class SubscriptionsService {
     // If approved, activate or renew the subscription
     if (billingStatus === BillingStatus.APPROVED) {
       const isSamePlan = tenant.plan === plan;
-      const hasActiveSubscription =
-        tenant.plan !== null &&
-        tenant.plan !== SubscriptionPlan.EMPRENDEDOR;
+      const hasActiveSubscription = tenant.plan !== null;
 
       if (isSamePlan && hasActiveSubscription) {
         // Renewal: extend current subscription end date

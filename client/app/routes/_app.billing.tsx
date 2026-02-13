@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Clock,
   Receipt,
+  RefreshCw,
 } from "lucide-react";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
@@ -148,7 +149,15 @@ function ShimmerSkeleton({ className }: { className?: string }) {
 }
 
 // Current Plan Card
-function CurrentPlanCard() {
+function CurrentPlanCard({
+  selectedPeriod,
+  onRenew,
+  isRenewing,
+}: {
+  selectedPeriod: SubscriptionPeriod;
+  onRenew: (plan: SubscriptionPlan, period: SubscriptionPeriod) => void;
+  isRenewing: boolean;
+}) {
   const { data: subscription, isLoading } = useSubscriptionStatus();
 
   if (isLoading) {
@@ -219,23 +228,36 @@ function CurrentPlanCard() {
           </div>
         </div>
 
-        {/* Limits summary */}
-        {subscription?.limits && (
-          <div className="flex flex-wrap gap-3 sm:gap-4">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
-              <Users className="h-4 w-4 text-neutral-400" />
-              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {subscription.limits.maxUsers} usuarios
-              </span>
+        {/* Limits summary + Renew button */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          {subscription?.limits && (
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
+                <Users className="h-4 w-4 text-neutral-400" />
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  {subscription.limits.maxUsers} usuarios
+                </span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
+                <Warehouse className="h-4 w-4 text-neutral-400" />
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  {subscription.limits.maxWarehouses} bodegas
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
-              <Warehouse className="h-4 w-4 text-neutral-400" />
-              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                {subscription.limits.maxWarehouses} bodegas
-              </span>
-            </div>
-          </div>
-        )}
+          )}
+          {plan && plan !== "EMPRENDEDOR" && (
+            <Button
+              variant="outline-primary"
+              size="sm"
+              onClick={() => onRenew(plan, selectedPeriod)}
+              isLoading={isRenewing}
+              rightIcon={<RefreshCw className="h-3.5 w-3.5" />}
+            >
+              Renovar Plan
+            </Button>
+          )}
+        </div>
       </div>
     </Card>
   );
@@ -309,7 +331,7 @@ function PlanCard({
 
   return (
     <motion.div
-      whileHover={!isCurrentPlan ? { scale: 1.02, y: -4 } : undefined}
+      whileHover={{ scale: 1.02, y: -4 }}
       transition={{ duration: 0.2 }}
     >
       <Card
@@ -318,7 +340,8 @@ function PlanCard({
         className={cn(
           "relative overflow-hidden h-full flex flex-col",
           isRecommended && "ring-2 ring-primary-500 dark:ring-primary-400",
-          isCurrentPlan && "opacity-75",
+          isCurrentPlan &&
+            "ring-2 ring-success-500 dark:ring-success-400",
         )}
       >
         {/* Recommended badge */}
@@ -430,12 +453,13 @@ function PlanCard({
         <div className="px-6 pb-6">
           {isCurrentPlan ? (
             <Button
-              variant="secondary"
+              variant="outline-primary"
               fullWidth
-              disabled
-              className="cursor-not-allowed"
+              onClick={() => onSelect(plan.plan, selectedPeriod)}
+              isLoading={isSelecting}
+              rightIcon={<RefreshCw className="h-4 w-4" />}
             >
-              Plan Actual
+              Renovar
             </Button>
           ) : (
             <Button
@@ -458,51 +482,15 @@ function PlanCard({
 function PlanGrid({
   selectedPeriod,
   currentPlan,
+  onSelectPlan,
+  selectingPlan,
 }: {
   selectedPeriod: SubscriptionPeriod;
   currentPlan: SubscriptionPlan | null;
+  onSelectPlan: (plan: SubscriptionPlan, period: SubscriptionPeriod) => void;
+  selectingPlan: SubscriptionPlan | null;
 }) {
   const { data: plans, isLoading } = usePlans();
-  const checkoutConfig = useCheckoutConfig();
-  const verifyPayment = useVerifyPayment();
-  const [selectingPlan, setSelectingPlan] = useState<SubscriptionPlan | null>(
-    null,
-  );
-
-  const handleSelectPlan = async (
-    plan: SubscriptionPlan,
-    period: SubscriptionPeriod,
-  ) => {
-    setSelectingPlan(plan);
-    try {
-      const config = await checkoutConfig.mutateAsync({ plan, period });
-
-      const result = await openWompiCheckout({
-        publicKey: config.publicKey,
-        currency: config.currency,
-        amountInCents: config.amountInCents,
-        reference: config.reference,
-        signatureIntegrity: config.integrityHash,
-        redirectUrl: config.redirectUrl,
-        customerData: undefined,
-      });
-
-      if (result.id) {
-        await verifyPayment.mutateAsync({
-          transactionId: result.id,
-          plan,
-          period,
-        });
-        toast.success("Tu suscripcion ha sido actualizada exitosamente");
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message !== "Pago cancelado") {
-        toast.error(error.message || "Error al procesar el pago");
-      }
-    } finally {
-      setSelectingPlan(null);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -536,7 +524,7 @@ function PlanGrid({
           selectedPeriod={selectedPeriod}
           isCurrentPlan={currentPlan === plan.plan}
           isRecommended={plan.plan === "PRO"}
-          onSelect={handleSelectPlan}
+          onSelect={onSelectPlan}
           isSelecting={selectingPlan === plan.plan}
         />
       ))}
@@ -678,6 +666,52 @@ export default function BillingPage() {
   const { data: subscription } = useSubscriptionStatus();
   const currentPlan = subscription?.plan ?? null;
 
+  const checkoutConfig = useCheckoutConfig();
+  const verifyPayment = useVerifyPayment();
+  const [selectingPlan, setSelectingPlan] = useState<SubscriptionPlan | null>(
+    null,
+  );
+
+  const handleSelectPlan = async (
+    plan: SubscriptionPlan,
+    period: SubscriptionPeriod,
+  ) => {
+    setSelectingPlan(plan);
+    try {
+      const config = await checkoutConfig.mutateAsync({ plan, period });
+
+      const result = await openWompiCheckout({
+        publicKey: config.publicKey,
+        currency: config.currency,
+        amountInCents: config.amountInCents,
+        reference: config.reference,
+        signatureIntegrity: config.integrityHash,
+        redirectUrl: config.redirectUrl,
+        customerData: undefined,
+      });
+
+      if (result.id) {
+        await verifyPayment.mutateAsync({
+          transactionId: result.id,
+          plan,
+          period,
+        });
+        const isRenewal = currentPlan === plan;
+        toast.success(
+          isRenewal
+            ? "Tu suscripcion ha sido renovada exitosamente"
+            : "Tu suscripcion ha sido actualizada exitosamente",
+        );
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message !== "Pago cancelado") {
+        toast.error(error.message || "Error al procesar el pago");
+      }
+    } finally {
+      setSelectingPlan(null);
+    }
+  };
+
   return (
     <PageWrapper>
       {/* Header */}
@@ -694,7 +728,11 @@ export default function BillingPage() {
 
       {/* Current Plan */}
       <PageSection>
-        <CurrentPlanCard />
+        <CurrentPlanCard
+          selectedPeriod={selectedPeriod}
+          onRenew={handleSelectPlan}
+          isRenewing={selectingPlan === currentPlan}
+        />
       </PageSection>
 
       {/* Period Selector */}
@@ -707,7 +745,12 @@ export default function BillingPage() {
 
       {/* Plan Grid */}
       <PageSection>
-        <PlanGrid selectedPeriod={selectedPeriod} currentPlan={currentPlan} />
+        <PlanGrid
+          selectedPeriod={selectedPeriod}
+          currentPlan={currentPlan}
+          onSelectPlan={handleSelectPlan}
+          selectingPlan={selectingPlan}
+        />
       </PageSection>
 
       {/* Billing History */}

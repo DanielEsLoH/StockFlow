@@ -354,15 +354,30 @@ export class SubscriptionsService {
       },
     });
 
-    // If approved, activate the subscription
+    // If approved, activate or renew the subscription
     if (billingStatus === BillingStatus.APPROVED) {
-      await this.activateSubscription(
-        tenantId,
-        plan,
-        period,
-        billingTransaction.id,
-        wompiTx.customer_email ?? null,
-      );
+      const isSamePlan = tenant.plan === plan;
+      const hasActiveSubscription =
+        tenant.plan !== null &&
+        tenant.plan !== SubscriptionPlan.EMPRENDEDOR;
+
+      if (isSamePlan && hasActiveSubscription) {
+        // Renewal: extend current subscription end date
+        await this.extendSubscription(
+          tenantId,
+          period,
+          billingTransaction.id,
+        );
+      } else {
+        // New plan or upgrade: activate subscription
+        await this.activateSubscription(
+          tenantId,
+          plan,
+          period,
+          billingTransaction.id,
+          wompiTx.customer_email ?? null,
+        );
+      }
     }
 
     return this.getSubscriptionStatus(tenantId);
@@ -728,6 +743,33 @@ export class SubscriptionsService {
       await tx.billingTransaction.update({
         where: { id: billingTransactionId },
         data: { subscriptionId: subscription.id },
+      });
+
+      // Create renewal notification
+      const periodLabel =
+        period === SubscriptionPeriod.MONTHLY
+          ? 'mensual'
+          : period === SubscriptionPeriod.QUARTERLY
+            ? 'trimestral'
+            : 'anual';
+
+      const planLimits = getPlanLimits(subscription.plan);
+
+      await tx.notification.create({
+        data: {
+          tenantId,
+          type: NotificationType.SUBSCRIPTION_ACTIVATED,
+          title: `Plan ${planLimits.displayName} renovado`,
+          message: `Tu suscripción ${periodLabel} al plan ${planLimits.displayName} ha sido renovada. Nueva fecha de vencimiento: ${newEndDate.toLocaleDateString('es-CO')}.`,
+          priority: NotificationPriority.HIGH,
+          link: '/billing',
+          metadata: {
+            plan: subscription.plan,
+            period,
+            endDate: newEndDate.toISOString(),
+            isRenewal: true,
+          },
+        },
       });
     });
 

@@ -84,6 +84,10 @@ export function useVerifyPayment() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.billing.history(),
       });
+      // Refresh notifications so the bell dropdown shows the new notification
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.all,
+      });
       toast.success("Pago verificado exitosamente");
     },
     onError: (error: Error) => {

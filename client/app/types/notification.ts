@@ -15,7 +15,12 @@ export type NotificationType =
   | "INFO"
   | "WARNING"
   | "SUCCESS"
-  | "ERROR";
+  | "ERROR"
+  | "USER_VERIFIED_EMAIL"
+  | "USER_APPROVED"
+  | "SUBSCRIPTION_EXPIRING"
+  | "SUBSCRIPTION_EXPIRED"
+  | "SUBSCRIPTION_ACTIVATED";
 
 // Notification Priority
 export type NotificationPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -39,6 +44,11 @@ export const NotificationTypeLabels: Record<NotificationType, string> = {
   WARNING: "Advertencia",
   SUCCESS: "Exito",
   ERROR: "Error",
+  USER_VERIFIED_EMAIL: "Email verificado",
+  USER_APPROVED: "Usuario aprobado",
+  SUBSCRIPTION_EXPIRING: "Suscripción por vencer",
+  SUBSCRIPTION_EXPIRED: "Suscripción vencida",
+  SUBSCRIPTION_ACTIVATED: "Suscripción activada",
 };
 
 // Priority labels in Spanish
@@ -69,6 +79,11 @@ export const NotificationTypeToCategory: Record<
   WARNING: "warning",
   SUCCESS: "success",
   ERROR: "error",
+  USER_VERIFIED_EMAIL: "success",
+  USER_APPROVED: "success",
+  SUBSCRIPTION_EXPIRING: "warning",
+  SUBSCRIPTION_EXPIRED: "error",
+  SUBSCRIPTION_ACTIVATED: "success",
 };
 
 // Main Notification entity

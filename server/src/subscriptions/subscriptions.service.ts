@@ -11,6 +11,8 @@ import {
   SubscriptionPeriod,
   SubscriptionStatus as PrismaSubscriptionStatus,
   BillingStatus,
+  NotificationType,
+  NotificationPriority,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { WompiService, WompiTransaction } from './wompi.service';
@@ -655,6 +657,26 @@ export class SubscriptionsService {
           data: { subscriptionId: subscription.id },
         });
       }
+
+      // Create in-app notification for the subscription activation
+      const periodLabel =
+        period === SubscriptionPeriod.MONTHLY
+          ? 'mensual'
+          : period === SubscriptionPeriod.QUARTERLY
+            ? 'trimestral'
+            : 'anual';
+
+      await tx.notification.create({
+        data: {
+          tenantId,
+          type: NotificationType.SUBSCRIPTION_ACTIVATED,
+          title: `Plan ${limits.displayName} activado`,
+          message: `Tu suscripción ${periodLabel} al plan ${limits.displayName} ha sido activada exitosamente. Vence el ${endDate.toLocaleDateString('es-CO')}.`,
+          priority: NotificationPriority.HIGH,
+          link: '/billing',
+          metadata: { plan, period, endDate: endDate.toISOString() },
+        },
+      });
     });
 
     this.logger.log(

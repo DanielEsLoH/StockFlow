@@ -17,17 +17,21 @@ import {
 import { UserRole } from '@prisma/client';
 import { SubscriptionsService } from './subscriptions.service';
 import type {
-  SubscriptionStatus,
-  CheckoutSessionResponse,
-  PortalSessionResponse,
+  SubscriptionStatusResponse,
+  CheckoutConfigResponse,
 } from './subscriptions.service';
-import { CreateCheckoutDto, CreatePortalDto } from './dto';
+import {
+  CreateCheckoutDto,
+  VerifyPaymentDto,
+  CreatePaymentSourceDto,
+} from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { CurrentTenant, Roles } from '../common/decorators';
 import {
   SubscriptionStatusEntity,
-  CheckoutSessionResponseEntity,
-  PortalSessionResponseEntity,
+  CheckoutConfigResponseEntity,
+  PaymentSourceResponseEntity,
+  BillingTransactionEntity,
 } from './entities/subscription.entity';
 
 /**
@@ -39,8 +43,11 @@ import {
  *
  * Endpoints:
  * - GET /subscriptions/status - Get current subscription status
- * - POST /subscriptions/create-checkout - Create Stripe checkout session
- * - POST /subscriptions/portal - Create Stripe customer portal session
+ * - GET /subscriptions/plans - Get available plans with pricing
+ * - POST /subscriptions/checkout-config - Get Wompi checkout widget configuration
+ * - POST /subscriptions/verify-payment - Verify payment after Wompi widget callback
+ * - POST /subscriptions/payment-source - Create a payment source for recurring billing
+ * - GET /subscriptions/billing-history - Get billing transaction history
  */
 @ApiTags('subscriptions')
 @ApiBearerAuth('JWT-auth')
@@ -53,34 +60,12 @@ export class SubscriptionsController {
 
   /**
    * Gets the current subscription status for the tenant.
-   *
-   * Returns:
-   * - Current plan and limits
-   * - Stripe customer and subscription IDs
-   * - Subscription status from Stripe (if available)
-   * - Current period end date
-   * - Cancel at period end flag
-   *
-   * @param tenantId - Current tenant ID from JWT
-   * @returns Subscription status details
-   *
-   * @example
-   * GET /subscriptions/status
-   *
-   * Response:
-   * {
-   *   "tenantId": "clu...",
-   *   "plan": "PYME",
-   *   "limits": { "maxUsers": 2, "maxProducts": 500, ... },
-   *   "stripeSubscriptionStatus": "active",
-   *   "currentPeriodEnd": "2024-02-15T00:00:00.000Z"
-   * }
    */
   @Get('status')
   @ApiOperation({
     summary: 'Get subscription status',
     description:
-      'Returns the current subscription status for the tenant including plan, limits, and Stripe subscription details. All authenticated users can access this endpoint.',
+      'Returns the current subscription status for the tenant including plan, limits, dates, and payment source status. All authenticated users can access this endpoint.',
   })
   @ApiResponse({
     status: 200,
@@ -93,108 +78,53 @@ export class SubscriptionsController {
   })
   async getStatus(
     @CurrentTenant() tenantId: string,
-  ): Promise<SubscriptionStatus> {
+  ): Promise<SubscriptionStatusResponse> {
     this.logger.log(`Getting subscription status for tenant: ${tenantId}`);
     return this.subscriptionsService.getSubscriptionStatus(tenantId);
   }
 
   /**
-   * Creates a Stripe checkout session for upgrading to a paid plan.
-   *
-   * Only ADMIN users can initiate subscription upgrades.
-   * After creation, redirect the user to the returned URL to complete payment.
-   *
-   * @param tenantId - Current tenant ID from JWT
-   * @param dto - Checkout creation parameters (target plan)
-   * @returns Checkout session ID and URL for redirect
-   *
-   * @example
-   * POST /subscriptions/create-checkout
-   * {
-   *   "plan": "PRO"
-   * }
-   *
-   * Response:
-   * {
-   *   "sessionId": "cs_test_...",
-   *   "url": "https://checkout.stripe.com/..."
-   * }
+   * Returns all available plans with pricing for every period.
    */
-  @Post('create-checkout')
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
+  @Get('plans')
   @ApiOperation({
-    summary: 'Create checkout session',
+    summary: 'Get available plans',
     description:
-      'Creates a Stripe checkout session for upgrading to a paid plan. Redirect the user to the returned URL to complete payment. Only ADMIN users can create checkout sessions.',
+      'Returns all available subscription plans with pricing details for each period (monthly, quarterly, annual). Includes features, limits, and discount information.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Checkout session created successfully',
-    type: CheckoutSessionResponseEntity,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request - Invalid plan or already subscribed',
+    description: 'Plans retrieved successfully',
   })
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Insufficient permissions',
-  })
-  async createCheckout(
-    @CurrentTenant() tenantId: string,
-    @Body() dto: CreateCheckoutDto,
-  ): Promise<CheckoutSessionResponse> {
-    this.logger.log(
-      `Creating checkout session for tenant ${tenantId} - plan: ${dto.plan}`,
-    );
-    return this.subscriptionsService.createCheckoutSession(tenantId, dto.plan);
+  getPlans() {
+    this.logger.log('Getting available plans');
+    return this.subscriptionsService.getPlans();
   }
 
   /**
-   * Creates a Stripe customer portal session for managing subscriptions.
-   *
-   * Only ADMIN users can access the billing portal.
-   * The portal allows customers to:
-   * - View and download invoices
-   * - Update payment methods
-   * - Change or cancel subscriptions
-   *
-   * @param tenantId - Current tenant ID from JWT
-   * @param dto - Portal creation parameters (optional return URL)
-   * @returns Portal session URL for redirect
-   *
-   * @example
-   * POST /subscriptions/portal
-   * {
-   *   "returnUrl": "https://app.stockflow.com/settings"
-   * }
-   *
-   * Response:
-   * {
-   *   "url": "https://billing.stripe.com/..."
-   * }
+   * Generates checkout widget configuration for the Wompi payment widget.
+   * Only ADMIN users can initiate subscription upgrades.
    */
-  @Post('portal')
+  @Post('checkout-config')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Create portal session',
+    summary: 'Get checkout configuration',
     description:
-      'Creates a Stripe customer portal session for managing subscriptions, viewing invoices, and updating payment methods. Redirect the user to the returned URL. Only ADMIN users can access the billing portal.',
+      'Generates the configuration needed by the frontend to open the Wompi checkout widget. Includes public key, reference, amount, integrity hash, and acceptance tokens. Only ADMIN users can request checkout configurations.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Portal session created successfully',
-    type: PortalSessionResponseEntity,
+    description: 'Checkout configuration generated successfully',
+    type: CheckoutConfigResponseEntity,
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - No Stripe customer found',
+    description: 'Bad Request - Invalid plan or EMPRENDEDOR plan selected',
   })
   @ApiResponse({
     status: 401,
@@ -204,14 +134,128 @@ export class SubscriptionsController {
     status: 403,
     description: 'Forbidden - Insufficient permissions',
   })
-  async createPortal(
+  async getCheckoutConfig(
     @CurrentTenant() tenantId: string,
-    @Body() dto: CreatePortalDto,
-  ): Promise<PortalSessionResponse> {
-    this.logger.log(`Creating portal session for tenant: ${tenantId}`);
-    return this.subscriptionsService.createPortalSession(
-      tenantId,
-      dto.returnUrl,
+    @Body() dto: CreateCheckoutDto,
+  ): Promise<CheckoutConfigResponse> {
+    this.logger.log(
+      `Creating checkout config for tenant ${tenantId} - plan: ${dto.plan}, period: ${dto.period}`,
     );
+    return this.subscriptionsService.getCheckoutConfig(
+      tenantId,
+      dto.plan,
+      dto.period,
+    );
+  }
+
+  /**
+   * Verifies a Wompi payment after the checkout widget callback.
+   * If the payment is approved, the subscription is activated.
+   */
+  @Post('verify-payment')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Verify payment',
+    description:
+      'Verifies a Wompi transaction after the checkout widget callback. If the payment was approved, the subscription is activated and plan limits are updated. Returns the updated subscription status.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment verified and subscription status updated',
+    type: SubscriptionStatusEntity,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found - Tenant not found',
+  })
+  async verifyPayment(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: VerifyPaymentDto,
+  ): Promise<SubscriptionStatusResponse> {
+    this.logger.log(
+      `Verifying payment for tenant ${tenantId} - transaction: ${dto.transactionId}`,
+    );
+    return this.subscriptionsService.verifyPayment(
+      tenantId,
+      dto.transactionId,
+    );
+  }
+
+  /**
+   * Creates a Wompi payment source (tokenized card) for recurring billing.
+   */
+  @Post('payment-source')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create payment source',
+    description:
+      'Creates a Wompi payment source from a tokenized card for recurring billing. The token must be obtained client-side via the Wompi.js SDK. Only ADMIN users can add payment methods.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment source created successfully',
+    type: PaymentSourceResponseEntity,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found - Tenant not found',
+  })
+  async createPaymentSource(
+    @CurrentTenant() tenantId: string,
+    @Body() dto: CreatePaymentSourceDto,
+  ): Promise<{ paymentSourceId: string }> {
+    this.logger.log(`Creating payment source for tenant: ${tenantId}`);
+    return this.subscriptionsService.createPaymentSource(
+      tenantId,
+      dto.token,
+      dto.acceptanceToken,
+      dto.personalAuthToken,
+    );
+  }
+
+  /**
+   * Returns the billing transaction history for the tenant.
+   */
+  @Get('billing-history')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Get billing history',
+    description:
+      'Returns all billing transactions for the tenant, ordered by most recent first. Includes transaction status, amounts, payment methods, and timestamps. Only ADMIN users can view billing history.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Billing history retrieved successfully',
+    type: [BillingTransactionEntity],
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+  })
+  async getBillingHistory(@CurrentTenant() tenantId: string) {
+    this.logger.log(`Getting billing history for tenant: ${tenantId}`);
+    return this.subscriptionsService.getBillingHistory(tenantId);
   }
 }

@@ -25,8 +25,8 @@ describe('TenantContextService', () => {
     phone: null,
     status: TenantStatus.ACTIVE,
     plan: SubscriptionPlan.PRO,
-    stripeCustomerId: null,
-    stripeSubscriptionId: null,
+    wompiPaymentSourceId: null,
+    wompiCustomerEmail: null,
     maxUsers: 10,
     maxProducts: 1000,
     maxInvoices: -1, // unlimited

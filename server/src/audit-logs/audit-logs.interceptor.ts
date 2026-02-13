@@ -348,8 +348,8 @@ export class AuditInterceptor implements NestInterceptor {
       'refreshToken',
       'resetToken',
       'resetTokenExpiry',
-      'stripeCustomerId',
-      'stripeSubscriptionId',
+      'wompiPaymentSourceId',
+      'wompiCustomerEmail',
     ];
 
     sensitiveFields.forEach((field) => {

@@ -1,11 +1,11 @@
 import { IsEnum, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { SubscriptionPlan } from '@prisma/client';
+import { SubscriptionPlan, SubscriptionPeriod } from '@prisma/client';
 
 /**
- * DTO for creating a Stripe checkout session.
+ * DTO for requesting a Wompi checkout widget configuration.
  *
- * Used when a tenant wants to upgrade their subscription plan.
+ * Used when a tenant admin wants to upgrade their subscription plan.
  * The plan must be one of the paid plans (PYME, PRO, or PLUS).
  */
 export class CreateCheckoutDto {
@@ -25,4 +25,20 @@ export class CreateCheckoutDto {
   })
   @IsNotEmpty({ message: 'Plan is required' })
   readonly plan: SubscriptionPlan;
+
+  /**
+   * The subscription period.
+   *
+   * @example 'MONTHLY'
+   */
+  @ApiProperty({
+    description: 'Subscription period (MONTHLY, QUARTERLY, or ANNUAL)',
+    enum: SubscriptionPeriod,
+    example: 'MONTHLY',
+  })
+  @IsEnum(SubscriptionPeriod, {
+    message: 'Period must be one of: MONTHLY, QUARTERLY, ANNUAL',
+  })
+  @IsNotEmpty({ message: 'Period is required' })
+  readonly period: SubscriptionPeriod;
 }

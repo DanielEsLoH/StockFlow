@@ -64,14 +64,14 @@ export interface ArcjetConfig {
 }
 
 /**
- * Stripe configuration interface
+ * Wompi configuration interface
  */
-export interface StripeConfig {
-  secretKey: string | undefined;
-  webhookSecret: string | undefined;
-  priceBasic: string | undefined;
-  pricePro: string | undefined;
-  priceEnterprise: string | undefined;
+export interface WompiConfig {
+  publicKey: string | undefined;
+  privateKey: string | undefined;
+  eventSecret: string | undefined;
+  integritySecret: string | undefined;
+  environment: 'sandbox' | 'production';
 }
 
 /**
@@ -114,7 +114,7 @@ export interface Configuration {
   mail: MailConfig;
   email: EmailConfig;
   arcjet: ArcjetConfig;
-  stripe: StripeConfig;
+  wompi: WompiConfig;
   redis: RedisConfig;
   google: GoogleOAuthConfig;
   github: GitHubOAuthConfig;
@@ -206,17 +206,18 @@ export const arcjetConfig = registerAs(
 );
 
 /**
- * Stripe configuration factory
- * Provides subscription billing and payment processing
+ * Wompi configuration factory
+ * Provides subscription billing and payment processing via Wompi (Bancolombia)
  */
-export const stripeConfig = registerAs(
-  'stripe',
-  (): StripeConfig => ({
-    secretKey: process.env.STRIPE_SECRET_KEY,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-    priceBasic: process.env.STRIPE_PRICE_BASIC,
-    pricePro: process.env.STRIPE_PRICE_PRO,
-    priceEnterprise: process.env.STRIPE_PRICE_ENTERPRISE,
+export const wompiConfig = registerAs(
+  'wompi',
+  (): WompiConfig => ({
+    publicKey: process.env.WOMPI_PUBLIC_KEY,
+    privateKey: process.env.WOMPI_PRIVATE_KEY,
+    eventSecret: process.env.WOMPI_EVENT_SECRET,
+    integritySecret: process.env.WOMPI_INTEGRITY_SECRET,
+    environment:
+      process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
   }),
 );
 
@@ -306,12 +307,13 @@ export default (): Configuration => ({
       process.env.NODE_ENV === 'production' ? 'production' : 'development',
     enabled: process.env.ARCJET_ENABLED !== 'false',
   },
-  stripe: {
-    secretKey: process.env.STRIPE_SECRET_KEY,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-    priceBasic: process.env.STRIPE_PRICE_BASIC,
-    pricePro: process.env.STRIPE_PRICE_PRO,
-    priceEnterprise: process.env.STRIPE_PRICE_ENTERPRISE,
+  wompi: {
+    publicKey: process.env.WOMPI_PUBLIC_KEY,
+    privateKey: process.env.WOMPI_PRIVATE_KEY,
+    eventSecret: process.env.WOMPI_EVENT_SECRET,
+    integritySecret: process.env.WOMPI_INTEGRITY_SECRET,
+    environment:
+      process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
   },
   redis: {
     host: process.env.REDIS_HOST,

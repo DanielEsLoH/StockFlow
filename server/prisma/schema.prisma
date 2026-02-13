@@ -199,6 +199,14 @@ enum TaxResponsibility {
   R_99_PN // No responsable (persona natural)
 }
 
+enum BillingStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  VOIDED
+  ERROR
+}
+
 enum NotificationType {
   LOW_STOCK
   OUT_OF_STOCK
@@ -237,8 +245,8 @@ model Tenant {
   phone                  String?
   status                 TenantStatus      @default(TRIAL)
   plan                   SubscriptionPlan?
-  stripeCustomerId       String?           @map("stripe_customer_id")
-  stripeSubscriptionId   String?           @map("stripe_subscription_id")
+  wompiPaymentSourceId   String?           @map("wompi_payment_source_id")
+  wompiCustomerEmail     String?           @map("wompi_customer_email")
   maxUsers               Int               @default(1) @map("max_users")
   maxProducts            Int               @default(100) @map("max_products")
   maxInvoices            Int               @default(50) @map("max_invoices")
@@ -264,6 +272,7 @@ model Tenant {
   cashRegisterMovements CashRegisterMovement[]
   dianConfig            TenantDianConfig?
   dianDocuments         DianDocument[]
+  billingTransactions   BillingTransaction[]
 
   @@map("tenants")
 }
@@ -660,11 +669,43 @@ model Subscription {
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  billingTransactions BillingTransaction[]
 
   @@index([status])
   @@index([endDate])
   @@map("subscriptions")
+}
+
+// ============================================================================
+// BILLING TRANSACTION MODEL
+// ============================================================================
+
+model BillingTransaction {
+  id                 String             @id @default(cuid())
+  tenantId           String             @map("tenant_id")
+  subscriptionId     String?            @map("subscription_id")
+  wompiTransactionId String?            @unique @map("wompi_transaction_id")
+  wompiReference     String?            @map("wompi_reference")
+  plan               SubscriptionPlan
+  period             SubscriptionPeriod
+  amountInCents      Int                @map("amount_in_cents")
+  currency           String             @default("COP")
+  status             BillingStatus      @default(PENDING)
+  paymentMethodType  String?            @map("payment_method_type")
+  failureReason      String?            @map("failure_reason")
+  isRecurring        Boolean            @default(false) @map("is_recurring")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([wompiTransactionId])
+  @@index([status])
+  @@index([tenantId, createdAt])
+  @@map("billing_transactions")
 }
 
 // ============================================================================

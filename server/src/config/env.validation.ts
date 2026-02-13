@@ -176,52 +176,43 @@ export class EnvironmentVariables {
   ARCJET_ENABLED?: string = 'true';
 
   // ============================================================================
-  // STRIPE CONFIGURATION (Optional - for subscription billing)
+  // WOMPI CONFIGURATION (Optional - for subscription billing via Wompi/Bancolombia)
   // ============================================================================
 
   /**
-   * Stripe secret API key.
-   * Get your API key from https://dashboard.stripe.com/apikeys
-   * Use sk_test_... for testing and sk_live_... for production.
-   * If not set, Stripe features will be disabled.
+   * Wompi public API key.
+   * Get your keys from https://comercios.wompi.co
+   * Use pub_test_... for sandbox and pub_prod_... for production.
+   * If not set, Wompi features will be disabled.
    */
   @IsString()
   @IsOptional()
-  STRIPE_SECRET_KEY?: string;
+  WOMPI_PUBLIC_KEY?: string;
 
   /**
-   * Stripe webhook signing secret.
-   * Get this from https://dashboard.stripe.com/webhooks
-   * Each webhook endpoint has its own signing secret.
-   * Required for secure webhook verification.
+   * Wompi private API key.
+   * Use prv_test_... for sandbox and prv_prod_... for production.
+   * Required for creating transactions and payment sources.
    */
   @IsString()
   @IsOptional()
-  STRIPE_WEBHOOK_SECRET?: string;
+  WOMPI_PRIVATE_KEY?: string;
 
   /**
-   * Stripe Price ID for the BASIC subscription plan.
-   * Create a price in Stripe dashboard and copy the price_xxx ID.
+   * Wompi event signing secret for webhook verification.
+   * Use test_events_... for sandbox and prod_events_... for production.
    */
   @IsString()
   @IsOptional()
-  STRIPE_PRICE_BASIC?: string;
+  WOMPI_EVENT_SECRET?: string;
 
   /**
-   * Stripe Price ID for the PRO subscription plan.
-   * Create a price in Stripe dashboard and copy the price_xxx ID.
+   * Wompi integrity secret for transaction signature verification.
+   * Use test_integrity_... for sandbox and prod_integrity_... for production.
    */
   @IsString()
   @IsOptional()
-  STRIPE_PRICE_PRO?: string;
-
-  /**
-   * Stripe Price ID for the ENTERPRISE subscription plan.
-   * Create a price in Stripe dashboard and copy the price_xxx ID.
-   */
-  @IsString()
-  @IsOptional()
-  STRIPE_PRICE_ENTERPRISE?: string;
+  WOMPI_INTEGRITY_SECRET?: string;
 
   // ============================================================================
   // REDIS CACHE CONFIGURATION (Optional - for distributed caching)

@@ -1,36 +1,25 @@
 import {
   Controller,
   Post,
-  Headers,
-  Req,
+  Body,
   HttpCode,
   HttpStatus,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
-import type { RawBodyRequest } from '@nestjs/common';
-import type { Request } from 'express';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
 import { Public } from '../common';
 import { WebhookResponseEntity } from './entities/subscription.entity';
 
 /**
- * WebhooksController handles incoming Stripe webhook events.
+ * WebhooksController handles incoming Wompi webhook events.
  *
  * This controller is PUBLIC (no authentication required) because
- * Stripe needs to call it directly. Security is handled via
- * webhook signature verification.
+ * Wompi needs to call it directly. Security is handled via
+ * webhook signature verification (SHA256 checksum).
  *
- * IMPORTANT: This controller requires raw body access for signature
- * verification. The main.ts must be configured to preserve raw body
- * for this route.
- *
- * Stripe events handled:
- * - checkout.session.completed: User completed payment
- * - customer.subscription.updated: Subscription changed
- * - customer.subscription.deleted: Subscription canceled
- * - invoice.payment_failed: Payment failed
+ * Wompi events handled:
+ * - transaction.updated: Transaction status changed (PENDING -> APPROVED/DECLINED/etc.)
  */
 @ApiTags('webhooks')
 @Controller('webhooks')
@@ -40,35 +29,22 @@ export class WebhooksController {
   constructor(private readonly subscriptionsService: SubscriptionsService) {}
 
   /**
-   * Handles incoming Stripe webhook events.
+   * Handles incoming Wompi webhook events.
    *
-   * This endpoint:
-   * 1. Verifies the webhook signature using Stripe's SDK
-   * 2. Routes the event to the appropriate handler in SubscriptionsService
-   * 3. Returns 200 OK to acknowledge receipt (even if processing fails)
+   * Wompi sends webhook events as JSON POST requests with a signature
+   * embedded in the body (body.signature.checksum). The service verifies
+   * the signature using SHA256 before processing the event.
    *
-   * @param signature - Stripe signature header for verification
-   * @param req - Raw request with body buffer
-   * @returns Empty response with 200 status
-   *
-   * @example
-   * POST /webhooks/stripe
-   * Headers:
-   *   stripe-signature: t=...,v1=...,v0=...
-   * Body: <raw event JSON>
+   * @param body - The parsed JSON webhook payload
+   * @returns Acknowledgement response
    */
-  @Post('stripe')
+  @Post('wompi')
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Handle Stripe webhook',
+    summary: 'Handle Wompi webhook',
     description:
-      'Handles incoming Stripe webhook events. This endpoint is public and verifies requests using the Stripe signature header. Used for processing subscription lifecycle events.',
-  })
-  @ApiHeader({
-    name: 'stripe-signature',
-    description: 'Stripe webhook signature for verification',
-    required: true,
+      'Handles incoming Wompi webhook events. This endpoint is public and verifies requests using the embedded SHA256 signature. Used for processing payment status updates.',
   })
   @ApiResponse({
     status: 200,
@@ -77,31 +53,14 @@ export class WebhooksController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - Missing signature or invalid payload',
+    description: 'Bad Request - Invalid signature or payload',
   })
-  async handleStripeWebhook(
-    @Headers('stripe-signature') signature: string,
-    @Req() req: RawBodyRequest<Request>,
+  async handleWompiWebhook(
+    @Body() body: any,
   ): Promise<{ received: boolean }> {
-    this.logger.log('Received Stripe webhook');
+    this.logger.log('Received Wompi webhook');
 
-    if (!signature) {
-      this.logger.warn('Stripe webhook received without signature');
-      throw new BadRequestException('Missing stripe-signature header');
-    }
-
-    const rawBody = req.rawBody;
-
-    if (!rawBody) {
-      this.logger.error(
-        'Raw body not available - ensure rawBody: true is set for this route',
-      );
-      throw new BadRequestException(
-        'Raw body not available for webhook verification',
-      );
-    }
-
-    await this.subscriptionsService.handleWebhook(signature, rawBody);
+    await this.subscriptionsService.handleWebhook(body);
 
     return { received: true };
   }

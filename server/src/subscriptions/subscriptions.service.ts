@@ -6,726 +6,820 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SubscriptionPlan, Tenant } from '@prisma/client';
-import Stripe from 'stripe';
-import { PrismaService } from '../prisma';
-
-/**
- * Plan limits configuration for each subscription tier.
- * -1 indicates unlimited.
- * Note: The primary plan limits configuration is in plan-limits.ts.
- * This is kept for backward compatibility with Stripe webhook handlers.
- */
-export const STRIPE_PLAN_LIMITS: Record<
+import {
   SubscriptionPlan,
-  {
-    maxUsers: number;
-    maxProducts: number;
-    maxInvoices: number;
-    maxWarehouses: number;
-  }
-> = {
-  EMPRENDEDOR: {
-    maxUsers: 1,
-    maxProducts: 100,
-    maxInvoices: 50,
-    maxWarehouses: 1,
-  },
-  PYME: { maxUsers: 2, maxProducts: 500, maxInvoices: -1, maxWarehouses: 2 },
-  PRO: { maxUsers: 3, maxProducts: 2000, maxInvoices: -1, maxWarehouses: 10 },
-  PLUS: {
-    maxUsers: 8,
-    maxProducts: -1,
-    maxInvoices: -1,
-    maxWarehouses: 100,
-  },
+  SubscriptionPeriod,
+  SubscriptionStatus as PrismaSubscriptionStatus,
+  BillingStatus,
+} from '@prisma/client';
+import { PrismaService } from '../prisma';
+import { WompiService, WompiTransaction } from './wompi.service';
+import {
+  PLAN_LIMITS,
+  calculatePlanPrice,
+  getPlanLimits,
+  PERIOD_DISCOUNTS,
+  PERIOD_MULTIPLIERS,
+} from './plan-limits';
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const PERIOD_DAYS: Record<SubscriptionPeriod, number> = {
+  MONTHLY: 30,
+  QUARTERLY: 90,
+  ANNUAL: 365,
 };
 
 /**
- * Subscription status response interface.
+ * Maps Wompi transaction statuses to internal BillingStatus values.
  */
-export interface SubscriptionStatus {
+const WOMPI_STATUS_MAP: Record<string, BillingStatus> = {
+  APPROVED: BillingStatus.APPROVED,
+  DECLINED: BillingStatus.DECLINED,
+  VOIDED: BillingStatus.VOIDED,
+  ERROR: BillingStatus.ERROR,
+  PENDING: BillingStatus.PENDING,
+};
+
+// ============================================================================
+// EXPORTED INTERFACES
+// ============================================================================
+
+/**
+ * Subscription status response returned by getSubscriptionStatus.
+ */
+export interface SubscriptionStatusResponse {
   tenantId: string;
-  plan: SubscriptionPlan;
-  stripeCustomerId: string | null;
-  stripeSubscriptionId: string | null;
+  plan: SubscriptionPlan | null;
+  status: PrismaSubscriptionStatus | null;
+  periodType: SubscriptionPeriod | null;
+  startDate: Date | null;
+  endDate: Date | null;
   limits: {
     maxUsers: number;
     maxProducts: number;
     maxInvoices: number;
     maxWarehouses: number;
   };
-  stripeSubscriptionStatus?: Stripe.Subscription.Status;
-  currentPeriodEnd?: Date;
-  cancelAtPeriodEnd?: boolean;
+  hasPaymentSource: boolean;
+  daysRemaining: number | null;
 }
 
 /**
- * Checkout session response interface.
+ * Checkout configuration returned by getCheckoutConfig for the Wompi widget.
  */
-export interface CheckoutSessionResponse {
-  sessionId: string;
-  url: string;
+export interface CheckoutConfigResponse {
+  publicKey: string;
+  reference: string;
+  amountInCents: number;
+  currency: string;
+  integrityHash: string;
+  redirectUrl: string;
+  acceptanceToken: string;
+  personalDataAuthToken: string;
+  plan: SubscriptionPlan;
+  period: SubscriptionPeriod;
+  displayName: string;
+  priceFormatted: string;
 }
 
-/**
- * Portal session response interface.
- */
-export interface PortalSessionResponse {
-  url: string;
-}
+// ============================================================================
+// SERVICE
+// ============================================================================
 
 /**
- * SubscriptionsService handles all Stripe subscription-related operations.
+ * SubscriptionsService handles all Wompi-based subscription billing operations.
  *
  * This service manages:
- * - Creating checkout sessions for plan upgrades
- * - Creating customer portal sessions for subscription management
- * - Processing webhook events from Stripe
- * - Syncing subscription status with tenant records
- *
- * @example
- * ```TypeScript
- * // In a controller
- * @Post('create-checkout')
- * async createCheckout(
- *   @CurrentTenant() tenantId: string,
- *   @Body() dto: CreateCheckoutDto,
- * ) {
- *   return this.subscriptionsService.createCheckoutSession(tenantId, dto. Plan);
- * }
- * ```
+ * - Querying subscription status for tenants
+ * - Listing available plans with pricing
+ * - Generating checkout widget configuration
+ * - Verifying payments after Wompi widget callback
+ * - Creating payment sources for recurring billing
+ * - Charging recurring subscriptions
+ * - Processing Wompi webhook events
+ * - Querying billing history
  */
 @Injectable()
 export class SubscriptionsService {
   private readonly logger = new Logger(SubscriptionsService.name);
-  private readonly stripe: Stripe | null;
-  private readonly stripeEnabled: boolean;
   private readonly frontendUrl: string;
-  private readonly webhookSecret: string;
-  private readonly priceIds: Record<
-    Exclude<SubscriptionPlan, 'EMPRENDEDOR'>,
-    string
-  >;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly wompiService: WompiService,
   ) {
-    const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
-
-    if (!stripeSecretKey) {
-      this.logger.warn(
-        'STRIPE_SECRET_KEY not configured - Stripe features will be disabled',
-      );
-      this.stripe = null;
-      this.stripeEnabled = false;
-    } else {
-      // Initialize Stripe client only if key is provided
-      this.stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2025-12-15.clover',
-        typescript: true,
-      });
-      this.stripeEnabled = true;
-    }
-
     this.frontendUrl =
       this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
-    this.webhookSecret =
-      this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || '';
-
-    // Map plans to Stripe price IDs
-    this.priceIds = {
-      PYME: this.configService.get<string>('STRIPE_PRICE_PYME') || '',
-      PRO: this.configService.get<string>('STRIPE_PRICE_PRO') || '',
-      PLUS: this.configService.get<string>('STRIPE_PRICE_PLUS') || '',
-    };
   }
 
-  /**
-   * Checks if Stripe is enabled and returns the Stripe instance.
-   * Throws an error if Stripe is not configured.
-   *
-   * @returns The Stripe instance
-   * @throws BadRequestException if Stripe is not enabled
-   */
-  private getStripeClient(): Stripe {
-    if (!this.stripeEnabled || !this.stripe) {
-      throw new BadRequestException(
-        'Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.',
-      );
-    }
-    return this.stripe;
-  }
+  // ==========================================================================
+  // PUBLIC METHODS
+  // ==========================================================================
 
   /**
-   * Creates a Stripe checkout session for upgrading to a paid plan.
+   * Returns the current subscription status for a tenant.
    *
-   * This method:
-   * 1. Retrieves or creates a Stripe customer for the tenant
-   * 2. Creates a checkout session with the appropriate price
-   * 3. Returns the session ID and URL for redirect
+   * This is a local-only query -- no external API calls are made.
    *
-   * @param tenantId - The tenant's ID
-   * @param plan - The target subscription plan
-   * @returns Checkout session details with URL
-   * @throws BadRequestException if plan is FREE or invalid
-   * @throws NotFoundException if tenant not found
+   * @param tenantId - The tenant ID
+   * @returns Current subscription status including plan, limits, and dates
+   * @throws NotFoundException if tenant does not exist
    */
-  async createCheckoutSession(
+  async getSubscriptionStatus(
     tenantId: string,
-    plan: SubscriptionPlan,
-  ): Promise<CheckoutSessionResponse> {
-    const stripe = this.getStripeClient();
-    this.logger.log(`Creating checkout session for tenant ${tenantId}`);
-
-    if (plan === 'EMPRENDEDOR') {
-      throw new BadRequestException(
-        'Cannot create checkout session for EMPRENDEDOR plan - it is the base plan',
-      );
-    }
-
-    const priceId = this.priceIds[plan];
-    if (!priceId) {
-      throw new BadRequestException(
-        `Price not configured for plan: ${plan}. Please configure STRIPE_PRICE_${plan}`,
-      );
-    }
-
-    // Get tenant
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
-    });
-
-    if (!tenant) {
-      throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
-    }
-
-    // Get or create Stripe customer
-    const stripeCustomerId = await this.getOrCreateStripeCustomer(tenant);
-
-    try {
-      // Create checkout session
-      const session = await stripe.checkout.sessions.create({
-        customer: stripeCustomerId,
-        mode: 'subscription',
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        success_url: `${this.frontendUrl}/settings/billing?session_id={CHECKOUT_SESSION_ID}&success=true`,
-        cancel_url: `${this.frontendUrl}/settings/billing?canceled=true`,
-        metadata: {
-          tenantId,
-          plan,
-        },
-        subscription_data: {
-          metadata: {
-            tenantId,
-            plan,
-          },
-        },
-      });
-
-      this.logger.log(
-        `Checkout session created: ${session.id} for tenant ${tenantId}`,
-      );
-
-      return {
-        sessionId: session.id,
-        url: session.url || '',
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to create checkout session: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-      throw new InternalServerErrorException(
-        'Failed to create checkout session',
-      );
-    }
-  }
-
-  /**
-   * Creates a Stripe customer portal session for managing subscriptions.
-   *
-   * Allows customers to:
-   * - View billing history
-   * - Update payment methods
-   * - Cancel or modify subscriptions
-   *
-   * @param tenantId - The tenant's ID
-   * @param returnUrl - Optional URL to redirect after portal session
-   * @returns Portal session URL
-   * @throws NotFoundException if tenant not found or has no Stripe customer
-   */
-  async createPortalSession(
-    tenantId: string,
-    returnUrl?: string,
-  ): Promise<PortalSessionResponse> {
-    const stripe = this.getStripeClient();
-    this.logger.log(`Creating portal session for tenant ${tenantId}`);
-
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: tenantId },
-    });
-
-    if (!tenant) {
-      throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
-    }
-
-    if (!tenant.stripeCustomerId) {
-      throw new BadRequestException(
-        'No Stripe customer found for this tenant. Please subscribe to a plan first.',
-      );
-    }
-
-    try {
-      const session = await stripe.billingPortal.sessions.create({
-        customer: tenant.stripeCustomerId,
-        return_url: returnUrl || `${this.frontendUrl}/settings/billing`,
-      });
-
-      this.logger.log(`Portal session created for tenant ${tenantId}`);
-
-      return {
-        url: session.url,
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to create portal session: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-      throw new InternalServerErrorException(
-        'Failed to create customer portal session',
-      );
-    }
-  }
-
-  /**
-   * Gets the current subscription status for a tenant.
-   *
-   * @param tenantId - The tenant's ID
-   * @returns Subscription status including plan, limits, and Stripe details
-   * @throws NotFoundException if tenant not found
-   */
-  async getSubscriptionStatus(tenantId: string): Promise<SubscriptionStatus> {
+  ): Promise<SubscriptionStatusResponse> {
     this.logger.log(`Getting subscription status for tenant ${tenantId}`);
 
     const tenant = await this.prisma.tenant.findUnique({
       where: { id: tenantId },
+      include: { subscription: true },
     });
 
     if (!tenant) {
       throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
     }
 
-    const status: SubscriptionStatus = {
+    const subscription = tenant.subscription;
+    let daysRemaining: number | null = null;
+
+    if (subscription?.endDate) {
+      const now = new Date();
+      const diffMs = subscription.endDate.getTime() - now.getTime();
+      daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    }
+
+    return {
       tenantId: tenant.id,
-      plan: tenant.plan || 'EMPRENDEDOR',
-      stripeCustomerId: tenant.stripeCustomerId,
-      stripeSubscriptionId: tenant.stripeSubscriptionId,
+      plan: tenant.plan,
+      status: subscription?.status ?? null,
+      periodType: subscription?.periodType ?? null,
+      startDate: subscription?.startDate ?? null,
+      endDate: subscription?.endDate ?? null,
       limits: {
         maxUsers: tenant.maxUsers,
         maxProducts: tenant.maxProducts,
         maxInvoices: tenant.maxInvoices,
         maxWarehouses: tenant.maxWarehouses,
       },
+      hasPaymentSource: !!tenant.wompiPaymentSourceId,
+      daysRemaining,
     };
+  }
 
-    // If there's an active Stripe subscription and Stripe is enabled, fetch additional details
-    if (tenant.stripeSubscriptionId && this.stripeEnabled && this.stripe) {
-      try {
-        const subscriptionResponse = await this.stripe.subscriptions.retrieve(
-          tenant.stripeSubscriptionId,
-        );
-        // Stripe Response<T> type extends T, cast to access subscription properties
-        const subscription =
-          subscriptionResponse as unknown as Stripe.Subscription;
+  /**
+   * Returns all available plans with pricing for every period.
+   *
+   * @returns Array of plan info objects with prices for each period
+   */
+  getPlans() {
+    const plans = Object.entries(PLAN_LIMITS).map(([key, limits]) => {
+      const plan = key as SubscriptionPlan;
 
-        status.stripeSubscriptionStatus = subscription.status;
-        status.cancelAtPeriodEnd = subscription.cancel_at_period_end;
-
-        // In Clover API (2025-12-15), current_period_end is on subscription items
-        // Access it from the first item if available
-        if (subscription.items?.data?.length > 0) {
-          const firstItem = subscription.items.data[0];
-          if (firstItem.current_period_end) {
-            status.currentPeriodEnd = new Date(
-              firstItem.current_period_end * 1000,
-            );
+      const prices = Object.values(SubscriptionPeriod).reduce(
+        (acc, period) => {
+          const price = calculatePlanPrice(plan, period);
+          acc[period] = {
+            total: price,
+            totalInCents: price * 100,
+            monthly: Math.round(price / PERIOD_MULTIPLIERS[period]),
+            discount: PERIOD_DISCOUNTS[period],
+          };
+          return acc;
+        },
+        {} as Record<
+          SubscriptionPeriod,
+          {
+            total: number;
+            totalInCents: number;
+            monthly: number;
+            discount: number;
           }
-        }
-      } catch (error) {
-        this.logger.warn(
-          `Could not fetch Stripe subscription details: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
-        // Continue without Stripe details - don't fail the request
-      }
-    }
-
-    return status;
-  }
-
-  /**
-   * Handles Stripe webhook events.
-   *
-   * Supported events:
-   * - checkout.session.completed: Updates tenant plan after successful checkout
-   * - customer.subscription.updated: Syncs plan changes from Stripe
-   * - customer.subscription.deleted: Downgrades tenant to FREE
-   * - invoice.payment_failed: Logs payment failure (subscription status managed by Stripe)
-   *
-   * @param signature - Stripe signature header
-   * @param rawBody - Raw request body for signature verification
-   */
-  async handleWebhook(signature: string, rawBody: Buffer): Promise<void> {
-    const stripe = this.getStripeClient();
-    let event: Stripe.Event;
-
-    try {
-      event = stripe.webhooks.constructEvent(
-        rawBody,
-        signature,
-        this.webhookSecret,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Webhook signature verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-      throw new BadRequestException('Invalid webhook signature');
-    }
-
-    this.logger.log(`Processing webhook event: ${event.type}`);
-
-    try {
-      switch (event.type) {
-        case 'checkout.session.completed':
-          await this.handleCheckoutSessionCompleted(event.data.object);
-          break;
-
-        case 'customer.subscription.updated':
-          await this.handleSubscriptionUpdated(event.data.object);
-          break;
-
-        case 'customer.subscription.deleted':
-          await this.handleSubscriptionDeleted(event.data.object);
-          break;
-
-        case 'invoice.payment_failed':
-          await this.handleInvoicePaymentFailed(event.data.object);
-          break;
-
-        default:
-          this.logger.log(`Unhandled webhook event type: ${event.type}`);
-      }
-    } catch (error) {
-      this.logger.error(
-        `Error processing webhook ${event.type}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-      // Don't rethrow - acknowledge receipt to Stripe
-      // Failed events can be retried via Stripe dashboard
-    }
-  }
-
-  // ============================================================================
-  // PRIVATE METHODS
-  // ============================================================================
-
-  /**
-   * Gets or creates a Stripe customer for a tenant.
-   *
-   * @param tenant - The tenant record
-   * @returns Stripe customer ID
-   */
-  private async getOrCreateStripeCustomer(tenant: Tenant): Promise<string> {
-    if (tenant.stripeCustomerId) {
-      return tenant.stripeCustomerId;
-    }
-
-    // Note: This method is only called after getStripeClient() has verified stripe is non-null
-    const stripe = this.stripe!;
-
-    try {
-      const customer = await stripe.customers.create({
-        email: tenant.email,
-        name: tenant.name,
-        metadata: {
-          tenantId: tenant.id,
-          slug: tenant.slug,
-        },
-      });
-
-      // Update tenant with Stripe customer ID
-      await this.prisma.tenant.update({
-        where: { id: tenant.id },
-        data: { stripeCustomerId: customer.id },
-      });
-
-      this.logger.log(
-        `Created Stripe customer ${customer.id} for tenant ${tenant.id}`,
+        >,
       );
 
-      return customer.id;
-    } catch (error) {
-      this.logger.error(
-        `Failed to create Stripe customer: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-      throw new InternalServerErrorException(
-        'Failed to create Stripe customer',
-      );
-    }
-  }
-
-  /**
-   * Handles checkout.session.completed webhook event.
-   *
-   * Updates tenant with subscription details and applies plan limits.
-   *
-   * @param session - Stripe checkout session
-   */
-  private async handleCheckoutSessionCompleted(
-    session: Stripe.Checkout.Session,
-  ): Promise<void> {
-    const tenantId = session.metadata?.tenantId;
-    const planFromMetadata = session.metadata?.plan as
-      | SubscriptionPlan
-      | undefined;
-
-    if (!tenantId) {
-      this.logger.warn(
-        'Checkout session completed without tenantId in metadata',
-      );
-      return;
-    }
-
-    const subscriptionId =
-      typeof session.subscription === 'string'
-        ? session.subscription
-        : session.subscription?.id;
-
-    if (!subscriptionId) {
-      this.logger.warn('Checkout session completed without subscription ID');
-      return;
-    }
-
-    // Determine plan from metadata or subscription
-    let plan: SubscriptionPlan = planFromMetadata || 'PYME';
-
-    if (!planFromMetadata && this.stripe) {
-      // Try to get plan from subscription metadata
-      try {
-        const subscription =
-          await this.stripe.subscriptions.retrieve(subscriptionId);
-        const subscriptionPlan = subscription.metadata
-          ?.plan as SubscriptionPlan;
-        if (subscriptionPlan && STRIPE_PLAN_LIMITS[subscriptionPlan]) {
-          plan = subscriptionPlan;
-        }
-      } catch (error) {
-        this.logger.warn(
-          `Could not fetch subscription for plan details: ${error instanceof Error ? error.message : 'Unknown'}`,
-        );
-      }
-    }
-
-    const limits = STRIPE_PLAN_LIMITS[plan];
-
-    await this.prisma.executeInTransaction(async (tx) => {
-      await tx.tenant.update({
-        where: { id: tenantId },
-        data: {
-          plan,
-          stripeSubscriptionId: subscriptionId,
+      return {
+        plan,
+        displayName: limits.displayName,
+        description: limits.description,
+        features: limits.features,
+        priceMonthly: limits.priceMonthly,
+        limits: {
           maxUsers: limits.maxUsers,
+          maxWarehouses: limits.maxWarehouses,
           maxProducts: limits.maxProducts,
           maxInvoices: limits.maxInvoices,
-          maxWarehouses: limits.maxWarehouses,
         },
-      });
+        prices,
+      };
     });
 
-    this.logger.log(
-      `Tenant ${tenantId} upgraded to ${plan} plan (subscription: ${subscriptionId})`,
-    );
+    return plans;
   }
 
   /**
-   * Handles customer.subscription.updated webhook event.
+   * Generates the configuration needed by the frontend to open the Wompi
+   * checkout widget.
    *
-   * Syncs plan changes that occur through Stripe (e.g., plan changes via portal).
-   *
-   * @param subscription - Stripe subscription
+   * @param tenantId - The tenant ID
+   * @param plan - The target subscription plan
+   * @param period - The subscription period
+   * @returns Checkout widget configuration
+   * @throws BadRequestException if plan is EMPRENDEDOR
+   * @throws NotFoundException if tenant does not exist
    */
-  private async handleSubscriptionUpdated(
-    subscription: Stripe.Subscription,
-  ): Promise<void> {
-    const tenantId = subscription.metadata?.tenantId;
-
-    if (!tenantId) {
-      // Try to find tenant by customer ID
-      const customerId =
-        typeof subscription.customer === 'string'
-          ? subscription.customer
-          : subscription.customer?.id;
-
-      if (!customerId) {
-        this.logger.warn(
-          'Subscription updated without tenantId or customer ID',
-        );
-        return;
-      }
-
-      const tenant = await this.prisma.tenant.findFirst({
-        where: { stripeCustomerId: customerId },
-      });
-
-      if (!tenant) {
-        this.logger.warn(`No tenant found for Stripe customer: ${customerId}`);
-        return;
-      }
-
-      await this.updateTenantFromSubscription(tenant.id, subscription);
-      return;
-    }
-
-    await this.updateTenantFromSubscription(tenantId, subscription);
-  }
-
-  /**
-   * Updates tenant plan based on subscription details.
-   *
-   * @param tenantId - Tenant ID
-   * @param subscription - Stripe subscription
-   */
-  private async updateTenantFromSubscription(
+  async getCheckoutConfig(
     tenantId: string,
-    subscription: Stripe.Subscription,
-  ): Promise<void> {
-    // Get plan from subscription metadata
-    const plan = (subscription.metadata?.plan as SubscriptionPlan) || undefined;
-
-    // If subscription is active, and we have a plan, update the tenant
-    if (subscription.status === 'active' && plan && STRIPE_PLAN_LIMITS[plan]) {
-      const limits = STRIPE_PLAN_LIMITS[plan];
-
-      await this.prisma.tenant.update({
-        where: { id: tenantId },
-        data: {
-          plan,
-          stripeSubscriptionId: subscription.id,
-          maxUsers: limits.maxUsers,
-          maxProducts: limits.maxProducts,
-          maxInvoices: limits.maxInvoices,
-          maxWarehouses: limits.maxWarehouses,
-        },
-      });
-
-      this.logger.log(`Tenant ${tenantId} subscription updated to ${plan}`);
-    } else if (
-      subscription.status === 'past_due' ||
-      subscription.status === 'unpaid'
-    ) {
-      this.logger.warn(
-        `Tenant ${tenantId} subscription is ${subscription.status}`,
-      );
-      // Could implement grace period logic here
-    }
-  }
-
-  /**
-   * Handles customer.subscription.deleted webhook event.
-   *
-   * Downgrades tenant to FREE plan when subscription is canceled.
-   *
-   * @param subscription - Stripe subscription
-   */
-  private async handleSubscriptionDeleted(
-    subscription: Stripe.Subscription,
-  ): Promise<void> {
-    const tenantId = subscription.metadata?.tenantId;
-    let targetTenantId = tenantId;
-
-    if (!targetTenantId) {
-      // Try to find tenant by customer ID
-      const customerId =
-        typeof subscription.customer === 'string'
-          ? subscription.customer
-          : subscription.customer?.id;
-
-      if (!customerId) {
-        this.logger.warn('Subscription deleted without tenantId or customer');
-        return;
-      }
-
-      const tenant = await this.prisma.tenant.findFirst({
-        where: { stripeCustomerId: customerId },
-      });
-
-      if (!tenant) {
-        this.logger.warn(`No tenant found for Stripe customer: ${customerId}`);
-        return;
-      }
-
-      targetTenantId = tenant.id;
-    }
-
-    // When subscription is cancelled, set plan to null (no active subscription)
-    // The tenant will need to be suspended or have a new plan activated by admin
-    await this.prisma.executeInTransaction(async (tx) => {
-      await tx.tenant.update({
-        where: { id: targetTenantId },
-        data: {
-          plan: null,
-          stripeSubscriptionId: null,
-        },
-      });
-    });
-
+    plan: SubscriptionPlan,
+    period: SubscriptionPeriod,
+  ): Promise<CheckoutConfigResponse> {
     this.logger.log(
-      `Tenant ${targetTenantId} subscription cancelled - plan set to null`,
+      `Generating checkout config for tenant ${tenantId} - plan: ${plan}, period: ${period}`,
     );
-  }
 
-  /**
-   * Handles invoice.payment_failed webhook event.
-   *
-   * Logs the payment failure. Stripe handles subscription status automatically.
-   * Could be extended to send notification emails.
-   *
-   * @param invoice - Stripe invoice
-   */
-  private async handleInvoicePaymentFailed(
-    invoice: Stripe.Invoice,
-  ): Promise<void> {
-    const customerId =
-      typeof invoice.customer === 'string'
-        ? invoice.customer
-        : invoice.customer?.id;
-
-    if (!customerId) {
-      this.logger.warn('Invoice payment failed without customer ID');
-      return;
+    if (plan === SubscriptionPlan.EMPRENDEDOR) {
+      throw new BadRequestException(
+        'Cannot create checkout for EMPRENDEDOR plan - it is the base plan',
+      );
     }
 
-    const tenant = await this.prisma.tenant.findFirst({
-      where: { stripeCustomerId: customerId },
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
     });
 
     if (!tenant) {
-      this.logger.warn(`Payment failed for unknown customer: ${customerId}`);
+      throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
+    }
+
+    const priceInCop = calculatePlanPrice(plan, period);
+    const amountInCents = priceInCop * 100;
+    const reference = `SF-${tenantId.slice(0, 8)}-${Date.now()}`;
+
+    // generateIntegrityHash is synchronous; getMerchantInfo is async
+    const integrityHash = this.wompiService.generateIntegrityHash(
+      reference,
+      amountInCents,
+      'COP',
+    );
+    const merchantInfo = await this.wompiService.getMerchantInfo();
+    const publicKey = this.wompiService.getPublicKey();
+
+    const planLimits = getPlanLimits(plan);
+    const redirectUrl = `${this.frontendUrl}/billing?success=true`;
+
+    const priceFormatted = new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+    }).format(priceInCop);
+
+    return {
+      publicKey,
+      reference,
+      amountInCents,
+      currency: 'COP',
+      integrityHash,
+      redirectUrl,
+      acceptanceToken: merchantInfo.presigned_acceptance.acceptance_token,
+      personalDataAuthToken:
+        merchantInfo.presigned_personal_data_auth.acceptance_token,
+      plan,
+      period,
+      displayName: planLimits.displayName,
+      priceFormatted,
+    };
+  }
+
+  /**
+   * Verifies a Wompi transaction after the widget checkout callback and
+   * activates the subscription if the payment was approved.
+   *
+   * @param tenantId - The tenant ID
+   * @param transactionId - The Wompi transaction ID
+   * @returns Updated subscription status
+   * @throws NotFoundException if tenant does not exist
+   */
+  async verifyPayment(
+    tenantId: string,
+    transactionId: string,
+  ): Promise<SubscriptionStatusResponse> {
+    this.logger.log(
+      `Verifying payment for tenant ${tenantId} - transaction: ${transactionId}`,
+    );
+
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
+    }
+
+    let wompiTx: WompiTransaction;
+
+    try {
+      wompiTx = await this.wompiService.getTransaction(transactionId);
+    } catch (error) {
+      this.logger.error(
+        `Failed to retrieve Wompi transaction ${transactionId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to verify payment with Wompi',
+      );
+    }
+
+    const billingStatus = WOMPI_STATUS_MAP[wompiTx.status] ?? BillingStatus.ERROR;
+    const plan = this.extractPlanFromMetadata(wompiTx);
+    const period = this.extractPeriodFromMetadata(wompiTx);
+
+    // Create BillingTransaction record
+    const billingTransaction = await this.prisma.billingTransaction.create({
+      data: {
+        tenantId,
+        wompiTransactionId: wompiTx.id,
+        wompiReference: wompiTx.reference,
+        plan: plan ?? tenant.plan ?? SubscriptionPlan.EMPRENDEDOR,
+        period: period ?? SubscriptionPeriod.MONTHLY,
+        amountInCents: wompiTx.amount_in_cents,
+        currency: wompiTx.currency,
+        status: billingStatus,
+        paymentMethodType: wompiTx.payment_method_type ?? null,
+        failureReason: wompiTx.status_message ?? null,
+        isRecurring: false,
+      },
+    });
+
+    // If approved, activate the subscription
+    if (billingStatus === BillingStatus.APPROVED && plan && period) {
+      await this.activateSubscription(
+        tenantId,
+        plan,
+        period,
+        billingTransaction.id,
+        wompiTx.customer_email ?? null,
+      );
+    }
+
+    return this.getSubscriptionStatus(tenantId);
+  }
+
+  /**
+   * Creates a payment source (tokenized card) on Wompi for recurring billing.
+   *
+   * @param tenantId - The tenant ID
+   * @param token - Wompi tokenized card token
+   * @param acceptanceToken - Wompi acceptance token
+   * @param personalAuthToken - Optional personal data authorization token
+   * @throws NotFoundException if tenant does not exist
+   */
+  async createPaymentSource(
+    tenantId: string,
+    token: string,
+    acceptanceToken: string,
+    personalAuthToken?: string,
+  ): Promise<{ paymentSourceId: string }> {
+    this.logger.log(`Creating payment source for tenant ${tenantId}`);
+
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
+    }
+
+    const customerEmail = tenant.wompiCustomerEmail ?? tenant.email;
+
+    let paymentSource: Awaited<
+      ReturnType<WompiService['createPaymentSource']>
+    >;
+
+    try {
+      // WompiService.createPaymentSource(token, customerEmail, acceptanceToken, personalAuthToken?)
+      paymentSource = await this.wompiService.createPaymentSource(
+        token,
+        customerEmail,
+        acceptanceToken,
+        personalAuthToken,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to create payment source for tenant ${tenantId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to create payment source with Wompi',
+      );
+    }
+
+    // WompiPaymentSource.id is a number; wompiPaymentSourceId on Tenant is String
+    const paymentSourceIdStr = String(paymentSource.id);
+
+    await this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: { wompiPaymentSourceId: paymentSourceIdStr },
+    });
+
+    this.logger.log(
+      `Payment source ${paymentSourceIdStr} stored for tenant ${tenantId}`,
+    );
+
+    return { paymentSourceId: paymentSourceIdStr };
+  }
+
+  /**
+   * Charges a tenant's stored payment source to renew their subscription.
+   *
+   * @param tenantId - The tenant ID
+   * @returns Updated subscription status
+   * @throws NotFoundException if tenant or subscription does not exist
+   * @throws BadRequestException if tenant has no stored payment source
+   */
+  async chargeRecurring(
+    tenantId: string,
+  ): Promise<SubscriptionStatusResponse> {
+    this.logger.log(`Charging recurring payment for tenant ${tenantId}`);
+
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: { subscription: true },
+    });
+
+    if (!tenant) {
+      throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
+    }
+
+    if (!tenant.subscription) {
+      throw new NotFoundException(
+        `No active subscription found for tenant ${tenantId}`,
+      );
+    }
+
+    if (!tenant.wompiPaymentSourceId) {
+      throw new BadRequestException(
+        'Tenant does not have a stored payment source. Please add a payment method first.',
+      );
+    }
+
+    const { subscription } = tenant;
+    const plan = subscription.plan;
+    const period = subscription.periodType;
+    const priceInCop = calculatePlanPrice(plan, period);
+    const amountInCents = priceInCop * 100;
+    const reference = `SF-${tenantId.slice(0, 8)}-${Date.now()}`;
+
+    const merchantInfo = await this.wompiService.getMerchantInfo();
+
+    // CreateTransactionParams.paymentSourceId is number | undefined
+    const paymentSourceId = parseInt(tenant.wompiPaymentSourceId, 10);
+
+    let wompiTx: WompiTransaction;
+
+    try {
+      wompiTx = await this.wompiService.createTransaction({
+        amountInCents,
+        currency: 'COP',
+        customerEmail: tenant.wompiCustomerEmail ?? tenant.email,
+        reference,
+        paymentSourceId,
+        acceptanceToken: merchantInfo.presigned_acceptance.acceptance_token,
+        recurrent: true,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to create recurring transaction for tenant ${tenantId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to process recurring payment with Wompi',
+      );
+    }
+
+    const billingStatus = WOMPI_STATUS_MAP[wompiTx.status] ?? BillingStatus.ERROR;
+
+    const billingTransaction = await this.prisma.billingTransaction.create({
+      data: {
+        tenantId,
+        subscriptionId: subscription.id,
+        wompiTransactionId: wompiTx.id,
+        wompiReference: reference,
+        plan,
+        period,
+        amountInCents,
+        currency: 'COP',
+        status: billingStatus,
+        paymentMethodType: wompiTx.payment_method_type ?? null,
+        failureReason: wompiTx.status_message ?? null,
+        isRecurring: true,
+      },
+    });
+
+    if (billingStatus === BillingStatus.APPROVED) {
+      await this.extendSubscription(tenantId, period, billingTransaction.id);
+      this.logger.log(
+        `Recurring payment approved for tenant ${tenantId} - subscription extended`,
+      );
+    } else {
+      this.logger.warn(
+        `Recurring payment ${billingStatus} for tenant ${tenantId} - transaction: ${wompiTx.id}`,
+      );
+    }
+
+    return this.getSubscriptionStatus(tenantId);
+  }
+
+  /**
+   * Processes incoming Wompi webhook events.
+   *
+   * Currently handles the `transaction.updated` event to update billing
+   * transaction records and activate subscriptions when payments are approved.
+   *
+   * @param body - The raw webhook request body
+   * @throws BadRequestException if webhook signature is invalid
+   */
+  async handleWebhook(body: any): Promise<void> {
+    const isValid = this.wompiService.verifyWebhookSignature(body);
+
+    if (!isValid) {
+      this.logger.warn('Wompi webhook received with invalid signature');
+      throw new BadRequestException('Invalid webhook signature');
+    }
+
+    const event = body.event;
+    this.logger.log(`Processing Wompi webhook event: ${event}`);
+
+    try {
+      if (event === 'transaction.updated') {
+        await this.handleTransactionUpdated(body.data?.transaction);
+      } else {
+        this.logger.log(`Unhandled Wompi webhook event: ${event}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error processing webhook ${event}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      // Don't rethrow -- acknowledge receipt to Wompi.
+      // Failed events can be retried from the Wompi dashboard.
+    }
+  }
+
+  /**
+   * Returns the billing transaction history for a tenant, ordered by most
+   * recent first.
+   *
+   * @param tenantId - The tenant ID
+   * @returns Array of BillingTransaction records
+   */
+  async getBillingHistory(tenantId: string) {
+    this.logger.log(`Getting billing history for tenant ${tenantId}`);
+
+    return this.prisma.billingTransaction.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // ==========================================================================
+  // PRIVATE METHODS
+  // ==========================================================================
+
+  /**
+   * Activates a subscription for a tenant after a successful payment.
+   * Creates or updates the Subscription record and applies plan limits
+   * to the tenant.
+   */
+  private async activateSubscription(
+    tenantId: string,
+    plan: SubscriptionPlan,
+    period: SubscriptionPeriod,
+    billingTransactionId: string,
+    customerEmail: string | null,
+  ): Promise<void> {
+    const limits = getPlanLimits(plan);
+    const durationDays = PERIOD_DAYS[period];
+    const startDate = new Date();
+    const endDate = new Date(
+      startDate.getTime() + durationDays * 24 * 60 * 60 * 1000,
+    );
+
+    await this.prisma.executeInTransaction(async (tx) => {
+      // Upsert subscription
+      await tx.subscription.upsert({
+        where: { tenantId },
+        create: {
+          tenantId,
+          plan,
+          status: PrismaSubscriptionStatus.ACTIVE,
+          periodType: period,
+          startDate,
+          endDate,
+        },
+        update: {
+          plan,
+          status: PrismaSubscriptionStatus.ACTIVE,
+          periodType: period,
+          startDate,
+          endDate,
+          suspendedAt: null,
+          suspendedReason: null,
+        },
+      });
+
+      // Update tenant plan and limits
+      const tenantUpdateData: Record<string, unknown> = {
+        plan,
+        maxUsers: limits.maxUsers,
+        maxProducts: limits.maxProducts,
+        maxInvoices: limits.maxInvoices,
+        maxWarehouses: limits.maxWarehouses,
+      };
+
+      if (customerEmail) {
+        tenantUpdateData.wompiCustomerEmail = customerEmail;
+      }
+
+      await tx.tenant.update({
+        where: { id: tenantId },
+        data: tenantUpdateData,
+      });
+
+      // Link billing transaction to subscription
+      const subscription = await tx.subscription.findUnique({
+        where: { tenantId },
+      });
+
+      if (subscription) {
+        await tx.billingTransaction.update({
+          where: { id: billingTransactionId },
+          data: { subscriptionId: subscription.id },
+        });
+      }
+    });
+
+    this.logger.log(
+      `Subscription activated for tenant ${tenantId}: plan=${plan}, period=${period}, endDate=${endDate.toISOString()}`,
+    );
+  }
+
+  /**
+   * Extends the current subscription end date by the subscription's period
+   * duration. If the subscription is already expired, extends from now instead.
+   */
+  private async extendSubscription(
+    tenantId: string,
+    period: SubscriptionPeriod,
+    billingTransactionId: string,
+  ): Promise<void> {
+    const durationDays = PERIOD_DAYS[period];
+
+    await this.prisma.executeInTransaction(async (tx) => {
+      const subscription = await tx.subscription.findUnique({
+        where: { tenantId },
+      });
+
+      if (!subscription) {
+        this.logger.warn(
+          `Cannot extend subscription: no subscription found for tenant ${tenantId}`,
+        );
+        return;
+      }
+
+      // Extend from the current endDate (or now if already expired)
+      const baseDate =
+        subscription.endDate > new Date()
+          ? subscription.endDate
+          : new Date();
+
+      const newEndDate = new Date(
+        baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000,
+      );
+
+      await tx.subscription.update({
+        where: { tenantId },
+        data: {
+          endDate: newEndDate,
+          status: PrismaSubscriptionStatus.ACTIVE,
+        },
+      });
+
+      await tx.billingTransaction.update({
+        where: { id: billingTransactionId },
+        data: { subscriptionId: subscription.id },
+      });
+    });
+
+    this.logger.log(
+      `Subscription extended for tenant ${tenantId} by ${durationDays} days`,
+    );
+  }
+
+  /**
+   * Handles a `transaction.updated` webhook event from Wompi.
+   * Updates the BillingTransaction record and activates the plan if the
+   * transaction transitions to APPROVED.
+   */
+  private async handleTransactionUpdated(
+    transactionData: any,
+  ): Promise<void> {
+    if (!transactionData?.id) {
+      this.logger.warn(
+        'Webhook transaction.updated received without transaction data',
+      );
       return;
     }
 
-    this.logger.warn(
-      `Payment failed for tenant ${tenant.id} (${tenant.name}) - Invoice: ${invoice.id}`,
+    const wompiTransactionId = transactionData.id as string;
+    const newStatus =
+      WOMPI_STATUS_MAP[transactionData.status] ?? BillingStatus.ERROR;
+
+    this.logger.log(
+      `Processing transaction update: ${wompiTransactionId} -> ${newStatus}`,
     );
 
-    // Note: Stripe will automatically mark the subscription as past_due
-    // Additional logic could be added here:
-    // - Send email notification to tenant
-    // - Update tenant status to indicate payment issue
-    // - Implement grace period countdown
+    // Find the existing billing transaction
+    const billingTransaction =
+      await this.prisma.billingTransaction.findUnique({
+        where: { wompiTransactionId },
+      });
+
+    if (!billingTransaction) {
+      this.logger.warn(
+        `No BillingTransaction found for Wompi transaction: ${wompiTransactionId}`,
+      );
+      return;
+    }
+
+    const previousStatus = billingTransaction.status;
+
+    // Update the billing transaction status
+    await this.prisma.billingTransaction.update({
+      where: { wompiTransactionId },
+      data: {
+        status: newStatus,
+        paymentMethodType:
+          transactionData.payment_method_type ??
+          billingTransaction.paymentMethodType,
+        failureReason:
+          transactionData.status_message ??
+          billingTransaction.failureReason,
+      },
+    });
+
+    // If the transaction is newly APPROVED, activate the subscription
+    if (
+      newStatus === BillingStatus.APPROVED &&
+      previousStatus !== BillingStatus.APPROVED
+    ) {
+      this.logger.log(
+        `Transaction ${wompiTransactionId} newly approved - activating plan for tenant ${billingTransaction.tenantId}`,
+      );
+
+      const customerEmail =
+        transactionData.customer_email ??
+        transactionData.customer_data?.email ??
+        null;
+
+      await this.activateSubscription(
+        billingTransaction.tenantId,
+        billingTransaction.plan,
+        billingTransaction.period,
+        billingTransaction.id,
+        customerEmail,
+      );
+    }
+  }
+
+  /**
+   * Extracts the target plan from a Wompi transaction's metadata, if present.
+   */
+  private extractPlanFromMetadata(
+    transaction: WompiTransaction & { metadata?: Record<string, string> },
+  ): SubscriptionPlan | null {
+    const plan = (transaction as any).metadata?.plan as string | undefined;
+    if (
+      plan &&
+      Object.values(SubscriptionPlan).includes(plan as SubscriptionPlan)
+    ) {
+      return plan as SubscriptionPlan;
+    }
+    return null;
+  }
+
+  /**
+   * Extracts the subscription period from a Wompi transaction's metadata,
+   * if present.
+   */
+  private extractPeriodFromMetadata(
+    transaction: WompiTransaction & { metadata?: Record<string, string> },
+  ): SubscriptionPeriod | null {
+    const period = (transaction as any).metadata?.period as string | undefined;
+    if (
+      period &&
+      Object.values(SubscriptionPeriod).includes(period as SubscriptionPeriod)
+    ) {
+      return period as SubscriptionPeriod;
+    }
+    return null;
   }
 }

@@ -137,6 +137,13 @@ const errorMappings: ErrorMapping[] = [
     pattern: /internal server error/i,
     message: "Ocurrio un error inesperado. Intenta de nuevo mas tarde.",
   },
+
+  // String-based patterns for exact/partial match (case-insensitive)
+  {
+    pattern: "token has been revoked",
+    message:
+      "Tu sesion ha sido revocada. Inicia sesion nuevamente.",
+  },
 ];
 
 /**

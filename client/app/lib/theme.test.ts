@@ -24,6 +24,38 @@ describe("theme utilities", () => {
 
       vi.unstubAllGlobals();
     });
+
+    it("getSessionTheme returns null when window is undefined", async () => {
+      vi.resetModules();
+      vi.stubGlobal("window", undefined);
+
+      const { getSessionTheme } = await import("./theme");
+      expect(getSessionTheme()).toBeNull();
+
+      vi.unstubAllGlobals();
+    });
+
+    it("setSessionTheme returns early when window is undefined", async () => {
+      vi.resetModules();
+      vi.stubGlobal("window", undefined);
+
+      const { setSessionTheme } = await import("./theme");
+      // Should not throw
+      expect(() => setSessionTheme("dark")).not.toThrow();
+
+      vi.unstubAllGlobals();
+    });
+
+    it("clearSessionTheme returns early when window is undefined", async () => {
+      vi.resetModules();
+      vi.stubGlobal("window", undefined);
+
+      const { clearSessionTheme } = await import("./theme");
+      // Should not throw
+      expect(() => clearSessionTheme()).not.toThrow();
+
+      vi.unstubAllGlobals();
+    });
   });
 
   describe("getSystemTheme", () => {

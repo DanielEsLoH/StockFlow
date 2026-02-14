@@ -90,6 +90,7 @@ import {
   _resetRefreshState,
   startAuthInit,
   completeAuthInit,
+  isAuthInitializing,
 } from "./api";
 
 describe("API client", () => {
@@ -205,6 +206,44 @@ describe("API client", () => {
 
       // Restore
       localStorage.removeItem = originalRemoveItem;
+    });
+  });
+
+  describe("auth initialization state", () => {
+    it("isAuthInitializing returns false when no auth init is pending", () => {
+      // completeAuthInit was called in beforeEach, so no init pending
+      expect(isAuthInitializing()).toBe(false);
+    });
+
+    it("isAuthInitializing returns true after startAuthInit", () => {
+      startAuthInit();
+      expect(isAuthInitializing()).toBe(true);
+      // Clean up
+      completeAuthInit();
+    });
+
+    it("isAuthInitializing returns false after completeAuthInit", () => {
+      startAuthInit();
+      expect(isAuthInitializing()).toBe(true);
+      completeAuthInit();
+      expect(isAuthInitializing()).toBe(false);
+    });
+
+    it("startAuthInit does not create new promise if already started", () => {
+      startAuthInit();
+      expect(isAuthInitializing()).toBe(true);
+      // Calling again should not change state
+      startAuthInit();
+      expect(isAuthInitializing()).toBe(true);
+      // Clean up
+      completeAuthInit();
+    });
+
+    it("completeAuthInit is a no-op when no init is pending", () => {
+      // No startAuthInit called
+      expect(isAuthInitializing()).toBe(false);
+      completeAuthInit();
+      expect(isAuthInitializing()).toBe(false);
     });
   });
 
@@ -895,6 +934,34 @@ describe("API client", () => {
       };
       expect(response.data).toHaveLength(2);
       expect(response.meta.total).toBe(100);
+    });
+  });
+
+  // NOTE: This test must be last because vi.resetModules() invalidates the
+  // module-level interceptor handlers captured by other tests.
+  describe("auto-start auth init on module load", () => {
+    it("should auto-start auth init when refresh token exists in localStorage", async () => {
+      // Set a refresh token in localStorage before re-importing the module
+      localStorage.setItem("refreshToken", "some-token");
+
+      // Reset modules to force re-evaluation of the module-level code
+      vi.resetModules();
+
+      // Re-mock axios since modules were reset
+      vi.doMock("axios", () => ({
+        default: {
+          create: mockAxiosCreate,
+          post: mockAxiosPost,
+        },
+      }));
+
+      const apiModule = await import("./api");
+      // The module should have auto-started auth init
+      expect(apiModule.isAuthInitializing()).toBe(true);
+
+      // Clean up
+      apiModule.completeAuthInit();
+      localStorage.removeItem("refreshToken");
     });
   });
 });

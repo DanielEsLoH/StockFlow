@@ -1184,4 +1184,206 @@ describe("Header", () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  describe("spotlight keyboard navigation (ArrowDown, ArrowUp, Enter)", () => {
+    it("should move selection down when pressing ArrowDown (lines 171-173)", async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open search
+      await user.click(screen.getByText("Buscar..."));
+
+      // Wait for search input to appear
+      await screen.findByPlaceholderText(/buscar productos/i);
+
+      // Initially, Dashboard (index 0) should be selected (has bg-primary-50 class)
+      const dashboardLink = screen.getByText("Dashboard").closest("a");
+      expect(dashboardLink?.className).toContain("bg-primary-50");
+
+      // Press ArrowDown to move selection to index 1 (Productos)
+      fireEvent.keyDown(window, { key: "ArrowDown" });
+
+      await waitFor(() => {
+        const productosLink = screen.getByText("Productos").closest("a");
+        expect(productosLink?.className).toContain("bg-primary-50");
+      });
+
+      // Dashboard should no longer be selected
+      const dashboardLinkAfter = screen.getByText("Dashboard").closest("a");
+      expect(dashboardLinkAfter?.className).not.toContain("bg-primary-50");
+    });
+
+    it("should not move selection past the last item when pressing ArrowDown at the end (line 173 boundary)", async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open search
+      await user.click(screen.getByText("Buscar..."));
+      await screen.findByPlaceholderText(/buscar productos/i);
+
+      // Press ArrowDown 4 times to reach the last item (Configuracion at index 4)
+      for (let i = 0; i < 4; i++) {
+        fireEvent.keyDown(window, { key: "ArrowDown" });
+      }
+
+      await waitFor(() => {
+        const configLink = screen.getByText("Configuracion").closest("a");
+        expect(configLink?.className).toContain("bg-primary-50");
+      });
+
+      // Press ArrowDown once more -- should stay at the last item
+      fireEvent.keyDown(window, { key: "ArrowDown" });
+
+      await waitFor(() => {
+        const configLink = screen.getByText("Configuracion").closest("a");
+        expect(configLink?.className).toContain("bg-primary-50");
+      });
+    });
+
+    it("should move selection up when pressing ArrowUp (lines 177-178)", async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open search
+      await user.click(screen.getByText("Buscar..."));
+      await screen.findByPlaceholderText(/buscar productos/i);
+
+      // Move down to index 2 (Clientes)
+      fireEvent.keyDown(window, { key: "ArrowDown" });
+      fireEvent.keyDown(window, { key: "ArrowDown" });
+
+      await waitFor(() => {
+        const clientesLink = screen.getByText("Clientes").closest("a");
+        expect(clientesLink?.className).toContain("bg-primary-50");
+      });
+
+      // Press ArrowUp to move back to index 1 (Productos)
+      fireEvent.keyDown(window, { key: "ArrowUp" });
+
+      await waitFor(() => {
+        const productosLink = screen.getByText("Productos").closest("a");
+        expect(productosLink?.className).toContain("bg-primary-50");
+      });
+    });
+
+    it("should not move selection above 0 when pressing ArrowUp at the top (line 178 boundary)", async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open search
+      await user.click(screen.getByText("Buscar..."));
+      await screen.findByPlaceholderText(/buscar productos/i);
+
+      // Already at index 0 (Dashboard), press ArrowUp -- should stay at 0
+      fireEvent.keyDown(window, { key: "ArrowUp" });
+
+      await waitFor(() => {
+        const dashboardLink = screen.getByText("Dashboard").closest("a");
+        expect(dashboardLink?.className).toContain("bg-primary-50");
+      });
+    });
+
+    it("should navigate to selected action and close search when pressing Enter (lines 181-184)", async () => {
+      const user = userEvent.setup();
+
+      // Mock window.location.href setter
+      const originalLocation = window.location;
+      const locationMock = {
+        ...originalLocation,
+        href: originalLocation.href,
+      };
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: locationMock,
+      });
+
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open search
+      await user.click(screen.getByText("Buscar..."));
+      await screen.findByPlaceholderText(/buscar productos/i);
+
+      // Move to index 1 (Productos)
+      fireEvent.keyDown(window, { key: "ArrowDown" });
+
+      await waitFor(() => {
+        const productosLink = screen.getByText("Productos").closest("a");
+        expect(productosLink?.className).toContain("bg-primary-50");
+      });
+
+      // Press Enter to navigate to the selected action
+      fireEvent.keyDown(window, { key: "Enter" });
+
+      // Search should close
+      await waitFor(() => {
+        expect(
+          screen.queryByPlaceholderText(/buscar productos/i),
+        ).not.toBeInTheDocument();
+      });
+
+      // Location should have been set to /products
+      expect(locationMock.href).toBe("/products");
+
+      // Restore original location
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: originalLocation,
+      });
+    });
+  });
+
+  describe("spotlight search result link click (lines 682-683)", () => {
+    it("should close search and clear query when clicking a search result link", async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open search
+      await user.click(screen.getByText("Buscar..."));
+      await screen.findByPlaceholderText(/buscar productos/i);
+
+      // Click on the "Dashboard" link in search results
+      const dashboardLink = screen.getByText("Dashboard").closest("a");
+      expect(dashboardLink).toBeInTheDocument();
+
+      await user.click(dashboardLink!);
+
+      // Search should be closed
+      await waitFor(() => {
+        expect(
+          screen.queryByPlaceholderText(/buscar productos/i),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("should close search and clear query when clicking any search result link", async () => {
+      const user = userEvent.setup();
+      render(<Header />, { wrapper: createWrapper() });
+
+      // Open search
+      await user.click(screen.getByText("Buscar..."));
+
+      // Type a query to filter
+      const searchInput =
+        await screen.findByPlaceholderText(/buscar productos/i);
+      await user.type(searchInput, "Fact");
+
+      // Wait for Facturas to appear
+      await waitFor(() => {
+        expect(screen.getByText("Facturas")).toBeInTheDocument();
+      });
+
+      // Click on the "Facturas" link
+      const facturasLink = screen.getByText("Facturas").closest("a");
+      expect(facturasLink).toBeInTheDocument();
+
+      await user.click(facturasLink!);
+
+      // Search should be closed
+      await waitFor(() => {
+        expect(
+          screen.queryByPlaceholderText(/buscar productos/i),
+        ).not.toBeInTheDocument();
+      });
+    });
+  });
 });

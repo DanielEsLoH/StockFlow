@@ -29,6 +29,14 @@ vi.mock("~/lib/api", () => ({
   clearAllAuthData: vi.fn(),
 }));
 
+vi.mock("~/services/permissions.service", () => ({
+  permissionsService: {
+    getMyPermissions: vi.fn(),
+  },
+}));
+
+import { permissionsService } from "~/services/permissions.service";
+
 import { getAccessToken } from "~/lib/api";
 
 vi.mock("~/lib/theme", () => ({
@@ -248,6 +256,63 @@ describe("useAuth", () => {
       await waitFor(() => {
         expect(result.current.isLoggingIn).toBe(false);
       });
+    });
+
+    it("should load user permissions after successful login", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.login).mockResolvedValue(mockAuthResponse);
+      const mockPermissions = ["products:read", "products:write"];
+      vi.mocked(permissionsService.getMyPermissions).mockResolvedValue({
+        permissions: mockPermissions,
+      });
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.login({
+          email: "test@example.com",
+          password: "password",
+        });
+      });
+
+      await waitFor(() => {
+        expect(permissionsService.getMyPermissions).toHaveBeenCalled();
+        const state = useAuthStore.getState();
+        expect(state.user?.permissions).toEqual(mockPermissions);
+      });
+    });
+
+    it("should handle permission loading failure gracefully", async () => {
+      vi.mocked(authService.getMe).mockRejectedValue(new Error("Unauthorized"));
+      vi.mocked(authService.login).mockResolvedValue(mockAuthResponse);
+      vi.mocked(permissionsService.getMyPermissions).mockRejectedValue(
+        new Error("Permission fetch failed"),
+      );
+
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const { result } = renderHook(() => useAuth(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.login({
+          email: "test@example.com",
+          password: "password",
+        });
+      });
+
+      await waitFor(() => {
+        expect(permissionsService.getMyPermissions).toHaveBeenCalled();
+        expect(consoleSpy).toHaveBeenCalledWith(
+          "Failed to load permissions:",
+          expect.any(Error),
+        );
+      });
+
+      consoleSpy.mockRestore();
     });
 
     it("should show error toast with error message on login failure", async () => {

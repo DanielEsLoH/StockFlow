@@ -55,6 +55,25 @@ export function loader({ request }: Route.LoaderArgs) {
   return null;
 }
 
+/**
+ * Handles smooth scrolling for hash-based anchor links.
+ * For non-hash hrefs, does nothing (lets the browser handle navigation).
+ */
+export function handleScrollToSection(
+  e: React.MouseEvent<HTMLAnchorElement>,
+  href: string,
+  onScrollComplete?: () => void,
+): void {
+  if (href.startsWith("#")) {
+    e.preventDefault();
+    const element = document.querySelector(href);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+      onScrollComplete?.();
+    }
+  }
+}
+
 // Animation variants - hoisted outside component for performance
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -222,14 +241,7 @@ export default function Home() {
 
   const scrollToSection = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-      if (href.startsWith("#")) {
-        e.preventDefault();
-        const element = document.querySelector(href);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth" });
-          setMobileMenuOpen(false);
-        }
-      }
+      handleScrollToSection(e, href, () => setMobileMenuOpen(false));
     },
     [],
   );

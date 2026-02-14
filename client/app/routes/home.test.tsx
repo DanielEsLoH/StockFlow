@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import Home, { meta, loader } from "./home";
+import Home, { meta, loader, handleScrollToSection } from "./home";
 import React from "react";
 import * as authServer from "~/lib/auth.server";
 
@@ -249,6 +249,65 @@ describe("Home route", () => {
       } as Parameters<typeof loader>[0]);
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe("handleScrollToSection (exported helper)", () => {
+    it("should not call preventDefault for non-hash href", () => {
+      const preventDefaultMock = vi.fn();
+      const mockEvent = {
+        preventDefault: preventDefaultMock,
+      } as unknown as React.MouseEvent<HTMLAnchorElement>;
+
+      handleScrollToSection(mockEvent, "/some-page");
+
+      expect(preventDefaultMock).not.toHaveBeenCalled();
+    });
+
+    it("should not call scrollIntoView for non-hash href", () => {
+      const querySelectorSpy = vi.spyOn(document, "querySelector");
+      const mockEvent = {
+        preventDefault: vi.fn(),
+      } as unknown as React.MouseEvent<HTMLAnchorElement>;
+
+      handleScrollToSection(mockEvent, "/register?plan=pyme");
+
+      expect(querySelectorSpy).not.toHaveBeenCalled();
+      querySelectorSpy.mockRestore();
+    });
+
+    it("should call preventDefault and scrollIntoView for hash href", () => {
+      const preventDefaultMock = vi.fn();
+      const scrollIntoViewMock = vi.fn();
+      const mockEvent = {
+        preventDefault: preventDefaultMock,
+      } as unknown as React.MouseEvent<HTMLAnchorElement>;
+
+      vi.spyOn(document, "querySelector").mockReturnValue({
+        scrollIntoView: scrollIntoViewMock,
+      } as unknown as Element);
+
+      handleScrollToSection(mockEvent, "#features");
+
+      expect(preventDefaultMock).toHaveBeenCalled();
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: "smooth" });
+      vi.restoreAllMocks();
+    });
+
+    it("should call onScrollComplete callback for hash href when element found", () => {
+      const onScrollComplete = vi.fn();
+      const mockEvent = {
+        preventDefault: vi.fn(),
+      } as unknown as React.MouseEvent<HTMLAnchorElement>;
+
+      vi.spyOn(document, "querySelector").mockReturnValue({
+        scrollIntoView: vi.fn(),
+      } as unknown as Element);
+
+      handleScrollToSection(mockEvent, "#features", onScrollComplete);
+
+      expect(onScrollComplete).toHaveBeenCalled();
+      vi.restoreAllMocks();
     });
   });
 

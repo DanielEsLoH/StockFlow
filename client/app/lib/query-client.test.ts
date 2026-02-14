@@ -816,4 +816,68 @@ describe("Query Keys", () => {
       ]);
     });
   });
+
+  describe("stockMovements keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.stockMovements.all).toEqual(["stockMovements"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.stockMovements.list()).toEqual([
+        "stockMovements",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { type: "IN", warehouseId: "wh-1" };
+      expect(queryKeys.stockMovements.list(filters)).toEqual([
+        "stockMovements",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.stockMovements.detail("sm-001")).toEqual([
+        "stockMovements",
+        "sm-001",
+      ]);
+    });
+
+    it("generates byProduct key", () => {
+      expect(queryKeys.stockMovements.byProduct("prod-001")).toEqual([
+        "stockMovements",
+        "product",
+        "prod-001",
+      ]);
+    });
+
+    it("generates byWarehouse key", () => {
+      expect(queryKeys.stockMovements.byWarehouse("wh-001")).toEqual([
+        "stockMovements",
+        "warehouse",
+        "wh-001",
+      ]);
+    });
+  });
+
+  describe("billing keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.billing.all).toEqual(["billing"]);
+    });
+
+    it("generates status key", () => {
+      expect(queryKeys.billing.status()).toEqual(["billing", "status"]);
+    });
+
+    it("generates plans key", () => {
+      expect(queryKeys.billing.plans()).toEqual(["billing", "plans"]);
+    });
+
+    it("generates history key", () => {
+      expect(queryKeys.billing.history()).toEqual(["billing", "history"]);
+    });
+  });
 });

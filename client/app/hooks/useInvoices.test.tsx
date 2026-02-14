@@ -10,12 +10,14 @@ import {
   useRecentInvoices,
   useInvoiceStats,
   useCreateInvoice,
+  useCheckoutInvoice,
   useUpdateInvoice,
   useUpdateInvoiceStatus,
   useDeleteInvoice,
   useAddInvoiceItem,
   useUpdateInvoiceItem,
   useRemoveInvoiceItem,
+  useSendInvoiceToDian,
 } from "./useInvoices";
 import { invoicesService } from "~/services/invoices.service";
 import { useAuthStore } from "~/stores/auth.store";
@@ -36,12 +38,14 @@ vi.mock("~/services/invoices.service", () => ({
     getRecentInvoices: vi.fn(),
     getInvoiceStats: vi.fn(),
     createInvoice: vi.fn(),
+    checkoutInvoice: vi.fn(),
     updateInvoice: vi.fn(),
     updateInvoiceStatus: vi.fn(),
     deleteInvoice: vi.fn(),
     addInvoiceItem: vi.fn(),
     updateInvoiceItem: vi.fn(),
     removeInvoiceItem: vi.fn(),
+    sendToDian: vi.fn(),
   },
 }));
 
@@ -2548,6 +2552,185 @@ describe("useInvoices hooks", () => {
 
       expect(toast.error).toHaveBeenCalledWith(
         "No tiene permisos para eliminar items",
+      );
+    });
+  });
+
+  describe("useCheckoutInvoice", () => {
+    it("should checkout invoice successfully", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      const checkoutResult = {
+        ...mockInvoice,
+        status: "SENT",
+        invoiceNumber: "FAC-2024-0001",
+        customerId: "1",
+      };
+      vi.mocked(invoicesService.checkoutInvoice).mockResolvedValue(
+        checkoutResult,
+      );
+
+      const { result } = renderHook(() => useCheckoutInvoice(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          customerId: "1",
+          items: [
+            {
+              productId: "prod-1",
+              quantity: 2,
+              unitPrice: 100000,
+              discount: 0,
+              tax: 19,
+            },
+          ],
+          issueDate: "2024-01-05",
+          dueDate: "2024-01-20",
+          immediatePayment: true,
+          paymentMethod: "CASH",
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(toast.success).toHaveBeenCalledWith(
+        'Factura "FAC-2024-0001" procesada',
+      );
+    });
+
+    it("should handle checkout invoice error", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(invoicesService.checkoutInvoice).mockRejectedValue(
+        new Error("Stock insuficiente"),
+      );
+
+      const { result } = renderHook(() => useCheckoutInvoice(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          customerId: "1",
+          items: [
+            {
+              productId: "prod-1",
+              quantity: 999,
+              unitPrice: 100000,
+              discount: 0,
+              tax: 19,
+            },
+          ],
+          issueDate: "2024-01-05",
+          dueDate: "2024-01-20",
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(toast.error).toHaveBeenCalledWith("Stock insuficiente");
+    });
+
+    it("should show default error when error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(invoicesService.checkoutInvoice).mockRejectedValue(
+        new Error(""),
+      );
+
+      const { result } = renderHook(() => useCheckoutInvoice(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          customerId: "1",
+          items: [],
+          issueDate: "2024-01-05",
+          dueDate: "2024-01-20",
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al procesar la factura",
+      );
+    });
+  });
+
+  describe("useSendInvoiceToDian", () => {
+    it("should send invoice to DIAN successfully", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      const dianResult = {
+        ...mockInvoice,
+        dianStatus: "ACCEPTED",
+        cufe: "cufe-hash-12345",
+      };
+      vi.mocked(invoicesService.sendToDian).mockResolvedValue(dianResult);
+
+      const { result } = renderHook(() => useSendInvoiceToDian(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate("1");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(invoicesService.sendToDian).toHaveBeenCalledWith("1");
+      expect(toast.success).toHaveBeenCalledWith(
+        'Factura "FAC-2024-0001" enviada a la DIAN exitosamente',
+      );
+    });
+
+    it("should handle DIAN send error", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(invoicesService.sendToDian).mockRejectedValue(
+        new Error("DIAN no disponible"),
+      );
+
+      const { result } = renderHook(() => useSendInvoiceToDian(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate("1");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(toast.error).toHaveBeenCalledWith("DIAN no disponible");
+    });
+
+    it("should show default error when error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(invoicesService.sendToDian).mockRejectedValue(new Error(""));
+
+      const { result } = renderHook(() => useSendInvoiceToDian(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate("1");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al enviar la factura a la DIAN",
       );
     });
   });

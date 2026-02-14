@@ -42,6 +42,24 @@ describe("auth.server", () => {
       );
       expect(hasAuthToken(request)).toBe(true);
     });
+
+    it("should skip empty cookie segments gracefully", () => {
+      // Cookie header with a leading semicolon creates an empty-name segment after trim+split
+      const request = createMockRequest(
+        "http://localhost/",
+        "; refreshToken=true",
+      );
+      expect(hasAuthToken(request)).toBe(true);
+    });
+
+    it("should skip cookies with empty name from malformed header", () => {
+      // A segment like "=somevalue" results in an empty name
+      const request = createMockRequest(
+        "http://localhost/",
+        "=somevalue; other=val",
+      );
+      expect(hasAuthToken(request)).toBe(false);
+    });
   });
 
   describe("getRedirectTo", () => {

@@ -281,6 +281,73 @@ describe("error-messages", () => {
         const message = getErrorMessage("NETWORK ERROR");
         expect(message).toContain("conexion");
       });
+
+      it("should match string-type patterns via includes (case-insensitive)", () => {
+        const message = getErrorMessage("Token has been revoked");
+        expect(message).toBe(
+          "Tu sesion ha sido revocada. Inicia sesion nuevamente.",
+        );
+      });
+
+      it("should match string-type patterns regardless of surrounding text", () => {
+        const message = getErrorMessage(
+          "Error: TOKEN HAS BEEN REVOKED by admin",
+        );
+        expect(message).toBe(
+          "Tu sesion ha sido revocada. Inicia sesion nuevamente.",
+        );
+      });
+    });
+  });
+
+  describe("AxiosError handling", () => {
+    it("should extract string message from AxiosError response.data.message", () => {
+      const axiosError = new Error("Request failed") as any;
+      axiosError.response = {
+        data: { message: "El correo ya está registrado" },
+      };
+      const message = getErrorMessage(axiosError);
+      expect(message).toBe("El correo ya está registrado");
+    });
+
+    it("should extract first element from array message in AxiosError response.data", () => {
+      const axiosError = new Error("Validation failed") as any;
+      axiosError.response = {
+        data: {
+          message: [
+            "El correo electrónico es requerido",
+            "El campo email es inválido",
+          ],
+        },
+      };
+      const message = getErrorMessage(axiosError);
+      // "correo" and "ó" are Spanish indicators, so it's returned as user-friendly
+      expect(message).toBe("El correo electrónico es requerido");
+    });
+
+    it("should fall back to error.message when response.data.message is neither string nor array", () => {
+      const axiosError = new Error("Invalid credentials") as any;
+      axiosError.response = {
+        data: { message: { code: 400 } },
+      };
+      const message = getErrorMessage(axiosError);
+      expect(message).toContain("correo o la contrasena son incorrectos");
+    });
+
+    it("should use error.message when response.data has no message field", () => {
+      const axiosError = new Error("Network Error") as any;
+      axiosError.response = {
+        data: { statusCode: 500 },
+      };
+      const message = getErrorMessage(axiosError);
+      expect(message).toContain("conexion");
+    });
+
+    it("should use error.message when response.data is null", () => {
+      const axiosError = new Error("User with this email already exists") as any;
+      axiosError.response = { data: null };
+      const message = getErrorMessage(axiosError);
+      expect(message).toContain("Ya existe una cuenta");
     });
   });
 

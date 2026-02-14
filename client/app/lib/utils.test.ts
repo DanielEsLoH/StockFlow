@@ -3,6 +3,7 @@ import {
   cn,
   formatCurrency,
   formatDate,
+  formatDateTime,
   formatRelativeTime,
   formatCompactNumber,
   getInitials,
@@ -98,6 +99,34 @@ describe("utils", () => {
       const result = formatDate(date, { dateStyle: "long" });
       expect(result).toBeTruthy();
       expect(result.length).toBeGreaterThan(5);
+    });
+  });
+
+  describe("formatDateTime", () => {
+    it("formats a string date", () => {
+      const result = formatDateTime("2024-01-15T10:30:00");
+      expect(result).toBeTruthy();
+      expect(typeof result).toBe("string");
+    });
+
+    it("formats a Date object", () => {
+      const date = new Date("2024-01-15T10:30:00");
+      const result = formatDateTime(date);
+      expect(result).toBeTruthy();
+      expect(typeof result).toBe("string");
+    });
+
+    it("accepts custom options", () => {
+      const date = new Date("2024-01-15T10:30:00");
+      const result = formatDateTime(date, { dateStyle: "long", timeStyle: "long" });
+      expect(result).toBeTruthy();
+      expect(result.length).toBeGreaterThan(5);
+    });
+
+    it("returns consistent results for string and Date input of the same date", () => {
+      const dateStr = "2024-06-15T14:30:00";
+      const dateObj = new Date(dateStr);
+      expect(formatDateTime(dateStr)).toBe(formatDateTime(dateObj));
     });
   });
 

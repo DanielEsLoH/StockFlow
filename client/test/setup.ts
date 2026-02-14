@@ -111,6 +111,9 @@ vi.mock('framer-motion', () => ({
     img: React.forwardRef((props: React.ComponentProps<'img'>, ref: React.Ref<HTMLImageElement>) =>
       React.createElement('img', { ...props, ref })
     ),
+    tr: React.forwardRef(({ children, ...props }: React.ComponentProps<'tr'>, ref: React.Ref<HTMLTableRowElement>) =>
+      React.createElement('tr', { ...props, ref }, children)
+    ),
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
 }));

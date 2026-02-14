@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Select, SelectField, MultiSelect } from "./Select";
 import type { SelectOption } from "./Select";
 
@@ -301,14 +302,13 @@ describe("MultiSelect", () => {
         />,
       );
 
-      // Find the X button inside the Option 1 tag
-      const option1Tag = screen.getByText("Option 1").closest("span");
-      const removeButton = option1Tag?.querySelector("button");
+      // The remove spans are rendered with role="button" (not actual <button> elements)
+      // getAllByRole("button") returns: [main-trigger, remove-1, remove-2]
+      const allButtons = screen.getAllByRole("button");
+      const removeSpan = allButtons[1]; // First tag remove button
 
-      if (removeButton) {
-        fireEvent.click(removeButton);
-        expect(onChange).toHaveBeenCalledWith(["2"]);
-      }
+      fireEvent.click(removeSpan);
+      expect(onChange).toHaveBeenCalledWith(["2"]);
     });
   });
 
@@ -497,6 +497,49 @@ describe("MultiSelect", () => {
 
       // preventDefault should be called
       expect(preventDefaultSpy).toHaveBeenCalled();
+    });
+
+    it("should remove tag via keyboard Enter using userEvent", async () => {
+      const user = userEvent.setup();
+      const mockOnChange = vi.fn();
+      render(
+        <MultiSelect
+          options={mockOptions}
+          value={["1", "2"]}
+          onChange={mockOnChange}
+        />,
+      );
+
+      // Find the remove span elements (role="button" with tabIndex)
+      const allButtons = screen.getAllByRole("button");
+      // The first is the main trigger, rest are tag remove buttons
+      const removeSpan = allButtons[1]; // First tag remove button
+
+      // Focus and press Enter
+      removeSpan.focus();
+      await user.keyboard("{Enter}");
+
+      expect(mockOnChange).toHaveBeenCalledWith(["2"]);
+    });
+
+    it("should remove tag via keyboard Space using userEvent", async () => {
+      const user = userEvent.setup();
+      const mockOnChange = vi.fn();
+      render(
+        <MultiSelect
+          options={mockOptions}
+          value={["1", "2"]}
+          onChange={mockOnChange}
+        />,
+      );
+
+      const allButtons = screen.getAllByRole("button");
+      const removeSpan = allButtons[1];
+
+      removeSpan.focus();
+      await user.keyboard(" ");
+
+      expect(mockOnChange).toHaveBeenCalledWith(["2"]);
     });
 
     it("should call preventDefault on Space key", () => {

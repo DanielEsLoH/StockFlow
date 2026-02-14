@@ -9,6 +9,7 @@ import {
   TableRow,
   TableCell,
   TableCaption,
+  AnimatedTableRow,
 } from "./Table";
 
 describe("Table Components", () => {
@@ -412,6 +413,79 @@ describe("Table Components", () => {
       );
 
       expect(screen.getByText("A list of products")).toBeInTheDocument();
+    });
+  });
+
+  describe("AnimatedTableRow", () => {
+    it("should render a tr element without index prop (default index = 0)", () => {
+      render(
+        <table>
+          <tbody>
+            <AnimatedTableRow>
+              <td>Animated Cell Default</td>
+            </AnimatedTableRow>
+          </tbody>
+        </table>,
+      );
+
+      const cell = screen.getByText("Animated Cell Default");
+      expect(cell).toBeInTheDocument();
+      const row = cell.closest("tr");
+      expect(row).not.toBeNull();
+      expect(row!.tagName).toBe("TR");
+      // The default index=0 is passed as custom attribute
+      expect(row).toHaveAttribute("custom", "0");
+    });
+
+    it("should render a tr element with explicit index prop", () => {
+      render(
+        <table>
+          <tbody>
+            <AnimatedTableRow index={5}>
+              <td>Row Five</td>
+            </AnimatedTableRow>
+          </tbody>
+        </table>,
+      );
+
+      const cell = screen.getByText("Row Five");
+      expect(cell).toBeInTheDocument();
+      const row = cell.closest("tr");
+      expect(row).not.toBeNull();
+      expect(row!.tagName).toBe("TR");
+      // The explicit index=5 is passed as custom attribute
+      expect(row).toHaveAttribute("custom", "5");
+    });
+
+    it("should apply border and hover styles", () => {
+      render(
+        <table>
+          <tbody>
+            <AnimatedTableRow>
+              <td>Styled Cell</td>
+            </AnimatedTableRow>
+          </tbody>
+        </table>,
+      );
+
+      const row = screen.getByText("Styled Cell").closest("tr");
+      expect(row).toHaveClass("border-b");
+      expect(row).toHaveClass("transition-colors");
+    });
+
+    it("should allow custom className", () => {
+      render(
+        <table>
+          <tbody>
+            <AnimatedTableRow className="custom-animated">
+              <td>Custom Cell</td>
+            </AnimatedTableRow>
+          </tbody>
+        </table>,
+      );
+
+      const row = screen.getByText("Custom Cell").closest("tr");
+      expect(row).toHaveClass("custom-animated");
     });
   });
 

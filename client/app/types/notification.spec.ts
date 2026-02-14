@@ -69,8 +69,36 @@ describe("Notification Types", () => {
       expect(NotificationTypeLabels.ERROR).toBe("Error");
     });
 
-    it("should have exactly 14 notification type labels", () => {
-      expect(Object.keys(NotificationTypeLabels)).toHaveLength(14);
+    it("should have a label for USER_VERIFIED_EMAIL", () => {
+      expect(NotificationTypeLabels.USER_VERIFIED_EMAIL).toBe(
+        "Email verificado",
+      );
+    });
+
+    it("should have a label for USER_APPROVED", () => {
+      expect(NotificationTypeLabels.USER_APPROVED).toBe("Usuario aprobado");
+    });
+
+    it("should have a label for SUBSCRIPTION_EXPIRING", () => {
+      expect(NotificationTypeLabels.SUBSCRIPTION_EXPIRING).toBe(
+        "Suscripción por vencer",
+      );
+    });
+
+    it("should have a label for SUBSCRIPTION_EXPIRED", () => {
+      expect(NotificationTypeLabels.SUBSCRIPTION_EXPIRED).toBe(
+        "Suscripción vencida",
+      );
+    });
+
+    it("should have a label for SUBSCRIPTION_ACTIVATED", () => {
+      expect(NotificationTypeLabels.SUBSCRIPTION_ACTIVATED).toBe(
+        "Suscripción activada",
+      );
+    });
+
+    it("should have exactly 19 notification type labels", () => {
+      expect(Object.keys(NotificationTypeLabels)).toHaveLength(19);
     });
 
     it("should have all labels as non-empty strings", () => {
@@ -167,8 +195,28 @@ describe("Notification Types", () => {
       expect(NotificationTypeToCategory.ERROR).toBe("error");
     });
 
-    it("should have exactly 14 type-to-category mappings", () => {
-      expect(Object.keys(NotificationTypeToCategory)).toHaveLength(14);
+    it("should map USER_VERIFIED_EMAIL to success category", () => {
+      expect(NotificationTypeToCategory.USER_VERIFIED_EMAIL).toBe("success");
+    });
+
+    it("should map USER_APPROVED to success category", () => {
+      expect(NotificationTypeToCategory.USER_APPROVED).toBe("success");
+    });
+
+    it("should map SUBSCRIPTION_EXPIRING to warning category", () => {
+      expect(NotificationTypeToCategory.SUBSCRIPTION_EXPIRING).toBe("warning");
+    });
+
+    it("should map SUBSCRIPTION_EXPIRED to error category", () => {
+      expect(NotificationTypeToCategory.SUBSCRIPTION_EXPIRED).toBe("error");
+    });
+
+    it("should map SUBSCRIPTION_ACTIVATED to success category", () => {
+      expect(NotificationTypeToCategory.SUBSCRIPTION_ACTIVATED).toBe("success");
+    });
+
+    it("should have exactly 19 type-to-category mappings", () => {
+      expect(Object.keys(NotificationTypeToCategory)).toHaveLength(19);
     });
 
     it("should only map to valid categories (info, success, warning, error)", () => {
@@ -291,6 +339,37 @@ describe("Notification Types", () => {
       expect(getNotificationCategory(notification)).toBe("error");
     });
 
+    it("should return success for USER_VERIFIED_EMAIL notification", () => {
+      const notification = { type: "USER_VERIFIED_EMAIL" as NotificationType };
+      expect(getNotificationCategory(notification)).toBe("success");
+    });
+
+    it("should return success for USER_APPROVED notification", () => {
+      const notification = { type: "USER_APPROVED" as NotificationType };
+      expect(getNotificationCategory(notification)).toBe("success");
+    });
+
+    it("should return warning for SUBSCRIPTION_EXPIRING notification", () => {
+      const notification = {
+        type: "SUBSCRIPTION_EXPIRING" as NotificationType,
+      };
+      expect(getNotificationCategory(notification)).toBe("warning");
+    });
+
+    it("should return error for SUBSCRIPTION_EXPIRED notification", () => {
+      const notification = {
+        type: "SUBSCRIPTION_EXPIRED" as NotificationType,
+      };
+      expect(getNotificationCategory(notification)).toBe("error");
+    });
+
+    it("should return success for SUBSCRIPTION_ACTIVATED notification", () => {
+      const notification = {
+        type: "SUBSCRIPTION_ACTIVATED" as NotificationType,
+      };
+      expect(getNotificationCategory(notification)).toBe("success");
+    });
+
     it("should return info as fallback for unknown notification type", () => {
       // Using type assertion to test the fallback behavior with an invalid type
       const notification = { type: "UNKNOWN_TYPE" as NotificationType };
@@ -411,6 +490,11 @@ describe("Notification Types", () => {
         "WARNING",
         "SUCCESS",
         "ERROR",
+        "USER_VERIFIED_EMAIL",
+        "USER_APPROVED",
+        "SUBSCRIPTION_EXPIRING",
+        "SUBSCRIPTION_EXPIRED",
+        "SUBSCRIPTION_ACTIVATED",
       ];
       const labelKeys = Object.keys(NotificationTypeLabels);
       expectedTypes.forEach((type) => {

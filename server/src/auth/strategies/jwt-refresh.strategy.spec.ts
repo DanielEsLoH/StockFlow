@@ -158,6 +158,48 @@ describe('JwtRefreshStrategy', () => {
     });
   });
 
+  describe('extractTokenFromBody (lines 18-24)', () => {
+    // The extractTokenFromBody function is a standalone function passed to
+    // passport-jwt as jwtFromRequest. We can access it via the internal
+    // passport-jwt option stored on the strategy instance.
+    let extractFn: (req: Partial<Request>) => string | null;
+
+    beforeEach(() => {
+      // passport-jwt stores the extraction function in _jwtFromRequest
+      extractFn = (strategy as any)._jwtFromRequest;
+    });
+
+    it('should extract refreshToken from request body', () => {
+      const req = { body: { refreshToken: 'my-token-123' } };
+      expect(extractFn(req)).toBe('my-token-123');
+    });
+
+    it('should return null when body is undefined', () => {
+      const req = { body: undefined };
+      expect(extractFn(req)).toBeNull();
+    });
+
+    it('should return null when body has no refreshToken field', () => {
+      const req = { body: {} };
+      expect(extractFn(req)).toBeNull();
+    });
+
+    it('should return null when refreshToken is not a string', () => {
+      const req = { body: { refreshToken: 12345 } };
+      expect(extractFn(req)).toBeNull();
+    });
+
+    it('should return null when refreshToken is null', () => {
+      const req = { body: { refreshToken: null } };
+      expect(extractFn(req)).toBeNull();
+    });
+
+    it('should return null when body is null', () => {
+      const req = { body: null };
+      expect(extractFn(req)).toBeNull();
+    });
+  });
+
   describe('validate', () => {
     it('should return RequestUser when refresh token is valid', async () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(

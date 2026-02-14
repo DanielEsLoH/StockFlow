@@ -258,6 +258,57 @@ describe('SubscriptionGuard', () => {
         });
       });
 
+      describe('null plan - no active subscription', () => {
+        it('should throw ForbiddenException when tenant has no active plan', async () => {
+          const context = createMockContext(testUser);
+          reflector.get.mockReturnValue(SubscriptionPlan.PYME);
+          (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue({
+            id: 'tenant-123',
+            plan: null,
+            name: 'Test Tenant',
+          });
+
+          await expect(guard.canActivate(context)).rejects.toThrow(
+            ForbiddenException,
+          );
+        });
+
+        it('should include "no active subscription" in error message when plan is null', async () => {
+          const context = createMockContext(testUser);
+          reflector.get.mockReturnValue(SubscriptionPlan.PRO);
+          (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue({
+            id: 'tenant-123',
+            plan: null,
+            name: 'Test Tenant',
+          });
+
+          await expect(guard.canActivate(context)).rejects.toThrow(
+            "This feature requires a PRO plan or higher. You don't have an active subscription.",
+          );
+        });
+
+        it('should log debug message when tenant has no active plan', async () => {
+          const debugSpy = jest.spyOn(Logger.prototype, 'debug');
+          const context = createMockContext(testUser);
+          reflector.get.mockReturnValue(SubscriptionPlan.PYME);
+          (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue({
+            id: 'tenant-123',
+            plan: null,
+            name: 'Test Tenant',
+          });
+
+          try {
+            await guard.canActivate(context);
+          } catch {
+            // Expected to throw
+          }
+
+          expect(debugSpy).toHaveBeenCalledWith(
+            'Access denied for tenant Test Tenant: no active subscription plan',
+          );
+        });
+      });
+
       describe('error messages', () => {
         it('should include current and required plan in error message', async () => {
           const context = createMockContext(testUser);

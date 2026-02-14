@@ -1092,6 +1092,36 @@ describe('ProductsService', () => {
         });
       });
 
+      it('should update maxStock when provided', async () => {
+        const maxStockUpdate = { maxStock: 500 };
+        (prismaService.product.update as jest.Mock).mockResolvedValue({
+          ...mockProduct,
+          maxStock: 500,
+        });
+
+        await service.update('product-123', maxStockUpdate);
+
+        expect(prismaService.product.update).toHaveBeenCalledWith({
+          where: { id: 'product-123' },
+          data: { maxStock: 500 },
+        });
+      });
+
+      it('should update imageUrl when provided', async () => {
+        const imageUrlUpdate = { imageUrl: 'https://example.com/image.png' };
+        (prismaService.product.update as jest.Mock).mockResolvedValue({
+          ...mockProduct,
+          imageUrl: 'https://example.com/image.png',
+        });
+
+        await service.update('product-123', imageUrlUpdate);
+
+        expect(prismaService.product.update).toHaveBeenCalledWith({
+          where: { id: 'product-123' },
+          data: { imageUrl: 'https://example.com/image.png' },
+        });
+      });
+
       it('should update status when provided', async () => {
         const statusUpdate = { status: ProductStatus.INACTIVE };
         (prismaService.product.update as jest.Mock).mockResolvedValue({
@@ -1621,6 +1651,112 @@ describe('ProductsService', () => {
           where: { tenantId: mockTenantId },
         }),
       );
+    });
+  });
+
+  describe('findOne - cache hit', () => {
+    it('should return cached product without querying database', async () => {
+      const cachedProduct = {
+        id: 'product-123',
+        sku: 'SKU-001',
+        name: 'Cached Product',
+        tenantId: mockTenantId,
+        stock: 100,
+      };
+
+      // Access cacheService from the service instance
+      const cacheService = (service as unknown as { cache: { get: jest.Mock } }).cache;
+      cacheService.get.mockResolvedValue(cachedProduct);
+
+      const result = await service.findOne('product-123');
+
+      expect(result).toEqual(cachedProduct);
+      // Should NOT query the database
+      expect(prismaService.product.findFirst).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('create - auto-generate SKU', () => {
+    it('should generate SKU when not provided', async () => {
+      const createDtoNoSku = {
+        name: 'Auto SKU Product',
+        costPrice: 10,
+        salePrice: 20,
+      } as CreateProductDto;
+
+      // First call to findFirst for generateSku (get last PROD- SKU)
+      (prismaService.product.findFirst as jest.Mock)
+        .mockResolvedValueOnce({ sku: 'PROD-00003' }) // last product
+        .mockResolvedValueOnce(null); // barcode check
+
+      // findUnique for SKU uniqueness check in generateSku
+      (prismaService.product.findUnique as jest.Mock)
+        .mockResolvedValueOnce(null) // PROD-00004 doesn't exist
+        .mockResolvedValueOnce(null); // SKU unique check in create
+
+      (prismaService.product.create as jest.Mock).mockResolvedValue({
+        ...mockProduct,
+        sku: 'PROD-00004',
+        name: 'Auto SKU Product',
+      });
+
+      const result = await service.create(createDtoNoSku);
+
+      expect(result.sku).toBe('PROD-00004');
+    });
+
+    it('should generate PROD-00001 when no existing PROD- SKUs', async () => {
+      const createDtoNoSku = {
+        name: 'First Product',
+        costPrice: 10,
+        salePrice: 20,
+      } as CreateProductDto;
+
+      (prismaService.product.findFirst as jest.Mock)
+        .mockResolvedValueOnce(null) // no existing PROD- products
+        .mockResolvedValueOnce(null); // barcode check
+
+      (prismaService.product.findUnique as jest.Mock)
+        .mockResolvedValueOnce(null) // PROD-00001 doesn't exist
+        .mockResolvedValueOnce(null); // SKU unique check
+
+      (prismaService.product.create as jest.Mock).mockResolvedValue({
+        ...mockProduct,
+        sku: 'PROD-00001',
+        name: 'First Product',
+      });
+
+      const result = await service.create(createDtoNoSku);
+
+      expect(result.sku).toBe('PROD-00001');
+    });
+
+    it('should retry when generated SKU already exists', async () => {
+      const createDtoNoSku = {
+        name: 'Retry Product',
+        costPrice: 10,
+        salePrice: 20,
+      } as CreateProductDto;
+
+      (prismaService.product.findFirst as jest.Mock)
+        .mockResolvedValueOnce({ sku: 'PROD-00005' }) // first generateSku call
+        .mockResolvedValueOnce({ sku: 'PROD-00006' }) // second (recursive) generateSku call
+        .mockResolvedValueOnce(null); // barcode check
+
+      (prismaService.product.findUnique as jest.Mock)
+        .mockResolvedValueOnce({ id: 'exists' }) // PROD-00006 already exists! triggers retry
+        .mockResolvedValueOnce(null) // PROD-00007 is free
+        .mockResolvedValueOnce(null); // SKU unique check in create
+
+      (prismaService.product.create as jest.Mock).mockResolvedValue({
+        ...mockProduct,
+        sku: 'PROD-00007',
+        name: 'Retry Product',
+      });
+
+      const result = await service.create(createDtoNoSku);
+
+      expect(result.sku).toBe('PROD-00007');
     });
   });
 });

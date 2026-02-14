@@ -2945,4 +2945,883 @@ describe('InvoicesService', () => {
       expect(tenantContextService.requireTenantId).toHaveBeenCalled();
     });
   });
+
+  describe('getStats', () => {
+    it('should return invoice statistics for the tenant', async () => {
+      (prismaService.invoice.findMany as jest.Mock).mockResolvedValue([
+        {
+          status: InvoiceStatus.DRAFT,
+          paymentStatus: PaymentStatus.UNPAID,
+          total: 100,
+        },
+        {
+          status: InvoiceStatus.SENT,
+          paymentStatus: PaymentStatus.PAID,
+          total: 200,
+        },
+        {
+          status: InvoiceStatus.SENT,
+          paymentStatus: PaymentStatus.UNPAID,
+          total: 150,
+        },
+        {
+          status: InvoiceStatus.OVERDUE,
+          paymentStatus: PaymentStatus.UNPAID,
+          total: 75,
+        },
+      ]);
+
+      const result = await service.getStats();
+
+      expect(result.totalInvoices).toBe(4);
+      expect(result.totalRevenue).toBe(200);
+      expect(result.pendingAmount).toBe(150);
+      expect(result.overdueAmount).toBe(75);
+      expect(result.averageInvoiceValue).toBe(131.25);
+      expect(result.invoicesByStatus[InvoiceStatus.DRAFT]).toBe(1);
+      expect(result.invoicesByStatus[InvoiceStatus.SENT]).toBe(2);
+      expect(result.invoicesByStatus[InvoiceStatus.OVERDUE]).toBe(1);
+      expect(result.invoicesByStatus[InvoiceStatus.CANCELLED]).toBe(0);
+      expect(result.invoicesByStatus[InvoiceStatus.VOID]).toBe(0);
+      expect(result.invoicesByStatus[InvoiceStatus.PENDING]).toBe(0);
+    });
+
+    it('should return zero values when no invoices exist', async () => {
+      (prismaService.invoice.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.getStats();
+
+      expect(result.totalInvoices).toBe(0);
+      expect(result.totalRevenue).toBe(0);
+      expect(result.pendingAmount).toBe(0);
+      expect(result.overdueAmount).toBe(0);
+      expect(result.averageInvoiceValue).toBe(0);
+    });
+
+    it('should require tenant context', async () => {
+      (prismaService.invoice.findMany as jest.Mock).mockResolvedValue([]);
+
+      await service.getStats();
+
+      expect(tenantContextService.requireTenantId).toHaveBeenCalled();
+    });
+
+    it('should scope query to tenant', async () => {
+      (prismaService.invoice.findMany as jest.Mock).mockResolvedValue([]);
+
+      await service.getStats();
+
+      expect(prismaService.invoice.findMany).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        select: {
+          status: true,
+          paymentStatus: true,
+          total: true,
+        },
+      });
+    });
+  });
+
+  describe('findAll - source filter', () => {
+    beforeEach(() => {
+      (prismaService.invoice.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.invoice.count as jest.Mock).mockResolvedValue(0);
+    });
+
+    it('should filter by source when provided', async () => {
+      await service.findAll({ source: 'POS' as never });
+
+      expect(prismaService.invoice.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            tenantId: mockTenantId,
+            source: 'POS',
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('create - transaction returns null', () => {
+    it('should throw BadRequestException when transaction returns null', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: null,
+        role: 'ADMIN',
+      });
+      (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
+        mockCustomer,
+      );
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct,
+      ]);
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.invoice.count as jest.Mock).mockResolvedValue(0);
+
+      const txMock = createMockTransaction();
+      txMock.invoice.create.mockResolvedValue({
+        ...mockInvoice,
+        items: undefined,
+      });
+      // findUnique returns null — simulates the error path
+      txMock.invoice.findUnique.mockResolvedValue(null);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await expect(
+        service.create(
+          {
+            customerId: mockCustomer.id,
+            items: [
+              {
+                productId: mockProduct.id,
+                quantity: 2,
+                unitPrice: 99.99,
+                taxRate: 19,
+                discount: 0,
+              },
+            ],
+          },
+          mockUserId,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw with correct message when transaction returns null', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: null,
+        role: 'ADMIN',
+      });
+      (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
+        mockCustomer,
+      );
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct,
+      ]);
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.invoice.count as jest.Mock).mockResolvedValue(0);
+
+      const txMock = createMockTransaction();
+      txMock.invoice.create.mockResolvedValue({
+        ...mockInvoice,
+        items: undefined,
+      });
+      txMock.invoice.findUnique.mockResolvedValue(null);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await expect(
+        service.create(
+          {
+            items: [
+              {
+                productId: mockProduct.id,
+                quantity: 2,
+                unitPrice: 99.99,
+              },
+            ],
+          },
+          mockUserId,
+        ),
+      ).rejects.toThrow('Error al crear la factura');
+    });
+  });
+
+  describe('checkout', () => {
+    const checkoutDto = {
+      items: [
+        {
+          productId: mockProduct.id,
+          quantity: 2,
+          unitPrice: 99.99,
+          taxRate: 19,
+          discount: 0,
+        },
+      ],
+      customerId: mockCustomer.id,
+      immediatePayment: true,
+      paymentMethod: 'CASH',
+    };
+
+    const mockSentInvoice = {
+      ...mockInvoice,
+      status: InvoiceStatus.SENT,
+      paymentStatus: PaymentStatus.PAID,
+      source: 'MANUAL',
+      warehouseId: 'warehouse-123',
+      warehouse: mockWarehouse,
+      tenant: null,
+    };
+
+    beforeEach(() => {
+      // Mock for the inner create() call
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: null,
+        role: 'ADMIN',
+      });
+      (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(
+        mockCustomer,
+      );
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct,
+      ]);
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.invoice.count as jest.Mock).mockResolvedValue(0);
+    });
+
+    it('should create an invoice and mark it as SENT with immediate payment', async () => {
+      // First transaction: create invoice
+      const createTxMock = createMockTransaction();
+      createTxMock.invoice.create.mockResolvedValue({
+        ...mockInvoice,
+        items: undefined,
+      });
+      createTxMock.invoice.findUnique.mockResolvedValue(mockInvoice);
+
+      // Second transaction: checkout (update to SENT + payment)
+      const checkoutTxMock = {
+        invoice: {
+          update: jest.fn().mockResolvedValue(mockSentInvoice),
+          findUnique: jest.fn().mockResolvedValue(mockSentInvoice),
+        },
+        payment: {
+          create: jest.fn().mockResolvedValue({}),
+        },
+      };
+
+      let txCallCount = 0;
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          txCallCount++;
+          if (txCallCount === 1) return callback(createTxMock);
+          return callback(checkoutTxMock);
+        },
+      );
+
+      const result = await service.checkout(checkoutDto as never, mockUserId);
+
+      expect(result).toBeDefined();
+      expect(result.status).toBe(InvoiceStatus.SENT);
+    });
+
+    it('should create an invoice without immediate payment', async () => {
+      const dtoWithoutPayment = {
+        ...checkoutDto,
+        immediatePayment: false,
+      };
+
+      const createTxMock = createMockTransaction();
+      createTxMock.invoice.create.mockResolvedValue({
+        ...mockInvoice,
+        items: undefined,
+      });
+      createTxMock.invoice.findUnique.mockResolvedValue(mockInvoice);
+
+      const sentInvoice = {
+        ...mockSentInvoice,
+        paymentStatus: PaymentStatus.UNPAID,
+      };
+      const checkoutTxMock = {
+        invoice: {
+          update: jest.fn().mockResolvedValue(sentInvoice),
+          findUnique: jest.fn().mockResolvedValue(sentInvoice),
+        },
+        payment: {
+          create: jest.fn(),
+        },
+      };
+
+      let txCallCount = 0;
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          txCallCount++;
+          if (txCallCount === 1) return callback(createTxMock);
+          return callback(checkoutTxMock);
+        },
+      );
+
+      await service.checkout(dtoWithoutPayment as never, mockUserId);
+
+      expect(checkoutTxMock.payment.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when checkout transaction returns null', async () => {
+      const createTxMock = createMockTransaction();
+      createTxMock.invoice.create.mockResolvedValue({
+        ...mockInvoice,
+        items: undefined,
+      });
+      createTxMock.invoice.findUnique.mockResolvedValue(mockInvoice);
+
+      const checkoutTxMock = {
+        invoice: {
+          update: jest.fn().mockResolvedValue({}),
+          findUnique: jest.fn().mockResolvedValue(null),
+        },
+        payment: {
+          create: jest.fn().mockResolvedValue({}),
+        },
+      };
+
+      let txCallCount = 0;
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          txCallCount++;
+          if (txCallCount === 1) return callback(createTxMock);
+          return callback(checkoutTxMock);
+        },
+      );
+
+      await expect(
+        service.checkout(checkoutDto as never, mockUserId),
+      ).rejects.toThrow('Error al procesar el checkout');
+    });
+  });
+
+  describe('markAsPaid', () => {
+    const mockInvoiceWithPayments = {
+      ...mockInvoice,
+      status: InvoiceStatus.SENT,
+      payments: [],
+      source: 'MANUAL',
+      warehouseId: 'warehouse-123',
+    };
+
+    const mockPaidInvoice = {
+      ...mockInvoice,
+      status: InvoiceStatus.SENT,
+      paymentStatus: PaymentStatus.PAID,
+      source: 'MANUAL',
+      warehouseId: 'warehouse-123',
+      warehouse: mockWarehouse,
+      tenant: null,
+    };
+
+    it('should mark a SENT invoice as paid', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        mockInvoiceWithPayments,
+      );
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const txMock = {
+            invoice: {
+              update: jest.fn().mockResolvedValue(mockPaidInvoice),
+            },
+            payment: {
+              create: jest.fn().mockResolvedValue({}),
+            },
+          };
+          return callback(txMock);
+        },
+      );
+
+      const result = await service.markAsPaid('invoice-123');
+
+      expect(result.paymentStatus).toBe(PaymentStatus.PAID);
+    });
+
+    it('should accept a custom payment method', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        mockInvoiceWithPayments,
+      );
+
+      let capturedPaymentData: unknown;
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const txMock = {
+            invoice: {
+              update: jest.fn().mockResolvedValue(mockPaidInvoice),
+            },
+            payment: {
+              create: jest.fn().mockImplementation((data) => {
+                capturedPaymentData = data;
+                return {};
+              }),
+            },
+          };
+          return callback(txMock);
+        },
+      );
+
+      await service.markAsPaid('invoice-123', 'TRANSFER');
+
+      expect(
+        (capturedPaymentData as { data: { method: string } }).data.method,
+      ).toBe('TRANSFER');
+    });
+
+    it('should throw NotFoundException when invoice not found', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.markAsPaid('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw NotFoundException with correct message', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.markAsPaid('nonexistent')).rejects.toThrow(
+        'Factura no encontrada',
+      );
+    });
+
+    it('should throw BadRequestException for cancelled invoice', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoiceWithPayments,
+        status: InvoiceStatus.CANCELLED,
+      });
+
+      await expect(service.markAsPaid('invoice-123')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException for void invoice', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoiceWithPayments,
+        status: InvoiceStatus.VOID,
+      });
+
+      await expect(service.markAsPaid('invoice-123')).rejects.toThrow(
+        'No se puede marcar como pagada una factura cancelada o anulada',
+      );
+    });
+
+    it('should throw BadRequestException when already paid', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoiceWithPayments,
+        paymentStatus: PaymentStatus.PAID,
+      });
+
+      await expect(service.markAsPaid('invoice-123')).rejects.toThrow(
+        'La factura ya esta pagada',
+      );
+    });
+
+    it('should throw BadRequestException when no remaining balance', async () => {
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue({
+        ...mockInvoiceWithPayments,
+        total: 100,
+        payments: [{ amount: 100 }],
+      });
+
+      await expect(service.markAsPaid('invoice-123')).rejects.toThrow(
+        'No hay saldo pendiente en esta factura',
+      );
+    });
+
+    it('should move DRAFT invoice to SENT before paying', async () => {
+      const draftInvoiceWithPayments = {
+        ...mockInvoiceWithPayments,
+        status: InvoiceStatus.DRAFT,
+      };
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        draftInvoiceWithPayments,
+      );
+
+      let invoiceUpdateCalls: unknown[] = [];
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const txMock = {
+            invoice: {
+              update: jest.fn().mockImplementation((args) => {
+                invoiceUpdateCalls.push(args);
+                return mockPaidInvoice;
+              }),
+            },
+            payment: {
+              create: jest.fn().mockResolvedValue({}),
+            },
+          };
+          return callback(txMock);
+        },
+      );
+
+      await service.markAsPaid('invoice-123');
+
+      // First update should set status to SENT
+      expect(invoiceUpdateCalls[0]).toEqual(
+        expect.objectContaining({
+          data: { status: InvoiceStatus.SENT },
+        }),
+      );
+    });
+
+    it('should calculate remaining balance with existing payments', async () => {
+      const invoiceWithPartialPayment = {
+        ...mockInvoiceWithPayments,
+        total: 200,
+        payments: [{ amount: 50 }, { amount: 30 }],
+      };
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        invoiceWithPartialPayment,
+      );
+
+      let capturedPaymentAmount: number | undefined;
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => {
+          const txMock = {
+            invoice: {
+              update: jest.fn().mockResolvedValue(mockPaidInvoice),
+            },
+            payment: {
+              create: jest.fn().mockImplementation((args) => {
+                capturedPaymentAmount = args.data.amount;
+                return {};
+              }),
+            },
+          };
+          return callback(txMock);
+        },
+      );
+
+      await service.markAsPaid('invoice-123');
+
+      // Remaining = 200 - 50 - 30 = 120
+      expect(capturedPaymentAmount).toBe(120);
+    });
+  });
+
+  describe('resolveWarehouseForInvoice (via create)', () => {
+    const createDto = {
+      items: [
+        {
+          productId: mockProduct.id,
+          quantity: 1,
+          unitPrice: 100,
+        },
+      ],
+    };
+
+    beforeEach(() => {
+      (prismaService.customer.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct,
+      ]);
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.invoice.count as jest.Mock).mockResolvedValue(0);
+
+      const txMock = createMockTransaction();
+      txMock.invoice.create.mockResolvedValue({
+        ...mockInvoice,
+        items: undefined,
+      });
+      txMock.invoice.findUnique.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.create(createDto, mockUserId)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.create(createDto, mockUserId)).rejects.toThrow(
+        'Usuario no encontrado',
+      );
+    });
+
+    it('should throw BadRequestException when non-admin has no assigned warehouse', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: null,
+        role: 'EMPLOYEE',
+      });
+
+      await expect(service.create(createDto, mockUserId)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.create(createDto, mockUserId)).rejects.toThrow(
+        'No tiene una bodega asignada. Contacte al administrador.',
+      );
+    });
+
+    it('should throw ForbiddenException when non-admin tries to use different warehouse', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: 'warehouse-123',
+        role: 'EMPLOYEE',
+      });
+
+      const dtoWithWarehouse = {
+        ...createDto,
+        warehouseId: 'other-warehouse-456',
+      };
+
+      await expect(
+        service.create(dtoWithWarehouse, mockUserId),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.create(dtoWithWarehouse, mockUserId),
+      ).rejects.toThrow('Solo puede facturar desde su bodega asignada');
+    });
+
+    it('should use non-admin user assigned warehouse', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: 'warehouse-123',
+        role: 'EMPLOYEE',
+      });
+
+      const txMock = createMockTransaction();
+      txMock.invoice.create.mockResolvedValue({
+        ...mockInvoice,
+        warehouseId: 'warehouse-123',
+        items: undefined,
+      });
+      txMock.invoice.findUnique.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.create(createDto, mockUserId);
+
+      expect(txMock.invoice.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            warehouseId: 'warehouse-123',
+          }),
+        }),
+      );
+    });
+
+    it('should validate admin-specified warehouse exists and is active', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: null,
+        role: 'ADMIN',
+      });
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const dtoWithWarehouse = {
+        ...createDto,
+        warehouseId: 'nonexistent-warehouse',
+      };
+
+      await expect(
+        service.create(dtoWithWarehouse, mockUserId),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.create(dtoWithWarehouse, mockUserId),
+      ).rejects.toThrow(
+        'Bodega no encontrada o inactiva: nonexistent-warehouse',
+      );
+    });
+
+    it('should allow admin to use a valid specified warehouse', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: null,
+        role: 'ADMIN',
+      });
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
+
+      const dtoWithWarehouse = {
+        ...createDto,
+        warehouseId: 'warehouse-123',
+      };
+
+      const txMock = createMockTransaction();
+      txMock.invoice.create.mockResolvedValue({
+        ...mockInvoice,
+        items: undefined,
+      });
+      txMock.invoice.findUnique.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.create(dtoWithWarehouse, mockUserId);
+
+      expect(txMock.invoice.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            warehouseId: 'warehouse-123',
+          }),
+        }),
+      );
+    });
+
+    it('should use admin assigned warehouse when no dto warehouseId', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: 'admin-warehouse-789',
+        role: 'ADMIN',
+      });
+
+      const txMock = createMockTransaction();
+      txMock.invoice.create.mockResolvedValue({
+        ...mockInvoice,
+        items: undefined,
+      });
+      txMock.invoice.findUnique.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await service.create(createDto, mockUserId);
+
+      expect(txMock.invoice.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            warehouseId: 'admin-warehouse-789',
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('getDefaultWarehouseId (via create)', () => {
+    it('should throw BadRequestException when no active warehouses found', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        warehouseId: null,
+        role: 'ADMIN',
+      });
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct,
+      ]);
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.invoice.count as jest.Mock).mockResolvedValue(0);
+
+      const txMock = createMockTransaction();
+      txMock.invoice.create.mockResolvedValue({
+        ...mockInvoice,
+        items: undefined,
+      });
+      // Override warehouse.findFirst to return null (no active warehouses)
+      txMock.warehouse.findFirst.mockResolvedValue(null);
+      txMock.invoice.findUnique.mockResolvedValue(mockInvoice);
+      (prismaService.$transaction as jest.Mock).mockImplementation(
+        async (callback) => callback(txMock),
+      );
+
+      await expect(
+        service.create(
+          {
+            items: [
+              {
+                productId: mockProduct.id,
+                quantity: 1,
+                unitPrice: 100,
+              },
+            ],
+          },
+          mockUserId,
+        ),
+      ).rejects.toThrow(
+        'No hay bodegas activas. Cree una bodega primero.',
+      );
+    });
+  });
+
+  describe('mapToInvoiceResponse - warehouse and tenant mapping', () => {
+    it('should map warehouse when included', async () => {
+      const invoiceWithWarehouse = {
+        ...mockInvoice,
+        warehouseId: 'warehouse-123',
+        source: 'MANUAL',
+        warehouse: {
+          id: 'warehouse-123',
+          name: 'Main Warehouse',
+          code: 'ALM-01',
+        },
+      };
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        invoiceWithWarehouse,
+      );
+
+      const result = await service.findOne('invoice-123');
+
+      expect(result.warehouse).toBeDefined();
+      expect(result.warehouse?.id).toBe('warehouse-123');
+      expect(result.warehouse?.name).toBe('Main Warehouse');
+      expect(result.warehouse?.code).toBe('ALM-01');
+    });
+
+    it('should map tenant with DIAN config when included', async () => {
+      const invoiceWithTenant = {
+        ...mockInvoice,
+        source: 'MANUAL',
+        warehouseId: null,
+        tenant: {
+          id: mockTenantId,
+          name: 'Test Tenant',
+          email: 'tenant@example.com',
+          phone: '+573001234567',
+          dianConfig: {
+            businessName: 'Test Business SAS',
+            nit: '900123456',
+            dv: '7',
+            address: 'Calle 123',
+            city: 'Bogota',
+            resolutionNumber: 'RES-001',
+            resolutionPrefix: 'FE',
+            resolutionRangeFrom: 1,
+            resolutionRangeTo: 5000,
+            resolutionDate: new Date('2024-01-01'),
+          },
+        },
+      };
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        invoiceWithTenant,
+      );
+
+      const result = await service.findOne('invoice-123');
+
+      expect(result.tenant).toBeDefined();
+      expect(result.tenant?.name).toBe('Test Tenant');
+      expect(result.tenant?.email).toBe('tenant@example.com');
+      expect(result.tenant?.businessName).toBe('Test Business SAS');
+      expect(result.tenant?.nit).toBe('900123456');
+      expect(result.tenant?.dv).toBe('7');
+      expect(result.tenant?.address).toBe('Calle 123');
+      expect(result.tenant?.city).toBe('Bogota');
+      expect(result.tenant?.resolutionNumber).toBe('RES-001');
+      expect(result.tenant?.resolutionPrefix).toBe('FE');
+      expect(result.tenant?.resolutionRangeFrom).toBe(1);
+      expect(result.tenant?.resolutionRangeTo).toBe(5000);
+    });
+
+    it('should handle tenant without DIAN config', async () => {
+      const invoiceWithTenantNoDian = {
+        ...mockInvoice,
+        source: 'MANUAL',
+        warehouseId: null,
+        tenant: {
+          id: mockTenantId,
+          name: 'Test Tenant',
+          email: 'tenant@example.com',
+          phone: null,
+          dianConfig: null,
+        },
+      };
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        invoiceWithTenantNoDian,
+      );
+
+      const result = await service.findOne('invoice-123');
+
+      expect(result.tenant).toBeDefined();
+      expect(result.tenant?.name).toBe('Test Tenant');
+      expect(result.tenant?.businessName).toBeNull();
+      expect(result.tenant?.nit).toBeNull();
+      expect(result.tenant?.resolutionNumber).toBeNull();
+    });
+
+    it('should not include warehouse when not present', async () => {
+      const invoiceWithoutWarehouse = {
+        ...mockInvoice,
+        source: 'MANUAL',
+        warehouseId: null,
+        warehouse: null,
+      };
+      (prismaService.invoice.findFirst as jest.Mock).mockResolvedValue(
+        invoiceWithoutWarehouse,
+      );
+
+      const result = await service.findOne('invoice-123');
+
+      expect(result.warehouse).toBeUndefined();
+    });
+  });
 });

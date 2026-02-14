@@ -529,6 +529,58 @@ describe('LoggingInterceptor', () => {
     });
   });
 
+  describe('duration color thresholds', () => {
+    it('should use magenta color for slow requests (>500ms)', (done) => {
+      // Mock performance.now() to simulate a 600ms request
+      let callCount = 0;
+      jest.spyOn(performance, 'now').mockImplementation(() => {
+        callCount++;
+        // First call (start time) returns 0, second call (end time) returns 600
+        return callCount === 1 ? 0 : 600;
+      });
+
+      const result = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
+
+      result.subscribe({
+        complete: () => {
+          expect(logSpy).toHaveBeenCalled();
+          const logMessage = getFirstLogMessage(logSpy);
+          // Magenta ANSI code is \x1b[35m
+          expect(logMessage).toContain('\x1b[35m');
+          expect(logMessage).toContain('600ms');
+          done();
+        },
+      });
+    });
+
+    it('should use yellow color for moderate requests (100-500ms)', (done) => {
+      let callCount = 0;
+      jest.spyOn(performance, 'now').mockImplementation(() => {
+        callCount++;
+        return callCount === 1 ? 0 : 250;
+      });
+
+      const result = interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
+
+      result.subscribe({
+        complete: () => {
+          expect(logSpy).toHaveBeenCalled();
+          const logMessage = getFirstLogMessage(logSpy);
+          // Yellow ANSI code is \x1b[33m
+          expect(logMessage).toContain('\x1b[33m');
+          expect(logMessage).toContain('250ms');
+          done();
+        },
+      });
+    });
+  });
+
   describe('different URL patterns', () => {
     it('should log root path', (done) => {
       mockRequest.url = '/';

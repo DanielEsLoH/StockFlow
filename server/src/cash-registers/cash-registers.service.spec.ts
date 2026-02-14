@@ -390,6 +390,79 @@ describe('CashRegistersService', () => {
         }),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it('should update code successfully when new code does not conflict (line 320)', async () => {
+      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue({
+        ...mockCashRegisterWithWarehouse,
+        code: 'CAJA-001',
+        sessions: [],
+      });
+      // No existing cash register with the new code
+      (prisma.cashRegister.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.cashRegister.update as jest.Mock).mockResolvedValue({
+        ...mockCashRegister,
+        code: 'CAJA-NEW',
+      });
+
+      const result = await service.update('cash-register-123', {
+        code: 'caja-new',
+      });
+
+      expect(result).toBeDefined();
+      expect(prisma.cashRegister.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            code: 'CAJA-NEW',
+          }),
+        }),
+      );
+    });
+
+    it('should update status successfully when no active session (line 329)', async () => {
+      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue({
+        ...mockCashRegisterWithWarehouse,
+        sessions: [],
+      });
+      (prisma.cashRegister.update as jest.Mock).mockResolvedValue({
+        ...mockCashRegister,
+        status: CashRegisterStatus.CLOSED,
+      });
+
+      const result = await service.update('cash-register-123', {
+        status: CashRegisterStatus.CLOSED,
+      });
+
+      expect(result).toBeDefined();
+      expect(prisma.cashRegister.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: CashRegisterStatus.CLOSED,
+          }),
+        }),
+      );
+    });
+
+    it('should skip code update when normalized code matches current code', async () => {
+      (prisma.cashRegister.findFirst as jest.Mock).mockResolvedValue({
+        ...mockCashRegisterWithWarehouse,
+        code: 'CAJA-001',
+        sessions: [],
+      });
+      (prisma.cashRegister.update as jest.Mock).mockResolvedValue({
+        ...mockCashRegister,
+      });
+
+      await service.update('cash-register-123', { code: 'caja-001' });
+
+      // findUnique should NOT be called since normalized code matches current
+      expect(prisma.cashRegister.findUnique).not.toHaveBeenCalled();
+      // Update should not include code in data
+      expect(prisma.cashRegister.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.not.objectContaining({ code: expect.anything() }),
+        }),
+      );
+    });
   });
 
   describe('delete', () => {

@@ -10,8 +10,9 @@ import { StockMovementsService } from './stock-movements.service';
 import type {
   StockMovementResponse,
   PaginatedMovementsResponse,
+  TransferResponse,
 } from './stock-movements.service';
-import { CreateMovementDto, FilterMovementsDto } from './dto';
+import { CreateMovementDto, CreateTransferDto, FilterMovementsDto } from './dto';
 
 describe('StockMovementsController', () => {
   let controller: StockMovementsController;
@@ -97,6 +98,7 @@ describe('StockMovementsController', () => {
       findAll: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
+      createTransfer: jest.fn(),
       findByProduct: jest.fn(),
       findByWarehouse: jest.fn(),
     };
@@ -533,6 +535,69 @@ describe('StockMovementsController', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Creating stock adjustment for product product-123, quantity: -5',
       );
+    });
+  });
+
+  describe('createTransfer', () => {
+    const transferDto: CreateTransferDto = {
+      productId: 'product-123',
+      sourceWarehouseId: 'warehouse-123',
+      destinationWarehouseId: 'warehouse-456',
+      quantity: 10,
+      reason: 'Reposicion de sucursal',
+      notes: 'Solicitado por gerente',
+    };
+
+    const mockTransferResponse: TransferResponse = {
+      outMovement: {
+        ...mockStockMovement,
+        id: 'movement-out',
+        type: MovementType.TRANSFER,
+        quantity: -10,
+        warehouseId: 'warehouse-123',
+      },
+      inMovement: {
+        ...mockStockMovement,
+        id: 'movement-in',
+        type: MovementType.TRANSFER,
+        quantity: 10,
+        warehouseId: 'warehouse-456',
+        warehouse: { id: 'warehouse-456', code: 'ALM-02', name: 'Secondary Warehouse' },
+      },
+    };
+
+    it('should create and return a transfer with out and in movements', async () => {
+      stockMovementsService.createTransfer.mockResolvedValue(mockTransferResponse);
+
+      const result = await controller.createTransfer(transferDto, mockUserId);
+
+      expect(result).toEqual(mockTransferResponse);
+      expect(result.outMovement.quantity).toBe(-10);
+      expect(result.inMovement.quantity).toBe(10);
+      expect(stockMovementsService.createTransfer).toHaveBeenCalledWith(
+        transferDto,
+        mockUserId,
+      );
+    });
+
+    it('should log transfer details including product, quantity, source and destination', async () => {
+      stockMovementsService.createTransfer.mockResolvedValue(mockTransferResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.createTransfer(transferDto, mockUserId);
+
+      expect(logSpy).toHaveBeenCalledWith(
+        `Creating transfer for product product-123: 10 units from warehouse-123 to warehouse-456`,
+      );
+    });
+
+    it('should propagate service errors', async () => {
+      const error = new BadRequestException('Insufficient stock');
+      stockMovementsService.createTransfer.mockRejectedValue(error);
+
+      await expect(
+        controller.createTransfer(transferDto, mockUserId),
+      ).rejects.toThrow(error);
     });
   });
 

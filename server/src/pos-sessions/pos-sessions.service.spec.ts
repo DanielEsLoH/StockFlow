@@ -354,6 +354,99 @@ describe('POSSessionsService', () => {
 
       expect(result.meta.totalPages).toBe(3);
     });
+
+    it('should process cash movements into per-session summaries', async () => {
+      (prisma.pOSSession.findMany as jest.Mock).mockResolvedValue([
+        mockSession,
+      ]);
+      (prisma.pOSSession.count as jest.Mock).mockResolvedValue(1);
+      (prisma.pOSSale.groupBy as jest.Mock).mockResolvedValue([
+        {
+          sessionId: mockSessionId,
+          _count: { id: 2 },
+          _sum: { total: 100000 },
+        },
+      ]);
+      (prisma.cashRegisterMovement.findMany as jest.Mock).mockResolvedValue([
+        {
+          sessionId: mockSessionId,
+          type: CashMovementType.CASH_IN,
+          amount: 50000,
+        },
+        {
+          sessionId: mockSessionId,
+          type: CashMovementType.CASH_IN,
+          amount: 30000,
+        },
+        {
+          sessionId: mockSessionId,
+          type: CashMovementType.CASH_OUT,
+          amount: 10000,
+        },
+        {
+          sessionId: mockSessionId,
+          type: CashMovementType.OPENING,
+          amount: 100000,
+        },
+      ]);
+      (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.findAll(1, 10);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].summary.totalCashIn).toBe(80000);
+      expect(result.data[0].summary.totalCashOut).toBe(10000);
+    });
+
+    it('should process sale payments into per-session sales by method', async () => {
+      (prisma.pOSSession.findMany as jest.Mock).mockResolvedValue([
+        mockSession,
+      ]);
+      (prisma.pOSSession.count as jest.Mock).mockResolvedValue(1);
+      (prisma.pOSSale.groupBy as jest.Mock).mockResolvedValue([
+        {
+          sessionId: mockSessionId,
+          _count: { id: 3 },
+          _sum: { total: 200000 },
+        },
+      ]);
+      (prisma.cashRegisterMovement.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.salePayment.findMany as jest.Mock).mockResolvedValue([
+        {
+          method: PaymentMethod.CASH,
+          amount: 50000,
+          sale: { sessionId: mockSessionId },
+        },
+        {
+          method: PaymentMethod.CASH,
+          amount: 40000,
+          sale: { sessionId: mockSessionId },
+        },
+        {
+          method: PaymentMethod.CREDIT_CARD,
+          amount: 60000,
+          sale: { sessionId: mockSessionId },
+        },
+        {
+          method: PaymentMethod.BANK_TRANSFER,
+          amount: 50000,
+          sale: { sessionId: mockSessionId },
+        },
+      ]);
+
+      const result = await service.findAll(1, 10);
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].summary.salesByMethod[PaymentMethod.CASH]).toBe(
+        90000,
+      );
+      expect(
+        result.data[0].summary.salesByMethod[PaymentMethod.CREDIT_CARD],
+      ).toBe(60000);
+      expect(
+        result.data[0].summary.salesByMethod[PaymentMethod.BANK_TRANSFER],
+      ).toBe(50000);
+    });
   });
 
   describe('openSession', () => {

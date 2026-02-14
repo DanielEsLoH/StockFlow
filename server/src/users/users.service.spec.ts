@@ -1066,4 +1066,378 @@ describe('UsersService', () => {
       expect(warnSpy).toHaveBeenCalledWith('User not found: nonexistent');
     });
   });
+
+  describe('update - warehouse assignment changes', () => {
+    const currentAdmin = { userId: 'admin-123', role: UserRole.ADMIN };
+    const currentEmployee = { userId: 'user-123', role: UserRole.EMPLOYEE };
+
+    beforeEach(() => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        warehouseId: 'warehouse-456',
+      });
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue({
+        ...mockWarehouse,
+        id: 'warehouse-456',
+      });
+    });
+
+    it('should throw ForbiddenException when non-admin tries to change warehouse assignment', async () => {
+      const warehouseUpdate = { warehouseId: 'warehouse-456' };
+
+      await expect(
+        service.update('user-123', warehouseUpdate, currentEmployee),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw correct message for non-admin warehouse change', async () => {
+      const warehouseUpdate = { warehouseId: 'warehouse-456' };
+
+      await expect(
+        service.update('user-123', warehouseUpdate, currentEmployee),
+      ).rejects.toThrow(
+        'Only administrators can change warehouse assignments',
+      );
+    });
+
+    it('should allow admin to change warehouse assignment', async () => {
+      const warehouseUpdate = { warehouseId: 'warehouse-456' };
+
+      const result = await service.update(
+        'user-123',
+        warehouseUpdate,
+        currentAdmin,
+      );
+
+      expect(result.warehouseId).toBe('warehouse-456');
+      expect(prismaService.warehouse.findFirst).toHaveBeenCalledWith({
+        where: { id: 'warehouse-456', tenantId: mockTenantId },
+      });
+    });
+
+    it('should validate warehouse assignment when changing role and warehouse simultaneously', async () => {
+      const combinedUpdate = {
+        role: UserRole.MANAGER,
+        warehouseId: 'warehouse-456',
+      };
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        role: UserRole.MANAGER,
+        warehouseId: 'warehouse-456',
+      });
+
+      await service.update('user-123', combinedUpdate, currentAdmin);
+
+      expect(prismaService.warehouse.findFirst).toHaveBeenCalledWith({
+        where: { id: 'warehouse-456', tenantId: mockTenantId },
+      });
+    });
+
+    it('should use effective role (dto.role) when validating warehouse during combined update', async () => {
+      // Changing to ADMIN role and setting warehouseId should fail
+      const combinedUpdate = {
+        role: UserRole.ADMIN,
+        warehouseId: 'warehouse-456',
+      };
+
+      await expect(
+        service.update('user-123', combinedUpdate, currentAdmin),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('update - role change without warehouseId', () => {
+    const currentAdmin = { userId: 'admin-123', role: UserRole.ADMIN };
+
+    it('should throw BadRequestException when changing to MANAGER without warehouseId and user has none', async () => {
+      const userWithoutWarehouse = {
+        ...mockUser,
+        warehouseId: null,
+      };
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        userWithoutWarehouse,
+      );
+
+      const roleUpdate = { role: UserRole.MANAGER };
+
+      await expect(
+        service.update('user-123', roleUpdate, currentAdmin),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw correct message for role change without warehouse', async () => {
+      const userWithoutWarehouse = {
+        ...mockUser,
+        warehouseId: null,
+      };
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        userWithoutWarehouse,
+      );
+
+      const roleUpdate = { role: UserRole.EMPLOYEE };
+
+      await expect(
+        service.update('user-123', roleUpdate, currentAdmin),
+      ).rejects.toThrow(
+        'Los usuarios con rol MANAGER o EMPLOYEE deben tener una bodega asignada. Incluya warehouseId.',
+      );
+    });
+
+    it('should allow role change to MANAGER when user already has a warehouseId', async () => {
+      // mockUser already has warehouseId: 'warehouse-123'
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        role: UserRole.MANAGER,
+      });
+
+      const roleUpdate = { role: UserRole.MANAGER };
+
+      const result = await service.update('user-123', roleUpdate, currentAdmin);
+
+      expect(result.role).toBe(UserRole.MANAGER);
+    });
+  });
+
+  describe('updateAvatar', () => {
+    beforeEach(() => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        avatar: 'https://example.com/new-avatar.png',
+      });
+    });
+
+    it('should update the user avatar', async () => {
+      const result = await service.updateAvatar(
+        'user-123',
+        'https://example.com/new-avatar.png',
+      );
+
+      expect(result.avatar).toBe('https://example.com/new-avatar.png');
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-123' },
+        data: { avatar: 'https://example.com/new-avatar.png' },
+      });
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.updateAvatar('nonexistent', 'https://example.com/avatar.png'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException with correct message', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.updateAvatar('nonexistent', 'https://example.com/avatar.png'),
+      ).rejects.toThrow('User with ID nonexistent not found');
+    });
+
+    it('should require tenant context', async () => {
+      await service.updateAvatar(
+        'user-123',
+        'https://example.com/avatar.png',
+      );
+
+      expect(tenantContextService.requireTenantId).toHaveBeenCalled();
+    });
+
+    it('should find user scoped to tenant', async () => {
+      await service.updateAvatar(
+        'user-123',
+        'https://example.com/avatar.png',
+      );
+
+      expect(prismaService.user.findFirst).toHaveBeenCalledWith({
+        where: { id: 'user-123', tenantId: mockTenantId },
+      });
+    });
+  });
+
+  describe('removeAvatar', () => {
+    beforeEach(() => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        avatar: 'https://example.com/old-avatar.png',
+      });
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        avatar: null,
+      });
+    });
+
+    it('should remove the user avatar and return previous URL', async () => {
+      const result = await service.removeAvatar('user-123');
+
+      expect(result).toEqual({
+        previousUrl: 'https://example.com/old-avatar.png',
+      });
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-123' },
+        data: { avatar: null },
+      });
+    });
+
+    it('should return null previousUrl when user had no avatar', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        avatar: null,
+      });
+
+      const result = await service.removeAvatar('user-123');
+
+      expect(result).toEqual({ previousUrl: null });
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.removeAvatar('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw NotFoundException with correct message', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.removeAvatar('nonexistent')).rejects.toThrow(
+        'User with ID nonexistent not found',
+      );
+    });
+
+    it('should require tenant context', async () => {
+      await service.removeAvatar('user-123');
+
+      expect(tenantContextService.requireTenantId).toHaveBeenCalled();
+    });
+  });
+
+  describe('validateWarehouseAssignment (via create)', () => {
+    const baseCreateDto: CreateUserDto = {
+      email: 'warehouse-test@example.com',
+      password: 'securePassword123',
+      firstName: 'Test',
+      lastName: 'User',
+    };
+
+    beforeEach(() => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+    });
+
+    it('should throw BadRequestException when EMPLOYEE has no warehouseId', async () => {
+      const dto = { ...baseCreateDto, role: UserRole.EMPLOYEE };
+
+      await expect(service.create(dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw correct message for EMPLOYEE without warehouse', async () => {
+      const dto = { ...baseCreateDto, role: UserRole.EMPLOYEE };
+
+      await expect(service.create(dto)).rejects.toThrow(
+        'Los usuarios con rol MANAGER o EMPLOYEE deben tener una bodega asignada',
+      );
+    });
+
+    it('should throw BadRequestException when MANAGER has no warehouseId', async () => {
+      const dto = { ...baseCreateDto, role: UserRole.MANAGER };
+
+      await expect(service.create(dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when ADMIN has a warehouseId', async () => {
+      const dto = {
+        ...baseCreateDto,
+        role: UserRole.ADMIN,
+        warehouseId: 'warehouse-123',
+      };
+
+      await expect(service.create(dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw correct message for ADMIN with warehouse', async () => {
+      const dto = {
+        ...baseCreateDto,
+        role: UserRole.ADMIN,
+        warehouseId: 'warehouse-123',
+      };
+
+      await expect(service.create(dto)).rejects.toThrow(
+        'Los usuarios con rol ADMIN o SUPER_ADMIN no deben tener bodega asignada',
+      );
+    });
+
+    it('should throw BadRequestException when SUPER_ADMIN has a warehouseId', async () => {
+      const dto = {
+        ...baseCreateDto,
+        role: UserRole.SUPER_ADMIN,
+        warehouseId: 'warehouse-123',
+      };
+
+      await expect(service.create(dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when warehouse does not exist', async () => {
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const dto = {
+        ...baseCreateDto,
+        role: UserRole.EMPLOYEE,
+        warehouseId: 'nonexistent-warehouse',
+      };
+
+      await expect(service.create(dto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw correct message for non-existent warehouse', async () => {
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const dto = {
+        ...baseCreateDto,
+        role: UserRole.EMPLOYEE,
+        warehouseId: 'nonexistent-warehouse',
+      };
+
+      await expect(service.create(dto)).rejects.toThrow(
+        'Bodega no encontrada: nonexistent-warehouse',
+      );
+    });
+
+    it('should throw BadRequestException when warehouse is not ACTIVE', async () => {
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue({
+        ...mockWarehouse,
+        status: 'INACTIVE',
+      });
+
+      const dto = {
+        ...baseCreateDto,
+        role: UserRole.EMPLOYEE,
+        warehouseId: 'warehouse-123',
+      };
+
+      await expect(service.create(dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw correct message for inactive warehouse', async () => {
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue({
+        ...mockWarehouse,
+        status: 'INACTIVE',
+      });
+
+      const dto = {
+        ...baseCreateDto,
+        role: UserRole.EMPLOYEE,
+        warehouseId: 'warehouse-123',
+      };
+
+      await expect(service.create(dto)).rejects.toThrow(
+        'La bodega asignada debe estar activa',
+      );
+    });
+  });
 });

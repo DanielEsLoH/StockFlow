@@ -216,6 +216,9 @@ describe('AuthService', () => {
         .fn()
         .mockResolvedValue({ success: true }),
       sendVerificationEmail: jest.fn().mockResolvedValue({ success: true }),
+      sendAdminUserVerifiedEmail: jest
+        .fn()
+        .mockResolvedValue({ success: true }),
     };
 
     const mockInvitationsService = {
@@ -3244,6 +3247,136 @@ describe('AuthService', () => {
       );
 
       sendNotificationSpy.mockRestore();
+    });
+  });
+
+  describe('sendAdminUserVerifiedNotification (via verifyEmail)', () => {
+    const validToken = 'verify-notification-token';
+    const mockVerifyUser = {
+      ...mockUser,
+      emailVerified: false,
+      verificationToken: validToken,
+      verificationTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      tenant: { ...mockTenant, name: 'Verified Tenant' },
+    };
+
+    beforeEach(() => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(
+        mockVerifyUser,
+      );
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...mockVerifyUser,
+        emailVerified: true,
+        verificationToken: null,
+        verificationTokenExpiry: null,
+      });
+    });
+
+    it('should log success when sendAdminUserVerifiedEmail returns success:true', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+      (brevoService.sendAdminUserVerifiedEmail as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+
+      await service.verifyEmail(validToken);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Admin notification sent for verified user'),
+      );
+    });
+
+    it('should log warning when sendAdminUserVerifiedEmail returns success:false', async () => {
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn');
+      (brevoService.sendAdminUserVerifiedEmail as jest.Mock).mockResolvedValue({
+        success: false,
+        error: 'Admin email delivery failed',
+      });
+
+      await service.verifyEmail(validToken);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Admin notification failed for verified user'),
+      );
+    });
+
+    it('should log error when sendAdminUserVerifiedEmail throws an Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+      (brevoService.sendAdminUserVerifiedEmail as jest.Mock).mockRejectedValue(
+        new Error('Brevo service unavailable'),
+      );
+
+      await service.verifyEmail(validToken);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Admin notification error for verified user',
+        ),
+        expect.any(String),
+      );
+    });
+
+    it('should log error with undefined stack when sendAdminUserVerifiedEmail throws non-Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+      (brevoService.sendAdminUserVerifiedEmail as jest.Mock).mockRejectedValue(
+        'non-error rejection',
+      );
+
+      await service.verifyEmail(validToken);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Admin notification error for verified user',
+        ),
+        undefined,
+      );
+    });
+
+    it('should trigger the outer .catch() when sendAdminUserVerifiedNotification itself rejects with Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      const sendNotifSpy = jest.spyOn(
+        service as unknown as {
+          sendAdminUserVerifiedNotification: () => Promise<void>;
+        },
+        'sendAdminUserVerifiedNotification',
+      );
+      sendNotifSpy.mockRejectedValue(new Error('Unexpected crash'));
+
+      await service.verifyEmail(validToken);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Failed to send admin user verified notification',
+        expect.any(String),
+      );
+
+      sendNotifSpy.mockRestore();
+    });
+
+    it('should trigger the outer .catch() with undefined stack when sendAdminUserVerifiedNotification rejects with non-Error', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      const sendNotifSpy = jest.spyOn(
+        service as unknown as {
+          sendAdminUserVerifiedNotification: () => Promise<void>;
+        },
+        'sendAdminUserVerifiedNotification',
+      );
+      sendNotifSpy.mockRejectedValue('string rejection');
+
+      await service.verifyEmail(validToken);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Failed to send admin user verified notification',
+        undefined,
+      );
+
+      sendNotifSpy.mockRestore();
     });
   });
 });

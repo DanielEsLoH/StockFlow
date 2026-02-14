@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger } from '@nestjs/common';
+import { BadRequestException, Logger } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import type { UserResponse, PaginatedUsersResponse } from './users.service';
@@ -12,6 +12,7 @@ describe('UsersController', () => {
   let controller: UsersController;
   let usersService: jest.Mocked<UsersService>;
   let permissionsService: jest.Mocked<PermissionsService>;
+  let uploadService: jest.Mocked<UploadService>;
 
   // Test data
   const mockTenantId = 'tenant-123';
@@ -97,6 +98,8 @@ describe('UsersController', () => {
       changePassword: jest.fn(),
       approve: jest.fn(),
       suspend: jest.fn(),
+      updateAvatar: jest.fn(),
+      removeAvatar: jest.fn(),
     };
 
     const mockPermissionsService = {
@@ -119,6 +122,7 @@ describe('UsersController', () => {
     const mockUploadService = {
       uploadAvatar: jest.fn(),
       deleteAvatar: jest.fn(),
+      deleteByUrl: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -133,6 +137,7 @@ describe('UsersController', () => {
     controller = module.get<UsersController>(UsersController);
     usersService = module.get(UsersService);
     permissionsService = module.get(PermissionsService);
+    uploadService = module.get(UploadService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -284,6 +289,158 @@ describe('UsersController', () => {
       await expect(controller.getProfile(employeeCurrentUser)).rejects.toThrow(
         error,
       );
+    });
+  });
+
+  describe('uploadMyAvatar', () => {
+    const mockFile = {
+      fieldname: 'file',
+      originalname: 'avatar.png',
+      encoding: '7bit',
+      mimetype: 'image/png',
+      buffer: Buffer.from('fake-image-data'),
+      size: 1024,
+    } as Express.Multer.File;
+
+    it('should throw BadRequestException when no file is provided', async () => {
+      await expect(
+        controller.uploadMyAvatar(
+          undefined as unknown as Express.Multer.File,
+          employeeCurrentUser,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      await expect(
+        controller.uploadMyAvatar(
+          undefined as unknown as Express.Multer.File,
+          employeeCurrentUser,
+        ),
+      ).rejects.toThrow('No file provided');
+    });
+
+    it('should upload avatar for user without existing avatar', async () => {
+      const userWithoutAvatar = { ...mockUser, avatar: null };
+      usersService.findOne.mockResolvedValue(userWithoutAvatar);
+      uploadService.uploadAvatar.mockResolvedValue({
+        url: 'https://cdn.example.com/avatars/new-avatar.png',
+      } as any);
+      const updatedUser = {
+        ...mockUser,
+        avatar: 'https://cdn.example.com/avatars/new-avatar.png',
+      };
+      usersService.updateAvatar.mockResolvedValue(updatedUser);
+
+      const result = await controller.uploadMyAvatar(
+        mockFile,
+        employeeCurrentUser,
+      );
+
+      expect(result).toEqual(updatedUser);
+      expect(usersService.findOne).toHaveBeenCalledWith('user-123');
+      expect(uploadService.deleteByUrl).not.toHaveBeenCalled();
+      expect(uploadService.uploadAvatar).toHaveBeenCalledWith(
+        mockFile,
+        mockTenantId,
+        'user-123',
+      );
+      expect(usersService.updateAvatar).toHaveBeenCalledWith(
+        'user-123',
+        'https://cdn.example.com/avatars/new-avatar.png',
+      );
+    });
+
+    it('should delete old avatar before uploading new one', async () => {
+      const userWithAvatar = {
+        ...mockUser,
+        avatar: 'https://cdn.example.com/avatars/old-avatar.png',
+      };
+      usersService.findOne.mockResolvedValue(userWithAvatar);
+      uploadService.deleteByUrl.mockResolvedValue(undefined as any);
+      uploadService.uploadAvatar.mockResolvedValue({
+        url: 'https://cdn.example.com/avatars/new-avatar.png',
+      } as any);
+      const updatedUser = {
+        ...mockUser,
+        avatar: 'https://cdn.example.com/avatars/new-avatar.png',
+      };
+      usersService.updateAvatar.mockResolvedValue(updatedUser);
+
+      const result = await controller.uploadMyAvatar(
+        mockFile,
+        employeeCurrentUser,
+      );
+
+      expect(result).toEqual(updatedUser);
+      expect(uploadService.deleteByUrl).toHaveBeenCalledWith(
+        'https://cdn.example.com/avatars/old-avatar.png',
+      );
+      expect(uploadService.uploadAvatar).toHaveBeenCalledWith(
+        mockFile,
+        mockTenantId,
+        'user-123',
+      );
+      expect(usersService.updateAvatar).toHaveBeenCalledWith(
+        'user-123',
+        'https://cdn.example.com/avatars/new-avatar.png',
+      );
+    });
+
+    it('should propagate errors from upload service', async () => {
+      usersService.findOne.mockResolvedValue(mockUser);
+      const error = new Error('Upload failed');
+      uploadService.uploadAvatar.mockRejectedValue(error);
+
+      await expect(
+        controller.uploadMyAvatar(mockFile, employeeCurrentUser),
+      ).rejects.toThrow(error);
+    });
+  });
+
+  describe('deleteMyAvatar', () => {
+    it('should delete avatar and remove file when user has an avatar', async () => {
+      usersService.removeAvatar.mockResolvedValue({
+        previousUrl: 'https://cdn.example.com/avatars/old-avatar.png',
+      });
+      uploadService.deleteByUrl.mockResolvedValue(undefined as any);
+
+      await controller.deleteMyAvatar(employeeCurrentUser);
+
+      expect(usersService.removeAvatar).toHaveBeenCalledWith('user-123');
+      expect(uploadService.deleteByUrl).toHaveBeenCalledWith(
+        'https://cdn.example.com/avatars/old-avatar.png',
+      );
+    });
+
+    it('should not call deleteByUrl when user has no avatar', async () => {
+      usersService.removeAvatar.mockResolvedValue({
+        previousUrl: null,
+      });
+
+      await controller.deleteMyAvatar(employeeCurrentUser);
+
+      expect(usersService.removeAvatar).toHaveBeenCalledWith('user-123');
+      expect(uploadService.deleteByUrl).not.toHaveBeenCalled();
+    });
+
+    it('should propagate errors from removeAvatar', async () => {
+      const error = new Error('Failed to remove avatar');
+      usersService.removeAvatar.mockRejectedValue(error);
+
+      await expect(
+        controller.deleteMyAvatar(employeeCurrentUser),
+      ).rejects.toThrow(error);
+    });
+
+    it('should propagate errors from deleteByUrl', async () => {
+      usersService.removeAvatar.mockResolvedValue({
+        previousUrl: 'https://cdn.example.com/avatars/old-avatar.png',
+      });
+      const error = new Error('Failed to delete file');
+      uploadService.deleteByUrl.mockRejectedValue(error);
+
+      await expect(
+        controller.deleteMyAvatar(employeeCurrentUser),
+      ).rejects.toThrow(error);
     });
   });
 

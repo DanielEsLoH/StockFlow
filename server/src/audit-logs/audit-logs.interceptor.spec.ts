@@ -1085,5 +1085,209 @@ describe('AuditInterceptor', () => {
         );
       });
     });
+
+    describe('fetchOldValues edge cases', () => {
+      beforeEach(() => {
+        reflector.getAllAndOverride.mockImplementation((key: string) => {
+          if (key === SKIP_AUDIT_KEY) return false;
+          if (key === AUDIT_ENTITY_TYPE_KEY) return 'Product';
+          return undefined;
+        });
+      });
+
+      it('should return null oldValues when model exists but has no findFirst method', async () => {
+        // Override the prisma product model to have no findFirst
+        (
+          prismaService as unknown as Record<string, Record<string, unknown>>
+        ).product = {};
+
+        const context = createMockExecutionContext({ method: 'PATCH' });
+        const handler = createMockCallHandler();
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(auditLogsService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            oldValues: null,
+          }),
+        );
+      });
+
+      it('should return null oldValues when findFirst throws an error in the inner catch', async () => {
+        // Make findFirst throw to trigger the inner catch block (line 267)
+        (prismaService.product.findFirst as jest.Mock).mockImplementation(
+          () => {
+            throw new Error('Unexpected DB error');
+          },
+        );
+
+        const context = createMockExecutionContext({ method: 'PATCH' });
+        const handler = createMockCallHandler();
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(auditLogsService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            oldValues: null,
+          }),
+        );
+      });
+    });
+
+    describe('extractEntityIdFromResponse edge cases', () => {
+      beforeEach(() => {
+        reflector.getAllAndOverride.mockImplementation((key: string) => {
+          if (key === SKIP_AUDIT_KEY) return false;
+          if (key === AUDIT_ENTITY_TYPE_KEY) return 'Product';
+          return undefined;
+        });
+      });
+
+      it('should return null entity ID when response is null', async () => {
+        const context = createMockExecutionContext({
+          method: 'POST',
+          params: { id: '' },
+        });
+        const handler = createMockCallHandler(null);
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(Logger.prototype.warn).toHaveBeenCalledWith(
+          expect.stringContaining('Could not determine entity ID'),
+        );
+        expect(auditLogsService.create).not.toHaveBeenCalled();
+      });
+
+      it('should return null entity ID when response is a primitive (not object)', async () => {
+        const context = createMockExecutionContext({
+          method: 'POST',
+          params: { id: '' },
+        });
+        const handler = createMockCallHandler('string response');
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(Logger.prototype.warn).toHaveBeenCalledWith(
+          expect.stringContaining('Could not determine entity ID'),
+        );
+        expect(auditLogsService.create).not.toHaveBeenCalled();
+      });
+
+      it('should return null entity ID when response object has no id and nested data has no string id', async () => {
+        const context = createMockExecutionContext({
+          method: 'POST',
+          params: { id: '' },
+        });
+        // Response has data but data.id is not a string
+        const handler = createMockCallHandler({
+          data: { id: 12345, name: 'Numeric ID' },
+        });
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(Logger.prototype.warn).toHaveBeenCalledWith(
+          expect.stringContaining('Could not determine entity ID'),
+        );
+        expect(auditLogsService.create).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('extractValuesFromResponse edge cases', () => {
+      beforeEach(() => {
+        reflector.getAllAndOverride.mockImplementation((key: string) => {
+          if (key === SKIP_AUDIT_KEY) return false;
+          if (key === AUDIT_ENTITY_TYPE_KEY) return 'Product';
+          return undefined;
+        });
+      });
+
+      it('should return null newValues when response is null', async () => {
+        const context = createMockExecutionContext({
+          method: 'POST',
+          params: { id: mockEntityId },
+        });
+        const handler = createMockCallHandler(null);
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(auditLogsService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            newValues: null,
+          }),
+        );
+      });
+
+      it('should return null newValues when response is a number (not object)', async () => {
+        const context = createMockExecutionContext({
+          method: 'POST',
+          params: { id: mockEntityId },
+        });
+        const handler = createMockCallHandler(42);
+
+        const result = await interceptor.intercept(context, handler);
+
+        await new Promise<void>((resolve) => {
+          result.subscribe({
+            complete: () => {
+              setTimeout(resolve, 10);
+            },
+          });
+        });
+
+        expect(auditLogsService.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            newValues: null,
+          }),
+        );
+      });
+    });
   });
 });

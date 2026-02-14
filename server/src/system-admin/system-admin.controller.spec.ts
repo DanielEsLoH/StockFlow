@@ -15,7 +15,7 @@ import {
   UserActionResult,
   TenantActionResult,
 } from './types';
-import { SubscriptionPlan } from '@prisma/client';
+import { SubscriptionPlan, SubscriptionPeriod } from '@prisma/client';
 
 describe('SystemAdminController', () => {
   let controller: SystemAdminController;
@@ -82,6 +82,11 @@ describe('SystemAdminController', () => {
       deleteUser: jest.fn(),
       getAllTenants: jest.fn(),
       changeTenantPlan: jest.fn(),
+      activateTenantPlan: jest.fn(),
+      suspendTenantPlan: jest.fn(),
+      reactivateTenantPlan: jest.fn(),
+      getTenantSubscription: jest.fn(),
+      getAllPlanLimits: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -579,6 +584,197 @@ describe('SystemAdminController', () => {
       expect(logSpy).toHaveBeenCalledWith(
         'Change tenant plan request: tenant-1 to PRO by admin: admin@stockflow.com',
       );
+    });
+  });
+
+  describe('activateTenantPlan', () => {
+    it('should activate a tenant subscription plan with period', async () => {
+      const actionResult: TenantActionResult = {
+        success: true,
+        message: 'Plan activated successfully',
+        tenantId: 'tenant-1',
+        action: 'activate_plan',
+        newPlan: 'PYME',
+        endDate: new Date('2026-05-13'),
+      };
+      service.activateTenantPlan.mockResolvedValue(actionResult);
+
+      const result = await controller.activateTenantPlan(
+        { id: 'tenant-1' },
+        { plan: SubscriptionPlan.PYME, period: SubscriptionPeriod.QUARTERLY },
+        mockAdmin,
+      );
+
+      expect(result).toEqual(actionResult);
+      expect(service.activateTenantPlan).toHaveBeenCalledWith(
+        'tenant-1',
+        SubscriptionPlan.PYME,
+        SubscriptionPeriod.QUARTERLY,
+        mockAdmin.adminId,
+      );
+    });
+
+    it('should log the activate tenant plan request', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+      service.activateTenantPlan.mockResolvedValue({
+        success: true,
+        message: 'Plan activated',
+        tenantId: 'tenant-1',
+        action: 'activate_plan',
+      });
+
+      await controller.activateTenantPlan(
+        { id: 'tenant-1' },
+        { plan: SubscriptionPlan.PRO, period: SubscriptionPeriod.ANNUAL },
+        mockAdmin,
+      );
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Activate tenant plan request: tenant-1 - PRO for ANNUAL by admin: admin@stockflow.com',
+      );
+    });
+  });
+
+  describe('suspendTenantPlan', () => {
+    it('should suspend a tenant subscription plan', async () => {
+      const actionResult: TenantActionResult = {
+        success: true,
+        message: 'Plan suspended successfully',
+        tenantId: 'tenant-1',
+        action: 'suspend_plan',
+      };
+      service.suspendTenantPlan.mockResolvedValue(actionResult);
+
+      const result = await controller.suspendTenantPlan(
+        { id: 'tenant-1' },
+        { reason: 'Violation of terms of service' },
+        mockAdmin,
+      );
+
+      expect(result).toEqual(actionResult);
+      expect(service.suspendTenantPlan).toHaveBeenCalledWith(
+        'tenant-1',
+        'Violation of terms of service',
+        mockAdmin.adminId,
+      );
+    });
+
+    it('should log the suspend tenant plan request', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+      service.suspendTenantPlan.mockResolvedValue({
+        success: true,
+        message: 'Plan suspended',
+        tenantId: 'tenant-1',
+        action: 'suspend_plan',
+      });
+
+      await controller.suspendTenantPlan(
+        { id: 'tenant-1' },
+        { reason: 'Non-payment' },
+        mockAdmin,
+      );
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Suspend tenant plan request: tenant-1 by admin: admin@stockflow.com',
+      );
+    });
+  });
+
+  describe('reactivateTenantPlan', () => {
+    it('should reactivate a suspended tenant subscription', async () => {
+      const actionResult: TenantActionResult = {
+        success: true,
+        message: 'Plan reactivated successfully',
+        tenantId: 'tenant-1',
+        action: 'reactivate_plan',
+      };
+      service.reactivateTenantPlan.mockResolvedValue(actionResult);
+
+      const result = await controller.reactivateTenantPlan(
+        { id: 'tenant-1' },
+        mockAdmin,
+      );
+
+      expect(result).toEqual(actionResult);
+      expect(service.reactivateTenantPlan).toHaveBeenCalledWith(
+        'tenant-1',
+        mockAdmin.adminId,
+      );
+    });
+
+    it('should log the reactivate tenant plan request', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+      service.reactivateTenantPlan.mockResolvedValue({
+        success: true,
+        message: 'Plan reactivated',
+        tenantId: 'tenant-1',
+        action: 'reactivate_plan',
+      });
+
+      await controller.reactivateTenantPlan({ id: 'tenant-1' }, mockAdmin);
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Reactivate tenant plan request: tenant-1 by admin: admin@stockflow.com',
+      );
+    });
+  });
+
+  describe('getTenantSubscription', () => {
+    it('should return subscription details for a tenant', async () => {
+      const subscriptionData = {
+        id: 'sub-1',
+        tenantId: 'tenant-1',
+        plan: 'PYME',
+        period: 'QUARTERLY',
+        status: 'ACTIVE',
+        startDate: new Date('2026-01-01'),
+        endDate: new Date('2026-04-01'),
+      };
+      service.getTenantSubscription.mockResolvedValue(subscriptionData);
+
+      const result = await controller.getTenantSubscription({
+        id: 'tenant-1',
+      });
+
+      expect(result).toEqual(subscriptionData);
+      expect(service.getTenantSubscription).toHaveBeenCalledWith('tenant-1');
+    });
+
+    it('should log the get tenant subscription request', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+      service.getTenantSubscription.mockResolvedValue(null);
+
+      await controller.getTenantSubscription({ id: 'tenant-1' });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        'Get tenant subscription request: tenant-1',
+      );
+    });
+  });
+
+  describe('getAllPlanLimits', () => {
+    it('should return plan limits for all plans', () => {
+      const planLimits = {
+        EMPRENDEDOR: { maxProducts: 50, maxWarehouses: 1, maxUsers: 2 },
+        PYME: { maxProducts: 500, maxWarehouses: 3, maxUsers: 10 },
+        PRO: { maxProducts: 5000, maxWarehouses: 10, maxUsers: 50 },
+        PLUS: { maxProducts: -1, maxWarehouses: -1, maxUsers: -1 },
+      };
+      service.getAllPlanLimits.mockReturnValue(planLimits);
+
+      const result = controller.getAllPlanLimits();
+
+      expect(result).toEqual(planLimits);
+      expect(service.getAllPlanLimits).toHaveBeenCalled();
+    });
+
+    it('should log the get all plan limits request', () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+      service.getAllPlanLimits.mockReturnValue({});
+
+      controller.getAllPlanLimits();
+
+      expect(logSpy).toHaveBeenCalledWith('Get all plan limits request');
     });
   });
 });

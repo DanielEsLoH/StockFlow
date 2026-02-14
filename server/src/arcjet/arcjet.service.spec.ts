@@ -428,6 +428,28 @@ describe('ArcjetService', () => {
         }),
       );
     });
+
+    it('should create rate limit client with byUser AND byTenant characteristics', async () => {
+      mockArcjetClient.protect.mockResolvedValue({
+        isAllowed: () => true,
+        isDenied: () => false,
+      });
+
+      const req = createMockRequest();
+      const result = await service.checkRateLimit(
+        req,
+        { requests: 100, window: '1h', byUser: true, byTenant: true },
+        'user-123',
+        'tenant-123',
+      );
+
+      expect(result.allowed).toBe(true);
+      expect(arcjet).toHaveBeenCalledWith(
+        expect.objectContaining({
+          characteristics: expect.arrayContaining(['ip.src', 'userId', 'tenantId']),
+        }),
+      );
+    });
   });
 
   describe('checkSubscriptionRateLimit', () => {
@@ -634,6 +656,20 @@ describe('ArcjetService', () => {
       );
 
       expect(result.reason).toBe('DISABLED');
+    });
+
+    it('should handle errors gracefully', async () => {
+      mockArcjetClient.protect.mockRejectedValue(new Error('Heavy op error'));
+
+      const req = createMockRequest();
+      const result = await service.checkHeavyOperationLimit(
+        req,
+        'upload',
+        'user-123',
+      );
+
+      expect(result.allowed).toBe(true);
+      expect(result.reason).toBe('ERROR');
     });
   });
 
@@ -938,6 +974,125 @@ describe('ArcjetService', () => {
       expect(warnSpy).toHaveBeenCalledWith(
         expect.stringContaining('suspicious-bot'),
       );
+    });
+
+    it('should log unknown event types with log level', () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      service.logSecurityEvent({
+        type: 'UNKNOWN_TYPE' as any,
+        ip: '192.168.1.1',
+        path: '/api/test',
+        method: 'GET',
+        timestamp: new Date(),
+      });
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Security event'),
+      );
+    });
+  });
+
+  describe('serializeReason (via mapDecision)', () => {
+    beforeEach(() => {
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'arcjet.enabled') return true;
+        if (key === 'arcjet.key') return 'test-api-key';
+        if (key === 'arcjet.environment') return 'development';
+        return undefined;
+      });
+
+      service.onModuleInit();
+    });
+
+    it('should serialize SHIELD reason', async () => {
+      mockArcjetClient.protect.mockResolvedValue({
+        isAllowed: () => false,
+        isDenied: () => true,
+        reason: {
+          type: 'SHIELD',
+          isRateLimit: () => false,
+          isBot: () => false,
+          isShield: () => true,
+          isError: () => false,
+          shieldTriggered: true,
+        },
+      });
+
+      const req = createMockRequest();
+      const result = await service.checkRateLimit(req, {
+        requests: 1,
+        window: '1m',
+      });
+
+      expect(result.allowed).toBe(false);
+    });
+
+    it('should serialize ERROR reason', async () => {
+      mockArcjetClient.protect.mockResolvedValue({
+        isAllowed: () => false,
+        isDenied: () => true,
+        reason: {
+          type: 'ERROR',
+          isRateLimit: () => false,
+          isBot: () => false,
+          isShield: () => false,
+          isError: () => true,
+          message: 'Something went wrong',
+        },
+      });
+
+      const req = createMockRequest();
+      const result = await service.checkRateLimit(req, {
+        requests: 1,
+        window: '1m',
+      });
+
+      expect(result.allowed).toBe(false);
+    });
+
+    it('should serialize unknown reason type', async () => {
+      mockArcjetClient.protect.mockResolvedValue({
+        isAllowed: () => false,
+        isDenied: () => true,
+        reason: {
+          type: 'CUSTOM',
+          isRateLimit: () => false,
+          isBot: () => false,
+          isShield: () => false,
+          isError: () => false,
+        },
+      });
+
+      const req = createMockRequest();
+      const result = await service.checkRateLimit(req, {
+        requests: 1,
+        window: '1m',
+      });
+
+      expect(result.allowed).toBe(false);
+    });
+
+    it('should serialize reason with no type as UNKNOWN', async () => {
+      mockArcjetClient.protect.mockResolvedValue({
+        isAllowed: () => false,
+        isDenied: () => true,
+        reason: {
+          type: undefined,
+          isRateLimit: () => false,
+          isBot: () => false,
+          isShield: () => false,
+          isError: () => false,
+        },
+      });
+
+      const req = createMockRequest();
+      const result = await service.checkRateLimit(req, {
+        requests: 1,
+        window: '1m',
+      });
+
+      expect(result.allowed).toBe(false);
     });
   });
 });

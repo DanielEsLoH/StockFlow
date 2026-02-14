@@ -239,6 +239,54 @@ describe('UploadService', () => {
       );
       expect(storageService.upload).not.toHaveBeenCalled();
     });
+
+    it('should cleanup already-uploaded files when a subsequent upload fails', async () => {
+      const files = [
+        createMockFile({ originalname: 'image1.jpg' }),
+        createMockFile({ originalname: 'image2.jpg' }),
+        createMockFile({ originalname: 'image3.jpg' }),
+      ];
+
+      const uploadError = new Error('Storage service unavailable');
+
+      // First upload succeeds, second succeeds, third fails
+      storageService.upload
+        .mockResolvedValueOnce(`${mockPublicUrl}/products/product-1.jpg`)
+        .mockResolvedValueOnce(`${mockPublicUrl}/products/product-2.jpg`)
+        .mockRejectedValueOnce(uploadError);
+
+      await expect(service.uploadFiles(files, mockTenantId)).rejects.toThrow(
+        uploadError,
+      );
+
+      // Should have attempted to delete the two already-uploaded keys
+      expect(storageService.delete).toHaveBeenCalledTimes(2);
+      expect(storageService.delete).toHaveBeenCalledWith('products/product-1.jpg');
+      expect(storageService.delete).toHaveBeenCalledWith('products/product-2.jpg');
+    });
+
+    it('should still throw original error even if cleanup delete fails', async () => {
+      const files = [
+        createMockFile({ originalname: 'image1.jpg' }),
+        createMockFile({ originalname: 'image2.jpg' }),
+      ];
+
+      const uploadError = new Error('Upload failed');
+
+      storageService.upload
+        .mockResolvedValueOnce(`${mockPublicUrl}/products/product-1.jpg`)
+        .mockRejectedValueOnce(uploadError);
+
+      // Make the cleanup delete also fail
+      storageService.delete.mockRejectedValueOnce(new Error('Delete failed'));
+
+      await expect(service.uploadFiles(files, mockTenantId)).rejects.toThrow(
+        uploadError,
+      );
+
+      // Cleanup was attempted despite failing
+      expect(storageService.delete).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('uploadAvatar', () => {

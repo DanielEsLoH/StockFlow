@@ -431,6 +431,41 @@ describe('SubscriptionManagementService', () => {
       expect(Logger.prototype.error).toHaveBeenCalled();
     });
 
+    it('should log error with undefined stack when .catch receives a non-Error rejection (line 142)', async () => {
+      const tenantWithUsers = { ...mockTenant, users: [mockUser] };
+      mockPrismaTenant.findUnique.mockResolvedValue(tenantWithUsers);
+
+      mockPrismaTransaction.mockImplementation(async (callback) => {
+        const tx = {
+          subscription: {
+            upsert: jest.fn().mockResolvedValue(mockSubscription),
+          },
+          tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
+        };
+        return callback(tx);
+      });
+
+      // Spy on the private method to force the outer .catch() handler
+      jest
+        .spyOn(service as any, 'sendPlanActivationNotification')
+        .mockRejectedValue('string rejection');
+
+      const result = await service.activatePlan(
+        mockTenantId,
+        SubscriptionPlan.PYME,
+        SubscriptionPeriod.MONTHLY,
+        mockAdminId,
+      );
+
+      await flushPromises();
+
+      expect(result.success).toBe(true);
+      expect(Logger.prototype.error).toHaveBeenCalledWith(
+        'Failed to send plan activation notification',
+        undefined,
+      );
+    });
+
     it('should clear suspended fields when reactivating', async () => {
       const tenantWithUsers = { ...mockTenant, users: [mockUser] };
       mockPrismaTenant.findUnique.mockResolvedValue(tenantWithUsers);
@@ -627,6 +662,45 @@ describe('SubscriptionManagementService', () => {
 
       expect(result.success).toBe(true);
       expect(Logger.prototype.error).toHaveBeenCalled();
+    });
+
+    it('should log error with undefined stack when .catch receives a non-Error rejection (line 215)', async () => {
+      const subscriptionWithTenant = {
+        ...mockSubscription,
+        tenant: { ...mockTenant, users: [mockUser] },
+      };
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
+
+      mockPrismaTransaction.mockImplementation(async (callback) => {
+        const tx = {
+          subscription: {
+            update: jest.fn().mockResolvedValue(mockSubscription),
+          },
+          tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
+        };
+        return callback(tx);
+      });
+
+      // Spy on the private method to force the outer .catch() handler
+      jest
+        .spyOn(service as any, 'sendPlanSuspensionNotification')
+        .mockRejectedValue('string rejection');
+
+      const result = await service.suspendPlan(
+        mockTenantId,
+        'Reason',
+        mockAdminId,
+      );
+
+      await flushPromises();
+
+      expect(result.success).toBe(true);
+      expect(Logger.prototype.error).toHaveBeenCalledWith(
+        'Failed to send plan suspension notification',
+        undefined,
+      );
     });
   });
 
@@ -913,6 +987,45 @@ describe('SubscriptionManagementService', () => {
       await flushPromises();
 
       expect(result.success).toBe(true);
+    });
+
+    it('should log error with undefined stack when .catch receives a non-Error rejection (line 361)', async () => {
+      const subscriptionWithTenant = {
+        ...mockSubscription,
+        tenant: { ...mockTenant, users: [mockUser] },
+      };
+      mockPrismaSubscription.findUnique.mockResolvedValue(
+        subscriptionWithTenant,
+      );
+
+      mockPrismaTransaction.mockImplementation(async (callback) => {
+        const tx = {
+          subscription: {
+            update: jest.fn().mockResolvedValue(mockSubscription),
+          },
+          tenant: { update: jest.fn().mockResolvedValue(mockTenant) },
+        };
+        return callback(tx);
+      });
+
+      // Spy on the private method to force the outer .catch() handler
+      jest
+        .spyOn(service as any, 'sendPlanChangeNotification')
+        .mockRejectedValue('string rejection');
+
+      const result = await service.changePlan(
+        mockTenantId,
+        SubscriptionPlan.PRO,
+        mockAdminId,
+      );
+
+      await flushPromises();
+
+      expect(result.success).toBe(true);
+      expect(Logger.prototype.error).toHaveBeenCalledWith(
+        'Failed to send plan change notification',
+        undefined,
+      );
     });
   });
 

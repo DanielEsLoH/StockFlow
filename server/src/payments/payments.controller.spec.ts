@@ -80,6 +80,7 @@ describe('PaymentsController', () => {
       create: jest.fn(),
       delete: jest.fn(),
       findByInvoice: jest.fn(),
+      getStats: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -303,6 +304,57 @@ describe('PaymentsController', () => {
     });
   });
 
+  describe('getStats', () => {
+    const mockStats = {
+      totalPayments: 25,
+      totalAmount: 12500.5,
+      byMethod: {
+        CASH: { count: 10, amount: 5000 },
+        BANK_TRANSFER: { count: 8, amount: 4500.5 },
+        CREDIT_CARD: { count: 7, amount: 3000 },
+      },
+    };
+
+    it('should return payment statistics', async () => {
+      paymentsService.getStats.mockResolvedValue(mockStats);
+
+      const result = await controller.getStats();
+
+      expect(result).toEqual(mockStats);
+      expect(paymentsService.getStats).toHaveBeenCalledTimes(1);
+    });
+
+    it('should log when getting payment statistics', async () => {
+      paymentsService.getStats.mockResolvedValue(mockStats);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.getStats();
+
+      expect(logSpy).toHaveBeenCalledWith('Getting payment statistics');
+    });
+
+    it('should propagate service errors', async () => {
+      const error = new Error('Database error');
+      paymentsService.getStats.mockRejectedValue(error);
+
+      await expect(controller.getStats()).rejects.toThrow(error);
+    });
+
+    it('should return empty stats when no payments exist', async () => {
+      const emptyStats = {
+        totalPayments: 0,
+        totalAmount: 0,
+        byMethod: {},
+      };
+      paymentsService.getStats.mockResolvedValue(emptyStats);
+
+      const result = await controller.getStats();
+
+      expect(result.totalPayments).toBe(0);
+      expect(result.totalAmount).toBe(0);
+    });
+  });
+
   describe('findOne', () => {
     it('should return a payment by id', async () => {
       paymentsService.findOne.mockResolvedValue(mockPayment);
@@ -500,6 +552,7 @@ describe('PaymentsController', () => {
   describe('HTTP methods and decorators', () => {
     it('controller methods should exist', () => {
       expect(controller.findAll).toBeDefined();
+      expect(controller.getStats).toBeDefined();
       expect(controller.findOne).toBeDefined();
       expect(controller.create).toBeDefined();
       expect(controller.delete).toBeDefined();

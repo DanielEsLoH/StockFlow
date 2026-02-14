@@ -1021,4 +1021,122 @@ describe('PaymentsService', () => {
       expect(result.invoice).toBeUndefined();
     });
   });
+
+  describe('getStats', () => {
+    it('should return empty stats when no payments exist', async () => {
+      (prismaService.payment.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.getStats();
+
+      expect(result.totalPayments).toBe(0);
+      expect(result.totalReceived).toBe(0);
+      expect(result.averagePaymentValue).toBe(0);
+      expect(result.todayPayments).toBe(0);
+      expect(result.weekPayments).toBe(0);
+      expect(result.paymentsByStatus[PaymentStatus.PAID]).toBe(0);
+    });
+
+    it('should calculate stats correctly with payments', async () => {
+      const payments = [
+        {
+          amount: 1000,
+          method: PaymentMethod.CASH,
+          paymentDate: new Date(), // today
+        },
+        {
+          amount: 2000,
+          method: PaymentMethod.CREDIT_CARD,
+          paymentDate: new Date(), // today
+        },
+        {
+          amount: 500,
+          method: PaymentMethod.CASH,
+          paymentDate: new Date('2023-01-01'), // old payment
+        },
+      ];
+      (prismaService.payment.findMany as jest.Mock).mockResolvedValue(payments);
+
+      const result = await service.getStats();
+
+      expect(result.totalPayments).toBe(3);
+      expect(result.totalReceived).toBe(3500);
+      expect(result.averagePaymentValue).toBeCloseTo(1166.67, 0);
+      expect(result.todayPayments).toBe(2);
+      expect(result.todayTotal).toBe(3000);
+      expect(result.paymentsByStatus[PaymentStatus.PAID]).toBe(3);
+      expect(result.paymentsByMethod[PaymentMethod.CASH]).toBe(2);
+      expect(result.paymentsByMethod[PaymentMethod.CREDIT_CARD]).toBe(1);
+    });
+
+    it('should count today and week payments correctly', async () => {
+      const now = new Date();
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const lastMonth = new Date(now);
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+      const payments = [
+        {
+          amount: 100,
+          method: PaymentMethod.NEQUI,
+          paymentDate: now,
+        },
+        {
+          amount: 200,
+          method: PaymentMethod.PSE,
+          paymentDate: yesterday,
+        },
+        {
+          amount: 300,
+          method: PaymentMethod.BANK_TRANSFER,
+          paymentDate: lastMonth,
+        },
+      ];
+      (prismaService.payment.findMany as jest.Mock).mockResolvedValue(payments);
+
+      const result = await service.getStats();
+
+      expect(result.totalPayments).toBe(3);
+      expect(result.totalReceived).toBe(600);
+      expect(result.todayPayments).toBe(1);
+      expect(result.todayTotal).toBe(100);
+      expect(result.paymentsByMethod[PaymentMethod.NEQUI]).toBe(1);
+      expect(result.paymentsByMethod[PaymentMethod.PSE]).toBe(1);
+      expect(result.paymentsByMethod[PaymentMethod.BANK_TRANSFER]).toBe(1);
+    });
+
+    it('should use requireTenantId for scoping', async () => {
+      (prismaService.payment.findMany as jest.Mock).mockResolvedValue([]);
+
+      await service.getStats();
+
+      expect(tenantContextService.requireTenantId).toHaveBeenCalled();
+      expect(prismaService.payment.findMany).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        select: {
+          amount: true,
+          method: true,
+          paymentDate: true,
+        },
+      });
+    });
+
+    it('should count all payment methods correctly', async () => {
+      const payments = [
+        { amount: 100, method: PaymentMethod.DEBIT_CARD, paymentDate: new Date('2023-06-01') },
+        { amount: 200, method: PaymentMethod.DAVIPLATA, paymentDate: new Date('2023-06-01') },
+        { amount: 300, method: PaymentMethod.OTHER, paymentDate: new Date('2023-06-01') },
+      ];
+      (prismaService.payment.findMany as jest.Mock).mockResolvedValue(payments);
+
+      const result = await service.getStats();
+
+      expect(result.paymentsByMethod[PaymentMethod.DEBIT_CARD]).toBe(1);
+      expect(result.paymentsByMethod[PaymentMethod.DAVIPLATA]).toBe(1);
+      expect(result.paymentsByMethod[PaymentMethod.OTHER]).toBe(1);
+      expect(result.totalPending).toBe(0);
+      expect(result.totalRefunded).toBe(0);
+      expect(result.totalProcessing).toBe(0);
+    });
+  });
 });

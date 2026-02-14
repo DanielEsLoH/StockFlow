@@ -603,5 +603,32 @@ describe('LimitCheckInterceptor', () => {
         interceptor.intercept(context, mockCallHandler),
       ).rejects.toThrow('Unknown limit type');
     });
+
+    it('should log error and return 0 for unknown limit type in getCurrentCount (lines 213-215)', async () => {
+      const context = createMockContext({});
+      // Force an invalid limit type
+      reflector.get.mockReturnValue('unknownType' as unknown as LimitType);
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue(
+        mockTenant,
+      );
+
+      // Bypass getLimitValue by spying on it to return a non-unlimited value
+      // so the code proceeds to getCurrentCount with the unknown type.
+      jest
+        .spyOn(interceptor as any, 'getLimitValue')
+        .mockReturnValue(10);
+
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+
+      // getCurrentCount returns 0 for unknown type, which is < 10 limit,
+      // so the request should proceed without throwing.
+      const result = await interceptor.intercept(context, mockCallHandler);
+
+      expect(result).toBeDefined();
+      expect(mockCallHandler.handle).toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Unknown limit type: unknownType',
+      );
+    });
   });
 });

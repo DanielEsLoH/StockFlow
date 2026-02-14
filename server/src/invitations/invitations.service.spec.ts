@@ -258,6 +258,65 @@ describe('InvitationsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should throw BadRequestException when EMPLOYEE role has no warehouseId', async () => {
+      const dtoWithoutWarehouse = {
+        email: 'invitee@example.com',
+        role: UserRole.EMPLOYEE,
+      };
+
+      await expect(
+        service.create(dtoWithoutWarehouse, mockAdminUser as any),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.create(dtoWithoutWarehouse, mockAdminUser as any),
+      ).rejects.toThrow('deben tener una bodega asignada');
+    });
+
+    it('should throw BadRequestException when MANAGER role has no warehouseId', async () => {
+      const dtoWithoutWarehouse = {
+        email: 'invitee@example.com',
+        role: UserRole.MANAGER,
+      };
+
+      await expect(
+        service.create(dtoWithoutWarehouse, mockAdminUser as any),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.create(dtoWithoutWarehouse, mockAdminUser as any),
+      ).rejects.toThrow('deben tener una bodega asignada');
+    });
+
+    it('should throw BadRequestException when warehouse does not exist or is inactive', async () => {
+      const dtoWithBadWarehouse = {
+        email: 'invitee@example.com',
+        role: UserRole.EMPLOYEE,
+        warehouseId: 'nonexistent-warehouse',
+      };
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.create(dtoWithBadWarehouse, mockAdminUser as any),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.create(dtoWithBadWarehouse, mockAdminUser as any),
+      ).rejects.toThrow('La bodega seleccionada no existe');
+    });
+
+    it('should throw BadRequestException when ADMIN role has a warehouseId', async () => {
+      const dtoAdminWithWarehouse = {
+        email: 'invitee@example.com',
+        role: UserRole.ADMIN,
+        warehouseId: 'warehouse-123',
+      };
+
+      await expect(
+        service.create(dtoAdminWithWarehouse, mockAdminUser as any),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.create(dtoAdminWithWarehouse, mockAdminUser as any),
+      ).rejects.toThrow('Los administradores no deben tener una bodega asignada');
+    });
+
     it('should throw ConflictException if user already exists in platform', async () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue({
         id: 'existing-user',

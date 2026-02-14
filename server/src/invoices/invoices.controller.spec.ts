@@ -8,6 +8,7 @@ import type {
 } from './invoices.service';
 import {
   CreateInvoiceDto,
+  CheckoutInvoiceDto,
   UpdateInvoiceDto,
   FilterInvoicesDto,
   AddInvoiceItemDto,
@@ -162,7 +163,10 @@ describe('InvoicesController', () => {
     const mockInvoicesService = {
       findAll: jest.fn(),
       findOne: jest.fn(),
+      getStats: jest.fn(),
       create: jest.fn(),
+      checkout: jest.fn(),
+      markAsPaid: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
       send: jest.fn(),
@@ -182,6 +186,7 @@ describe('InvoicesController', () => {
 
     const mockDianService = {
       sendInvoice: jest.fn(),
+      processInvoice: jest.fn(),
       getInvoiceStatus: jest.fn(),
       resendInvoice: jest.fn(),
       downloadPdf: jest.fn(),
@@ -535,6 +540,319 @@ describe('InvoicesController', () => {
       invoicesService.cancel.mockRejectedValue(error);
 
       await expect(controller.cancel('invoice-123')).rejects.toThrow(error);
+    });
+  });
+
+  describe('getStats', () => {
+    const mockStats = {
+      totalInvoices: 50,
+      totalRevenue: 25000,
+      pendingAmount: 5000,
+      byStatus: {
+        DRAFT: 10,
+        SENT: 20,
+        CANCELLED: 5,
+        VOID: 0,
+      },
+      byPaymentStatus: {
+        UNPAID: 15,
+        PARTIALLY_PAID: 10,
+        PAID: 25,
+      },
+    };
+
+    it('should return invoice statistics', async () => {
+      invoicesService.getStats.mockResolvedValue(mockStats);
+
+      const result = await controller.getStats();
+
+      expect(result).toEqual(mockStats);
+      expect(invoicesService.getStats).toHaveBeenCalledTimes(1);
+    });
+
+    it('should log the stats request', async () => {
+      invoicesService.getStats.mockResolvedValue(mockStats);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.getStats();
+
+      expect(logSpy).toHaveBeenCalledWith('Getting invoice statistics');
+    });
+
+    it('should propagate service errors', async () => {
+      const error = new Error('Database error');
+      invoicesService.getStats.mockRejectedValue(error);
+
+      await expect(controller.getStats()).rejects.toThrow(error);
+    });
+  });
+
+  describe('checkout', () => {
+    const checkoutDto: CheckoutInvoiceDto = {
+      items: [
+        {
+          productId: 'product-123',
+          quantity: 2,
+          unitPrice: 50,
+          taxRate: 19,
+          discount: 0,
+        },
+      ],
+      customerId: 'customer-123',
+      immediatePayment: true,
+    };
+
+    const checkoutResponse: InvoiceResponse = {
+      ...mockInvoice,
+      status: InvoiceStatus.SENT,
+      source: 'POS',
+      paymentStatus: PaymentStatus.PAID,
+    };
+
+    it('should create a checkout invoice and return it', async () => {
+      invoicesService.checkout.mockResolvedValue(checkoutResponse);
+
+      const result = await controller.checkout(checkoutDto, mockUser);
+
+      expect(result).toEqual(checkoutResponse);
+      expect(invoicesService.checkout).toHaveBeenCalledWith(
+        checkoutDto,
+        mockUser.userId,
+      );
+    });
+
+    it('should pass userId from @CurrentUser to service', async () => {
+      invoicesService.checkout.mockResolvedValue(checkoutResponse);
+
+      await controller.checkout(checkoutDto, mockUser);
+
+      expect(invoicesService.checkout).toHaveBeenCalledWith(
+        checkoutDto,
+        'user-123',
+      );
+    });
+
+    it('should log checkout with immediatePayment true', async () => {
+      invoicesService.checkout.mockResolvedValue(checkoutResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.checkout(checkoutDto, mockUser);
+
+      expect(logSpy).toHaveBeenCalledWith(
+        `Checkout by user ${mockUser.userId}, immediatePayment: true`,
+      );
+    });
+
+    it('should log checkout with immediatePayment false when not provided', async () => {
+      invoicesService.checkout.mockResolvedValue(checkoutResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      const dtoWithoutPayment: CheckoutInvoiceDto = {
+        items: [
+          {
+            productId: 'product-123',
+            quantity: 1,
+            unitPrice: 100,
+          },
+        ],
+      };
+
+      await controller.checkout(dtoWithoutPayment, mockUser);
+
+      expect(logSpy).toHaveBeenCalledWith(
+        `Checkout by user ${mockUser.userId}, immediatePayment: false`,
+      );
+    });
+
+    it('should handle checkout without customer', async () => {
+      invoicesService.checkout.mockResolvedValue(checkoutResponse);
+
+      const dtoWithoutCustomer: CheckoutInvoiceDto = {
+        items: [
+          {
+            productId: 'product-123',
+            quantity: 1,
+            unitPrice: 100,
+          },
+        ],
+        immediatePayment: false,
+      };
+
+      await controller.checkout(dtoWithoutCustomer, mockUser);
+
+      expect(invoicesService.checkout).toHaveBeenCalledWith(
+        dtoWithoutCustomer,
+        mockUser.userId,
+      );
+    });
+
+    it('should propagate validation errors', async () => {
+      const error = new BadRequestException('Invalid checkout data');
+      invoicesService.checkout.mockRejectedValue(error);
+
+      await expect(
+        controller.checkout(checkoutDto, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate insufficient stock errors', async () => {
+      const error = new BadRequestException('Insufficient stock');
+      invoicesService.checkout.mockRejectedValue(error);
+
+      await expect(
+        controller.checkout(checkoutDto, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate service errors', async () => {
+      const error = new Error('Database error');
+      invoicesService.checkout.mockRejectedValue(error);
+
+      await expect(
+        controller.checkout(checkoutDto, mockUser),
+      ).rejects.toThrow(error);
+    });
+  });
+
+  describe('markAsPaid', () => {
+    const paidInvoice: InvoiceResponse = {
+      ...mockInvoice,
+      status: InvoiceStatus.SENT,
+      paymentStatus: PaymentStatus.PAID,
+    };
+
+    it('should mark an invoice as paid and return it', async () => {
+      invoicesService.markAsPaid.mockResolvedValue(paidInvoice);
+
+      const result = await controller.markAsPaid('invoice-123', {
+        paymentMethod: 'CASH',
+      });
+
+      expect(result).toEqual(paidInvoice);
+      expect(invoicesService.markAsPaid).toHaveBeenCalledWith(
+        'invoice-123',
+        'CASH',
+      );
+    });
+
+    it('should pass undefined paymentMethod when body has no paymentMethod', async () => {
+      invoicesService.markAsPaid.mockResolvedValue(paidInvoice);
+
+      await controller.markAsPaid('invoice-123', {});
+
+      expect(invoicesService.markAsPaid).toHaveBeenCalledWith(
+        'invoice-123',
+        undefined,
+      );
+    });
+
+    it('should handle body being undefined-like', async () => {
+      invoicesService.markAsPaid.mockResolvedValue(paidInvoice);
+
+      await controller.markAsPaid('invoice-123', undefined as any);
+
+      expect(invoicesService.markAsPaid).toHaveBeenCalledWith(
+        'invoice-123',
+        undefined,
+      );
+    });
+
+    it('should log the mark as paid request', async () => {
+      invoicesService.markAsPaid.mockResolvedValue(paidInvoice);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.markAsPaid('invoice-123', { paymentMethod: 'CASH' });
+
+      expect(logSpy).toHaveBeenCalledWith('Marking invoice invoice-123 as paid');
+    });
+
+    it('should propagate not found errors', async () => {
+      const error = new NotFoundException('Factura no encontrada');
+      invoicesService.markAsPaid.mockRejectedValue(error);
+
+      await expect(
+        controller.markAsPaid('nonexistent', { paymentMethod: 'CASH' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should propagate bad request errors', async () => {
+      const error = new BadRequestException('Invoice already paid');
+      invoicesService.markAsPaid.mockRejectedValue(error);
+
+      await expect(
+        controller.markAsPaid('invoice-123', { paymentMethod: 'CASH' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate service errors', async () => {
+      const error = new Error('Database error');
+      invoicesService.markAsPaid.mockRejectedValue(error);
+
+      await expect(
+        controller.markAsPaid('invoice-123', {}),
+      ).rejects.toThrow(error);
+    });
+  });
+
+  describe('sendToDian', () => {
+    const mockDianResponse = {
+      success: true,
+      cufe: 'abc123-cufe-hash',
+      status: 'ACCEPTED',
+      message: 'Invoice processed successfully',
+    };
+
+    it('should send invoice to DIAN and return result', async () => {
+      dianService.processInvoice.mockResolvedValue(mockDianResponse);
+
+      const result = await controller.sendToDian('invoice-123');
+
+      expect(result).toEqual(mockDianResponse);
+      expect(dianService.processInvoice).toHaveBeenCalledWith('invoice-123');
+    });
+
+    it('should call dianService.processInvoice with correct id', async () => {
+      dianService.processInvoice.mockResolvedValue(mockDianResponse);
+
+      await controller.sendToDian('invoice-456');
+
+      expect(dianService.processInvoice).toHaveBeenCalledWith('invoice-456');
+    });
+
+    it('should log the send to DIAN request', async () => {
+      dianService.processInvoice.mockResolvedValue(mockDianResponse);
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+
+      await controller.sendToDian('invoice-123');
+
+      expect(logSpy).toHaveBeenCalledWith('Sending invoice invoice-123 to DIAN');
+    });
+
+    it('should propagate not found errors', async () => {
+      const error = new NotFoundException('Factura no encontrada');
+      dianService.processInvoice.mockRejectedValue(error);
+
+      await expect(controller.sendToDian('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should propagate bad request errors for missing DIAN config', async () => {
+      const error = new BadRequestException('DIAN configuration missing');
+      dianService.processInvoice.mockRejectedValue(error);
+
+      await expect(controller.sendToDian('invoice-123')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should propagate service errors', async () => {
+      const error = new Error('DIAN service unavailable');
+      dianService.processInvoice.mockRejectedValue(error);
+
+      await expect(controller.sendToDian('invoice-123')).rejects.toThrow(
+        error,
+      );
     });
   });
 

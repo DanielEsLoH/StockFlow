@@ -376,6 +376,151 @@ describe('PermissionsService', () => {
     });
   });
 
+  describe('setPermissionOverrides', () => {
+    it('should upsert multiple overrides in a transaction', async () => {
+      const overrides = [
+        { permission: Permission.POS_REFUND, granted: true, reason: 'Promotion' },
+        { permission: Permission.POS_SELL, granted: false, reason: 'Security' },
+      ];
+
+      await service.setPermissionOverrides(
+        mockUserId,
+        mockTenantId,
+        overrides,
+        mockAdminId,
+      );
+
+      expect(prismaService.$transaction).toHaveBeenCalled();
+      // The transaction callback receives the mock prisma service and should call upsert for each override
+      expect(prismaService.userPermissionOverride.upsert).toHaveBeenCalledTimes(2);
+
+      expect(prismaService.userPermissionOverride.upsert).toHaveBeenCalledWith({
+        where: {
+          userId_permission: {
+            userId: mockUserId,
+            permission: Permission.POS_REFUND,
+          },
+        },
+        create: {
+          userId: mockUserId,
+          tenantId: mockTenantId,
+          permission: Permission.POS_REFUND,
+          granted: true,
+          grantedBy: mockAdminId,
+          reason: 'Promotion',
+        },
+        update: {
+          granted: true,
+          grantedBy: mockAdminId,
+          reason: 'Promotion',
+          updatedAt: expect.any(Date),
+        },
+      });
+
+      expect(prismaService.userPermissionOverride.upsert).toHaveBeenCalledWith({
+        where: {
+          userId_permission: {
+            userId: mockUserId,
+            permission: Permission.POS_SELL,
+          },
+        },
+        create: {
+          userId: mockUserId,
+          tenantId: mockTenantId,
+          permission: Permission.POS_SELL,
+          granted: false,
+          grantedBy: mockAdminId,
+          reason: 'Security',
+        },
+        update: {
+          granted: false,
+          grantedBy: mockAdminId,
+          reason: 'Security',
+          updatedAt: expect.any(Date),
+        },
+      });
+    });
+
+    it('should invalidate cache after setting overrides', async () => {
+      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+
+      // Prime the cache
+      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
+
+      // Set overrides (clears cache)
+      await service.setPermissionOverrides(
+        mockUserId,
+        mockTenantId,
+        [{ permission: Permission.POS_REFUND, granted: true }],
+        mockAdminId,
+      );
+
+      // Next call should hit the database again
+      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
+
+      expect(prismaService.userPermissionOverride.findMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle empty overrides array', async () => {
+      await service.setPermissionOverrides(
+        mockUserId,
+        mockTenantId,
+        [],
+        mockAdminId,
+      );
+
+      expect(prismaService.$transaction).toHaveBeenCalled();
+      expect(prismaService.userPermissionOverride.upsert).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPermissionOverrides', () => {
+    it('should return all permission overrides for a user', async () => {
+      const mockOverrides = [
+        {
+          permission: Permission.POS_REFUND,
+          granted: true,
+          grantedBy: mockAdminId,
+          reason: 'Promotion',
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+        },
+        {
+          permission: Permission.POS_SELL,
+          granted: false,
+          grantedBy: mockAdminId,
+          reason: 'Security concern',
+          createdAt: new Date('2024-01-02'),
+          updatedAt: new Date('2024-01-02'),
+        },
+      ];
+      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue(mockOverrides);
+
+      const result = await service.getPermissionOverrides(mockUserId, mockTenantId);
+
+      expect(result).toEqual(mockOverrides);
+      expect(prismaService.userPermissionOverride.findMany).toHaveBeenCalledWith({
+        where: { userId: mockUserId, tenantId: mockTenantId },
+        select: {
+          permission: true,
+          granted: true,
+          grantedBy: true,
+          reason: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    });
+
+    it('should return empty array when no overrides exist', async () => {
+      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+
+      const result = await service.getPermissionOverrides(mockUserId, mockTenantId);
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('clearCache', () => {
     it('should clear the entire cache', async () => {
       prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);

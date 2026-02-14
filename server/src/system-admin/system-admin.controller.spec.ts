@@ -730,7 +730,7 @@ describe('SystemAdminController', () => {
         startDate: new Date('2026-01-01'),
         endDate: new Date('2026-04-01'),
       };
-      service.getTenantSubscription.mockResolvedValue(subscriptionData);
+      service.getTenantSubscription.mockResolvedValue(subscriptionData as any);
 
       const result = await controller.getTenantSubscription({
         id: 'tenant-1',
@@ -760,7 +760,7 @@ describe('SystemAdminController', () => {
         PRO: { maxProducts: 5000, maxWarehouses: 10, maxUsers: 50 },
         PLUS: { maxProducts: -1, maxWarehouses: -1, maxUsers: -1 },
       };
-      service.getAllPlanLimits.mockReturnValue(planLimits);
+      service.getAllPlanLimits.mockReturnValue(planLimits as any);
 
       const result = controller.getAllPlanLimits();
 
@@ -770,7 +770,7 @@ describe('SystemAdminController', () => {
 
     it('should log the get all plan limits request', () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
-      service.getAllPlanLimits.mockReturnValue({});
+      service.getAllPlanLimits.mockReturnValue({} as any);
 
       controller.getAllPlanLimits();
 

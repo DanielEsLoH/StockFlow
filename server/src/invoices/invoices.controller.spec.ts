@@ -548,16 +548,15 @@ describe('InvoicesController', () => {
       totalInvoices: 50,
       totalRevenue: 25000,
       pendingAmount: 5000,
-      byStatus: {
+      overdueAmount: 2000,
+      averageInvoiceValue: 500,
+      invoicesByStatus: {
         DRAFT: 10,
+        PENDING: 5,
         SENT: 20,
+        OVERDUE: 5,
         CANCELLED: 5,
         VOID: 0,
-      },
-      byPaymentStatus: {
-        UNPAID: 15,
-        PARTIALLY_PAID: 10,
-        PAID: 25,
       },
     };
 
@@ -797,13 +796,14 @@ describe('InvoicesController', () => {
   describe('sendToDian', () => {
     const mockDianResponse = {
       success: true,
+      documentId: 'dian-doc-123',
       cufe: 'abc123-cufe-hash',
       status: 'ACCEPTED',
       message: 'Invoice processed successfully',
     };
 
     it('should send invoice to DIAN and return result', async () => {
-      dianService.processInvoice.mockResolvedValue(mockDianResponse);
+      dianService.processInvoice.mockResolvedValue(mockDianResponse as any);
 
       const result = await controller.sendToDian('invoice-123');
 
@@ -812,7 +812,7 @@ describe('InvoicesController', () => {
     });
 
     it('should call dianService.processInvoice with correct id', async () => {
-      dianService.processInvoice.mockResolvedValue(mockDianResponse);
+      dianService.processInvoice.mockResolvedValue(mockDianResponse as any);
 
       await controller.sendToDian('invoice-456');
 
@@ -820,7 +820,7 @@ describe('InvoicesController', () => {
     });
 
     it('should log the send to DIAN request', async () => {
-      dianService.processInvoice.mockResolvedValue(mockDianResponse);
+      dianService.processInvoice.mockResolvedValue(mockDianResponse as any);
       const logSpy = jest.spyOn(Logger.prototype, 'log');
 
       await controller.sendToDian('invoice-123');

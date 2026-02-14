@@ -307,12 +307,17 @@ describe('PaymentsController', () => {
   describe('getStats', () => {
     const mockStats = {
       totalPayments: 25,
-      totalAmount: 12500.5,
-      byMethod: {
-        CASH: { count: 10, amount: 5000 },
-        BANK_TRANSFER: { count: 8, amount: 4500.5 },
-        CREDIT_CARD: { count: 7, amount: 3000 },
-      },
+      totalReceived: 10000,
+      totalPending: 2000,
+      totalRefunded: 500,
+      totalProcessing: 0,
+      averagePaymentValue: 500,
+      paymentsByStatus: { UNPAID: 5, PARTIALLY_PAID: 5, PAID: 15 },
+      paymentsByMethod: { CASH: 10, CREDIT_CARD: 5, DEBIT_CARD: 3, BANK_TRANSFER: 4, PSE: 1, NEQUI: 1, DAVIPLATA: 1, OTHER: 0 },
+      todayPayments: 3,
+      todayTotal: 1500,
+      weekPayments: 10,
+      weekTotal: 5000,
     };
 
     it('should return payment statistics', async () => {
@@ -343,15 +348,24 @@ describe('PaymentsController', () => {
     it('should return empty stats when no payments exist', async () => {
       const emptyStats = {
         totalPayments: 0,
-        totalAmount: 0,
-        byMethod: {},
+        totalReceived: 0,
+        totalPending: 0,
+        totalRefunded: 0,
+        totalProcessing: 0,
+        averagePaymentValue: 0,
+        paymentsByStatus: {},
+        paymentsByMethod: {},
+        todayPayments: 0,
+        todayTotal: 0,
+        weekPayments: 0,
+        weekTotal: 0,
       };
-      paymentsService.getStats.mockResolvedValue(emptyStats);
+      paymentsService.getStats.mockResolvedValue(emptyStats as any);
 
       const result = await controller.getStats();
 
       expect(result.totalPayments).toBe(0);
-      expect(result.totalAmount).toBe(0);
+      expect(result.totalReceived).toBe(0);
     });
   });
 

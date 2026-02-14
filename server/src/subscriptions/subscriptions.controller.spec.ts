@@ -50,6 +50,10 @@ describe('SubscriptionsController', () => {
   const mockPlans = [
     {
       plan: 'EMPRENDEDOR',
+      displayName: 'Plan Emprendedor',
+      description: 'Plan gratuito para empezar',
+      features: ['Funciones básicas'],
+      priceMonthly: 0,
       limits: { maxUsers: 2, maxProducts: 50, maxInvoices: 100, maxWarehouses: 1 },
       prices: {
         MONTHLY: { total: 0, totalInCents: 0, monthly: 0, discount: 0 },
@@ -59,6 +63,10 @@ describe('SubscriptionsController', () => {
     },
     {
       plan: 'PYME',
+      displayName: 'Plan PYME',
+      description: 'Plan para pequeñas empresas',
+      features: ['Multi-usuario', 'Reportes'],
+      priceMonthly: 59900,
       limits: { maxUsers: 5, maxProducts: 100, maxInvoices: 200, maxWarehouses: 2 },
       prices: {
         MONTHLY: { total: 59900, totalInCents: 5990000, monthly: 59900, discount: 0 },
@@ -72,28 +80,34 @@ describe('SubscriptionsController', () => {
     {
       id: 'billing-1',
       tenantId: mockTenantId,
-      transactionId: 'txn-001',
-      reference: 'ref-001',
+      wompiTransactionId: 'txn-001',
+      wompiReference: 'ref-001',
       plan: SubscriptionPlan.PYME,
-      periodType: SubscriptionPeriod.MONTHLY,
+      period: SubscriptionPeriod.MONTHLY,
       amountInCents: 5990000,
       currency: 'COP',
       status: 'APPROVED',
-      paymentMethod: 'CARD',
+      paymentMethodType: 'CARD',
+      failureReason: null,
+      isRecurring: false,
+      subscriptionId: null,
       createdAt: new Date('2025-01-01'),
       updatedAt: new Date('2025-01-01'),
     },
     {
       id: 'billing-2',
       tenantId: mockTenantId,
-      transactionId: 'txn-002',
-      reference: 'ref-002',
+      wompiTransactionId: 'txn-002',
+      wompiReference: 'ref-002',
       plan: SubscriptionPlan.PRO,
-      periodType: SubscriptionPeriod.QUARTERLY,
+      period: SubscriptionPeriod.QUARTERLY,
       amountInCents: 16173000,
       currency: 'COP',
       status: 'DECLINED',
-      paymentMethod: 'CARD',
+      paymentMethodType: 'CARD',
+      failureReason: null,
+      isRecurring: false,
+      subscriptionId: null,
       createdAt: new Date('2024-12-01'),
       updatedAt: new Date('2024-12-01'),
     },
@@ -264,7 +278,7 @@ describe('SubscriptionsController', () => {
 
   describe('getPlans', () => {
     it('should return the list of available plans', () => {
-      subscriptionsService.getPlans.mockReturnValue(mockPlans);
+      subscriptionsService.getPlans.mockReturnValue(mockPlans as any);
 
       const result = controller.getPlans();
 
@@ -272,7 +286,7 @@ describe('SubscriptionsController', () => {
     });
 
     it('should call the service getPlans method', () => {
-      subscriptionsService.getPlans.mockReturnValue(mockPlans);
+      subscriptionsService.getPlans.mockReturnValue(mockPlans as any);
 
       controller.getPlans();
 
@@ -280,7 +294,7 @@ describe('SubscriptionsController', () => {
     });
 
     it('should call the service exactly once', () => {
-      subscriptionsService.getPlans.mockReturnValue(mockPlans);
+      subscriptionsService.getPlans.mockReturnValue(mockPlans as any);
 
       controller.getPlans();
 
@@ -289,7 +303,7 @@ describe('SubscriptionsController', () => {
 
     it('should log the operation', () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
-      subscriptionsService.getPlans.mockReturnValue(mockPlans);
+      subscriptionsService.getPlans.mockReturnValue(mockPlans as any);
 
       controller.getPlans();
 
@@ -299,7 +313,7 @@ describe('SubscriptionsController', () => {
     });
 
     it('should return plans with pricing for all periods', () => {
-      subscriptionsService.getPlans.mockReturnValue(mockPlans);
+      subscriptionsService.getPlans.mockReturnValue(mockPlans as any);
 
       const result = controller.getPlans();
 
@@ -308,7 +322,7 @@ describe('SubscriptionsController', () => {
     });
 
     it('should return the result synchronously (no async)', () => {
-      subscriptionsService.getPlans.mockReturnValue(mockPlans);
+      subscriptionsService.getPlans.mockReturnValue(mockPlans as any);
 
       const result = controller.getPlans();
 
@@ -777,7 +791,7 @@ describe('SubscriptionsController', () => {
   describe('getBillingHistory', () => {
     it('should return the billing history for the tenant', async () => {
       subscriptionsService.getBillingHistory.mockResolvedValue(
-        mockBillingHistory,
+        mockBillingHistory as any,
       );
 
       const result = await controller.getBillingHistory(mockTenantId);
@@ -787,7 +801,7 @@ describe('SubscriptionsController', () => {
 
     it('should pass tenantId to the service', async () => {
       subscriptionsService.getBillingHistory.mockResolvedValue(
-        mockBillingHistory,
+        mockBillingHistory as any,
       );
 
       await controller.getBillingHistory(mockTenantId);
@@ -799,7 +813,7 @@ describe('SubscriptionsController', () => {
 
     it('should call the service exactly once', async () => {
       subscriptionsService.getBillingHistory.mockResolvedValue(
-        mockBillingHistory,
+        mockBillingHistory as any,
       );
 
       await controller.getBillingHistory(mockTenantId);
@@ -812,7 +826,7 @@ describe('SubscriptionsController', () => {
     it('should log the operation with the tenant ID', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
       subscriptionsService.getBillingHistory.mockResolvedValue(
-        mockBillingHistory,
+        mockBillingHistory as any,
       );
 
       await controller.getBillingHistory(mockTenantId);
@@ -833,7 +847,7 @@ describe('SubscriptionsController', () => {
 
     it('should return transactions in the order provided by the service', async () => {
       subscriptionsService.getBillingHistory.mockResolvedValue(
-        mockBillingHistory,
+        mockBillingHistory as any,
       );
 
       const result = await controller.getBillingHistory(mockTenantId);
@@ -952,19 +966,22 @@ describe('SubscriptionsController', () => {
       const largeBillingHistory = Array.from({ length: 500 }, (_, i) => ({
         id: `billing-${i}`,
         tenantId: mockTenantId,
-        transactionId: `txn-${i}`,
-        reference: `ref-${i}`,
+        wompiTransactionId: `txn-${i}`,
+        wompiReference: `ref-${i}`,
         plan: SubscriptionPlan.PYME,
-        periodType: SubscriptionPeriod.MONTHLY,
+        period: SubscriptionPeriod.MONTHLY,
         amountInCents: 5990000,
         currency: 'COP',
         status: 'APPROVED',
-        paymentMethod: 'CARD',
+        paymentMethodType: 'CARD',
+        failureReason: null,
+        isRecurring: false,
+        subscriptionId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       }));
       subscriptionsService.getBillingHistory.mockResolvedValue(
-        largeBillingHistory,
+        largeBillingHistory as any,
       );
 
       const result = await controller.getBillingHistory(mockTenantId);
@@ -976,9 +993,9 @@ describe('SubscriptionsController', () => {
       subscriptionsService.getSubscriptionStatus.mockResolvedValue(
         mockSubscriptionStatus,
       );
-      subscriptionsService.getPlans.mockReturnValue(mockPlans);
+      subscriptionsService.getPlans.mockReturnValue(mockPlans as any);
       subscriptionsService.getBillingHistory.mockResolvedValue(
-        mockBillingHistory,
+        mockBillingHistory as any,
       );
 
       const [statusResult, plansResult, historyResult] =

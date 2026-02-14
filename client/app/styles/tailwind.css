@@ -105,6 +105,9 @@
   --animate-bounce-subtle: bounce-subtle 0.5s ease-out;
   --animate-slide-in-right: slide-in-right 0.3s ease-out;
   --animate-fade-out: fade-out 0.2s ease-out forwards;
+  --animate-gradient-mesh-1: gradient-mesh-1 15s ease-in-out infinite;
+  --animate-gradient-mesh-2: gradient-mesh-2 18s ease-in-out infinite;
+  --animate-gradient-mesh-3: gradient-mesh-3 20s ease-in-out infinite;
 }
 
 /* ============================================
@@ -208,6 +211,27 @@
   50% {
     opacity: 1;
   }
+}
+
+/* Gradient Mesh Animations - Landing Page */
+@keyframes gradient-mesh-1 {
+  0%, 100% { transform: translate(0%, 0%) scale(1); }
+  25% { transform: translate(10%, -15%) scale(1.1); }
+  50% { transform: translate(-5%, 10%) scale(0.95); }
+  75% { transform: translate(-10%, -5%) scale(1.05); }
+}
+
+@keyframes gradient-mesh-2 {
+  0%, 100% { transform: translate(0%, 0%) scale(1); }
+  25% { transform: translate(-15%, 10%) scale(1.05); }
+  50% { transform: translate(10%, -10%) scale(1.1); }
+  75% { transform: translate(5%, 15%) scale(0.95); }
+}
+
+@keyframes gradient-mesh-3 {
+  0%, 100% { transform: translate(0%, 0%) scale(1.05); }
+  33% { transform: translate(15%, -10%) scale(1); }
+  66% { transform: translate(-10%, 15%) scale(1.1); }
 }
 
 /* ============================================

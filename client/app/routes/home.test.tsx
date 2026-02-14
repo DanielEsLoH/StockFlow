@@ -11,6 +11,35 @@ vi.mock("~/components/ui/ThemeToggle", () => ({
   ThemeToggle: () => <button data-testid="theme-toggle">Theme Toggle</button>,
 }));
 
+// Mock new UI components used in redesigned landing page
+vi.mock("~/components/ui/AnimatedNumber", () => ({
+  AnimatedNumber: ({ value, className }: { value: number; className?: string }) => (
+    <span className={className}>{value}</span>
+  ),
+}));
+
+vi.mock("~/components/ui/Badge", () => ({
+  Badge: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <span className={className}>{children}</span>
+  ),
+}));
+
+vi.mock("~/components/ui/Card", () => ({
+  Card: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <div className={className}>{children}</div>
+  ),
+}));
+
+vi.mock("~/components/ui/Switch", () => ({
+  Switch: ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
+    <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+  ),
+}));
+
+vi.mock("~/lib/utils", () => ({
+  cn: (...args: (string | boolean | undefined | null)[]) => args.filter(Boolean).join(" "),
+}));
+
 // Mock framer-motion to avoid SSR issues in tests
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const filterMotionProps = (props: Record<string, any>) => {

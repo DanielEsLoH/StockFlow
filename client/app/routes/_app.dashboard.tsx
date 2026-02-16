@@ -625,15 +625,15 @@ export default function DashboardPage() {
             <CardTitle>Por Categoria</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
+            <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={charts?.categoryDistribution || []}
                     cx="50%"
                     cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
+                    innerRadius={50}
+                    outerRadius={80}
                     paddingAngle={3}
                     dataKey="value"
                     nameKey="name"
@@ -655,17 +655,28 @@ export default function DashboardPage() {
                       boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
                     }}
                   />
-                  <Legend
-                    verticalAlign="bottom"
-                    height={36}
-                    formatter={(value) => (
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                        {value}
-                      </span>
-                    )}
-                  />
                 </PieChart>
               </ResponsiveContainer>
+            </div>
+            <div className="mt-2">
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                {(charts?.categoryDistribution || []).slice(0, 5).map((entry, index) => (
+                  <div key={index} className="flex items-center gap-1.5">
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-sm shrink-0"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className="text-xs text-neutral-600 dark:text-neutral-400">
+                      {entry.name}
+                    </span>
+                  </div>
+                ))}
+                {(charts?.categoryDistribution || []).length > 5 && (
+                  <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                    +{(charts?.categoryDistribution || []).length - 5} mas
+                  </span>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -857,31 +868,31 @@ export default function DashboardPage() {
                   <tr className="border-y border-neutral-100 dark:border-neutral-800">
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
+                      className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
                     >
                       Factura
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
+                      className="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
                     >
                       Cliente
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
+                      className="px-3 sm:px-6 py-3 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
                     >
                       Monto
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
+                      className="hidden sm:table-cell px-6 py-3 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
                     >
                       Estado
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
+                      className="hidden sm:table-cell px-6 py-3 text-right text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
                     >
                       Acciones
                     </th>
@@ -893,7 +904,7 @@ export default function DashboardPage() {
                       key={invoice.id}
                       className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <Link
                           to={`/invoices/${invoice.id}`}
                           className="text-sm font-semibold text-primary-600 dark:text-primary-400 hover:underline"
@@ -901,17 +912,17 @@ export default function DashboardPage() {
                           {invoice.number}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <p className="text-sm text-neutral-900 dark:text-white">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <p className="text-sm text-neutral-900 dark:text-white truncate max-w-[120px] sm:max-w-none">
                           {invoice.customer}
                         </p>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right">
                         <p className="text-sm font-semibold text-neutral-900 dark:text-white">
                           {formatCurrency(invoice.amount)}
                         </p>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                         <StatusBadge
                           status={
                             invoice.status as
@@ -922,7 +933,7 @@ export default function DashboardPage() {
                           }
                         />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Link
                             to={`/invoices/${invoice.id}`}

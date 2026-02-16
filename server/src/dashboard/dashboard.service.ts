@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InvoiceStatus } from '@prisma/client';
+import { InvoiceStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { CacheService, CACHE_KEYS, CACHE_TTL } from '../cache';
@@ -699,7 +699,12 @@ export class DashboardService {
    * Gets sales aggregated by category.
    * Optimized to use a single SQL query with JOINs instead of loading all items in memory.
    */
-  async getSalesByCategory(tenantId: string): Promise<SalesByCategory[]> {
+  async getSalesByCategory(tenantId: string, days?: number): Promise<SalesByCategory[]> {
+    // Calculate start date if days is provided
+    const startDate = days
+      ? new Date(new Date().setDate(new Date().getDate() - days))
+      : null;
+
     // Use raw SQL to aggregate by category in the database instead of memory
     const salesByCategory = await this.prisma.$queryRaw<
       Array<{
@@ -718,6 +723,7 @@ export class DashboardService {
       LEFT JOIN categories c ON p.category_id = c.id
       WHERE i.tenant_id = ${tenantId}
         AND i.status != 'CANCELLED'
+        ${startDate ? Prisma.sql`AND i.issue_date >= ${startDate}` : Prisma.empty}
       GROUP BY p.category_id, c.name
       ORDER BY total DESC
     `;
@@ -944,8 +950,8 @@ export class DashboardService {
 
     const [salesChart, categoryDistribution, topProducts] = await Promise.all([
       this.getSalesChartData(tenantId, days),
-      this.getCategoryDistribution(tenantId),
-      this.getTopProductsForCharts(tenantId),
+      this.getCategoryDistribution(tenantId, days),
+      this.getTopProductsForCharts(tenantId, 5, days),
     ]);
 
     return {
@@ -1046,8 +1052,9 @@ export class DashboardService {
    */
   private async getCategoryDistribution(
     tenantId: string,
+    days?: number,
   ): Promise<CategoryDistribution[]> {
-    const salesByCategory = await this.getSalesByCategory(tenantId);
+    const salesByCategory = await this.getSalesByCategory(tenantId, days);
 
     // Color palette for categories
     const colors = [
@@ -1074,7 +1081,12 @@ export class DashboardService {
   private async getTopProductsForCharts(
     tenantId: string,
     limit = 5,
+    days?: number,
   ): Promise<TopProduct[]> {
+    const startDate = days
+      ? new Date(new Date().setDate(new Date().getDate() - days))
+      : undefined;
+
     const topProducts = await this.prisma.invoiceItem.groupBy({
       by: ['productId'],
       where: {
@@ -1083,6 +1095,7 @@ export class DashboardService {
           status: {
             not: InvoiceStatus.CANCELLED,
           },
+          ...(startDate && { issueDate: { gte: startDate } }),
         },
         productId: {
           not: null,

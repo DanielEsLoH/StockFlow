@@ -68,12 +68,18 @@ export interface POSTicketProps {
 }
 
 // ============================================================================
-// HELPER: Truncate text to fit 42 chars per line
+// HELPERS
 // ============================================================================
+
+const SEP_LENGTH = 36;
 
 function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength - 3) + "...";
+}
+
+function charLine(char = "-"): string {
+  return char.repeat(SEP_LENGTH);
 }
 
 function formatTicketDate(dateString: string): string {
@@ -91,15 +97,139 @@ function formatTicketDate(dateString: string): string {
   }
 }
 
-function formatTicketCurrency(amount: number): string {
-  // Compact format for tickets
-  if (amount >= 1000000) {
-    return `$${(amount / 1000000).toFixed(1)}M`;
-  }
-  if (amount >= 1000) {
-    return `$${Math.round(amount / 1000)}K`;
-  }
-  return formatCurrency(amount);
+// ============================================================================
+// INLINE STYLES (no Tailwind — works identically in preview and print)
+// ============================================================================
+
+const S: Record<string, React.CSSProperties> = {
+  container: {
+    fontFamily: "'Courier New', Courier, monospace",
+    fontSize: "11pt",
+    lineHeight: "1.4",
+    width: "80mm",
+    maxWidth: "80mm",
+    padding: "3mm",
+    margin: "0 auto",
+    backgroundColor: "#fff",
+    color: "#000",
+    overflow: "hidden",
+  },
+  header: {
+    fontSize: "12pt",
+    fontWeight: "bold",
+    textTransform: "uppercase",
+    textAlign: "center",
+    letterSpacing: "0.05em",
+  },
+  subHeader: {
+    fontSize: "10pt",
+    textAlign: "center",
+  },
+  resolution: {
+    fontSize: "8pt",
+    textAlign: "center",
+    marginTop: "1mm",
+    wordBreak: "break-word" as const,
+  },
+  separator: {
+    fontSize: "11pt",
+    textAlign: "center",
+    margin: "1.5mm 0",
+    letterSpacing: "-0.05em",
+    overflow: "hidden",
+    whiteSpace: "nowrap" as const,
+  },
+  // Flex row for label:value pairs — replaces padLine + whiteSpace:pre
+  row: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "11pt",
+  },
+  rowLabel: {
+    flexShrink: 0,
+  },
+  rowValue: {
+    textAlign: "right" as const,
+    flexShrink: 0,
+  },
+  detailLine: {
+    fontSize: "10pt",
+    paddingLeft: "2mm",
+  },
+  sectionTitle: {
+    fontSize: "11pt",
+    fontWeight: "bold",
+  },
+  // Items table header
+  itemHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "11pt",
+    fontWeight: "bold",
+  },
+  // Items row: product name (flexible) + qty (fixed) + total (fixed)
+  itemRow: {
+    display: "flex",
+    fontSize: "11pt",
+  },
+  itemName: {
+    flex: "1 1 0%",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+    paddingRight: "2mm",
+  },
+  itemQty: {
+    width: "3ch",
+    textAlign: "right" as const,
+    flexShrink: 0,
+    paddingRight: "3mm",
+  },
+  itemTotal: {
+    textAlign: "right" as const,
+    flexShrink: 0,
+  },
+  totalRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "12pt",
+    fontWeight: "bold",
+  },
+  footer: {
+    fontSize: "11pt",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  finePrint: {
+    fontSize: "10pt",
+    textAlign: "center",
+  },
+  cufe: {
+    fontSize: "8pt",
+    textAlign: "center",
+    wordBreak: "break-all",
+  },
+};
+
+// ============================================================================
+// ROW COMPONENT — flex row with label + value (replaces padLine)
+// ============================================================================
+
+function Row({
+  label,
+  value,
+  style,
+}: {
+  label: string;
+  value: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div style={{ ...S.row, ...style }}>
+      <span style={S.rowLabel}>{label}</span>
+      <span style={S.rowValue}>{value}</span>
+    </div>
+  );
 }
 
 // ============================================================================
@@ -136,249 +266,202 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
       payments,
       change,
       dianCufe,
-      footerMessage = "¡Gracias por su compra!",
+      footerMessage = "Gracias por su compra!",
     } = props;
 
+    // Build resolution text
+    const resolutionText = resolutionNumber
+      ? [
+          `Res. DIAN No. ${resolutionNumber}`,
+          resolutionDate &&
+            `del ${formatTicketDate(resolutionDate).split(",")[0]}`,
+          resolutionPrefix && `Pref. ${resolutionPrefix}`,
+          resolutionRangeFrom != null &&
+            resolutionRangeTo != null &&
+            `del ${resolutionRangeFrom} al ${resolutionRangeTo}`,
+        ]
+          .filter(Boolean)
+          .join(", ")
+      : null;
+
     return (
-      <div
-        ref={ref}
-        className="pos-ticket bg-white text-black font-mono text-[8pt] leading-tight w-[80mm] mx-auto p-2"
-        style={{
-          fontFamily: "'Courier New', Courier, monospace",
-          width: "80mm",
-          maxWidth: "80mm",
-        }}
-      >
-        {/* ================================================================ */}
-        {/* HEADER - Business Info */}
-        {/* ================================================================ */}
-        <div className="text-center border-b border-dashed border-black pb-2 mb-2">
-          <div className="text-sm font-bold uppercase tracking-wide">
-            {businessName}
-          </div>
-          {businessNit && <div className="text-[7pt]">NIT: {businessNit}</div>}
-          {businessAddress && (
-            <div className="text-[7pt]">
-              {truncateText(businessAddress, 40)}
-            </div>
-          )}
-          {businessPhone && (
-            <div className="text-[7pt]">Tel: {businessPhone}</div>
-          )}
-          {resolutionNumber && (
-            <div className="text-[6pt] mt-1">
-              Res. DIAN No. {resolutionNumber}
-              {resolutionDate && ` del ${formatTicketDate(resolutionDate).split(",")[0]}`}
-              {resolutionPrefix && `, Pref. ${resolutionPrefix}`}
-              {resolutionRangeFrom != null &&
-                resolutionRangeTo != null &&
-                `, del ${resolutionRangeFrom} al ${resolutionRangeTo}`}
-            </div>
-          )}
-        </div>
+      <div ref={ref} className="pos-ticket" style={S.container}>
+        {/* ============================================================== */}
+        {/* HEADER - Business Info                                         */}
+        {/* ============================================================== */}
+        <div style={S.header}>{businessName}</div>
+        {businessNit && <div style={S.subHeader}>NIT: {businessNit}</div>}
+        {businessAddress && (
+          <div style={S.subHeader}>{businessAddress}</div>
+        )}
+        {businessPhone && (
+          <div style={S.subHeader}>Tel: {businessPhone}</div>
+        )}
+        {resolutionText && <div style={S.resolution}>{resolutionText}</div>}
 
-        {/* ================================================================ */}
-        {/* INVOICE INFO */}
-        {/* ================================================================ */}
-        <div className="border-b border-dashed border-black pb-2 mb-2">
-          <div className="font-bold">FACTURA DE VENTA</div>
-          <div className="flex justify-between">
-            <span>No:</span>
-            <span className="font-bold">{invoiceNumber}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Fecha:</span>
-            <span>{formatTicketDate(date)}</span>
-          </div>
-          {cashierName && (
-            <div className="flex justify-between">
-              <span>Cajero:</span>
-              <span>{truncateText(cashierName, 20)}</span>
-            </div>
-          )}
-          {cashRegisterName && (
-            <div className="flex justify-between">
-              <span>Caja:</span>
-              <span>{cashRegisterName}</span>
-            </div>
-          )}
-        </div>
+        <div style={S.separator}>{charLine()}</div>
 
-        {/* ================================================================ */}
-        {/* CUSTOMER INFO */}
-        {/* ================================================================ */}
+        {/* ============================================================== */}
+        {/* INVOICE INFO                                                   */}
+        {/* ============================================================== */}
+        <div style={S.sectionTitle}>FACTURA DE VENTA</div>
+        <Row label="No:" value={invoiceNumber} />
+        <Row label="Fecha:" value={formatTicketDate(date)} />
+        {cashierName && (
+          <Row label="Cajero:" value={truncateText(cashierName, 20)} />
+        )}
+        {cashRegisterName && (
+          <Row label="Caja:" value={cashRegisterName} />
+        )}
+
+        <div style={S.separator}>{charLine()}</div>
+
+        {/* ============================================================== */}
+        {/* CUSTOMER INFO                                                  */}
+        {/* ============================================================== */}
         {customerName && (
-          <div className="border-b border-dashed border-black pb-2 mb-2">
-            <div className="flex justify-between">
-              <span>Cliente:</span>
-              <span>{truncateText(customerName, 22)}</span>
-            </div>
+          <>
+            <Row label="Cliente:" value={truncateText(customerName, 20)} />
             {customerDocument && (
-              <div className="flex justify-between">
-                <span>{customerDocumentType || "Doc"}:</span>
-                <span>{customerDocument}</span>
-              </div>
+              <Row
+                label={`${customerDocumentType || "Doc"}:`}
+                value={customerDocument}
+              />
             )}
             {customerPhone && (
-              <div className="flex justify-between">
-                <span>Tel:</span>
-                <span>{customerPhone}</span>
-              </div>
+              <Row label="Tel:" value={customerPhone} />
             )}
             {customerAddress && (
-              <div className="text-[7pt]">
-                {truncateText(customerAddress, 40)}
+              <div style={S.detailLine}>
+                {truncateText(customerAddress, 36)}
               </div>
             )}
-          </div>
+
+            <div style={S.separator}>{charLine()}</div>
+          </>
         )}
 
-        {/* ================================================================ */}
-        {/* ITEMS TABLE */}
-        {/* ================================================================ */}
-        <div className="border-b border-dashed border-black pb-2 mb-2">
-          {/* Header */}
-          <div className="flex justify-between font-bold border-b border-black pb-1 mb-1">
-            <span className="flex-1">Producto</span>
-            <span className="w-8 text-center">Cnt</span>
-            <span className="w-16 text-right">Total</span>
-          </div>
+        {/* ============================================================== */}
+        {/* ITEMS TABLE                                                    */}
+        {/* ============================================================== */}
+        <div style={S.itemHeader}>
+          <span style={{ flex: "1 1 0%" }}>Producto</span>
+          <span style={{ width: "3ch", textAlign: "right", flexShrink: 0, paddingRight: "3mm" }}>Cnt</span>
+          <span style={{ textAlign: "right", flexShrink: 0 }}>Total</span>
+        </div>
+        <div style={S.separator}>{charLine()}</div>
 
-          {/* Items */}
-          {items.map((item, index) => (
-            <div key={index} className="mb-1">
-              <div className="flex justify-between">
-                <span className="flex-1 truncate pr-1">
-                  {truncateText(item.name, 22)}
-                </span>
-                <span className="w-8 text-center">{item.quantity}</span>
-                <span className="w-16 text-right">
-                  {formatTicketCurrency(item.total)}
-                </span>
+        {items.map((item, index) => (
+          <div key={index}>
+            {/* Main item row */}
+            <div style={S.itemRow}>
+              <span style={S.itemName}>{item.name}</span>
+              <span style={S.itemQty}>{item.quantity}</span>
+              <span style={S.itemTotal}>{formatCurrency(item.total)}</span>
+            </div>
+            {/* Unit price detail for qty > 1 */}
+            {item.quantity > 1 && (
+              <div style={S.detailLine}>
+                {item.quantity} x {formatCurrency(item.unitPrice)}
               </div>
-              {/* Show unit price for quantity > 1 */}
-              {item.quantity > 1 && (
-                <div className="text-[7pt] text-gray-600 pl-2">
-                  {item.quantity} x {formatTicketCurrency(item.unitPrice)}
-                </div>
-              )}
-              {/* Show discount if any */}
-              {item.discount && item.discount > 0 && (
-                <div className="text-[7pt] text-gray-600 pl-2">
-                  Desc: -{item.discount}%
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* ================================================================ */}
-        {/* TOTALS */}
-        {/* ================================================================ */}
-        <div className="border-b border-dashed border-black pb-2 mb-2">
-          <div className="flex justify-between">
-            <span>Subtotal:</span>
-            <span>{formatCurrency(subtotal)}</span>
+            )}
+            {/* Discount detail */}
+            {item.discount != null && item.discount > 0 && (
+              <div style={S.detailLine}>Desc: -{item.discount}%</div>
+            )}
           </div>
+        ))}
 
-          {discountAmount > 0 && (
-            <div className="flex justify-between">
-              <span>
-                Descuento{discountPercent ? ` (${discountPercent}%)` : ""}:
-              </span>
-              <span>-{formatCurrency(discountAmount)}</span>
-            </div>
-          )}
+        <div style={S.separator}>{charLine()}</div>
 
-          <div className="flex justify-between">
-            <span>IVA (19%):</span>
-            <span>+{formatCurrency(taxAmount)}</span>
-          </div>
+        {/* ============================================================== */}
+        {/* TOTALS                                                         */}
+        {/* ============================================================== */}
+        <Row label="Subtotal:" value={formatCurrency(subtotal)} />
 
-          {/* Total destacado */}
-          <div className="flex justify-between font-bold text-sm mt-1 pt-1 border-t border-black">
-            <span>TOTAL:</span>
-            <span>{formatCurrency(total)}</span>
-          </div>
-        </div>
-
-        {/* ================================================================ */}
-        {/* PAYMENTS */}
-        {/* ================================================================ */}
-        <div className="border-b border-dashed border-black pb-2 mb-2">
-          <div className="font-bold mb-1">Forma de pago:</div>
-          {payments.map((payment, index) => (
-            <div key={index} className="flex justify-between pl-2">
-              <span>{payment.methodLabel}:</span>
-              <span>{formatCurrency(payment.amount)}</span>
-            </div>
-          ))}
-          {change !== undefined && change > 0 && (
-            <div className="flex justify-between pl-2 font-bold mt-1">
-              <span>Cambio:</span>
-              <span>{formatCurrency(change)}</span>
-            </div>
-          )}
-        </div>
-
-        {/* ================================================================ */}
-        {/* DIAN CUFE (if electronic invoice) */}
-        {/* ================================================================ */}
-        {dianCufe && (
-          <div className="border-b border-dashed border-black pb-2 mb-2 text-center">
-            <div className="text-[6pt] break-all">CUFE: {dianCufe}</div>
-          </div>
+        {discountAmount > 0 && (
+          <Row
+            label={`Descuento${discountPercent ? ` (${discountPercent}%)` : ""}:`}
+            value={`-${formatCurrency(discountAmount)}`}
+          />
         )}
 
-        {/* ================================================================ */}
-        {/* FOOTER */}
-        {/* ================================================================ */}
-        <div className="text-center pt-2">
-          <div className="text-[9pt] font-bold">{footerMessage}</div>
-          <div className="text-[7pt] mt-1">Vuelva pronto</div>
-        </div>
+        <Row label="IVA (19%):" value={`+${formatCurrency(taxAmount)}`} />
 
-        {/* ================================================================ */}
-        {/* PRINT STYLES (inline for portability) */}
-        {/* ================================================================ */}
+        <div style={S.separator}>{charLine("=")}</div>
+        <div style={S.totalRow}>
+          <span>TOTAL:</span>
+          <span>{formatCurrency(total)}</span>
+        </div>
+        <div style={S.separator}>{charLine("=")}</div>
+
+        {/* ============================================================== */}
+        {/* PAYMENTS                                                       */}
+        {/* ============================================================== */}
+        <div style={S.sectionTitle}>Forma de pago:</div>
+        {payments.map((payment, index) => (
+          <Row
+            key={index}
+            label={`  ${payment.methodLabel}:`}
+            value={formatCurrency(payment.amount)}
+          />
+        ))}
+        {change !== undefined && change > 0 && (
+          <Row
+            label="  Cambio:"
+            value={formatCurrency(change)}
+            style={{ fontWeight: "bold" }}
+          />
+        )}
+
+        <div style={S.separator}>{charLine()}</div>
+
+        {/* ============================================================== */}
+        {/* DIAN CUFE (if electronic invoice)                              */}
+        {/* ============================================================== */}
+        {dianCufe && (
+          <>
+            <div style={S.cufe}>CUFE: {dianCufe}</div>
+            <div style={S.separator}>{charLine()}</div>
+          </>
+        )}
+
+        {/* ============================================================== */}
+        {/* FOOTER                                                         */}
+        {/* ============================================================== */}
+        <div style={{ ...S.footer, marginTop: "2mm" }}>{footerMessage}</div>
+        <div style={S.finePrint}>Vuelva pronto</div>
+
+        {/* ============================================================== */}
+        {/* PRINT STYLES                                                   */}
+        {/* ============================================================== */}
         <style>{`
           @media print {
             @page {
               size: 80mm auto;
               margin: 0;
             }
-
             body {
               margin: 0 !important;
               padding: 0 !important;
             }
-
             body * {
               visibility: hidden;
             }
-
             .pos-ticket,
             .pos-ticket * {
               visibility: visible;
             }
-
             .pos-ticket {
               position: absolute;
               left: 0;
               top: 0;
               width: 80mm !important;
               max-width: 80mm !important;
-              font-size: 8pt !important;
-              line-height: 1.2 !important;
-              padding: 2mm !important;
+              padding: 3mm !important;
               margin: 0 !important;
               background: white !important;
               color: black !important;
-            }
-
-            .pos-ticket .border-dashed {
-              border-style: dashed !important;
-              border-color: black !important;
             }
           }
         `}</style>

@@ -26,7 +26,7 @@ export function POSTicketModal({
       // Get the ticket HTML
       const ticketHTML = ticketRef.current.outerHTML;
 
-      // Write the print document
+      // Write the print document — minimal CSS since POSTicket uses inline styles
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -37,71 +37,19 @@ export function POSTicketModal({
               size: 80mm auto;
               margin: 0;
             }
-
             * {
               margin: 0;
               padding: 0;
               box-sizing: border-box;
             }
-
             body {
-              font-family: 'Courier New', Courier, monospace;
-              font-size: 8pt;
-              line-height: 1.2;
               width: 80mm;
               max-width: 80mm;
               background: white;
               color: black;
             }
-
-            .pos-ticket {
-              width: 80mm;
-              max-width: 80mm;
-              padding: 2mm;
-            }
-
-            .text-center { text-align: center; }
-            .text-right { text-align: right; }
-            .font-bold { font-weight: bold; }
-            .uppercase { text-transform: uppercase; }
-            .tracking-wide { letter-spacing: 0.05em; }
-            .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-            .text-sm { font-size: 9pt; }
-            .text-\\[7pt\\] { font-size: 7pt; }
-            .text-\\[6pt\\] { font-size: 6pt; }
-            .text-\\[8pt\\] { font-size: 8pt; }
-            .text-\\[9pt\\] { font-size: 9pt; }
-
-            .border-b { border-bottom-width: 1px; }
-            .border-t { border-top-width: 1px; }
-            .border-dashed { border-style: dashed; }
-            .border-black { border-color: black; }
-
-            .pb-1 { padding-bottom: 0.25rem; }
-            .pb-2 { padding-bottom: 0.5rem; }
-            .pt-1 { padding-top: 0.25rem; }
-            .pt-2 { padding-top: 0.5rem; }
-            .mb-1 { margin-bottom: 0.25rem; }
-            .mb-2 { margin-bottom: 0.5rem; }
-            .mt-1 { margin-top: 0.25rem; }
-            .pl-2 { padding-left: 0.5rem; }
-            .pr-1 { padding-right: 0.25rem; }
-
-            .flex { display: flex; }
-            .justify-between { justify-content: space-between; }
-            .flex-1 { flex: 1 1 0%; }
-            .w-8 { width: 2rem; }
-            .w-16 { width: 4rem; }
-
-            .break-all { word-break: break-all; }
-
-            .text-gray-600 { color: #4b5563; }
-
             @media print {
-              body {
-                width: 80mm !important;
-              }
+              body { width: 80mm !important; }
             }
           </style>
         </head>

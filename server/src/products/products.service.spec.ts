@@ -86,12 +86,21 @@ describe('ProductsService', () => {
       category: {
         findFirst: jest.fn(),
       },
+      warehouse: {
+        findFirst: jest.fn(),
+      },
+      warehouseStock: {
+        create: jest.fn(),
+      },
       invoiceItem: {
         count: jest.fn(),
       },
       stockMovement: {
         create: jest.fn(),
       },
+      $transaction: jest
+        .fn()
+        .mockImplementation((fn: (tx: any) => any) => fn(mockPrismaService)),
     };
 
     const mockTenantContextService = {
@@ -598,6 +607,15 @@ describe('ProductsService', () => {
       brand: 'NewBrand',
     };
 
+    const mockWarehouse = {
+      id: 'warehouse-main',
+      tenantId: mockTenantId,
+      name: 'Almacén Principal',
+      isMain: true,
+      status: 'ACTIVE',
+      createdAt: new Date(),
+    };
+
     beforeEach(() => {
       (prismaService.product.findUnique as jest.Mock).mockResolvedValue(null);
       (prismaService.product.findFirst as jest.Mock).mockResolvedValue(null);
@@ -605,6 +623,11 @@ describe('ProductsService', () => {
         mockCategory,
       );
       (prismaService.product.create as jest.Mock).mockResolvedValue(newProduct);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
+      (prismaService.warehouseStock.create as jest.Mock).mockResolvedValue({});
+      (prismaService.stockMovement.create as jest.Mock).mockResolvedValue({});
     });
 
     it('should create a new product', async () => {
@@ -613,6 +636,62 @@ describe('ProductsService', () => {
       expect(result.sku).toBe('NEW-SKU');
       expect(result.name).toBe('New Product');
       expect(prismaService.product.create).toHaveBeenCalled();
+    });
+
+    it('should create WarehouseStock for default warehouse when stock > 0', async () => {
+      await service.create(createDto);
+
+      expect(prismaService.warehouseStock.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          tenantId: mockTenantId,
+          warehouseId: 'warehouse-main',
+          productId: 'new-product-id',
+          quantity: 50,
+        }),
+      });
+    });
+
+    it('should create StockMovement of type PURCHASE when stock > 0', async () => {
+      await service.create(createDto);
+
+      expect(prismaService.stockMovement.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          tenantId: mockTenantId,
+          productId: 'new-product-id',
+          warehouseId: 'warehouse-main',
+          type: 'PURCHASE',
+          quantity: 50,
+          reason: 'Stock inicial',
+        }),
+      });
+    });
+
+    it('should NOT create WarehouseStock when stock is 0', async () => {
+      const dtoNoStock: CreateProductDto = {
+        ...createDto,
+        stock: 0,
+      };
+      const productNoStock = { ...newProduct, stock: 0 };
+      (prismaService.product.create as jest.Mock).mockResolvedValue(
+        productNoStock,
+      );
+
+      await service.create(dtoNoStock);
+
+      expect(prismaService.warehouseStock.create).not.toHaveBeenCalled();
+      expect(prismaService.stockMovement.create).not.toHaveBeenCalled();
+    });
+
+    it('should log warning when no active warehouse exists', async () => {
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(null);
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn');
+
+      await service.create(createDto);
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('No active warehouse found'),
+      );
+      expect(prismaService.warehouseStock.create).not.toHaveBeenCalled();
     });
 
     it('should enforce tenant product limit', async () => {

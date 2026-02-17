@@ -5,7 +5,14 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { Product, ProductStatus, TaxCategory, Prisma } from '@prisma/client';
+import {
+  Product,
+  ProductStatus,
+  TaxCategory,
+  WarehouseStatus,
+  MovementType,
+  Prisma,
+} from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { CacheService, CACHE_KEYS, CACHE_TTL } from '../cache';
@@ -379,27 +386,78 @@ export class ProductsService {
       }
     }
 
-    // Create product
-    const product = await this.prisma.product.create({
-      data: {
-        tenantId,
-        sku: normalizedSku,
-        name: dto.name.trim(),
-        description: dto.description,
-        categoryId: dto.categoryId,
-        costPrice: dto.costPrice,
-        salePrice: dto.salePrice,
-        taxCategory: dto.taxCategory ?? TaxCategory.GRAVADO_19,
-        taxRate: taxRateFromCategory(dto.taxCategory ?? TaxCategory.GRAVADO_19),
-        stock: dto.stock ?? 0,
-        minStock: dto.minStock ?? 0,
-        maxStock: dto.maxStock,
-        barcode: normalizedBarcode,
-        brand: dto.brand,
-        unit: dto.unit ?? 'UND',
-        imageUrl: dto.imageUrl,
-        status: ProductStatus.ACTIVE,
-      },
+    const initialStock = dto.stock ?? 0;
+
+    // Create product + warehouse stock in a transaction
+    const product = await this.prisma.$transaction(async (tx) => {
+      const newProduct = await tx.product.create({
+        data: {
+          tenantId,
+          sku: normalizedSku,
+          name: dto.name.trim(),
+          description: dto.description,
+          categoryId: dto.categoryId,
+          costPrice: dto.costPrice,
+          salePrice: dto.salePrice,
+          taxCategory: dto.taxCategory ?? TaxCategory.GRAVADO_19,
+          taxRate: taxRateFromCategory(
+            dto.taxCategory ?? TaxCategory.GRAVADO_19,
+          ),
+          stock: initialStock,
+          minStock: dto.minStock ?? 0,
+          maxStock: dto.maxStock,
+          barcode: normalizedBarcode,
+          brand: dto.brand,
+          unit: dto.unit ?? 'UND',
+          imageUrl: dto.imageUrl,
+          status: ProductStatus.ACTIVE,
+        },
+      });
+
+      // Assign initial stock to default warehouse
+      if (initialStock > 0) {
+        const warehouse =
+          (await tx.warehouse.findFirst({
+            where: {
+              tenantId,
+              isMain: true,
+              status: WarehouseStatus.ACTIVE,
+            },
+          })) ??
+          (await tx.warehouse.findFirst({
+            where: { tenantId, status: WarehouseStatus.ACTIVE },
+            orderBy: { createdAt: 'asc' },
+          }));
+
+        if (warehouse) {
+          await Promise.all([
+            tx.warehouseStock.create({
+              data: {
+                tenantId,
+                warehouseId: warehouse.id,
+                productId: newProduct.id,
+                quantity: initialStock,
+              },
+            }),
+            tx.stockMovement.create({
+              data: {
+                tenantId,
+                productId: newProduct.id,
+                warehouseId: warehouse.id,
+                type: MovementType.PURCHASE,
+                quantity: initialStock,
+                reason: 'Stock inicial',
+              },
+            }),
+          ]);
+        } else {
+          this.logger.warn(
+            `No active warehouse found for tenant ${tenantId}. Product created without WarehouseStock.`,
+          );
+        }
+      }
+
+      return newProduct;
     });
 
     this.logger.log(`Product created: ${product.name} (${product.id})`);

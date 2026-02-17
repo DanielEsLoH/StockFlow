@@ -191,7 +191,7 @@ describe('TenantContextService', () => {
 
       expect(result).toBe(true);
       expect(prismaService.user.count).toHaveBeenCalledWith({
-        where: { tenantId: 'tenant-123' },
+        where: { tenantId: 'tenant-123', role: { not: 'CONTADOR' } },
       });
     });
 
@@ -252,13 +252,14 @@ describe('TenantContextService', () => {
     });
 
     it('should throw ForbiddenException when limit reached', async () => {
-      (prismaService.user.count as jest.Mock).mockResolvedValue(10);
+      // PRO plan: maxUsers=10, maxContadores=1 → effective limit = 9
+      (prismaService.user.count as jest.Mock).mockResolvedValue(9);
 
       await expect(service.enforceLimit('users')).rejects.toThrow(
         ForbiddenException,
       );
       await expect(service.enforceLimit('users')).rejects.toThrow(
-        'Users limit reached (10)',
+        'Users limit reached (9)',
       );
     });
   });
@@ -323,7 +324,8 @@ describe('TenantContextService', () => {
 
       const result = await service.getRemainingCount('users');
 
-      expect(result).toBe(3); // 10 - 7 = 3
+      // PRO plan: maxUsers=10, maxContadores=1 → effective limit = 9; 9 - 7 = 2
+      expect(result).toBe(2);
     });
 
     it('should return -1 for unlimited resources', async () => {
@@ -454,15 +456,20 @@ describe('TenantContextService', () => {
     });
 
     it('should return usage summary for all limit types', async () => {
-      (prismaService.user.count as jest.Mock).mockResolvedValue(5);
+      // user.count is called twice: once for 'users' (non-CONTADOR), once for 'contadores'
+      (prismaService.user.count as jest.Mock)
+        .mockResolvedValueOnce(5) // users (non-CONTADOR)
+        .mockResolvedValueOnce(0); // contadores
       (prismaService.product.count as jest.Mock).mockResolvedValue(500);
       (prismaService.invoice.count as jest.Mock).mockResolvedValue(100);
       (prismaService.warehouse.count as jest.Mock).mockResolvedValue(3);
 
       const result = await service.getUsageSummary();
 
+      // PRO plan: maxUsers=10, maxContadores=1 → effective user limit = 9
       expect(result).toEqual({
-        users: { current: 5, limit: 10, remaining: 5 },
+        users: { current: 5, limit: 9, remaining: 4 },
+        contadores: { current: 0, limit: 1, remaining: 1 },
         products: { current: 500, limit: 1000, remaining: 500 },
         invoices: { current: 100, limit: -1, remaining: -1 },
         warehouses: { current: 3, limit: 5, remaining: 2 },
@@ -478,7 +485,9 @@ describe('TenantContextService', () => {
 
       const tenant = await service.getTenant();
 
-      expect(service.getLimit(tenant, 'users')).toBe(10);
+      // PRO plan: maxUsers=10, maxContadores=1 → effective user limit = 9
+      expect(service.getLimit(tenant, 'users')).toBe(9);
+      expect(service.getLimit(tenant, 'contadores')).toBe(1);
       expect(service.getLimit(tenant, 'products')).toBe(1000);
       expect(service.getLimit(tenant, 'invoices')).toBe(-1);
       expect(service.getLimit(tenant, 'warehouses')).toBe(5);

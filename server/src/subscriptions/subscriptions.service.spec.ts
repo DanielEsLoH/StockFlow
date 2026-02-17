@@ -111,6 +111,9 @@ describe('SubscriptionsService', () => {
   // Prisma mock (top-level, used directly in tests)
   let prisma: {
     tenant: { findUnique: jest.Mock; update: jest.Mock };
+    user: { count: jest.Mock };
+    invitation: { count: jest.Mock };
+    warehouse: { count: jest.Mock };
     billingTransaction: {
       create: jest.Mock;
       findUnique: jest.Mock;
@@ -166,6 +169,9 @@ describe('SubscriptionsService', () => {
 
     prisma = {
       tenant: { findUnique: jest.fn(), update: jest.fn() },
+      user: { count: jest.fn().mockResolvedValue(0) },
+      invitation: { count: jest.fn().mockResolvedValue(0) },
+      warehouse: { count: jest.fn().mockResolvedValue(0) },
       billingTransaction: {
         create: jest.fn(),
         findUnique: jest.fn(),
@@ -257,6 +263,11 @@ describe('SubscriptionsService', () => {
         maxInvoices: -1,
         maxWarehouses: 10,
       });
+      expect(result.usage).toEqual({
+        users: { current: 0, limit: 3 },
+        contadores: { current: 0, limit: 1 },
+        warehouses: { current: 0, limit: 10 },
+      });
       expect(typeof result.daysRemaining).toBe('number');
       expect(result.daysRemaining).toBeGreaterThan(0);
     });
@@ -277,6 +288,11 @@ describe('SubscriptionsService', () => {
       expect(result.endDate).toBeNull();
       expect(result.daysRemaining).toBeNull();
       expect(result.hasPaymentSource).toBe(false);
+      expect(result.usage).toEqual({
+        users: { current: 0, limit: 3 },
+        contadores: { current: 0, limit: 1 },
+        warehouses: { current: 0, limit: 10 },
+      });
     });
 
     it('should calculate daysRemaining correctly for a future endDate', async () => {

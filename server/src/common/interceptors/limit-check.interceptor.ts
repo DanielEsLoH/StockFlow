@@ -8,8 +8,9 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { Tenant } from '@prisma/client';
+import { Tenant, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { getPlanLimits } from '../../subscriptions/plan-limits';
 import { CHECK_LIMIT_KEY } from '../decorators/check-limit.decorator';
 import { LimitType } from '../services';
 import { RequestUser } from '../../auth/types';
@@ -208,6 +209,11 @@ export class LimitCheckInterceptor implements NestInterceptor {
           where: { tenantId },
         });
 
+      case 'contadores':
+        return this.prisma.user.count({
+          where: { tenantId, role: UserRole.CONTADOR },
+        });
+
       default: {
         // Exhaustive check - TypeScript will error if a case is missed
         const exhaustiveCheck: never = limitType;
@@ -234,6 +240,10 @@ export class LimitCheckInterceptor implements NestInterceptor {
         return tenant.maxInvoices;
       case 'warehouses':
         return tenant.maxWarehouses;
+      case 'contadores': {
+        if (!tenant.plan) return 0;
+        return getPlanLimits(tenant.plan).maxContadores;
+      }
       default: {
         const exhaustiveCheck: never = limitType;
         throw new Error(`Unknown limit type: ${String(exhaustiveCheck)}`);

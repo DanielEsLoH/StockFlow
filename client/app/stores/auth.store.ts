@@ -7,7 +7,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "EMPLOYEE";
+  role: "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "EMPLOYEE" | "CONTADOR";
   status: "ACTIVE" | "PENDING" | "SUSPENDED";
   tenantId: string;
   avatar?: string | null;

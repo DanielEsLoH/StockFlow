@@ -13,6 +13,8 @@ import {
   BillingStatus,
   NotificationType,
   NotificationPriority,
+  UserRole,
+  InvitationStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { WompiService, WompiTransaction } from './wompi.service';
@@ -64,6 +66,11 @@ export interface SubscriptionStatusResponse {
     maxProducts: number;
     maxInvoices: number;
     maxWarehouses: number;
+  };
+  usage: {
+    users: { current: number; limit: number };
+    contadores: { current: number; limit: number };
+    warehouses: { current: number; limit: number };
   };
   hasPaymentSource: boolean;
   daysRemaining: number | null;
@@ -154,6 +161,43 @@ export class SubscriptionsService {
       daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
     }
 
+    // Calculate usage counts
+    const planLimits = tenant.plan ? getPlanLimits(tenant.plan) : null;
+    const maxRegularUsers = planLimits
+      ? tenant.maxUsers - planLimits.maxContadores
+      : tenant.maxUsers;
+    const maxContadores = planLimits?.maxContadores ?? 0;
+
+    const [
+      regularUserCount,
+      contadorCount,
+      pendingRegularInvitations,
+      pendingContadorInvitations,
+      warehouseCount,
+    ] = await Promise.all([
+      this.prisma.user.count({
+        where: { tenantId, role: { not: UserRole.CONTADOR } },
+      }),
+      this.prisma.user.count({
+        where: { tenantId, role: UserRole.CONTADOR },
+      }),
+      this.prisma.invitation.count({
+        where: {
+          tenantId,
+          role: { not: UserRole.CONTADOR },
+          status: InvitationStatus.PENDING,
+        },
+      }),
+      this.prisma.invitation.count({
+        where: {
+          tenantId,
+          role: UserRole.CONTADOR,
+          status: InvitationStatus.PENDING,
+        },
+      }),
+      this.prisma.warehouse.count({ where: { tenantId } }),
+    ]);
+
     return {
       tenantId: tenant.id,
       plan: tenant.plan,
@@ -166,6 +210,20 @@ export class SubscriptionsService {
         maxProducts: tenant.maxProducts,
         maxInvoices: tenant.maxInvoices,
         maxWarehouses: tenant.maxWarehouses,
+      },
+      usage: {
+        users: {
+          current: regularUserCount + pendingRegularInvitations,
+          limit: maxRegularUsers,
+        },
+        contadores: {
+          current: contadorCount + pendingContadorInvitations,
+          limit: maxContadores,
+        },
+        warehouses: {
+          current: warehouseCount,
+          limit: tenant.maxWarehouses,
+        },
       },
       hasPaymentSource: !!tenant.wompiPaymentSourceId,
       daysRemaining,

@@ -28,6 +28,11 @@ describe('SubscriptionsController', () => {
       maxInvoices: 200,
       maxWarehouses: 2,
     },
+    usage: {
+      users: { current: 1, limit: 2 },
+      contadores: { current: 0, limit: 1 },
+      warehouses: { current: 1, limit: 2 },
+    },
     hasPaymentSource: true,
     daysRemaining: 15,
   };
@@ -238,6 +243,11 @@ describe('SubscriptionsController', () => {
           maxProducts: 10,
           maxInvoices: 20,
           maxWarehouses: 1,
+        },
+        usage: {
+          users: { current: 0, limit: 1 },
+          contadores: { current: 0, limit: 0 },
+          warehouses: { current: 0, limit: 1 },
         },
         hasPaymentSource: false,
         daysRemaining: null,

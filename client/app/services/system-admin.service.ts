@@ -71,7 +71,7 @@ export interface LoginCredentials {
 
 // User types
 export type UserStatus = "PENDING" | "ACTIVE" | "INACTIVE" | "SUSPENDED";
-export type UserRole = "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "EMPLOYEE";
+export type UserRole = "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "EMPLOYEE" | "CONTADOR";
 
 export interface UserListItem {
   id: string;

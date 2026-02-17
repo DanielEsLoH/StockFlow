@@ -1997,19 +1997,25 @@ describe('AuthService', () => {
       (prismaService.user.update as jest.Mock).mockResolvedValue(createdUser);
     });
 
+    // Helper to build tx mock for acceptInvitation tests
+    const buildAcceptTx = (overrides: Record<string, unknown> = {}) => ({
+      tenant: {
+        findUnique: jest.fn().mockResolvedValue(mockTenant),
+      },
+      user: {
+        create: jest.fn().mockResolvedValue(createdUser),
+        count: jest.fn().mockResolvedValue(0),
+        ...(overrides.user as Record<string, unknown>),
+      },
+      invitation: {
+        update: jest.fn().mockResolvedValue(mockInvitation),
+        ...(overrides.invitation as Record<string, unknown>),
+      },
+    });
+
     it('should create user and return auth response for valid invitation', async () => {
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        (callback: (tx: unknown) => unknown) => {
-          const tx = {
-            user: {
-              create: jest.fn().mockResolvedValue(createdUser),
-            },
-            invitation: {
-              update: jest.fn().mockResolvedValue(mockInvitation),
-            },
-          };
-          return callback(tx);
-        },
+        (callback: (tx: unknown) => unknown) => callback(buildAcceptTx()),
       );
 
       const result = await service.acceptInvitation(acceptDto);
@@ -2069,17 +2075,8 @@ describe('AuthService', () => {
     it('should create user with invitation role and tenantId', async () => {
       const createUserMock = jest.fn().mockResolvedValue(createdUser);
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        (callback: (tx: unknown) => unknown) => {
-          const tx = {
-            user: {
-              create: createUserMock,
-            },
-            invitation: {
-              update: jest.fn().mockResolvedValue(mockInvitation),
-            },
-          };
-          return callback(tx);
-        },
+        (callback: (tx: unknown) => unknown) =>
+          callback(buildAcceptTx({ user: { create: createUserMock } })),
       );
 
       await service.acceptInvitation(acceptDto);
@@ -2099,17 +2096,12 @@ describe('AuthService', () => {
     it('should update invitation status to ACCEPTED', async () => {
       const updateInvitationMock = jest.fn().mockResolvedValue(mockInvitation);
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        (callback: (tx: unknown) => unknown) => {
-          const tx = {
-            user: {
-              create: jest.fn().mockResolvedValue(createdUser),
-            },
-            invitation: {
-              update: updateInvitationMock,
-            },
-          };
-          return callback(tx);
-        },
+        (callback: (tx: unknown) => unknown) =>
+          callback(
+            buildAcceptTx({
+              invitation: { update: updateInvitationMock },
+            }),
+          ),
       );
 
       await service.acceptInvitation(acceptDto);
@@ -2125,17 +2117,7 @@ describe('AuthService', () => {
 
     it('should store refresh token and update lastLoginAt', async () => {
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        (callback: (tx: unknown) => unknown) => {
-          const tx = {
-            user: {
-              create: jest.fn().mockResolvedValue(createdUser),
-            },
-            invitation: {
-              update: jest.fn().mockResolvedValue(mockInvitation),
-            },
-          };
-          return callback(tx);
-        },
+        (callback: (tx: unknown) => unknown) => callback(buildAcceptTx()),
       );
 
       await service.acceptInvitation(acceptDto);
@@ -2151,17 +2133,7 @@ describe('AuthService', () => {
 
     it('should hash password with 12 salt rounds', async () => {
       (prismaService.$transaction as jest.Mock).mockImplementation(
-        (callback: (tx: unknown) => unknown) => {
-          const tx = {
-            user: {
-              create: jest.fn().mockResolvedValue(createdUser),
-            },
-            invitation: {
-              update: jest.fn().mockResolvedValue(mockInvitation),
-            },
-          };
-          return callback(tx);
-        },
+        (callback: (tx: unknown) => unknown) => callback(buildAcceptTx()),
       );
 
       await service.acceptInvitation(acceptDto);

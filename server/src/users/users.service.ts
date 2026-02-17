@@ -151,8 +151,12 @@ export class UsersService {
 
     this.logger.debug(`Creating user ${normalizedEmail} in tenant ${tenantId}`);
 
-    // Check user limit
-    await this.tenantContext.enforceLimit('users');
+    // Check user limit (contadores have a separate slot)
+    if (dto.role === UserRole.CONTADOR) {
+      await this.tenantContext.enforceLimit('contadores');
+    } else {
+      await this.tenantContext.enforceLimit('users');
+    }
 
     // Check for existing user with same email (globally unique)
     const existingUser = await this.prisma.user.findUnique({

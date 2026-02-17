@@ -5,8 +5,10 @@ import { SubscriptionPlan, SubscriptionPeriod } from '@prisma/client';
  * Based on Alegra pricing structure adapted for inventory management.
  */
 export interface PlanLimits {
-  /** Maximum number of users allowed */
+  /** Maximum number of users allowed (includes contadores) */
   maxUsers: number;
+  /** Maximum number of contador slots (included in maxUsers) */
+  maxContadores: number;
   /** Maximum number of warehouses/bodegas allowed */
   maxWarehouses: number;
   /** Maximum number of products allowed (-1 = unlimited) */
@@ -34,6 +36,7 @@ export interface PlanLimits {
 export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   EMPRENDEDOR: {
     maxUsers: 2, // 1 usuario + 1 contador gratis
+    maxContadores: 1,
     maxWarehouses: 1,
     maxProducts: -1, // Ilimitados (igual que Alegra)
     maxInvoices: -1, // Ilimitadas (igual que Alegra)
@@ -52,6 +55,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   },
   PYME: {
     maxUsers: 3, // 2 usuarios + 1 contador gratis
+    maxContadores: 1,
     maxWarehouses: 2,
     maxProducts: -1, // Ilimitados (igual que Alegra)
     maxInvoices: -1, // Ilimitadas (igual que Alegra)
@@ -71,6 +75,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   },
   PRO: {
     maxUsers: 4, // 3 usuarios + 1 contador gratis
+    maxContadores: 1,
     maxWarehouses: 10,
     maxProducts: -1, // Ilimitados (igual que Alegra)
     maxInvoices: -1, // Ilimitadas (igual que Alegra)
@@ -91,6 +96,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   },
   PLUS: {
     maxUsers: 9, // 8 usuarios + 1 contador gratis
+    maxContadores: 1,
     maxWarehouses: 100,
     maxProducts: -1, // Ilimitados (igual que Alegra)
     maxInvoices: -1, // Ilimitadas (igual que Alegra)

@@ -174,6 +174,28 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
    * All operations are strictly scoped to their assigned warehouse.
    * Cannot access inventory, reports, settings, users, or admin features.
    */
+  /**
+   * CONTADOR: Read-only financial access across the entire tenant
+   * Can view all financial data, reports, and audit logs.
+   * Cannot create, edit, delete, or perform any operational actions.
+   * Not assigned to a specific warehouse (tenant-wide read access).
+   */
+  [UserRole.CONTADOR]: [
+    Permission.DASHBOARD_VIEW,
+    Permission.PRODUCTS_VIEW,
+    Permission.CATEGORIES_VIEW,
+    Permission.WAREHOUSES_VIEW,
+    Permission.INVENTORY_VIEW,
+    Permission.INVOICES_VIEW,
+    Permission.PAYMENTS_VIEW,
+    Permission.CUSTOMERS_VIEW,
+    Permission.REPORTS_VIEW,
+    Permission.REPORTS_EXPORT,
+    Permission.DIAN_VIEW,
+    Permission.AUDIT_VIEW,
+    Permission.AUDIT_EXPORT,
+  ],
+
   [UserRole.EMPLOYEE]: [
     // Dashboard - basic overview of their warehouse
     Permission.DASHBOARD_VIEW,

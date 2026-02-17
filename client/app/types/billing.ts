@@ -24,6 +24,11 @@ export interface SubscriptionStatusResponse {
     maxInvoices: number;
     maxWarehouses: number;
   };
+  usage: {
+    users: { current: number; limit: number };
+    contadores: { current: number; limit: number };
+    warehouses: { current: number; limit: number };
+  };
   hasPaymentSource: boolean;
   daysRemaining: number | null;
 }

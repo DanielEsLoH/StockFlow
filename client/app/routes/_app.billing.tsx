@@ -230,18 +230,27 @@ function CurrentPlanCard({
 
         {/* Limits summary + Renew button */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          {subscription?.limits && (
+          {subscription?.usage && (
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
                 <Users className="h-4 w-4 text-neutral-400" />
                 <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                  {subscription.limits.maxUsers} usuarios
+                  {subscription.usage.users.current}/
+                  {subscription.usage.users.limit} usuarios
+                </span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
+                <Users className="h-4 w-4 text-neutral-400" />
+                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  {subscription.usage.contadores.current}/
+                  {subscription.usage.contadores.limit} contador
                 </span>
               </div>
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-800/50">
                 <Warehouse className="h-4 w-4 text-neutral-400" />
                 <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                  {subscription.limits.maxWarehouses} bodegas
+                  {subscription.usage.warehouses.current}/
+                  {subscription.usage.warehouses.limit} bodegas
                 </span>
               </div>
             </div>

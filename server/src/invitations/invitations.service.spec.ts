@@ -113,8 +113,12 @@ describe('InvitationsService', () => {
 
     // Create mock implementations
     const mockPrismaService = {
+      tenant: {
+        findUnique: jest.fn(),
+      },
       user: {
         findUnique: jest.fn(),
+        count: jest.fn(),
       },
       invitation: {
         findUnique: jest.fn(),
@@ -124,6 +128,7 @@ describe('InvitationsService', () => {
         update: jest.fn(),
         updateMany: jest.fn(),
         delete: jest.fn(),
+        count: jest.fn(),
       },
       warehouse: {
         findFirst: jest.fn(),
@@ -178,6 +183,17 @@ describe('InvitationsService', () => {
       role: UserRole.EMPLOYEE,
       warehouseId: 'warehouse-123',
     };
+
+    // Default mocks for limit checks (checkUserSlotAvailability)
+    beforeEach(() => {
+      (prismaService.tenant.findUnique as jest.Mock).mockResolvedValue({
+        id: 'tenant-123',
+        plan: 'EMPRENDEDOR',
+        maxUsers: 2,
+      });
+      (prismaService.user.count as jest.Mock).mockResolvedValue(0);
+      (prismaService.invitation.count as jest.Mock).mockResolvedValue(0);
+    });
 
     it('should create a new invitation successfully', async () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);

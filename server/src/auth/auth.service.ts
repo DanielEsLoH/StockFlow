@@ -33,6 +33,7 @@ import {
   AuthProvider,
 } from '@prisma/client';
 import { BrevoService } from '../notifications/mail/brevo.service';
+import { getPlanLimits } from '../subscriptions/plan-limits';
 
 // Re-export JwtPayload for backwards compatibility
 export type { JwtPayload } from './types';
@@ -1007,6 +1008,44 @@ export class AuthService {
 
     // Create user and update invitation in a transaction
     const result = await this.prisma.$transaction(async (tx) => {
+      // Check user limit before creating user
+      const tenant = await tx.tenant.findUnique({
+        where: { id: invitation.tenantId },
+      });
+
+      if (tenant?.plan) {
+        const planLimits = getPlanLimits(tenant.plan);
+        const isContador = invitation.role === UserRole.CONTADOR;
+
+        if (isContador) {
+          const contadorCount = await tx.user.count({
+            where: {
+              tenantId: invitation.tenantId,
+              role: UserRole.CONTADOR,
+            },
+          });
+          if (contadorCount >= planLimits.maxContadores) {
+            throw new ForbiddenException(
+              'El limite de contadores ya fue alcanzado. Contacta al administrador.',
+            );
+          }
+        } else {
+          const maxRegularUsers =
+            tenant.maxUsers - planLimits.maxContadores;
+          const regularUserCount = await tx.user.count({
+            where: {
+              tenantId: invitation.tenantId,
+              role: { not: UserRole.CONTADOR },
+            },
+          });
+          if (regularUserCount >= maxRegularUsers) {
+            throw new ForbiddenException(
+              'El limite de usuarios ya fue alcanzado. Contacta al administrador para mejorar el plan.',
+            );
+          }
+        }
+      }
+
       // Create user with invitation's tenantId, role, and warehouse
       const user = await tx.user.create({
         data: {

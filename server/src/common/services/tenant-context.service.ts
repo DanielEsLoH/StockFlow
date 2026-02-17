@@ -7,14 +7,15 @@ import {
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { Tenant, TenantStatus } from '@prisma/client';
+import { Tenant, TenantStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { getTenantId as getTenantIdFromStorage } from '../context';
+import { getPlanLimits } from '../../subscriptions/plan-limits';
 
 /**
  * Supported limit types that can be checked against tenant plan limits.
  */
-export type LimitType = 'users' | 'products' | 'invoices' | 'warehouses';
+export type LimitType = 'users' | 'products' | 'invoices' | 'warehouses' | 'contadores';
 
 /**
  * Interface for the authenticated request with tenant information.
@@ -250,7 +251,12 @@ export class TenantContextService {
     switch (limitType) {
       case 'users':
         return this.prisma.user.count({
-          where: { tenantId },
+          where: { tenantId, role: { not: UserRole.CONTADOR } },
+        });
+
+      case 'contadores':
+        return this.prisma.user.count({
+          where: { tenantId, role: UserRole.CONTADOR },
         });
 
       case 'products':
@@ -411,6 +417,7 @@ export class TenantContextService {
 
     const limitTypes: LimitType[] = [
       'users',
+      'contadores',
       'products',
       'invoices',
       'warehouses',
@@ -437,8 +444,15 @@ export class TenantContextService {
    */
   private getLimitValue(tenant: Tenant, limitType: LimitType): number {
     switch (limitType) {
-      case 'users':
-        return tenant.maxUsers;
+      case 'users': {
+        if (!tenant.plan) return tenant.maxUsers;
+        const planLimits = getPlanLimits(tenant.plan);
+        return tenant.maxUsers - planLimits.maxContadores;
+      }
+      case 'contadores': {
+        if (!tenant.plan) return 0;
+        return getPlanLimits(tenant.plan).maxContadores;
+      }
       case 'products':
         return tenant.maxProducts;
       case 'invoices':

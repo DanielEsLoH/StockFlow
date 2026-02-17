@@ -42,6 +42,7 @@ enum UserRole {
   ADMIN
   MANAGER
   EMPLOYEE
+  CONTADOR
 }
 
 enum UserStatus {

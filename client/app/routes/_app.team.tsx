@@ -13,7 +13,9 @@ import {
   RefreshCw,
   ShieldAlert,
   Warehouse,
+  ArrowUpRight,
 } from "lucide-react";
+import { Link } from "react-router";
 import type { Route } from "./+types/_app.team";
 import { cn } from "~/lib/utils";
 import { useAuthStore } from "~/stores/auth.store";
@@ -25,6 +27,7 @@ import {
   useCancelInvitation,
   useResendInvitation,
 } from "~/hooks/useInvitations";
+import { useSubscriptionStatus } from "~/hooks/useBilling";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/Input";
 import {
@@ -71,7 +74,7 @@ export const meta: Route.MetaFunction = () => {
 const invitationSchema = z
   .object({
     email: z.email({ message: "Ingresa un email valido" }),
-    role: z.enum(["EMPLOYEE", "MANAGER", "ADMIN"]),
+    role: z.enum(["EMPLOYEE", "MANAGER", "ADMIN", "CONTADOR"]),
     warehouseId: z.string().optional(),
   })
   .refine(
@@ -94,6 +97,7 @@ const roleOptions = [
   { value: "EMPLOYEE", label: "Empleado" },
   { value: "MANAGER", label: "Gerente" },
   { value: "ADMIN", label: "Administrador" },
+  { value: "CONTADOR", label: "Contador" },
 ];
 
 // Role badge colors
@@ -105,6 +109,7 @@ const roleBadgeVariants: Record<
   ADMIN: "primary",
   MANAGER: "secondary",
   EMPLOYEE: "secondary",
+  CONTADOR: "success",
 };
 
 // Status badge configurations
@@ -134,6 +139,7 @@ const roleLabels: Record<string, string> = {
   ADMIN: "Administrador",
   MANAGER: "Gerente",
   EMPLOYEE: "Empleado",
+  CONTADOR: "Contador",
 };
 
 // Format date helper
@@ -170,6 +176,15 @@ export default function TeamPage() {
     isError: isErrorInvitations,
   } = useInvitations();
   const { data: warehouses = [] } = useWarehouses();
+  const { data: subscription } = useSubscriptionStatus();
+
+  // Usage limits
+  const usage = subscription?.usage;
+  const usersAtLimit = usage ? usage.users.current >= usage.users.limit : false;
+  const contadoresAtLimit = usage
+    ? usage.contadores.current >= usage.contadores.limit
+    : false;
+  const allSlotsAtLimit = usersAtLimit && contadoresAtLimit;
 
   // Mutations
   const createInvitation = useCreateInvitation();
@@ -195,9 +210,9 @@ export default function TeamPage() {
 
   const selectedRole = watch("role");
 
-  // Clear warehouseId when role changes to ADMIN
+  // Clear warehouseId when role changes to ADMIN or CONTADOR
   useEffect(() => {
-    if (selectedRole === "ADMIN") {
+    if (selectedRole === "ADMIN" || selectedRole === "CONTADOR") {
       setValue("warehouseId", "");
     }
   }, [selectedRole, setValue]);
@@ -209,7 +224,7 @@ export default function TeamPage() {
   // Warehouse options for the select
   const warehouseOptions = warehouses.map((w) => ({
     value: w.id,
-    label: `${w.name} (${w.code})`,
+    label: w.name,
   }));
 
   // Handle invitation submit
@@ -279,13 +294,54 @@ export default function TeamPage() {
           <p className="text-neutral-500 dark:text-neutral-400 mt-1">
             Gestiona los usuarios e invitaciones de tu organizacion
           </p>
+          {usage && (
+            <div className="flex flex-wrap items-center gap-3 mt-2">
+              <span
+                className={cn(
+                  "text-sm font-medium",
+                  usersAtLimit
+                    ? "text-error-600 dark:text-error-400"
+                    : "text-neutral-600 dark:text-neutral-400",
+                )}
+              >
+                Usuarios: {usage.users.current}/{usage.users.limit}
+              </span>
+              <span
+                className={cn(
+                  "text-sm font-medium",
+                  contadoresAtLimit
+                    ? "text-error-600 dark:text-error-400"
+                    : "text-neutral-600 dark:text-neutral-400",
+                )}
+              >
+                Contador: {usage.contadores.current}/{usage.contadores.limit}
+              </span>
+            </div>
+          )}
         </div>
-        <Button
-          leftIcon={<UserPlus className="h-4 w-4" />}
-          onClick={() => setIsInviteModalOpen(true)}
-        >
-          Invitar Usuario
-        </Button>
+        <div className="flex items-center gap-2">
+          {allSlotsAtLimit && (
+            <Link
+              to="/billing"
+              className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+            >
+              Mejorar plan
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
+          <Button
+            leftIcon={<UserPlus className="h-4 w-4" />}
+            onClick={() => setIsInviteModalOpen(true)}
+            disabled={allSlotsAtLimit}
+            title={
+              allSlotsAtLimit
+                ? "Limite de usuarios alcanzado. Mejora tu plan."
+                : undefined
+            }
+          >
+            Invitar Usuario
+          </Button>
+        </div>
       </PageSection>
 
       {/* Tab Navigation */}
@@ -445,7 +501,8 @@ export default function TeamPage() {
                           ) : (
                             <span className="text-sm text-neutral-400 dark:text-neutral-500">
                               {member.role === "ADMIN" ||
-                              member.role === "SUPER_ADMIN"
+                              member.role === "SUPER_ADMIN" ||
+                              member.role === "CONTADOR"
                                 ? "Todas"
                                 : "Sin asignar"}
                             </span>
@@ -785,9 +842,15 @@ export default function TeamPage() {
                 options={roleOptions}
                 value={selectedRole}
                 onChange={(value) =>
-                  setValue("role", value as "EMPLOYEE" | "MANAGER" | "ADMIN", {
-                    shouldValidate: true,
-                  })
+                  setValue(
+                    "role",
+                    value as
+                      | "EMPLOYEE"
+                      | "MANAGER"
+                      | "ADMIN"
+                      | "CONTADOR",
+                    { shouldValidate: true },
+                  )
                 }
                 placeholder="Selecciona un rol"
               />
@@ -798,6 +861,8 @@ export default function TeamPage() {
                   "Gestiona inventario y reportes de su bodega asignada."}
                 {selectedRole === "EMPLOYEE" &&
                   "Acceso basico para vender y facturar en su bodega asignada."}
+                {selectedRole === "CONTADOR" &&
+                  "Acceso de solo lectura a informacion financiera y reportes."}
               </p>
             </div>
 

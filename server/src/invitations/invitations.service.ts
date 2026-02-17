@@ -4,6 +4,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -17,7 +18,9 @@ import {
   Invitation,
   InvitationStatus,
   WarehouseStatus,
+  SubscriptionPlan,
 } from '@prisma/client';
+import { getPlanLimits } from '../subscriptions/plan-limits';
 
 /**
  * Response structure for invitation data
@@ -89,6 +92,9 @@ export class InvitationsService {
       );
     }
 
+    // Check user slot availability before creating invitation
+    await this.checkUserSlotAvailability(tenantId, role);
+
     // Validate warehouse assignment based on role
     if (role === UserRole.MANAGER || role === UserRole.EMPLOYEE) {
       if (!dto.warehouseId) {
@@ -109,9 +115,14 @@ export class InvitationsService {
           'La bodega seleccionada no existe, no pertenece a tu organizacion, o no esta activa',
         );
       }
-    } else if (role === UserRole.ADMIN && dto.warehouseId) {
+    } else if (
+      (role === UserRole.ADMIN || role === UserRole.CONTADOR) &&
+      dto.warehouseId
+    ) {
       throw new BadRequestException(
-        'Los administradores no deben tener una bodega asignada (acceso total)',
+        role === UserRole.ADMIN
+          ? 'Los administradores no deben tener una bodega asignada (acceso total)'
+          : 'Los contadores no deben tener una bodega asignada (acceso de lectura global)',
       );
     }
 
@@ -475,6 +486,67 @@ export class InvitationsService {
 
     if (result.count > 0) {
       this.logger.log(`Marked ${result.count} invitation(s) as expired`);
+    }
+  }
+
+  /**
+   * Checks if the tenant has available user slots for the given role.
+   * Counts existing users + pending invitations against the plan limit.
+   */
+  private async checkUserSlotAvailability(
+    tenantId: string,
+    role: UserRole,
+  ): Promise<void> {
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant?.plan) return; // Skip check for tenants without a plan (TRIAL)
+
+    const planLimits = getPlanLimits(tenant.plan as SubscriptionPlan);
+    const isContador = role === UserRole.CONTADOR;
+
+    if (isContador) {
+      const [existingContadores, pendingContadorInvitations] =
+        await Promise.all([
+          this.prisma.user.count({
+            where: { tenantId, role: UserRole.CONTADOR },
+          }),
+          this.prisma.invitation.count({
+            where: {
+              tenantId,
+              role: UserRole.CONTADOR,
+              status: InvitationStatus.PENDING,
+            },
+          }),
+        ]);
+
+      if (existingContadores + pendingContadorInvitations >= planLimits.maxContadores) {
+        throw new ForbiddenException(
+          `Limite de contadores alcanzado (${planLimits.maxContadores}). Ya tienes un contador asignado.`,
+        );
+      }
+    } else {
+      const maxRegularUsers = tenant.maxUsers - planLimits.maxContadores;
+      const [existingRegularUsers, pendingRegularInvitations] =
+        await Promise.all([
+          this.prisma.user.count({
+            where: { tenantId, role: { not: UserRole.CONTADOR } },
+          }),
+          this.prisma.invitation.count({
+            where: {
+              tenantId,
+              role: { not: UserRole.CONTADOR },
+              status: InvitationStatus.PENDING,
+            },
+          }),
+        ]);
+
+      if (existingRegularUsers + pendingRegularInvitations >= maxRegularUsers) {
+        throw new ForbiddenException(
+          `Limite de usuarios alcanzado (${maxRegularUsers}). Mejora tu plan para agregar mas usuarios.`,
+        );
+      }
     }
   }
 

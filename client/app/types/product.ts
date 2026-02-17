@@ -1,5 +1,11 @@
 // Product Types
 
+export interface WarehouseStock {
+  warehouseId: string;
+  warehouseName: string;
+  quantity: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -18,6 +24,7 @@ export interface Product {
   unit: string;
   imageUrl?: string | null;
   status: ProductStatus;
+  warehouseStocks?: WarehouseStock[];
   tenantId: string;
   createdAt: string;
   updatedAt: string;

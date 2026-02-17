@@ -140,6 +140,7 @@ export function useCheckoutInvoice() {
       });
       void queryClient.invalidateQueries({ queryKey: queryKeys.payments.all });
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
 
       toast.success(`Factura "${invoice.invoiceNumber}" procesada`);
     },

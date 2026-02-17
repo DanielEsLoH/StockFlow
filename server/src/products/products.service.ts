@@ -44,6 +44,17 @@ export interface ProductResponse {
 }
 
 /**
+ * Product detail with warehouse stock breakdown
+ */
+export interface ProductDetailResponse extends ProductResponse {
+  warehouseStocks: Array<{
+    warehouseId: string;
+    warehouseName: string;
+    quantity: number;
+  }>;
+}
+
+/**
  * Paginated response for list endpoints
  */
 export interface PaginatedProductsResponse {
@@ -253,20 +264,28 @@ export class ProductsService {
    * @returns Product data
    * @throws NotFoundException if product not found
    */
-  async findOne(id: string): Promise<ProductResponse> {
+  async findOne(id: string): Promise<ProductDetailResponse> {
     const tenantId = this.tenantContext.requireTenantId();
     const cacheKey = this.cache.generateKey(CACHE_KEYS.PRODUCT, tenantId, id);
 
     this.logger.debug(`Finding product ${id} in tenant ${tenantId}`);
 
     // Try to get from cache first
-    const cached = await this.cache.get<ProductResponse>(cacheKey);
+    const cached = await this.cache.get<ProductDetailResponse>(cacheKey);
     if (cached) {
       return cached;
     }
 
     const product = await this.prisma.product.findFirst({
       where: { id, tenantId },
+      include: {
+        category: { select: { id: true, name: true, color: true } },
+        warehouseStock: {
+          where: { quantity: { gt: 0 } },
+          include: { warehouse: { select: { id: true, name: true } } },
+          orderBy: { quantity: 'desc' },
+        },
+      },
     });
 
     if (!product) {
@@ -274,7 +293,14 @@ export class ProductsService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    const response = this.mapToProductResponse(product);
+    const response: ProductDetailResponse = {
+      ...this.mapToProductResponse(product),
+      warehouseStocks: (product.warehouseStock ?? []).map((ws) => ({
+        warehouseId: ws.warehouseId,
+        warehouseName: ws.warehouse.name,
+        quantity: ws.quantity,
+      })),
+    };
 
     // Cache the result
     await this.cache.set(cacheKey, response, CACHE_TTL.PRODUCT);

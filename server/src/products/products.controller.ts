@@ -24,6 +24,7 @@ import { UserRole } from '@prisma/client';
 import { ProductsService } from './products.service';
 import type {
   ProductResponse,
+  ProductDetailResponse,
   PaginatedProductsResponse,
 } from './products.service';
 import {
@@ -206,7 +207,7 @@ export class ProductsController {
     description: 'Unauthorized - Invalid or missing token',
   })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  async findOne(@Param('id') id: string): Promise<ProductResponse> {
+  async findOne(@Param('id') id: string): Promise<ProductDetailResponse> {
     this.logger.log(`Getting product: ${id}`);
 
     return this.productsService.findOne(id);

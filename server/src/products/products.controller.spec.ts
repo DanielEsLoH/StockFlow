@@ -4,6 +4,7 @@ import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import type {
   ProductResponse,
+  ProductDetailResponse,
   PaginatedProductsResponse,
 } from './products.service';
 import {
@@ -41,6 +42,11 @@ describe('ProductsController', () => {
     category: { id: 'category-123', name: 'Electronics', color: null },
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
+  };
+
+  const mockProductDetail: ProductDetailResponse = {
+    ...mockProduct,
+    warehouseStocks: [],
   };
 
   const mockProduct2: ProductResponse = {
@@ -262,11 +268,11 @@ describe('ProductsController', () => {
 
   describe('findOne', () => {
     it('should return a product by id', async () => {
-      productsService.findOne.mockResolvedValue(mockProduct);
+      productsService.findOne.mockResolvedValue(mockProductDetail);
 
       const result = await controller.findOne('product-123');
 
-      expect(result).toEqual(mockProduct);
+      expect(result).toEqual(mockProductDetail);
       expect(productsService.findOne).toHaveBeenCalledWith('product-123');
     });
 

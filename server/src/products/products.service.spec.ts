@@ -517,9 +517,11 @@ describe('ProductsService', () => {
 
       expect(result.id).toBe('product-123');
       expect(result.name).toBe('Test Product');
-      expect(prismaService.product.findFirst).toHaveBeenCalledWith({
-        where: { id: 'product-123', tenantId: mockTenantId },
-      });
+      expect(prismaService.product.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'product-123', tenantId: mockTenantId },
+        }),
+      );
     });
 
     it('should throw NotFoundException when product not found', async () => {
@@ -1623,9 +1625,11 @@ describe('ProductsService', () => {
 
       await service.findOne('product-123');
 
-      expect(prismaService.product.findFirst).toHaveBeenCalledWith({
-        where: { id: 'product-123', tenantId: mockTenantId },
-      });
+      expect(prismaService.product.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'product-123', tenantId: mockTenantId },
+        }),
+      );
     });
 
     it('should scope search to tenant', async () => {

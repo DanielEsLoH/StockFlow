@@ -9,6 +9,7 @@ import {
   Calendar,
   Barcode,
   AlertTriangle,
+  Warehouse,
 } from "lucide-react";
 import type { Route } from "./+types/_app.products.$id";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
@@ -246,7 +247,7 @@ export default function ProductDetailPage() {
             <CardHeader>
               <CardTitle>Inventario</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div
                   className={cn(
@@ -304,6 +305,30 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               </div>
+
+              {product.warehouseStocks && product.warehouseStocks.length > 0 && (
+                <div>
+                  <p className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                    Distribucion por Bodega
+                  </p>
+                  <div className="space-y-2">
+                    {product.warehouseStocks.map((ws) => (
+                      <div
+                        key={ws.warehouseId}
+                        className="flex items-center justify-between rounded-lg bg-neutral-100 p-3 dark:bg-neutral-800"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Warehouse className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+                          <span className="text-sm text-neutral-700 dark:text-neutral-300">
+                            {ws.warehouseName}
+                          </span>
+                        </div>
+                        <span className="font-medium">{ws.quantity} uds</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

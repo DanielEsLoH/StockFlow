@@ -21,7 +21,7 @@ import {
   type POSCartItem,
   type CartTotals,
 } from "~/lib/pos-utils";
-import { Button, Switch } from "~/components/ui";
+import { Button } from "~/components/ui";
 import type { Customer } from "~/types/customer";
 
 // ============================================================================
@@ -36,7 +36,6 @@ interface POSCartProProps {
   canCheckout: boolean;
   customer?: Customer | null;
   globalDiscount: number;
-  ivaEnabled: boolean;
   onUpdateQuantity: (productId: string, quantity: number) => void;
   onUpdatePrice: (productId: string, price: number) => void;
   onUpdateItemDiscount: (productId: string, discount: number) => void;
@@ -46,7 +45,6 @@ interface POSCartProProps {
   onClearCart: () => void;
   onSetNotes: (notes: string) => void;
   onSetGlobalDiscount: (discount: number) => void;
-  onSetIvaEnabled: (enabled: boolean) => void;
   onSelectCustomer: () => void;
   onCheckout: (status: "PENDING" | "PAID") => void;
   invoiceMode?: "POS" | "MANUAL";
@@ -269,7 +267,6 @@ export function POSCartPro({
   canCheckout,
   customer,
   globalDiscount,
-  ivaEnabled,
   onUpdateQuantity,
   onUpdatePrice,
   onUpdateItemDiscount,
@@ -279,7 +276,6 @@ export function POSCartPro({
   onClearCart,
   onSetNotes,
   onSetGlobalDiscount,
-  onSetIvaEnabled,
   onSelectCustomer,
   onCheckout,
   invoiceMode = "POS",
@@ -598,23 +594,11 @@ export function POSCartPro({
 
           {/* Tax */}
           <div className="flex items-center justify-between text-sm mb-2">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={ivaEnabled}
-                onChange={onSetIvaEnabled}
-                size="sm"
-              />
-              <span className="text-neutral-500 dark:text-neutral-400">
-                IVA {ivaEnabled ? "(19%)" : "Desactivado"}
-              </span>
-            </div>
+            <span className="text-neutral-500 dark:text-neutral-400">
+              IVA
+            </span>
             <span
-              className={cn(
-                "font-medium",
-                ivaEnabled
-                  ? "text-neutral-900 dark:text-white"
-                  : "text-neutral-400 dark:text-neutral-500"
-              )}
+              className="font-medium text-neutral-900 dark:text-white"
               style={{ fontVariantNumeric: "tabular-nums" }}
             >
               {formatCurrency(totals.taxAmount)}

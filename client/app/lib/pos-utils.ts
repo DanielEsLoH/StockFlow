@@ -4,7 +4,7 @@
 
 import type { Product } from "~/types/product";
 
-// Colombia VAT rate
+// Default Colombia VAT rate (used as fallback when product has no taxRate)
 export const COLOMBIA_VAT_RATE = 19;
 
 // Stock threshold for low stock warning
@@ -139,18 +139,13 @@ export function canAddToCart(
 }
 
 /**
- * Create a new cart item from product
- * @param product - The product to add to cart
- * @param quantity - Initial quantity (default: 1)
- * @param ivaEnabled - Whether IVA tax is enabled (default: true)
+ * Create a new cart item from product.
+ * Tax rate always comes from the product's taxRate (derived from taxCategory).
  */
 export function createCartItem(
   product: Product,
   quantity: number = 1,
-  ivaEnabled: boolean = true,
 ): POSCartItem {
-  // Use product's tax rate if available, otherwise use default Colombia VAT
-  const taxRate = ivaEnabled ? (product.taxRate ?? COLOMBIA_VAT_RATE) : 0;
   return {
     id: `cart-${product.id}-${Date.now()}`,
     productId: product.id,
@@ -158,7 +153,7 @@ export function createCartItem(
     quantity,
     unitPrice: product.salePrice,
     discount: 0,
-    tax: taxRate,
+    tax: product.taxRate ?? COLOMBIA_VAT_RATE,
   };
 }
 

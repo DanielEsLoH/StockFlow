@@ -153,6 +153,7 @@ export interface CreateInvoiceItemData {
   unitPrice: number;
   discount?: number;
   taxRate?: number;
+  taxCategory?: import('./product').TaxCategory;
 }
 
 // Update invoice item data

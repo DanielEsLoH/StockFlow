@@ -287,6 +287,7 @@ export interface SaleItemData {
   quantity: number;
   unitPrice?: number;
   discountPercent?: number;
+  taxRate?: number;
 }
 
 export interface SalePaymentData {

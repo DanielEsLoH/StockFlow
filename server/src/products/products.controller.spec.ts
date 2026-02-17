@@ -32,6 +32,7 @@ describe('ProductsController', () => {
     costPrice: 50,
     salePrice: 79.99,
     taxRate: 0,
+    taxCategory: 'GRAVADO_19' as any,
     stock: 100,
     minStock: 10,
     maxStock: null,

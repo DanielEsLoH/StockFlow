@@ -14,6 +14,7 @@ import {
   PaymentMethod,
   CashMovementType,
   MovementType,
+  TaxCategory,
   Prisma,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
@@ -226,6 +227,7 @@ export class POSSalesService {
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               taxRate: item.taxRate,
+              taxCategory: item.taxCategory,
               discount: item.discount,
               subtotal: item.subtotal,
               tax: item.tax,
@@ -676,6 +678,7 @@ export class POSSalesService {
       quantity: number;
       unitPrice: number;
       taxRate: number;
+      taxCategory: TaxCategory;
       discount: number;
       subtotal: number;
       tax: number;
@@ -690,6 +693,7 @@ export class POSSalesService {
       quantity: number;
       unitPrice: number;
       taxRate: number;
+      taxCategory: TaxCategory;
       discount: number;
       subtotal: number;
       tax: number;
@@ -699,7 +703,7 @@ export class POSSalesService {
     for (const item of items) {
       const product = productMap.get(item.productId)!;
       const unitPrice = item.unitPrice ?? Number(product.salePrice);
-      const taxRate = Number(product.taxRate);
+      const taxRate = item.taxRate ?? Number(product.taxRate);
       const itemSubtotal = unitPrice * item.quantity;
 
       // Calculate item discount
@@ -720,6 +724,7 @@ export class POSSalesService {
         quantity: item.quantity,
         unitPrice,
         taxRate,
+        taxCategory: product.taxCategory ?? TaxCategory.GRAVADO_19,
         discount: itemDiscount,
         subtotal: subtotalAfterDiscount,
         tax: itemTax,

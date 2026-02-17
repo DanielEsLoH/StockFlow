@@ -52,7 +52,7 @@ const productSchema = z.object({
   barcode: z.string().max(50, "Maximo 50 caracteres").optional(),
   salePrice: z.number().min(0, "El precio debe ser mayor o igual a 0"),
   costPrice: z.number().min(0, "El costo debe ser mayor o igual a 0"),
-  taxRate: z.number().min(0).max(100).optional(),
+  taxCategory: z.enum(["GRAVADO_19", "GRAVADO_5", "EXENTO", "EXCLUIDO"]).optional(),
   stock: z.number().int().min(0, "La cantidad debe ser mayor o igual a 0"),
   minStock: z
     .number()
@@ -161,7 +161,7 @@ export default function NewProductPage() {
       barcode: "",
       salePrice: 0,
       costPrice: 0,
-      taxRate: 19,
+      taxCategory: "GRAVADO_19",
       stock: 0,
       minStock: 10,
       maxStock: undefined,
@@ -503,23 +503,32 @@ export default function NewProductPage() {
                         </div>
                       </div>
 
-                      {/* Tax rate */}
+                      {/* Tax category */}
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                          IVA (%)
+                          Categoria Fiscal (IVA)
                         </label>
-                        <Input
-                          type="number"
-                          step="1"
-                          min="0"
-                          max="100"
-                          {...register("taxRate", { valueAsNumber: true })}
-                          placeholder="19"
-                          error={!!errors.taxRate}
+                        <Controller
+                          name="taxCategory"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              options={[
+                                { value: "GRAVADO_19", label: "Gravado 19%" },
+                                { value: "GRAVADO_5", label: "Gravado 5%" },
+                                { value: "EXENTO", label: "Exento (0%)" },
+                                { value: "EXCLUIDO", label: "Excluido (0%)" },
+                              ]}
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Seleccionar categoria fiscal"
+                              error={!!errors.taxCategory}
+                            />
+                          )}
                         />
-                        {errors.taxRate && (
+                        {errors.taxCategory && (
                           <p className="text-sm text-error-500">
-                            {errors.taxRate.message}
+                            {errors.taxCategory.message}
                           </p>
                         )}
                       </div>

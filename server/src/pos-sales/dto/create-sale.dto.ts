@@ -54,6 +54,18 @@ export class SaleItemDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   discountPercent?: number;
+
+  @ApiPropertyOptional({
+    description: 'Tax rate override (uses product tax rate if not provided)',
+    example: 19,
+    minimum: 0,
+    maximum: 100,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  taxRate?: number;
 }
 
 export class SalePaymentDto {

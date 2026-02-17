@@ -5,7 +5,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { Product, ProductStatus, Prisma } from '@prisma/client';
+import { Product, ProductStatus, TaxCategory, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { CacheService, CACHE_KEYS, CACHE_TTL } from '../cache';
@@ -15,6 +15,7 @@ import {
   UpdateStockDto,
   FilterProductsDto,
   StockAdjustmentType,
+  taxRateFromCategory,
 } from './dto';
 
 /**
@@ -29,6 +30,7 @@ export interface ProductResponse {
   costPrice: number;
   salePrice: number;
   taxRate: number;
+  taxCategory: TaxCategory;
   stock: number;
   minStock: number;
   maxStock: number | null;
@@ -387,7 +389,8 @@ export class ProductsService {
         categoryId: dto.categoryId,
         costPrice: dto.costPrice,
         salePrice: dto.salePrice,
-        taxRate: dto.taxRate ?? 19,
+        taxCategory: dto.taxCategory ?? TaxCategory.GRAVADO_19,
+        taxRate: taxRateFromCategory(dto.taxCategory ?? TaxCategory.GRAVADO_19),
         stock: dto.stock ?? 0,
         minStock: dto.minStock ?? 0,
         maxStock: dto.maxStock,
@@ -517,8 +520,9 @@ export class ProductsService {
       updateData.salePrice = dto.salePrice;
     }
 
-    if (dto.taxRate !== undefined) {
-      updateData.taxRate = dto.taxRate;
+    if (dto.taxCategory !== undefined) {
+      updateData.taxCategory = dto.taxCategory;
+      updateData.taxRate = taxRateFromCategory(dto.taxCategory);
     }
 
     if (dto.minStock !== undefined) {
@@ -752,6 +756,7 @@ export class ProductsService {
       costPrice: Number(product.costPrice),
       salePrice: Number(product.salePrice),
       taxRate: Number(product.taxRate),
+      taxCategory: product.taxCategory,
       stock: product.stock,
       minStock: product.minStock,
       maxStock: product.maxStock,

@@ -14,7 +14,7 @@ import {
   ArrayMinSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { InvoiceSource, PaymentMethod } from '@prisma/client';
+import { InvoiceSource, PaymentMethod, TaxCategory } from '@prisma/client';
 
 // CUID pattern: starts with 'c' followed by lowercase letters and numbers, typically 25 chars
 // Example: clh1234567890abcdefghijkl or cmkcykam80004reya0hsdx337
@@ -96,6 +96,23 @@ export class CreateInvoiceItemDto {
   @Min(0, { message: 'El descuento debe ser al menos 0' })
   @IsOptional()
   discount?: number = 0;
+
+  /**
+   * Tax category for DIAN compliance (inherited from product if not provided)
+   * @example "GRAVADO_19"
+   */
+  @ApiPropertyOptional({
+    description:
+      'Tax category: GRAVADO_19 (19%), GRAVADO_5 (5%), EXENTO (0%), EXCLUIDO (0%)',
+    enum: TaxCategory,
+    example: 'GRAVADO_19',
+  })
+  @IsEnum(TaxCategory, {
+    message:
+      'Tax category must be GRAVADO_19, GRAVADO_5, EXENTO, or EXCLUIDO',
+  })
+  @IsOptional()
+  taxCategory?: TaxCategory;
 }
 
 /**

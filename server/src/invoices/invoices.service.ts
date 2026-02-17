@@ -19,6 +19,7 @@ import {
   UserRole,
   Tenant,
   TenantDianConfig,
+  TaxCategory,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
@@ -412,6 +413,10 @@ export class InvoicesService {
     const itemsData = dto.items.map((item, index) => {
       const subtotal = item.quantity * item.unitPrice;
       const taxRate = item.taxRate ?? 19;
+      const taxCategory =
+        item.taxCategory ??
+        productValidations[index].taxCategory ??
+        TaxCategory.GRAVADO_19;
       const discount = item.discount ?? 0;
       const tax = subtotal * (taxRate / 100);
       const total = subtotal + tax - discount;
@@ -421,6 +426,7 @@ export class InvoicesService {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         taxRate,
+        taxCategory,
         discount,
         subtotal,
         tax,
@@ -484,6 +490,7 @@ export class InvoicesService {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           taxRate: item.taxRate,
+          taxCategory: item.taxCategory,
           discount: item.discount,
           subtotal: item.subtotal,
           tax: item.tax,

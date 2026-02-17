@@ -1,5 +1,23 @@
 // Product Types
 
+export type TaxCategory = 'GRAVADO_19' | 'GRAVADO_5' | 'EXENTO' | 'EXCLUIDO';
+
+export const TAX_CATEGORY_OPTIONS = [
+  { value: 'GRAVADO_19' as TaxCategory, label: 'Gravado 19%', rate: 19 },
+  { value: 'GRAVADO_5' as TaxCategory, label: 'Gravado 5%', rate: 5 },
+  { value: 'EXENTO' as TaxCategory, label: 'Exento (0%)', rate: 0 },
+  { value: 'EXCLUIDO' as TaxCategory, label: 'Excluido (0%)', rate: 0 },
+] as const;
+
+export function taxRateFromCategory(category: TaxCategory): number {
+  switch (category) {
+    case 'GRAVADO_19': return 19;
+    case 'GRAVADO_5': return 5;
+    case 'EXENTO':
+    case 'EXCLUIDO': return 0;
+  }
+}
+
 export interface WarehouseStock {
   warehouseId: string;
   warehouseName: string;
@@ -15,6 +33,7 @@ export interface Product {
   salePrice: number;
   costPrice: number;
   taxRate: number;
+  taxCategory: TaxCategory;
   stock: number;
   minStock: number;
   maxStock?: number | null;
@@ -83,7 +102,7 @@ export interface CreateProductData {
   barcode?: string;
   salePrice: number;
   costPrice: number;
-  taxRate?: number;
+  taxCategory?: TaxCategory;
   stock?: number;
   minStock?: number;
   maxStock?: number;

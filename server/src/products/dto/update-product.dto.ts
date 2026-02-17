@@ -5,11 +5,10 @@ import {
   IsInt,
   IsEnum,
   Min,
-  Max,
   MinLength,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ProductStatus } from '@prisma/client';
+import { ProductStatus, TaxCategory } from '@prisma/client';
 
 /**
  * Data transfer object for updating an existing product.
@@ -96,20 +95,21 @@ export class UpdateProductDto {
   salePrice?: number;
 
   /**
-   * Tax rate percentage
-   * @example 19
+   * Tax category for DIAN compliance
+   * @example "GRAVADO_19"
    */
   @ApiPropertyOptional({
-    description: 'Tax rate percentage',
-    example: 19,
-    minimum: 0,
-    maximum: 100,
+    description:
+      'Tax category: GRAVADO_19 (19%), GRAVADO_5 (5%), EXENTO (0%), EXCLUIDO (0%)',
+    enum: TaxCategory,
+    example: 'GRAVADO_19',
   })
-  @IsNumber({}, { message: 'Tax rate must be a number' })
-  @Min(0, { message: 'Tax rate must be at least 0' })
-  @Max(100, { message: 'Tax rate cannot exceed 100' })
+  @IsEnum(TaxCategory, {
+    message:
+      'Tax category must be GRAVADO_19, GRAVADO_5, EXENTO, or EXCLUIDO',
+  })
   @IsOptional()
-  taxRate?: number;
+  taxCategory?: TaxCategory;
 
   /**
    * Minimum stock level for low stock alerts

@@ -6,7 +6,6 @@ import {
   calculateCartTotals,
   createCartItem,
   canAddToCart,
-  COLOMBIA_VAT_RATE,
 } from "~/lib/pos-utils";
 
 /**
@@ -21,8 +20,6 @@ export interface POSState {
   isProcessing: boolean;
   notes: string;
   globalDiscount: number;
-  /** Whether IVA (19% tax) is enabled for this invoice */
-  ivaEnabled: boolean;
 }
 
 /**
@@ -50,7 +47,6 @@ type POSAction =
   | { type: "SET_PROCESSING"; payload: boolean }
   | { type: "SET_NOTES"; payload: string }
   | { type: "SET_GLOBAL_DISCOUNT"; payload: number }
-  | { type: "SET_IVA_ENABLED"; payload: boolean }
   | { type: "RESET_STATE" };
 
 /**
@@ -65,7 +61,6 @@ const initialState: POSState = {
   isProcessing: false,
   notes: "",
   globalDiscount: 0,
-  ivaEnabled: true,
 };
 
 /**
@@ -106,7 +101,7 @@ function posReducer(state: POSState, action: POSAction): POSState {
 
       return {
         ...state,
-        cart: [...state.cart, createCartItem(product, 1, state.ivaEnabled)],
+        cart: [...state.cart, createCartItem(product)],
       };
     }
 
@@ -254,20 +249,6 @@ function posReducer(state: POSState, action: POSAction): POSState {
         notes: action.payload,
       };
 
-    case "SET_IVA_ENABLED": {
-      const ivaEnabled = action.payload;
-      // Update all cart items with the new tax rate
-      const updatedCart = state.cart.map((item) => ({
-        ...item,
-        tax: ivaEnabled ? (item.product.taxRate ?? COLOMBIA_VAT_RATE) : 0,
-      }));
-      return {
-        ...state,
-        ivaEnabled,
-        cart: updatedCart,
-      };
-    }
-
     case "RESET_STATE":
       return initialState;
 
@@ -343,10 +324,6 @@ export function usePOSCart() {
     dispatch({ type: "SET_NOTES", payload: notes });
   }, []);
 
-  const setIvaEnabled = useCallback((enabled: boolean) => {
-    dispatch({ type: "SET_IVA_ENABLED", payload: enabled });
-  }, []);
-
   const resetState = useCallback(() => {
     dispatch({ type: "RESET_STATE" });
   }, []);
@@ -408,7 +385,6 @@ export function usePOSCart() {
     setSelectedCategory,
     setProcessing,
     setNotes,
-    setIvaEnabled,
     resetState,
 
     // Helpers
@@ -422,4 +398,3 @@ export type UsePOSCartReturn = ReturnType<typeof usePOSCart>;
 
 // Re-export types for convenience
 export type { POSCartItem, CartTotals };
-export { COLOMBIA_VAT_RATE };

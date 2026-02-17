@@ -216,6 +216,7 @@ export default function POSPage() {
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             discountPercent: item.discountPercent,
+            taxRate: item.taxRate,
           })),
           payments,
           discountPercent: globalDiscount,

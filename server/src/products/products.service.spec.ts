@@ -36,6 +36,7 @@ describe('ProductsService', () => {
     costPrice: { toNumber: () => 50 } as unknown as number,
     salePrice: { toNumber: () => 79.99 } as unknown as number,
     taxRate: { toNumber: () => 19 } as unknown as number,
+    taxCategory: 'GRAVADO_19',
     stock: 100,
     minStock: 10,
     maxStock: null,
@@ -575,7 +576,7 @@ describe('ProductsService', () => {
       categoryId: 'category-123',
       costPrice: 30,
       salePrice: 49.99,
-      taxRate: 19,
+      taxCategory: 'GRAVADO_19' as any,
       stock: 50,
       minStock: 5,
       barcode: '1234567890123',
@@ -1034,18 +1035,19 @@ describe('ProductsService', () => {
         });
       });
 
-      it('should update taxRate when provided', async () => {
-        const taxRateUpdate = { taxRate: 21 };
+      it('should update taxCategory and derive taxRate', async () => {
+        const taxUpdate = { taxCategory: 'GRAVADO_5' as any };
         (prismaService.product.update as jest.Mock).mockResolvedValue({
           ...mockProduct,
-          taxRate: { toNumber: () => 21 },
+          taxCategory: 'GRAVADO_5',
+          taxRate: { toNumber: () => 5 },
         });
 
-        await service.update('product-123', taxRateUpdate);
+        await service.update('product-123', taxUpdate);
 
         expect(prismaService.product.update).toHaveBeenCalledWith({
           where: { id: 'product-123' },
-          data: { taxRate: 21 },
+          data: { taxCategory: 'GRAVADO_5', taxRate: 5 },
         });
       });
 
@@ -1145,7 +1147,7 @@ describe('ProductsService', () => {
           description: 'Updated Description',
           costPrice: 50,
           salePrice: 100,
-          taxRate: 18,
+          taxCategory: 'GRAVADO_5' as any,
           minStock: 15,
           brand: 'UpdatedBrand',
           unit: 'LTR',
@@ -1154,6 +1156,7 @@ describe('ProductsService', () => {
         (prismaService.product.update as jest.Mock).mockResolvedValue({
           ...mockProduct,
           ...multiUpdate,
+          taxRate: 5,
         });
 
         await service.update('product-123', multiUpdate);
@@ -1165,7 +1168,8 @@ describe('ProductsService', () => {
             description: 'Updated Description',
             costPrice: 50,
             salePrice: 100,
-            taxRate: 18,
+            taxCategory: 'GRAVADO_5',
+            taxRate: 5,
             minStock: 15,
             brand: 'UpdatedBrand',
             unit: 'LTR',

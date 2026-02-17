@@ -3,11 +3,28 @@ import {
   IsOptional,
   IsNumber,
   IsInt,
+  IsEnum,
   Min,
   Max,
   MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TaxCategory } from '@prisma/client';
+
+/**
+ * Derives the tax rate from a TaxCategory enum value.
+ */
+export function taxRateFromCategory(category: TaxCategory): number {
+  switch (category) {
+    case TaxCategory.GRAVADO_19:
+      return 19;
+    case TaxCategory.GRAVADO_5:
+      return 5;
+    case TaxCategory.EXENTO:
+    case TaxCategory.EXCLUIDO:
+      return 0;
+  }
+}
 
 /**
  * Data transfer object for creating a new product.
@@ -92,21 +109,22 @@ export class CreateProductDto {
   salePrice: number;
 
   /**
-   * Tax rate percentage (default: 19%)
-   * @example 19
+   * Tax category for DIAN compliance
+   * @example "GRAVADO_19"
    */
   @ApiPropertyOptional({
-    description: 'Tax rate percentage',
-    example: 19,
-    minimum: 0,
-    maximum: 100,
-    default: 19,
+    description:
+      'Tax category: GRAVADO_19 (19%), GRAVADO_5 (5%), EXENTO (0%), EXCLUIDO (0%)',
+    enum: TaxCategory,
+    example: 'GRAVADO_19',
+    default: 'GRAVADO_19',
   })
-  @IsNumber({}, { message: 'Tax rate must be a number' })
-  @Min(0, { message: 'Tax rate must be at least 0' })
-  @Max(100, { message: 'Tax rate cannot exceed 100' })
+  @IsEnum(TaxCategory, {
+    message:
+      'Tax category must be GRAVADO_19, GRAVADO_5, EXENTO, or EXCLUIDO',
+  })
   @IsOptional()
-  taxRate?: number = 19;
+  taxCategory?: TaxCategory = TaxCategory.GRAVADO_19;
 
   /**
    * Current stock quantity (default: 0)

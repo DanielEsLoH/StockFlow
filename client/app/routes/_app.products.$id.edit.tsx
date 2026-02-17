@@ -51,7 +51,7 @@ const productSchema = z.object({
   barcode: z.string().max(50, "Maximo 50 caracteres").optional(),
   salePrice: z.number().min(0, "El precio debe ser mayor o igual a 0"),
   costPrice: z.number().min(0, "El costo debe ser mayor o igual a 0"),
-  taxRate: z.number().min(0).max(100).optional(),
+  taxCategory: z.enum(["GRAVADO_19", "GRAVADO_5", "EXENTO", "EXCLUIDO"]).optional(),
   minStock: z
     .number()
     .int()
@@ -148,7 +148,7 @@ export default function EditProductPage() {
         barcode: product.barcode || "",
         salePrice: product.salePrice,
         costPrice: product.costPrice,
-        taxRate: product.taxRate,
+        taxCategory: product.taxCategory,
         minStock: product.minStock,
         maxStock: product.maxStock || undefined,
         categoryId: product.categoryId || undefined,
@@ -442,6 +442,36 @@ export default function EditProductPage() {
                       {margin.toFixed(1)}%
                     </div>
                   </div>
+                </div>
+
+                {/* Tax Category */}
+                <div className="mt-4 space-y-2">
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                    Categoria Fiscal (IVA)
+                  </label>
+                  <Controller
+                    name="taxCategory"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        options={[
+                          { value: "GRAVADO_19", label: "Gravado 19%" },
+                          { value: "GRAVADO_5", label: "Gravado 5%" },
+                          { value: "EXENTO", label: "Exento (0%)" },
+                          { value: "EXCLUIDO", label: "Excluido (0%)" },
+                        ]}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Seleccionar categoria fiscal"
+                        error={!!errors.taxCategory}
+                      />
+                    )}
+                  />
+                  {errors.taxCategory && (
+                    <p className="text-sm text-error-500">
+                      {errors.taxCategory.message}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>

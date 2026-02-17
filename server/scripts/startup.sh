@@ -9,8 +9,7 @@ echo "Starting StockFlow API..."
 echo "Running database migrations..."
 ./node_modules/.bin/prisma migrate deploy
 
-# Run seed using compiled JavaScript (works in production without ts-node)
-# The seed script checks internally if seeding is needed (skips if data exists)
+# Run seed only if database is empty (skips automatically if tenants exist)
 echo "Running database seed..."
 node dist/prisma/seed.js
 

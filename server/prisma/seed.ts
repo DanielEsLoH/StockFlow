@@ -93,7 +93,16 @@ interface InvoiceRecord {
 // ============================================================================
 
 async function main() {
-  console.log('🌱 Iniciando seed ULTRA-COMPLETO de base de datos...\n');
+  console.log('🌱 Verificando base de datos...\n');
+
+  // Check if database already has data — skip seeding if so
+  const existingTenants = await prisma.tenant.count();
+  if (existingTenants > 0) {
+    console.log('✅ Base de datos ya contiene datos. Seed omitido.\n');
+    return;
+  }
+
+  console.log('📦 Base de datos vacía. Ejecutando seed completo...\n');
 
   // ============================================================================
   // STEP 1: Clean existing data
@@ -176,6 +185,12 @@ async function main() {
   // ============================================================================
   console.log('🏢 Creando Tenants...');
 
+  // Plan limits (from plan-limits.ts):
+  // EMPRENDEDOR: maxUsers=2 (1+1 contador), maxWarehouses=1, maxProducts=-1, maxInvoices=-1
+  // PYME:        maxUsers=3 (2+1 contador), maxWarehouses=2, maxProducts=-1, maxInvoices=-1
+  // PRO:         maxUsers=4 (3+1 contador), maxWarehouses=10, maxProducts=-1, maxInvoices=-1
+  // PLUS:        maxUsers=9 (8+1 contador), maxWarehouses=100, maxProducts=-1, maxInvoices=-1
+
   const tenantDemo = await prisma.tenant.create({
     data: {
       name: 'Tienda Demo',
@@ -184,10 +199,10 @@ async function main() {
       phone: '+57 300 123 4567',
       status: 'ACTIVE',
       plan: 'PRO',
-      maxUsers: 10,
-      maxProducts: 5000,
+      maxUsers: 4,
+      maxProducts: -1,
       maxInvoices: -1,
-      maxWarehouses: 20,
+      maxWarehouses: 10,
     },
   });
 
@@ -199,7 +214,7 @@ async function main() {
       phone: '+57 1 234 5678',
       status: 'ACTIVE',
       plan: 'PLUS',
-      maxUsers: 25,
+      maxUsers: 9,
       maxProducts: -1,
       maxInvoices: -1,
       maxWarehouses: 100,
@@ -214,9 +229,9 @@ async function main() {
       phone: '+57 311 555 4444',
       status: 'TRIAL',
       plan: 'EMPRENDEDOR',
-      maxUsers: 1,
-      maxProducts: 100,
-      maxInvoices: 50,
+      maxUsers: 2,
+      maxProducts: -1,
+      maxInvoices: -1,
       maxWarehouses: 1,
     },
   });
@@ -229,10 +244,10 @@ async function main() {
       phone: '+57 4 987 6543',
       status: 'ACTIVE',
       plan: 'PYME',
-      maxUsers: 5,
-      maxProducts: 1000,
+      maxUsers: 3,
+      maxProducts: -1,
       maxInvoices: -1,
-      maxWarehouses: 5,
+      maxWarehouses: 2,
     },
   });
 
@@ -439,7 +454,35 @@ async function main() {
     },
   });
 
-  console.log('   ✅ 21 Usuarios creados (10 Demo + 6 Distribuidora + 1 Nuevo Negocio + 4 Papelería)');
+  // ── Contadores (1 per tenant with plan) ──
+  const contadorDemo = await prisma.user.create({
+    data: {
+      tenantId: tenantDemo.id, email: 'contador@tienda-demo.com', password: hashedPassword,
+      firstName: 'Isabel', lastName: 'Quintero', phone: '+57 300 111 9999',
+      avatar: avatarUrl('Isabel', 'Quintero'),
+      role: 'CONTADOR', status: 'ACTIVE', emailVerified: true, lastLoginAt: daysAgo(3),
+    },
+  });
+
+  const contadorDN = await prisma.user.create({
+    data: {
+      tenantId: tenantDistribuidora.id, email: 'contador@distribuidoranacional.com', password: hashedPassword,
+      firstName: 'Hernando', lastName: 'Parra', phone: '+57 1 555 0007',
+      avatar: avatarUrl('Hernando', 'Parra'),
+      role: 'CONTADOR', status: 'ACTIVE', emailVerified: true, lastLoginAt: daysAgo(5),
+    },
+  });
+
+  const contadorPC = await prisma.user.create({
+    data: {
+      tenantId: tenantPapeleria.id, email: 'contador@papeleriacentral.com', password: hashedPassword,
+      firstName: 'Adriana', lastName: 'Serna', phone: '+57 4 987 0004',
+      avatar: avatarUrl('Adriana', 'Serna'),
+      role: 'CONTADOR', status: 'ACTIVE', emailVerified: true, lastLoginAt: daysAgo(2),
+    },
+  });
+
+  console.log('   ✅ 24 Usuarios creados (11 Demo + 7 Distribuidora + 1 Nuevo Negocio + 5 Papelería)');
 
   // ============================================================================
   // STEP 5: Categories
@@ -1468,7 +1511,7 @@ async function main() {
   console.log(`   ✅ ${sysAdminActions.length} System Admin Audit Logs creados`);
 
   // ============================================================================
-  // STEP 16: Invitations (13 total)
+  // STEP 16: Invitations (15 total)
   // ============================================================================
   console.log('📨 Creando Invitaciones...');
 
@@ -1481,12 +1524,14 @@ async function main() {
     { tenantId: tenantDemo.id, email: 'aceptado2@email.com', role: 'EMPLOYEE', status: 'ACCEPTED', invitedById: managerDemo.id },
     { tenantId: tenantDemo.id, email: 'expirado@email.com', role: 'EMPLOYEE', status: 'EXPIRED', invitedById: adminDemo.id },
     { tenantId: tenantDemo.id, email: 'cancelado@email.com', role: 'MANAGER', status: 'CANCELLED', invitedById: adminDemo.id },
-    // DN (3)
+    // DN (4)
     { tenantId: tenantDistribuidora.id, email: 'nuevo.dn1@email.com', role: 'EMPLOYEE', status: 'PENDING', invitedById: dnAdmin.id },
     { tenantId: tenantDistribuidora.id, email: 'aceptado.dn@email.com', role: 'EMPLOYEE', status: 'ACCEPTED', invitedById: dnAdmin.id },
     { tenantId: tenantDistribuidora.id, email: 'expirado.dn@email.com', role: 'MANAGER', status: 'EXPIRED', invitedById: dnAdmin.id },
-    // NN (1)
+    { tenantId: tenantDistribuidora.id, email: 'contador.rechazado.dn@email.com', role: 'CONTADOR', status: 'CANCELLED', invitedById: dnAdmin.id },
+    // NN (2)
     { tenantId: tenantNuevo.id, email: 'invitado.nn@email.com', role: 'EMPLOYEE', status: 'PENDING', invitedById: nnAdmin.id },
+    { tenantId: tenantNuevo.id, email: 'contador.nn@email.com', role: 'CONTADOR', status: 'PENDING', invitedById: nnAdmin.id },
     // PC (2)
     { tenantId: tenantPapeleria.id, email: 'nuevo.pc@email.com', role: 'EMPLOYEE', status: 'PENDING', invitedById: pcAdmin.id },
     { tenantId: tenantPapeleria.id, email: 'aceptado.pc@email.com', role: 'EMPLOYEE', status: 'ACCEPTED', invitedById: pcAdmin.id },
@@ -1737,14 +1782,17 @@ async function main() {
   console.log('══════════════════════════════════════════════════════');
   console.log('\n🔑 CREDENCIALES DE ACCESO:');
   console.log('──────────────────────────────────────────────────────');
-  console.log('  Tienda Demo (PRO):');
+  console.log('  Tienda Demo (PRO - maxUsers:4 = 3 regulares + 1 contador):');
   console.log('    admin@tienda-demo.com / password123');
-  console.log('  Distribuidora Nacional (PLUS):');
+  console.log('    contador@tienda-demo.com / password123 (CONTADOR)');
+  console.log('  Distribuidora Nacional (PLUS - maxUsers:9 = 8 regulares + 1 contador):');
   console.log('    admin@distribuidoranacional.com / password123');
-  console.log('  Nuevo Negocio (EMPRENDEDOR):');
+  console.log('    contador@distribuidoranacional.com / password123 (CONTADOR)');
+  console.log('  Nuevo Negocio (EMPRENDEDOR - maxUsers:2 = 1 regular + 1 contador):');
   console.log('    admin@nuevonegocio.com / password123');
-  console.log('  Papelería Central (PYME):');
+  console.log('  Papelería Central (PYME - maxUsers:3 = 2 regulares + 1 contador):');
   console.log('    admin@papeleriacentral.com / password123');
+  console.log('    contador@papeleriacentral.com / password123 (CONTADOR)');
   console.log('──────────────────────────────────────────────────────');
   console.log('  System Admin:');
   console.log(`    ${process.env.SYSTEM_ADMIN_EMAIL || 'superadmin@stockflow.com'} / ${process.env.SYSTEM_ADMIN_PASSWORD || 'admin123!'}`);

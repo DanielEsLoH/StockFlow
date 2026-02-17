@@ -408,9 +408,6 @@ export class InvoicesService {
       tenantId,
     );
 
-    // Generate invoice number
-    const invoiceNumber = await this.generateInvoiceNumber();
-
     // Calculate item totals and invoice totals
     const itemsData = dto.items.map((item, index) => {
       const subtotal = item.quantity * item.unitPrice;
@@ -445,6 +442,9 @@ export class InvoicesService {
 
     // Create invoice within a transaction
     const invoice = await this.prisma.$transaction(async (tx) => {
+      // Generate invoice number inside transaction to prevent race conditions
+      const invoiceNumber = await this.generateInvoiceNumber(tx);
+
       // Create the invoice
       const newInvoice = await tx.invoice.create({
         data: {
@@ -1680,12 +1680,15 @@ export class InvoicesService {
    *
    * @returns Generated invoice number
    */
-  async generateInvoiceNumber(): Promise<string> {
+  async generateInvoiceNumber(
+    tx?: Prisma.TransactionClient,
+  ): Promise<string> {
     const tenantId = this.tenantContext.requireTenantId();
+    const client = tx ?? this.prisma;
 
-    // Get the last invoice number for this tenant
-    const lastInvoice = await this.prisma.invoice.findFirst({
-      where: { tenantId },
+    // Get the last INV- prefixed invoice number for this tenant
+    const lastInvoice = await client.invoice.findFirst({
+      where: { tenantId, invoiceNumber: { startsWith: 'INV-' } },
       orderBy: { invoiceNumber: 'desc' },
       select: { invoiceNumber: true },
     });
@@ -1693,14 +1696,12 @@ export class InvoicesService {
     let nextNumber = 1;
 
     if (lastInvoice?.invoiceNumber) {
-      // Extract the number from the invoice number (INV-00001 -> 1)
       const match = lastInvoice.invoiceNumber.match(/INV-(\d+)/);
       if (match) {
         nextNumber = parseInt(match[1], 10) + 1;
       }
     }
 
-    // Format with leading zeros (5 digits)
     const invoiceNumber = `INV-${nextNumber.toString().padStart(5, '0')}`;
 
     this.logger.debug(`Generated invoice number: ${invoiceNumber}`);

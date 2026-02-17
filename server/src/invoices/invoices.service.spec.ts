@@ -131,6 +131,7 @@ describe('InvoicesService', () => {
         create: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
+        findFirst: jest.fn(),
         findUnique: jest.fn(),
       },
       invoiceItem: {
@@ -1411,7 +1412,7 @@ describe('InvoicesService', () => {
       await service.generateInvoiceNumber();
 
       expect(prismaService.invoice.findFirst).toHaveBeenCalledWith({
-        where: { tenantId: mockTenantId },
+        where: { tenantId: mockTenantId, invoiceNumber: { startsWith: 'INV-' } },
         orderBy: { invoiceNumber: 'desc' },
         select: { invoiceNumber: true },
       });

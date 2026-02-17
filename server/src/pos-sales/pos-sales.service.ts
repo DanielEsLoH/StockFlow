@@ -781,7 +781,7 @@ export class POSSalesService {
     tenantId: string,
   ): Promise<string> {
     const lastInvoice = await tx.invoice.findFirst({
-      where: { tenantId },
+      where: { tenantId, invoiceNumber: { startsWith: 'INV-' } },
       orderBy: { invoiceNumber: 'desc' },
       select: { invoiceNumber: true },
     });

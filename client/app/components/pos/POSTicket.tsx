@@ -1,9 +1,11 @@
-import { forwardRef } from "react";
+import { forwardRef, useMemo } from "react";
 import { formatCurrency } from "~/lib/utils";
 
 // ============================================================================
 // TYPES
 // ============================================================================
+
+export type PaperWidth = 58 | 80;
 
 export interface POSTicketItem {
   name: string;
@@ -20,6 +22,9 @@ export interface POSTicketPayment {
 }
 
 export interface POSTicketProps {
+  // Paper size
+  paperWidth?: PaperWidth;
+
   // Business info
   businessName: string;
   businessNit?: string;
@@ -68,18 +73,66 @@ export interface POSTicketProps {
 }
 
 // ============================================================================
-// HELPERS
+// PAPER SIZE CONFIGS
 // ============================================================================
 
-const SEP_LENGTH = 36;
+interface PaperConfig {
+  cssWidth: string;
+  pageSize: string;
+  padding: string;
+  fontSize: string;
+  headerSize: string;
+  subSize: string;
+  detailSize: string;
+  totalSize: string;
+  resolutionSize: string;
+  cufeSize: string;
+  sepLength: number;
+  maxTruncate: number;
+}
+
+export const PAPER_CONFIGS: Record<PaperWidth, PaperConfig> = {
+  58: {
+    cssWidth: "48mm",
+    pageSize: "58mm",
+    padding: "2mm",
+    fontSize: "9pt",
+    headerSize: "10pt",
+    subSize: "8pt",
+    detailSize: "8pt",
+    totalSize: "10pt",
+    resolutionSize: "7pt",
+    cufeSize: "7pt",
+    sepLength: 28,
+    maxTruncate: 24,
+  },
+  80: {
+    cssWidth: "80mm",
+    pageSize: "80mm",
+    padding: "3mm",
+    fontSize: "11pt",
+    headerSize: "12pt",
+    subSize: "10pt",
+    detailSize: "10pt",
+    totalSize: "12pt",
+    resolutionSize: "8pt",
+    cufeSize: "8pt",
+    sepLength: 36,
+    maxTruncate: 36,
+  },
+};
+
+// ============================================================================
+// HELPERS
+// ============================================================================
 
 function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength - 3) + "...";
 }
 
-function charLine(char = "-"): string {
-  return char.repeat(SEP_LENGTH);
+function charLine(length: number, char = "-"): string {
+  return char.repeat(length);
 }
 
 function formatTicketDate(dateString: string): string {
@@ -98,118 +151,117 @@ function formatTicketDate(dateString: string): string {
 }
 
 // ============================================================================
-// INLINE STYLES (no Tailwind — works identically in preview and print)
+// DYNAMIC STYLES
 // ============================================================================
 
-const S: Record<string, React.CSSProperties> = {
-  container: {
-    fontFamily: "'Courier New', Courier, monospace",
-    fontSize: "11pt",
-    lineHeight: "1.4",
-    width: "80mm",
-    maxWidth: "80mm",
-    padding: "3mm",
-    margin: "0 auto",
-    backgroundColor: "#fff",
-    color: "#000",
-    overflow: "hidden",
-  },
-  header: {
-    fontSize: "12pt",
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    textAlign: "center",
-    letterSpacing: "0.05em",
-  },
-  subHeader: {
-    fontSize: "10pt",
-    textAlign: "center",
-  },
-  resolution: {
-    fontSize: "8pt",
-    textAlign: "center",
-    marginTop: "1mm",
-    wordBreak: "break-word" as const,
-  },
-  separator: {
-    fontSize: "11pt",
-    textAlign: "center",
-    margin: "1.5mm 0",
-    letterSpacing: "-0.05em",
-    overflow: "hidden",
-    whiteSpace: "nowrap" as const,
-  },
-  // Flex row for label:value pairs — replaces padLine + whiteSpace:pre
-  row: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: "11pt",
-  },
-  rowLabel: {
-    flexShrink: 0,
-  },
-  rowValue: {
-    textAlign: "right" as const,
-    flexShrink: 0,
-  },
-  detailLine: {
-    fontSize: "10pt",
-    paddingLeft: "2mm",
-  },
-  sectionTitle: {
-    fontSize: "11pt",
-    fontWeight: "bold",
-  },
-  // Items table header
-  itemHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: "11pt",
-    fontWeight: "bold",
-  },
-  // Items row: product name (flexible) + qty (fixed) + total (fixed)
-  itemRow: {
-    display: "flex",
-    fontSize: "11pt",
-  },
-  itemName: {
-    flex: "1 1 0%",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap" as const,
-    paddingRight: "2mm",
-  },
-  itemQty: {
-    width: "3ch",
-    textAlign: "right" as const,
-    flexShrink: 0,
-    paddingRight: "3mm",
-  },
-  itemTotal: {
-    textAlign: "right" as const,
-    flexShrink: 0,
-  },
-  totalRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: "12pt",
-    fontWeight: "bold",
-  },
-  footer: {
-    fontSize: "11pt",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  finePrint: {
-    fontSize: "10pt",
-    textAlign: "center",
-  },
-  cufe: {
-    fontSize: "8pt",
-    textAlign: "center",
-    wordBreak: "break-all",
-  },
-};
+function getStyles(cfg: PaperConfig): Record<string, React.CSSProperties> {
+  return {
+    container: {
+      fontFamily: "'Courier New', Courier, monospace",
+      fontSize: cfg.fontSize,
+      lineHeight: "1.4",
+      width: cfg.cssWidth,
+      maxWidth: cfg.cssWidth,
+      padding: cfg.padding,
+      margin: "0 auto",
+      backgroundColor: "#fff",
+      color: "#000",
+      overflow: "hidden",
+    },
+    header: {
+      fontSize: cfg.headerSize,
+      fontWeight: "bold",
+      textTransform: "uppercase",
+      textAlign: "center",
+      letterSpacing: "0.05em",
+    },
+    subHeader: {
+      fontSize: cfg.subSize,
+      textAlign: "center",
+    },
+    resolution: {
+      fontSize: cfg.resolutionSize,
+      textAlign: "center",
+      marginTop: "1mm",
+      wordBreak: "break-word" as const,
+    },
+    separator: {
+      fontSize: cfg.fontSize,
+      textAlign: "center",
+      margin: "1.5mm 0",
+      letterSpacing: "-0.05em",
+      overflow: "hidden",
+      whiteSpace: "nowrap" as const,
+    },
+    row: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: cfg.fontSize,
+    },
+    rowLabel: {
+      flexShrink: 0,
+    },
+    rowValue: {
+      textAlign: "right" as const,
+      flexShrink: 0,
+    },
+    detailLine: {
+      fontSize: cfg.detailSize,
+      paddingLeft: "2mm",
+    },
+    sectionTitle: {
+      fontSize: cfg.fontSize,
+      fontWeight: "bold",
+    },
+    itemHeader: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: cfg.fontSize,
+      fontWeight: "bold",
+    },
+    itemRow: {
+      display: "flex",
+      fontSize: cfg.fontSize,
+    },
+    itemName: {
+      flex: "1 1 0%",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap" as const,
+      paddingRight: "2mm",
+    },
+    itemQty: {
+      width: "3ch",
+      textAlign: "right" as const,
+      flexShrink: 0,
+      paddingRight: "3mm",
+    },
+    itemTotal: {
+      textAlign: "right" as const,
+      flexShrink: 0,
+    },
+    totalRow: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: cfg.totalSize,
+      fontWeight: "bold",
+    },
+    footer: {
+      fontSize: cfg.fontSize,
+      fontWeight: "bold",
+      textAlign: "center",
+    },
+    finePrint: {
+      fontSize: cfg.detailSize,
+      textAlign: "center",
+    },
+    cufe: {
+      fontSize: cfg.cufeSize,
+      textAlign: "center",
+      wordBreak: "break-all",
+    },
+  };
+}
 
 // ============================================================================
 // ROW COMPONENT — flex row with label + value (replaces padLine)
@@ -219,15 +271,17 @@ function Row({
   label,
   value,
   style,
+  styles,
 }: {
   label: string;
   value: string;
   style?: React.CSSProperties;
+  styles: Record<string, React.CSSProperties>;
 }) {
   return (
-    <div style={{ ...S.row, ...style }}>
-      <span style={S.rowLabel}>{label}</span>
-      <span style={S.rowValue}>{value}</span>
+    <div style={{ ...styles.row, ...style }}>
+      <span style={styles.rowLabel}>{label}</span>
+      <span style={styles.rowValue}>{value}</span>
     </div>
   );
 }
@@ -239,6 +293,7 @@ function Row({
 export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
   function POSTicket(props, ref) {
     const {
+      paperWidth = 80,
       businessName,
       businessNit,
       businessAddress,
@@ -268,6 +323,11 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
       dianCufe,
       footerMessage = "Gracias por su compra!",
     } = props;
+
+    const cfg = PAPER_CONFIGS[paperWidth];
+    const S = useMemo(() => getStyles(cfg), [cfg]);
+    const sep = cfg.sepLength;
+    const maxTrunc = cfg.maxTruncate;
 
     // Build resolution text
     const resolutionText = resolutionNumber
@@ -299,45 +359,46 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
         )}
         {resolutionText && <div style={S.resolution}>{resolutionText}</div>}
 
-        <div style={S.separator}>{charLine()}</div>
+        <div style={S.separator}>{charLine(sep)}</div>
 
         {/* ============================================================== */}
         {/* INVOICE INFO                                                   */}
         {/* ============================================================== */}
         <div style={S.sectionTitle}>FACTURA DE VENTA</div>
-        <Row label="No:" value={invoiceNumber} />
-        <Row label="Fecha:" value={formatTicketDate(date)} />
+        <Row styles={S} label="No:" value={invoiceNumber} />
+        <Row styles={S} label="Fecha:" value={formatTicketDate(date)} />
         {cashierName && (
-          <Row label="Cajero:" value={truncateText(cashierName, 20)} />
+          <Row styles={S} label="Cajero:" value={truncateText(cashierName, maxTrunc)} />
         )}
         {cashRegisterName && (
-          <Row label="Caja:" value={cashRegisterName} />
+          <Row styles={S} label="Caja:" value={cashRegisterName} />
         )}
 
-        <div style={S.separator}>{charLine()}</div>
+        <div style={S.separator}>{charLine(sep)}</div>
 
         {/* ============================================================== */}
         {/* CUSTOMER INFO                                                  */}
         {/* ============================================================== */}
         {customerName && (
           <>
-            <Row label="Cliente:" value={truncateText(customerName, 20)} />
+            <Row styles={S} label="Cliente:" value={truncateText(customerName, maxTrunc)} />
             {customerDocument && (
               <Row
+                styles={S}
                 label={`${customerDocumentType || "Doc"}:`}
                 value={customerDocument}
               />
             )}
             {customerPhone && (
-              <Row label="Tel:" value={customerPhone} />
+              <Row styles={S} label="Tel:" value={customerPhone} />
             )}
             {customerAddress && (
               <div style={S.detailLine}>
-                {truncateText(customerAddress, 36)}
+                {truncateText(customerAddress, maxTrunc)}
               </div>
             )}
 
-            <div style={S.separator}>{charLine()}</div>
+            <div style={S.separator}>{charLine(sep)}</div>
           </>
         )}
 
@@ -349,7 +410,7 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
           <span style={{ width: "3ch", textAlign: "right", flexShrink: 0, paddingRight: "3mm" }}>Cnt</span>
           <span style={{ textAlign: "right", flexShrink: 0 }}>Total</span>
         </div>
-        <div style={S.separator}>{charLine()}</div>
+        <div style={S.separator}>{charLine(sep)}</div>
 
         {items.map((item, index) => (
           <div key={index}>
@@ -372,28 +433,29 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
           </div>
         ))}
 
-        <div style={S.separator}>{charLine()}</div>
+        <div style={S.separator}>{charLine(sep)}</div>
 
         {/* ============================================================== */}
         {/* TOTALS                                                         */}
         {/* ============================================================== */}
-        <Row label="Subtotal:" value={formatCurrency(subtotal)} />
+        <Row styles={S} label="Subtotal:" value={formatCurrency(subtotal)} />
 
         {discountAmount > 0 && (
           <Row
+            styles={S}
             label={`Descuento${discountPercent ? ` (${discountPercent}%)` : ""}:`}
             value={`-${formatCurrency(discountAmount)}`}
           />
         )}
 
-        <Row label="IVA (19%):" value={`+${formatCurrency(taxAmount)}`} />
+        <Row styles={S} label="IVA (19%):" value={`+${formatCurrency(taxAmount)}`} />
 
-        <div style={S.separator}>{charLine("=")}</div>
+        <div style={S.separator}>{charLine(sep, "=")}</div>
         <div style={S.totalRow}>
           <span>TOTAL:</span>
           <span>{formatCurrency(total)}</span>
         </div>
-        <div style={S.separator}>{charLine("=")}</div>
+        <div style={S.separator}>{charLine(sep, "=")}</div>
 
         {/* ============================================================== */}
         {/* PAYMENTS                                                       */}
@@ -401,6 +463,7 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
         <div style={S.sectionTitle}>Forma de pago:</div>
         {payments.map((payment, index) => (
           <Row
+            styles={S}
             key={index}
             label={`  ${payment.methodLabel}:`}
             value={formatCurrency(payment.amount)}
@@ -408,13 +471,14 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
         ))}
         {change !== undefined && change > 0 && (
           <Row
+            styles={S}
             label="  Cambio:"
             value={formatCurrency(change)}
             style={{ fontWeight: "bold" }}
           />
         )}
 
-        <div style={S.separator}>{charLine()}</div>
+        <div style={S.separator}>{charLine(sep)}</div>
 
         {/* ============================================================== */}
         {/* DIAN CUFE (if electronic invoice)                              */}
@@ -422,7 +486,7 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
         {dianCufe && (
           <>
             <div style={S.cufe}>CUFE: {dianCufe}</div>
-            <div style={S.separator}>{charLine()}</div>
+            <div style={S.separator}>{charLine(sep)}</div>
           </>
         )}
 
@@ -438,7 +502,7 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
         <style>{`
           @media print {
             @page {
-              size: 80mm auto;
+              size: ${cfg.pageSize} auto;
               margin: 0;
             }
             body {
@@ -456,9 +520,9 @@ export const POSTicket = forwardRef<HTMLDivElement, POSTicketProps>(
               position: absolute;
               left: 0;
               top: 0;
-              width: 80mm !important;
-              max-width: 80mm !important;
-              padding: 3mm !important;
+              width: ${cfg.cssWidth} !important;
+              max-width: ${cfg.cssWidth} !important;
+              padding: ${cfg.padding} !important;
               margin: 0 !important;
               background: white !important;
               color: black !important;

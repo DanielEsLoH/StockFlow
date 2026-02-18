@@ -58,6 +58,7 @@ import { PaymentMethodLabels } from "~/types/payment";
 import type { PaymentMethod } from "~/types/payment";
 import { POSTicketModal } from "~/components/pos";
 import { PaymentModal } from "~/components/payments/PaymentModal";
+import { useUserPreferences } from "~/hooks/useSettings";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -360,6 +361,7 @@ export default function InvoiceDetailPage() {
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
+  const { data: preferences } = useUserPreferences();
   const { data: invoice, isLoading, isError } = useInvoice(id!);
   const { data: invoicePayments = [], isLoading: isLoadingPayments } = usePaymentsByInvoice(id!);
   const deleteInvoice = useDeleteInvoice();
@@ -1071,6 +1073,7 @@ export default function InvoiceDetailPage() {
         <POSTicketModal
           isOpen={showTicketModal}
           onClose={() => setShowTicketModal(false)}
+          paperWidth={preferences?.posPaperWidth ?? 80}
           // Datos del negocio desde invoice.tenant
           businessName={
             invoice.tenant?.businessName ||

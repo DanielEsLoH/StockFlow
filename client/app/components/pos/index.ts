@@ -17,4 +17,6 @@ export type {
   POSTicketProps,
   POSTicketItem,
   POSTicketPayment,
+  PaperWidth,
 } from "./POSTicket";
+export { PAPER_CONFIGS } from "./POSTicket";

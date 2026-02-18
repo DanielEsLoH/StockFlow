@@ -20,6 +20,7 @@ export interface UserPreferences {
   language: "es" | "en";
   currency: "COP" | "USD" | "EUR";
   dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
+  posPaperWidth: 58 | 80;
   notifications: {
     email: boolean;
     push: boolean;
@@ -43,6 +44,7 @@ const defaultPreferences: UserPreferences = {
   language: "es",
   currency: "COP",
   dateFormat: "DD/MM/YYYY",
+  posPaperWidth: 80,
   notifications: {
     email: true,
     push: true,

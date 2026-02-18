@@ -3,6 +3,7 @@ export interface UserPreferences {
   theme: "light" | "dark" | "system";
   language: "es" | "en";
   notifications: NotificationPreferences;
+  posPaperWidth?: 58 | 80;
 }
 
 export interface NotificationPreferences {
@@ -29,6 +30,7 @@ export const defaultUserPreferences: UserPreferences = {
   theme: "system",
   language: "es",
   notifications: defaultNotificationPreferences,
+  posPaperWidth: 80,
 };
 
 // Profile update data

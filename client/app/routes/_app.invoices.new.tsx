@@ -36,6 +36,7 @@ import {
   POSTicketModal,
 } from "~/components/pos";
 import type { Customer } from "~/types/customer";
+import { useUserPreferences } from "~/hooks/useSettings";
 
 // Meta for SEO - used by React Router
 export const meta: Route.MetaFunction = () => {
@@ -84,6 +85,8 @@ export default function POSPage() {
       resolutionDate?: string | null;
     };
   } | null>(null);
+
+  const { data: userPreferences } = useUserPreferences();
 
   // POS Cart hook - must be before useProducts to have selectedWarehouseId available
   const {
@@ -778,6 +781,7 @@ export default function POSPage() {
         <POSTicketModal
           isOpen={showTicketModal}
           onClose={() => setShowTicketModal(false)}
+          paperWidth={userPreferences?.posPaperWidth ?? 80}
           businessName={
             lastInvoice.tenant?.businessName ||
             lastInvoice.tenant?.name ||

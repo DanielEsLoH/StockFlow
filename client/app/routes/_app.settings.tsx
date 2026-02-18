@@ -24,6 +24,7 @@ import {
   FileText,
   BarChart3,
   ChevronRight,
+  Printer,
 } from "lucide-react";
 import type { Route } from "./+types/_app.settings";
 import { cn, getInitials } from "~/lib/utils";
@@ -679,6 +680,40 @@ function PreferencesTabContent() {
               options={languageOptions}
               value={localPreferences.language}
               onChange={handleLanguageChange}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* POS Print Settings */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-lg bg-success-50 text-success-500 dark:bg-success-900/20">
+              <Printer className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Impresion POS</CardTitle>
+              <CardDescription>
+                Selecciona el ancho de papel de tu impresora termica
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="max-w-xs">
+            <Select
+              options={[
+                { value: "80", label: "80mm (Recomendado)" },
+                { value: "58", label: "58mm" },
+              ]}
+              value={String(localPreferences.posPaperWidth ?? 80)}
+              onChange={(val) =>
+                setLocalPreferences({
+                  ...localPreferences,
+                  posPaperWidth: Number(val) as 58 | 80,
+                })
+              }
             />
           </div>
         </CardContent>

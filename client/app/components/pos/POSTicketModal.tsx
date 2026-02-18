@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Printer, Check } from "lucide-react";
 import { Button } from "~/components/ui/Button";
-import { POSTicket, type POSTicketProps } from "./POSTicket";
+import { POSTicket, type POSTicketProps, type PaperWidth, PAPER_CONFIGS } from "./POSTicket";
 
 interface POSTicketModalProps extends POSTicketProps {
   isOpen: boolean;
@@ -17,16 +17,16 @@ export function POSTicketModal({
   ...ticketProps
 }: POSTicketModalProps) {
   const ticketRef = useRef<HTMLDivElement>(null);
+  const pw: PaperWidth = ticketProps.paperWidth ?? 80;
+  const cfg = PAPER_CONFIGS[pw];
 
   const handlePrint = () => {
-    // Create a new window for printing
-    const printWindow = window.open("", "_blank", "width=320,height=600");
+    const windowWidth = pw === 58 ? 250 : 320;
+    const printWindow = window.open("", "_blank", `width=${windowWidth},height=600`);
 
     if (printWindow && ticketRef.current) {
-      // Get the ticket HTML
       const ticketHTML = ticketRef.current.outerHTML;
 
-      // Write the print document — minimal CSS since POSTicket uses inline styles
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -34,7 +34,7 @@ export function POSTicketModal({
           <title>Ticket - ${ticketProps.invoiceNumber}</title>
           <style>
             @page {
-              size: 80mm auto;
+              size: ${cfg.pageSize} auto;
               margin: 0;
             }
             * {
@@ -43,13 +43,13 @@ export function POSTicketModal({
               box-sizing: border-box;
             }
             body {
-              width: 80mm;
-              max-width: 80mm;
+              width: ${cfg.cssWidth};
+              max-width: ${cfg.cssWidth};
               background: white;
               color: black;
             }
             @media print {
-              body { width: 80mm !important; }
+              body { width: ${cfg.cssWidth} !important; }
             }
           </style>
         </head>
@@ -69,7 +69,6 @@ export function POSTicketModal({
 
       printWindow.document.close();
 
-      // Call completion callback
       if (onPrintComplete) {
         setTimeout(onPrintComplete, 500);
       }

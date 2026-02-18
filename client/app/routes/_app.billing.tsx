@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Navigate } from "react-router";
 import { motion } from "framer-motion";
 import {
   Crown,
@@ -37,6 +38,7 @@ import {
 } from "~/hooks/useBilling";
 import { openWompiCheckout } from "~/lib/wompi";
 import { toast } from "~/components/ui/Toast";
+import { usePermissions } from "~/hooks/usePermissions";
 import type { Route } from "./+types/_app.billing";
 import type {
   SubscriptionPlan,
@@ -670,6 +672,12 @@ function BillingHistoryTable() {
 
 // Main Billing Page
 export default function BillingPage() {
+  const { canManageSettings } = usePermissions();
+
+  if (!canManageSettings) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const [selectedPeriod, setSelectedPeriod] =
     useState<SubscriptionPeriod>("MONTHLY");
   const { data: subscription } = useSubscriptionStatus();

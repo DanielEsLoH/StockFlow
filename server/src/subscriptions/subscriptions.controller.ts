@@ -62,10 +62,11 @@ export class SubscriptionsController {
    * Gets the current subscription status for the tenant.
    */
   @Get('status')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: 'Get subscription status',
     description:
-      'Returns the current subscription status for the tenant including plan, limits, dates, and payment source status. All authenticated users can access this endpoint.',
+      'Returns the current subscription status for the tenant including plan, limits, dates, and payment source status. Only ADMIN users can access this endpoint.',
   })
   @ApiResponse({
     status: 200,
@@ -87,10 +88,11 @@ export class SubscriptionsController {
    * Returns all available plans with pricing for every period.
    */
   @Get('plans')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: 'Get available plans',
     description:
-      'Returns all available subscription plans with pricing details for each period (monthly, quarterly, annual). Includes features, limits, and discount information.',
+      'Returns all available subscription plans with pricing details for each period (monthly, quarterly, annual). Includes features, limits, and discount information. Only ADMIN users can access this endpoint.',
   })
   @ApiResponse({
     status: 200,

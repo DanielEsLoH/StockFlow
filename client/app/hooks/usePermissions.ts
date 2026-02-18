@@ -162,6 +162,13 @@ export function usePermissions() {
       canViewCashRegisters: hasPermission(Permission.CASH_REGISTERS_VIEW),
       canManageCashRegisters: hasPermission(Permission.CASH_REGISTERS_MANAGE),
 
+      // Quotations
+      canViewQuotations: hasPermission(Permission.QUOTATIONS_VIEW),
+      canCreateQuotations: hasPermission(Permission.QUOTATIONS_CREATE),
+      canEditQuotations: hasPermission(Permission.QUOTATIONS_EDIT),
+      canDeleteQuotations: hasPermission(Permission.QUOTATIONS_DELETE),
+      canConvertQuotations: hasPermission(Permission.QUOTATIONS_CONVERT),
+
       // Dashboard
       canViewDashboard: hasPermission(Permission.DASHBOARD_VIEW),
     }),

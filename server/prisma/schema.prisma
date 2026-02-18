@@ -281,6 +281,7 @@ model Tenant {
   dianConfig            TenantDianConfig?
   dianDocuments         DianDocument[]
   billingTransactions   BillingTransaction[]
+  quotations            Quotation[]
 
   @@map("tenants")
 }
@@ -321,6 +322,7 @@ model User {
   notifications       Notification[]
   posSessions         POSSession[]
   permissionOverrides UserPermissionOverride[]
+  quotations          Quotation[]
 
   @@index([tenantId])
   @@index([warehouseId])
@@ -388,6 +390,7 @@ model Product {
   tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category       Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   invoiceItems   InvoiceItem[]
+  quotationItems QuotationItem[]
   movements      StockMovement[]
   warehouseStock WarehouseStock[]
 
@@ -490,8 +493,9 @@ model Customer {
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoices Invoice[]
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoices   Invoice[]
+  quotations Quotation[]
 
   @@unique([tenantId, documentNumber])
   @@index([tenantId])
@@ -528,10 +532,11 @@ model Invoice {
   customer      Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
   user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   warehouse     Warehouse?     @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  items         InvoiceItem[]
-  payments      Payment[]
-  posSale       POSSale?
-  dianDocuments DianDocument[]
+  items                  InvoiceItem[]
+  payments               Payment[]
+  posSale                POSSale?
+  dianDocuments          DianDocument[]
+  convertedFromQuotation Quotation?
 
   @@unique([tenantId, invoiceNumber])
   @@index([tenantId])
@@ -950,4 +955,71 @@ model DianDocument {
   @@index([tenantId, documentType])
   @@index([tenantId, createdAt])
   @@map("dian_documents")
+}
+
+// ============================
+// Quotations
+// ============================
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+}
+
+model Quotation {
+  id                   String          @id @default(cuid())
+  tenantId             String          @map("tenant_id")
+  customerId           String?         @map("customer_id")
+  userId               String?         @map("user_id")
+  quotationNumber      String          @map("quotation_number")
+  subtotal             Decimal         @default(0) @db.Decimal(10, 2)
+  tax                  Decimal         @default(0) @db.Decimal(10, 2)
+  discount             Decimal         @default(0) @db.Decimal(10, 2)
+  total                Decimal         @default(0) @db.Decimal(10, 2)
+  issueDate            DateTime        @default(now()) @map("issue_date")
+  validUntil           DateTime?       @map("valid_until")
+  status               QuotationStatus @default(DRAFT)
+  notes                String?
+  convertedToInvoiceId String?         @unique @map("converted_to_invoice_id")
+  convertedAt          DateTime?       @map("converted_at")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+
+  tenant             Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer           Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  user               User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  convertedToInvoice Invoice?      @relation(fields: [convertedToInvoiceId], references: [id], onDelete: SetNull)
+  items              QuotationItem[]
+
+  @@unique([tenantId, quotationNumber])
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id          String      @id @default(cuid())
+  quotationId String      @map("quotation_id")
+  productId   String?     @map("product_id")
+  quantity    Int         @default(1)
+  unitPrice   Decimal     @default(0) @map("unit_price") @db.Decimal(10, 2)
+  taxRate     Decimal     @default(19) @map("tax_rate") @db.Decimal(5, 2)
+  taxCategory TaxCategory @default(GRAVADO_19) @map("tax_category")
+  discount    Decimal     @default(0) @db.Decimal(10, 2)
+  subtotal    Decimal     @default(0) @db.Decimal(10, 2)
+  tax         Decimal     @default(0) @db.Decimal(10, 2)
+  total       Decimal     @default(0) @db.Decimal(10, 2)
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  product   Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([quotationId])
+  @@map("quotation_items")
 }

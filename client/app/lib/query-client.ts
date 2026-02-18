@@ -214,6 +214,15 @@ export const queryKeys = {
       [...queryKeys.stockMovements.all, "warehouse", warehouseId] as const,
   },
 
+  // Quotations
+  quotations: {
+    all: ["quotations"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.quotations.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.quotations.all, id] as const,
+    stats: () => [...queryKeys.quotations.all, "stats"] as const,
+  },
+
   // Billing
   billing: {
     all: ["billing"] as const,

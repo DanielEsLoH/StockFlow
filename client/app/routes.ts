@@ -54,6 +54,12 @@ export default [
     route("customers/:id", "routes/_app.customers.$id.tsx"),
     route("customers/:id/edit", "routes/_app.customers.$id.edit.tsx"),
 
+    // Quotations module
+    route("quotations", "routes/_app.quotations.tsx"),
+    route("quotations/new", "routes/_app.quotations.new.tsx"),
+    route("quotations/:id", "routes/_app.quotations.$id.tsx"),
+    route("quotations/:id/edit", "routes/_app.quotations.$id.edit.tsx"),
+
     // Invoices module
     route("invoices", "routes/_app.invoices.tsx"),
     route("invoices/new", "routes/_app.invoices.new.tsx"),

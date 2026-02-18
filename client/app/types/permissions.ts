@@ -79,6 +79,13 @@ export enum Permission {
   CASH_REGISTERS_VIEW = 'cash_registers:view',
   CASH_REGISTERS_MANAGE = 'cash_registers:manage',
 
+  // === Quotations Module ===
+  QUOTATIONS_VIEW = 'quotations:view',
+  QUOTATIONS_CREATE = 'quotations:create',
+  QUOTATIONS_EDIT = 'quotations:edit',
+  QUOTATIONS_DELETE = 'quotations:delete',
+  QUOTATIONS_CONVERT = 'quotations:convert',
+
   // === Dashboard Module ===
   DASHBOARD_VIEW = 'dashboard:view',
 }
@@ -156,6 +163,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Cash Registers - Full access
     Permission.CASH_REGISTERS_VIEW,
     Permission.CASH_REGISTERS_MANAGE,
+    // Quotations - Full access
+    Permission.QUOTATIONS_VIEW,
+    Permission.QUOTATIONS_CREATE,
+    Permission.QUOTATIONS_EDIT,
+    Permission.QUOTATIONS_DELETE,
+    Permission.QUOTATIONS_CONVERT,
   ],
 
   MANAGER: [
@@ -206,6 +219,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.AUDIT_VIEW,
     // Cash Registers - View only
     Permission.CASH_REGISTERS_VIEW,
+    // Quotations - Full access
+    Permission.QUOTATIONS_VIEW,
+    Permission.QUOTATIONS_CREATE,
+    Permission.QUOTATIONS_EDIT,
+    Permission.QUOTATIONS_DELETE,
+    Permission.QUOTATIONS_CONVERT,
   ],
 
   EMPLOYEE: [
@@ -221,6 +240,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Customers - view and create (to register new customers during sales)
     Permission.CUSTOMERS_VIEW,
     Permission.CUSTOMERS_CREATE,
+    // Quotations - View and create
+    Permission.QUOTATIONS_VIEW,
+    Permission.QUOTATIONS_CREATE,
     // --- RESTRICTED: No access to inventory, categories, warehouses, payments, DIAN, settings, cash registers ---
   ],
 
@@ -249,6 +271,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Audit - view and export (accountability)
     Permission.AUDIT_VIEW,
     Permission.AUDIT_EXPORT,
+    // Quotations - View only
+    Permission.QUOTATIONS_VIEW,
     // --- RESTRICTED: No POS, no create/edit/delete, no users, no settings, no cash registers ---
   ],
 };
@@ -345,6 +369,16 @@ export const PERMISSION_CATEGORIES = {
     label: 'Cajas Registradoras',
     permissions: [Permission.CASH_REGISTERS_VIEW, Permission.CASH_REGISTERS_MANAGE],
   },
+  quotations: {
+    label: 'Cotizaciones',
+    permissions: [
+      Permission.QUOTATIONS_VIEW,
+      Permission.QUOTATIONS_CREATE,
+      Permission.QUOTATIONS_EDIT,
+      Permission.QUOTATIONS_DELETE,
+      Permission.QUOTATIONS_CONVERT,
+    ],
+  },
   dashboard: {
     label: 'Dashboard',
     permissions: [Permission.DASHBOARD_VIEW],
@@ -426,6 +460,13 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   // Cash Registers
   [Permission.CASH_REGISTERS_VIEW]: 'Ver cajas registradoras',
   [Permission.CASH_REGISTERS_MANAGE]: 'Gestionar cajas registradoras',
+
+  // Quotations
+  [Permission.QUOTATIONS_VIEW]: 'Ver cotizaciones',
+  [Permission.QUOTATIONS_CREATE]: 'Crear cotizaciones',
+  [Permission.QUOTATIONS_EDIT]: 'Editar cotizaciones',
+  [Permission.QUOTATIONS_DELETE]: 'Eliminar cotizaciones',
+  [Permission.QUOTATIONS_CONVERT]: 'Convertir cotizaciones a facturas',
 
   // Dashboard
   [Permission.DASHBOARD_VIEW]: 'Ver dashboard',

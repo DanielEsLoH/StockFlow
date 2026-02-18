@@ -21,6 +21,7 @@ import {
   Receipt,
   ArrowUpDown,
   ArrowLeftRight,
+  ClipboardList,
 } from "lucide-react";
 import { cn, getInitials, formatCurrency } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
@@ -94,6 +95,12 @@ const navSections: NavSection[] = [
   {
     label: "Ventas",
     items: [
+      {
+        name: "Cotizaciones",
+        href: "/quotations",
+        icon: ClipboardList,
+        permission: Permission.QUOTATIONS_VIEW,
+      },
       {
         name: "Facturas",
         href: "/invoices",

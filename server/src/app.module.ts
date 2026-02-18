@@ -29,6 +29,7 @@ import { CashRegistersModule } from './cash-registers';
 import { POSSessionsModule } from './pos-sessions';
 import { POSSalesModule } from './pos-sales';
 import { DianModule } from './dian';
+import { QuotationsModule } from './quotations';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 import { PermissionsModule } from './common/permissions';
@@ -69,6 +70,7 @@ import { PermissionsModule } from './common/permissions';
     POSSessionsModule,
     POSSalesModule,
     DianModule,
+    QuotationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

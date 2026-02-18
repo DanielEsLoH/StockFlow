@@ -78,6 +78,13 @@ export enum Permission {
   CASH_REGISTERS_VIEW = 'cash_registers:view',
   CASH_REGISTERS_MANAGE = 'cash_registers:manage',
 
+  // === Quotations Module ===
+  QUOTATIONS_VIEW = 'quotations:view',
+  QUOTATIONS_CREATE = 'quotations:create',
+  QUOTATIONS_EDIT = 'quotations:edit',
+  QUOTATIONS_DELETE = 'quotations:delete',
+  QUOTATIONS_CONVERT = 'quotations:convert',
+
   // === Dashboard Module ===
   DASHBOARD_VIEW = 'dashboard:view',
 }
@@ -174,6 +181,16 @@ export const PERMISSION_CATEGORIES = {
     label: 'Cajas Registradoras',
     permissions: [Permission.CASH_REGISTERS_VIEW, Permission.CASH_REGISTERS_MANAGE],
   },
+  quotations: {
+    label: 'Cotizaciones',
+    permissions: [
+      Permission.QUOTATIONS_VIEW,
+      Permission.QUOTATIONS_CREATE,
+      Permission.QUOTATIONS_EDIT,
+      Permission.QUOTATIONS_DELETE,
+      Permission.QUOTATIONS_CONVERT,
+    ],
+  },
   dashboard: {
     label: 'Dashboard',
     permissions: [Permission.DASHBOARD_VIEW],
@@ -255,6 +272,13 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   // Cash Registers
   [Permission.CASH_REGISTERS_VIEW]: 'Ver cajas registradoras',
   [Permission.CASH_REGISTERS_MANAGE]: 'Gestionar cajas registradoras',
+
+  // Quotations
+  [Permission.QUOTATIONS_VIEW]: 'Ver cotizaciones',
+  [Permission.QUOTATIONS_CREATE]: 'Crear cotizaciones',
+  [Permission.QUOTATIONS_EDIT]: 'Editar cotizaciones',
+  [Permission.QUOTATIONS_DELETE]: 'Eliminar cotizaciones',
+  [Permission.QUOTATIONS_CONVERT]: 'Convertir cotizaciones a factura',
 
   // Dashboard
   [Permission.DASHBOARD_VIEW]: 'Ver dashboard',

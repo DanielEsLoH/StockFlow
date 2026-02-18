@@ -93,6 +93,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Cash Registers - Full access
     Permission.CASH_REGISTERS_VIEW,
     Permission.CASH_REGISTERS_MANAGE,
+
+    // Quotations - Full access
+    Permission.QUOTATIONS_VIEW,
+    Permission.QUOTATIONS_CREATE,
+    Permission.QUOTATIONS_EDIT,
+    Permission.QUOTATIONS_DELETE,
+    Permission.QUOTATIONS_CONVERT,
   ],
 
   /**
@@ -166,6 +173,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Cash Registers - View only
     Permission.CASH_REGISTERS_VIEW,
     // Note: Cannot manage cash registers
+
+    // Quotations - Full access
+    Permission.QUOTATIONS_VIEW,
+    Permission.QUOTATIONS_CREATE,
+    Permission.QUOTATIONS_EDIT,
+    Permission.QUOTATIONS_DELETE,
+    Permission.QUOTATIONS_CONVERT,
   ],
 
   /**
@@ -194,6 +208,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.DIAN_VIEW,
     Permission.AUDIT_VIEW,
     Permission.AUDIT_EXPORT,
+    Permission.QUOTATIONS_VIEW,
   ],
 
   [UserRole.EMPLOYEE]: [
@@ -221,6 +236,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.CUSTOMERS_VIEW,
     Permission.CUSTOMERS_CREATE,
     // Note: Cannot edit or delete customers
+
+    // Quotations - view and create
+    Permission.QUOTATIONS_VIEW,
+    Permission.QUOTATIONS_CREATE,
 
     // --- RESTRICTED AREAS ---
     // Inventory: No access (cannot view or adjust stock)

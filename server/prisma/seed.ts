@@ -93,21 +93,21 @@ interface InvoiceRecord {
 // ============================================================================
 
 async function main() {
-  console.log('🌱 Verificando base de datos...\n');
+  console.log('🌱 Checking database...\n');
 
   // Check if database already has data — skip seeding if so
   const existingTenants = await prisma.tenant.count();
   if (existingTenants > 0) {
-    console.log('✅ Base de datos ya contiene datos. Seed omitido.\n');
+    console.log('✅ Database already has data. Seed skipped.\n');
     return;
   }
 
-  console.log('📦 Base de datos vacía. Ejecutando seed completo...\n');
+  console.log('📦 Empty database. Running full seed...\n');
 
   // ============================================================================
   // STEP 1: Clean existing data
   // ============================================================================
-  console.log('🗑️  Limpiando datos existentes...');
+  console.log('🗑️  Cleaning existing data...');
   await prisma.salePayment.deleteMany();
   await prisma.cashRegisterMovement.deleteMany();
   await prisma.pOSSale.deleteMany();
@@ -133,12 +133,12 @@ async function main() {
   await prisma.tenant.deleteMany();
   await prisma.systemAdminAuditLog.deleteMany();
   await prisma.systemAdmin.deleteMany();
-  console.log('   ✅ Datos limpiados');
+  console.log('   ✅ Data cleaned');
 
   // ============================================================================
   // STEP 2: System Admins (3)
   // ============================================================================
-  console.log('👤 Creando System Admins...');
+  console.log('👤 Creating System Admins...');
   const systemAdminPassword = process.env.SYSTEM_ADMIN_PASSWORD || 'admin123!';
   const hashedSystemAdminPassword = await bcrypt.hash(systemAdminPassword, 12);
 
@@ -178,12 +178,12 @@ async function main() {
     },
   });
 
-  console.log('   ✅ 3 System Admins creados');
+  console.log('   ✅ 3 System Admins created');
 
   // ============================================================================
   // STEP 3: Tenants (4)
   // ============================================================================
-  console.log('🏢 Creando Tenants...');
+  console.log('🏢 Creating Tenants...');
 
   // Plan limits (from plan-limits.ts):
   // EMPRENDEDOR: maxUsers=2 (1+1 contador), maxWarehouses=1, maxProducts=-1, maxInvoices=-1
@@ -251,12 +251,12 @@ async function main() {
     },
   });
 
-  console.log('   ✅ 4 Tenants creados');
+  console.log('   ✅ 4 Tenants created');
 
   // ============================================================================
   // STEP 4: Users (21 total)
   // ============================================================================
-  console.log('👥 Creando Usuarios...');
+  console.log('👥 Creating Users...');
   const hashedPassword = await bcrypt.hash('password123', 10);
 
   // ── Tienda Demo Users (10) ──
@@ -482,12 +482,12 @@ async function main() {
     },
   });
 
-  console.log('   ✅ 24 Usuarios creados (11 Demo + 7 Distribuidora + 1 Nuevo Negocio + 5 Papelería)');
+  console.log('   ✅ 24 Users created (11 Demo + 7 Distribuidora + 1 Nuevo Negocio + 5 Papelería)');
 
   // ============================================================================
   // STEP 5: Categories
   // ============================================================================
-  console.log('📁 Creando Categorías...');
+  console.log('📁 Creating Categories...');
 
   // ── Tienda Demo Categories (15) ──
   const demoCategoriesData = [
@@ -561,12 +561,12 @@ async function main() {
     pcCategories[cat.name] = created;
   }
 
-  console.log('   ✅ 32 Categorías creadas (15 + 6 + 3 + 8)');
+  console.log('   ✅ 32 Categories created (15 + 6 + 3 + 8)');
 
   // ============================================================================
   // STEP 6: Products - Tienda Demo (85 productos)
   // ============================================================================
-  console.log('📦 Creando Productos Tienda Demo...');
+  console.log('📦 Creating Tienda Demo Products...');
 
   interface ProductInput {
     sku: string; name: string; description: string; costPrice: number; salePrice: number;
@@ -693,12 +693,12 @@ async function main() {
     });
     demoProducts.push({ ...created, salePrice: p.salePrice, taxRate: p.taxRate, categoryId: category.id });
   }
-  console.log(`   ✅ ${demoProducts.length} Productos Tienda Demo creados`);
+  console.log(`   ✅ ${demoProducts.length} Tienda Demo Products created`);
 
   // ============================================================================
   // STEP 6b: Products - Distribuidora Nacional (30 productos)
   // ============================================================================
-  console.log('📦 Creando Productos Distribuidora Nacional...');
+  console.log('📦 Creating Distribuidora Nacional Products...');
 
   const dnProductsData: { sku: string; name: string; description: string; costPrice: number; salePrice: number; taxRate: number; stock: number; minStock: number; maxStock: number; brand: string; catKey: string }[] = [
     { sku: 'DN-001', name: 'Jabón Líquido Fabuloso 5L', description: 'Limpiador multiusos lavanda', costPrice: 15000, salePrice: 22000, taxRate: 19, stock: 200, minStock: 50, maxStock: 400, brand: 'Fabuloso', catKey: 'Aseo y Limpieza' },
@@ -749,12 +749,12 @@ async function main() {
     });
     dnProducts.push({ ...created, salePrice: p.salePrice, taxRate: p.taxRate, categoryId: dnCategories[p.catKey].id });
   }
-  console.log(`   ✅ ${dnProducts.length} Productos Distribuidora creados`);
+  console.log(`   ✅ ${dnProducts.length} Distribuidora Nacional Products created`);
 
   // ============================================================================
   // STEP 6c: Products - Nuevo Negocio (12 productos)
   // ============================================================================
-  console.log('📦 Creando Productos Nuevo Negocio...');
+  console.log('📦 Creating Nuevo Negocio Products...');
 
   const nnProductsData = [
     { sku: 'NN-001', name: 'Camiseta Básica Algodón', description: 'Camiseta unisex 100% algodón', costPrice: 18000, salePrice: 35000, taxRate: 19, stock: 50, minStock: 15, maxStock: 100, brand: 'Urban Style', catKey: 'Camisetas y Tops' },
@@ -787,12 +787,12 @@ async function main() {
     });
     nnProducts.push({ ...created, salePrice: p.salePrice, taxRate: p.taxRate, categoryId: nnCategories[p.catKey].id });
   }
-  console.log(`   ✅ ${nnProducts.length} Productos Nuevo Negocio creados`);
+  console.log(`   ✅ ${nnProducts.length} Nuevo Negocio Products created`);
 
   // ============================================================================
   // STEP 6d: Products - Papelería Central (40 productos)
   // ============================================================================
-  console.log('📦 Creando Productos Papelería Central...');
+  console.log('📦 Creating Papelería Central Products...');
 
   const pcProductsData = [
     // Cuadernos (5)
@@ -861,13 +861,13 @@ async function main() {
     });
     pcProducts.push({ ...created, salePrice: p.salePrice, taxRate: p.taxRate, categoryId: pcCategories[p.catKey].id });
   }
-  console.log(`   ✅ ${pcProducts.length} Productos Papelería Central creados`);
-  console.log(`   📊 Total productos: ${demoProducts.length + dnProducts.length + nnProducts.length + pcProducts.length}`);
+  console.log(`   ✅ ${pcProducts.length} Papelería Central Products created`);
+  console.log(`   📊 Total products: ${demoProducts.length + dnProducts.length + nnProducts.length + pcProducts.length}`);
 
   // ============================================================================
   // STEP 7: Warehouses
   // ============================================================================
-  console.log('🏭 Creando Bodegas...');
+  console.log('🏭 Creating Warehouses...');
 
   // ── Tienda Demo (6) ──
   const warehouseMain = await prisma.warehouse.create({ data: { tenantId: tenantDemo.id, name: 'Almacén Principal', code: 'BOD-001', address: 'Calle 10 #43-67, El Poblado', city: 'Medellín', phone: '+57 4 444 5555', isMain: true, status: 'ACTIVE' } });
@@ -892,10 +892,10 @@ async function main() {
   const pcWarehouse2 = await prisma.warehouse.create({ data: { tenantId: tenantPapeleria.id, name: 'Bodega Stock', code: 'PC-BOD-002', address: 'Calle 30 #65-20', city: 'Medellín', phone: '+57 4 987 0011', isMain: false, status: 'ACTIVE' } });
   const pcActiveWarehouses = [pcWarehouseMain, pcWarehouse2];
 
-  console.log('   ✅ 12 Bodegas creadas (6 + 3 + 1 + 2)');
+  console.log('   ✅ 12 Warehouses created (6 + 3 + 1 + 2)');
 
   // ── Assign warehouses to users ──
-  console.log('🔗 Asignando bodegas a usuarios...');
+  console.log('🔗 Assigning warehouses to users...');
 
   // Demo users
   await prisma.user.update({ where: { id: managerDemo.id }, data: { warehouseId: warehouseMain.id } });
@@ -922,10 +922,10 @@ async function main() {
   await prisma.user.update({ where: { id: pcEmployee1.id }, data: { warehouseId: pcWarehouseMain.id } });
   await prisma.user.update({ where: { id: pcEmployee2.id }, data: { warehouseId: pcWarehouse2.id } });
 
-  console.log('   ✅ Bodegas asignadas a usuarios');
+  console.log('   ✅ Warehouses assigned to users');
 
   // ── Permission Overrides ──
-  console.log('🔑 Creando Permission Overrides...');
+  console.log('🔑 Creating Permission Overrides...');
   await prisma.userPermissionOverride.createMany({
     data: [
       // Demo (7)
@@ -945,12 +945,12 @@ async function main() {
       { userId: pcManager.id, tenantId: tenantPapeleria.id, permission: 'inventory:transfer', granted: true, grantedBy: pcAdmin.id, reason: 'Transferencias entre local y bodega' },
     ],
   });
-  console.log('   ✅ 12 Permission Overrides creados');
+  console.log('   ✅ 12 Permission Overrides created');
 
   // ============================================================================
   // STEP 8: Warehouse Stock Distribution
   // ============================================================================
-  console.log('📊 Distribuyendo stock en bodegas...');
+  console.log('📊 Distributing stock across warehouses...');
 
   // Demo: 50% principal, 20% norte, 15% sur, 10% bogotá, 5% tienda
   for (const product of demoProducts) {
@@ -1004,12 +1004,12 @@ async function main() {
     if (stockQty > 0) await prisma.warehouseStock.create({ data: { tenantId: tenantPapeleria.id, warehouseId: pcWarehouse2.id, productId: product.id, quantity: stockQty } });
   }
 
-  console.log('   ✅ Stock distribuido en todas las bodegas');
+  console.log('   ✅ Stock distributed across all warehouses');
 
   // ============================================================================
   // STEP 9: Customers (57 total)
   // ============================================================================
-  console.log('👤 Creando Clientes...');
+  console.log('👤 Creating Customers...');
 
   // ── Tienda Demo Customers (25) ──
   const demoCustomersData = [
@@ -1140,12 +1140,12 @@ async function main() {
     pcCustomers.push({ id: created.id, name: created.name, status: c.status });
   }
 
-  console.log(`   ✅ ${demoCustomers.length + dnCustomers.length + nnCustomers.length + pcCustomers.length} Clientes creados`);
+  console.log(`   ✅ ${demoCustomers.length + dnCustomers.length + nnCustomers.length + pcCustomers.length} Customers created`);
 
   // ============================================================================
   // STEP 10: Invoice Helper + Invoices (108 total)
   // ============================================================================
-  console.log('🧾 Creando Facturas...');
+  console.log('🧾 Creating Invoices...');
 
   async function createTenantInvoice(config: {
     tenantId: string; products: ProductRecord[]; customers: CustomerRecord[];
@@ -1296,12 +1296,12 @@ async function main() {
     }
   }
 
-  console.log(`   ✅ ${demoInvoices.length + dnInvoices.length + nnInvoices.length + pcInvoices.length} Facturas creadas`);
+  console.log(`   ✅ ${demoInvoices.length + dnInvoices.length + nnInvoices.length + pcInvoices.length} Invoices created`);
 
   // ============================================================================
   // STEP 11: Payments (123+ total)
   // ============================================================================
-  console.log('💰 Creando Pagos...');
+  console.log('💰 Creating Payments...');
 
   const allPaymentMethods = ['CASH', 'CREDIT_CARD', 'DEBIT_CARD', 'BANK_TRANSFER', 'PSE', 'NEQUI', 'DAVIPLATA', 'OTHER'];
   let paymentCount = 0;
@@ -1338,12 +1338,12 @@ async function main() {
   await createPaymentsForInvoices(tenantNuevo.id, nnInvoices, nnAdmin.id);
   await createPaymentsForInvoices(tenantPapeleria.id, pcInvoices, pcAdmin.id);
 
-  console.log(`   ✅ ${paymentCount} Pagos creados (todos los PaymentMethod cubiertos)`);
+  console.log(`   ✅ ${paymentCount} Payments created (all PaymentMethods covered)`);
 
   // ============================================================================
   // STEP 12: Stock Movements (230+ total)
   // ============================================================================
-  console.log('📦 Creando Movimientos de Stock...');
+  console.log('📦 Creating Stock Movements...');
 
   let movementCount = 0;
   const movementTypes = ['PURCHASE', 'SALE', 'ADJUSTMENT', 'TRANSFER', 'RETURN', 'DAMAGED'];
@@ -1380,12 +1380,12 @@ async function main() {
   await createStockMovements(tenantNuevo.id, nnProducts, [nnWarehouse], nnAdmin.id, 15);
   await createStockMovements(tenantPapeleria.id, pcProducts, pcActiveWarehouses, pcAdmin.id, 35);
 
-  console.log(`   ✅ ${movementCount} Movimientos de stock creados`);
+  console.log(`   ✅ ${movementCount} Stock Movements created`);
 
   // ============================================================================
   // STEP 13: Notifications (77+ total — ALL 16 types, ALL 4 priorities)
   // ============================================================================
-  console.log('🔔 Creando Notificaciones...');
+  console.log('🔔 Creating Notifications...');
 
   const notificationTypes = [
     'LOW_STOCK', 'OUT_OF_STOCK', 'NEW_INVOICE', 'INVOICE_PAID', 'INVOICE_OVERDUE',
@@ -1437,12 +1437,12 @@ async function main() {
   await createNotifications(tenantNuevo.id, nnAdmin.id, 5);
   await createNotifications(tenantPapeleria.id, pcAdmin.id, 12);
 
-  console.log(`   ✅ ${notifCount} Notificaciones creadas (16 tipos, 4 prioridades)`);
+  console.log(`   ✅ ${notifCount} Notifications created (16 types, 4 priorities)`);
 
   // ============================================================================
   // STEP 14: Audit Logs (52 total)
   // ============================================================================
-  console.log('📋 Creando Audit Logs...');
+  console.log('📋 Creating Audit Logs...');
 
   const auditActions = ['CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'EXPORT', 'IMPORT'];
   const auditEntities = ['Product', 'Invoice', 'Customer', 'User', 'Warehouse', 'Payment'];
@@ -1471,12 +1471,12 @@ async function main() {
   await createAuditLogs(tenantNuevo.id, [nnAdmin], 5);
   await createAuditLogs(tenantPapeleria.id, pcInvUsers, 10);
 
-  console.log(`   ✅ ${auditCount} Audit Logs creados (incluye IMPORT)`);
+  console.log(`   ✅ ${auditCount} Audit Logs created (includes IMPORT)`);
 
   // ============================================================================
   // STEP 15: System Admin Audit Logs (15)
   // ============================================================================
-  console.log('🛡️ Creando System Admin Audit Logs...');
+  console.log('🛡️ Creating System Admin Audit Logs...');
 
   const sysAdminActions = [
     { adminId: superAdmin.id, action: 'CREATE_TENANT', entity: 'Tenant', details: { tenantName: 'Tienda Demo' } },
@@ -1508,12 +1508,12 @@ async function main() {
     });
   }
 
-  console.log(`   ✅ ${sysAdminActions.length} System Admin Audit Logs creados`);
+  console.log(`   ✅ ${sysAdminActions.length} System Admin Audit Logs created`);
 
   // ============================================================================
   // STEP 16: Invitations (15 total)
   // ============================================================================
-  console.log('📨 Creando Invitaciones...');
+  console.log('📨 Creating Invitations...');
 
   const invitationsData = [
     // Demo (7)
@@ -1549,12 +1549,12 @@ async function main() {
     });
   }
 
-  console.log(`   ✅ ${invitationsData.length} Invitaciones creadas`);
+  console.log(`   ✅ ${invitationsData.length} Invitations created`);
 
   // ============================================================================
   // STEP 17: DIAN Config + Documents
   // ============================================================================
-  console.log('📄 Creando DIAN Config y Documentos...');
+  console.log('📄 Creating DIAN Config and Documents...');
 
   // DIAN Config (3 tenants — not NN)
   const dianTenants = [
@@ -1610,12 +1610,12 @@ async function main() {
     }
   }
 
-  console.log(`   ✅ ${dianConfigs.length} DIAN Configs + ${dianDocCount} Documentos creados`);
+  console.log(`   ✅ ${dianConfigs.length} DIAN Configs + ${dianDocCount} Documents created`);
 
   // ============================================================================
   // STEP 18: POS Infrastructure
   // ============================================================================
-  console.log('🏪 Creando POS (Cajas, Sesiones, Ventas)...');
+  console.log('🏪 Creating POS (Cash Registers, Sessions, Sales)...');
 
   // Cash Registers (11)
   const crData = [
@@ -1731,12 +1731,12 @@ async function main() {
     posSaleCount++;
   }
 
-  console.log(`   ✅ ${cashRegisters.length} Cajas, ${posSessions.length} Sesiones POS, ${crMovCount} Movimientos caja, ${posSaleCount} Ventas POS`);
+  console.log(`   ✅ ${cashRegisters.length} Cash Registers, ${posSessions.length} POS Sessions, ${crMovCount} Register Movements, ${posSaleCount} POS Sales`);
 
   // ============================================================================
   // STEP 19: Subscriptions (4 — one per tenant)
   // ============================================================================
-  console.log('💳 Creando Suscripciones...');
+  console.log('💳 Creating Subscriptions...');
 
   await prisma.subscription.create({
     data: { tenantId: tenantDemo.id, plan: 'PRO', status: 'ACTIVE', periodType: 'ANNUAL', startDate: daysAgo(180), endDate: daysFromNow(185) },
@@ -1751,19 +1751,19 @@ async function main() {
     data: { tenantId: tenantPapeleria.id, plan: 'PYME', status: 'ACTIVE', periodType: 'QUARTERLY', startDate: daysAgo(60), endDate: daysFromNow(30) },
   });
 
-  console.log('   ✅ 4 Suscripciones creadas');
+  console.log('   ✅ 4 Subscriptions created');
 
   // ============================================================================
   // SUMMARY
   // ============================================================================
   console.log('\n══════════════════════════════════════════════════════');
-  console.log('📊 RESUMEN SEED ULTRA-COMPLETO');
+  console.log('📊 FULL SEED SUMMARY');
   console.log('══════════════════════════════════════════════════════');
   console.log(`  System Admins:     3`);
   console.log(`  Tenants:           4`);
   console.log(`  Users:             21`);
   console.log(`  Categories:        32`);
-  console.log(`  Products:          167 (con imágenes, barcodes, maxStock)`);
+  console.log(`  Products:          167 (with images, barcodes, maxStock)`);
   console.log(`  Warehouses:        12`);
   console.log(`  Customers:         ${demoCustomers.length + dnCustomers.length + nnCustomers.length + pcCustomers.length}`);
   console.log(`  Invoices:          ${demoInvoices.length + dnInvoices.length + nnInvoices.length + pcInvoices.length}`);
@@ -1780,17 +1780,17 @@ async function main() {
   console.log(`  POS Sales:         ${posSaleCount}`);
   console.log(`  Subscriptions:     4`);
   console.log('══════════════════════════════════════════════════════');
-  console.log('\n🔑 CREDENCIALES DE ACCESO:');
+  console.log('\n🔑 ACCESS CREDENTIALS:');
   console.log('──────────────────────────────────────────────────────');
-  console.log('  Tienda Demo (PRO - maxUsers:4 = 3 regulares + 1 contador):');
+  console.log('  Tienda Demo (PRO - maxUsers:4 = 3 regular + 1 contador):');
   console.log('    admin@tienda-demo.com / password123');
   console.log('    contador@tienda-demo.com / password123 (CONTADOR)');
-  console.log('  Distribuidora Nacional (PLUS - maxUsers:9 = 8 regulares + 1 contador):');
+  console.log('  Distribuidora Nacional (PLUS - maxUsers:9 = 8 regular + 1 contador):');
   console.log('    admin@distribuidoranacional.com / password123');
   console.log('    contador@distribuidoranacional.com / password123 (CONTADOR)');
   console.log('  Nuevo Negocio (EMPRENDEDOR - maxUsers:2 = 1 regular + 1 contador):');
   console.log('    admin@nuevonegocio.com / password123');
-  console.log('  Papelería Central (PYME - maxUsers:3 = 2 regulares + 1 contador):');
+  console.log('  Papelería Central (PYME - maxUsers:3 = 2 regular + 1 contador):');
   console.log('    admin@papeleriacentral.com / password123');
   console.log('    contador@papeleriacentral.com / password123 (CONTADOR)');
   console.log('──────────────────────────────────────────────────────');
@@ -1798,12 +1798,12 @@ async function main() {
   console.log(`    ${process.env.SYSTEM_ADMIN_EMAIL || 'superadmin@stockflow.com'} / ${process.env.SYSTEM_ADMIN_PASSWORD || 'admin123!'}`);
   console.log('══════════════════════════════════════════════════════');
 
-  console.log('\n🎉 SEED ULTRA-COMPLETO FINALIZADO');
+  console.log('\n🎉 FULL SEED COMPLETED');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error en seeding:', e);
+    console.error('❌ Seed error:', e);
     process.exit(1);
   })
   .finally(async () => {

@@ -15,6 +15,7 @@ import {
 } from '@prisma/client';
 import { SubscriptionsService } from './subscriptions.service';
 import { PrismaService } from '../prisma';
+import { BrevoService } from '../notifications/mail/brevo.service';
 import { WompiService } from './wompi.service';
 import { PLAN_LIMITS, calculatePlanPrice } from './plan-limits';
 
@@ -217,12 +218,17 @@ describe('SubscriptionsService', () => {
       get: jest.fn().mockReturnValue(FRONTEND_URL),
     };
 
+    const brevoService = {
+      sendSubscriptionPaymentEmail: jest.fn().mockResolvedValue({ success: true }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SubscriptionsService,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: configService },
         { provide: WompiService, useValue: wompiService },
+        { provide: BrevoService, useValue: brevoService },
       ],
     }).compile();
 
@@ -1904,6 +1910,7 @@ describe('SubscriptionsService', () => {
           { provide: PrismaService, useValue: prisma },
           { provide: ConfigService, useValue: configService },
           { provide: WompiService, useValue: wompiService },
+          { provide: BrevoService, useValue: { sendSubscriptionPaymentEmail: jest.fn().mockResolvedValue({ success: true }) } },
         ],
       }).compile();
 

@@ -17,6 +17,7 @@ import {
   InvitationStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
+import { BrevoService } from '../notifications/mail/brevo.service';
 import { WompiService, WompiTransaction } from './wompi.service';
 import {
   PLAN_LIMITS,
@@ -120,6 +121,7 @@ export class SubscriptionsService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly wompiService: WompiService,
+    private readonly brevoService: BrevoService,
   ) {
     this.frontendUrl =
       this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
@@ -747,6 +749,21 @@ export class SubscriptionsService {
     this.logger.log(
       `Subscription activated for tenant ${tenantId}: plan=${plan}, period=${period}, endDate=${endDate.toISOString()}`,
     );
+
+    // Send payment confirmation email (fire-and-forget)
+    this.sendPaymentConfirmationEmail(
+      tenantId,
+      plan,
+      period,
+      billingTransactionId,
+      endDate,
+      false,
+    ).catch((error) => {
+      this.logger.error(
+        'Failed to send payment confirmation email',
+        error instanceof Error ? error.stack : undefined,
+      );
+    });
   }
 
   /**
@@ -759,6 +776,8 @@ export class SubscriptionsService {
     billingTransactionId: string,
   ): Promise<void> {
     const durationDays = PERIOD_DAYS[period];
+    let subscriptionPlan: SubscriptionPlan | null = null;
+    let newEndDate: Date | null = null;
 
     await this.prisma.executeInTransaction(async (tx) => {
       const subscription = await tx.subscription.findUnique({
@@ -772,13 +791,15 @@ export class SubscriptionsService {
         return;
       }
 
+      subscriptionPlan = subscription.plan;
+
       // Extend from the current endDate (or now if already expired)
       const baseDate =
         subscription.endDate > new Date()
           ? subscription.endDate
           : new Date();
 
-      const newEndDate = new Date(
+      newEndDate = new Date(
         baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000,
       );
 
@@ -826,6 +847,23 @@ export class SubscriptionsService {
     this.logger.log(
       `Subscription extended for tenant ${tenantId} by ${durationDays} days`,
     );
+
+    // Send renewal payment confirmation email (fire-and-forget)
+    if (subscriptionPlan && newEndDate) {
+      this.sendPaymentConfirmationEmail(
+        tenantId,
+        subscriptionPlan,
+        period,
+        billingTransactionId,
+        newEndDate,
+        true,
+      ).catch((error) => {
+        this.logger.error(
+          'Failed to send renewal payment confirmation email',
+          error instanceof Error ? error.stack : undefined,
+        );
+      });
+    }
   }
 
   /**
@@ -904,4 +942,72 @@ export class SubscriptionsService {
     }
   }
 
+  /**
+   * Sends a payment confirmation email to the tenant admin after a successful
+   * subscription payment (activation or renewal). Fetches the billing
+   * transaction details and admin user info, then delegates to BrevoService.
+   */
+  private async sendPaymentConfirmationEmail(
+    tenantId: string,
+    plan: SubscriptionPlan,
+    period: SubscriptionPeriod,
+    billingTransactionId: string,
+    endDate: Date,
+    isRenewal: boolean,
+  ): Promise<void> {
+    // Fetch billing transaction for payment details
+    const billingTransaction = await this.prisma.billingTransaction.findUnique({
+      where: { id: billingTransactionId },
+    });
+
+    if (!billingTransaction) {
+      this.logger.warn(
+        `Cannot send payment email: billing transaction ${billingTransactionId} not found`,
+      );
+      return;
+    }
+
+    // Fetch tenant admin user for email
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: { users: { where: { role: UserRole.ADMIN }, take: 1 } },
+    });
+
+    const adminUser = tenant?.users[0];
+    if (!adminUser) {
+      this.logger.warn(
+        `Cannot send payment email: no admin user found for tenant ${tenantId}`,
+      );
+      return;
+    }
+
+    const limits = getPlanLimits(plan);
+    const amountCOP = billingTransaction.amountInCents / 100;
+
+    const result = await this.brevoService.sendSubscriptionPaymentEmail({
+      to: adminUser.email,
+      firstName: adminUser.firstName,
+      planName: limits.displayName,
+      period,
+      amountCOP,
+      paymentMethod: billingTransaction.paymentMethodType ?? 'CARD',
+      transactionRef:
+        billingTransaction.wompiReference ??
+        billingTransaction.wompiTransactionId ??
+        billingTransaction.id,
+      endDate,
+      features: limits.features,
+      isRenewal,
+    });
+
+    if (result.success) {
+      this.logger.log(
+        `Payment confirmation email sent to ${adminUser.email} for tenant ${tenantId} (${isRenewal ? 'renewal' : 'activation'})`,
+      );
+    } else {
+      this.logger.warn(
+        `Payment confirmation email failed for ${adminUser.email}: ${result.error}`,
+      );
+    }
+  }
 }

@@ -1681,4 +1681,217 @@ export class BrevoService {
       textContent: `Hola ${firstName}, tu plan ha sido cambiado de ${oldPlanName} a ${newPlanName}. Accede a tu dashboard en ${this.frontendUrl}/dashboard para ver los nuevos beneficios.`,
     });
   }
+
+  /**
+   * Sends a subscription payment confirmation email after a successful Wompi
+   * payment. Uses a different template for first-time activations vs renewals.
+   *
+   * @param data - Payment and subscription details
+   * @returns Send result
+   */
+  async sendSubscriptionPaymentEmail(data: {
+    to: string;
+    firstName: string;
+    planName: string;
+    period: string;
+    amountCOP: number;
+    paymentMethod: string;
+    transactionRef: string;
+    endDate: Date;
+    features: string[];
+    isRenewal: boolean;
+  }): Promise<SendMailResult> {
+    const {
+      to,
+      firstName,
+      planName,
+      period,
+      amountCOP,
+      paymentMethod,
+      transactionRef,
+      endDate,
+      features,
+      isRenewal,
+    } = data;
+
+    const periodDisplay: Record<string, string> = {
+      MONTHLY: 'Mensual',
+      QUARTERLY: 'Trimestral',
+      ANNUAL: 'Anual',
+    };
+
+    const formattedAmount = this.formatCurrencyCOP(amountCOP);
+    const formattedMethod = this.formatWompiPaymentMethod(paymentMethod);
+    const formattedEndDate = endDate.toLocaleDateString('es-CO', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const infoTable = `
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Plan</span><br>
+                  <span style="color: #111827; font-size: 20px; font-weight: 600;">${planName}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Periodo</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${periodDisplay[period] || period}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Monto</span><br>
+                  <span style="color: #16a34a; font-size: 24px; font-weight: 600;">${formattedAmount}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Método de pago</span><br>
+                  <span style="color: #111827; font-size: 16px; font-weight: 500;">${formattedMethod}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Referencia</span><br>
+                  <span style="color: #111827; font-size: 14px; font-family: monospace;">${transactionRef}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;">
+                  <span style="color: #6b7280; font-size: 14px;">Válido hasta</span><br>
+                  <span style="color: #22c55e; font-size: 16px; font-weight: 600;">${formattedEndDate}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>`;
+
+    let content: string;
+
+    if (isRenewal) {
+      // Renewal: shorter, transactional email
+      content = `
+      <div style="padding: 12px 16px; background-color: #dcfce7; border-left: 4px solid #22c55e; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #166534; font-size: 14px; font-weight: 500;">
+          Renovación procesada exitosamente
+        </p>
+      </div>
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Recibo de renovación
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Hola ${firstName},
+      </p>
+      <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Tu suscripción al plan <strong>${planName}</strong> ha sido renovada exitosamente. Aquí tienes el detalle de tu pago:
+      </p>
+      ${infoTable}
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="border-radius: 6px; background-color: #2563eb;">
+            <a href="${this.frontendUrl}/billing" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
+              Administrar suscripción
+            </a>
+          </td>
+        </tr>
+      </table>`;
+    } else {
+      // First payment: welcome + payment confirmation
+      const featuresHtml = features
+        .map((f) => `<li style="margin-bottom: 8px;">${f}</li>`)
+        .join('');
+
+      content = `
+      <div style="padding: 12px 16px; background-color: #dcfce7; border-left: 4px solid #22c55e; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #166534; font-size: 14px; font-weight: 500;">
+          ¡Pago recibido exitosamente!
+        </p>
+      </div>
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Confirmación de pago — Plan ${planName}
+      </h2>
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Hola ${firstName},
+      </p>
+      <p style="margin: 0 0 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Tu pago por el plan <strong>${planName}</strong> ha sido procesado exitosamente. ¡Bienvenido!
+      </p>
+      ${infoTable}
+      <h3 style="margin: 0 0 12px 0; color: #111827; font-size: 16px; font-weight: 600;">
+        Tu plan incluye:
+      </h3>
+      <ul style="margin: 0 0 24px 0; padding-left: 20px; color: #374151; font-size: 16px; line-height: 1.8;">
+        ${featuresHtml}
+      </ul>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+          <td style="border-radius: 6px; background-color: #2563eb;">
+            <a href="${this.frontendUrl}/dashboard" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
+              Ir al dashboard
+            </a>
+          </td>
+        </tr>
+      </table>`;
+    }
+
+    const title = isRenewal
+      ? 'Recibo de renovación - StockFlow'
+      : 'Confirmación de pago - StockFlow';
+    const subject = isRenewal
+      ? `[StockFlow] Recibo de renovación — Plan ${planName}`
+      : `[StockFlow] Confirmación de pago — Plan ${planName}`;
+
+    const htmlContent = this.getEmailTemplate(content, title);
+
+    const textContent = isRenewal
+      ? `Hola ${firstName}, tu suscripción al plan ${planName} (${periodDisplay[period] || period}) ha sido renovada. Monto: ${formattedAmount}. Válido hasta: ${formattedEndDate}. Referencia: ${transactionRef}. Administra tu suscripción en ${this.frontendUrl}/billing`
+      : `Hola ${firstName}, tu pago por el plan ${planName} (${periodDisplay[period] || period}) ha sido procesado exitosamente. Monto: ${formattedAmount}. Válido hasta: ${formattedEndDate}. Referencia: ${transactionRef}. Accede a tu dashboard en ${this.frontendUrl}/dashboard`;
+
+    return this.sendEmail({
+      to,
+      subject,
+      htmlContent,
+      textContent,
+    });
+  }
+
+  /**
+   * Formats an amount in Colombian Pesos (COP).
+   *
+   * @param amount - Amount in COP (not cents)
+   * @returns Formatted currency string (e.g., "$ 219.900")
+   */
+  private formatCurrencyCOP(amount: number): string {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
+
+  /**
+   * Formats a Wompi payment method type to a human-readable Spanish string.
+   *
+   * @param method - Wompi payment_method_type value
+   * @returns Human-readable payment method
+   */
+  private formatWompiPaymentMethod(method: string): string {
+    const methodMap: Record<string, string> = {
+      CARD: 'Tarjeta de crédito/débito',
+      PSE: 'PSE (débito bancario)',
+      NEQUI: 'Nequi',
+      BANCOLOMBIA_TRANSFER: 'Transferencia Bancolombia',
+      BANCOLOMBIA_COLLECT: 'Corresponsal Bancolombia',
+    };
+    return methodMap[method] ?? method;
+  }
 }

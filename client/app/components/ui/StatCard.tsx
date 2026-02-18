@@ -160,7 +160,7 @@ export function StatCard({
               <div className="h-8 w-32 bg-neutral-200 dark:bg-neutral-700 rounded" />
               <div className="h-4 w-20 bg-neutral-100 dark:bg-neutral-800 rounded" />
             </div>
-            <div className="h-14 w-14 bg-neutral-200 dark:bg-neutral-700 rounded-xl" />
+            <div className="h-10 w-10 bg-neutral-200 dark:bg-neutral-700 rounded-xl" />
           </div>
         </div>
       </Card>
@@ -180,29 +180,27 @@ export function StatCard({
         {/* Gradient accent bar */}
         <div className={cn("h-1 bg-gradient-to-r", colorScheme.accentBg)} />
 
-        <div className="p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2 flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 truncate">
-                {label}
-              </p>
-              <p className="text-3xl font-bold tracking-tight bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
-                {value}
-              </p>
-              <ChangeIndicator />
-            </div>
+        <div className="p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 truncate">
+              {label}
+            </p>
             <div
               className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-2xl shrink-0",
+                "flex h-10 w-10 items-center justify-center rounded-xl shrink-0",
                 finalIconBg,
               )}
             >
               <Icon
-                className={cn("h-7 w-7", finalIconColor)}
+                className={cn("h-5 w-5", finalIconColor)}
                 aria-hidden="true"
               />
             </div>
           </div>
+          <p className="text-2xl font-bold tracking-tight bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
+            {value}
+          </p>
+          <ChangeIndicator />
         </div>
       </Card>
     );
@@ -236,27 +234,27 @@ export function StatCard({
         className={cn(onClick && "cursor-pointer")}
         onClick={onClick}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2 flex-1 min-w-0">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 truncate">
               {label}
             </p>
-            <p className="text-3xl font-bold tracking-tight bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
-              {value}
-            </p>
-            <ChangeIndicator />
+            <div
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-xl shrink-0 shadow-sm",
+                finalIconBg,
+              )}
+            >
+              <Icon
+                className={cn("h-5 w-5", finalIconColor)}
+                aria-hidden="true"
+              />
+            </div>
           </div>
-          <div
-            className={cn(
-              "flex h-14 w-14 items-center justify-center rounded-2xl shrink-0 shadow-sm",
-              finalIconBg,
-            )}
-          >
-            <Icon
-              className={cn("h-7 w-7", finalIconColor)}
-              aria-hidden="true"
-            />
-          </div>
+          <p className="text-2xl font-bold tracking-tight bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
+            {value}
+          </p>
+          <ChangeIndicator />
         </div>
       </Card>
     );

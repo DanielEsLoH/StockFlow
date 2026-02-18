@@ -22,6 +22,11 @@ import {
   Store,
   ShoppingCart,
   Loader2,
+  CreditCard,
+  Banknote,
+  Smartphone,
+  DollarSign,
+  Hash,
 } from "lucide-react";
 import type { Route } from "./+types/_app.invoices.$id";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
@@ -33,6 +38,7 @@ import {
   useSendInvoiceToDian,
 } from "~/hooks/useInvoices";
 import { useDownloadDianXml } from "~/hooks/useDian";
+import { usePaymentsByInvoice } from "~/hooks/usePayments";
 import { Button } from "~/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
 import { Badge } from "~/components/ui/Badge";
@@ -46,8 +52,12 @@ import {
   TableRow,
   TableCell,
 } from "~/components/ui/Table";
-import type { InvoiceStatus, InvoiceSource } from "~/types/invoice";
+import type { InvoiceStatus, InvoiceSource, InvoicePaymentStatus } from "~/types/invoice";
+import { InvoicePaymentStatusLabels } from "~/types/invoice";
+import { PaymentMethodLabels } from "~/types/payment";
+import type { PaymentMethod } from "~/types/payment";
 import { POSTicketModal } from "~/components/pos";
+import { PaymentModal } from "~/components/payments/PaymentModal";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -178,6 +188,51 @@ function DianStatusBadge({ hasCufe }: { hasCufe: boolean }) {
   );
 }
 
+// Payment status badge
+function PaymentStatusBadge({
+  status,
+  size = "md",
+}: {
+  status?: InvoicePaymentStatus;
+  size?: "sm" | "md" | "lg";
+}) {
+  const config: Record<
+    InvoicePaymentStatus,
+    { variant: "success" | "warning" | "error" }
+  > = {
+    PAID: { variant: "success" },
+    PARTIALLY_PAID: { variant: "warning" },
+    UNPAID: { variant: "error" },
+  };
+
+  if (!status) return null;
+  const { variant } = config[status] || { variant: "default" as const };
+  const label = InvoicePaymentStatusLabels[status] || status;
+
+  return (
+    <Badge variant={variant} size={size}>
+      {label}
+    </Badge>
+  );
+}
+
+// Payment method icon helper
+function getPaymentMethodIcon(method: PaymentMethod) {
+  const iconMap: Record<string, React.ReactNode> = {
+    CASH: <Banknote className="h-3.5 w-3.5 text-neutral-500" />,
+    CREDIT_CARD: <CreditCard className="h-3.5 w-3.5 text-neutral-500" />,
+    DEBIT_CARD: <CreditCard className="h-3.5 w-3.5 text-neutral-500" />,
+    BANK_TRANSFER: <Building2 className="h-3.5 w-3.5 text-neutral-500" />,
+    WIRE_TRANSFER: <Building2 className="h-3.5 w-3.5 text-neutral-500" />,
+    CHECK: <FileText className="h-3.5 w-3.5 text-neutral-500" />,
+    PSE: <Building2 className="h-3.5 w-3.5 text-neutral-500" />,
+    NEQUI: <Smartphone className="h-3.5 w-3.5 text-neutral-500" />,
+    DAVIPLATA: <Smartphone className="h-3.5 w-3.5 text-neutral-500" />,
+    OTHER: <DollarSign className="h-3.5 w-3.5 text-neutral-500" />,
+  };
+  return iconMap[method] || <DollarSign className="h-3.5 w-3.5 text-neutral-500" />;
+}
+
 // Status action dropdown
 function StatusActions({
   currentStatus,
@@ -303,12 +358,19 @@ export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const { data: invoice, isLoading, isError } = useInvoice(id!);
+  const { data: invoicePayments = [], isLoading: isLoadingPayments } = usePaymentsByInvoice(id!);
   const deleteInvoice = useDeleteInvoice();
   const updateStatus = useUpdateInvoiceStatus();
   const sendToDian = useSendInvoiceToDian();
   const downloadXml = useDownloadDianXml();
+
+  // Calculate payment totals
+  const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0);
+  const remainingBalance = invoice ? Math.max(0, invoice.total - totalPaid) : 0;
+  const paymentPercentage = invoice && invoice.total > 0 ? Math.min(100, (totalPaid / invoice.total) * 100) : 0;
 
   const handleDelete = async () => {
     await deleteInvoice.mutateAsync(id!);
@@ -345,6 +407,13 @@ export default function InvoiceDetailPage() {
   const canEdit =
     invoice && invoice.status !== "PAID" && invoice.status !== "CANCELLED";
   const canDelete = invoice && invoice.status === "DRAFT";
+
+  // Can register payment if: not fully paid and not cancelled/void
+  const canRegisterPayment =
+    invoice &&
+    invoice.paymentStatus !== "PAID" &&
+    invoice.status !== "CANCELLED" &&
+    invoice.status !== "VOID";
 
   // Can send to DIAN if: has DIAN config (tenant.nit), invoice is PENDING or PAID, and no CUFE yet
   const canSendToDian =
@@ -394,6 +463,7 @@ export default function InvoiceDetailPage() {
                   Factura {invoice.invoiceNumber}
                 </h1>
                 <InvoiceStatusBadge status={invoice.status} size="lg" />
+                <PaymentStatusBadge status={invoice.paymentStatus as InvoicePaymentStatus} size="lg" />
                 <InvoiceSourceBadge source={invoice.source} />
                 <DianStatusBadge hasCufe={!!invoice.dianCufe} />
               </div>
@@ -403,6 +473,15 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 ml-14 sm:ml-0">
+            {canRegisterPayment && (
+              <Button
+                variant="primary"
+                onClick={() => setShowPaymentModal(true)}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Registrar Pago
+              </Button>
+            )}
             <StatusActions
               currentStatus={invoice.status}
               onStatusChange={handleStatusChange}
@@ -786,6 +865,116 @@ export default function InvoiceDetailPage() {
         </Card>
       </PageSection>
 
+      {/* Payments Section */}
+      <PageSection>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary-500" />
+                Pagos Registrados
+              </CardTitle>
+              <PaymentStatusBadge status={invoice.paymentStatus as InvoicePaymentStatus} />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Progress bar */}
+            <div className="mb-6">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Pagado: {formatCurrency(totalPaid)}
+                </span>
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Pendiente: {formatCurrency(remainingBalance)}
+                </span>
+              </div>
+              <div className="h-3 w-full rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-500",
+                    paymentPercentage >= 100
+                      ? "bg-success-500"
+                      : paymentPercentage > 0
+                        ? "bg-warning-500"
+                        : "bg-neutral-300 dark:bg-neutral-600"
+                  )}
+                  style={{ width: `${paymentPercentage}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs mt-1">
+                <span className="text-neutral-400">
+                  {paymentPercentage.toFixed(0)}% del total
+                </span>
+                <span className="font-medium text-neutral-900 dark:text-white">
+                  Total: {formatCurrency(invoice.total)}
+                </span>
+              </div>
+            </div>
+
+            {/* Payments list */}
+            {isLoadingPayments ? (
+              <div className="space-y-3">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : invoicePayments.length === 0 ? (
+              <div className="flex flex-col items-center py-6 text-neutral-400 dark:text-neutral-500">
+                <CreditCard className="h-8 w-8 mb-2" />
+                <p className="text-sm">No hay pagos registrados para esta factura</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Metodo</TableHead>
+                      <TableHead>Referencia</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invoicePayments.map((payment) => (
+                      <TableRow key={payment.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5 text-neutral-400" />
+                            <span className="text-sm">{formatDate(payment.paymentDate)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            {getPaymentMethodIcon(payment.method as PaymentMethod)}
+                            <span className="text-sm">
+                              {PaymentMethodLabels[payment.method as PaymentMethod] || payment.method}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {payment.reference ? (
+                            <div className="flex items-center gap-1.5">
+                              <Hash className="h-3.5 w-3.5 text-neutral-400" />
+                              <span className="text-sm font-mono">{payment.reference}</span>
+                            </div>
+                          ) : (
+                            <span className="text-neutral-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-semibold text-neutral-900 dark:text-white">
+                            {formatCurrency(payment.amount)}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </PageSection>
+
       {/* DIAN Section */}
       {invoice.dianCufe && (
         <PageSection>
@@ -865,6 +1054,16 @@ export default function InvoiceDetailPage() {
         itemType="factura"
         onConfirm={handleDelete}
         isLoading={deleteInvoice.isPending}
+      />
+
+      {/* Payment Modal */}
+      <PaymentModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        invoiceId={invoice.id}
+        invoiceNumber={invoice.invoiceNumber}
+        invoiceTotal={invoice.total}
+        totalPaid={totalPaid}
       />
 
       {/* POS Ticket Modal - Solo para facturas POS */}

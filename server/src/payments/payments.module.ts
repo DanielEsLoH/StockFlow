@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 /**
  * PaymentsModule provides payment recording functionality including:
@@ -8,10 +9,12 @@ import { PaymentsService } from './payments.service';
  * - Automatic invoice payment status updates
  * - Payment validation against remaining balance
  * - Multi-tenant isolation
+ * - Payment receipt email notifications
  *
  * This module depends on:
  * - PrismaModule (global) - for database access
  * - CommonModule (global) - for TenantContextService
+ * - NotificationsModule - for sending payment receipt emails
  * - AuthModule - for guards and decorators (imported at app level)
  *
  * All endpoints are protected by JwtAuthGuard and RolesGuard.
@@ -26,8 +29,10 @@ import { PaymentsService } from './payments.service';
  *   - PAID when fully paid
  * - Only ADMIN can delete payments
  * - Deleting a payment recalculates invoice payment status
+ * - Payment receipt email sent to customer after manual payment creation
  */
 @Module({
+  imports: [NotificationsModule],
   controllers: [PaymentsController],
   providers: [PaymentsService],
   exports: [PaymentsService],

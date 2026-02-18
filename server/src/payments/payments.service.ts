@@ -13,6 +13,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePaymentDto, FilterPaymentsDto } from './dto';
 
 /**
@@ -85,6 +86,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -95,16 +97,15 @@ export class PaymentsService {
   async getStats(): Promise<{
     totalPayments: number;
     totalReceived: number;
-    totalPending: number;
-    totalRefunded: number;
-    totalProcessing: number;
     averagePaymentValue: number;
-    paymentsByStatus: Record<PaymentStatus, number>;
     paymentsByMethod: Record<PaymentMethod, number>;
     todayPayments: number;
     todayTotal: number;
     weekPayments: number;
     weekTotal: number;
+    pendingInvoicesCount: number;
+    pendingAmount: number;
+    overdueCount: number;
   }> {
     const tenantId = this.tenantContext.requireTenantId();
 
@@ -129,14 +130,6 @@ export class PaymentsService {
         paymentDate: true,
       },
     });
-
-    // Initialize status counts (payments don't have status in current schema, so we'll use PaymentStatus from invoice context)
-    // For now, all recorded payments are considered PAID
-    const paymentsByStatus: Record<PaymentStatus, number> = {
-      [PaymentStatus.UNPAID]: 0,
-      [PaymentStatus.PARTIALLY_PAID]: 0,
-      [PaymentStatus.PAID]: payments.length, // All recorded payments count as paid
-    };
 
     // Initialize method counts
     const paymentsByMethod: Record<PaymentMethod, number> = {
@@ -183,19 +176,45 @@ export class PaymentsService {
     const averagePaymentValue =
       totalPayments > 0 ? totalReceived / totalPayments : 0;
 
+    // Get pending collection stats from invoices
+    const pendingInvoices = await this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        paymentStatus: { in: ['UNPAID', 'PARTIALLY_PAID'] },
+        status: { notIn: ['DRAFT', 'CANCELLED', 'VOID'] },
+      },
+      select: {
+        total: true,
+        dueDate: true,
+        payments: { select: { amount: true } },
+      },
+    });
+
+    let pendingAmount = 0;
+    let overdueCount = 0;
+    for (const inv of pendingInvoices) {
+      const invPaid = inv.payments.reduce(
+        (sum, p) => sum + Number(p.amount),
+        0,
+      );
+      pendingAmount += Math.max(0, Number(inv.total) - invPaid);
+      if (inv.dueDate && new Date(inv.dueDate) < now) {
+        overdueCount++;
+      }
+    }
+
     return {
       totalPayments,
       totalReceived,
-      totalPending: 0, // No pending status for payments in current schema
-      totalRefunded: 0, // Would need refund tracking
-      totalProcessing: 0, // Would need processing status
       averagePaymentValue,
-      paymentsByStatus,
       paymentsByMethod,
       todayPayments,
       todayTotal,
       weekPayments,
       weekTotal,
+      pendingInvoicesCount: pendingInvoices.length,
+      pendingAmount,
+      overdueCount,
     };
   }
 
@@ -382,6 +401,7 @@ export class PaymentsService {
           select: {
             id: true,
             name: true,
+            email: true,
           },
         },
       },
@@ -463,6 +483,27 @@ export class PaymentsService {
     this.logger.log(
       `Payment recorded: ${payment.id} for invoice ${invoice.invoiceNumber}, amount: ${dto.amount}, new status: ${newPaymentStatus}`,
     );
+
+    // Fire-and-forget: send payment receipt email to customer
+    this.notificationsService
+      .sendPaymentReceivedEmail(
+        { amount: dto.amount, method: dto.method },
+        {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          total: Number(invoice.total),
+          dueDate: invoice.dueDate,
+          customer: invoice.customer,
+          totalPaid,
+        },
+        tenantId,
+      )
+      .catch((err) =>
+        this.logger.error(
+          `Failed to send payment receipt email for invoice ${invoice.invoiceNumber}`,
+          err instanceof Error ? err.stack : err,
+        ),
+      );
 
     return this.mapToPaymentResponse(payment);
   }

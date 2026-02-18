@@ -160,6 +160,68 @@ export class InvoicesService {
   ) {}
 
   /**
+   * Gets invoices pending collection (UNPAID or PARTIALLY_PAID).
+   * Excludes drafts, cancelled, and void invoices.
+   * Returns each invoice with its total paid and remaining balance.
+   */
+  async findPendingCollection() {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        paymentStatus: { in: ['UNPAID', 'PARTIALLY_PAID'] },
+        status: { notIn: ['DRAFT', 'CANCELLED', 'VOID'] },
+      },
+      include: {
+        customer: {
+          select: { id: true, name: true },
+        },
+        payments: {
+          select: { amount: true },
+        },
+      },
+      orderBy: [
+        { dueDate: 'asc' },
+        { createdAt: 'asc' },
+      ],
+    });
+
+    return invoices.map((invoice) => {
+      const totalPaid = invoice.payments.reduce(
+        (sum, p) => sum + Number(p.amount),
+        0,
+      );
+      const total = Number(invoice.total);
+      const remainingBalance = Math.max(0, total - totalPaid);
+
+      const now = new Date();
+      const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : null;
+      const daysOverdue =
+        dueDate && dueDate < now
+          ? Math.floor(
+              (now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
+            )
+          : 0;
+
+      return {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        customerId: invoice.customerId,
+        customer: invoice.customer,
+        status: invoice.status,
+        paymentStatus: invoice.paymentStatus,
+        total,
+        totalPaid,
+        remainingBalance,
+        dueDate: invoice.dueDate,
+        issueDate: invoice.issueDate,
+        daysOverdue,
+      };
+    });
+  }
+
+  /**
    * Gets aggregated statistics for all invoices in the current tenant.
    *
    * @returns Invoice statistics including totals, amounts by status, and averages

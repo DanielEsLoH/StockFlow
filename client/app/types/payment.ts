@@ -107,14 +107,13 @@ export interface CreatePaymentData {
 export interface PaymentStats {
   totalPayments: number;
   totalReceived: number;
-  totalPending: number;
-  totalRefunded: number;
-  totalProcessing: number;
   averagePaymentValue: number;
-  paymentsByStatus: Record<string, number>;
   paymentsByMethod: Record<PaymentMethod, number>;
   todayPayments: number;
   todayTotal: number;
   weekPayments: number;
   weekTotal: number;
+  pendingInvoicesCount: number;
+  pendingAmount: number;
+  overdueCount: number;
 }

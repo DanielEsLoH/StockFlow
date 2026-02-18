@@ -139,6 +139,38 @@ export function useCreatePayment() {
 }
 
 /**
+ * Create a payment inline (no navigation after success).
+ * Used from invoice detail modal.
+ */
+export function useCreatePaymentInline() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreatePaymentData) =>
+      paymentsService.createPayment(data),
+    onSuccess: (payment) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.payments.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.payments.byInvoice(payment.invoiceId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.invoices.detail(payment.invoiceId),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.invoices.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.payments.stats(),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+
+      toast.success("Pago registrado exitosamente");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al registrar el pago");
+    },
+  });
+}
+
+/**
  * Delete a payment
  */
 export function useDeletePayment() {

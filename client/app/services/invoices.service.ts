@@ -10,6 +10,7 @@ import type {
   InvoiceStats,
   InvoiceStatus,
   InvoicePayment,
+  PendingCollectionInvoice,
 } from "~/types/invoice";
 
 // Service - Real API calls
@@ -157,6 +158,14 @@ export const invoicesService = {
   async removeInvoiceItem(invoiceId: string, itemId: string): Promise<Invoice> {
     const { data } = await api.delete<Invoice>(
       `/invoices/${invoiceId}/items/${itemId}`,
+    );
+    return data;
+  },
+
+  // Get invoices pending collection
+  async getPendingCollection(): Promise<PendingCollectionInvoice[]> {
+    const { data } = await api.get<PendingCollectionInvoice[]>(
+      "/invoices/pending-collection",
     );
     return data;
   },

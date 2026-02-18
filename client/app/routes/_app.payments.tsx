@@ -14,6 +14,8 @@ import {
   Plus,
   DollarSign,
   ShieldX,
+  AlertTriangle,
+  FileText,
 } from "lucide-react";
 import { usePermissions } from "~/hooks/usePermissions";
 import { Permission } from "~/types/permissions";
@@ -24,6 +26,7 @@ import {
   usePaymentStats,
   useDeletePayment,
 } from "~/hooks/usePayments";
+import { usePendingCollection } from "~/hooks/useInvoices";
 import { useCustomers } from "~/hooks/useCustomers";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
 import { Button } from "~/components/ui/Button";
@@ -133,8 +136,11 @@ function AccessDenied() {
   );
 }
 
+type TabType = "payments" | "collection";
+
 export default function PaymentsPage() {
   const { hasPermission } = usePermissions();
+  const [activeTab, setActiveTab] = useState<TabType>("payments");
   const [showFilters, setShowFilters] = useState(false);
   const [deletingPayment, setDeletingPayment] = useState<PaymentSummary | null>(
     null,
@@ -150,6 +156,7 @@ export default function PaymentsPage() {
   // Queries - must be called before any early returns to maintain hook order
   const { data: paymentsData, isLoading, isError } = usePayments(filters);
   const { data: stats } = usePaymentStats();
+  const { data: pendingInvoices = [], isLoading: isLoadingCollection } = usePendingCollection();
   const { data: customersData } = useCustomers({ limit: 100 });
   const deletePayment = useDeletePayment();
 
@@ -228,32 +235,75 @@ export default function PaymentsPage() {
             icon={DollarSign}
             label="Total Recibido"
             value={formatCurrency(stats?.totalReceived || 0)}
+            subtitle={`${stats?.todayPayments || 0} hoy (${formatCurrency(stats?.todayTotal || 0)})`}
             color="success"
-          />
-          <StatCard
-            icon={Calendar}
-            label="Hoy"
-            value={formatCurrency(stats?.todayTotal || 0)}
-            subtitle={`${stats?.todayPayments || 0} pagos`}
-            color="accent"
           />
           <StatCard
             icon={Clock}
             label="Esta Semana"
             value={formatCurrency(stats?.weekTotal || 0)}
             subtitle={`${stats?.weekPayments || 0} pagos`}
+            color="accent"
+          />
+          <StatCard
+            icon={FileText}
+            label="Facturas Pendientes"
+            value={stats?.pendingInvoicesCount || 0}
+            subtitle={formatCurrency(stats?.pendingAmount || 0)}
             color="warning"
           />
           <StatCard
-            icon={CreditCard}
-            label="Total Pagos"
-            value={stats?.totalPayments || 0}
-            subtitle="en el sistema"
-            color="primary"
+            icon={AlertTriangle}
+            label="Facturas Vencidas"
+            value={stats?.overdueCount || 0}
+            subtitle="sin pago completo"
+            color={(stats?.overdueCount ?? 0) > 0 ? "error" : "primary"}
           />
         </div>
       </PageSection>
 
+      {/* Tabs */}
+      <PageSection>
+        <div className="flex gap-1 border-b border-neutral-200 dark:border-neutral-700">
+          <button
+            onClick={() => setActiveTab("payments")}
+            className={cn(
+              "px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px",
+              activeTab === "payments"
+                ? "border-primary-500 text-primary-600 dark:text-primary-400"
+                : "border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Pagos Registrados
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab("collection")}
+            className={cn(
+              "px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px",
+              activeTab === "collection"
+                ? "border-primary-500 text-primary-600 dark:text-primary-400"
+                : "border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Cobros Pendientes
+              {pendingInvoices.length > 0 && (
+                <Badge variant="error" size="sm">
+                  {pendingInvoices.length}
+                </Badge>
+              )}
+            </div>
+          </button>
+        </div>
+      </PageSection>
+
+      {/* Tab content: Payments */}
+      {activeTab === "payments" && (
+        <>
       {/* Search and Filters */}
       <PageSection>
         <Card padding="md">
@@ -530,6 +580,130 @@ export default function PaymentsPage() {
           )}
         </Card>
       </PageSection>
+
+        </>
+      )}
+
+      {/* Tab content: Pending Collection */}
+      {activeTab === "collection" && (
+        <PageSection>
+          <Card>
+            {isLoadingCollection ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Factura</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-right hidden sm:table-cell">Pagado</TableHead>
+                    <TableHead className="text-right">Pendiente</TableHead>
+                    <TableHead className="hidden md:table-cell">Vencimiento</TableHead>
+                    <TableHead className="w-25">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <SkeletonTableRow key={i} columns={7} />
+                  ))}
+                </TableBody>
+              </Table>
+            ) : pendingInvoices.length === 0 ? (
+              <EmptyState
+                icon={<FileText className="h-16 w-16" />}
+                title="Sin cobros pendientes"
+                description="Todas las facturas estan pagadas. ¡Excelente!"
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Factura</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-right hidden sm:table-cell">Pagado</TableHead>
+                    <TableHead className="text-right">Pendiente</TableHead>
+                    <TableHead className="hidden md:table-cell">Vencimiento</TableHead>
+                    <TableHead className="w-25">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingInvoices.map((inv, i) => (
+                    <AnimatedTableRow key={inv.id} index={i}>
+                      <TableCell>
+                        <Link
+                          to={`/invoices/${inv.id}`}
+                          className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                        >
+                          {inv.invoiceNumber}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <p className="font-medium text-neutral-900 dark:text-white">
+                          {inv.customer?.name || "Sin cliente"}
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                          {formatCurrency(inv.total)}
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-right hidden sm:table-cell">
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          {formatCurrency(inv.totalPaid)}
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <p className="font-semibold text-error-600 dark:text-error-400">
+                          {formatCurrency(inv.remainingBalance)}
+                        </p>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {inv.dueDate ? (
+                          <div className="flex items-center gap-1.5">
+                            <Calendar
+                              className={cn(
+                                "h-3.5 w-3.5",
+                                inv.daysOverdue > 0
+                                  ? "text-error-500"
+                                  : "text-neutral-400"
+                              )}
+                            />
+                            <span
+                              className={cn(
+                                "text-sm",
+                                inv.daysOverdue > 0
+                                  ? "text-error-600 dark:text-error-400 font-medium"
+                                  : "text-neutral-700 dark:text-neutral-300"
+                              )}
+                            >
+                              {formatDate(inv.dueDate)}
+                              {inv.daysOverdue > 0 && (
+                                <span className="ml-1 text-xs">
+                                  ({inv.daysOverdue}d)
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-neutral-400">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Link to={`/invoices/${inv.id}`}>
+                          <Button variant="outline" size="sm">
+                            <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                            Cobrar
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </AnimatedTableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Card>
+        </PageSection>
+      )}
 
       {/* Delete Modal */}
       <DeleteModal

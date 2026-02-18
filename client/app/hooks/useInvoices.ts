@@ -14,6 +14,7 @@ import type {
   UpdateInvoiceItemData,
   InvoiceStats,
   InvoiceStatus,
+  PendingCollectionInvoice,
 } from "~/types/invoice";
 
 // ============================================================================
@@ -82,6 +83,19 @@ export function useInvoiceStats() {
     queryKey: queryKeys.invoices.stats(),
     queryFn: () => invoicesService.getInvoiceStats(),
     staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled,
+  });
+}
+
+/**
+ * Invoices pending collection (unpaid/partially paid)
+ */
+export function usePendingCollection() {
+  const enabled = useIsQueryEnabled();
+  return useQuery<PendingCollectionInvoice[]>({
+    queryKey: [...queryKeys.invoices.all, "pending-collection"],
+    queryFn: () => invoicesService.getPendingCollection(),
+    staleTime: 1000 * 60 * 2, // 2 minutes
     enabled,
   });
 }

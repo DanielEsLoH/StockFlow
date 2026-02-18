@@ -16,6 +16,15 @@ export type InvoiceStatus =
 // Invoice Source
 export type InvoiceSource = "MANUAL" | "POS";
 
+// Payment Status (on the Invoice, not the Payment entity)
+export type InvoicePaymentStatus = "UNPAID" | "PARTIALLY_PAID" | "PAID";
+
+export const InvoicePaymentStatusLabels: Record<InvoicePaymentStatus, string> = {
+  UNPAID: "Sin pagar",
+  PARTIALLY_PAID: "Parcial",
+  PAID: "Pagada",
+};
+
 // Status display labels in Spanish
 export const InvoiceStatusLabels: Record<InvoiceStatus, string> = {
   DRAFT: "Borrador",
@@ -74,6 +83,7 @@ export interface Invoice {
   warehouse?: { id: string; name: string; code: string } | null;
   tenant?: InvoiceTenant;
   status: InvoiceStatus;
+  paymentStatus?: InvoicePaymentStatus;
   source: InvoiceSource;
   issueDate: string;
   dueDate: string;
@@ -104,6 +114,7 @@ export interface InvoiceSummary {
   warehouseId?: string | null;
   warehouse?: { id: string; name: string; code: string } | null;
   status: InvoiceStatus;
+  paymentStatus?: InvoicePaymentStatus;
   source: InvoiceSource;
   issueDate: string;
   dueDate: string;
@@ -190,6 +201,22 @@ export interface InvoiceStats {
   overdueAmount: number;
   averageInvoiceValue: number;
   invoicesByStatus: Record<InvoiceStatus, number>;
+}
+
+// Pending collection invoice (for collections dashboard)
+export interface PendingCollectionInvoice {
+  id: string;
+  invoiceNumber: string;
+  customerId: string;
+  customer?: { id: string; name: string } | null;
+  status: InvoiceStatus;
+  paymentStatus: InvoicePaymentStatus;
+  total: number;
+  totalPaid: number;
+  remainingBalance: number;
+  dueDate: string | null;
+  issueDate: string;
+  daysOverdue: number;
 }
 
 // Invoice payment

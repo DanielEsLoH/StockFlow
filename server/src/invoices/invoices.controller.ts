@@ -134,6 +134,30 @@ export class InvoicesController {
   }
 
   /**
+   * Gets invoices pending collection (unpaid or partially paid).
+   * Useful for the collections dashboard.
+   *
+   * @returns List of invoices with pending balance
+   *
+   * @example
+   * GET /invoices/pending-collection
+   */
+  @Get('pending-collection')
+  @ApiOperation({
+    summary: 'Get invoices pending collection',
+    description:
+      'Returns invoices that are unpaid or partially paid, ordered by due date (most overdue first). Excludes drafts, cancelled, and void invoices.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Pending collection invoices retrieved successfully',
+  })
+  async getPendingCollection() {
+    this.logger.log('Getting pending collection invoices');
+    return this.invoicesService.findPendingCollection();
+  }
+
+  /**
    * Gets an invoice by ID.
    * Includes all items, customer, and user relations.
    *

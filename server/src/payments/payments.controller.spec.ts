@@ -308,16 +308,15 @@ describe('PaymentsController', () => {
     const mockStats = {
       totalPayments: 25,
       totalReceived: 10000,
-      totalPending: 2000,
-      totalRefunded: 500,
-      totalProcessing: 0,
       averagePaymentValue: 500,
-      paymentsByStatus: { UNPAID: 5, PARTIALLY_PAID: 5, PAID: 15 },
       paymentsByMethod: { CASH: 10, CREDIT_CARD: 5, DEBIT_CARD: 3, BANK_TRANSFER: 4, PSE: 1, NEQUI: 1, DAVIPLATA: 1, OTHER: 0 },
       todayPayments: 3,
       todayTotal: 1500,
       weekPayments: 10,
       weekTotal: 5000,
+      pendingInvoicesCount: 5,
+      pendingAmount: 2000,
+      overdueCount: 2,
     };
 
     it('should return payment statistics', async () => {
@@ -349,16 +348,15 @@ describe('PaymentsController', () => {
       const emptyStats = {
         totalPayments: 0,
         totalReceived: 0,
-        totalPending: 0,
-        totalRefunded: 0,
-        totalProcessing: 0,
         averagePaymentValue: 0,
-        paymentsByStatus: {},
         paymentsByMethod: {},
         todayPayments: 0,
         todayTotal: 0,
         weekPayments: 0,
         weekTotal: 0,
+        pendingInvoicesCount: 0,
+        pendingAmount: 0,
+        overdueCount: 0,
       };
       paymentsService.getStats.mockResolvedValue(emptyStats as any);
 

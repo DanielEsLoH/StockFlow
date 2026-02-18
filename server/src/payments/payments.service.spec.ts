@@ -4,6 +4,7 @@ import { PaymentMethod, PaymentStatus } from '@prisma/client';
 import { PaymentsService } from './payments.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { NotificationsService } from '../notifications/notifications.service';
 import type { CreatePaymentDto, FilterPaymentsDto } from './dto';
 
 describe('PaymentsService', () => {
@@ -82,6 +83,7 @@ describe('PaymentsService', () => {
       },
       invoice: {
         findFirst: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
         update: jest.fn(),
       },
       $transaction: jest.fn(),
@@ -92,11 +94,19 @@ describe('PaymentsService', () => {
       requireTenantId: jest.fn().mockReturnValue(mockTenantId),
     };
 
+    const mockNotificationsService = {
+      sendPaymentReceivedEmail: jest.fn().mockResolvedValue(null),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentsService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
+        {
+          provide: NotificationsService,
+          useValue: mockNotificationsService,
+        },
       ],
     }).compile();
 
@@ -490,6 +500,7 @@ describe('PaymentsService', () => {
             select: {
               id: true,
               name: true,
+              email: true,
             },
           },
         },
@@ -1033,7 +1044,9 @@ describe('PaymentsService', () => {
       expect(result.averagePaymentValue).toBe(0);
       expect(result.todayPayments).toBe(0);
       expect(result.weekPayments).toBe(0);
-      expect(result.paymentsByStatus[PaymentStatus.PAID]).toBe(0);
+      expect(result.pendingInvoicesCount).toBe(0);
+      expect(result.pendingAmount).toBe(0);
+      expect(result.overdueCount).toBe(0);
     });
 
     it('should calculate stats correctly with payments', async () => {
@@ -1063,7 +1076,6 @@ describe('PaymentsService', () => {
       expect(result.averagePaymentValue).toBeCloseTo(1166.67, 0);
       expect(result.todayPayments).toBe(2);
       expect(result.todayTotal).toBe(3000);
-      expect(result.paymentsByStatus[PaymentStatus.PAID]).toBe(3);
       expect(result.paymentsByMethod[PaymentMethod.CASH]).toBe(2);
       expect(result.paymentsByMethod[PaymentMethod.CREDIT_CARD]).toBe(1);
     });
@@ -1134,9 +1146,9 @@ describe('PaymentsService', () => {
       expect(result.paymentsByMethod[PaymentMethod.DEBIT_CARD]).toBe(1);
       expect(result.paymentsByMethod[PaymentMethod.DAVIPLATA]).toBe(1);
       expect(result.paymentsByMethod[PaymentMethod.OTHER]).toBe(1);
-      expect(result.totalPending).toBe(0);
-      expect(result.totalRefunded).toBe(0);
-      expect(result.totalProcessing).toBe(0);
+      expect(result.pendingInvoicesCount).toBe(0);
+      expect(result.pendingAmount).toBe(0);
+      expect(result.overdueCount).toBe(0);
     });
   });
 });

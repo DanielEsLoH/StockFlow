@@ -4,9 +4,7 @@ import type {
   PaymentFilters,
   PaymentsResponse,
   CreatePaymentData,
-  UpdatePaymentData,
   PaymentStats,
-  PaymentStatus,
 } from "~/types/payment";
 
 // Service - Real API calls
@@ -59,37 +57,9 @@ export const paymentsService = {
     return data;
   },
 
-  // Update payment (limited fields)
-  async updatePayment(
-    id: string,
-    paymentData: UpdatePaymentData,
-  ): Promise<Payment> {
-    const { data } = await api.patch<Payment>(`/payments/${id}`, paymentData);
-    return data;
-  },
-
-  // Update payment status only
-  async updatePaymentStatus(
-    id: string,
-    status: PaymentStatus,
-  ): Promise<Payment> {
-    const { data } = await api.patch<Payment>(`/payments/${id}/status`, {
-      status,
-    });
-    return data;
-  },
-
-  // Delete payment (only PENDING allowed)
+  // Delete payment
   async deletePayment(id: string): Promise<void> {
     await api.delete(`/payments/${id}`);
-  },
-
-  // Process refund (partial or full)
-  async refundPayment(id: string, amount?: number): Promise<Payment> {
-    const { data } = await api.post<Payment>(`/payments/${id}/refund`, {
-      amount,
-    });
-    return data;
   },
 
   // Get payment statistics

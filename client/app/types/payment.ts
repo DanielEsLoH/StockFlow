@@ -16,14 +16,8 @@ export type PaymentMethod =
   | "DAVIPLATA"
   | "OTHER";
 
-// Payment Status
-export type PaymentStatus =
-  | "PENDING"
-  | "PROCESSING"
-  | "COMPLETED"
-  | "FAILED"
-  | "REFUNDED"
-  | "CANCELLED";
+// Invoice Payment Status (from invoice, not payment itself)
+export type InvoicePaymentStatus = "UNPAID" | "PARTIALLY_PAID" | "PAID";
 
 // Payment method display labels in Spanish
 export const PaymentMethodLabels: Record<PaymentMethod, string> = {
@@ -39,61 +33,38 @@ export const PaymentMethodLabels: Record<PaymentMethod, string> = {
   OTHER: "Otro",
 };
 
-// Payment status display labels in Spanish
-export const PaymentStatusLabels: Record<PaymentStatus, string> = {
-  PENDING: "Pendiente",
-  PROCESSING: "Procesando",
-  COMPLETED: "Completado",
-  FAILED: "Fallido",
-  REFUNDED: "Reembolsado",
-  CANCELLED: "Cancelado",
+// Invoice payment status display labels in Spanish
+export const InvoicePaymentStatusLabels: Record<InvoicePaymentStatus, string> = {
+  UNPAID: "Sin pagar",
+  PARTIALLY_PAID: "Parcial",
+  PAID: "Pagada",
 };
 
-// Main Payment entity
+// Main Payment entity — matches backend PaymentResponse
 export interface Payment {
   id: string;
-  paymentNumber: string;
+  tenantId: string;
   invoiceId: string;
-  invoice?: Invoice;
-  customerId: string;
-  customer?: Customer;
-  customerName?: string;
-  invoiceNumber?: string;
   amount: number;
   method: PaymentMethod;
-  status: PaymentStatus;
+  reference: string | null;
+  notes: string | null;
   paymentDate: string;
-  processedAt?: string;
-  reference?: string;
-  referenceNumber?: string;
-  notes?: string;
-  refundedAt?: string;
-  refundAmount?: number;
-  originalPaymentId?: string;
   createdAt: string;
-  updatedAt: string;
+  invoice?: {
+    id: string;
+    invoiceNumber: string;
+    total: number;
+    paymentStatus: InvoicePaymentStatus;
+    customer?: {
+      id: string;
+      name: string;
+    } | null;
+  };
 }
 
-// Lightweight payment type for lists
-export interface PaymentSummary {
-  id: string;
-  paymentNumber: string;
-  invoiceId: string;
-  invoice?: Invoice;
-  customerId: string;
-  customer?: Customer;
-  customerName?: string;
-  invoiceNumber?: string;
-  amount: number;
-  method: PaymentMethod;
-  status: PaymentStatus;
-  paymentDate: string;
-  processedAt?: string;
-  reference?: string;
-  referenceNumber?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// Lightweight payment type for lists (same as Payment since backend returns same shape)
+export type PaymentSummary = Payment;
 
 // Filters for payment list
 export interface PaymentFilters {
@@ -101,7 +72,6 @@ export interface PaymentFilters {
   invoiceId?: string;
   customerId?: string;
   method?: PaymentMethod;
-  status?: PaymentStatus;
   startDate?: string;
   endDate?: string;
   minAmount?: number;
@@ -126,29 +96,10 @@ export interface PaymentsResponse {
 // Create payment data
 export interface CreatePaymentData {
   invoiceId: string;
-  customerId: string;
-  customerName?: string;
-  invoiceNumber?: string;
   amount: number;
   method: PaymentMethod;
-  status?: PaymentStatus;
   paymentDate?: string;
   reference?: string;
-  referenceNumber?: string;
-  notes?: string;
-}
-
-// Update payment data
-export interface UpdatePaymentData {
-  invoiceId?: string;
-  customerId?: string;
-  amount?: number;
-  method?: PaymentMethod;
-  status?: PaymentStatus;
-  paymentDate?: string;
-  processedAt?: string;
-  reference?: string;
-  referenceNumber?: string;
   notes?: string;
 }
 
@@ -160,7 +111,7 @@ export interface PaymentStats {
   totalRefunded: number;
   totalProcessing: number;
   averagePaymentValue: number;
-  paymentsByStatus: Record<PaymentStatus, number>;
+  paymentsByStatus: Record<string, number>;
   paymentsByMethod: Record<PaymentMethod, number>;
   todayPayments: number;
   todayTotal: number;

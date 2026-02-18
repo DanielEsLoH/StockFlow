@@ -11,8 +11,8 @@ import {
   X,
   Calendar,
   Clock,
-  RefreshCcw,
-  CheckCircle,
+  Plus,
+  DollarSign,
   ShieldX,
 } from "lucide-react";
 import { usePermissions } from "~/hooks/usePermissions";
@@ -48,16 +48,14 @@ import { EmptyState } from "~/components/ui/EmptyState";
 import type {
   PaymentFilters,
   PaymentSummary,
-  PaymentStatus,
   PaymentMethod,
 } from "~/types/payment";
-import { PaymentMethodLabels, PaymentStatusLabels } from "~/types/payment";
+import { PaymentMethodLabels } from "~/types/payment";
 
 // Parser config for payment filters
 const paymentFiltersParser = {
   parse: (searchParams: URLSearchParams): PaymentFilters => ({
     search: searchParams.get("search") || undefined,
-    status: (searchParams.get("status") as PaymentStatus) || undefined,
     method: (searchParams.get("method") as PaymentMethod) || undefined,
     customerId: searchParams.get("customerId") || undefined,
     startDate: searchParams.get("startDate") || undefined,
@@ -74,16 +72,6 @@ export const meta: Route.MetaFunction = () => {
     { name: "description", content: "Gestion de pagos" },
   ];
 };
-
-// Status options for filter
-const statusOptions = [
-  { value: "", label: "Todos los estados" },
-  { value: "PENDING", label: "Pendiente" },
-  { value: "COMPLETED", label: "Completado" },
-  { value: "FAILED", label: "Fallido" },
-  { value: "REFUNDED", label: "Reembolsado" },
-  { value: "CANCELLED", label: "Cancelado" },
-];
 
 // Method options for filter
 const methodOptions = [
@@ -103,31 +91,16 @@ const pageSizeOptions = [
   { value: "50", label: "50 por pagina" },
 ];
 
-// Status badge component
-function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
-  const config: Record<
-    PaymentStatus,
-    {
-      label: string;
-      variant:
-        | "default"
-        | "primary"
-        | "secondary"
-        | "success"
-        | "warning"
-        | "error";
-    }
-  > = {
-    PENDING: { label: PaymentStatusLabels.PENDING, variant: "warning" },
-    PROCESSING: { label: PaymentStatusLabels.PROCESSING, variant: "primary" },
-    COMPLETED: { label: PaymentStatusLabels.COMPLETED, variant: "success" },
-    FAILED: { label: PaymentStatusLabels.FAILED, variant: "error" },
-    REFUNDED: { label: PaymentStatusLabels.REFUNDED, variant: "secondary" },
-    CANCELLED: { label: PaymentStatusLabels.CANCELLED, variant: "secondary" },
+// Invoice payment status badge (from invoice, not payment)
+function InvoicePaymentStatusBadge({ status }: { status?: string }) {
+  const config: Record<string, { label: string; variant: "success" | "warning" | "error" | "default" }> = {
+    PAID: { label: "Pagada", variant: "success" },
+    PARTIALLY_PAID: { label: "Parcial", variant: "warning" },
+    UNPAID: { label: "Sin pagar", variant: "error" },
   };
 
-  const statusConfig = config[status] || {
-    label: status || "Desconocido",
+  const statusConfig = config[status || ""] || {
+    label: "—",
     variant: "default" as const,
   };
 
@@ -219,16 +192,10 @@ export default function PaymentsPage() {
     }
   };
 
-  // Check if payment can be deleted (only pending payments)
-  const canDelete = (payment: PaymentSummary) => {
-    return payment.status === "PENDING";
-  };
-
   const payments = paymentsData?.data || [];
   const paginationMeta = paymentsData?.meta;
   const hasActiveFilters =
     filters.search ||
-    filters.status ||
     filters.method ||
     filters.customerId ||
     filters.startDate ||
@@ -246,28 +213,36 @@ export default function PaymentsPage() {
             Gestiona los pagos recibidos
           </p>
         </div>
+        <Link to="/payments/new">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Pago
+          </Button>
+        </Link>
       </PageSection>
 
       {/* Stats Cards */}
       <PageSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            icon={CheckCircle}
+            icon={DollarSign}
             label="Total Recibido"
             value={formatCurrency(stats?.totalReceived || 0)}
             color="success"
           />
           <StatCard
-            icon={Clock}
-            label="Total Pendiente"
-            value={formatCurrency(stats?.totalPending || 0)}
-            color="warning"
+            icon={Calendar}
+            label="Hoy"
+            value={formatCurrency(stats?.todayTotal || 0)}
+            subtitle={`${stats?.todayPayments || 0} pagos`}
+            color="accent"
           />
           <StatCard
-            icon={RefreshCcw}
-            label="Total Reembolsado"
-            value={formatCurrency(stats?.totalRefunded || 0)}
-            color="error"
+            icon={Clock}
+            label="Esta Semana"
+            value={formatCurrency(stats?.weekTotal || 0)}
+            subtitle={`${stats?.weekPayments || 0} pagos`}
+            color="warning"
           />
           <StatCard
             icon={CreditCard}
@@ -288,7 +263,7 @@ export default function PaymentsPage() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
-                  placeholder="Buscar por numero de pago o cliente..."
+                  placeholder="Buscar por referencia o cliente..."
                   className="pl-10"
                   defaultValue={filters.search}
                   onChange={handleSearchChange}
@@ -310,7 +285,6 @@ export default function PaymentsPage() {
                   <Badge variant="primary" className="ml-2">
                     {
                       [
-                        filters.status,
                         filters.method,
                         filters.customerId,
                         filters.startDate,
@@ -339,17 +313,7 @@ export default function PaymentsPage() {
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                    <Select
-                      options={statusOptions}
-                      value={filters.status || ""}
-                      onChange={(value) =>
-                        updateFilters({
-                          status: (value as PaymentStatus) || undefined,
-                        })
-                      }
-                      placeholder="Todos los estados"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
                     <Select
                       options={methodOptions}
                       value={filters.method || ""}
@@ -411,21 +375,18 @@ export default function PaymentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No. Pago</TableHead>
+                  <TableHead>Factura</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    Factura
-                  </TableHead>
                   <TableHead className="text-right">Monto</TableHead>
                   <TableHead className="hidden sm:table-cell">Metodo</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead className="hidden md:table-cell">Estado Factura</TableHead>
                   <TableHead className="hidden lg:table-cell">Fecha</TableHead>
                   <TableHead className="w-25">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <SkeletonTableRow key={i} columns={8} />
+                  <SkeletonTableRow key={i} columns={7} />
                 ))}
               </TableBody>
             </Table>
@@ -459,16 +420,15 @@ export default function PaymentsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>No. Pago</TableHead>
+                    <TableHead>Factura</TableHead>
                     <TableHead>Cliente</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Factura
-                    </TableHead>
                     <TableHead className="text-right">Monto</TableHead>
                     <TableHead className="hidden sm:table-cell">
                       Metodo
                     </TableHead>
-                    <TableHead>Estado</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      Estado Factura
+                    </TableHead>
                     <TableHead className="hidden lg:table-cell">
                       Fecha
                     </TableHead>
@@ -478,74 +438,64 @@ export default function PaymentsPage() {
                 <TableBody>
                   {payments.map((payment, i) => (
                     <AnimatedTableRow key={payment.id} index={i}>
-                        <TableCell>
+                      <TableCell>
+                        {payment.invoice ? (
                           <Link
-                            to={`/payments/${payment.id}`}
+                            to={`/invoices/${payment.invoiceId}`}
                             className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                           >
-                            {payment.paymentNumber}
+                            {payment.invoice.invoiceNumber}
                           </Link>
-                        </TableCell>
-                        <TableCell>
-                          <p className="font-medium text-neutral-900 dark:text-white">
-                            {payment.customer?.name || "Cliente desconocido"}
-                          </p>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {payment.invoice ? (
-                            <Link
-                              to={`/invoices/${payment.invoiceId}`}
-                              className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                        ) : (
+                          <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                            —
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <p className="font-medium text-neutral-900 dark:text-white">
+                          {payment.invoice?.customer?.name || "Cliente desconocido"}
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <p className="font-semibold text-neutral-900 dark:text-white">
+                          {formatCurrency(payment.amount)}
+                        </p>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <PaymentMethodBadge method={payment.method} />
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <InvoicePaymentStatusBadge status={payment.invoice?.paymentStatus} />
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <div className="flex items-center gap-1.5 text-sm text-neutral-700 dark:text-neutral-300">
+                          <Calendar className="h-3.5 w-3.5 text-neutral-400" />
+                          {formatDate(payment.paymentDate)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Link to={`/payments/${payment.id}`}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Ver detalles"
                             >
-                              {payment.invoice.invoiceNumber}
-                            </Link>
-                          ) : (
-                            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                              -
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <p className="font-semibold text-neutral-900 dark:text-white">
-                            {formatCurrency(payment.amount)}
-                          </p>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <PaymentMethodBadge method={payment.method} />
-                        </TableCell>
-                        <TableCell>
-                          <PaymentStatusBadge status={payment.status} />
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          <div className="flex items-center gap-1.5 text-sm text-neutral-700 dark:text-neutral-300">
-                            <Calendar className="h-3.5 w-3.5 text-neutral-400" />
-                            {formatDate(payment.paymentDate)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Link to={`/payments/${payment.id}`}>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Ver detalles"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                            {canDelete(payment) && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setDeletingPayment(payment)}
-                                title="Eliminar"
-                                className="text-error-500 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeletingPayment(payment)}
+                            title="Eliminar"
+                            className="text-error-500 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </AnimatedTableRow>
                   ))}
                 </TableBody>
@@ -585,7 +535,11 @@ export default function PaymentsPage() {
       <DeleteModal
         open={!!deletingPayment}
         onOpenChange={(open) => !open && setDeletingPayment(null)}
-        itemName={deletingPayment?.paymentNumber || ""}
+        itemName={
+          deletingPayment?.invoice?.invoiceNumber
+            ? `Pago de ${deletingPayment.invoice.invoiceNumber}`
+            : "este pago"
+        }
         itemType="pago"
         onConfirm={handleDelete}
         isLoading={deletePayment.isPending}

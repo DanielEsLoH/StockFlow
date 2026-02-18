@@ -173,7 +173,6 @@ export default function NewPaymentPage() {
   const onSubmit = (data: PaymentFormData) => {
     createPayment.mutate({
       invoiceId: data.invoiceId,
-      customerId: data.customerId,
       amount: data.amount,
       method: data.method as PaymentMethod,
       paymentDate: data.paymentDate,

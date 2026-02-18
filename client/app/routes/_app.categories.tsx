@@ -87,7 +87,7 @@ function AccessDenied() {
 }
 
 export default function CategoriesPage() {
-  const { hasPermission } = usePermissions();
+  const { hasPermission, canManageCategories } = usePermissions();
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(
@@ -211,9 +211,11 @@ export default function CategoriesPage() {
             Organiza tus productos en categorias
           </p>
         </div>
-        <Button leftIcon={<Plus className="h-4 w-4" />} onClick={handleCreate}>
-          Nueva Categoria
-        </Button>
+        {canManageCategories && (
+          <Button leftIcon={<Plus className="h-4 w-4" />} onClick={handleCreate}>
+            Nueva Categoria
+          </Button>
+        )}
       </PageSection>
 
       {/* Search */}
@@ -348,25 +350,27 @@ export default function CategoriesPage() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(category)}
-                              title="Editar"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeletingCategory(category)}
-                              title="Eliminar"
-                              className="text-error-500 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          {canManageCategories && (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEdit(category)}
+                                title="Editar"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeletingCategory(category)}
+                                title="Eliminar"
+                                className="text-error-500 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                     </AnimatedTableRow>
                   ))}

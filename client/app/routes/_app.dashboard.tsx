@@ -273,7 +273,7 @@ function QuickActionCard({
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
-  const { canCreateProducts, canViewReports } = usePermissions();
+  const { canCreateProducts, canCreateInvoices, canCreateCustomers, canViewReports } = usePermissions();
 
   const [dateRange, setDateRange] = useState<string>("30d");
   const days = parseInt(dateRange) || 30;
@@ -434,13 +434,15 @@ export default function DashboardPage() {
       {/* Quick Actions - Gradient Cards (filtered by permissions) */}
       <PageSection>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <QuickActionCard
-            to="/invoices/new"
-            icon={Plus}
-            label="Nueva Factura"
-            description="Crear venta rapida"
-            gradient="from-primary-600 to-primary-500"
-          />
+          {canCreateInvoices && (
+            <QuickActionCard
+              to="/invoices/new"
+              icon={Plus}
+              label="Nueva Factura"
+              description="Crear venta rapida"
+              gradient="from-primary-600 to-primary-500"
+            />
+          )}
           {canCreateProducts && (
             <QuickActionCard
               to="/products/new"
@@ -459,13 +461,15 @@ export default function DashboardPage() {
               gradient="from-accent-600 to-accent-500"
             />
           )}
-          <QuickActionCard
-            to="/customers/new"
-            icon={UserPlus}
-            label="Nuevo Cliente"
-            description="Agregar contacto"
-            gradient="from-warning-600 to-warning-500"
-          />
+          {canCreateCustomers && (
+            <QuickActionCard
+              to="/customers/new"
+              icon={UserPlus}
+              label="Nuevo Cliente"
+              description="Agregar contacto"
+              gradient="from-warning-600 to-warning-500"
+            />
+          )}
         </div>
       </PageSection>
 

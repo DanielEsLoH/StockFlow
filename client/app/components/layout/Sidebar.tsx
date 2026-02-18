@@ -306,7 +306,7 @@ function SidebarContent({
   const location = useLocation();
   const { user, tenant } = useAuthStore();
   const { logout, isLoggingOut } = useAuth();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, canSell } = usePermissions();
 
   const userName = user ? `${user.firstName} ${user.lastName}` : "Usuario";
   const userEmail = user?.email || "usuario@email.com";
@@ -407,8 +407,10 @@ function SidebarContent({
         </motion.div>
       </div>
 
-      {/* Caja Quick Access */}
-      <CajaQuickAccess isCollapsed={isCollapsed} onClick={onClose} />
+      {/* Caja Quick Access - only for roles with POS access */}
+      {canSell && (
+        <CajaQuickAccess isCollapsed={isCollapsed} onClick={onClose} />
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 pb-4">

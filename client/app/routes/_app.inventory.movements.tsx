@@ -140,7 +140,7 @@ function AccessDenied() {
 }
 
 export default function InventoryMovementsPage() {
-  const { hasPermission } = usePermissions();
+  const { hasPermission, canAdjustInventory } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
 
   const { filters, updateFilters, clearFilters } =
@@ -221,12 +221,14 @@ export default function InventoryMovementsPage() {
             Historial completo de entradas y salidas de stock
           </p>
         </div>
-        <Link to="/inventory/adjustments/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Ajuste
-          </Button>
-        </Link>
+        {canAdjustInventory && (
+          <Link to="/inventory/adjustments/new">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo Ajuste
+            </Button>
+          </Link>
+        )}
       </PageSection>
 
       {/* Stats Cards */}

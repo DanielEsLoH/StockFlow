@@ -48,6 +48,7 @@ import { DeleteModal } from "~/components/ui/DeleteModal";
 import { EmptyState } from "~/components/ui/EmptyState";
 import type { CustomerFilters, Customer, CustomerType } from "~/types/customer";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
+import { usePermissions } from "~/hooks/usePermissions";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -86,6 +87,7 @@ const customerFiltersParser = {
 };
 
 export default function CustomersPage() {
+  const { canCreateCustomers } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(
     null,
@@ -160,14 +162,16 @@ export default function CustomersPage() {
             </p>
           </div>
         </div>
-        <Link to="/customers/new">
-          <Button
-            variant="gradient"
-            leftIcon={<UserPlus className="h-4 w-4" />}
-          >
-            Nuevo Cliente
-          </Button>
-        </Link>
+        {canCreateCustomers && (
+          <Link to="/customers/new">
+            <Button
+              variant="gradient"
+              leftIcon={<UserPlus className="h-4 w-4" />}
+            >
+              Nuevo Cliente
+            </Button>
+          </Link>
+        )}
       </PageSection>
 
       {/* Quick Stats */}

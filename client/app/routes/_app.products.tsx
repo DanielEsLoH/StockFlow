@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePermissions } from "~/hooks/usePermissions";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Search,
@@ -80,6 +81,7 @@ const productFiltersParser = {
 };
 
 export default function ProductsPage() {
+  const { canCreateProducts } = usePermissions();
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -161,11 +163,13 @@ export default function ProductsPage() {
             </div>
           </div>
         </div>
-        <Link to="/products/new">
-          <Button variant="gradient" leftIcon={<Plus className="h-4 w-4" />}>
-            Nuevo Producto
-          </Button>
-        </Link>
+        {canCreateProducts && (
+          <Link to="/products/new">
+            <Button variant="gradient" leftIcon={<Plus className="h-4 w-4" />}>
+              Nuevo Producto
+            </Button>
+          </Link>
+        )}
       </PageSection>
 
       {/* Search and Filters */}

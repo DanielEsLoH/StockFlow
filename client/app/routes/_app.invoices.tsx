@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePermissions } from "~/hooks/usePermissions";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
   Search,
@@ -209,6 +210,7 @@ const invoiceFiltersParser = {
 
 // Default export used by React Router
 export default function InvoicesPage() {
+  const { canCreateInvoices } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingInvoice, setDeletingInvoice] = useState<InvoiceSummary | null>(
     null,
@@ -285,11 +287,13 @@ export default function InvoicesPage() {
             </p>
           </div>
         </div>
-        <Link to="/invoices/new">
-          <Button variant="gradient" leftIcon={<Plus className="h-4 w-4" />}>
-            Nueva Factura
-          </Button>
-        </Link>
+        {canCreateInvoices && (
+          <Link to="/invoices/new">
+            <Button variant="gradient" leftIcon={<Plus className="h-4 w-4" />}>
+              Nueva Factura
+            </Button>
+          </Link>
+        )}
       </PageSection>
 
       {/* Stats Cards */}

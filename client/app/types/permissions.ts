@@ -86,7 +86,7 @@ export enum Permission {
 /**
  * User role type
  */
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'CONTADOR';
 
 /**
  * Default permissions for each role.
@@ -222,6 +222,34 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.CUSTOMERS_VIEW,
     Permission.CUSTOMERS_CREATE,
     // --- RESTRICTED: No access to inventory, categories, warehouses, payments, DIAN, settings, cash registers ---
+  ],
+
+  CONTADOR: [
+    // Dashboard - financial overview
+    Permission.DASHBOARD_VIEW,
+    // Products - view only (prices, costs, stock levels)
+    Permission.PRODUCTS_VIEW,
+    // Categories - view only
+    Permission.CATEGORIES_VIEW,
+    // Warehouses - view only
+    Permission.WAREHOUSES_VIEW,
+    // Inventory - view only
+    Permission.INVENTORY_VIEW,
+    // Invoices - view only (financial records)
+    Permission.INVOICES_VIEW,
+    // Payments - view only
+    Permission.PAYMENTS_VIEW,
+    // Customers - view only
+    Permission.CUSTOMERS_VIEW,
+    // Reports - view and export (core function for accountants)
+    Permission.REPORTS_VIEW,
+    Permission.REPORTS_EXPORT,
+    // DIAN - view only (tax compliance review)
+    Permission.DIAN_VIEW,
+    // Audit - view and export (accountability)
+    Permission.AUDIT_VIEW,
+    Permission.AUDIT_EXPORT,
+    // --- RESTRICTED: No POS, no create/edit/delete, no users, no settings, no cash registers ---
   ],
 };
 

@@ -96,7 +96,7 @@ function AccessDenied() {
 }
 
 export default function WarehousesPage() {
-  const { hasPermission } = usePermissions();
+  const { hasPermission, canManageWarehouses } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingWarehouse, setDeletingWarehouse] =
     useState<WarehouseType | null>(null);
@@ -170,9 +170,11 @@ export default function WarehousesPage() {
             Gestiona tus bodegas y almacenes
           </p>
         </div>
-        <Link to="/warehouses/new">
-          <Button leftIcon={<Plus className="h-4 w-4" />}>Nueva Bodega</Button>
-        </Link>
+        {canManageWarehouses && (
+          <Link to="/warehouses/new">
+            <Button leftIcon={<Plus className="h-4 w-4" />}>Nueva Bodega</Button>
+          </Link>
+        )}
       </PageSection>
 
       {/* Search and Filters */}
@@ -407,24 +409,28 @@ export default function WarehousesPage() {
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
-                            <Link to={`/warehouses/${warehouse.id}/edit`}>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Editar"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeletingWarehouse(warehouse)}
-                              title="Eliminar"
-                              className="text-error-500 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {canManageWarehouses && (
+                              <>
+                                <Link to={`/warehouses/${warehouse.id}/edit`}>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    title="Editar"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </Link>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDeletingWarehouse(warehouse)}
+                                  title="Eliminar"
+                                  className="text-error-500 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                     </AnimatedTableRow>

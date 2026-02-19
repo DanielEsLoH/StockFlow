@@ -937,7 +937,7 @@ export class PurchaseOrdersService {
   async getStats(): Promise<{
     totalPurchaseOrders: number;
     totalValue: number;
-    receivedValue: number;
+    totalReceived: number;
     purchaseOrdersByStatus: Record<PurchaseOrderStatus, number>;
   }> {
     const tenantId = this.tenantContext.requireTenantId();
@@ -964,21 +964,21 @@ export class PurchaseOrdersService {
     };
 
     let totalValue = 0;
-    let receivedValue = 0;
+    let totalReceived = 0;
 
     for (const po of purchaseOrders) {
       purchaseOrdersByStatus[po.status]++;
       totalValue += Number(po.total);
 
       if (po.status === PurchaseOrderStatus.RECEIVED) {
-        receivedValue += Number(po.total);
+        totalReceived += Number(po.total);
       }
     }
 
     return {
       totalPurchaseOrders: purchaseOrders.length,
       totalValue,
-      receivedValue,
+      totalReceived,
       purchaseOrdersByStatus,
     };
   }

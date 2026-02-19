@@ -101,6 +101,19 @@ export enum Permission {
   PURCHASE_ORDERS_RECEIVE = 'purchase_orders:receive',
   PURCHASE_ORDERS_CANCEL = 'purchase_orders:cancel',
 
+  // === Accounting Module ===
+  ACCOUNTING_VIEW = 'accounting:view',
+  ACCOUNTING_CREATE = 'accounting:create',
+  ACCOUNTING_EDIT = 'accounting:edit',
+  ACCOUNTING_CLOSE_PERIOD = 'accounting:close_period',
+  ACCOUNTING_CONFIG = 'accounting:config',
+
+  // === Bank Module ===
+  BANK_VIEW = 'bank:view',
+  BANK_CREATE = 'bank:create',
+  BANK_IMPORT = 'bank:import',
+  BANK_RECONCILE = 'bank:reconcile',
+
   // === Dashboard Module ===
   DASHBOARD_VIEW = 'dashboard:view',
 }
@@ -229,6 +242,25 @@ export const PERMISSION_CATEGORIES = {
       Permission.PURCHASE_ORDERS_CANCEL,
     ],
   },
+  accounting: {
+    label: 'Contabilidad',
+    permissions: [
+      Permission.ACCOUNTING_VIEW,
+      Permission.ACCOUNTING_CREATE,
+      Permission.ACCOUNTING_EDIT,
+      Permission.ACCOUNTING_CLOSE_PERIOD,
+      Permission.ACCOUNTING_CONFIG,
+    ],
+  },
+  bank: {
+    label: 'Bancos',
+    permissions: [
+      Permission.BANK_VIEW,
+      Permission.BANK_CREATE,
+      Permission.BANK_IMPORT,
+      Permission.BANK_RECONCILE,
+    ],
+  },
   dashboard: {
     label: 'Dashboard',
     permissions: [Permission.DASHBOARD_VIEW],
@@ -333,6 +365,19 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   [Permission.PURCHASE_ORDERS_CONFIRM]: 'Confirmar órdenes de compra',
   [Permission.PURCHASE_ORDERS_RECEIVE]: 'Recibir mercancía',
   [Permission.PURCHASE_ORDERS_CANCEL]: 'Cancelar órdenes de compra',
+
+  // Accounting
+  [Permission.ACCOUNTING_VIEW]: 'Ver contabilidad',
+  [Permission.ACCOUNTING_CREATE]: 'Crear asientos contables',
+  [Permission.ACCOUNTING_EDIT]: 'Editar asientos contables',
+  [Permission.ACCOUNTING_CLOSE_PERIOD]: 'Cerrar periodos contables',
+  [Permission.ACCOUNTING_CONFIG]: 'Configurar contabilidad',
+
+  // Bank
+  [Permission.BANK_VIEW]: 'Ver cuentas bancarias',
+  [Permission.BANK_CREATE]: 'Crear cuentas bancarias',
+  [Permission.BANK_IMPORT]: 'Importar extractos bancarios',
+  [Permission.BANK_RECONCILE]: 'Conciliar extractos',
 
   // Dashboard
   [Permission.DASHBOARD_VIEW]: 'Ver dashboard',

@@ -32,6 +32,8 @@ import { POSSalesModule } from './pos-sales';
 import { DianModule } from './dian';
 import { QuotationsModule } from './quotations';
 import { PurchaseOrdersModule } from './purchase-orders';
+import { AccountingModule } from './accounting';
+import { BankModule } from './bank';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 import { PermissionsModule } from './common/permissions';
@@ -75,6 +77,8 @@ import { PermissionsModule } from './common/permissions';
     DianModule,
     QuotationsModule,
     PurchaseOrdersModule,
+    AccountingModule,
+    BankModule,
   ],
   controllers: [AppController],
   providers: [AppService],

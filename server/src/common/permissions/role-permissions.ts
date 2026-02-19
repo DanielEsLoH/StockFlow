@@ -116,6 +116,19 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.PURCHASE_ORDERS_CONFIRM,
     Permission.PURCHASE_ORDERS_RECEIVE,
     Permission.PURCHASE_ORDERS_CANCEL,
+
+    // Accounting - Full access
+    Permission.ACCOUNTING_VIEW,
+    Permission.ACCOUNTING_CREATE,
+    Permission.ACCOUNTING_EDIT,
+    Permission.ACCOUNTING_CLOSE_PERIOD,
+    Permission.ACCOUNTING_CONFIG,
+
+    // Bank - Full access
+    Permission.BANK_VIEW,
+    Permission.BANK_CREATE,
+    Permission.BANK_IMPORT,
+    Permission.BANK_RECONCILE,
   ],
 
   /**
@@ -211,6 +224,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.PURCHASE_ORDERS_CONFIRM,
     Permission.PURCHASE_ORDERS_RECEIVE,
     // Note: Cannot delete or cancel purchase orders (ADMIN only)
+
+    // Accounting - View only
+    Permission.ACCOUNTING_VIEW,
+    // Note: Cannot create, edit, close periods, or configure accounting
+
+    // Bank - View only
+    Permission.BANK_VIEW,
+    // Note: Cannot create bank accounts, import, or reconcile
   ],
 
   /**
@@ -242,6 +263,18 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.QUOTATIONS_VIEW,
     Permission.SUPPLIERS_VIEW,
     Permission.PURCHASE_ORDERS_VIEW,
+
+    // Accounting - View, create, edit (core function for accountants)
+    Permission.ACCOUNTING_VIEW,
+    Permission.ACCOUNTING_CREATE,
+    Permission.ACCOUNTING_EDIT,
+    // Note: Cannot close periods or configure accounting (ADMIN only)
+
+    // Bank - View, import, reconcile (core function for accountants)
+    Permission.BANK_VIEW,
+    Permission.BANK_IMPORT,
+    Permission.BANK_RECONCILE,
+    // Note: Cannot create bank accounts (ADMIN only)
   ],
 
   [UserRole.EMPLOYEE]: [

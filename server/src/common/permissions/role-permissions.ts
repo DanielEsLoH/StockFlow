@@ -100,6 +100,22 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.QUOTATIONS_EDIT,
     Permission.QUOTATIONS_DELETE,
     Permission.QUOTATIONS_CONVERT,
+
+    // Suppliers - Full access
+    Permission.SUPPLIERS_VIEW,
+    Permission.SUPPLIERS_CREATE,
+    Permission.SUPPLIERS_EDIT,
+    Permission.SUPPLIERS_DELETE,
+
+    // Purchase Orders - Full access
+    Permission.PURCHASE_ORDERS_VIEW,
+    Permission.PURCHASE_ORDERS_CREATE,
+    Permission.PURCHASE_ORDERS_EDIT,
+    Permission.PURCHASE_ORDERS_DELETE,
+    Permission.PURCHASE_ORDERS_SEND,
+    Permission.PURCHASE_ORDERS_CONFIRM,
+    Permission.PURCHASE_ORDERS_RECEIVE,
+    Permission.PURCHASE_ORDERS_CANCEL,
   ],
 
   /**
@@ -180,6 +196,21 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.QUOTATIONS_EDIT,
     Permission.QUOTATIONS_DELETE,
     Permission.QUOTATIONS_CONVERT,
+
+    // Suppliers - View, create, edit (no delete)
+    Permission.SUPPLIERS_VIEW,
+    Permission.SUPPLIERS_CREATE,
+    Permission.SUPPLIERS_EDIT,
+    // Note: Cannot delete suppliers (ADMIN only)
+
+    // Purchase Orders - Operational access (no delete, no cancel)
+    Permission.PURCHASE_ORDERS_VIEW,
+    Permission.PURCHASE_ORDERS_CREATE,
+    Permission.PURCHASE_ORDERS_EDIT,
+    Permission.PURCHASE_ORDERS_SEND,
+    Permission.PURCHASE_ORDERS_CONFIRM,
+    Permission.PURCHASE_ORDERS_RECEIVE,
+    // Note: Cannot delete or cancel purchase orders (ADMIN only)
   ],
 
   /**
@@ -209,6 +240,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.AUDIT_VIEW,
     Permission.AUDIT_EXPORT,
     Permission.QUOTATIONS_VIEW,
+    Permission.SUPPLIERS_VIEW,
+    Permission.PURCHASE_ORDERS_VIEW,
   ],
 
   [UserRole.EMPLOYEE]: [
@@ -240,6 +273,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Quotations - view and create
     Permission.QUOTATIONS_VIEW,
     Permission.QUOTATIONS_CREATE,
+
+    // Suppliers - view only
+    Permission.SUPPLIERS_VIEW,
+
+    // Purchase Orders - view only
+    Permission.PURCHASE_ORDERS_VIEW,
 
     // --- RESTRICTED AREAS ---
     // Inventory: No access (cannot view or adjust stock)

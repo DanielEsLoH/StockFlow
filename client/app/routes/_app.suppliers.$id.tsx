@@ -1,0 +1,370 @@
+import { useState } from "react";
+import { Link, useParams } from "react-router";
+import {
+  ArrowLeft,
+  Building2,
+  Pencil,
+  Trash2,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  DollarSign,
+  ShoppingCart,
+  Clock,
+  User,
+} from "lucide-react";
+import type { Route } from "./+types/_app.suppliers.$id";
+import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
+import { formatDate, formatCurrency } from "~/lib/utils";
+import {
+  useSupplier,
+  useDeleteSupplier,
+} from "~/hooks/useSuppliers";
+import { PaymentTermsLabels } from "~/types/supplier";
+import { Button } from "~/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
+import { Badge } from "~/components/ui/Badge";
+import { StatCard } from "~/components/ui/StatCard";
+import { Skeleton } from "~/components/ui/Skeleton";
+import { DeleteModal } from "~/components/ui/DeleteModal";
+import { usePermissions } from "~/hooks/usePermissions";
+import { Permission } from "~/types/permissions";
+
+// Meta for SEO
+export const meta: Route.MetaFunction = () => {
+  return [
+    { title: "Proveedor - StockFlow" },
+    { name: "description", content: "Detalles del proveedor" },
+  ];
+};
+
+// Loading skeleton
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-10 w-10" />
+        <Skeleton className="h-8 w-48" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <Skeleton className="h-16 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <Card>
+        <CardContent className="p-6">
+          <Skeleton className="h-40 w-full" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function SupplierDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { hasPermission } = usePermissions();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const { data: supplier, isLoading, isError } = useSupplier(id!);
+  const deleteSupplier = useDeleteSupplier();
+
+  const handleDelete = async () => {
+    await deleteSupplier.mutateAsync(id!);
+    setShowDeleteModal(false);
+  };
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (isError || !supplier) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Building2 className="h-16 w-16 text-neutral-300 dark:text-neutral-600 mb-4" />
+        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
+          Proveedor no encontrado
+        </h2>
+        <p className="text-neutral-500 dark:text-neutral-400 mb-4">
+          El proveedor que buscas no existe o fue eliminado.
+        </p>
+        <Link to="/suppliers">
+          <Button variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver a proveedores
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <PageWrapper>
+      {/* Header */}
+      <PageSection>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-4">
+            <Link to="/suppliers">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-50 dark:bg-primary-900/20">
+                <Building2 className="h-7 w-7 text-primary-500" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
+                    {supplier.name}
+                  </h1>
+                  {supplier.status === "ACTIVE" ? (
+                    <Badge variant="success">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Activo
+                    </Badge>
+                  ) : (
+                    <Badge variant="error">
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Inactivo
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="primary">
+                    {PaymentTermsLabels[supplier.paymentTerms]}
+                  </Badge>
+                  {supplier.city && (
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                      {supplier.city}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2 ml-14 sm:ml-0">
+            {hasPermission(Permission.SUPPLIERS_EDIT) && (
+              <Link to={`/suppliers/${id}/edit`}>
+                <Button variant="outline">
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+              </Link>
+            )}
+            {hasPermission(Permission.SUPPLIERS_DELETE) && (
+              <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar
+              </Button>
+            )}
+          </div>
+        </div>
+      </PageSection>
+
+      {/* Stats */}
+      <PageSection>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <StatCard
+            icon={ShoppingCart}
+            label="Total Ordenes"
+            value={supplier.totalOrders || 0}
+            subtitle="ordenes de compra"
+            color="primary"
+          />
+          <StatCard
+            icon={DollarSign}
+            label="Total Comprado"
+            value={formatCurrency(supplier.totalPurchased || 0)}
+            color="success"
+          />
+        </div>
+      </PageSection>
+
+      {/* Details */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Contact Info */}
+        <PageSection>
+          <Card>
+            <CardHeader>
+              <CardTitle>Informacion de Contacto</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                  <Mail className="h-5 w-5 text-neutral-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Email
+                  </p>
+                  <p className="text-neutral-900 dark:text-white">
+                    {supplier.email || "-"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                  <Phone className="h-5 w-5 text-neutral-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Telefono
+                  </p>
+                  <p className="text-neutral-900 dark:text-white">
+                    {supplier.phone || "-"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                  <MapPin className="h-5 w-5 text-neutral-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Direccion
+                  </p>
+                  <p className="text-neutral-900 dark:text-white">
+                    {supplier.address || "-"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                  <MapPin className="h-5 w-5 text-neutral-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Ciudad
+                  </p>
+                  <p className="text-neutral-900 dark:text-white">
+                    {supplier.city || "-"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                  <User className="h-5 w-5 text-neutral-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Persona de Contacto
+                  </p>
+                  <p className="text-neutral-900 dark:text-white">
+                    {supplier.contactName || "-"}
+                  </p>
+                  {supplier.contactPhone && (
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      {supplier.contactPhone}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </PageSection>
+
+        {/* Additional Info */}
+        <PageSection>
+          <Card>
+            <CardHeader>
+              <CardTitle>Informacion Adicional</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Tipo de Documento
+                </span>
+                <span className="font-medium text-neutral-900 dark:text-white">
+                  {supplier.documentType || "-"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Numero de Documento
+                </span>
+                <span className="font-medium text-neutral-900 dark:text-white">
+                  {supplier.documentNumber || "-"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Razon Social
+                </span>
+                <span className="font-medium text-neutral-900 dark:text-white">
+                  {supplier.businessName || "-"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  RUT / Tax ID
+                </span>
+                <span className="font-medium text-neutral-900 dark:text-white">
+                  {supplier.taxId || "-"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Condiciones de Pago
+                </span>
+                <Badge variant="primary" icon={<Clock className="h-3 w-3" />}>
+                  {PaymentTermsLabels[supplier.paymentTerms]}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-neutral-200 dark:border-neutral-700">
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Fecha de Registro
+                </span>
+                <span className="text-neutral-900 dark:text-white flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-neutral-400" />
+                  {formatDate(supplier.createdAt)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-neutral-500 dark:text-neutral-400">
+                  Ultima Actualizacion
+                </span>
+                <span className="text-neutral-900 dark:text-white flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-neutral-400" />
+                  {formatDate(supplier.updatedAt)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </PageSection>
+      </div>
+
+      {/* Notes */}
+      {supplier.notes && (
+        <PageSection>
+          <Card>
+            <CardHeader>
+              <CardTitle>Notas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
+                {supplier.notes}
+              </p>
+            </CardContent>
+          </Card>
+        </PageSection>
+      )}
+
+      {/* Delete Modal */}
+      <DeleteModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        itemName={supplier.name}
+        itemType="proveedor"
+        onConfirm={handleDelete}
+        isLoading={deleteSupplier.isPending}
+      />
+    </PageWrapper>
+  );
+}

@@ -13,6 +13,7 @@ import { CategoriesModule } from './categories';
 import { ProductsModule } from './products';
 import { WarehousesModule } from './warehouses';
 import { CustomersModule } from './customers';
+import { SuppliersModule } from './suppliers';
 import { InvoicesModule } from './invoices';
 import { PaymentsModule } from './payments';
 import { StockMovementsModule } from './stock-movements';
@@ -30,6 +31,7 @@ import { POSSessionsModule } from './pos-sessions';
 import { POSSalesModule } from './pos-sales';
 import { DianModule } from './dian';
 import { QuotationsModule } from './quotations';
+import { PurchaseOrdersModule } from './purchase-orders';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 import { PermissionsModule } from './common/permissions';
@@ -54,6 +56,7 @@ import { PermissionsModule } from './common/permissions';
     ProductsModule,
     WarehousesModule,
     CustomersModule,
+    SuppliersModule,
     InvoicesModule,
     PaymentsModule,
     StockMovementsModule,
@@ -71,6 +74,7 @@ import { PermissionsModule } from './common/permissions';
     POSSalesModule,
     DianModule,
     QuotationsModule,
+    PurchaseOrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

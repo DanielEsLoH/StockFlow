@@ -17,6 +17,7 @@ import {
   X,
   ShoppingCart,
   Building,
+  Building2,
   TrendingUp,
   Receipt,
   ArrowUpDown,
@@ -118,6 +119,23 @@ const navSections: NavSection[] = [
         href: "/customers",
         icon: Users,
         permission: Permission.CUSTOMERS_VIEW,
+      },
+    ],
+  },
+  {
+    label: "Compras",
+    items: [
+      {
+        name: "Proveedores",
+        href: "/suppliers",
+        icon: Building2,
+        permission: Permission.SUPPLIERS_VIEW,
+      },
+      {
+        name: "Ordenes de Compra",
+        href: "/purchases",
+        icon: ShoppingCart,
+        permission: Permission.PURCHASE_ORDERS_VIEW,
       },
     ],
   },

@@ -223,6 +223,24 @@ export const queryKeys = {
     stats: () => [...queryKeys.quotations.all, "stats"] as const,
   },
 
+  // Suppliers
+  suppliers: {
+    all: ["suppliers"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.suppliers.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.suppliers.all, id] as const,
+    stats: () => [...queryKeys.suppliers.all, "stats"] as const,
+  },
+
+  // Purchase Orders
+  purchaseOrders: {
+    all: ["purchaseOrders"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.purchaseOrders.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.purchaseOrders.all, id] as const,
+    stats: () => [...queryKeys.purchaseOrders.all, "stats"] as const,
+  },
+
   // Billing
   billing: {
     all: ["billing"] as const,

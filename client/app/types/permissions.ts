@@ -86,6 +86,22 @@ export enum Permission {
   QUOTATIONS_DELETE = 'quotations:delete',
   QUOTATIONS_CONVERT = 'quotations:convert',
 
+  // === Suppliers Module ===
+  SUPPLIERS_VIEW = 'suppliers:view',
+  SUPPLIERS_CREATE = 'suppliers:create',
+  SUPPLIERS_EDIT = 'suppliers:edit',
+  SUPPLIERS_DELETE = 'suppliers:delete',
+
+  // === Purchase Orders Module ===
+  PURCHASE_ORDERS_VIEW = 'purchase_orders:view',
+  PURCHASE_ORDERS_CREATE = 'purchase_orders:create',
+  PURCHASE_ORDERS_EDIT = 'purchase_orders:edit',
+  PURCHASE_ORDERS_DELETE = 'purchase_orders:delete',
+  PURCHASE_ORDERS_SEND = 'purchase_orders:send',
+  PURCHASE_ORDERS_CONFIRM = 'purchase_orders:confirm',
+  PURCHASE_ORDERS_RECEIVE = 'purchase_orders:receive',
+  PURCHASE_ORDERS_CANCEL = 'purchase_orders:cancel',
+
   // === Dashboard Module ===
   DASHBOARD_VIEW = 'dashboard:view',
 }
@@ -169,6 +185,20 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.QUOTATIONS_EDIT,
     Permission.QUOTATIONS_DELETE,
     Permission.QUOTATIONS_CONVERT,
+    // Suppliers - Full access
+    Permission.SUPPLIERS_VIEW,
+    Permission.SUPPLIERS_CREATE,
+    Permission.SUPPLIERS_EDIT,
+    Permission.SUPPLIERS_DELETE,
+    // Purchase Orders - Full access
+    Permission.PURCHASE_ORDERS_VIEW,
+    Permission.PURCHASE_ORDERS_CREATE,
+    Permission.PURCHASE_ORDERS_EDIT,
+    Permission.PURCHASE_ORDERS_DELETE,
+    Permission.PURCHASE_ORDERS_SEND,
+    Permission.PURCHASE_ORDERS_CONFIRM,
+    Permission.PURCHASE_ORDERS_RECEIVE,
+    Permission.PURCHASE_ORDERS_CANCEL,
   ],
 
   MANAGER: [
@@ -225,6 +255,17 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.QUOTATIONS_EDIT,
     Permission.QUOTATIONS_DELETE,
     Permission.QUOTATIONS_CONVERT,
+    // Suppliers - View, create, edit (no delete)
+    Permission.SUPPLIERS_VIEW,
+    Permission.SUPPLIERS_CREATE,
+    Permission.SUPPLIERS_EDIT,
+    // Purchase Orders - Operational access (no delete, no cancel)
+    Permission.PURCHASE_ORDERS_VIEW,
+    Permission.PURCHASE_ORDERS_CREATE,
+    Permission.PURCHASE_ORDERS_EDIT,
+    Permission.PURCHASE_ORDERS_SEND,
+    Permission.PURCHASE_ORDERS_CONFIRM,
+    Permission.PURCHASE_ORDERS_RECEIVE,
   ],
 
   EMPLOYEE: [
@@ -243,6 +284,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Quotations - View and create
     Permission.QUOTATIONS_VIEW,
     Permission.QUOTATIONS_CREATE,
+    // Suppliers - View only
+    Permission.SUPPLIERS_VIEW,
+    // Purchase Orders - View only
+    Permission.PURCHASE_ORDERS_VIEW,
     // --- RESTRICTED: No access to inventory, categories, warehouses, payments, DIAN, settings, cash registers ---
   ],
 
@@ -273,6 +318,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.AUDIT_EXPORT,
     // Quotations - View only
     Permission.QUOTATIONS_VIEW,
+    // Suppliers - View only
+    Permission.SUPPLIERS_VIEW,
+    // Purchase Orders - View only
+    Permission.PURCHASE_ORDERS_VIEW,
     // --- RESTRICTED: No POS, no create/edit/delete, no users, no settings, no cash registers ---
   ],
 };
@@ -379,6 +428,28 @@ export const PERMISSION_CATEGORIES = {
       Permission.QUOTATIONS_CONVERT,
     ],
   },
+  suppliers: {
+    label: 'Proveedores',
+    permissions: [
+      Permission.SUPPLIERS_VIEW,
+      Permission.SUPPLIERS_CREATE,
+      Permission.SUPPLIERS_EDIT,
+      Permission.SUPPLIERS_DELETE,
+    ],
+  },
+  purchaseOrders: {
+    label: 'Órdenes de Compra',
+    permissions: [
+      Permission.PURCHASE_ORDERS_VIEW,
+      Permission.PURCHASE_ORDERS_CREATE,
+      Permission.PURCHASE_ORDERS_EDIT,
+      Permission.PURCHASE_ORDERS_DELETE,
+      Permission.PURCHASE_ORDERS_SEND,
+      Permission.PURCHASE_ORDERS_CONFIRM,
+      Permission.PURCHASE_ORDERS_RECEIVE,
+      Permission.PURCHASE_ORDERS_CANCEL,
+    ],
+  },
   dashboard: {
     label: 'Dashboard',
     permissions: [Permission.DASHBOARD_VIEW],
@@ -467,6 +538,22 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   [Permission.QUOTATIONS_EDIT]: 'Editar cotizaciones',
   [Permission.QUOTATIONS_DELETE]: 'Eliminar cotizaciones',
   [Permission.QUOTATIONS_CONVERT]: 'Convertir cotizaciones a facturas',
+
+  // Suppliers
+  [Permission.SUPPLIERS_VIEW]: 'Ver proveedores',
+  [Permission.SUPPLIERS_CREATE]: 'Crear proveedores',
+  [Permission.SUPPLIERS_EDIT]: 'Editar proveedores',
+  [Permission.SUPPLIERS_DELETE]: 'Eliminar proveedores',
+
+  // Purchase Orders
+  [Permission.PURCHASE_ORDERS_VIEW]: 'Ver órdenes de compra',
+  [Permission.PURCHASE_ORDERS_CREATE]: 'Crear órdenes de compra',
+  [Permission.PURCHASE_ORDERS_EDIT]: 'Editar órdenes de compra',
+  [Permission.PURCHASE_ORDERS_DELETE]: 'Eliminar órdenes de compra',
+  [Permission.PURCHASE_ORDERS_SEND]: 'Enviar órdenes de compra',
+  [Permission.PURCHASE_ORDERS_CONFIRM]: 'Confirmar órdenes de compra',
+  [Permission.PURCHASE_ORDERS_RECEIVE]: 'Recibir mercancía',
+  [Permission.PURCHASE_ORDERS_CANCEL]: 'Cancelar órdenes de compra',
 
   // Dashboard
   [Permission.DASHBOARD_VIEW]: 'Ver dashboard',

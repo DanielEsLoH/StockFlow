@@ -60,6 +60,18 @@ export default [
     route("quotations/:id", "routes/_app.quotations.$id.tsx"),
     route("quotations/:id/edit", "routes/_app.quotations.$id.edit.tsx"),
 
+    // Suppliers module
+    route("suppliers", "routes/_app.suppliers.tsx"),
+    route("suppliers/new", "routes/_app.suppliers.new.tsx"),
+    route("suppliers/:id", "routes/_app.suppliers.$id.tsx"),
+    route("suppliers/:id/edit", "routes/_app.suppliers.$id.edit.tsx"),
+
+    // Purchase Orders module
+    route("purchases", "routes/_app.purchases.tsx"),
+    route("purchases/new", "routes/_app.purchases.new.tsx"),
+    route("purchases/:id", "routes/_app.purchases.$id.tsx"),
+    route("purchases/:id/edit", "routes/_app.purchases.$id.edit.tsx"),
+
     // Invoices module
     route("invoices", "routes/_app.invoices.tsx"),
     route("invoices/new", "routes/_app.invoices.new.tsx"),

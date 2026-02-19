@@ -282,6 +282,8 @@ model Tenant {
   dianDocuments         DianDocument[]
   billingTransactions   BillingTransaction[]
   quotations            Quotation[]
+  suppliers             Supplier[]
+  purchaseOrders        PurchaseOrder[]
 
   @@map("tenants")
 }
@@ -323,6 +325,7 @@ model User {
   posSessions         POSSession[]
   permissionOverrides UserPermissionOverride[]
   quotations          Quotation[]
+  purchaseOrders      PurchaseOrder[]
 
   @@index([tenantId])
   @@index([warehouseId])
@@ -389,10 +392,11 @@ model Product {
 
   tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category       Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  invoiceItems   InvoiceItem[]
-  quotationItems QuotationItem[]
-  movements      StockMovement[]
-  warehouseStock WarehouseStock[]
+  invoiceItems       InvoiceItem[]
+  quotationItems     QuotationItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  movements          StockMovement[]
+  warehouseStock     WarehouseStock[]
 
   @@unique([tenantId, sku])
   @@index([tenantId])
@@ -416,13 +420,14 @@ model Warehouse {
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
 
-  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  users         User[]
-  invoices      Invoice[]
-  invitations   Invitation[]
-  stocks        WarehouseStock[]
-  movements     StockMovement[]
-  cashRegisters CashRegister[]
+  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users          User[]
+  invoices       Invoice[]
+  invitations    Invitation[]
+  stocks         WarehouseStock[]
+  movements      StockMovement[]
+  cashRegisters  CashRegister[]
+  purchaseOrders PurchaseOrder[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -454,17 +459,19 @@ model StockMovement {
   productId   String       @map("product_id")
   warehouseId String?      @map("warehouse_id")
   userId      String?      @map("user_id")
-  type        MovementType
-  quantity    Int
-  reason      String?
-  notes       String?
-  invoiceId   String?      @map("invoice_id")
-  createdAt   DateTime     @default(now()) @map("created_at")
+  type            MovementType
+  quantity        Int
+  reason          String?
+  notes           String?
+  invoiceId       String?      @map("invoice_id")
+  purchaseOrderId String?      @map("purchase_order_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
 
-  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  warehouse Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
-  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse     Warehouse?     @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([productId])
@@ -472,6 +479,7 @@ model StockMovement {
   @@index([tenantId, createdAt])
   @@index([tenantId, type])
   @@index([invoiceId])
+  @@index([purchaseOrderId])
   @@map("stock_movements")
 }
 
@@ -958,6 +966,25 @@ model DianDocument {
 }
 
 // ============================
+// Purchases
+// ============================
+
+enum PurchaseOrderStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  RECEIVED
+  CANCELLED
+}
+
+enum PaymentTerms {
+  IMMEDIATE
+  NET_15
+  NET_30
+  NET_60
+}
+
+// ============================
 // Quotations
 // ============================
 
@@ -1022,4 +1049,97 @@ model QuotationItem {
 
   @@index([quotationId])
   @@map("quotation_items")
+}
+
+// ============================
+// Suppliers & Purchase Orders
+// ============================
+
+model Supplier {
+  id             String         @id @default(cuid())
+  tenantId       String         @map("tenant_id")
+  name           String
+  email          String?
+  phone          String?
+  documentType   DocumentType   @default(NIT) @map("document_type")
+  documentNumber String         @map("document_number")
+  address        String?
+  city           String?
+  state          String?
+  businessName   String?        @map("business_name")
+  taxId          String?        @map("tax_id")
+  notes          String?
+  status         CustomerStatus @default(ACTIVE)
+  paymentTerms   PaymentTerms   @default(NET_30) @map("payment_terms")
+  contactName    String?        @map("contact_name")
+  contactPhone   String?        @map("contact_phone")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseOrders PurchaseOrder[]
+
+  @@unique([tenantId, documentNumber])
+  @@index([tenantId])
+  @@index([tenantId, name])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id                   String              @id @default(cuid())
+  tenantId             String              @map("tenant_id")
+  purchaseOrderNumber  String              @map("purchase_order_number")
+  supplierId           String              @map("supplier_id")
+  userId               String?             @map("user_id")
+  warehouseId          String              @map("warehouse_id")
+  status               PurchaseOrderStatus @default(DRAFT)
+  paymentStatus        PaymentStatus       @default(UNPAID) @map("payment_status")
+  subtotal             Decimal             @default(0) @db.Decimal(12, 2)
+  tax                  Decimal             @default(0) @db.Decimal(12, 2)
+  discount             Decimal             @default(0) @db.Decimal(12, 2)
+  total                Decimal             @default(0) @db.Decimal(12, 2)
+  issueDate            DateTime            @default(now()) @map("issue_date")
+  expectedDeliveryDate DateTime?           @map("expected_delivery_date")
+  receivedDate         DateTime?           @map("received_date")
+  notes                String?
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  tenant    Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier  Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  user      User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  warehouse Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  items     PurchaseOrderItem[]
+  movements StockMovement[]
+
+  @@unique([tenantId, purchaseOrderNumber])
+  @@index([tenantId])
+  @@index([supplierId])
+  @@index([warehouseId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String      @id @default(cuid())
+  purchaseOrderId String      @map("purchase_order_id")
+  productId       String      @map("product_id")
+  quantity        Int         @default(1)
+  unitPrice       Decimal     @default(0) @map("unit_price") @db.Decimal(12, 2)
+  taxRate         Decimal     @default(19) @map("tax_rate") @db.Decimal(5, 2)
+  taxCategory     TaxCategory @default(GRAVADO_19) @map("tax_category")
+  discount        Decimal     @default(0) @db.Decimal(12, 2)
+  subtotal        Decimal     @default(0) @db.Decimal(12, 2)
+  tax             Decimal     @default(0) @db.Decimal(12, 2)
+  total           Decimal     @default(0) @db.Decimal(12, 2)
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseOrderId])
+  @@map("purchase_order_items")
 }

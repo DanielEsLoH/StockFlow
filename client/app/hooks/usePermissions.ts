@@ -169,6 +169,16 @@ export function usePermissions() {
       canDeleteQuotations: hasPermission(Permission.QUOTATIONS_DELETE),
       canConvertQuotations: hasPermission(Permission.QUOTATIONS_CONVERT),
 
+      // Purchase Orders
+      canViewPurchaseOrders: hasPermission(Permission.PURCHASE_ORDERS_VIEW),
+      canCreatePurchaseOrders: hasPermission(Permission.PURCHASE_ORDERS_CREATE),
+      canEditPurchaseOrders: hasPermission(Permission.PURCHASE_ORDERS_EDIT),
+      canDeletePurchaseOrders: hasPermission(Permission.PURCHASE_ORDERS_DELETE),
+      canSendPurchaseOrders: hasPermission(Permission.PURCHASE_ORDERS_SEND),
+      canConfirmPurchaseOrders: hasPermission(Permission.PURCHASE_ORDERS_CONFIRM),
+      canReceivePurchaseOrders: hasPermission(Permission.PURCHASE_ORDERS_RECEIVE),
+      canCancelPurchaseOrders: hasPermission(Permission.PURCHASE_ORDERS_CANCEL),
+
       // Dashboard
       canViewDashboard: hasPermission(Permission.DASHBOARD_VIEW),
     }),

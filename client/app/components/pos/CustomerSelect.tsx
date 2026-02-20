@@ -10,6 +10,8 @@ interface CustomerSelectProps {
   onSelectCustomer: (customerId: string | null) => void;
   isLoading?: boolean;
   className?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function CustomerSelect({
@@ -18,11 +20,28 @@ export function CustomerSelect({
   onSelectCustomer,
   isLoading = false,
   className,
+  open: controlledOpen,
+  onOpenChange,
 }: CustomerSelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = controlledOpen ?? internalOpen;
   const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const onOpenChangeRef = useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
+
+  const setIsOpen = (value: boolean) => {
+    setInternalOpen(value);
+    onOpenChangeRef.current?.(value);
+  };
+
+  // Sync controlled open → internal
+  useEffect(() => {
+    if (controlledOpen !== undefined) {
+      setInternalOpen(controlledOpen);
+    }
+  }, [controlledOpen]);
 
   // Close on click outside
   useEffect(() => {
@@ -31,7 +50,8 @@ export function CustomerSelect({
         containerRef.current &&
         !containerRef.current.contains(event.target as Node)
       ) {
-        setIsOpen(false);
+        setInternalOpen(false);
+        onOpenChangeRef.current?.(false);
         setSearchQuery("");
       }
     };
@@ -99,7 +119,7 @@ export function CustomerSelect({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex h-12 w-full min-w-[240px] items-center gap-3 rounded-xl border px-4 transition-all",
+          "flex h-12 w-full items-center gap-3 rounded-xl border px-4 transition-all sm:min-w-[240px]",
           "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2",
           isOpen
             ? "border-primary-500 bg-white dark:bg-neutral-800"
@@ -163,7 +183,7 @@ export function CustomerSelect({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-full min-w-[300px] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
+        <div className="absolute left-0 top-full z-50 mt-2 w-[calc(100vw-2rem)] max-w-[calc(100vw-1rem)] sm:w-full sm:min-w-[300px] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-800">
           {/* Search Input */}
           <div className="border-b border-neutral-200 p-2 dark:border-neutral-700">
             <div className="relative">

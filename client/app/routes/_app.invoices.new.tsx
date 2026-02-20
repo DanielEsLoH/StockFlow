@@ -60,6 +60,7 @@ export default function POSPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("products");
+  const [customerSelectOpen, setCustomerSelectOpen] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [invoiceMode, setInvoiceMode] = useState<InvoiceMode>("POS");
@@ -421,7 +422,7 @@ export default function POSPage() {
         </div>
 
         {/* Row 2: Mode toggle + Warehouse + Customer selects */}
-        <div className="flex items-center gap-3 px-3 pb-3 sm:px-4">
+        <div className="flex flex-wrap items-center gap-2 px-3 pb-3 sm:flex-nowrap sm:gap-3 sm:px-4">
           {/* Invoice Mode Toggle */}
           <div className="flex items-center rounded-lg border border-neutral-200 dark:border-neutral-700 overflow-hidden shrink-0">
             <button
@@ -464,6 +465,8 @@ export default function POSPage() {
             onSelectCustomer={setCustomer}
             isLoading={isLoadingCustomers}
             className="flex-1 sm:flex-none sm:w-64"
+            open={customerSelectOpen}
+            onOpenChange={setCustomerSelectOpen}
           />
 
           {/* Quick Action Buttons - Desktop only */}
@@ -607,14 +610,7 @@ export default function POSPage() {
               onClearCart={handleClearCart}
               onSetNotes={setNotes}
               onSetGlobalDiscount={setGlobalDiscount}
-              onSelectCustomer={() => {
-                const customerSelect = document.querySelector(
-                  "[data-customer-select]",
-                );
-                if (customerSelect instanceof HTMLElement) {
-                  customerSelect.click();
-                }
-              }}
+              onSelectCustomer={() => requestAnimationFrame(() => setCustomerSelectOpen(true))}
               onCheckout={handleCheckout}
               invoiceMode={invoiceMode}
               className="flex-1"
@@ -720,7 +716,7 @@ export default function POSPage() {
                     onClearCart={handleClearCart}
                     onSetNotes={setNotes}
                     onSetGlobalDiscount={setGlobalDiscount}
-                    onSelectCustomer={() => setMobileTab("products")}
+                    onSelectCustomer={() => requestAnimationFrame(() => setCustomerSelectOpen(true))}
                     onCheckout={handleCheckout}
                     invoiceMode={invoiceMode}
                     className="flex h-full flex-col"

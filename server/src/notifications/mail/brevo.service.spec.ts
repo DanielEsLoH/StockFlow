@@ -1678,5 +1678,120 @@ describe('BrevoService', () => {
         expect(result.success).toBe(true);
       });
     });
+
+    describe('sendSubscriptionPaymentEmail', () => {
+      const basePaymentData = {
+        to: 'user@example.com',
+        firstName: 'Carlos',
+        planName: 'PRO',
+        period: 'MONTHLY',
+        amountCOP: 219900,
+        paymentMethod: 'CARD',
+        transactionRef: 'TXN-123456',
+        endDate: new Date('2025-06-15'),
+        features: ['Inventario ilimitado', 'Facturación electrónica'],
+        isRenewal: false,
+      };
+
+      it('should send first payment confirmation email successfully', async () => {
+        const result = await brevoServiceConfigured.sendSubscriptionPaymentEmail(basePaymentData);
+
+        expect(result.success).toBe(true);
+        expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
+      });
+
+      it('should include plan name in subject for first payment', async () => {
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail(basePaymentData);
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.subject).toContain('Confirmación de pago');
+        expect(callArgs.subject).toContain('PRO');
+      });
+
+      it('should include dashboard link for first payment', async () => {
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail(basePaymentData);
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('/dashboard');
+        expect(callArgs.textContent).toContain('/dashboard');
+      });
+
+      it('should include features list for first payment', async () => {
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail(basePaymentData);
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('Inventario ilimitado');
+        expect(callArgs.htmlContent).toContain('Facturación electrónica');
+      });
+
+      it('should send renewal email with different subject', async () => {
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail({
+          ...basePaymentData,
+          isRenewal: true,
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.subject).toContain('Recibo de renovación');
+        expect(callArgs.subject).toContain('PRO');
+      });
+
+      it('should include billing link for renewal', async () => {
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail({
+          ...basePaymentData,
+          isRenewal: true,
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('/billing');
+        expect(callArgs.textContent).toContain('/billing');
+      });
+
+      it('should format payment method correctly in email', async () => {
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail({
+          ...basePaymentData,
+          paymentMethod: 'PSE',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('PSE');
+      });
+
+      it('should include transaction reference', async () => {
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail(basePaymentData);
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('TXN-123456');
+      });
+
+      it('should display period in Spanish', async () => {
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail({
+          ...basePaymentData,
+          period: 'ANNUAL',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('Anual');
+      });
+
+      it('should fall back to raw period string for unknown period', async () => {
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail({
+          ...basePaymentData,
+          period: 'CUSTOM',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('CUSTOM');
+      });
+
+      it('should handle unknown payment method by displaying raw value', async () => {
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail({
+          ...basePaymentData,
+          paymentMethod: 'CRYPTO',
+        });
+
+        const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
+        expect(callArgs.htmlContent).toContain('CRYPTO');
+      });
+    });
   });
 });

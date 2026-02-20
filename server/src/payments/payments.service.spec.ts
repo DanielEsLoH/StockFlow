@@ -5,6 +5,7 @@ import { PaymentsService } from './payments.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AccountingBridgeService } from '../accounting';
 import type { CreatePaymentDto, FilterPaymentsDto } from './dto';
 
 describe('PaymentsService', () => {
@@ -106,6 +107,10 @@ describe('PaymentsService', () => {
         {
           provide: NotificationsService,
           useValue: mockNotificationsService,
+        },
+        {
+          provide: AccountingBridgeService,
+          useValue: { onPaymentCreated: jest.fn().mockResolvedValue(undefined) },
         },
       ],
     }).compile();

@@ -10,6 +10,7 @@ import { InvoiceStatus, PaymentStatus } from '@prisma/client';
 import { InvoicesService } from './invoices.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { AccountingBridgeService } from '../accounting';
 import type {
   CreateInvoiceDto,
   UpdateInvoiceDto,
@@ -219,6 +220,14 @@ describe('InvoicesService', () => {
         InvoicesService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
+        {
+          provide: AccountingBridgeService,
+          useValue: {
+            onInvoiceCreated: jest.fn().mockResolvedValue(undefined),
+            onPaymentCreated: jest.fn().mockResolvedValue(undefined),
+            onInvoiceCancelled: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 

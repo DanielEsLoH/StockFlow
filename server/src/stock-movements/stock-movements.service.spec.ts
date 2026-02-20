@@ -4,6 +4,7 @@ import { MovementType } from '@prisma/client';
 import { StockMovementsService } from './stock-movements.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { AccountingBridgeService } from '../accounting';
 import type { CreateMovementDto, FilterMovementsDto } from './dto';
 
 describe('StockMovementsService', () => {
@@ -105,6 +106,10 @@ describe('StockMovementsService', () => {
         StockMovementsService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
+        {
+          provide: AccountingBridgeService,
+          useValue: { onStockAdjustment: jest.fn().mockResolvedValue(undefined) },
+        },
       ],
     }).compile();
 

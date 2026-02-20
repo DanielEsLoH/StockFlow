@@ -4,6 +4,7 @@ export { JournalEntriesService } from './journal-entries.service';
 export { AccountingPeriodsService } from './accounting-periods.service';
 export { AccountingConfigService } from './accounting-config.service';
 export { AccountingSetupService } from './accounting-setup.service';
+export { AccountingBridgeService } from './accounting-bridge.service';
 export type { AccountResponse, AccountTreeResponse } from './accounts.service';
 export type {
   JournalEntryResponse,
@@ -20,3 +21,12 @@ export {
   CreateAccountingPeriodDto,
   UpdateAccountingConfigDto,
 } from './dto';
+export { AccountingReportsService } from './reports/accounting-reports.service';
+export type {
+  TrialBalanceReport,
+  GeneralJournalReport,
+  GeneralLedgerReport,
+  BalanceSheetReport,
+  IncomeStatementReport,
+  CashFlowReport,
+} from './reports/accounting-reports.service';

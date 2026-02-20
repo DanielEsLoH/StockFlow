@@ -23,6 +23,11 @@ import {
   ArrowUpDown,
   ArrowLeftRight,
   ClipboardList,
+  BookOpen,
+  BookMarked,
+  CalendarDays,
+  PieChart,
+  Landmark,
 } from "lucide-react";
 import { cn, getInitials, formatCurrency } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
@@ -136,6 +141,46 @@ const navSections: NavSection[] = [
         href: "/purchases",
         icon: ShoppingCart,
         permission: Permission.PURCHASE_ORDERS_VIEW,
+      },
+    ],
+  },
+  {
+    label: "Contabilidad",
+    items: [
+      {
+        name: "Plan de Cuentas",
+        href: "/accounting/accounts",
+        icon: BookOpen,
+        permission: Permission.ACCOUNTING_VIEW,
+      },
+      {
+        name: "Asientos Contables",
+        href: "/accounting/journal-entries",
+        icon: BookMarked,
+        permission: Permission.ACCOUNTING_VIEW,
+      },
+      {
+        name: "Periodos",
+        href: "/accounting/periods",
+        icon: CalendarDays,
+        permission: Permission.ACCOUNTING_VIEW,
+      },
+      {
+        name: "Estados Financieros",
+        href: "/accounting/reports",
+        icon: PieChart,
+        permission: Permission.ACCOUNTING_VIEW,
+      },
+    ],
+  },
+  {
+    label: "Bancos",
+    items: [
+      {
+        name: "Cuentas Bancarias",
+        href: "/bank/accounts",
+        icon: Landmark,
+        permission: Permission.BANK_VIEW,
       },
     ],
   },

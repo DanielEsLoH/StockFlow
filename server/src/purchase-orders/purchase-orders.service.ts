@@ -20,6 +20,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { AccountingBridgeService } from '../accounting';
 import {
   CreatePurchaseOrderDto,
   UpdatePurchaseOrderDto,
@@ -136,6 +137,7 @@ export class PurchaseOrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
+    private readonly accountingBridge: AccountingBridgeService,
   ) {}
 
   /**
@@ -867,6 +869,16 @@ export class PurchaseOrdersService {
     this.logger.log(
       `Purchase order received: ${result.purchaseOrderNumber} (${result.id}) - ${result.items.length} items processed`,
     );
+
+    // Non-blocking: generate accounting entry for purchase
+    this.accountingBridge.onPurchaseReceived({
+      tenantId: result.tenantId,
+      purchaseOrderId: result.id,
+      purchaseOrderNumber: result.purchaseOrderNumber,
+      subtotal: Number(result.subtotal),
+      tax: Number(result.tax),
+      total: Number(result.total),
+    }).catch(() => {});
 
     return this.mapToResponse(result);
   }

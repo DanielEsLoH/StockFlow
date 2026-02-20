@@ -5,6 +5,7 @@ import {
   WarehouseMovementsController,
 } from './stock-movements.controller';
 import { StockMovementsService } from './stock-movements.service';
+import { AccountingModule } from '../accounting';
 
 /**
  * StockMovementsModule provides stock movement tracking functionality including:
@@ -39,6 +40,7 @@ import { StockMovementsService } from './stock-movements.service';
  * - GET /warehouses/:warehouseId/movements - Warehouse history (all roles)
  */
 @Module({
+  imports: [AccountingModule],
   controllers: [
     StockMovementsController,
     ProductMovementsController,

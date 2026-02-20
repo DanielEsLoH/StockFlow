@@ -119,5 +119,56 @@ export default [
     route("dian/config", "routes/_app.dian.config.tsx"),
     route("dian/documents", "routes/_app.dian.documents.tsx"),
     route("dian/documents/:id", "routes/_app.dian.documents.$id.tsx"),
+
+    // Accounting module
+    route("accounting/accounts", "routes/_app.accounting.accounts.tsx"),
+    route(
+      "accounting/journal-entries",
+      "routes/_app.accounting.journal-entries.tsx",
+    ),
+    route(
+      "accounting/journal-entries/new",
+      "routes/_app.accounting.journal-entries.new.tsx",
+    ),
+    route(
+      "accounting/journal-entries/:id",
+      "routes/_app.accounting.journal-entries.$id.tsx",
+    ),
+    route("accounting/periods", "routes/_app.accounting.periods.tsx"),
+    route("accounting/reports", "routes/_app.accounting.reports.tsx"),
+    route(
+      "accounting/reports/trial-balance",
+      "routes/_app.accounting.reports.trial-balance.tsx",
+    ),
+    route(
+      "accounting/reports/general-journal",
+      "routes/_app.accounting.reports.general-journal.tsx",
+    ),
+    route(
+      "accounting/reports/general-ledger",
+      "routes/_app.accounting.reports.general-ledger.tsx",
+    ),
+    route(
+      "accounting/reports/balance-sheet",
+      "routes/_app.accounting.reports.balance-sheet.tsx",
+    ),
+    route(
+      "accounting/reports/income-statement",
+      "routes/_app.accounting.reports.income-statement.tsx",
+    ),
+    route(
+      "accounting/reports/cash-flow",
+      "routes/_app.accounting.reports.cash-flow.tsx",
+    ),
+
+    // Bank module
+    route("bank/accounts", "routes/_app.bank.accounts.tsx"),
+    route("bank/accounts/new", "routes/_app.bank.accounts.new.tsx"),
+    route("bank/accounts/:id", "routes/_app.bank.accounts.$id.tsx"),
+    route("bank/statements/:id", "routes/_app.bank.statements.$id.tsx"),
+    route(
+      "bank/reconciliation/:statementId",
+      "routes/_app.bank.reconciliation.$statementId.tsx",
+    ),
   ]),
 ] satisfies RouteConfig;

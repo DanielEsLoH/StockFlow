@@ -248,4 +248,41 @@ export const queryKeys = {
     plans: () => [...queryKeys.billing.all, "plans"] as const,
     history: () => [...queryKeys.billing.all, "history"] as const,
   },
+
+  // Accounting
+  accounting: {
+    all: ["accounting"] as const,
+    config: () => ["accounting", "config"] as const,
+    accounts: () => ["accounting", "accounts"] as const,
+    accountTree: () => ["accounting", "account-tree"] as const,
+    accountDetail: (id: string) => ["accounting", "account", id] as const,
+    journalEntries: (filters?: Record<string, unknown>) =>
+      ["accounting", "journal-entries", "list", filters] as const,
+    journalEntry: (id: string) =>
+      ["accounting", "journal-entries", id] as const,
+    periods: () => ["accounting", "periods"] as const,
+    trialBalance: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "trial-balance", params] as const,
+    generalJournal: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "general-journal", params] as const,
+    generalLedger: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "general-ledger", params] as const,
+    balanceSheet: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "balance-sheet", params] as const,
+    incomeStatement: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "income-statement", params] as const,
+    cashFlow: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "cash-flow", params] as const,
+  },
+
+  // Bank
+  bank: {
+    all: ["bank"] as const,
+    accounts: (filters?: Record<string, unknown>) =>
+      ["bank", "accounts", "list", filters] as const,
+    account: (id: string) => ["bank", "accounts", id] as const,
+    statements: (bankAccountId: string) =>
+      ["bank", "statements", "account", bankAccountId] as const,
+    statement: (id: string) => ["bank", "statements", id] as const,
+  },
 };

@@ -23,6 +23,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { AccountingBridgeService } from '../accounting';
 import {
   CreateInvoiceDto,
   CheckoutInvoiceDto,
@@ -157,6 +158,7 @@ export class InvoicesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
+    private readonly accountingBridge: AccountingBridgeService,
   ) {}
 
   /**
@@ -643,6 +645,21 @@ export class InvoicesService {
       `Invoice created: ${invoice.invoiceNumber} (${invoice.id})`,
     );
 
+    // Non-blocking: generate automatic accounting entry
+    this.accountingBridge.onInvoiceCreated({
+      tenantId: invoice.tenantId,
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      subtotal: Number(invoice.subtotal),
+      tax: Number(invoice.tax),
+      total: Number(invoice.total),
+      items: (invoice.items ?? []).map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        product: item.product ? { costPrice: item.product.costPrice } : null,
+      })),
+    }).catch(() => {});
+
     return this.mapToInvoiceResponse(invoice);
   }
 
@@ -715,6 +732,17 @@ export class InvoicesService {
     this.logger.log(
       `Checkout completed: ${updatedInvoice.invoiceNumber} (${updatedInvoice.id}), paid: ${dto.immediatePayment ?? false}`,
     );
+
+    // Non-blocking: generate payment accounting entry for POS immediate payment
+    if (dto.immediatePayment) {
+      this.accountingBridge.onPaymentCreated({
+        tenantId,
+        paymentId: '',
+        invoiceNumber: updatedInvoice.invoiceNumber,
+        amount: Number(updatedInvoice.total),
+        method: (dto.paymentMethod ?? 'CASH') as any,
+      }).catch(() => {});
+    }
 
     return this.mapToInvoiceResponse(updatedInvoice);
   }
@@ -1178,6 +1206,21 @@ export class InvoicesService {
     this.logger.log(
       `Invoice cancelled: ${cancelledInvoice.invoiceNumber} (${cancelledInvoice.id})`,
     );
+
+    // Non-blocking: generate reverse accounting entry
+    this.accountingBridge.onInvoiceCancelled({
+      tenantId: cancelledInvoice.tenantId,
+      invoiceId: cancelledInvoice.id,
+      invoiceNumber: cancelledInvoice.invoiceNumber,
+      subtotal: Number(cancelledInvoice.subtotal),
+      tax: Number(cancelledInvoice.tax),
+      total: Number(cancelledInvoice.total),
+      items: (cancelledInvoice.items ?? []).map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        product: item.product ? { costPrice: item.product.costPrice } : null,
+      })),
+    }).catch(() => {});
 
     return this.mapToInvoiceResponse(cancelledInvoice);
   }

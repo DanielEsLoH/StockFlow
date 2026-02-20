@@ -13,6 +13,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { AccountingBridgeService } from '../accounting';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePaymentDto, FilterPaymentsDto } from './dto';
 
@@ -87,6 +88,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
     private readonly notificationsService: NotificationsService,
+    private readonly accountingBridge: AccountingBridgeService,
   ) {}
 
   /**
@@ -483,6 +485,15 @@ export class PaymentsService {
     this.logger.log(
       `Payment recorded: ${payment.id} for invoice ${invoice.invoiceNumber}, amount: ${dto.amount}, new status: ${newPaymentStatus}`,
     );
+
+    // Non-blocking: generate accounting entry for payment
+    this.accountingBridge.onPaymentCreated({
+      tenantId,
+      paymentId: payment.id,
+      invoiceNumber: invoice.invoiceNumber,
+      amount: Number(dto.amount),
+      method: dto.method,
+    }).catch(() => {});
 
     // Fire-and-forget: send payment receipt email to customer
     this.notificationsService

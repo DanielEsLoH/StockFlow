@@ -8,6 +8,9 @@ import { AccountingPeriodsService } from './accounting-periods.service';
 import { AccountingConfigController } from './accounting-config.controller';
 import { AccountingConfigService } from './accounting-config.service';
 import { AccountingSetupService } from './accounting-setup.service';
+import { AccountingBridgeService } from './accounting-bridge.service';
+import { AccountingReportsController } from './reports/accounting-reports.controller';
+import { AccountingReportsService } from './reports/accounting-reports.service';
 
 /**
  * AccountingModule provides the full accounting system:
@@ -16,6 +19,7 @@ import { AccountingSetupService } from './accounting-setup.service';
  * - Accounting periods (open/close)
  * - Accounting configuration (account mappings)
  * - Initial PUC setup wizard
+ * - Automatic journal entry generation via AccountingBridgeService
  *
  * Dependencies (via global modules):
  * - PrismaModule: Database access
@@ -24,8 +28,8 @@ import { AccountingSetupService } from './accounting-setup.service';
  *
  * Exports:
  * - AccountsService: Used by BankModule for account creation
- * - JournalEntriesService: Used by AccountingBridgeService (Sub-fase 2B)
- * - AccountingConfigService: Used by AccountingBridgeService
+ * - AccountingBridgeService: Used by InvoicesModule, PaymentsModule,
+ *   PurchaseOrdersModule, StockMovementsModule for auto journal entries
  */
 @Module({
   controllers: [
@@ -33,6 +37,7 @@ import { AccountingSetupService } from './accounting-setup.service';
     JournalEntriesController,
     AccountingPeriodsController,
     AccountingConfigController,
+    AccountingReportsController,
   ],
   providers: [
     AccountsService,
@@ -40,11 +45,12 @@ import { AccountingSetupService } from './accounting-setup.service';
     AccountingPeriodsService,
     AccountingConfigService,
     AccountingSetupService,
+    AccountingBridgeService,
+    AccountingReportsService,
   ],
   exports: [
     AccountsService,
-    JournalEntriesService,
-    AccountingConfigService,
+    AccountingBridgeService,
   ],
 })
 export class AccountingModule {}

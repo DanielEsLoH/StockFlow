@@ -15,6 +15,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { AccountingBridgeService } from '../accounting';
 import { CreateMovementDto, CreateTransferDto, FilterMovementsDto } from './dto';
 
 /**
@@ -99,6 +100,7 @@ export class StockMovementsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
+    private readonly accountingBridge: AccountingBridgeService,
   ) {}
 
   /**
@@ -458,6 +460,15 @@ export class StockMovementsService {
     this.logger.log(
       `Stock adjustment created: ${movement.id} for product ${product.sku}, quantity: ${dto.quantity}, new stock: ${newStock}`,
     );
+
+    // Non-blocking: generate accounting entry for inventory adjustment
+    this.accountingBridge.onStockAdjustment({
+      tenantId,
+      movementId: movement.id,
+      productSku: product.sku,
+      quantity: dto.quantity,
+      costPrice: Number(product.costPrice),
+    }).catch(() => {});
 
     return this.mapToMovementResponse(movement);
   }

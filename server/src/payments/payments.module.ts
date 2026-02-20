@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AccountingModule } from '../accounting';
 
 /**
  * PaymentsModule provides payment recording functionality including:
@@ -32,7 +33,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
  * - Payment receipt email sent to customer after manual payment creation
  */
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, AccountingModule],
   controllers: [PaymentsController],
   providers: [PaymentsService],
   exports: [PaymentsService],

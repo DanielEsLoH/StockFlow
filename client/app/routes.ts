@@ -161,6 +161,18 @@ export default [
       "routes/_app.accounting.reports.cash-flow.tsx",
     ),
 
+    // Payroll module
+    route("payroll/employees", "routes/_app.payroll.employees.tsx"),
+    route("payroll/employees/new", "routes/_app.payroll.employees.new.tsx"),
+    route("payroll/employees/:id", "routes/_app.payroll.employees.$id.tsx"),
+    route(
+      "payroll/employees/:id/edit",
+      "routes/_app.payroll.employees.$id.edit.tsx",
+    ),
+    route("payroll/periods", "routes/_app.payroll.periods.tsx"),
+    route("payroll/periods/:id", "routes/_app.payroll.periods.$id.tsx"),
+    route("payroll/config", "routes/_app.payroll.config.tsx"),
+
     // Bank module
     route("bank/accounts", "routes/_app.bank.accounts.tsx"),
     route("bank/accounts/new", "routes/_app.bank.accounts.new.tsx"),

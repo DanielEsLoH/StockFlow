@@ -12,13 +12,22 @@ import {
 } from './services/xml-generator.service';
 import { CufeGeneratorService } from './services/cufe-generator.service';
 import { DianClientService } from './services/dian-client.service';
+import { XmlSignerService } from './services/xml-signer.service';
 import {
   CreateDianConfigDto,
   UpdateDianConfigDto,
   SetDianSoftwareDto,
   SetDianResolutionDto,
+  GenerateCreditNoteDto,
+  GenerateDebitNoteDto,
+  SetNoteConfigDto,
 } from './dto';
-import { DianDocumentStatus, DianDocumentType } from '@prisma/client';
+import {
+  DianDocumentStatus,
+  DianDocumentType,
+  CreditNoteReason,
+} from '@prisma/client';
+import { DebitNoteItem } from './services/xml-generator.service';
 
 export interface ProcessInvoiceResult {
   success: boolean;
@@ -40,6 +49,7 @@ export class DianService {
     private readonly xmlGenerator: XmlGeneratorService,
     private readonly cufeGenerator: CufeGeneratorService,
     private readonly dianClient: DianClientService,
+    private readonly xmlSigner: XmlSignerService,
   ) {}
 
   // ============================================================================
@@ -202,20 +212,32 @@ export class DianService {
 
     this.logger.log(`Uploading certificate for tenant ${tenantId}`);
 
-    // TODO: Validate certificate format and password
-    // This would require a library like node-forge or pkcs12
+    // Validate certificate format and password
+    const validation = this.xmlSigner.validateCertificate(file, password);
+
+    if (!validation.isValid) {
+      throw new BadRequestException(
+        validation.errors.join('. '),
+      );
+    }
 
     await this.prisma.tenantDianConfig.update({
       where: { tenantId },
       data: {
         certificateFile: new Uint8Array(file),
-        certificatePassword: password, // Should be encrypted in production
+        certificatePassword: password,
       },
     });
 
     return {
       success: true,
       message: 'Certificado digital cargado correctamente',
+      certificate: {
+        subject: validation.subject,
+        issuer: validation.issuer,
+        validFrom: validation.validFrom,
+        validTo: validation.validTo,
+      },
     };
   }
 
@@ -329,9 +351,8 @@ export class DianService {
       },
     });
 
-    // TODO: Sign XML with digital certificate
-    // For now, we'll use the unsigned XML (only valid for testing)
-    const signedXml = xml; // Should be signed in production
+    // Sign XML with digital certificate (XAdES-BES)
+    const signedXml = this.signXmlIfCertificateAvailable(xml, config);
 
     // Update document with signed XML
     await this.prisma.dianDocument.update({
@@ -390,6 +411,460 @@ export class DianService {
         : result.statusDescription || 'Error al enviar la factura',
       errors: result.errors,
     };
+  }
+
+  /**
+   * Process and send a credit note to DIAN
+   */
+  async processCreditNote(
+    dto: GenerateCreditNoteDto,
+  ): Promise<ProcessInvoiceResult> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.log(
+      `Processing credit note for invoice ${dto.invoiceId}`,
+    );
+
+    // Get config and validate
+    const config = await this.getAndValidateConfig(tenantId);
+
+    if (!config.creditNotePrefix) {
+      throw new BadRequestException(
+        'Prefijo de notas credito no configurado. Configure en DIAN > Configuracion > Notas.',
+      );
+    }
+
+    // Get original invoice with details
+    const invoice = await this.getInvoiceWithDetails(dto.invoiceId, tenantId);
+
+    // Find original accepted DIAN document
+    const originalDoc = await this.prisma.dianDocument.findFirst({
+      where: {
+        invoiceId: dto.invoiceId,
+        tenantId,
+        documentType: DianDocumentType.FACTURA_ELECTRONICA,
+        status: DianDocumentStatus.ACCEPTED,
+      },
+    });
+
+    if (!originalDoc) {
+      throw new BadRequestException(
+        'La factura original no ha sido aceptada por la DIAN. Solo se pueden crear notas credito para facturas aceptadas.',
+      );
+    }
+
+    // Build credit note invoice data (clone items or filter partial)
+    let noteInvoice: InvoiceWithDetails;
+    if (dto.items && dto.items.length > 0) {
+      // Partial credit — adjust quantities
+      const adjustedItems = dto.items.map((creditItem) => {
+        const originalItem = invoice.items.find(
+          (i) => i.id === creditItem.invoiceItemId,
+        );
+        if (!originalItem) {
+          throw new BadRequestException(
+            `Item ${creditItem.invoiceItemId} no encontrado en la factura original`,
+          );
+        }
+        if (creditItem.quantity > Number(originalItem.quantity)) {
+          throw new BadRequestException(
+            `Cantidad a acreditar (${creditItem.quantity}) excede la cantidad original (${originalItem.quantity})`,
+          );
+        }
+        const ratio = creditItem.quantity / Number(originalItem.quantity);
+        return {
+          ...originalItem,
+          quantity: creditItem.quantity as any,
+          subtotal: (Number(originalItem.subtotal) * ratio) as any,
+          tax: (Number(originalItem.tax) * ratio) as any,
+          total: (Number(originalItem.total) * ratio) as any,
+        };
+      });
+
+      const subtotal = adjustedItems.reduce(
+        (sum, i) => sum + Number(i.subtotal),
+        0,
+      );
+      const tax = adjustedItems.reduce((sum, i) => sum + Number(i.tax), 0);
+      const total = subtotal + tax;
+
+      noteInvoice = {
+        ...invoice,
+        items: adjustedItems,
+        subtotal: subtotal as any,
+        tax: tax as any,
+        total: total as any,
+      };
+    } else {
+      // Full credit — clone all items
+      noteInvoice = { ...invoice };
+    }
+
+    // Generate note number atomically
+    const noteNumber = `${config.creditNotePrefix}${String(config.creditNoteCurrentNumber).padStart(8, '0')}`;
+
+    // Generate CUDE
+    const customerDocument =
+      invoice.customer?.documentNumber || '222222222222';
+    const issueDate = new Date();
+    const cude = this.cufeGenerator.generateCude({
+      documentNumber: noteNumber,
+      issueDate,
+      issueTime: issueDate.toISOString().split('T')[1].split('.')[0] + '-05:00',
+      subtotal: Number(noteInvoice.subtotal),
+      tax01: Number(noteInvoice.tax),
+      tax04: 0,
+      tax03: 0,
+      total: Number(noteInvoice.total),
+      supplierNit: config.nit,
+      customerDocument,
+      softwarePin: config.softwarePin || '',
+      testMode: config.testMode,
+    });
+
+    // Generate QR code data for credit note
+    const qrCode = `NumFac: ${noteNumber}\nFecFac: ${issueDate.toISOString().split('T')[0]}\nNitFac: ${config.nit}\nDocAdq: ${customerDocument}\nValFac: ${Number(noteInvoice.total).toFixed(2)}\nCUDE: ${cude}\nQRCode: https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=${cude}`;
+
+    // Generate XML with dynamic responseCode
+    const xml = this.xmlGenerator.generateCreditNoteXml(
+      {
+        dianConfig: config,
+        invoice: { ...noteInvoice, invoiceNumber: noteNumber } as any,
+        cufe: cude,
+        qrCode,
+      },
+      invoice,
+      dto.reason,
+      dto.reasonCode,
+    );
+
+    // Create document and increment number atomically
+    const [document] = await this.prisma.$transaction([
+      this.prisma.dianDocument.create({
+        data: {
+          tenantId,
+          invoiceId: dto.invoiceId,
+          originalDianDocumentId: originalDoc.id,
+          documentType: DianDocumentType.NOTA_CREDITO,
+          documentNumber: noteNumber,
+          cude,
+          creditNoteReason: dto.reason,
+          qrCode,
+          status: DianDocumentStatus.GENERATED,
+          xmlContent: xml,
+        },
+      }),
+      this.prisma.tenantDianConfig.update({
+        where: { tenantId },
+        data: { creditNoteCurrentNumber: { increment: 1 } },
+      }),
+    ]);
+
+    // Sign XML
+    const signedXml = this.signXmlIfCertificateAvailable(xml, config);
+
+    // Update with signed XML
+    await this.prisma.dianDocument.update({
+      where: { id: document.id },
+      data: { signedXml, status: DianDocumentStatus.SIGNED },
+    });
+
+    // Send to DIAN
+    const fileName = `nc${noteNumber}.xml`;
+    const result = await this.dianClient.sendDocument(
+      config,
+      signedXml,
+      fileName,
+    );
+
+    // Update document status
+    const finalStatus = result.success
+      ? DianDocumentStatus.ACCEPTED
+      : result.isValid === false
+        ? DianDocumentStatus.REJECTED
+        : DianDocumentStatus.SENT;
+
+    await this.prisma.dianDocument.update({
+      where: { id: document.id },
+      data: {
+        status: finalStatus,
+        dianTrackId: result.trackId,
+        dianResponse: result as any,
+        errorMessage: result.errors?.join('; '),
+        sentAt: new Date(),
+        acceptedAt: result.success ? new Date() : undefined,
+      },
+    });
+
+    return {
+      success: result.success,
+      documentId: document.id,
+      cufe: cude,
+      trackId: result.trackId,
+      status: finalStatus,
+      message: result.success
+        ? 'Nota credito enviada y aceptada por la DIAN'
+        : result.statusDescription || 'Error al enviar la nota credito',
+      errors: result.errors,
+    };
+  }
+
+  /**
+   * Process and send a debit note to DIAN
+   */
+  async processDebitNote(
+    dto: GenerateDebitNoteDto,
+  ): Promise<ProcessInvoiceResult> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.log(
+      `Processing debit note for invoice ${dto.invoiceId}`,
+    );
+
+    const config = await this.getAndValidateConfig(tenantId);
+
+    if (!config.debitNotePrefix) {
+      throw new BadRequestException(
+        'Prefijo de notas debito no configurado. Configure en DIAN > Configuracion > Notas.',
+      );
+    }
+
+    // Get original invoice
+    const invoice = await this.getInvoiceWithDetails(dto.invoiceId, tenantId);
+
+    // Find original accepted DIAN document
+    const originalDoc = await this.prisma.dianDocument.findFirst({
+      where: {
+        invoiceId: dto.invoiceId,
+        tenantId,
+        documentType: DianDocumentType.FACTURA_ELECTRONICA,
+        status: DianDocumentStatus.ACCEPTED,
+      },
+    });
+
+    if (!originalDoc) {
+      throw new BadRequestException(
+        'La factura original no ha sido aceptada por la DIAN.',
+      );
+    }
+
+    // Generate note number
+    const noteNumber = `${config.debitNotePrefix}${String(config.debitNoteCurrentNumber).padStart(8, '0')}`;
+
+    // Calculate totals from debit note items
+    const debitItems: DebitNoteItem[] = dto.items.map((i) => ({
+      description: i.description,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      taxRate: i.taxRate,
+    }));
+
+    let subtotal = 0;
+    let totalTax = 0;
+    for (const item of debitItems) {
+      const lineSubtotal = item.quantity * item.unitPrice;
+      subtotal += lineSubtotal;
+      totalTax += lineSubtotal * (item.taxRate / 100);
+    }
+    const total = subtotal + totalTax;
+
+    // Generate CUDE
+    const customerDocument =
+      invoice.customer?.documentNumber || '222222222222';
+    const issueDate = new Date();
+    const cude = this.cufeGenerator.generateCude({
+      documentNumber: noteNumber,
+      issueDate,
+      issueTime: issueDate.toISOString().split('T')[1].split('.')[0] + '-05:00',
+      subtotal,
+      tax01: totalTax,
+      tax04: 0,
+      tax03: 0,
+      total,
+      supplierNit: config.nit,
+      customerDocument,
+      softwarePin: config.softwarePin || '',
+      testMode: config.testMode,
+    });
+
+    const qrCode = `NumFac: ${noteNumber}\nFecFac: ${new Date().toISOString().split('T')[0]}\nNitFac: ${config.nit}\nDocAdq: ${customerDocument}\nValFac: ${total.toFixed(2)}\nCUDE: ${cude}\nQRCode: https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=${cude}`;
+
+    // Generate XML — use a synthetic "invoice" with the note number
+    const xml = this.xmlGenerator.generateDebitNoteXml(
+      {
+        dianConfig: config,
+        invoice: { ...invoice, invoiceNumber: noteNumber } as any,
+        cufe: cude,
+        qrCode,
+      },
+      invoice,
+      dto.reason,
+      dto.reasonCode,
+      debitItems,
+    );
+
+    // Create document and increment number atomically
+    const [document] = await this.prisma.$transaction([
+      this.prisma.dianDocument.create({
+        data: {
+          tenantId,
+          invoiceId: dto.invoiceId,
+          originalDianDocumentId: originalDoc.id,
+          documentType: DianDocumentType.NOTA_DEBITO,
+          documentNumber: noteNumber,
+          cude,
+          creditNoteReason: dto.reason,
+          qrCode,
+          status: DianDocumentStatus.GENERATED,
+          xmlContent: xml,
+        },
+      }),
+      this.prisma.tenantDianConfig.update({
+        where: { tenantId },
+        data: { debitNoteCurrentNumber: { increment: 1 } },
+      }),
+    ]);
+
+    // Sign XML
+    const signedXml = this.signXmlIfCertificateAvailable(xml, config);
+
+    await this.prisma.dianDocument.update({
+      where: { id: document.id },
+      data: { signedXml, status: DianDocumentStatus.SIGNED },
+    });
+
+    // Send to DIAN
+    const fileName = `nd${noteNumber}.xml`;
+    const result = await this.dianClient.sendDocument(
+      config,
+      signedXml,
+      fileName,
+    );
+
+    const finalStatus = result.success
+      ? DianDocumentStatus.ACCEPTED
+      : result.isValid === false
+        ? DianDocumentStatus.REJECTED
+        : DianDocumentStatus.SENT;
+
+    await this.prisma.dianDocument.update({
+      where: { id: document.id },
+      data: {
+        status: finalStatus,
+        dianTrackId: result.trackId,
+        dianResponse: result as any,
+        errorMessage: result.errors?.join('; '),
+        sentAt: new Date(),
+        acceptedAt: result.success ? new Date() : undefined,
+      },
+    });
+
+    return {
+      success: result.success,
+      documentId: document.id,
+      cufe: cude,
+      trackId: result.trackId,
+      status: finalStatus,
+      message: result.success
+        ? 'Nota debito enviada y aceptada por la DIAN'
+        : result.statusDescription || 'Error al enviar la nota debito',
+      errors: result.errors,
+    };
+  }
+
+  /**
+   * Configure note numbering (prefixes and starting numbers)
+   */
+  async setNoteConfig(dto: SetNoteConfigDto) {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const data: any = {};
+    if (dto.creditNotePrefix !== undefined)
+      data.creditNotePrefix = dto.creditNotePrefix;
+    if (dto.creditNoteStartNumber !== undefined)
+      data.creditNoteCurrentNumber = dto.creditNoteStartNumber;
+    if (dto.debitNotePrefix !== undefined)
+      data.debitNotePrefix = dto.debitNotePrefix;
+    if (dto.debitNoteStartNumber !== undefined)
+      data.debitNoteCurrentNumber = dto.debitNoteStartNumber;
+
+    await this.prisma.tenantDianConfig.update({
+      where: { tenantId },
+      data,
+    });
+
+    return {
+      success: true,
+      message: 'Configuracion de notas actualizada',
+    };
+  }
+
+  // ─── Private helpers ────────────────────────────────────────────────────
+
+  private async getAndValidateConfig(tenantId: string) {
+    const config = await this.prisma.tenantDianConfig.findUnique({
+      where: { tenantId },
+    });
+
+    if (!config) {
+      throw new BadRequestException(
+        'Configuracion DIAN no encontrada. Configure primero los datos de facturacion electronica.',
+      );
+    }
+
+    if (!config.softwareId || !config.technicalKey) {
+      throw new BadRequestException(
+        'Credenciales de software DIAN no configuradas.',
+      );
+    }
+
+    return config;
+  }
+
+  private async getInvoiceWithDetails(invoiceId: string, tenantId: string) {
+    const invoice = (await this.prisma.invoice.findFirst({
+      where: { id: invoiceId, tenantId },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+      },
+    })) as InvoiceWithDetails | null;
+
+    if (!invoice) {
+      throw new NotFoundException('Factura no encontrada');
+    }
+
+    return invoice;
+  }
+
+  private signXmlIfCertificateAvailable(
+    xml: string,
+    config: { certificateFile: Uint8Array | null; certificatePassword: string | null },
+  ): string {
+    if (config.certificateFile && config.certificatePassword) {
+      const certContents = this.xmlSigner.loadCertificate(
+        Buffer.from(config.certificateFile),
+        config.certificatePassword,
+      );
+      return this.xmlSigner.signXml(
+        xml,
+        certContents.privateKeyPem,
+        certContents.certDerBase64,
+        certContents.certDigestBase64,
+        certContents.issuerName,
+        certContents.serialNumber,
+      );
+    }
+    this.logger.warn(
+      'Certificate not configured — sending unsigned XML (test mode only)',
+    );
+    return xml;
   }
 
   /**

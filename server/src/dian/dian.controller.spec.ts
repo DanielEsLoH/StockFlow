@@ -235,6 +235,12 @@ describe('DianController', () => {
       service.uploadCertificate.mockResolvedValue({
         success: true,
         message: 'Uploaded',
+        certificate: {
+          subject: 'CN=Test',
+          issuer: 'CN=CA',
+          validFrom: new Date(),
+          validTo: new Date(),
+        },
       });
 
       const result = await controller.uploadCertificate(file, password);

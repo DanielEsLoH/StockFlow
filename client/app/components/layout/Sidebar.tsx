@@ -28,6 +28,9 @@ import {
   CalendarDays,
   PieChart,
   Landmark,
+  UserCheck,
+  Calculator,
+  Cog,
 } from "lucide-react";
 import { cn, getInitials, formatCurrency } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
@@ -181,6 +184,29 @@ const navSections: NavSection[] = [
         href: "/bank/accounts",
         icon: Landmark,
         permission: Permission.BANK_VIEW,
+      },
+    ],
+  },
+  {
+    label: "Nomina",
+    items: [
+      {
+        name: "Empleados",
+        href: "/payroll/employees",
+        icon: UserCheck,
+        permission: Permission.PAYROLL_VIEW,
+      },
+      {
+        name: "Periodos",
+        href: "/payroll/periods",
+        icon: Calculator,
+        permission: Permission.PAYROLL_VIEW,
+      },
+      {
+        name: "Configuracion",
+        href: "/payroll/config",
+        icon: Cog,
+        permission: Permission.PAYROLL_CONFIG,
       },
     ],
   },

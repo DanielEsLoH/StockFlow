@@ -214,6 +214,11 @@ export class LimitCheckInterceptor implements NestInterceptor {
           where: { tenantId, role: UserRole.CONTADOR },
         });
 
+      case 'employees':
+        return this.prisma.employee.count({
+          where: { tenantId },
+        });
+
       default: {
         // Exhaustive check - TypeScript will error if a case is missed
         const exhaustiveCheck: never = limitType;
@@ -244,6 +249,8 @@ export class LimitCheckInterceptor implements NestInterceptor {
         if (!tenant.plan) return 0;
         return getPlanLimits(tenant.plan).maxContadores;
       }
+      case 'employees':
+        return tenant.maxEmployees;
       default: {
         const exhaustiveCheck: never = limitType;
         throw new Error(`Unknown limit type: ${String(exhaustiveCheck)}`);

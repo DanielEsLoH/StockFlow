@@ -6,6 +6,8 @@ import {
   Customer,
   PaymentMethod,
   Product,
+  CreditNoteReason,
+  DebitNoteReason,
 } from '@prisma/client';
 
 export interface InvoiceItemWithProduct extends InvoiceItem {
@@ -23,6 +25,30 @@ export interface XmlGeneratorConfig {
   cufe: string;
   qrCode: string;
 }
+
+export interface DebitNoteItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+}
+
+// DIAN ResponseCode mapping for credit notes
+const CREDIT_NOTE_RESPONSE_CODES: Record<CreditNoteReason, string> = {
+  DEVOLUCION_PARCIAL: '1',
+  ANULACION: '2',
+  DESCUENTO: '3',
+  AJUSTE_PRECIO: '4',
+  OTRO: '5',
+};
+
+// DIAN ResponseCode mapping for debit notes
+const DEBIT_NOTE_RESPONSE_CODES: Record<DebitNoteReason, string> = {
+  INTERESES: '1',
+  GASTOS: '2',
+  CAMBIO_VALOR: '3',
+  OTRO: '4',
+};
 
 /**
  * Generates UBL 2.1 XML documents for Colombian electronic invoicing (DIAN)
@@ -148,8 +174,10 @@ ${this.generateInvoiceLines(invoice.items)}
     config: XmlGeneratorConfig,
     originalInvoice: InvoiceWithDetails,
     reason: string,
+    reasonCode: CreditNoteReason,
   ): string {
     const { dianConfig, invoice, cufe, qrCode } = config;
+    const responseCode = CREDIT_NOTE_RESPONSE_CODES[reasonCode];
 
     this.logger.log(
       `Generating Credit Note XML for invoice ${invoice.invoiceNumber}`,
@@ -158,7 +186,7 @@ ${this.generateInvoiceLines(invoice.items)}
     const issueDate = new Date();
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<CreditNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2" ${this.formatNamespaces().replace('xmlns=', 'xmlns:ns=')}>
+<CreditNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2" ${this.formatNamespacesWithoutRoot()}>
   <ext:UBLExtensions>
     <ext:UBLExtension>
       <ext:ExtensionContent>
@@ -175,6 +203,9 @@ ${this.generateInvoiceLines(invoice.items)}
         </sts:DianExtensions>
       </ext:ExtensionContent>
     </ext:UBLExtension>
+    <ext:UBLExtension>
+      <ext:ExtensionContent></ext:ExtensionContent>
+    </ext:UBLExtension>
   </ext:UBLExtensions>
   <cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID>
   <cbc:CustomizationID>20</cbc:CustomizationID>
@@ -184,13 +215,13 @@ ${this.generateInvoiceLines(invoice.items)}
   <cbc:UUID schemeID="${dianConfig.testMode ? '2' : '1'}" schemeName="CUDE-SHA384">${cufe}</cbc:UUID>
   <cbc:IssueDate>${this.formatDate(issueDate)}</cbc:IssueDate>
   <cbc:IssueTime>${this.formatTime(issueDate)}</cbc:IssueTime>
-  <cbc:CreditNoteTypeCode>91</cbc:CreditNoteTypeCode>
+  <cbc:CreditNoteTypeCode listAgencyID="6" listID="UNCL1001">91</cbc:CreditNoteTypeCode>
   <cbc:Note>${reason}</cbc:Note>
   <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
   <cbc:LineCountNumeric>${invoice.items.length}</cbc:LineCountNumeric>
   <cac:DiscrepancyResponse>
     <cbc:ReferenceID>${originalInvoice.invoiceNumber}</cbc:ReferenceID>
-    <cbc:ResponseCode>2</cbc:ResponseCode>
+    <cbc:ResponseCode>${responseCode}</cbc:ResponseCode>
     <cbc:Description>${reason}</cbc:Description>
   </cac:DiscrepancyResponse>
   <cac:BillingReference>
@@ -210,10 +241,123 @@ ${this.generateCreditNoteLines(invoice.items)}
     return xml;
   }
 
-  // Helper methods
+  /**
+   * Generate UBL 2.1 XML for a debit note
+   */
+  generateDebitNoteXml(
+    config: XmlGeneratorConfig,
+    originalInvoice: InvoiceWithDetails,
+    reason: string,
+    reasonCode: DebitNoteReason,
+    items: DebitNoteItem[],
+  ): string {
+    const { dianConfig, invoice, cufe, qrCode } = config;
+    const responseCode = DEBIT_NOTE_RESPONSE_CODES[reasonCode];
+
+    this.logger.log(
+      `Generating Debit Note XML for invoice ${invoice.invoiceNumber}`,
+    );
+
+    const issueDate = new Date();
+
+    // Calculate totals from debit note items
+    let subtotal = 0;
+    let totalTax = 0;
+    for (const item of items) {
+      const lineSubtotal = item.quantity * item.unitPrice;
+      const lineTax = lineSubtotal * (item.taxRate / 100);
+      subtotal += lineSubtotal;
+      totalTax += lineTax;
+    }
+    const total = subtotal + totalTax;
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<DebitNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2" ${this.formatNamespacesWithoutRoot()}>
+  <ext:UBLExtensions>
+    <ext:UBLExtension>
+      <ext:ExtensionContent>
+        <sts:DianExtensions>
+          <sts:InvoiceSource>
+            <cbc:IdentificationCode listAgencyID="6" listAgencyName="United Nations Economic Commission for Europe">CO</cbc:IdentificationCode>
+          </sts:InvoiceSource>
+          <sts:SoftwareProvider>
+            <sts:ProviderID schemeAgencyID="195" schemeID="${dianConfig.dv}" schemeName="31">${dianConfig.nit}</sts:ProviderID>
+            <sts:SoftwareID schemeAgencyID="195">${dianConfig.softwareId || ''}</sts:SoftwareID>
+          </sts:SoftwareProvider>
+          <sts:SoftwareSecurityCode schemeAgencyID="195">${this.generateSoftwareSecurityCode(dianConfig, invoice.invoiceNumber)}</sts:SoftwareSecurityCode>
+          <sts:QRCode>${qrCode}</sts:QRCode>
+        </sts:DianExtensions>
+      </ext:ExtensionContent>
+    </ext:UBLExtension>
+    <ext:UBLExtension>
+      <ext:ExtensionContent></ext:ExtensionContent>
+    </ext:UBLExtension>
+  </ext:UBLExtensions>
+  <cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>22</cbc:CustomizationID>
+  <cbc:ProfileID>DIAN 2.1</cbc:ProfileID>
+  <cbc:ProfileExecutionID>${dianConfig.testMode ? '2' : '1'}</cbc:ProfileExecutionID>
+  <cbc:ID>${invoice.invoiceNumber}</cbc:ID>
+  <cbc:UUID schemeID="${dianConfig.testMode ? '2' : '1'}" schemeName="CUDE-SHA384">${cufe}</cbc:UUID>
+  <cbc:IssueDate>${this.formatDate(issueDate)}</cbc:IssueDate>
+  <cbc:IssueTime>${this.formatTime(issueDate)}</cbc:IssueTime>
+  <cbc:DebitNoteTypeCode listAgencyID="6" listID="UNCL1001">92</cbc:DebitNoteTypeCode>
+  <cbc:Note>${reason}</cbc:Note>
+  <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
+  <cbc:LineCountNumeric>${items.length}</cbc:LineCountNumeric>
+  <cac:DiscrepancyResponse>
+    <cbc:ReferenceID>${originalInvoice.invoiceNumber}</cbc:ReferenceID>
+    <cbc:ResponseCode>${responseCode}</cbc:ResponseCode>
+    <cbc:Description>${reason}</cbc:Description>
+  </cac:DiscrepancyResponse>
+  <cac:BillingReference>
+    <cac:InvoiceDocumentReference>
+      <cbc:ID>${originalInvoice.invoiceNumber}</cbc:ID>
+      <cbc:UUID schemeName="CUFE-SHA384">${originalInvoice.dianCufe || ''}</cbc:UUID>
+      <cbc:IssueDate>${this.formatDate(new Date(originalInvoice.issueDate))}</cbc:IssueDate>
+    </cac:InvoiceDocumentReference>
+  </cac:BillingReference>
+${this.generateSupplierParty(dianConfig)}
+${this.generateCustomerParty(originalInvoice.customer)}
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="COP">${totalTax.toFixed(2)}</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="COP">${subtotal.toFixed(2)}</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="COP">${totalTax.toFixed(2)}</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:Percent>${items.length > 0 ? items[0].taxRate.toFixed(2) : '19.00'}</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>01</cbc:ID>
+          <cbc:Name>IVA</cbc:Name>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:RequestedMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="COP">${subtotal.toFixed(2)}</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="COP">${subtotal.toFixed(2)}</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="COP">${total.toFixed(2)}</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="COP">${total.toFixed(2)}</cbc:PayableAmount>
+  </cac:RequestedMonetaryTotal>
+${this.generateDebitNoteLines(items)}
+</DebitNote>`;
+
+    return xml;
+  }
+
+  // ============================================================================
+  // HELPER METHODS
+  // ============================================================================
 
   private formatNamespaces(): string {
     return Object.entries(this.namespaces)
+      .map(([key, value]) => `${key}="${value}"`)
+      .join(' ');
+  }
+
+  private formatNamespacesWithoutRoot(): string {
+    return Object.entries(this.namespaces)
+      .filter(([key]) => key !== 'xmlns')
       .map(([key, value]) => `${key}="${value}"`)
       .join(' ');
   }
@@ -524,6 +668,42 @@ ${this.generateCreditNoteLines(invoice.items)}
       <cbc:BaseQuantity unitCode="EA">1</cbc:BaseQuantity>
     </cac:Price>
   </cac:CreditNoteLine>`;
+      })
+      .join('\n');
+  }
+
+  private generateDebitNoteLines(items: DebitNoteItem[]): string {
+    return items
+      .map((item, index) => {
+        const lineSubtotal = item.quantity * item.unitPrice;
+        const lineTax = lineSubtotal * (item.taxRate / 100);
+
+        return `  <cac:DebitNoteLine>
+    <cbc:ID>${index + 1}</cbc:ID>
+    <cbc:DebitedQuantity unitCode="EA">${item.quantity}</cbc:DebitedQuantity>
+    <cbc:LineExtensionAmount currencyID="COP">${lineSubtotal.toFixed(2)}</cbc:LineExtensionAmount>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="COP">${lineTax.toFixed(2)}</cbc:TaxAmount>
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="COP">${lineSubtotal.toFixed(2)}</cbc:TaxableAmount>
+        <cbc:TaxAmount currencyID="COP">${lineTax.toFixed(2)}</cbc:TaxAmount>
+        <cac:TaxCategory>
+          <cbc:Percent>${item.taxRate.toFixed(2)}</cbc:Percent>
+          <cac:TaxScheme>
+            <cbc:ID>01</cbc:ID>
+            <cbc:Name>IVA</cbc:Name>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Description>${this.escapeXml(item.description)}</cbc:Description>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="COP">${item.unitPrice.toFixed(2)}</cbc:PriceAmount>
+      <cbc:BaseQuantity unitCode="EA">1</cbc:BaseQuantity>
+    </cac:Price>
+  </cac:DebitNoteLine>`;
       })
       .join('\n');
   }

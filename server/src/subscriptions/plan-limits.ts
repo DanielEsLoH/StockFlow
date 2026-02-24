@@ -15,6 +15,8 @@ export interface PlanLimits {
   maxProducts: number;
   /** Maximum number of invoices per month (-1 = unlimited) */
   maxInvoices: number;
+  /** Maximum number of employees allowed (-1 = unlimited) */
+  maxEmployees: number;
   /** Monthly price in COP */
   priceMonthly: number;
   /** Plan display name */
@@ -40,6 +42,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxWarehouses: 1,
     maxProducts: -1, // Ilimitados (igual que Alegra)
     maxInvoices: -1, // Ilimitadas (igual que Alegra)
+    maxEmployees: 5,
     priceMonthly: 69_900,
     displayName: 'Emprendedor',
     description: 'Para emprendedores que inician',
@@ -59,6 +62,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxWarehouses: 2,
     maxProducts: -1, // Ilimitados (igual que Alegra)
     maxInvoices: -1, // Ilimitadas (igual que Alegra)
+    maxEmployees: 20,
     priceMonthly: 149_900,
     displayName: 'PYME',
     description: 'Para pequeños negocios en crecimiento',
@@ -79,6 +83,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxWarehouses: 10,
     maxProducts: -1, // Ilimitados (igual que Alegra)
     maxInvoices: -1, // Ilimitadas (igual que Alegra)
+    maxEmployees: 50,
     priceMonthly: 219_900,
     displayName: 'Pro',
     description: 'Para empresas establecidas',
@@ -100,6 +105,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxWarehouses: 100,
     maxProducts: -1, // Ilimitados (igual que Alegra)
     maxInvoices: -1, // Ilimitadas (igual que Alegra)
+    maxEmployees: -1, // Ilimitados
     priceMonthly: 279_900,
     displayName: 'Plus',
     description: 'Para grandes organizaciones',

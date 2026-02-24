@@ -13,6 +13,9 @@ import {
   getDianDocument,
   downloadDianXml,
   getDianStats,
+  createCreditNote,
+  createDebitNote,
+  setNoteConfig,
   type ListDocumentsParams,
 } from "~/services/dian.service";
 import { useIsQueryEnabled } from "./useIsQueryEnabled";
@@ -23,6 +26,9 @@ import type {
   SetDianResolutionDto,
   SendInvoiceDto,
   CheckDocumentStatusDto,
+  GenerateCreditNoteDto,
+  GenerateDebitNoteDto,
+  SetNoteConfigDto,
 } from "~/types/dian";
 
 // Query Keys
@@ -161,6 +167,62 @@ export function useCheckDocumentStatus() {
     },
     onError: (error: Error) => {
       toast.error(`Error al consultar estado: ${error.message}`);
+    },
+  });
+}
+
+// Credit/Debit Note Hooks
+export function useCreateCreditNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: GenerateCreditNoteDto) => createCreditNote(data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: dianKeys.documents() });
+      queryClient.invalidateQueries({ queryKey: dianKeys.stats() });
+      if (result.success) {
+        toast.success(result.message || "Nota credito creada exitosamente");
+      } else {
+        toast.warning(result.message);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al crear nota credito: ${error.message}`);
+    },
+  });
+}
+
+export function useCreateDebitNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: GenerateDebitNoteDto) => createDebitNote(data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: dianKeys.documents() });
+      queryClient.invalidateQueries({ queryKey: dianKeys.stats() });
+      if (result.success) {
+        toast.success(result.message || "Nota debito creada exitosamente");
+      } else {
+        toast.warning(result.message);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al crear nota debito: ${error.message}`);
+    },
+  });
+}
+
+export function useSetNoteConfig() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: SetNoteConfigDto) => setNoteConfig(data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: dianKeys.config() });
+      toast.success(result.message || "Configuracion de notas actualizada");
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`);
     },
   });
 }

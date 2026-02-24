@@ -27,6 +27,8 @@ import {
   Smartphone,
   DollarSign,
   Hash,
+  FileMinus,
+  FilePlus,
 } from "lucide-react";
 import type { Route } from "./+types/_app.invoices.$id";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
@@ -38,6 +40,8 @@ import {
   useSendInvoiceToDian,
 } from "~/hooks/useInvoices";
 import { useDownloadDianXml } from "~/hooks/useDian";
+import { CreditNoteModal } from "~/components/dian/CreditNoteModal";
+import { DebitNoteModal } from "~/components/dian/DebitNoteModal";
 import { usePaymentsByInvoice } from "~/hooks/usePayments";
 import { Button } from "~/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
@@ -360,6 +364,8 @@ export default function InvoiceDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showCreditNoteModal, setShowCreditNoteModal] = useState(false);
+  const [showDebitNoteModal, setShowDebitNoteModal] = useState(false);
 
   const { data: preferences } = useUserPreferences();
   const { data: invoice, isLoading, isError } = useInvoice(id!);
@@ -1026,6 +1032,22 @@ export default function InvoiceDetailPage() {
                   )}
                   Descargar XML
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCreditNoteModal(true)}
+                >
+                  <FileMinus className="h-4 w-4 mr-2" />
+                  Nota Credito
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDebitNoteModal(true)}
+                >
+                  <FilePlus className="h-4 w-4 mr-2" />
+                  Nota Debito
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1125,6 +1147,23 @@ export default function InvoiceDetailPage() {
           payments={[]}
           dianCufe={invoice.dianCufe}
           footerMessage="¡Gracias por su compra!"
+        />
+      )}
+      {/* Credit Note Modal */}
+      {invoice.dianCufe && (
+        <CreditNoteModal
+          open={showCreditNoteModal}
+          onOpenChange={setShowCreditNoteModal}
+          invoice={invoice}
+        />
+      )}
+
+      {/* Debit Note Modal */}
+      {invoice.dianCufe && (
+        <DebitNoteModal
+          open={showDebitNoteModal}
+          onOpenChange={setShowDebitNoteModal}
+          invoice={invoice}
         />
       )}
     </PageWrapper>

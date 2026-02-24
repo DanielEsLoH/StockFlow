@@ -285,4 +285,32 @@ export const queryKeys = {
       ["bank", "statements", "account", bankAccountId] as const,
     statement: (id: string) => ["bank", "statements", id] as const,
   },
+
+  // Payroll - Employees
+  payrollEmployees: {
+    all: ["payrollEmployees"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.payrollEmployees.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.payrollEmployees.all, id] as const,
+  },
+
+  // Payroll - Config
+  payrollConfig: {
+    all: ["payrollConfig"] as const,
+    detail: () => [...queryKeys.payrollConfig.all, "detail"] as const,
+  },
+
+  // Payroll - Periods
+  payrollPeriods: {
+    all: ["payrollPeriods"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.payrollPeriods.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.payrollPeriods.all, id] as const,
+  },
+
+  // Payroll - Entries
+  payrollEntries: {
+    all: ["payrollEntries"] as const,
+    detail: (id: string) => [...queryKeys.payrollEntries.all, id] as const,
+  },
 };

@@ -14,6 +14,10 @@ import type {
   CheckDocumentStatusResult,
   PaginatedDianDocuments,
   DianDocumentStatus,
+  GenerateCreditNoteDto,
+  GenerateDebitNoteDto,
+  SetNoteConfigDto,
+  NoteResult,
 } from "~/types/dian";
 
 const BASE_URL = "/dian";
@@ -91,6 +95,37 @@ export async function checkDocumentStatus(
 ): Promise<CheckDocumentStatusResult> {
   const response = await api.post<CheckDocumentStatusResult>(
     `${BASE_URL}/check-status`,
+    data,
+  );
+  return response.data;
+}
+
+// Credit/Debit note endpoints
+export async function createCreditNote(
+  data: GenerateCreditNoteDto,
+): Promise<NoteResult> {
+  const response = await api.post<NoteResult>(
+    `${BASE_URL}/credit-note`,
+    data,
+  );
+  return response.data;
+}
+
+export async function createDebitNote(
+  data: GenerateDebitNoteDto,
+): Promise<NoteResult> {
+  const response = await api.post<NoteResult>(
+    `${BASE_URL}/debit-note`,
+    data,
+  );
+  return response.data;
+}
+
+export async function setNoteConfig(
+  data: SetNoteConfigDto,
+): Promise<{ success: boolean; message: string }> {
+  const response = await api.post<{ success: boolean; message: string }>(
+    `${BASE_URL}/config/notes`,
     data,
   );
   return response.data;

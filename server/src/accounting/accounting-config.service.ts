@@ -18,6 +18,11 @@ export interface AccountingConfigResponse {
   inventoryAdjustmentId: string | null;
   reteFuenteReceivedId: string | null;
   reteFuentePayableId: string | null;
+  payrollExpenseId: string | null;
+  payrollPayableId: string | null;
+  payrollRetentionsId: string | null;
+  payrollContributionsId: string | null;
+  payrollProvisionsId: string | null;
   autoGenerateEntries: boolean;
   isConfigured: boolean;
   createdAt: Date;
@@ -96,6 +101,11 @@ export class AccountingConfigService {
       inventoryAdjustmentId: config.inventoryAdjustmentId,
       reteFuenteReceivedId: config.reteFuenteReceivedId,
       reteFuentePayableId: config.reteFuentePayableId,
+      payrollExpenseId: config.payrollExpenseId,
+      payrollPayableId: config.payrollPayableId,
+      payrollRetentionsId: config.payrollRetentionsId,
+      payrollContributionsId: config.payrollContributionsId,
+      payrollProvisionsId: config.payrollProvisionsId,
       autoGenerateEntries: config.autoGenerateEntries,
       isConfigured,
       createdAt: config.createdAt,

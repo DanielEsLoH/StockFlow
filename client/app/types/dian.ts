@@ -198,6 +198,83 @@ export interface PaginatedDianDocuments {
   };
 }
 
+// ─── Credit/Debit Note Types ──────────────────────────────────────────────
+
+export enum CreditNoteReason {
+  DEVOLUCION_PARCIAL = "DEVOLUCION_PARCIAL",
+  ANULACION = "ANULACION",
+  DESCUENTO = "DESCUENTO",
+  AJUSTE_PRECIO = "AJUSTE_PRECIO",
+  OTRO = "OTRO",
+}
+
+export enum DebitNoteReason {
+  INTERESES = "INTERESES",
+  GASTOS = "GASTOS",
+  CAMBIO_VALOR = "CAMBIO_VALOR",
+  OTRO = "OTRO",
+}
+
+export const creditNoteReasonLabels: Record<CreditNoteReason, string> = {
+  [CreditNoteReason.DEVOLUCION_PARCIAL]: "Devolucion parcial de bienes",
+  [CreditNoteReason.ANULACION]: "Anulacion de factura",
+  [CreditNoteReason.DESCUENTO]: "Rebaja o descuento parcial/total",
+  [CreditNoteReason.AJUSTE_PRECIO]: "Ajuste de precio",
+  [CreditNoteReason.OTRO]: "Otros",
+};
+
+export const debitNoteReasonLabels: Record<DebitNoteReason, string> = {
+  [DebitNoteReason.INTERESES]: "Intereses",
+  [DebitNoteReason.GASTOS]: "Gastos por cobrar",
+  [DebitNoteReason.CAMBIO_VALOR]: "Cambio del valor",
+  [DebitNoteReason.OTRO]: "Otros",
+};
+
+export interface CreditNoteItemDto {
+  invoiceItemId: string;
+  quantity: number;
+}
+
+export interface GenerateCreditNoteDto {
+  invoiceId: string;
+  reasonCode: CreditNoteReason;
+  reason: string;
+  description?: string;
+  items?: CreditNoteItemDto[];
+}
+
+export interface DebitNoteItemDto {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+}
+
+export interface GenerateDebitNoteDto {
+  invoiceId: string;
+  reasonCode: DebitNoteReason;
+  reason: string;
+  description?: string;
+  items: DebitNoteItemDto[];
+}
+
+export interface SetNoteConfigDto {
+  creditNotePrefix?: string;
+  creditNoteStartNumber?: number;
+  debitNotePrefix?: string;
+  debitNoteStartNumber?: number;
+}
+
+export interface NoteResult {
+  success: boolean;
+  documentId: string;
+  cude?: string;
+  trackId?: string;
+  status: DianDocumentStatus;
+  message: string;
+  errors?: string[];
+}
+
 // Colombia geographic data for forms
 export interface ColombiaDepartment {
   code: string;

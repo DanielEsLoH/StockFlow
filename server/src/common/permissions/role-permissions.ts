@@ -129,6 +129,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.BANK_CREATE,
     Permission.BANK_IMPORT,
     Permission.BANK_RECONCILE,
+
+    // Payroll - Full access
+    Permission.PAYROLL_VIEW,
+    Permission.PAYROLL_CREATE,
+    Permission.PAYROLL_EDIT,
+    Permission.PAYROLL_APPROVE,
+    Permission.PAYROLL_CONFIG,
+    Permission.PAYROLL_SEND,
   ],
 
   /**
@@ -232,6 +240,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Bank - View only
     Permission.BANK_VIEW,
     // Note: Cannot create bank accounts, import, or reconcile
+
+    // Payroll - View and basic edit
+    Permission.PAYROLL_VIEW,
+    Permission.PAYROLL_CREATE,
+    Permission.PAYROLL_EDIT,
+    // Note: Cannot approve, configure, or send to DIAN (ADMIN only)
   ],
 
   /**
@@ -275,6 +289,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.BANK_IMPORT,
     Permission.BANK_RECONCILE,
     // Note: Cannot create bank accounts (ADMIN only)
+
+    // Payroll - View only (for financial review)
+    Permission.PAYROLL_VIEW,
   ],
 
   [UserRole.EMPLOYEE]: [

@@ -115,6 +115,14 @@ export enum Permission {
   BANK_IMPORT = 'bank:import',
   BANK_RECONCILE = 'bank:reconcile',
 
+  // === Payroll Module ===
+  PAYROLL_VIEW = 'payroll:view',
+  PAYROLL_CREATE = 'payroll:create',
+  PAYROLL_EDIT = 'payroll:edit',
+  PAYROLL_APPROVE = 'payroll:approve',
+  PAYROLL_CONFIG = 'payroll:config',
+  PAYROLL_SEND = 'payroll:send',
+
   // === Dashboard Module ===
   DASHBOARD_VIEW = 'dashboard:view',
 }
@@ -223,6 +231,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.BANK_CREATE,
     Permission.BANK_IMPORT,
     Permission.BANK_RECONCILE,
+    // Payroll - Full access
+    Permission.PAYROLL_VIEW,
+    Permission.PAYROLL_CREATE,
+    Permission.PAYROLL_EDIT,
+    Permission.PAYROLL_APPROVE,
+    Permission.PAYROLL_CONFIG,
+    Permission.PAYROLL_SEND,
   ],
 
   MANAGER: [
@@ -294,6 +309,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.ACCOUNTING_VIEW,
     // Bank - View only
     Permission.BANK_VIEW,
+    // Payroll - Operational
+    Permission.PAYROLL_VIEW,
+    Permission.PAYROLL_CREATE,
+    Permission.PAYROLL_EDIT,
   ],
 
   EMPLOYEE: [
@@ -358,6 +377,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.BANK_VIEW,
     Permission.BANK_IMPORT,
     Permission.BANK_RECONCILE,
+    // Payroll - View only
+    Permission.PAYROLL_VIEW,
     // --- RESTRICTED: No POS, no create/edit/delete, no users, no settings, no cash registers ---
   ],
 };
@@ -505,6 +526,17 @@ export const PERMISSION_CATEGORIES = {
       Permission.BANK_RECONCILE,
     ],
   },
+  payroll: {
+    label: 'Nómina',
+    permissions: [
+      Permission.PAYROLL_VIEW,
+      Permission.PAYROLL_CREATE,
+      Permission.PAYROLL_EDIT,
+      Permission.PAYROLL_APPROVE,
+      Permission.PAYROLL_CONFIG,
+      Permission.PAYROLL_SEND,
+    ],
+  },
   dashboard: {
     label: 'Dashboard',
     permissions: [Permission.DASHBOARD_VIEW],
@@ -622,6 +654,14 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   [Permission.BANK_CREATE]: 'Crear cuentas bancarias',
   [Permission.BANK_IMPORT]: 'Importar extractos bancarios',
   [Permission.BANK_RECONCILE]: 'Conciliar extractos',
+
+  // Payroll
+  [Permission.PAYROLL_VIEW]: 'Ver nómina',
+  [Permission.PAYROLL_CREATE]: 'Crear empleados y periodos',
+  [Permission.PAYROLL_EDIT]: 'Editar nómina',
+  [Permission.PAYROLL_APPROVE]: 'Aprobar nómina',
+  [Permission.PAYROLL_CONFIG]: 'Configurar nómina',
+  [Permission.PAYROLL_SEND]: 'Enviar nómina a DIAN',
 
   // Dashboard
   [Permission.DASHBOARD_VIEW]: 'Ver dashboard',

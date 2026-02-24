@@ -5,6 +5,7 @@ import {
   XmlGeneratorService,
   CufeGeneratorService,
   DianClientService,
+  XmlSignerService,
 } from './services';
 
 @Module({
@@ -14,6 +15,7 @@ import {
     XmlGeneratorService,
     CufeGeneratorService,
     DianClientService,
+    XmlSignerService,
   ],
   exports: [DianService],
 })

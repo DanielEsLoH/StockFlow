@@ -434,6 +434,172 @@ export class AccountingBridgeService {
   }
 
   /**
+   * Generate journal entry for approved payroll.
+   * Called from PayrollPeriodsService.approvePeriod() after approval.
+   *
+   * Entry:
+   *   DR 5105 Gastos de personal (sueldos + extras + bonificaciones + etc.)
+   *   DR 5115 Aportes patronales (salud + pensión + ARL + caja + SENA + ICBF)
+   *   DR 5120 Provisiones prestaciones (prima + cesantías + intereses + vacaciones)
+   *   CR 2505 Salarios por pagar (neto)
+   *   CR 2370 Retenciones por pagar (retención fuente)
+   *   CR 2380 Aportes por pagar (salud + pensión empleado + fondo solidaridad)
+   *   CR 2380 Aportes patronales por pagar (empleador contributions)
+   *   CR 2610 Obligaciones laborales (provisiones)
+   */
+  async onPayrollApproved(params: {
+    tenantId: string;
+    periodId: string;
+    periodName: string;
+    totalDevengados: number;
+    totalDeducciones: number;
+    totalNeto: number;
+    totalSaludEmpleado: number;
+    totalPensionEmpleado: number;
+    totalFondoSolidaridad: number;
+    totalRetencionFuente: number;
+    totalSaludEmpleador: number;
+    totalPensionEmpleador: number;
+    totalArlEmpleador: number;
+    totalCajaEmpleador: number;
+    totalSenaEmpleador: number;
+    totalIcbfEmpleador: number;
+    totalProvisionPrima: number;
+    totalProvisionCesantias: number;
+    totalProvisionIntereses: number;
+    totalProvisionVacaciones: number;
+  }): Promise<void> {
+    try {
+      const config = await this.configService.getConfigForTenant(params.tenantId);
+      if (!config?.autoGenerateEntries) return;
+
+      const {
+        payrollExpenseId,
+        payrollPayableId,
+        payrollRetentionsId,
+        payrollContributionsId,
+        payrollProvisionsId,
+      } = config;
+
+      if (!payrollExpenseId || !payrollPayableId) {
+        this.logger.warn(`Payroll accounting config incomplete for tenant ${params.tenantId}`);
+        return;
+      }
+
+      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+
+      // DR Gastos de personal = totalDevengados
+      if (params.totalDevengados > 0) {
+        lines.push({
+          accountId: payrollExpenseId,
+          description: `Gastos personal ${params.periodName}`,
+          debit: params.totalDevengados,
+          credit: 0,
+        });
+      }
+
+      // DR Aportes patronales
+      const totalAportes =
+        params.totalSaludEmpleador + params.totalPensionEmpleador +
+        params.totalArlEmpleador + params.totalCajaEmpleador +
+        params.totalSenaEmpleador + params.totalIcbfEmpleador;
+
+      if (totalAportes > 0 && payrollContributionsId) {
+        lines.push({
+          accountId: payrollContributionsId,
+          description: `Aportes patronales ${params.periodName}`,
+          debit: totalAportes,
+          credit: 0,
+        });
+      }
+
+      // DR Provisiones prestaciones
+      const totalProvisiones =
+        params.totalProvisionPrima + params.totalProvisionCesantias +
+        params.totalProvisionIntereses + params.totalProvisionVacaciones;
+
+      if (totalProvisiones > 0 && payrollProvisionsId) {
+        lines.push({
+          accountId: payrollProvisionsId,
+          description: `Provisiones ${params.periodName}`,
+          debit: totalProvisiones,
+          credit: 0,
+        });
+      }
+
+      // CR Salarios por pagar = neto
+      if (params.totalNeto > 0) {
+        lines.push({
+          accountId: payrollPayableId,
+          description: `Nómina por pagar ${params.periodName}`,
+          debit: 0,
+          credit: params.totalNeto,
+        });
+      }
+
+      // CR Retenciones por pagar
+      if (params.totalRetencionFuente > 0 && payrollRetentionsId) {
+        lines.push({
+          accountId: payrollRetentionsId,
+          description: `ReteFuente nómina ${params.periodName}`,
+          debit: 0,
+          credit: params.totalRetencionFuente,
+        });
+      }
+
+      // CR Aportes empleado por pagar
+      const totalAportesEmpleado =
+        params.totalSaludEmpleado + params.totalPensionEmpleado + params.totalFondoSolidaridad;
+
+      if (totalAportesEmpleado > 0 && payrollContributionsId) {
+        lines.push({
+          accountId: payrollContributionsId,
+          description: `Aportes empleado ${params.periodName}`,
+          debit: 0,
+          credit: totalAportesEmpleado,
+        });
+      }
+
+      // CR Aportes patronales por pagar
+      if (totalAportes > 0 && payrollContributionsId) {
+        lines.push({
+          accountId: payrollContributionsId,
+          description: `Aportes patronales por pagar ${params.periodName}`,
+          debit: 0,
+          credit: totalAportes,
+        });
+      }
+
+      // CR Obligaciones laborales (provisiones)
+      if (totalProvisiones > 0 && payrollProvisionsId) {
+        lines.push({
+          accountId: payrollProvisionsId,
+          description: `Provisiones por pagar ${params.periodName}`,
+          debit: 0,
+          credit: totalProvisiones,
+        });
+      }
+
+      if (lines.length === 0) return;
+
+      await this.journalEntriesService.createAutoEntry({
+        tenantId: params.tenantId,
+        date: new Date(),
+        description: `Nómina aprobada - ${params.periodName}`,
+        source: JournalEntrySource.PAYROLL_APPROVED,
+        lines,
+      });
+
+      this.logger.debug(`Payroll entry generated for ${params.periodName}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate payroll entry for ${params.periodName}`,
+        error instanceof Error ? error.stack : error,
+      );
+    }
+  }
+
+  /**
    * Map payment method to the appropriate PUC account.
    * CASH → Caja (1105), everything else → Bancos (1110)
    */

@@ -6,7 +6,7 @@ import {
   InvoiceWithDetails,
 } from './xml-generator.service';
 import type { TenantDianConfig, Customer } from '@prisma/client';
-import { PaymentMethod } from '@prisma/client';
+import { CreditNoteReason, PaymentMethod } from '@prisma/client';
 
 describe('XmlGeneratorService', () => {
   let service: XmlGeneratorService;
@@ -516,6 +516,7 @@ describe('XmlGeneratorService', () => {
         config,
         originalInvoice,
         'Devolucion de mercancia',
+        CreditNoteReason.DEVOLUCION_PARCIAL,
       );
 
       expect(xml).toBeDefined();
@@ -536,12 +537,13 @@ describe('XmlGeneratorService', () => {
         config,
         originalInvoice,
         'Devolucion',
+        CreditNoteReason.DEVOLUCION_PARCIAL,
       );
 
       expect(xml).toContain('schemeName="CUDE-SHA384"');
     });
 
-    it('should include discrepancy response', () => {
+    it('should include discrepancy response with dynamic response code', () => {
       const config: XmlGeneratorConfig = {
         dianConfig: mockDianConfig,
         invoice: mockInvoice,
@@ -553,6 +555,7 @@ describe('XmlGeneratorService', () => {
         config,
         originalInvoice,
         'Devolucion de mercancia',
+        CreditNoteReason.ANULACION,
       );
 
       expect(xml).toContain('<cac:DiscrepancyResponse>');
@@ -575,6 +578,7 @@ describe('XmlGeneratorService', () => {
         config,
         originalInvoice,
         'Anulacion',
+        CreditNoteReason.ANULACION,
       );
 
       expect(xml).toContain('<cac:BillingReference>');
@@ -597,6 +601,7 @@ describe('XmlGeneratorService', () => {
         config,
         originalInvoice,
         'Devolucion',
+        CreditNoteReason.DEVOLUCION_PARCIAL,
       );
 
       expect(xml).toContain('<cac:CreditNoteLine>');
@@ -616,10 +621,11 @@ describe('XmlGeneratorService', () => {
         config,
         originalInvoice,
         'Devolucion',
+        CreditNoteReason.DEVOLUCION_PARCIAL,
       );
 
       expect(xml).toContain(
-        '<cbc:CreditNoteTypeCode>91</cbc:CreditNoteTypeCode>',
+        '<cbc:CreditNoteTypeCode listAgencyID="6" listID="UNCL1001">91</cbc:CreditNoteTypeCode>',
       );
     });
 
@@ -635,6 +641,7 @@ describe('XmlGeneratorService', () => {
         config,
         originalInvoice,
         'Devolucion',
+        CreditNoteReason.DEVOLUCION_PARCIAL,
       );
 
       expect(xml).toContain('<cbc:CustomizationID>20</cbc:CustomizationID>');
@@ -653,6 +660,7 @@ describe('XmlGeneratorService', () => {
         config,
         originalWithoutCufe,
         'Devolucion',
+        CreditNoteReason.DEVOLUCION_PARCIAL,
       );
 
       expect(xml).toContain('schemeName="CUFE-SHA384"></cbc:UUID>');

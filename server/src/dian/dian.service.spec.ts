@@ -6,6 +6,7 @@ import { TenantContextService } from '../common';
 import { XmlGeneratorService } from './services/xml-generator.service';
 import { CufeGeneratorService } from './services/cufe-generator.service';
 import { DianClientService } from './services/dian-client.service';
+import { XmlSignerService } from './services/xml-signer.service';
 import { DianDocumentStatus, DianDocumentType } from '@prisma/client';
 
 describe('DianService', () => {
@@ -151,6 +152,19 @@ describe('DianService', () => {
       }),
     };
 
+    const mockXmlSignerService = {
+      loadCertificate: jest.fn(),
+      validateCertificate: jest.fn().mockReturnValue({
+        isValid: true,
+        subject: 'CN=Test',
+        issuer: 'CN=CA',
+        validFrom: new Date('2024-01-01'),
+        validTo: new Date('2025-12-31'),
+        errors: [],
+      }),
+      signXml: jest.fn().mockReturnValue('<xml>signed</xml>'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DianService,
@@ -159,6 +173,7 @@ describe('DianService', () => {
         { provide: XmlGeneratorService, useValue: mockXmlGeneratorService },
         { provide: CufeGeneratorService, useValue: mockCufeGeneratorService },
         { provide: DianClientService, useValue: mockDianClientService },
+        { provide: XmlSignerService, useValue: mockXmlSignerService },
       ],
     }).compile();
 

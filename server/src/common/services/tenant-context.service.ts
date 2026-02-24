@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { Tenant, TenantStatus, UserRole } from '@prisma/client';
+import { Tenant, TenantStatus, UserRole, EmployeeStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { getTenantId as getTenantIdFromStorage } from '../context';
 import { getPlanLimits } from '../../subscriptions/plan-limits';
@@ -15,7 +15,7 @@ import { getPlanLimits } from '../../subscriptions/plan-limits';
 /**
  * Supported limit types that can be checked against tenant plan limits.
  */
-export type LimitType = 'users' | 'products' | 'invoices' | 'warehouses' | 'contadores';
+export type LimitType = 'users' | 'products' | 'invoices' | 'warehouses' | 'contadores' | 'employees';
 
 /**
  * Interface for the authenticated request with tenant information.
@@ -283,6 +283,11 @@ export class TenantContextService {
           where: { tenantId },
         });
 
+      case 'employees':
+        return this.prisma.employee.count({
+          where: { tenantId, status: { not: EmployeeStatus.TERMINATED } },
+        });
+
       default: {
         const exhaustiveCheck: never = limitType;
         throw new Error(`Unknown limit type: ${String(exhaustiveCheck)}`);
@@ -421,6 +426,7 @@ export class TenantContextService {
       'products',
       'invoices',
       'warehouses',
+      'employees',
     ];
 
     const result = {} as Record<
@@ -459,6 +465,8 @@ export class TenantContextService {
         return tenant.maxInvoices;
       case 'warehouses':
         return tenant.maxWarehouses;
+      case 'employees':
+        return tenant.maxEmployees;
       default: {
         const exhaustiveCheck: never = limitType;
         throw new Error(`Unknown limit type: ${String(exhaustiveCheck)}`);

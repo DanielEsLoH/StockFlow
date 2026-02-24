@@ -35,6 +35,9 @@ import {
   SetDianResolutionDto,
   SendInvoiceDto,
   CheckDocumentStatusDto,
+  GenerateCreditNoteDto,
+  GenerateDebitNoteDto,
+  SetNoteConfigDto,
 } from './dto';
 import { DianConfigEntity } from './entities/dian-config.entity';
 import {
@@ -204,6 +207,52 @@ export class DianController {
   async checkStatus(@Body() dto: CheckDocumentStatusDto) {
     this.logger.log(`Checking status for document ${dto.documentId}`);
     return this.dianService.checkDocumentStatus(dto.documentId);
+  }
+
+  @Post('credit-note')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create credit note',
+    description:
+      'Generates and sends a credit note (nota crédito) to DIAN for an existing invoice.',
+  })
+  @ApiResponse({ status: 200, description: 'Credit note created and sent' })
+  @ApiResponse({ status: 400, description: 'Invalid data or invoice not accepted' })
+  @ApiResponse({ status: 404, description: 'Invoice not found' })
+  async createCreditNote(@Body() dto: GenerateCreditNoteDto) {
+    this.logger.log(`Creating credit note for invoice ${dto.invoiceId}`);
+    return this.dianService.processCreditNote(dto);
+  }
+
+  @Post('debit-note')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Create debit note',
+    description:
+      'Generates and sends a debit note (nota débito) to DIAN for an existing invoice.',
+  })
+  @ApiResponse({ status: 200, description: 'Debit note created and sent' })
+  @ApiResponse({ status: 400, description: 'Invalid data or invoice not accepted' })
+  @ApiResponse({ status: 404, description: 'Invoice not found' })
+  async createDebitNote(@Body() dto: GenerateDebitNoteDto) {
+    this.logger.log(`Creating debit note for invoice ${dto.invoiceId}`);
+    return this.dianService.processDebitNote(dto);
+  }
+
+  @Post('config/notes')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Set note numbering configuration',
+    description:
+      'Configures prefixes and starting numbers for credit and debit notes.',
+  })
+  @ApiResponse({ status: 200, description: 'Note configuration updated' })
+  async setNoteConfig(@Body() dto: SetNoteConfigDto) {
+    this.logger.log('Setting note configuration');
+    return this.dianService.setNoteConfig(dto);
   }
 
   // ============================================================================

@@ -19,11 +19,13 @@ import {
   useSetSoftwareCredentials,
   useSetResolution,
   useUploadCertificate,
+  useSetNoteConfig,
 } from "~/hooks/useDian";
 import type {
   CreateDianConfigDto,
   SetDianSoftwareDto,
   SetDianResolutionDto,
+  SetNoteConfigDto,
   TaxResponsibility,
 } from "~/types/dian";
 import { taxResponsibilityLabels } from "~/types/dian";
@@ -35,9 +37,10 @@ import {
   Shield,
   CheckCircle,
   Loader2,
+  Hash,
 } from "lucide-react";
 
-type ActiveTab = "company" | "software" | "resolution" | "certificate";
+type ActiveTab = "company" | "software" | "resolution" | "certificate" | "notes";
 
 export default function DianConfigPage() {
   const { data: config, isLoading } = useDianConfig();
@@ -46,6 +49,7 @@ export default function DianConfigPage() {
   const setSoftwareCredentials = useSetSoftwareCredentials();
   const setResolution = useSetResolution();
   const uploadCertificate = useUploadCertificate();
+  const setNoteConfigMutation = useSetNoteConfig();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("company");
 
@@ -83,6 +87,12 @@ export default function DianConfigPage() {
       label: "Certificado",
       icon: Shield,
       complete: config?.hasCertificate,
+    },
+    {
+      id: "notes" as const,
+      label: "Notas",
+      icon: Hash,
+      complete: false,
     },
   ];
 
@@ -184,6 +194,16 @@ export default function DianConfigPage() {
             await uploadCertificate.mutateAsync({ file, password });
           }}
           isLoading={uploadCertificate.isPending}
+        />
+      )}
+
+      {activeTab === "notes" && (
+        <NoteConfigForm
+          hasConfig={!!config}
+          onSubmit={async (data) => {
+            await setNoteConfigMutation.mutateAsync(data);
+          }}
+          isLoading={setNoteConfigMutation.isPending}
         />
       )}
     </PageWrapper>
@@ -802,6 +822,134 @@ function CertificateUploadForm({
           <Button type="submit" disabled={isLoading || !file || !password}>
             {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {hasCertificate ? "Reemplazar Certificado" : "Cargar Certificado"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Note Configuration Form
+function NoteConfigForm({
+  hasConfig,
+  onSubmit,
+  isLoading,
+}: {
+  hasConfig: boolean;
+  onSubmit: (data: SetNoteConfigDto) => Promise<void>;
+  isLoading: boolean;
+}) {
+  const {
+    register,
+    handleSubmit,
+  } = useForm<SetNoteConfigDto>({
+    defaultValues: {
+      creditNotePrefix: "NC",
+      creditNoteStartNumber: 1,
+      debitNotePrefix: "ND",
+      debitNoteStartNumber: 1,
+    },
+  });
+
+  if (!hasConfig) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <p className="text-neutral-500">
+            Primero debes configurar los datos de la empresa
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Numeracion de Notas</CardTitle>
+        <CardDescription>
+          Configura los prefijos y numeracion inicial para notas credito y debito
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Credit Note */}
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">
+              Notas Credito
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                  htmlFor="creditNotePrefix"
+                >
+                  Prefijo
+                </label>
+                <Input
+                  id="creditNotePrefix"
+                  {...register("creditNotePrefix")}
+                  placeholder="NC"
+                />
+              </div>
+              <div>
+                <label
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                  htmlFor="creditNoteStartNumber"
+                >
+                  Numero Inicial
+                </label>
+                <Input
+                  id="creditNoteStartNumber"
+                  type="number"
+                  min={1}
+                  {...register("creditNoteStartNumber", { valueAsNumber: true })}
+                  placeholder="1"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Debit Note */}
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 dark:text-white mb-3">
+              Notas Debito
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                  htmlFor="debitNotePrefix"
+                >
+                  Prefijo
+                </label>
+                <Input
+                  id="debitNotePrefix"
+                  {...register("debitNotePrefix")}
+                  placeholder="ND"
+                />
+              </div>
+              <div>
+                <label
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                  htmlFor="debitNoteStartNumber"
+                >
+                  Numero Inicial
+                </label>
+                <Input
+                  id="debitNoteStartNumber"
+                  type="number"
+                  min={1}
+                  {...register("debitNoteStartNumber", { valueAsNumber: true })}
+                  placeholder="1"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Guardar Configuracion de Notas
           </Button>
         </form>
       </CardContent>

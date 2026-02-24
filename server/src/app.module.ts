@@ -34,6 +34,7 @@ import { QuotationsModule } from './quotations';
 import { PurchaseOrdersModule } from './purchase-orders';
 import { AccountingModule } from './accounting';
 import { BankModule } from './bank';
+import { PayrollModule } from './payroll/payroll.module';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 import { PermissionsModule } from './common/permissions';
@@ -79,6 +80,7 @@ import { PermissionsModule } from './common/permissions';
     PurchaseOrdersModule,
     AccountingModule,
     BankModule,
+    PayrollModule,
   ],
   controllers: [AppController],
   providers: [AppService],

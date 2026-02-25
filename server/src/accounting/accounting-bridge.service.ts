@@ -282,6 +282,66 @@ export class AccountingBridgeService {
   }
 
   /**
+   * Generate journal entry for a supplier payment (purchase payment).
+   * Called from PurchasePaymentsService.create() after the transaction completes.
+   *
+   * Entry:
+   *   DR 2205 Proveedores = amount  (reduces the AP liability)
+   *   CR 1105 Caja / 1110 Bancos = amount
+   */
+  async onPurchasePaymentCreated(params: {
+    tenantId: string;
+    purchasePaymentId: string;
+    purchaseOrderId: string;
+    purchaseOrderNumber: string;
+    amount: number;
+    method: PaymentMethod;
+  }): Promise<void> {
+    try {
+      const config = await this.configService.getConfigForTenant(params.tenantId);
+      if (!config?.autoGenerateEntries) return;
+
+      const { cashAccountId, bankAccountId, accountsPayableId } = config;
+      if (!accountsPayableId) return;
+
+      const creditAccountId = this.getPaymentAccountId(params.method, cashAccountId, bankAccountId);
+      if (!creditAccountId) {
+        this.logger.warn(`No account mapped for payment method ${params.method}`);
+        return;
+      }
+
+      await this.journalEntriesService.createAutoEntry({
+        tenantId: params.tenantId,
+        date: new Date(),
+        description: `Pago proveedor - OC ${params.purchaseOrderNumber} (${params.method})`,
+        source: JournalEntrySource.PURCHASE_PAYMENT,
+        purchaseOrderId: params.purchaseOrderId,
+        lines: [
+          {
+            accountId: accountsPayableId,
+            description: `Pago proveedor OC ${params.purchaseOrderNumber}`,
+            debit: params.amount,
+            credit: 0,
+          },
+          {
+            accountId: creditAccountId,
+            description: `Salida caja/banco OC ${params.purchaseOrderNumber}`,
+            debit: 0,
+            credit: params.amount,
+          },
+        ],
+      });
+
+      this.logger.debug(`Purchase payment entry generated for OC ${params.purchaseOrderNumber}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate purchase payment entry for OC ${params.purchaseOrderNumber}`,
+        error instanceof Error ? error.stack : error,
+      );
+    }
+  }
+
+  /**
    * Generate journal entry for a purchase order received.
    * Called from PurchaseOrdersService.receive() after the transaction completes.
    *

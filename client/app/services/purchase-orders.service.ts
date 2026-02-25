@@ -6,6 +6,8 @@ import type {
   CreatePurchaseOrderData,
   UpdatePurchaseOrderData,
   PurchaseOrderStats,
+  PurchasePayment,
+  CreatePurchasePaymentData,
 } from "~/types/purchase-order";
 
 export const purchaseOrdersService = {
@@ -87,5 +89,30 @@ export const purchaseOrdersService = {
       "/purchase-orders/stats",
     );
     return data;
+  },
+
+  async getPurchasePayments(poId: string): Promise<PurchasePayment[]> {
+    const { data } = await api.get<PurchasePayment[]>(
+      `/purchase-orders/${poId}/payments`,
+    );
+    return data;
+  },
+
+  async createPurchasePayment(
+    poId: string,
+    paymentData: CreatePurchasePaymentData,
+  ): Promise<PurchasePayment> {
+    const { data } = await api.post<PurchasePayment>(
+      `/purchase-orders/${poId}/payments`,
+      paymentData,
+    );
+    return data;
+  },
+
+  async deletePurchasePayment(
+    poId: string,
+    paymentId: string,
+  ): Promise<void> {
+    await api.delete(`/purchase-orders/${poId}/payments/${paymentId}`);
   },
 };

@@ -15,6 +15,8 @@ import {
   Package,
   Loader2,
   Truck,
+  CreditCard,
+  DollarSign,
 } from "lucide-react";
 import type { Route } from "./+types/_app.purchases.$id";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
@@ -26,6 +28,8 @@ import {
   useConfirmPurchaseOrder,
   useReceivePurchaseOrder,
   useCancelPurchaseOrder,
+  usePurchasePayments,
+  useDeletePurchasePayment,
 } from "~/hooks/usePurchaseOrders";
 import { usePermissions } from "~/hooks/usePermissions";
 import { Permission } from "~/types/permissions";
@@ -44,7 +48,14 @@ import {
   TableCell,
 } from "~/components/ui/Table";
 import type { PurchaseOrderStatus } from "~/types/purchase-order";
-import { PurchaseOrderStatusLabels } from "~/types/purchase-order";
+import {
+  PurchaseOrderStatusLabels,
+  PaymentStatusLabels,
+  PaymentStatusVariants,
+} from "~/types/purchase-order";
+import { PaymentMethodLabels } from "~/types/payment";
+import type { PaymentMethod } from "~/types/payment";
+import { PurchasePaymentModal } from "~/components/payments/PurchasePaymentModal";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -152,9 +163,13 @@ export default function PurchaseOrderDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
 
   const { data: order, isLoading, isError } = usePurchaseOrder(id!);
+  const { data: payments = [] } = usePurchasePayments(id!);
   const deletePurchaseOrder = useDeletePurchaseOrder();
+  const deletePayment = useDeletePurchasePayment(id!);
   const sendPurchaseOrder = useSendPurchaseOrder();
   const confirmPurchaseOrder = useConfirmPurchaseOrder();
   const receivePurchaseOrder = useReceivePurchaseOrder();
@@ -248,6 +263,15 @@ export default function PurchaseOrderDetailPage() {
                   Orden de Compra {order.purchaseOrderNumber}
                 </h1>
                 <PurchaseOrderStatusBadge status={order.status} size="lg" />
+                {order.status === "RECEIVED" && (
+                  <Badge
+                    variant={PaymentStatusVariants[order.paymentStatus]}
+                    size="lg"
+                    icon={<DollarSign className="h-3 w-3" />}
+                  >
+                    {PaymentStatusLabels[order.paymentStatus]}
+                  </Badge>
+                )}
               </div>
               <p className="text-neutral-500 dark:text-neutral-400 mt-1">
                 Creada el {formatDate(order.createdAt)}
@@ -351,6 +375,19 @@ export default function PurchaseOrderDetailPage() {
                 )}
               </>
             )}
+
+            {/* RECEIVED: payment button */}
+            {order.status === "RECEIVED" &&
+              order.paymentStatus !== "PAID" &&
+              canEdit && (
+                <Button
+                  variant="primary"
+                  onClick={() => setShowPaymentModal(true)}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Registrar Pago
+                </Button>
+              )}
           </div>
         </div>
       </PageSection>
@@ -631,6 +668,129 @@ export default function PurchaseOrderDetailPage() {
         </Card>
       </PageSection>
 
+      {/* Payment section — only for RECEIVED orders */}
+      {order.status === "RECEIVED" && (
+        <PageSection>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-primary-500" />
+                Estado de Pago
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Progress bar */}
+              {(() => {
+                const totalPaid = payments.reduce(
+                  (sum, p) => sum + Number(p.amount),
+                  0
+                );
+                const remaining = Math.max(0, order.total - totalPaid);
+                const pct = order.total > 0 ? Math.min(100, (totalPaid / order.total) * 100) : 0;
+
+                return (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-neutral-500 dark:text-neutral-400">
+                          Pagado: {formatCurrency(totalPaid)} de{" "}
+                          {formatCurrency(order.total)}
+                        </span>
+                        <span className="font-medium text-neutral-900 dark:text-white">
+                          {pct.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            pct >= 100
+                              ? "bg-success-500"
+                              : pct > 0
+                                ? "bg-warning-500"
+                                : "bg-neutral-300 dark:bg-neutral-600"
+                          }`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      {remaining > 0 && (
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                          Saldo pendiente: {formatCurrency(remaining)}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+
+              {/* Payments table */}
+              {payments.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead>Metodo</TableHead>
+                        <TableHead>Referencia</TableHead>
+                        <TableHead className="text-right">Monto</TableHead>
+                        {canEdit && <TableHead className="w-10" />}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {payments.map((payment) => (
+                        <TableRow key={payment.id}>
+                          <TableCell>
+                            {formatDate(payment.paymentDate)}
+                          </TableCell>
+                          <TableCell>
+                            {PaymentMethodLabels[payment.method as PaymentMethod] ||
+                              payment.method}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-neutral-500 dark:text-neutral-400">
+                              {payment.reference || "—"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(payment.amount)}
+                          </TableCell>
+                          {canEdit && (
+                            <TableCell>
+                              <button
+                                onClick={() => setPaymentToDelete(payment.id)}
+                                className="p-1 text-neutral-400 hover:text-error-500 rounded transition-colors"
+                                title="Eliminar pago"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-8 text-neutral-400 dark:text-neutral-500">
+                  <CreditCard className="h-10 w-10 mb-2" />
+                  <p className="text-sm">No se han registrado pagos</p>
+                  {canEdit && order.paymentStatus !== "PAID" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => setShowPaymentModal(true)}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Registrar primer pago
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </PageSection>
+      )}
+
       {/* Notes */}
       {order.notes && (
         <PageSection>
@@ -680,6 +840,34 @@ export default function PurchaseOrderDetailPage() {
         cancelLabel="Volver"
         onConfirm={handleCancel}
         isLoading={cancelPurchaseOrder.isPending}
+        variant="danger"
+      />
+
+      {/* Purchase Payment Modal */}
+      <PurchasePaymentModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        purchaseOrderId={order.id}
+        purchaseOrderNumber={order.purchaseOrderNumber}
+        purchaseOrderTotal={order.total}
+        totalPaid={payments.reduce((sum, p) => sum + Number(p.amount), 0)}
+      />
+
+      {/* Delete Payment Confirmation */}
+      <ConfirmModal
+        open={!!paymentToDelete}
+        onOpenChange={(open) => !open && setPaymentToDelete(null)}
+        title="Eliminar Pago"
+        description="¿Estas seguro de eliminar este pago? El saldo de la orden se recalculara automaticamente."
+        confirmLabel="Eliminar Pago"
+        cancelLabel="Cancelar"
+        onConfirm={async () => {
+          if (paymentToDelete) {
+            await deletePayment.mutateAsync(paymentToDelete);
+            setPaymentToDelete(null);
+          }
+        }}
+        isLoading={deletePayment.isPending}
         variant="danger"
       />
     </PageWrapper>

@@ -21,9 +21,14 @@ import {
 } from '@nestjs/swagger';
 import { PurchaseOrdersService } from './purchase-orders.service';
 import {
+  PurchasePaymentsService,
+  type PurchasePaymentResponse,
+} from './purchase-payments.service';
+import {
   CreatePurchaseOrderDto,
   UpdatePurchaseOrderDto,
   FilterPurchaseOrdersDto,
+  CreatePurchasePaymentDto,
 } from './dto';
 import {
   PurchaseOrderEntity,
@@ -61,6 +66,7 @@ export class PurchaseOrdersController {
 
   constructor(
     private readonly purchaseOrdersService: PurchaseOrdersService,
+    private readonly purchasePaymentsService: PurchasePaymentsService,
   ) {}
 
   /**
@@ -554,5 +560,43 @@ export class PurchaseOrdersController {
     this.logger.log(`Cancelling purchase order: ${id}`);
 
     return this.purchaseOrdersService.cancel(id);
+  }
+
+  // ============================
+  // PURCHASE PAYMENTS
+  // ============================
+
+  @Get(':id/payments')
+  @RequirePermissions(Permission.PURCHASE_ORDERS_VIEW)
+  @ApiOperation({ summary: 'List payments for a purchase order' })
+  @ApiParam({ name: 'id', description: 'Purchase order ID' })
+  async getPayments(
+    @Param('id') id: string,
+  ): Promise<PurchasePaymentResponse[]> {
+    return this.purchasePaymentsService.findByPurchaseOrder(id);
+  }
+
+  @Post(':id/payments')
+  @RequirePermissions(Permission.PURCHASE_ORDERS_EDIT)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Record a payment for a purchase order' })
+  @ApiParam({ name: 'id', description: 'Purchase order ID' })
+  async createPayment(
+    @Param('id') id: string,
+    @Body() dto: CreatePurchasePaymentDto,
+  ): Promise<PurchasePaymentResponse> {
+    return this.purchasePaymentsService.create(id, dto);
+  }
+
+  @Delete(':id/payments/:paymentId')
+  @RequirePermissions(Permission.PURCHASE_ORDERS_EDIT)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a purchase payment' })
+  @ApiParam({ name: 'id', description: 'Purchase order ID' })
+  @ApiParam({ name: 'paymentId', description: 'Payment ID' })
+  async deletePayment(
+    @Param('paymentId') paymentId: string,
+  ): Promise<void> {
+    return this.purchasePaymentsService.delete(paymentId);
   }
 }

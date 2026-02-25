@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PurchaseOrdersController } from './purchase-orders.controller';
 import { PurchaseOrdersService } from './purchase-orders.service';
+import { PurchasePaymentsService } from './purchase-payments.service';
 import { JwtAuthGuard } from '../auth';
 import { PermissionsGuard } from '../common';
 
@@ -52,10 +53,17 @@ describe('PurchaseOrdersController', () => {
       cancel: jest.fn().mockResolvedValue({ ...mockPurchaseOrder, status: 'CANCELLED' }),
     };
 
+    const mockPaymentsService = {
+      findByPurchaseOrder: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({ id: 'pay-1', amount: 500 }),
+      delete: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PurchaseOrdersController],
       providers: [
         { provide: PurchaseOrdersService, useValue: mockService },
+        { provide: PurchasePaymentsService, useValue: mockPaymentsService },
       ],
     })
       .overrideGuard(JwtAuthGuard)

@@ -982,6 +982,7 @@ describe('AccountingReportsService', () => {
       total: number,
       issueDate: Date,
       paymentTerms: PaymentTerms = PaymentTerms.NET_30,
+      purchasePayments: { amount: number }[] = [],
     ) {
       return {
         id,
@@ -989,6 +990,7 @@ describe('AccountingReportsService', () => {
         total,
         issueDate,
         supplier: { id: supplierId, name: supplierName, documentNumber: '800333444', paymentTerms },
+        purchasePayments,
       };
     }
 
@@ -1072,6 +1074,34 @@ describe('AccountingReportsService', () => {
       const result = await service.getAPAgingReport(asOfDate);
 
       expect(result.rows).toHaveLength(0);
+    });
+
+    it('should deduct purchase payments from balance', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makePO('po-1', 'sup-1', 'Proveedor A', 5000, new Date('2024-12-15'), PaymentTerms.NET_30, [
+          { amount: 2000 },
+          { amount: 1000 },
+        ]),
+      ]);
+
+      const result = await service.getAPAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0].totalBalance).toBe(2000);
+      expect(result.totals.totalBalance).toBe(2000);
+    });
+
+    it('should skip fully paid POs', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makePO('po-1', 'sup-1', 'Proveedor A', 5000, new Date('2024-12-15'), PaymentTerms.NET_30, [
+          { amount: 5000 },
+        ]),
+      ]);
+
+      const result = await service.getAPAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(0);
+      expect(result.totals.totalBalance).toBe(0);
     });
   });
 

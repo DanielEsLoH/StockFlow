@@ -802,6 +802,7 @@ export class AccountingReportsService {
       },
       include: {
         supplier: { select: { id: true, name: true, documentNumber: true, paymentTerms: true } },
+        purchasePayments: { select: { amount: true } },
       },
     });
 
@@ -809,7 +810,11 @@ export class AccountingReportsService {
 
     for (const order of orders) {
       const supplierId = order.supplierId;
-      const balance = Number(order.total);
+      const paidAmount = order.purchasePayments.reduce(
+        (sum, p) => sum + Number(p.amount),
+        0,
+      );
+      const balance = Number(order.total) - paidAmount;
       if (balance <= 0) continue;
 
       // Calculate due date from payment terms

@@ -1,4 +1,49 @@
 import type { Supplier } from "./supplier";
+import type { PaymentMethod } from "./payment";
+
+export type PaymentStatus = "UNPAID" | "PARTIALLY_PAID" | "PAID";
+
+export const PaymentStatusLabels: Record<PaymentStatus, string> = {
+  UNPAID: "Sin pagar",
+  PARTIALLY_PAID: "Parcial",
+  PAID: "Pagada",
+};
+
+export const PaymentStatusVariants: Record<
+  PaymentStatus,
+  "default" | "primary" | "secondary" | "success" | "warning" | "error"
+> = {
+  UNPAID: "error",
+  PARTIALLY_PAID: "warning",
+  PAID: "success",
+};
+
+export interface PurchasePayment {
+  id: string;
+  tenantId: string;
+  purchaseOrderId: string;
+  amount: number;
+  method: PaymentMethod;
+  reference: string | null;
+  notes: string | null;
+  paymentDate: string;
+  createdAt: string;
+  purchaseOrder?: {
+    id: string;
+    purchaseOrderNumber: string;
+    total: number;
+    paymentStatus: PaymentStatus;
+    supplier?: { id: string; name: string } | null;
+  } | null;
+}
+
+export interface CreatePurchasePaymentData {
+  amount: number;
+  method: PaymentMethod;
+  reference?: string;
+  notes?: string;
+  paymentDate?: string;
+}
 
 export type PurchaseOrderStatus =
   | "DRAFT"
@@ -52,7 +97,7 @@ export interface PurchaseOrder {
   warehouseId: string;
   warehouse?: { id: string; name: string; code: string } | null;
   status: PurchaseOrderStatus;
-  paymentStatus: string;
+  paymentStatus: PaymentStatus;
   issueDate: string;
   expectedDeliveryDate: string | null;
   receivedDate: string | null;
@@ -76,7 +121,7 @@ export interface PurchaseOrderSummary {
   warehouseId: string;
   warehouse?: { id: string; name: string; code: string } | null;
   status: PurchaseOrderStatus;
-  paymentStatus: string;
+  paymentStatus: PaymentStatus;
   issueDate: string;
   expectedDeliveryDate: string | null;
   receivedDate: string | null;

@@ -11,6 +11,8 @@ import type {
   CreatePurchaseOrderData,
   UpdatePurchaseOrderData,
   PurchaseOrderStats,
+  PurchasePayment,
+  CreatePurchasePaymentData,
 } from "~/types/purchase-order";
 
 // ============================================================================
@@ -205,6 +207,74 @@ export function useCancelPurchaseOrder() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Error al cancelar la orden de compra");
+    },
+  });
+}
+
+// ============================================================================
+// PURCHASE PAYMENT QUERIES & MUTATIONS
+// ============================================================================
+
+export function usePurchasePayments(poId: string) {
+  const enabled = useIsQueryEnabled();
+  return useQuery<PurchasePayment[]>({
+    queryKey: queryKeys.purchaseOrders.payments(poId),
+    queryFn: () => purchaseOrdersService.getPurchasePayments(poId),
+    staleTime: 1000 * 60 * 2,
+    enabled: enabled && !!poId,
+  });
+}
+
+export function useCreatePurchasePayment(poId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreatePurchasePaymentData) =>
+      purchaseOrdersService.createPurchasePayment(poId, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.purchaseOrders.payments(poId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.purchaseOrders.detail(poId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.purchaseOrders.list(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.accounting.apAging(),
+      });
+      toast.success("Pago registrado exitosamente");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al registrar el pago");
+    },
+  });
+}
+
+export function useDeletePurchasePayment(poId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (paymentId: string) =>
+      purchaseOrdersService.deletePurchasePayment(poId, paymentId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.purchaseOrders.payments(poId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.purchaseOrders.detail(poId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.purchaseOrders.list(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.accounting.apAging(),
+      });
+      toast.success("Pago eliminado exitosamente");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al eliminar el pago");
     },
   });
 }

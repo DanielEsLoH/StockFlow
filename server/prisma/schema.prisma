@@ -380,6 +380,7 @@ model Tenant {
   supportDocuments        SupportDocument[]
   collectionReminders     CollectionReminder[]
   withholdingCertificates WithholdingCertificate[]
+  purchasePayments        PurchasePayment[]
 
   @@map("tenants")
 }
@@ -703,6 +704,27 @@ model Payment {
   @@index([tenantId, paymentDate])
   @@index([tenantId, method])
   @@map("payments")
+}
+
+model PurchasePayment {
+  id              String        @id @default(cuid())
+  tenantId        String        @map("tenant_id")
+  purchaseOrderId String        @map("purchase_order_id")
+  amount          Decimal       @db.Decimal(12, 2)
+  method          PaymentMethod @default(CASH)
+  reference       String?
+  notes           String?
+  paymentDate     DateTime      @default(now()) @map("payment_date")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([purchaseOrderId])
+  @@index([tenantId, paymentDate])
+  @@index([tenantId, method])
+  @@map("purchase_payments")
 }
 
 model AuditLog {
@@ -1115,6 +1137,7 @@ enum JournalEntrySource {
   PAYROLL_ADJUSTMENT
   CREDIT_NOTE
   DEBIT_NOTE
+  PURCHASE_PAYMENT
 }
 
 enum AccountingPeriodStatus {
@@ -1288,8 +1311,9 @@ model PurchaseOrder {
   supplier  Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   user      User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
   warehouse Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
-  items     PurchaseOrderItem[]
-  movements StockMovement[]
+  items            PurchaseOrderItem[]
+  movements        StockMovement[]
+  purchasePayments PurchasePayment[]
 
   @@unique([tenantId, purchaseOrderNumber])
   @@index([tenantId])

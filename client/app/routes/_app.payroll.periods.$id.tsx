@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router";
+import { Link, useParams, useNavigate } from "react-router";
 import {
   ArrowLeft,
   Calculator,
@@ -63,6 +63,7 @@ function LoadingSkeleton() {
 
 export default function PayrollPeriodDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const { data: period, isLoading, isError } = usePayrollPeriod(id!);
   const calculatePeriod = useCalculatePeriod();
@@ -255,7 +256,12 @@ export default function PayrollPeriodDetailPage() {
               </TableHeader>
               <TableBody>
                 {period.entries.map((entry, i) => (
-                  <AnimatedTableRow key={entry.id} index={i}>
+                  <AnimatedTableRow
+                    key={entry.id}
+                    index={i}
+                    className="cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                    onClick={() => navigate(`/payroll/entries/${entry.id}`)}
+                  >
                     <TableCell>
                       <span className="font-medium text-neutral-900 dark:text-white">
                         {entry.employeeName || "—"}

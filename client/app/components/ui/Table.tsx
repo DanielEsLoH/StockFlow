@@ -155,10 +155,11 @@ interface AnimatedTableRowProps {
   index?: number;
   className?: string;
   children?: React.ReactNode;
+  onClick?: () => void;
 }
 
 const AnimatedTableRow = React.forwardRef<HTMLTableRowElement, AnimatedTableRowProps>(
-  ({ className, index = 0, children }, ref) => {
+  ({ className, index = 0, children, onClick }, ref) => {
     return (
       <motion.tr
         ref={ref}
@@ -166,6 +167,7 @@ const AnimatedTableRow = React.forwardRef<HTMLTableRowElement, AnimatedTableRowP
         initial="hidden"
         animate="visible"
         custom={index}
+        onClick={onClick}
         className={cn(
           "border-b border-neutral-100 transition-colors hover:bg-neutral-50/50 dark:border-neutral-800 dark:hover:bg-neutral-800/50",
           className,

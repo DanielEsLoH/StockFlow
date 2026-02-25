@@ -39,6 +39,7 @@ import {
   ScrollText,
   FileMinus,
   FilePlus,
+  ShieldCheck,
 } from "lucide-react";
 import { cn, getInitials, formatCurrency } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
@@ -292,6 +293,12 @@ const navSections: NavSection[] = [
         href: "/billing",
         icon: Receipt,
         permission: Permission.SETTINGS_MANAGE,
+      },
+      {
+        name: "Auditoria",
+        href: "/audit-logs",
+        icon: ShieldCheck,
+        permission: Permission.AUDIT_VIEW,
       },
       {
         name: "Configuracion",

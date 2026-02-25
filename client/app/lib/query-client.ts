@@ -384,4 +384,13 @@ export const queryKeys = {
       params?: Record<string, unknown>,
     ) => [...queryKeys.kardex.all, "product", productId, params] as const,
   },
+
+  // Audit Logs
+  auditLogs: {
+    all: ["auditLogs"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.auditLogs.all, "list", filters] as const,
+    stats: (params?: Record<string, unknown>) =>
+      [...queryKeys.auditLogs.all, "stats", params] as const,
+  },
 };

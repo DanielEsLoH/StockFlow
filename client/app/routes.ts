@@ -243,6 +243,9 @@ export default [
       "routes/_app.payroll.benefits.$employeeId.tsx",
     ),
 
+    // Audit Logs
+    route("audit-logs", "routes/_app.audit-logs.tsx"),
+
     // Bank module
     route("bank/accounts", "routes/_app.bank.accounts.tsx"),
     route("bank/accounts/new", "routes/_app.bank.accounts.new.tsx"),

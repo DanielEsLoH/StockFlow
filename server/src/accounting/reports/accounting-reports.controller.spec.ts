@@ -12,6 +12,9 @@ const mockBalanceSheet = { assets: [], liabilities: [], equity: [] };
 const mockIncomeStatement = { revenue: [], expenses: [], netIncome: 0 };
 const mockCashFlow = { operating: [], investing: [], financing: [] };
 const mockARAgingReport = { asOfDate: '2025-01-01', rows: [], totals: { current: 0, days1to30: 0, days31to60: 0, days61to90: 0, days90plus: 0, totalOverdue: 0, totalBalance: 0 } };
+const mockIvaDeclaration = { year: 2026, bimonthlyPeriod: 1, salesByRate: [], netIvaPayable: 0 };
+const mockReteFuenteSummary = { year: 2026, month: 2, rows: [], totalWithheld: 0 };
+const mockYtdTaxSummary = { year: 2026, ivaGeneradoYtd: 0, netIvaYtd: 0 };
 const mockAPAgingReport = { asOfDate: '2025-01-01', rows: [], totals: { current: 0, days1to30: 0, days31to60: 0, days61to90: 0, days90plus: 0, totalOverdue: 0, totalBalance: 0 } };
 
 describe('AccountingReportsController', () => {
@@ -30,6 +33,9 @@ describe('AccountingReportsController', () => {
       getCashFlow: jest.fn().mockResolvedValue(mockCashFlow),
       getARAgingReport: jest.fn().mockResolvedValue(mockARAgingReport),
       getAPAgingReport: jest.fn().mockResolvedValue(mockAPAgingReport),
+      getIvaDeclaration: jest.fn().mockResolvedValue(mockIvaDeclaration),
+      getReteFuenteSummary: jest.fn().mockResolvedValue(mockReteFuenteSummary),
+      getYtdTaxSummary: jest.fn().mockResolvedValue(mockYtdTaxSummary),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -266,6 +272,69 @@ describe('AccountingReportsController', () => {
       const result = await controller.getAPAgingReport();
 
       expect(result).toBe(mockAPAgingReport);
+    });
+  });
+
+  // ─── IVA DECLARATION ─────────────────────────────────────────
+  describe('getIvaDeclaration', () => {
+    it('should parse year and period and delegate to service', async () => {
+      await controller.getIvaDeclaration('2026', '1');
+
+      expect(service.getIvaDeclaration).toHaveBeenCalledWith(2026, 1);
+    });
+
+    it('should throw BadRequestException for invalid year', async () => {
+      await expect(controller.getIvaDeclaration('abc', '1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for invalid period', async () => {
+      await expect(controller.getIvaDeclaration('2026', '7')).rejects.toThrow(BadRequestException);
+      await expect(controller.getIvaDeclaration('2026', '0')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should return the service result', async () => {
+      const result = await controller.getIvaDeclaration('2026', '1');
+
+      expect(result).toBe(mockIvaDeclaration);
+    });
+  });
+
+  // ─── RETEFUENTE SUMMARY ──────────────────────────────────────
+  describe('getReteFuenteSummary', () => {
+    it('should parse year and month and delegate to service', async () => {
+      await controller.getReteFuenteSummary('2026', '2');
+
+      expect(service.getReteFuenteSummary).toHaveBeenCalledWith(2026, 2);
+    });
+
+    it('should throw BadRequestException for invalid month', async () => {
+      await expect(controller.getReteFuenteSummary('2026', '13')).rejects.toThrow(BadRequestException);
+      await expect(controller.getReteFuenteSummary('2026', '0')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should return the service result', async () => {
+      const result = await controller.getReteFuenteSummary('2026', '2');
+
+      expect(result).toBe(mockReteFuenteSummary);
+    });
+  });
+
+  // ─── YTD TAX SUMMARY ─────────────────────────────────────────
+  describe('getYtdTaxSummary', () => {
+    it('should parse year and delegate to service', async () => {
+      await controller.getYtdTaxSummary('2026');
+
+      expect(service.getYtdTaxSummary).toHaveBeenCalledWith(2026);
+    });
+
+    it('should throw BadRequestException for invalid year', async () => {
+      await expect(controller.getYtdTaxSummary('abc')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should return the service result', async () => {
+      const result = await controller.getYtdTaxSummary('2026');
+
+      expect(result).toBe(mockYtdTaxSummary);
     });
   });
 });

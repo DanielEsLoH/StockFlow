@@ -1368,6 +1368,294 @@ export class ReportsService {
   }
 
   // ============================================================================
+  // TAX REPORTS
+  // ============================================================================
+
+  async generateIvaDeclarationReport(
+    data: {
+      periodLabel: string;
+      fromDate: string;
+      toDate: string;
+      salesByRate: { taxRate: number; taxableBase: number; taxAmount: number; invoiceCount: number }[];
+      salesExempt: { category: string; taxableBase: number; invoiceCount: number }[];
+      totalSalesBase: number;
+      totalIvaGenerado: number;
+      purchasesByRate: { taxRate: number; taxableBase: number; taxAmount: number; invoiceCount: number }[];
+      purchasesExempt: { category: string; taxableBase: number; invoiceCount: number }[];
+      totalPurchasesBase: number;
+      totalIvaDescontable: number;
+      netIvaPayable: number;
+    },
+    format: 'pdf' | 'excel',
+  ): Promise<Buffer> {
+    if (format === 'excel') {
+      return this.generateIvaDeclarationExcel(data);
+    }
+    return this.generateIvaDeclarationPdf(data);
+  }
+
+  private async generateIvaDeclarationPdf(data: Parameters<typeof this.generateIvaDeclarationReport>[0]): Promise<Buffer> {
+    const tenant = await this.tenantContext.getTenant();
+
+    const salesBody: any[][] = [
+      [
+        { text: 'Tarifa', style: 'tableHeader' },
+        { text: 'Base Gravable', style: 'tableHeader', alignment: 'right' },
+        { text: 'IVA', style: 'tableHeader', alignment: 'right' },
+        { text: 'Facturas', style: 'tableHeader', alignment: 'right' },
+      ],
+    ];
+
+    for (const row of data.salesByRate) {
+      salesBody.push([
+        `${row.taxRate}%`,
+        { text: this.formatNumber(row.taxableBase), alignment: 'right' },
+        { text: this.formatNumber(row.taxAmount), alignment: 'right' },
+        { text: String(row.invoiceCount), alignment: 'right' },
+      ]);
+    }
+    for (const row of data.salesExempt) {
+      salesBody.push([
+        row.category,
+        { text: this.formatNumber(row.taxableBase), alignment: 'right' },
+        { text: this.formatNumber(0), alignment: 'right' },
+        { text: String(row.invoiceCount), alignment: 'right' },
+      ]);
+    }
+    salesBody.push([
+      { text: 'Total Ventas', style: 'tableTotal' },
+      { text: this.formatNumber(data.totalSalesBase), alignment: 'right', style: 'tableTotal' },
+      { text: this.formatNumber(data.totalIvaGenerado), alignment: 'right', style: 'tableTotal' },
+      {},
+    ]);
+
+    const purchasesBody: any[][] = [
+      [
+        { text: 'Tarifa', style: 'tableHeader' },
+        { text: 'Base Gravable', style: 'tableHeader', alignment: 'right' },
+        { text: 'IVA', style: 'tableHeader', alignment: 'right' },
+        { text: 'Compras', style: 'tableHeader', alignment: 'right' },
+      ],
+    ];
+
+    for (const row of data.purchasesByRate) {
+      purchasesBody.push([
+        `${row.taxRate}%`,
+        { text: this.formatNumber(row.taxableBase), alignment: 'right' },
+        { text: this.formatNumber(row.taxAmount), alignment: 'right' },
+        { text: String(row.invoiceCount), alignment: 'right' },
+      ]);
+    }
+    for (const row of data.purchasesExempt) {
+      purchasesBody.push([
+        row.category,
+        { text: this.formatNumber(row.taxableBase), alignment: 'right' },
+        { text: this.formatNumber(0), alignment: 'right' },
+        { text: String(row.invoiceCount), alignment: 'right' },
+      ]);
+    }
+    purchasesBody.push([
+      { text: 'Total Compras', style: 'tableTotal' },
+      { text: this.formatNumber(data.totalPurchasesBase), alignment: 'right', style: 'tableTotal' },
+      { text: this.formatNumber(data.totalIvaDescontable), alignment: 'right', style: 'tableTotal' },
+      {},
+    ]);
+
+    const docDefinition = {
+      content: [
+        { text: tenant.name, style: 'companyName' },
+        { text: 'Declaracion de IVA', style: 'header' },
+        { text: `Periodo: ${data.periodLabel}`, style: 'period' },
+        { text: '', margin: [0, 10, 0, 0] },
+        { text: 'IVA Generado (Ventas)', style: 'subheader' },
+        {
+          table: { headerRows: 1, widths: [60, '*', 100, 60], body: salesBody },
+          layout: 'lightHorizontalLines',
+        },
+        { text: '', margin: [0, 15, 0, 0] },
+        { text: 'IVA Descontable (Compras)', style: 'subheader' },
+        {
+          table: { headerRows: 1, widths: [60, '*', 100, 60], body: purchasesBody },
+          layout: 'lightHorizontalLines',
+        },
+        { text: '', margin: [0, 15, 0, 0] },
+        {
+          table: {
+            widths: ['*', 120],
+            body: [
+              [{ text: 'Total IVA Generado', bold: true }, { text: this.formatNumber(data.totalIvaGenerado), alignment: 'right' }],
+              [{ text: 'Total IVA Descontable', bold: true }, { text: this.formatNumber(data.totalIvaDescontable), alignment: 'right' }],
+              [
+                { text: 'IVA NETO A PAGAR', bold: true, fontSize: 11 },
+                { text: this.formatNumber(data.netIvaPayable), alignment: 'right', bold: true, fontSize: 11 },
+              ],
+            ],
+          },
+          layout: 'noBorders',
+        },
+      ],
+      styles: {
+        companyName: { fontSize: 14, bold: true, margin: [0, 0, 0, 2] },
+        header: { fontSize: 12, margin: [0, 0, 0, 4] },
+        period: { fontSize: 9, color: '#666', margin: [0, 0, 0, 10] },
+        subheader: { fontSize: 10, bold: true, margin: [0, 4, 0, 4] },
+        tableHeader: { fontSize: 9, bold: true, fillColor: '#333', color: '#fff' },
+        tableTotal: { fontSize: 9, bold: true },
+      },
+      defaultStyle: { fontSize: 8 },
+    };
+
+    return this.generatePdfBuffer(docDefinition);
+  }
+
+  private generateIvaDeclarationExcel(data: Parameters<typeof this.generateIvaDeclarationReport>[0]): Buffer {
+    const workbook = XLSX.utils.book_new();
+
+    const rows: any[][] = [
+      ['Declaracion de IVA'],
+      [`Periodo: ${data.periodLabel}`],
+      [],
+      ['IVA GENERADO (VENTAS)'],
+      ['Tarifa', 'Base Gravable', 'IVA', 'Facturas'],
+    ];
+
+    for (const row of data.salesByRate) {
+      rows.push([`${row.taxRate}%`, row.taxableBase, row.taxAmount, row.invoiceCount]);
+    }
+    for (const row of data.salesExempt) {
+      rows.push([row.category, row.taxableBase, 0, row.invoiceCount]);
+    }
+    rows.push(['Total Ventas', data.totalSalesBase, data.totalIvaGenerado, '']);
+    rows.push([]);
+    rows.push(['IVA DESCONTABLE (COMPRAS)']);
+    rows.push(['Tarifa', 'Base Gravable', 'IVA', 'Compras']);
+
+    for (const row of data.purchasesByRate) {
+      rows.push([`${row.taxRate}%`, row.taxableBase, row.taxAmount, row.invoiceCount]);
+    }
+    for (const row of data.purchasesExempt) {
+      rows.push([row.category, row.taxableBase, 0, row.invoiceCount]);
+    }
+    rows.push(['Total Compras', data.totalPurchasesBase, data.totalIvaDescontable, '']);
+    rows.push([]);
+    rows.push(['RESUMEN']);
+    rows.push(['Total IVA Generado', data.totalIvaGenerado]);
+    rows.push(['Total IVA Descontable', data.totalIvaDescontable]);
+    rows.push(['IVA NETO A PAGAR', data.netIvaPayable]);
+
+    const sheet = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(workbook, sheet, 'IVA');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+  }
+
+  async generateReteFuenteSummaryReport(
+    data: {
+      monthLabel: string;
+      rows: { supplierNit: string; supplierName: string; totalBase: number; totalWithheld: number; withholdingRate: number; purchaseCount: number; certificateNumber: string | null }[];
+      totalBase: number;
+      totalWithheld: number;
+    },
+    format: 'pdf' | 'excel',
+  ): Promise<Buffer> {
+    if (format === 'excel') {
+      return this.generateReteFuenteSummaryExcel(data);
+    }
+    return this.generateReteFuenteSummaryPdf(data);
+  }
+
+  private async generateReteFuenteSummaryPdf(data: Parameters<typeof this.generateReteFuenteSummaryReport>[0]): Promise<Buffer> {
+    const tenant = await this.tenantContext.getTenant();
+
+    const body: any[][] = [
+      [
+        { text: 'NIT', style: 'tableHeader' },
+        { text: 'Proveedor', style: 'tableHeader' },
+        { text: 'Base', style: 'tableHeader', alignment: 'right' },
+        { text: 'Retencion', style: 'tableHeader', alignment: 'right' },
+        { text: 'Tarifa', style: 'tableHeader', alignment: 'right' },
+        { text: 'Compras', style: 'tableHeader', alignment: 'right' },
+        { text: 'Certificado', style: 'tableHeader' },
+      ],
+    ];
+
+    for (const row of data.rows) {
+      body.push([
+        row.supplierNit,
+        row.supplierName,
+        { text: this.formatNumber(row.totalBase), alignment: 'right' },
+        { text: this.formatNumber(row.totalWithheld), alignment: 'right' },
+        { text: `${row.withholdingRate}%`, alignment: 'right' },
+        { text: String(row.purchaseCount), alignment: 'right' },
+        row.certificateNumber ?? 'Pendiente',
+      ]);
+    }
+
+    body.push([
+      { text: 'TOTALES', colSpan: 2, style: 'tableTotal' },
+      {},
+      { text: this.formatNumber(data.totalBase), alignment: 'right', style: 'tableTotal' },
+      { text: this.formatNumber(data.totalWithheld), alignment: 'right', style: 'tableTotal' },
+      {}, {},
+      {},
+    ]);
+
+    const docDefinition = {
+      pageOrientation: 'landscape' as const,
+      content: [
+        { text: tenant.name, style: 'companyName' },
+        { text: 'Resumen de ReteFuente', style: 'header' },
+        { text: `Periodo: ${data.monthLabel}`, style: 'period' },
+        { text: '', margin: [0, 10, 0, 0] },
+        {
+          table: { headerRows: 1, widths: [70, '*', 80, 80, 40, 45, 70], body },
+          layout: 'lightHorizontalLines',
+        },
+      ],
+      styles: {
+        companyName: { fontSize: 14, bold: true, margin: [0, 0, 0, 2] },
+        header: { fontSize: 12, margin: [0, 0, 0, 4] },
+        period: { fontSize: 9, color: '#666', margin: [0, 0, 0, 10] },
+        tableHeader: { fontSize: 9, bold: true, fillColor: '#333', color: '#fff' },
+        tableTotal: { fontSize: 9, bold: true },
+      },
+      defaultStyle: { fontSize: 8 },
+    };
+
+    return this.generatePdfBuffer(docDefinition);
+  }
+
+  private generateReteFuenteSummaryExcel(data: Parameters<typeof this.generateReteFuenteSummaryReport>[0]): Buffer {
+    const workbook = XLSX.utils.book_new();
+
+    const rows: any[][] = [
+      ['Resumen de ReteFuente'],
+      [`Periodo: ${data.monthLabel}`],
+      [],
+      ['NIT', 'Proveedor', 'Base', 'Retencion', 'Tarifa', 'Compras', 'Certificado'],
+    ];
+
+    for (const row of data.rows) {
+      rows.push([
+        row.supplierNit,
+        row.supplierName,
+        row.totalBase,
+        row.totalWithheld,
+        `${row.withholdingRate}%`,
+        row.purchaseCount,
+        row.certificateNumber ?? 'Pendiente',
+      ]);
+    }
+    rows.push([]);
+    rows.push(['TOTALES', '', data.totalBase, data.totalWithheld, '', '', '']);
+
+    const sheet = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(workbook, sheet, 'ReteFuente');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+  }
+
+  // ============================================================================
   // HELPER METHODS
   // ============================================================================
 

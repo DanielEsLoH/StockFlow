@@ -11,6 +11,9 @@ import type {
   CashFlowReport,
   ARAgingReport,
   APAgingReport,
+  IvaDeclarationReport,
+  ReteFuenteSummaryReport,
+  YtdTaxSummary,
 } from "~/types/accounting";
 
 // ============================================================================
@@ -103,5 +106,39 @@ export function useAPAgingReport(asOfDate?: string) {
     queryFn: () => accountingService.getAPAgingReport(asOfDate),
     staleTime: 1000 * 60 * 1,
     enabled,
+  });
+}
+
+// ============================================================================
+// TAX REPORT QUERIES
+// ============================================================================
+
+export function useIvaDeclaration(year?: number, period?: number) {
+  const enabled = useIsQueryEnabled();
+  return useQuery<IvaDeclarationReport>({
+    queryKey: queryKeys.accounting.ivaDeclaration({ year, period }),
+    queryFn: () => accountingService.getIvaDeclaration(year!, period!),
+    staleTime: 1000 * 60 * 1,
+    enabled: enabled && !!year && !!period,
+  });
+}
+
+export function useReteFuenteSummary(year?: number, month?: number) {
+  const enabled = useIsQueryEnabled();
+  return useQuery<ReteFuenteSummaryReport>({
+    queryKey: queryKeys.accounting.reteFuenteSummary({ year, month }),
+    queryFn: () => accountingService.getReteFuenteSummary(year!, month!),
+    staleTime: 1000 * 60 * 1,
+    enabled: enabled && !!year && !!month,
+  });
+}
+
+export function useYtdTaxSummary(year?: number) {
+  const enabled = useIsQueryEnabled();
+  return useQuery<YtdTaxSummary>({
+    queryKey: queryKeys.accounting.ytdTaxSummary({ year }),
+    queryFn: () => accountingService.getYtdTaxSummary(year!),
+    staleTime: 1000 * 60 * 1,
+    enabled: enabled && !!year,
   });
 }

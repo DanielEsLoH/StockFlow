@@ -178,6 +178,18 @@ export default [
       "accounting/reports/ap-aging",
       "routes/_app.accounting.reports.ap-aging.tsx",
     ),
+    route(
+      "accounting/reports/iva-declaration",
+      "routes/_app.accounting.reports.iva-declaration.tsx",
+    ),
+    route(
+      "accounting/reports/retefuente-summary",
+      "routes/_app.accounting.reports.retefuente-summary.tsx",
+    ),
+    route(
+      "accounting/reports/tax-summary",
+      "routes/_app.accounting.reports.tax-summary.tsx",
+    ),
 
     // Payroll module
     route("payroll/employees", "routes/_app.payroll.employees.tsx"),

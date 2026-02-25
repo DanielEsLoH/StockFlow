@@ -36,6 +36,7 @@ describe('AccountingReportsService', () => {
     journalEntry: { findMany: jest.fn() },
     invoice: { findMany: jest.fn() },
     purchaseOrder: { findMany: jest.fn() },
+    withholdingCertificate: { findMany: jest.fn() },
   };
 
   const mockTenantContextService = {
@@ -1071,6 +1072,238 @@ describe('AccountingReportsService', () => {
       const result = await service.getAPAgingReport(asOfDate);
 
       expect(result.rows).toHaveLength(0);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getIvaDeclaration
+  // ---------------------------------------------------------------------------
+  describe('getIvaDeclaration', () => {
+    function makeInvoiceWithItems(id: string, issueDate: Date, items: { taxRate: number; taxCategory: string; subtotal: number; tax: number }[]) {
+      return { id, issueDate, items };
+    }
+
+    function makePOWithItems(id: string, issueDate: Date, items: { taxRate: number; taxCategory: string; subtotal: number; tax: number }[]) {
+      return { id, issueDate, items };
+    }
+
+    it('should return empty data when no invoices or POs exist', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([]);
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([]);
+
+      const result = await service.getIvaDeclaration(2026, 1);
+
+      expect(result.year).toBe(2026);
+      expect(result.bimonthlyPeriod).toBe(1);
+      expect(result.periodLabel).toBe('Enero - Febrero 2026');
+      expect(result.salesByRate).toHaveLength(0);
+      expect(result.totalIvaGenerado).toBe(0);
+      expect(result.totalIvaDescontable).toBe(0);
+      expect(result.netIvaPayable).toBe(0);
+    });
+
+    it('should aggregate sales IVA by rate', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        makeInvoiceWithItems('inv-1', new Date('2026-01-15'), [
+          { taxRate: 19, taxCategory: 'GRAVADO_19', subtotal: 1000, tax: 190 },
+          { taxRate: 5, taxCategory: 'GRAVADO_5', subtotal: 500, tax: 25 },
+        ]),
+        makeInvoiceWithItems('inv-2', new Date('2026-02-10'), [
+          { taxRate: 19, taxCategory: 'GRAVADO_19', subtotal: 2000, tax: 380 },
+        ]),
+      ]);
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([]);
+
+      const result = await service.getIvaDeclaration(2026, 1);
+
+      expect(result.salesByRate).toHaveLength(2);
+      const rate19 = result.salesByRate.find(r => r.taxRate === 19)!;
+      expect(rate19.taxableBase).toBe(3000);
+      expect(rate19.taxAmount).toBe(570);
+      const rate5 = result.salesByRate.find(r => r.taxRate === 5)!;
+      expect(rate5.taxableBase).toBe(500);
+      expect(rate5.taxAmount).toBe(25);
+      expect(result.totalIvaGenerado).toBe(595);
+    });
+
+    it('should aggregate purchases IVA by rate', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([]);
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makePOWithItems('po-1', new Date('2026-01-20'), [
+          { taxRate: 19, taxCategory: 'GRAVADO_19', subtotal: 5000, tax: 950 },
+        ]),
+      ]);
+
+      const result = await service.getIvaDeclaration(2026, 1);
+
+      expect(result.purchasesByRate).toHaveLength(1);
+      expect(result.purchasesByRate[0].taxAmount).toBe(950);
+      expect(result.totalIvaDescontable).toBe(950);
+    });
+
+    it('should calculate net IVA payable correctly', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        makeInvoiceWithItems('inv-1', new Date('2026-01-15'), [
+          { taxRate: 19, taxCategory: 'GRAVADO_19', subtotal: 10000, tax: 1900 },
+        ]),
+      ]);
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makePOWithItems('po-1', new Date('2026-01-20'), [
+          { taxRate: 19, taxCategory: 'GRAVADO_19', subtotal: 5000, tax: 950 },
+        ]),
+      ]);
+
+      const result = await service.getIvaDeclaration(2026, 1);
+
+      expect(result.netIvaPayable).toBe(950); // 1900 - 950
+    });
+
+    it('should handle EXENTO and EXCLUIDO items', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        makeInvoiceWithItems('inv-1', new Date('2026-01-15'), [
+          { taxRate: 0, taxCategory: 'EXENTO', subtotal: 3000, tax: 0 },
+          { taxRate: 0, taxCategory: 'EXCLUIDO', subtotal: 2000, tax: 0 },
+        ]),
+      ]);
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([]);
+
+      const result = await service.getIvaDeclaration(2026, 1);
+
+      expect(result.salesExempt).toHaveLength(2);
+      expect(result.salesExempt.find(e => e.category === 'EXENTO')!.taxableBase).toBe(3000);
+      expect(result.salesExempt.find(e => e.category === 'EXCLUIDO')!.taxableBase).toBe(2000);
+      expect(result.totalSalesBase).toBe(5000);
+      expect(result.totalIvaGenerado).toBe(0);
+    });
+
+    it('should compute correct bimonthly date ranges', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([]);
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([]);
+
+      const result = await service.getIvaDeclaration(2026, 3);
+
+      expect(result.periodLabel).toBe('Mayo - Junio 2026');
+      expect(result.fromDate).toBe('2026-05-01');
+      expect(result.toDate).toBe('2026-06-30');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getReteFuenteSummary
+  // ---------------------------------------------------------------------------
+  describe('getReteFuenteSummary', () => {
+    function makeRetePO(id: string, supplierId: string, supplierName: string, subtotal: number, issueDate: Date) {
+      return {
+        id,
+        supplierId,
+        subtotal,
+        issueDate,
+        supplier: { id: supplierId, name: supplierName, documentNumber: '900111222' },
+      };
+    }
+
+    it('should return empty rows when no POs exceed min base', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makeRetePO('po-1', 'sup-1', 'Proveedor A', 500000, new Date('2026-02-10')),
+      ]);
+
+      const result = await service.getReteFuenteSummary(2026, 2);
+
+      expect(result.rows).toHaveLength(0);
+      expect(result.totalWithheld).toBe(0);
+    });
+
+    it('should calculate withholding for POs above min base', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makeRetePO('po-1', 'sup-1', 'Proveedor A', 1000000, new Date('2026-02-10')),
+      ]);
+      mockPrismaService.withholdingCertificate.findMany.mockResolvedValue([]);
+
+      const result = await service.getReteFuenteSummary(2026, 2);
+
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0].totalBase).toBe(1000000);
+      expect(result.rows[0].totalWithheld).toBe(25000); // 1000000 * 0.025
+      expect(result.rows[0].withholdingRate).toBe(2.5);
+    });
+
+    it('should group by supplier', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makeRetePO('po-1', 'sup-1', 'Proveedor A', 600000, new Date('2026-02-05')),
+        makeRetePO('po-2', 'sup-1', 'Proveedor A', 800000, new Date('2026-02-15')),
+        makeRetePO('po-3', 'sup-2', 'Proveedor B', 1000000, new Date('2026-02-20')),
+      ]);
+      mockPrismaService.withholdingCertificate.findMany.mockResolvedValue([]);
+
+      const result = await service.getReteFuenteSummary(2026, 2);
+
+      expect(result.rows).toHaveLength(2);
+      const supA = result.rows.find(r => r.supplierName === 'Proveedor A')!;
+      expect(supA.totalBase).toBe(1400000);
+      expect(supA.purchaseCount).toBe(2);
+      expect(result.totalWithheld).toBe(supA.totalWithheld + result.rows.find(r => r.supplierName === 'Proveedor B')!.totalWithheld);
+    });
+
+    it('should cross-reference withholding certificates', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makeRetePO('po-1', 'sup-1', 'Proveedor A', 1000000, new Date('2026-02-10')),
+      ]);
+      mockPrismaService.withholdingCertificate.findMany.mockResolvedValue([
+        { id: 'cert-1', supplierId: 'sup-1', certificateNumber: 'CERT-001' },
+      ]);
+
+      const result = await service.getReteFuenteSummary(2026, 2);
+
+      expect(result.rows[0].certificateId).toBe('cert-1');
+      expect(result.rows[0].certificateNumber).toBe('CERT-001');
+    });
+
+    it('should format month label correctly', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([]);
+
+      const result = await service.getReteFuenteSummary(2026, 2);
+
+      expect(result.monthLabel).toBe('Febrero 2026');
+      expect(result.fromDate).toBe('2026-02-01');
+      expect(result.toDate).toBe('2026-02-28');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getYtdTaxSummary
+  // ---------------------------------------------------------------------------
+  describe('getYtdTaxSummary', () => {
+    it('should return zeros when no invoices or POs exist', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([]);
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([]);
+
+      const result = await service.getYtdTaxSummary(2026);
+
+      expect(result.year).toBe(2026);
+      expect(result.ivaGeneradoYtd).toBe(0);
+      expect(result.ivaDescontableYtd).toBe(0);
+      expect(result.netIvaYtd).toBe(0);
+      expect(result.reteFuenteBaseYtd).toBe(0);
+      expect(result.reteFuenteWithheldYtd).toBe(0);
+    });
+
+    it('should aggregate IVA and ReteFuente for the full year', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        { tax: 1900 },
+        { tax: 950 },
+      ]);
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        { tax: 380, subtotal: 2000 },       // below min base
+        { tax: 1900, subtotal: 1000000 },    // above min base
+      ]);
+
+      const result = await service.getYtdTaxSummary(2026);
+
+      expect(result.ivaGeneradoYtd).toBe(2850);
+      expect(result.ivaDescontableYtd).toBe(2280);
+      expect(result.netIvaYtd).toBe(570);
+      expect(result.reteFuenteBaseYtd).toBe(1000000);
+      expect(result.reteFuenteWithheldYtd).toBe(25000);
     });
   });
 });

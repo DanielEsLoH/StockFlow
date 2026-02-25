@@ -148,6 +148,52 @@ export class AccountingReportsController {
     return this.reportsService.getAPAgingReport(date);
   }
 
+  // ─── TAX REPORTS ──────────────────────────────────────────────
+
+  @Get('iva-declaration')
+  @RequirePermissions(Permission.ACCOUNTING_VIEW)
+  @ApiOperation({ summary: 'Get IVA declaration (Declaracion de IVA bimestral)' })
+  @ApiQuery({ name: 'year', required: true, description: 'Year (e.g. 2026)' })
+  @ApiQuery({ name: 'period', required: true, description: 'Bimonthly period 1-6 (1=Jan-Feb, 2=Mar-Apr, etc.)' })
+  @ApiResponse({ status: 200, description: 'IVA declaration report' })
+  async getIvaDeclaration(
+    @Query('year') year: string,
+    @Query('period') period: string,
+  ) {
+    const y = this.parseYear(year);
+    const p = this.parseBimonthlyPeriod(period);
+    return this.reportsService.getIvaDeclaration(y, p);
+  }
+
+  @Get('retefuente-summary')
+  @RequirePermissions(Permission.ACCOUNTING_VIEW)
+  @ApiOperation({ summary: 'Get ReteFuente summary (Resumen ReteFuente mensual)' })
+  @ApiQuery({ name: 'year', required: true, description: 'Year (e.g. 2026)' })
+  @ApiQuery({ name: 'month', required: true, description: 'Month 1-12' })
+  @ApiResponse({ status: 200, description: 'ReteFuente summary report' })
+  async getReteFuenteSummary(
+    @Query('year') year: string,
+    @Query('month') month: string,
+  ) {
+    const y = this.parseYear(year);
+    const m = this.parseMonth(month);
+    return this.reportsService.getReteFuenteSummary(y, m);
+  }
+
+  @Get('tax-summary')
+  @RequirePermissions(Permission.ACCOUNTING_VIEW)
+  @ApiOperation({ summary: 'Get YTD tax summary (Resumen Tributario)' })
+  @ApiQuery({ name: 'year', required: true, description: 'Year (e.g. 2026)' })
+  @ApiResponse({ status: 200, description: 'Year-to-date tax summary' })
+  async getYtdTaxSummary(
+    @Query('year') year: string,
+  ) {
+    const y = this.parseYear(year);
+    return this.reportsService.getYtdTaxSummary(y);
+  }
+
+  // ─── PRIVATE HELPERS ──────────────────────────────────────────
+
   private parseDate(dateStr: string): Date {
     const date = new Date(dateStr + 'T00:00:00');
     if (isNaN(date.getTime())) {
@@ -171,5 +217,35 @@ export class AccountingReportsController {
         'La fecha de inicio no puede ser mayor a la fecha final',
       );
     }
+  }
+
+  private parseYear(yearStr: string): number {
+    const year = parseInt(yearStr, 10);
+    if (isNaN(year) || year < 2000 || year > 2100) {
+      throw new BadRequestException(
+        `Ano invalido: ${yearStr}. Debe ser un numero entre 2000 y 2100`,
+      );
+    }
+    return year;
+  }
+
+  private parseBimonthlyPeriod(periodStr: string): number {
+    const period = parseInt(periodStr, 10);
+    if (isNaN(period) || period < 1 || period > 6) {
+      throw new BadRequestException(
+        `Periodo invalido: ${periodStr}. Debe ser un numero entre 1 y 6`,
+      );
+    }
+    return period;
+  }
+
+  private parseMonth(monthStr: string): number {
+    const month = parseInt(monthStr, 10);
+    if (isNaN(month) || month < 1 || month > 12) {
+      throw new BadRequestException(
+        `Mes invalido: ${monthStr}. Debe ser un numero entre 1 y 12`,
+      );
+    }
+    return month;
   }
 }

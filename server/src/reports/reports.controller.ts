@@ -23,10 +23,13 @@ import {
   CustomersReportQueryDto,
   KardexQueryDto,
   CostCenterBalanceQueryDto,
+  IvaDeclarationQueryDto,
+  ReteFuenteSummaryQueryDto,
   ReportFormat,
 } from './dto';
 import { JwtAuthGuard } from '../auth';
 import { RateLimitGuard, RateLimit } from '../arcjet';
+import { AccountingReportsService } from '../accounting/reports/accounting-reports.service';
 
 /**
  * ReportsController handles all report generation endpoints.
@@ -48,7 +51,10 @@ import { RateLimitGuard, RateLimit } from '../arcjet';
 export class ReportsController {
   private readonly logger = new Logger(ReportsController.name);
 
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(
+    private readonly reportsService: ReportsService,
+    private readonly accountingReportsService: AccountingReportsService,
+  ) {}
 
   /**
    * Generates a sales report for the specified date range.
@@ -339,6 +345,36 @@ export class ReportsController {
     const filename = `factura-${id}`;
 
     this.sendReportResponse(res, buffer, filename, ReportFormat.PDF);
+  }
+
+  @Get('reports/tax/iva-declaration')
+  @ApiOperation({ summary: 'Download IVA declaration report (PDF/Excel)' })
+  @ApiProduces('application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiResponse({ status: 200, description: 'IVA declaration report file' })
+  async downloadIvaDeclaration(
+    @Query() query: IvaDeclarationQueryDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    this.logger.log(`Generating IVA declaration report: ${query.format} year=${query.year} period=${query.period}`);
+
+    const data = await this.accountingReportsService.getIvaDeclaration(query.year, query.period);
+    const buffer = await this.reportsService.generateIvaDeclarationReport(data, query.format);
+    this.sendReportResponse(res, buffer, `declaracion-iva-${query.year}-${query.period}`, query.format as ReportFormat);
+  }
+
+  @Get('reports/tax/retefuente-summary')
+  @ApiOperation({ summary: 'Download ReteFuente summary report (PDF/Excel)' })
+  @ApiProduces('application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiResponse({ status: 200, description: 'ReteFuente summary report file' })
+  async downloadReteFuenteSummary(
+    @Query() query: ReteFuenteSummaryQueryDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    this.logger.log(`Generating ReteFuente summary report: ${query.format} year=${query.year} month=${query.month}`);
+
+    const data = await this.accountingReportsService.getReteFuenteSummary(query.year, query.month);
+    const buffer = await this.reportsService.generateReteFuenteSummaryReport(data, query.format);
+    this.sendReportResponse(res, buffer, `retefuente-${query.year}-${query.month}`, query.format as ReportFormat);
   }
 
   /**

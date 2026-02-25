@@ -13,6 +13,7 @@ import {
 import { MovementType } from '@prisma/client';
 import type { Response } from 'express';
 import { ArcjetService } from '../arcjet/arcjet.service';
+import { AccountingReportsService } from '../accounting/reports/accounting-reports.service';
 
 describe('ReportsController', () => {
   let controller: ReportsController;
@@ -84,11 +85,18 @@ describe('ReportsController', () => {
       getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
     };
 
+    const mockAccountingReportsService = {
+      getIvaDeclaration: jest.fn().mockResolvedValue({}),
+      getReteFuenteSummary: jest.fn().mockResolvedValue({}),
+      getYtdTaxSummary: jest.fn().mockResolvedValue({}),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ReportsController],
       providers: [
         { provide: ReportsService, useValue: mockReportsService },
         { provide: ArcjetService, useValue: mockArcjetService },
+        { provide: AccountingReportsService, useValue: mockAccountingReportsService },
       ],
     }).compile();
 

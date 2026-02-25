@@ -279,6 +279,12 @@ export const queryKeys = {
       ["accounting", "reports", "ar-aging", params] as const,
     apAging: (params?: Record<string, unknown>) =>
       ["accounting", "reports", "ap-aging", params] as const,
+    ivaDeclaration: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "iva-declaration", params] as const,
+    reteFuenteSummary: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "retefuente-summary", params] as const,
+    ytdTaxSummary: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "tax-summary", params] as const,
   },
 
   // Bank

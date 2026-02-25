@@ -10,7 +10,9 @@ import {
   InvoiceStatus,
   PurchaseOrderStatus,
   PaymentTerms,
+  TaxCategory,
 } from '@prisma/client';
+import { RETE_FUENTE_RATE, RETE_FUENTE_MIN_BASE } from '../tax-constants';
 
 /** Balance row for a single account */
 export interface AccountBalance {
@@ -169,6 +171,78 @@ export interface APAgingReport {
   asOfDate: string;
   rows: APAgingRow[];
   totals: AgingTotals;
+}
+
+// ============================================================================
+// TAX REPORTS
+// ============================================================================
+
+/** IVA breakdown by tax rate */
+export interface IvaRateBreakdown {
+  taxRate: number;
+  taxableBase: number;
+  taxAmount: number;
+  invoiceCount: number;
+}
+
+/** Exempt/excluded summary */
+export interface IvaExemptSummary {
+  category: 'EXENTO' | 'EXCLUIDO';
+  taxableBase: number;
+  invoiceCount: number;
+}
+
+/** IVA Declaration report (bimonthly) */
+export interface IvaDeclarationReport {
+  year: number;
+  bimonthlyPeriod: number;
+  periodLabel: string;
+  fromDate: string;
+  toDate: string;
+  salesByRate: IvaRateBreakdown[];
+  salesExempt: IvaExemptSummary[];
+  totalSalesBase: number;
+  totalIvaGenerado: number;
+  purchasesByRate: IvaRateBreakdown[];
+  purchasesExempt: IvaExemptSummary[];
+  totalPurchasesBase: number;
+  totalIvaDescontable: number;
+  netIvaPayable: number;
+}
+
+/** ReteFuente row per supplier */
+export interface ReteFuenteSupplierRow {
+  supplierId: string;
+  supplierName: string;
+  supplierNit: string;
+  totalBase: number;
+  totalWithheld: number;
+  withholdingRate: number;
+  purchaseCount: number;
+  certificateId: string | null;
+  certificateNumber: string | null;
+}
+
+/** ReteFuente Summary report (monthly) */
+export interface ReteFuenteSummaryReport {
+  year: number;
+  month: number;
+  monthLabel: string;
+  fromDate: string;
+  toDate: string;
+  rows: ReteFuenteSupplierRow[];
+  totalBase: number;
+  totalWithheld: number;
+}
+
+/** Year-to-date tax summary */
+export interface YtdTaxSummary {
+  year: number;
+  ivaGeneradoYtd: number;
+  ivaDescontableYtd: number;
+  netIvaYtd: number;
+  reteFuenteBaseYtd: number;
+  reteFuenteWithheldYtd: number;
 }
 
 @Injectable()
@@ -811,5 +885,319 @@ export class AccountingReportsService {
       case PaymentTerms.NET_60: return 60;
       default: return 30;
     }
+  }
+
+  // ============================================================================
+  // TAX REPORTS
+  // ============================================================================
+
+  /**
+   * 9. Declaracion de IVA — IVA Declaration (bimonthly).
+   * Queries Invoice/InvoiceItem and PurchaseOrder/PurchaseOrderItem directly.
+   */
+  async getIvaDeclaration(year: number, bimonthlyPeriod: number): Promise<IvaDeclarationReport> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const { from, to, label } = this.getBimonthlyRange(year, bimonthlyPeriod);
+
+    // --- Sales side (IVA generado) ---
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.VOID, InvoiceStatus.DRAFT] },
+        issueDate: { gte: from, lte: to },
+      },
+      include: {
+        items: { select: { taxRate: true, taxCategory: true, subtotal: true, tax: true } },
+      },
+    });
+
+    const salesRateMap = new Map<number, IvaRateBreakdown>();
+    const salesExemptMap = new Map<string, IvaExemptSummary>();
+    const salesInvoiceIds = new Set<string>();
+
+    for (const invoice of invoices) {
+      for (const item of invoice.items) {
+        const rate = Number(item.taxRate);
+        const cat = item.taxCategory as TaxCategory;
+        const subtotal = Number(item.subtotal);
+        const tax = Number(item.tax);
+
+        if (cat === TaxCategory.EXENTO || cat === TaxCategory.EXCLUIDO) {
+          const key = cat as string;
+          if (!salesExemptMap.has(key)) {
+            salesExemptMap.set(key, { category: cat as 'EXENTO' | 'EXCLUIDO', taxableBase: 0, invoiceCount: 0 });
+          }
+          const entry = salesExemptMap.get(key)!;
+          entry.taxableBase += subtotal;
+          if (!salesInvoiceIds.has(`${invoice.id}-${key}`)) {
+            entry.invoiceCount++;
+            salesInvoiceIds.add(`${invoice.id}-${key}`);
+          }
+        } else if (rate > 0) {
+          if (!salesRateMap.has(rate)) {
+            salesRateMap.set(rate, { taxRate: rate, taxableBase: 0, taxAmount: 0, invoiceCount: 0 });
+          }
+          const entry = salesRateMap.get(rate)!;
+          entry.taxableBase += subtotal;
+          entry.taxAmount += tax;
+          if (!salesInvoiceIds.has(`${invoice.id}-${rate}`)) {
+            entry.invoiceCount++;
+            salesInvoiceIds.add(`${invoice.id}-${rate}`);
+          }
+        }
+      }
+    }
+
+    // --- Purchases side (IVA descontable) ---
+    const orders = await this.prisma.purchaseOrder.findMany({
+      where: {
+        tenantId,
+        status: PurchaseOrderStatus.RECEIVED,
+        issueDate: { gte: from, lte: to },
+      },
+      include: {
+        items: { select: { taxRate: true, taxCategory: true, subtotal: true, tax: true } },
+      },
+    });
+
+    const purchasesRateMap = new Map<number, IvaRateBreakdown>();
+    const purchasesExemptMap = new Map<string, IvaExemptSummary>();
+    const purchasesOrderIds = new Set<string>();
+
+    for (const order of orders) {
+      for (const item of order.items) {
+        const rate = Number(item.taxRate);
+        const cat = item.taxCategory as TaxCategory;
+        const subtotal = Number(item.subtotal);
+        const tax = Number(item.tax);
+
+        if (cat === TaxCategory.EXENTO || cat === TaxCategory.EXCLUIDO) {
+          const key = cat as string;
+          if (!purchasesExemptMap.has(key)) {
+            purchasesExemptMap.set(key, { category: cat as 'EXENTO' | 'EXCLUIDO', taxableBase: 0, invoiceCount: 0 });
+          }
+          const entry = purchasesExemptMap.get(key)!;
+          entry.taxableBase += subtotal;
+          if (!purchasesOrderIds.has(`${order.id}-${key}`)) {
+            entry.invoiceCount++;
+            purchasesOrderIds.add(`${order.id}-${key}`);
+          }
+        } else if (rate > 0) {
+          if (!purchasesRateMap.has(rate)) {
+            purchasesRateMap.set(rate, { taxRate: rate, taxableBase: 0, taxAmount: 0, invoiceCount: 0 });
+          }
+          const entry = purchasesRateMap.get(rate)!;
+          entry.taxableBase += subtotal;
+          entry.taxAmount += tax;
+          if (!purchasesOrderIds.has(`${order.id}-${rate}`)) {
+            entry.invoiceCount++;
+            purchasesOrderIds.add(`${order.id}-${rate}`);
+          }
+        }
+      }
+    }
+
+    const salesByRate = Array.from(salesRateMap.values()).sort((a, b) => b.taxRate - a.taxRate);
+    const salesExempt = Array.from(salesExemptMap.values());
+    const purchasesByRate = Array.from(purchasesRateMap.values()).sort((a, b) => b.taxRate - a.taxRate);
+    const purchasesExempt = Array.from(purchasesExemptMap.values());
+
+    const totalSalesBase = salesByRate.reduce((s, r) => s + r.taxableBase, 0) + salesExempt.reduce((s, r) => s + r.taxableBase, 0);
+    const totalIvaGenerado = salesByRate.reduce((s, r) => s + r.taxAmount, 0);
+    const totalPurchasesBase = purchasesByRate.reduce((s, r) => s + r.taxableBase, 0) + purchasesExempt.reduce((s, r) => s + r.taxableBase, 0);
+    const totalIvaDescontable = purchasesByRate.reduce((s, r) => s + r.taxAmount, 0);
+
+    this.logger.debug(`IVA Declaration ${year}-${bimonthlyPeriod}: generado=${totalIvaGenerado}, descontable=${totalIvaDescontable}`);
+
+    return {
+      year,
+      bimonthlyPeriod,
+      periodLabel: label,
+      fromDate: this.formatLocalDate(from),
+      toDate: this.formatLocalDate(to),
+      salesByRate,
+      salesExempt,
+      totalSalesBase,
+      totalIvaGenerado,
+      purchasesByRate,
+      purchasesExempt,
+      totalPurchasesBase,
+      totalIvaDescontable,
+      netIvaPayable: totalIvaGenerado - totalIvaDescontable,
+    };
+  }
+
+  /**
+   * 10. Resumen ReteFuente — Withholding Tax Summary (monthly).
+   */
+  async getReteFuenteSummary(year: number, month: number): Promise<ReteFuenteSummaryReport> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const from = new Date(year, month - 1, 1);
+    const to = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ];
+    const monthLabel = `${monthNames[month - 1]} ${year}`;
+
+    const orders = await this.prisma.purchaseOrder.findMany({
+      where: {
+        tenantId,
+        status: PurchaseOrderStatus.RECEIVED,
+        issueDate: { gte: from, lte: to },
+      },
+      include: {
+        supplier: { select: { id: true, name: true, documentNumber: true } },
+      },
+    });
+
+    // Group by supplier, only POs where subtotal > min base
+    const supplierMap = new Map<string, ReteFuenteSupplierRow>();
+
+    for (const order of orders) {
+      const subtotal = Number(order.subtotal);
+      if (subtotal <= RETE_FUENTE_MIN_BASE) continue;
+
+      const supplierId = order.supplierId;
+      const withheld = Math.round(subtotal * RETE_FUENTE_RATE);
+
+      if (!supplierMap.has(supplierId)) {
+        supplierMap.set(supplierId, {
+          supplierId,
+          supplierName: order.supplier.name,
+          supplierNit: order.supplier.documentNumber,
+          totalBase: 0,
+          totalWithheld: 0,
+          withholdingRate: RETE_FUENTE_RATE * 100,
+          purchaseCount: 0,
+          certificateId: null,
+          certificateNumber: null,
+        });
+      }
+
+      const row = supplierMap.get(supplierId)!;
+      row.totalBase += subtotal;
+      row.totalWithheld += withheld;
+      row.purchaseCount++;
+    }
+
+    // Cross-reference with WithholdingCertificate
+    const supplierIds = Array.from(supplierMap.keys());
+    if (supplierIds.length > 0) {
+      const certificates = await this.prisma.withholdingCertificate.findMany({
+        where: {
+          tenantId,
+          year,
+          supplierId: { in: supplierIds },
+          withholdingType: 'RENTA',
+        },
+        select: { id: true, supplierId: true, certificateNumber: true },
+      });
+
+      for (const cert of certificates) {
+        const row = supplierMap.get(cert.supplierId);
+        if (row) {
+          row.certificateId = cert.id;
+          row.certificateNumber = cert.certificateNumber;
+        }
+      }
+    }
+
+    const rows = Array.from(supplierMap.values()).sort((a, b) => b.totalWithheld - a.totalWithheld);
+
+    this.logger.debug(`ReteFuente Summary ${monthLabel}: ${rows.length} suppliers`);
+
+    return {
+      year,
+      month,
+      monthLabel,
+      fromDate: this.formatLocalDate(from),
+      toDate: this.formatLocalDate(to),
+      rows,
+      totalBase: rows.reduce((s, r) => s + r.totalBase, 0),
+      totalWithheld: rows.reduce((s, r) => s + r.totalWithheld, 0),
+    };
+  }
+
+  /**
+   * 11. Resumen Tributario YTD — Year-to-date tax summary.
+   */
+  async getYtdTaxSummary(year: number): Promise<YtdTaxSummary> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const from = new Date(year, 0, 1);
+    const to = new Date(year, 11, 31, 23, 59, 59, 999);
+
+    // IVA generado: sum of tax from sales invoice items
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.VOID, InvoiceStatus.DRAFT] },
+        issueDate: { gte: from, lte: to },
+      },
+      select: { tax: true },
+    });
+
+    const ivaGeneradoYtd = invoices.reduce((sum, inv) => sum + Number(inv.tax), 0);
+
+    // IVA descontable: sum of tax from received POs
+    const purchaseOrders = await this.prisma.purchaseOrder.findMany({
+      where: {
+        tenantId,
+        status: PurchaseOrderStatus.RECEIVED,
+        issueDate: { gte: from, lte: to },
+      },
+      select: { tax: true, subtotal: true },
+    });
+
+    const ivaDescontableYtd = purchaseOrders.reduce((sum, po) => sum + Number(po.tax), 0);
+
+    // ReteFuente: calculated from POs where subtotal > min base
+    let reteFuenteBaseYtd = 0;
+    let reteFuenteWithheldYtd = 0;
+    for (const po of purchaseOrders) {
+      const subtotal = Number(po.subtotal);
+      if (subtotal > RETE_FUENTE_MIN_BASE) {
+        reteFuenteBaseYtd += subtotal;
+        reteFuenteWithheldYtd += Math.round(subtotal * RETE_FUENTE_RATE);
+      }
+    }
+
+    this.logger.debug(`YTD Tax Summary ${year}: IVA generado=${ivaGeneradoYtd}, descontable=${ivaDescontableYtd}, reteFuente=${reteFuenteWithheldYtd}`);
+
+    return {
+      year,
+      ivaGeneradoYtd,
+      ivaDescontableYtd,
+      netIvaYtd: ivaGeneradoYtd - ivaDescontableYtd,
+      reteFuenteBaseYtd,
+      reteFuenteWithheldYtd,
+    };
+  }
+
+  // ============================================================================
+  // HELPERS
+  // ============================================================================
+
+  /** Format a local date as YYYY-MM-DD without UTC conversion */
+  private formatLocalDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  private getBimonthlyRange(year: number, period: number): { from: Date; to: Date; label: string } {
+    const periodNames = [
+      'Enero - Febrero', 'Marzo - Abril', 'Mayo - Junio',
+      'Julio - Agosto', 'Septiembre - Octubre', 'Noviembre - Diciembre',
+    ];
+    const startMonth = (period - 1) * 2;
+    const from = new Date(year, startMonth, 1);
+    const to = new Date(year, startMonth + 2, 0, 23, 59, 59, 999);
+    return { from, to, label: `${periodNames[period - 1]} ${year}` };
   }
 }

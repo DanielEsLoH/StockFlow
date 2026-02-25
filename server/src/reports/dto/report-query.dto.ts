@@ -1,10 +1,13 @@
 import {
   IsDate,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
+  Min,
+  Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -225,5 +228,51 @@ export class CustomersReportQueryDto {
   @IsEnum(ReportFormat, {
     message: 'El formato debe ser "pdf" o "excel"',
   })
+  format: ReportFormat;
+}
+
+/**
+ * Query DTO for IVA declaration report
+ */
+export class IvaDeclarationQueryDto {
+  @ApiProperty({ description: 'Year', example: 2026 })
+  @IsInt({ message: 'El ano debe ser un numero entero' })
+  @Min(2000)
+  @Max(2100)
+  @Type(() => Number)
+  year: number;
+
+  @ApiProperty({ description: 'Bimonthly period 1-6 (1=Jan-Feb, etc.)', example: 1 })
+  @IsInt({ message: 'El periodo debe ser un numero entero' })
+  @Min(1)
+  @Max(6)
+  @Type(() => Number)
+  period: number;
+
+  @ApiProperty({ enum: ReportFormat, example: 'pdf' })
+  @IsEnum(ReportFormat, { message: 'El formato debe ser "pdf" o "excel"' })
+  format: ReportFormat;
+}
+
+/**
+ * Query DTO for ReteFuente summary report
+ */
+export class ReteFuenteSummaryQueryDto {
+  @ApiProperty({ description: 'Year', example: 2026 })
+  @IsInt({ message: 'El ano debe ser un numero entero' })
+  @Min(2000)
+  @Max(2100)
+  @Type(() => Number)
+  year: number;
+
+  @ApiProperty({ description: 'Month 1-12', example: 2 })
+  @IsInt({ message: 'El mes debe ser un numero entero' })
+  @Min(1)
+  @Max(12)
+  @Type(() => Number)
+  month: number;
+
+  @ApiProperty({ enum: ReportFormat, example: 'pdf' })
+  @IsEnum(ReportFormat, { message: 'El formato debe ser "pdf" o "excel"' })
   format: ReportFormat;
 }

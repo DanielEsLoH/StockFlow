@@ -419,3 +419,69 @@ export interface APAgingReport {
   rows: APAgingRow[];
   totals: AgingTotals;
 }
+
+// ============================
+// Tax Reports (Informes Tributarios)
+// ============================
+
+export interface IvaRateBreakdown {
+  taxRate: number;
+  taxableBase: number;
+  taxAmount: number;
+  invoiceCount: number;
+}
+
+export interface IvaExemptSummary {
+  category: "EXENTO" | "EXCLUIDO";
+  taxableBase: number;
+  invoiceCount: number;
+}
+
+export interface IvaDeclarationReport {
+  year: number;
+  bimonthlyPeriod: number;
+  periodLabel: string;
+  fromDate: string;
+  toDate: string;
+  salesByRate: IvaRateBreakdown[];
+  salesExempt: IvaExemptSummary[];
+  totalSalesBase: number;
+  totalIvaGenerado: number;
+  purchasesByRate: IvaRateBreakdown[];
+  purchasesExempt: IvaExemptSummary[];
+  totalPurchasesBase: number;
+  totalIvaDescontable: number;
+  netIvaPayable: number;
+}
+
+export interface ReteFuenteSupplierRow {
+  supplierId: string;
+  supplierName: string;
+  supplierNit: string;
+  totalBase: number;
+  totalWithheld: number;
+  withholdingRate: number;
+  purchaseCount: number;
+  certificateId: string | null;
+  certificateNumber: string | null;
+}
+
+export interface ReteFuenteSummaryReport {
+  year: number;
+  month: number;
+  monthLabel: string;
+  fromDate: string;
+  toDate: string;
+  rows: ReteFuenteSupplierRow[];
+  totalBase: number;
+  totalWithheld: number;
+}
+
+export interface YtdTaxSummary {
+  year: number;
+  ivaGeneradoYtd: number;
+  ivaDescontableYtd: number;
+  netIvaYtd: number;
+  reteFuenteBaseYtd: number;
+  reteFuenteWithheldYtd: number;
+}

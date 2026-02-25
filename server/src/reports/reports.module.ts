@@ -3,6 +3,7 @@ import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { PrismaModule } from '../prisma';
 import { CommonModule } from '../common';
+import { AccountingReportsService } from '../accounting/reports/accounting-reports.service';
 
 /**
  * ReportsModule provides report generation functionality for the application.
@@ -20,7 +21,7 @@ import { CommonModule } from '../common';
 @Module({
   imports: [PrismaModule, CommonModule],
   controllers: [ReportsController],
-  providers: [ReportsService],
+  providers: [ReportsService, AccountingReportsService],
   exports: [ReportsService],
 })
 export class ReportsModule {}

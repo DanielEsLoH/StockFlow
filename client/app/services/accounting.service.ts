@@ -20,6 +20,9 @@ import type {
   CashFlowReport,
   ARAgingReport,
   APAgingReport,
+  IvaDeclarationReport,
+  ReteFuenteSummaryReport,
+  YtdTaxSummary,
 } from "~/types/accounting";
 
 export const accountingService = {
@@ -236,6 +239,69 @@ export const accountingService = {
       `/accounting/reports/ap-aging?${params.toString()}`,
     );
     return data;
+  },
+
+  async getIvaDeclaration(year: number, period: number): Promise<IvaDeclarationReport> {
+    const params = new URLSearchParams();
+    params.append("year", String(year));
+    params.append("period", String(period));
+    const { data } = await api.get<IvaDeclarationReport>(
+      `/accounting/reports/iva-declaration?${params.toString()}`,
+    );
+    return data;
+  },
+
+  async getReteFuenteSummary(year: number, month: number): Promise<ReteFuenteSummaryReport> {
+    const params = new URLSearchParams();
+    params.append("year", String(year));
+    params.append("month", String(month));
+    const { data } = await api.get<ReteFuenteSummaryReport>(
+      `/accounting/reports/retefuente-summary?${params.toString()}`,
+    );
+    return data;
+  },
+
+  async getYtdTaxSummary(year: number): Promise<YtdTaxSummary> {
+    const params = new URLSearchParams();
+    params.append("year", String(year));
+    const { data } = await api.get<YtdTaxSummary>(
+      `/accounting/reports/tax-summary?${params.toString()}`,
+    );
+    return data;
+  },
+
+  async downloadIvaDeclaration(
+    year: number,
+    period: number,
+    format: "pdf" | "excel",
+  ): Promise<{ blob: Blob; fileName: string }> {
+    const params = new URLSearchParams();
+    params.append("year", String(year));
+    params.append("period", String(period));
+    params.append("format", format);
+    const { data } = await api.get(
+      `/reports/tax/iva-declaration?${params.toString()}`,
+      { responseType: "blob" },
+    );
+    const ext = format === "pdf" ? "pdf" : "xlsx";
+    return { blob: data, fileName: `declaracion-iva-${year}-${period}.${ext}` };
+  },
+
+  async downloadReteFuenteSummary(
+    year: number,
+    month: number,
+    format: "pdf" | "excel",
+  ): Promise<{ blob: Blob; fileName: string }> {
+    const params = new URLSearchParams();
+    params.append("year", String(year));
+    params.append("month", String(month));
+    params.append("format", format);
+    const { data } = await api.get(
+      `/reports/tax/retefuente-summary?${params.toString()}`,
+      { responseType: "blob" },
+    );
+    const ext = format === "pdf" ? "pdf" : "xlsx";
+    return { blob: data, fileName: `retefuente-${year}-${month}.${ext}` };
   },
 
   async downloadCostCenterBalanceReport(

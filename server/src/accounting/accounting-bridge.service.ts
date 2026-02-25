@@ -3,6 +3,7 @@ import { PaymentMethod } from '@prisma/client';
 import { JournalEntriesService } from './journal-entries.service';
 import { AccountingConfigService } from './accounting-config.service';
 import { JournalEntrySource } from '@prisma/client';
+import { RETE_FUENTE_RATE, RETE_FUENTE_MIN_BASE } from './tax-constants';
 
 /**
  * AccountingBridgeService generates automatic journal entries from business events.
@@ -23,10 +24,6 @@ import { JournalEntrySource } from '@prisma/client';
 @Injectable()
 export class AccountingBridgeService {
   private readonly logger = new Logger(AccountingBridgeService.name);
-
-  /** ReteFuente V1: 2.5% on purchases above $523,740 COP */
-  private readonly RETE_FUENTE_RATE = 0.025;
-  private readonly RETE_FUENTE_MIN_BASE = 523740;
 
   constructor(
     private readonly journalEntriesService: JournalEntriesService,
@@ -337,8 +334,8 @@ export class AccountingBridgeService {
 
       // ReteFuente V1: 2.5% on base > $523,740
       let reteFuente = 0;
-      if (reteFuentePayableId && params.subtotal > this.RETE_FUENTE_MIN_BASE) {
-        reteFuente = Math.round(params.subtotal * this.RETE_FUENTE_RATE);
+      if (reteFuentePayableId && params.subtotal > RETE_FUENTE_MIN_BASE) {
+        reteFuente = Math.round(params.subtotal * RETE_FUENTE_RATE);
 
         lines.push({
           accountId: reteFuentePayableId,

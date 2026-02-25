@@ -4,5 +4,7 @@ export {
   KardexQueryDto,
   CustomersReportQueryDto,
   CostCenterBalanceQueryDto,
+  IvaDeclarationQueryDto,
+  ReteFuenteSummaryQueryDto,
   ReportFormat,
 } from './report-query.dto';

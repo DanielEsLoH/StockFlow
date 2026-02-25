@@ -26,19 +26,23 @@ describe('JournalEntriesService', () => {
   const mockLine1 = {
     id: 'line-1',
     accountId: 'acc-1',
+    costCenterId: null,
     description: 'Debit line',
     debit: 100000,
     credit: 0,
     account: { code: '1105', name: 'Caja' },
+    costCenter: null,
   };
 
   const mockLine2 = {
     id: 'line-2',
     accountId: 'acc-2',
+    costCenterId: null,
     description: 'Credit line',
     debit: 0,
     credit: 100000,
     account: { code: '4135', name: 'Ingresos' },
+    costCenter: null,
   };
 
   const mockEntry = {
@@ -330,6 +334,7 @@ describe('JournalEntriesService', () => {
           lines: {
             include: {
               account: { select: { code: true, name: true } },
+              costCenter: { select: { code: true, name: true } },
             },
           },
         },
@@ -824,6 +829,7 @@ describe('JournalEntriesService', () => {
           lines: {
             include: {
               account: { select: { code: true, name: true } },
+              costCenter: { select: { code: true, name: true } },
             },
           },
         },
@@ -903,6 +909,7 @@ describe('JournalEntriesService', () => {
           lines: {
             include: {
               account: { select: { code: true, name: true } },
+              costCenter: { select: { code: true, name: true } },
             },
           },
         },

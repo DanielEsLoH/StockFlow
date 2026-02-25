@@ -4,6 +4,7 @@ import {
   PaymentStatus,
   CustomerStatus,
   MovementType,
+  JournalEntryStatus,
 } from '@prisma/client';
 import PdfPrinter from 'pdfmake';
 import * as XLSX from 'xlsx';
@@ -53,6 +54,25 @@ export interface KardexReport {
   openingBalance: number;
   movements: KardexMovement[];
   closingBalance: number;
+}
+
+/**
+ * Data structure for the cost center balance report.
+ */
+interface CostCenterBalanceData {
+  costCenterId: string;
+  costCenterCode: string;
+  costCenterName: string;
+  accounts: {
+    accountId: string;
+    accountCode: string;
+    accountName: string;
+    totalDebit: number;
+    totalCredit: number;
+    balance: number;
+  }[];
+  totalDebit: number;
+  totalCredit: number;
 }
 
 /**
@@ -1085,6 +1105,266 @@ export class ReportsService {
     if (invoiceNumber) return invoiceNumber;
     if (purchaseOrderNumber) return purchaseOrderNumber;
     return undefined;
+  }
+
+  // ============================================================================
+  // COST CENTER BALANCE REPORT
+  // ============================================================================
+
+  /**
+   * Generates a cost center balance report for the specified date range.
+   * Groups journal entry lines by cost center and account, showing
+   * total debits, credits, and balance for each.
+   */
+  async generateCostCenterBalanceReport(
+    fromDate: Date,
+    toDate: Date,
+    format: 'pdf' | 'excel',
+    costCenterId?: string,
+  ): Promise<Buffer> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(
+      `Generating cost center balance report for tenant ${tenantId} from ${fromDate.toISOString()} to ${toDate.toISOString()}`,
+    );
+
+    // Query journal entry lines with cost center, filtered by date range and posted status
+    const whereClause: any = {
+      costCenterId: costCenterId ? costCenterId : { not: null },
+      journalEntry: {
+        tenantId,
+        status: JournalEntryStatus.POSTED,
+        date: {
+          gte: fromDate,
+          lte: toDate,
+        },
+      },
+    };
+
+    const lines = await this.prisma.journalEntryLine.findMany({
+      where: whereClause,
+      include: {
+        account: { select: { id: true, code: true, name: true } },
+        costCenter: { select: { id: true, code: true, name: true } },
+      },
+    });
+
+    // Group by cost center → account
+    const ccMap = new Map<
+      string,
+      {
+        costCenterId: string;
+        costCenterCode: string;
+        costCenterName: string;
+        accounts: Map<string, { accountId: string; accountCode: string; accountName: string; totalDebit: number; totalCredit: number }>;
+      }
+    >();
+
+    for (const line of lines) {
+      if (!line.costCenter) continue;
+
+      const ccId = line.costCenter.id;
+      if (!ccMap.has(ccId)) {
+        ccMap.set(ccId, {
+          costCenterId: ccId,
+          costCenterCode: line.costCenter.code,
+          costCenterName: line.costCenter.name,
+          accounts: new Map(),
+        });
+      }
+
+      const cc = ccMap.get(ccId)!;
+      const accId = line.account.id;
+      if (!cc.accounts.has(accId)) {
+        cc.accounts.set(accId, {
+          accountId: accId,
+          accountCode: line.account.code,
+          accountName: line.account.name,
+          totalDebit: 0,
+          totalCredit: 0,
+        });
+      }
+
+      const acc = cc.accounts.get(accId)!;
+      acc.totalDebit += Number(line.debit);
+      acc.totalCredit += Number(line.credit);
+    }
+
+    // Build sorted result
+    const costCenterBalances = Array.from(ccMap.values())
+      .map((cc) => {
+        const accounts = Array.from(cc.accounts.values())
+          .map((a) => ({
+            ...a,
+            balance: a.totalDebit - a.totalCredit,
+          }))
+          .sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+
+        return {
+          costCenterId: cc.costCenterId,
+          costCenterCode: cc.costCenterCode,
+          costCenterName: cc.costCenterName,
+          accounts,
+          totalDebit: accounts.reduce((sum, a) => sum + a.totalDebit, 0),
+          totalCredit: accounts.reduce((sum, a) => sum + a.totalCredit, 0),
+        };
+      })
+      .sort((a, b) => a.costCenterCode.localeCompare(b.costCenterCode));
+
+    if (format === 'excel') {
+      return this.generateCostCenterBalanceExcel(costCenterBalances, fromDate, toDate);
+    }
+    return this.generateCostCenterBalancePdf(costCenterBalances, fromDate, toDate);
+  }
+
+  private async generateCostCenterBalancePdf(
+    data: CostCenterBalanceData[],
+    fromDate: Date,
+    toDate: Date,
+  ): Promise<Buffer> {
+    const tenant = await this.tenantContext.getTenant();
+
+    const body: any[][] = [
+      [
+        { text: 'Cuenta', style: 'tableHeader' },
+        { text: 'Nombre', style: 'tableHeader' },
+        { text: 'Debitos', style: 'tableHeader', alignment: 'right' },
+        { text: 'Creditos', style: 'tableHeader', alignment: 'right' },
+        { text: 'Saldo', style: 'tableHeader', alignment: 'right' },
+      ],
+    ];
+
+    for (const cc of data) {
+      // Cost center header row
+      body.push([
+        { text: `${cc.costCenterCode} - ${cc.costCenterName}`, colSpan: 5, style: 'subheader' },
+        {}, {}, {}, {},
+      ]);
+
+      for (const acc of cc.accounts) {
+        body.push([
+          acc.accountCode,
+          acc.accountName,
+          { text: this.formatNumber(acc.totalDebit), alignment: 'right' },
+          { text: this.formatNumber(acc.totalCredit), alignment: 'right' },
+          { text: this.formatNumber(acc.balance), alignment: 'right' },
+        ]);
+      }
+
+      // Subtotal row
+      body.push([
+        { text: 'Subtotal', colSpan: 2, style: 'tableTotal' },
+        {},
+        { text: this.formatNumber(cc.totalDebit), alignment: 'right', style: 'tableTotal' },
+        { text: this.formatNumber(cc.totalCredit), alignment: 'right', style: 'tableTotal' },
+        { text: this.formatNumber(cc.totalDebit - cc.totalCredit), alignment: 'right', style: 'tableTotal' },
+      ]);
+    }
+
+    const docDefinition = {
+      content: [
+        { text: tenant.name, style: 'companyName' },
+        { text: 'Balance por Centro de Costo', style: 'header' },
+        {
+          text: `Periodo: ${this.formatDate(fromDate)} - ${this.formatDate(toDate)}`,
+          style: 'period',
+        },
+        { text: '', margin: [0, 10, 0, 0] },
+        {
+          table: {
+            headerRows: 1,
+            widths: [60, '*', 80, 80, 80],
+            body,
+          },
+          layout: 'lightHorizontalLines',
+        },
+      ],
+      styles: {
+        companyName: { fontSize: 14, bold: true, margin: [0, 0, 0, 2] },
+        header: { fontSize: 12, margin: [0, 0, 0, 4] },
+        period: { fontSize: 9, color: '#666', margin: [0, 0, 0, 10] },
+        subheader: { fontSize: 10, bold: true, fillColor: '#f0f0f0', margin: [0, 4, 0, 4] },
+        tableHeader: { fontSize: 9, bold: true, fillColor: '#333', color: '#fff' },
+        tableTotal: { fontSize: 9, bold: true },
+      },
+      defaultStyle: { fontSize: 8 },
+    };
+
+    return this.generatePdfBuffer(docDefinition);
+  }
+
+  private generateCostCenterBalanceExcel(
+    data: CostCenterBalanceData[],
+    fromDate: Date,
+    toDate: Date,
+  ): Buffer {
+    const workbook = XLSX.utils.book_new();
+
+    // Summary sheet with all cost centers
+    const summaryRows: any[][] = [
+      ['Balance por Centro de Costo'],
+      [`Periodo: ${this.formatDate(fromDate)} - ${this.formatDate(toDate)}`],
+      [],
+      ['Centro de Costo', 'Codigo CC', 'Cuenta', 'Nombre Cuenta', 'Debitos', 'Creditos', 'Saldo'],
+    ];
+
+    for (const cc of data) {
+      for (const acc of cc.accounts) {
+        summaryRows.push([
+          cc.costCenterName,
+          cc.costCenterCode,
+          acc.accountCode,
+          acc.accountName,
+          acc.totalDebit,
+          acc.totalCredit,
+          acc.balance,
+        ]);
+      }
+      summaryRows.push([
+        `Subtotal ${cc.costCenterName}`,
+        '',
+        '',
+        '',
+        cc.totalDebit,
+        cc.totalCredit,
+        cc.totalDebit - cc.totalCredit,
+      ]);
+      summaryRows.push([]);
+    }
+
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Balance CC');
+
+    // Individual sheets per cost center (max 10 to avoid huge workbooks)
+    for (const cc of data.slice(0, 10)) {
+      const sheetName = cc.costCenterCode.substring(0, 31); // Excel sheet name limit
+      const rows: any[][] = [
+        [`${cc.costCenterCode} - ${cc.costCenterName}`],
+        [],
+        ['Cuenta', 'Nombre', 'Debitos', 'Creditos', 'Saldo'],
+        ...cc.accounts.map((a) => [
+          a.accountCode,
+          a.accountName,
+          a.totalDebit,
+          a.totalCredit,
+          a.balance,
+        ]),
+        [],
+        ['TOTAL', '', cc.totalDebit, cc.totalCredit, cc.totalDebit - cc.totalCredit],
+      ];
+
+      const sheet = XLSX.utils.aoa_to_sheet(rows);
+      XLSX.utils.book_append_sheet(workbook, sheet, sheetName);
+    }
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+  }
+
+  private formatNumber(value: number): string {
+    return new Intl.NumberFormat('es-CO', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
   }
 
   // ============================================================================

@@ -14,6 +14,7 @@ import {
   useAccountingPeriods,
   useCreateJournalEntry,
 } from "~/hooks/useAccounting";
+import { useCostCenterOptions } from "~/hooks/useCostCenters";
 import { Button } from "~/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
 import { Badge } from "~/components/ui/Badge";
@@ -38,6 +39,7 @@ export const meta: Route.MetaFunction = () => {
 
 interface EntryLine {
   accountId: string;
+  costCenterId: string;
   description: string;
   debit: number;
   credit: number;
@@ -48,12 +50,13 @@ export default function NewJournalEntryPage() {
   const [description, setDescription] = useState("");
   const [periodId, setPeriodId] = useState<string>("");
   const [lines, setLines] = useState<EntryLine[]>([
-    { accountId: "", description: "", debit: 0, credit: 0 },
-    { accountId: "", description: "", debit: 0, credit: 0 },
+    { accountId: "", costCenterId: "", description: "", debit: 0, credit: 0 },
+    { accountId: "", costCenterId: "", description: "", debit: 0, credit: 0 },
   ]);
 
   const { data: accounts } = useAccounts();
   const { data: periods } = useAccountingPeriods();
+  const { data: costCenterOpts } = useCostCenterOptions();
   const createJournalEntry = useCreateJournalEntry();
 
   const openPeriods = (periods ?? []).filter((p) => p.status === "OPEN");
@@ -68,6 +71,11 @@ export default function NewJournalEntryPage() {
   const periodOptions = openPeriods.map((p) => ({
     value: p.id,
     label: p.name,
+  }));
+
+  const costCenterOptions = (costCenterOpts ?? []).map((cc) => ({
+    value: cc.id,
+    label: `${cc.code} - ${cc.name}`,
   }));
 
   const totalDebit = lines.reduce((sum, l) => sum + l.debit, 0);
@@ -98,7 +106,7 @@ export default function NewJournalEntryPage() {
   };
 
   const addLine = () => {
-    setLines((prev) => [...prev, { accountId: "", description: "", debit: 0, credit: 0 }]);
+    setLines((prev) => [...prev, { accountId: "", costCenterId: "", description: "", debit: 0, credit: 0 }]);
   };
 
   const removeLine = (index: number) => {
@@ -112,7 +120,13 @@ export default function NewJournalEntryPage() {
       date,
       description,
       periodId: periodId || undefined,
-      lines: validLines,
+      lines: validLines.map((l) => ({
+        accountId: l.accountId,
+        costCenterId: l.costCenterId || undefined,
+        description: l.description || undefined,
+        debit: l.debit,
+        credit: l.credit,
+      })),
     });
   };
 
@@ -199,14 +213,15 @@ export default function NewJournalEntryPage() {
               </Button>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-6 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[250px]">Cuenta</TableHead>
-                  <TableHead className="min-w-[180px]">Descripcion</TableHead>
-                  <TableHead className="text-right min-w-[140px]">Debito</TableHead>
-                  <TableHead className="text-right min-w-[140px]">Credito</TableHead>
+                  <TableHead className="min-w-[220px]">Cuenta</TableHead>
+                  <TableHead className="min-w-[160px]">Centro Costo</TableHead>
+                  <TableHead className="min-w-[160px]">Descripcion</TableHead>
+                  <TableHead className="text-right min-w-[130px]">Debito</TableHead>
+                  <TableHead className="text-right min-w-[130px]">Credito</TableHead>
                   <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
@@ -219,6 +234,14 @@ export default function NewJournalEntryPage() {
                         value={line.accountId}
                         onChange={(val) => updateLine(index, "accountId", val)}
                         placeholder="Seleccionar cuenta..."
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        options={costCenterOptions}
+                        value={line.costCenterId}
+                        onChange={(val) => updateLine(index, "costCenterId", val)}
+                        placeholder="Opcional"
                       />
                     </TableCell>
                     <TableCell>

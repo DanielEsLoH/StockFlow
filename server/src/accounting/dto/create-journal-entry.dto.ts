@@ -21,6 +21,11 @@ export class JournalEntryLineDto {
   @IsString({ message: 'El ID de cuenta es requerido' })
   accountId: string;
 
+  @ApiPropertyOptional({ description: 'Cost center ID' })
+  @IsString()
+  @IsOptional()
+  costCenterId?: string;
+
   @ApiPropertyOptional({ description: 'Line description' })
   @IsString()
   @IsOptional()

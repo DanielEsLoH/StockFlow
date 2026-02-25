@@ -170,6 +170,46 @@ export class KardexQueryDto {
 }
 
 /**
+ * Query DTO for cost center balance report
+ */
+export class CostCenterBalanceQueryDto {
+  @ApiProperty({
+    description: 'Output format for the report',
+    enum: ReportFormat,
+    example: 'pdf',
+  })
+  @IsEnum(ReportFormat, {
+    message: 'El formato debe ser "pdf" o "excel"',
+  })
+  format: ReportFormat;
+
+  @ApiProperty({
+    description: 'Start date for the report period (inclusive)',
+    type: String,
+    format: 'date-time',
+  })
+  @IsDate({ message: 'La fecha de inicio debe ser una fecha valida' })
+  @Type(() => Date)
+  fromDate: Date;
+
+  @ApiProperty({
+    description: 'End date for the report period (inclusive)',
+    type: String,
+    format: 'date-time',
+  })
+  @IsDate({ message: 'La fecha de fin debe ser una fecha valida' })
+  @Type(() => Date)
+  toDate: Date;
+
+  @ApiPropertyOptional({
+    description: 'Optional cost center ID to filter results',
+  })
+  @IsString({ message: 'El ID del centro de costo debe ser un texto valido' })
+  @IsOptional()
+  costCenterId?: string;
+}
+
+/**
  * Query DTO for customers report - no date range required
  */
 export class CustomersReportQueryDto {

@@ -166,6 +166,10 @@ export default [
       "accounting/reports/cash-flow",
       "routes/_app.accounting.reports.cash-flow.tsx",
     ),
+    route(
+      "accounting/reports/cost-center-balance",
+      "routes/_app.accounting.reports.cost-center-balance.tsx",
+    ),
 
     // Payroll module
     route("payroll/employees", "routes/_app.payroll.employees.tsx"),

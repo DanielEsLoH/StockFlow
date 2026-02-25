@@ -217,4 +217,24 @@ export const accountingService = {
     );
     return data;
   },
+
+  async downloadCostCenterBalanceReport(
+    fromDate: string,
+    toDate: string,
+    format: "pdf" | "excel",
+    costCenterId?: string,
+  ): Promise<{ blob: Blob; fileName: string }> {
+    const params = new URLSearchParams();
+    params.append("fromDate", fromDate);
+    params.append("toDate", toDate);
+    params.append("format", format);
+    if (costCenterId) params.append("costCenterId", costCenterId);
+    const { data } = await api.get(
+      `/reports/cost-center-balance?${params.toString()}`,
+      { responseType: "blob" },
+    );
+    const ext = format === "pdf" ? "pdf" : "xlsx";
+    const fileName = `balance-centro-costo-${fromDate}-${toDate}.${ext}`;
+    return { blob: data, fileName };
+  },
 };

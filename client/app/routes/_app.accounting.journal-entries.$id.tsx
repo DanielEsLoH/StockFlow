@@ -280,6 +280,7 @@ export default function JournalEntryDetailPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Cuenta</TableHead>
+                  <TableHead className="hidden md:table-cell">Centro Costo</TableHead>
                   <TableHead>Descripcion</TableHead>
                   <TableHead className="text-right">Debito</TableHead>
                   <TableHead className="text-right">Credito</TableHead>
@@ -298,6 +299,11 @@ export default function JournalEntryDetailPage() {
                         </span>
                       </div>
                     </TableCell>
+                    <TableCell className="hidden md:table-cell text-neutral-600 dark:text-neutral-400">
+                      {line.costCenterCode
+                        ? `${line.costCenterCode} - ${line.costCenterName}`
+                        : "—"}
+                    </TableCell>
                     <TableCell className="text-neutral-600 dark:text-neutral-400">
                       {line.description || "-"}
                     </TableCell>
@@ -312,7 +318,7 @@ export default function JournalEntryDetailPage() {
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={2} className="font-bold text-neutral-900 dark:text-white">
+                  <TableCell colSpan={3} className="font-bold text-neutral-900 dark:text-white">
                     Totales
                   </TableCell>
                   <TableCell className="text-right font-bold text-neutral-900 dark:text-white">

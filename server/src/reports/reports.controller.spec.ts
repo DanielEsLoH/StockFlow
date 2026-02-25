@@ -7,6 +7,7 @@ import {
   InventoryReportQueryDto,
   CustomersReportQueryDto,
   KardexQueryDto,
+  CostCenterBalanceQueryDto,
   ReportFormat,
 } from './dto';
 import { MovementType } from '@prisma/client';
@@ -69,6 +70,7 @@ describe('ReportsController', () => {
       generateCustomersReport: jest.fn(),
       generateInvoicePdf: jest.fn(),
       getKardexReport: jest.fn(),
+      generateCostCenterBalanceReport: jest.fn(),
     };
 
     const mockArcjetService = {
@@ -817,6 +819,95 @@ describe('ReportsController', () => {
           'Content-Disposition': expect.stringContaining('factura-invoice-456'),
         }),
       );
+    });
+  });
+
+  describe('getCostCenterBalanceReport', () => {
+    const mockCCBalanceQueryPdf: CostCenterBalanceQueryDto = {
+      format: ReportFormat.PDF,
+      fromDate: new Date('2024-01-01'),
+      toDate: new Date('2024-01-31'),
+    };
+
+    const mockCCBalanceQueryExcel: CostCenterBalanceQueryDto = {
+      format: ReportFormat.EXCEL,
+      fromDate: new Date('2024-01-01'),
+      toDate: new Date('2024-01-31'),
+      costCenterId: 'cc-123',
+    };
+
+    describe('PDF format', () => {
+      it('should return PDF buffer from service', async () => {
+        reportsService.generateCostCenterBalanceReport.mockResolvedValue(mockPdfBuffer);
+        const res = mockResponse();
+
+        await controller.getCostCenterBalanceReport(mockCCBalanceQueryPdf, res);
+
+        expect(reportsService.generateCostCenterBalanceReport).toHaveBeenCalledWith(
+          mockCCBalanceQueryPdf.fromDate,
+          mockCCBalanceQueryPdf.toDate,
+          ReportFormat.PDF,
+          undefined,
+        );
+        expect(res.send).toHaveBeenCalledWith(mockPdfBuffer);
+      });
+
+      it('should set correct PDF response headers', async () => {
+        reportsService.generateCostCenterBalanceReport.mockResolvedValue(mockPdfBuffer);
+        const res = mockResponse();
+
+        await controller.getCostCenterBalanceReport(mockCCBalanceQueryPdf, res);
+
+        expect(res.set).toHaveBeenCalledWith(
+          expect.objectContaining({
+            'Content-Type': 'application/pdf',
+          }),
+        );
+      });
+    });
+
+    describe('Excel format', () => {
+      it('should return Excel buffer from service', async () => {
+        reportsService.generateCostCenterBalanceReport.mockResolvedValue(mockExcelBuffer);
+        const res = mockResponse();
+
+        await controller.getCostCenterBalanceReport(mockCCBalanceQueryExcel, res);
+
+        expect(reportsService.generateCostCenterBalanceReport).toHaveBeenCalledWith(
+          mockCCBalanceQueryExcel.fromDate,
+          mockCCBalanceQueryExcel.toDate,
+          ReportFormat.EXCEL,
+          'cc-123',
+        );
+        expect(res.send).toHaveBeenCalledWith(mockExcelBuffer);
+      });
+
+      it('should set correct Excel response headers', async () => {
+        reportsService.generateCostCenterBalanceReport.mockResolvedValue(mockExcelBuffer);
+        const res = mockResponse();
+
+        await controller.getCostCenterBalanceReport(mockCCBalanceQueryExcel, res);
+
+        expect(res.set).toHaveBeenCalledWith(
+          expect.objectContaining({
+            'Content-Type':
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          }),
+        );
+      });
+    });
+
+    describe('error handling', () => {
+      it('should propagate service errors', async () => {
+        reportsService.generateCostCenterBalanceReport.mockRejectedValue(
+          new Error('Service error'),
+        );
+        const res = mockResponse();
+
+        await expect(
+          controller.getCostCenterBalanceReport(mockCCBalanceQueryPdf, res),
+        ).rejects.toThrow('Service error');
+      });
     });
   });
 });

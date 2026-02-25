@@ -20,6 +20,9 @@ export interface JournalEntryLineResponse {
   accountId: string;
   accountCode: string;
   accountName: string;
+  costCenterId: string | null;
+  costCenterCode: string | null;
+  costCenterName: string | null;
   description: string | null;
   debit: number;
   credit: number;
@@ -97,6 +100,7 @@ export class JournalEntriesService {
           lines: {
             include: {
               account: { select: { code: true, name: true } },
+            costCenter: { select: { code: true, name: true } },
             },
           },
         },
@@ -127,6 +131,7 @@ export class JournalEntriesService {
         lines: {
           include: {
             account: { select: { code: true, name: true } },
+            costCenter: { select: { code: true, name: true } },
           },
         },
       },
@@ -207,6 +212,7 @@ export class JournalEntriesService {
         lines: {
           create: dto.lines.map((l) => ({
             accountId: l.accountId,
+            costCenterId: l.costCenterId,
             description: l.description,
             debit: l.debit,
             credit: l.credit,
@@ -217,6 +223,7 @@ export class JournalEntriesService {
         lines: {
           include: {
             account: { select: { code: true, name: true } },
+            costCenter: { select: { code: true, name: true } },
           },
         },
       },
@@ -240,7 +247,7 @@ export class JournalEntriesService {
     purchaseOrderId?: string;
     stockMovementId?: string;
     dianDocumentId?: string;
-    lines: { accountId: string; description?: string; debit: number; credit: number }[];
+    lines: { accountId: string; costCenterId?: string; description?: string; debit: number; credit: number }[];
   }): Promise<JournalEntryResponse> {
     const totalDebit = params.lines.reduce((sum, l) => sum + l.debit, 0);
     const totalCredit = params.lines.reduce((sum, l) => sum + l.credit, 0);
@@ -281,6 +288,7 @@ export class JournalEntriesService {
         lines: {
           create: params.lines.map((l) => ({
             accountId: l.accountId,
+            costCenterId: l.costCenterId,
             description: l.description,
             debit: l.debit,
             credit: l.credit,
@@ -291,6 +299,7 @@ export class JournalEntriesService {
         lines: {
           include: {
             account: { select: { code: true, name: true } },
+            costCenter: { select: { code: true, name: true } },
           },
         },
       },
@@ -325,6 +334,7 @@ export class JournalEntriesService {
         lines: {
           include: {
             account: { select: { code: true, name: true } },
+            costCenter: { select: { code: true, name: true } },
           },
         },
       },
@@ -360,6 +370,7 @@ export class JournalEntriesService {
         lines: {
           include: {
             account: { select: { code: true, name: true } },
+            costCenter: { select: { code: true, name: true } },
           },
         },
       },
@@ -406,6 +417,9 @@ export class JournalEntriesService {
         accountId: l.accountId,
         accountCode: l.account?.code ?? '',
         accountName: l.account?.name ?? '',
+        costCenterId: l.costCenterId ?? null,
+        costCenterCode: l.costCenter?.code ?? null,
+        costCenterName: l.costCenter?.name ?? null,
         description: l.description,
         debit: Number(l.debit),
         credit: Number(l.credit),

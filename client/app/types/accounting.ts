@@ -112,6 +112,9 @@ export interface JournalEntryLine {
   accountId: string;
   accountCode: string;
   accountName: string;
+  costCenterId: string | null;
+  costCenterCode: string | null;
+  costCenterName: string | null;
   description: string | null;
   debit: number;
   credit: number;
@@ -164,6 +167,7 @@ export interface JournalEntriesResponse {
 // Create journal entry line data
 export interface JournalEntryLineData {
   accountId: string;
+  costCenterId?: string;
   description?: string;
   debit: number;
   credit: number;

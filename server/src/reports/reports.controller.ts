@@ -22,6 +22,7 @@ import {
   InventoryReportQueryDto,
   CustomersReportQueryDto,
   KardexQueryDto,
+  CostCenterBalanceQueryDto,
   ReportFormat,
 } from './dto';
 import { JwtAuthGuard } from '../auth';
@@ -255,6 +256,41 @@ export class ReportsController {
       query.fromDate,
       query.toDate,
     );
+  }
+
+  /**
+   * Generates a cost center balance report for the specified date range.
+   */
+  @Get('reports/cost-center-balance')
+  @ApiOperation({
+    summary: 'Generate cost center balance report',
+    description:
+      'Generates a report showing account balances grouped by cost center for the specified date range. Returns a downloadable PDF or Excel file.',
+  })
+  @ApiProduces(
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  @ApiResponse({
+    status: 200,
+    description: 'Cost center balance report generated successfully (file download)',
+  })
+  async getCostCenterBalanceReport(
+    @Query() query: CostCenterBalanceQueryDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    this.logger.log(
+      `Generating cost center balance report: ${query.format} from ${query.fromDate.toISOString()} to ${query.toDate.toISOString()}`,
+    );
+
+    const buffer = await this.reportsService.generateCostCenterBalanceReport(
+      query.fromDate,
+      query.toDate,
+      query.format,
+      query.costCenterId,
+    );
+
+    this.sendReportResponse(res, buffer, 'balance-centros-costo', query.format);
   }
 
   /**

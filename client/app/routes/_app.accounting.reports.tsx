@@ -9,6 +9,7 @@ import {
   Wallet,
   ArrowRight,
   BarChart3,
+  Target,
 } from "lucide-react";
 import type { Route } from "./+types/_app.accounting.reports";
 import { Card } from "~/components/ui/Card";
@@ -68,6 +69,14 @@ const reports = [
     icon: Wallet,
     gradient: "from-primary-500/20 to-accent-500/5",
     iconColor: "text-primary-600 dark:text-primary-400",
+  },
+  {
+    title: "Balance por Centro de Costo",
+    description: "Saldos agrupados por centro de costo",
+    href: "/accounting/reports/cost-center-balance",
+    icon: Target,
+    gradient: "from-accent-500/20 to-success-500/5",
+    iconColor: "text-accent-600 dark:text-accent-400",
   },
 ];
 

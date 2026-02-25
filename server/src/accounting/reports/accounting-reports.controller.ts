@@ -124,6 +124,30 @@ export class AccountingReportsController {
     );
   }
 
+  @Get('ar-aging')
+  @RequirePermissions(Permission.ACCOUNTING_VIEW)
+  @ApiOperation({ summary: 'Get AR aging report (Cartera CxC por Edades)' })
+  @ApiQuery({ name: 'asOfDate', required: false, description: 'As-of date (YYYY-MM-DD), defaults to today' })
+  @ApiResponse({ status: 200, description: 'AR aging report' })
+  async getARAgingReport(
+    @Query('asOfDate') asOfDate?: string,
+  ) {
+    const date = asOfDate ? this.parseDate(asOfDate) : new Date();
+    return this.reportsService.getARAgingReport(date);
+  }
+
+  @Get('ap-aging')
+  @RequirePermissions(Permission.ACCOUNTING_VIEW)
+  @ApiOperation({ summary: 'Get AP aging report (Cartera CxP por Edades)' })
+  @ApiQuery({ name: 'asOfDate', required: false, description: 'As-of date (YYYY-MM-DD), defaults to today' })
+  @ApiResponse({ status: 200, description: 'AP aging report' })
+  async getAPAgingReport(
+    @Query('asOfDate') asOfDate?: string,
+  ) {
+    const date = asOfDate ? this.parseDate(asOfDate) : new Date();
+    return this.reportsService.getAPAgingReport(date);
+  }
+
   private parseDate(dateStr: string): Date {
     const date = new Date(dateStr + 'T00:00:00');
     if (isNaN(date.getTime())) {

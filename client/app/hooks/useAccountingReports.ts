@@ -9,6 +9,8 @@ import type {
   BalanceSheetReport,
   IncomeStatementReport,
   CashFlowReport,
+  ARAgingReport,
+  APAgingReport,
 } from "~/types/accounting";
 
 // ============================================================================
@@ -81,5 +83,25 @@ export function useCashFlow(fromDate?: string, toDate?: string) {
     queryFn: () => accountingService.getCashFlow(fromDate!, toDate!),
     staleTime: 1000 * 60 * 1,
     enabled: enabled && !!fromDate && !!toDate,
+  });
+}
+
+export function useARAgingReport(asOfDate?: string) {
+  const enabled = useIsQueryEnabled();
+  return useQuery<ARAgingReport>({
+    queryKey: queryKeys.accounting.arAging({ asOfDate }),
+    queryFn: () => accountingService.getARAgingReport(asOfDate),
+    staleTime: 1000 * 60 * 1,
+    enabled,
+  });
+}
+
+export function useAPAgingReport(asOfDate?: string) {
+  const enabled = useIsQueryEnabled();
+  return useQuery<APAgingReport>({
+    queryKey: queryKeys.accounting.apAging({ asOfDate }),
+    queryFn: () => accountingService.getAPAgingReport(asOfDate),
+    staleTime: 1000 * 60 * 1,
+    enabled,
   });
 }

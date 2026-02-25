@@ -170,6 +170,14 @@ export default [
       "accounting/reports/cost-center-balance",
       "routes/_app.accounting.reports.cost-center-balance.tsx",
     ),
+    route(
+      "accounting/reports/ar-aging",
+      "routes/_app.accounting.reports.ar-aging.tsx",
+    ),
+    route(
+      "accounting/reports/ap-aging",
+      "routes/_app.accounting.reports.ap-aging.tsx",
+    ),
 
     // Payroll module
     route("payroll/employees", "routes/_app.payroll.employees.tsx"),

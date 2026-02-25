@@ -275,6 +275,10 @@ export const queryKeys = {
       ["accounting", "reports", "cash-flow", params] as const,
     costCenterBalance: (params?: Record<string, unknown>) =>
       ["accounting", "reports", "cost-center-balance", params] as const,
+    arAging: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "ar-aging", params] as const,
+    apAging: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "ap-aging", params] as const,
   },
 
   // Bank

@@ -11,6 +11,8 @@ const mockGeneralLedger = { accounts: [] };
 const mockBalanceSheet = { assets: [], liabilities: [], equity: [] };
 const mockIncomeStatement = { revenue: [], expenses: [], netIncome: 0 };
 const mockCashFlow = { operating: [], investing: [], financing: [] };
+const mockARAgingReport = { asOfDate: '2025-01-01', rows: [], totals: { current: 0, days1to30: 0, days31to60: 0, days61to90: 0, days90plus: 0, totalOverdue: 0, totalBalance: 0 } };
+const mockAPAgingReport = { asOfDate: '2025-01-01', rows: [], totals: { current: 0, days1to30: 0, days31to60: 0, days61to90: 0, days90plus: 0, totalOverdue: 0, totalBalance: 0 } };
 
 describe('AccountingReportsController', () => {
   let controller: AccountingReportsController;
@@ -26,6 +28,8 @@ describe('AccountingReportsController', () => {
       getBalanceSheet: jest.fn().mockResolvedValue(mockBalanceSheet),
       getIncomeStatement: jest.fn().mockResolvedValue(mockIncomeStatement),
       getCashFlow: jest.fn().mockResolvedValue(mockCashFlow),
+      getARAgingReport: jest.fn().mockResolvedValue(mockARAgingReport),
+      getAPAgingReport: jest.fn().mockResolvedValue(mockAPAgingReport),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -206,6 +210,62 @@ describe('AccountingReportsController', () => {
       await expect(
         controller.getCashFlow('2025-12-31', '2025-01-01'),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ─── AR AGING ─────────────────────────────────────────────────
+  describe('getARAgingReport', () => {
+    it('should use current date when no asOfDate provided', async () => {
+      await controller.getARAgingReport();
+
+      expect(service.getARAgingReport).toHaveBeenCalledWith(expect.any(Date));
+    });
+
+    it('should parse asOfDate string', async () => {
+      await controller.getARAgingReport('2025-06-15');
+
+      const calledDate = service.getARAgingReport.mock.calls[0][0] as Date;
+      expect(calledDate.getFullYear()).toBe(2025);
+      expect(calledDate.getMonth()).toBe(5);
+      expect(calledDate.getDate()).toBe(15);
+    });
+
+    it('should throw BadRequestException for invalid date', async () => {
+      await expect(controller.getARAgingReport('not-a-date')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should return the service result', async () => {
+      const result = await controller.getARAgingReport();
+
+      expect(result).toBe(mockARAgingReport);
+    });
+  });
+
+  // ─── AP AGING ─────────────────────────────────────────────────
+  describe('getAPAgingReport', () => {
+    it('should use current date when no asOfDate provided', async () => {
+      await controller.getAPAgingReport();
+
+      expect(service.getAPAgingReport).toHaveBeenCalledWith(expect.any(Date));
+    });
+
+    it('should parse asOfDate string', async () => {
+      await controller.getAPAgingReport('2025-03-20');
+
+      const calledDate = service.getAPAgingReport.mock.calls[0][0] as Date;
+      expect(calledDate.getFullYear()).toBe(2025);
+      expect(calledDate.getMonth()).toBe(2);
+      expect(calledDate.getDate()).toBe(20);
+    });
+
+    it('should throw BadRequestException for invalid date', async () => {
+      await expect(controller.getAPAgingReport('invalid')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should return the service result', async () => {
+      const result = await controller.getAPAgingReport();
+
+      expect(result).toBe(mockAPAgingReport);
     });
   });
 });

@@ -18,6 +18,8 @@ import type {
   BalanceSheetReport,
   IncomeStatementReport,
   CashFlowReport,
+  ARAgingReport,
+  APAgingReport,
 } from "~/types/accounting";
 
 export const accountingService = {
@@ -214,6 +216,24 @@ export const accountingService = {
     params.append("toDate", toDate);
     const { data } = await api.get<CashFlowReport>(
       `/accounting/reports/cash-flow?${params.toString()}`,
+    );
+    return data;
+  },
+
+  async getARAgingReport(asOfDate?: string): Promise<ARAgingReport> {
+    const params = new URLSearchParams();
+    if (asOfDate) params.append("asOfDate", asOfDate);
+    const { data } = await api.get<ARAgingReport>(
+      `/accounting/reports/ar-aging?${params.toString()}`,
+    );
+    return data;
+  },
+
+  async getAPAgingReport(asOfDate?: string): Promise<APAgingReport> {
+    const params = new URLSearchParams();
+    if (asOfDate) params.append("asOfDate", asOfDate);
+    const { data } = await api.get<APAgingReport>(
+      `/accounting/reports/ap-aging?${params.toString()}`,
     );
     return data;
   },

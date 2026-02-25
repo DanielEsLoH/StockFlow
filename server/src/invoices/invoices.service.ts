@@ -457,6 +457,7 @@ export class InvoicesService {
     );
 
     // Validate customer if provided
+    let customerCreditLimit: number | null = null;
     if (dto.customerId) {
       const customer = await this.prisma.customer.findFirst({
         where: { id: dto.customerId, tenantId },
@@ -464,6 +465,10 @@ export class InvoicesService {
 
       if (!customer) {
         throw new NotFoundException(`Cliente no encontrado: ${dto.customerId}`);
+      }
+
+      if (customer.creditLimit && Number(customer.creditLimit) > 0) {
+        customerCreditLimit = Number(customer.creditLimit);
       }
     }
 
@@ -509,6 +514,28 @@ export class InvoicesService {
       0,
     );
     const invoiceTotal = invoiceSubtotal + invoiceTax - invoiceDiscount;
+
+    // Check credit limit if applicable
+    if (customerCreditLimit !== null && dto.customerId) {
+      const unpaidInvoices = await this.prisma.invoice.findMany({
+        where: {
+          tenantId,
+          customerId: dto.customerId,
+          paymentStatus: { not: 'PAID' },
+          status: { notIn: ['CANCELLED', 'VOID', 'DRAFT'] },
+        },
+        select: { total: true },
+      });
+      const totalUnpaid = unpaidInvoices.reduce(
+        (sum, inv) => sum + Number(inv.total),
+        0,
+      );
+      if (totalUnpaid + invoiceTotal > customerCreditLimit) {
+        throw new BadRequestException(
+          `El cliente excede su limite de credito. Limite: $${customerCreditLimit.toLocaleString('es-CO')}, Saldo pendiente: $${totalUnpaid.toLocaleString('es-CO')}, Nueva factura: $${invoiceTotal.toLocaleString('es-CO')}`,
+        );
+      }
+    }
 
     // Create invoice within a transaction
     const invoice = await this.prisma.$transaction(async (tx) => {

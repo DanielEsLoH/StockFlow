@@ -10,6 +10,8 @@ import {
   ArrowRight,
   BarChart3,
   Target,
+  Clock,
+  Hourglass,
 } from "lucide-react";
 import type { Route } from "./+types/_app.accounting.reports";
 import { Card } from "~/components/ui/Card";
@@ -77,6 +79,22 @@ const reports = [
     icon: Target,
     gradient: "from-accent-500/20 to-success-500/5",
     iconColor: "text-accent-600 dark:text-accent-400",
+  },
+  {
+    title: "Cartera CxC",
+    description: "Antiguedad cuentas por cobrar",
+    href: "/accounting/reports/ar-aging",
+    icon: Clock,
+    gradient: "from-warning-500/20 to-error-500/5",
+    iconColor: "text-warning-600 dark:text-warning-400",
+  },
+  {
+    title: "Cartera CxP",
+    description: "Antiguedad cuentas por pagar",
+    href: "/accounting/reports/ap-aging",
+    icon: Hourglass,
+    gradient: "from-error-500/20 to-warning-500/5",
+    iconColor: "text-error-600 dark:text-error-400",
   },
 ];
 

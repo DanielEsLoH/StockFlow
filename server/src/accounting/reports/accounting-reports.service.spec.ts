@@ -6,6 +6,7 @@ import {
   AccountNature,
   JournalEntryStatus,
   JournalEntrySource,
+  PaymentTerms,
 } from '@prisma/client';
 import { AccountingReportsService } from './accounting-reports.service';
 import { PrismaService } from '../../prisma';
@@ -33,6 +34,8 @@ describe('AccountingReportsService', () => {
     account: { findMany: jest.fn() },
     journalEntryLine: { groupBy: jest.fn(), findMany: jest.fn(), aggregate: jest.fn() },
     journalEntry: { findMany: jest.fn() },
+    invoice: { findMany: jest.fn() },
+    purchaseOrder: { findMany: jest.fn() },
   };
 
   const mockTenantContextService = {
@@ -829,6 +832,245 @@ describe('AccountingReportsService', () => {
 
       expect(result.fromDate).toBe('2024-06-01');
       expect(result.toDate).toBe('2024-06-30');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getARAgingReport
+  // ---------------------------------------------------------------------------
+  describe('getARAgingReport', () => {
+    const asOfDate = new Date('2024-12-31');
+
+    function makeInvoice(
+      id: string,
+      customerId: string,
+      customerName: string,
+      total: number,
+      issueDate: Date,
+      dueDate: Date | null,
+      paidAmounts: number[] = [],
+    ) {
+      return {
+        id,
+        customerId,
+        total,
+        issueDate,
+        dueDate,
+        customer: { id: customerId, name: customerName, documentNumber: '900111222' },
+        payments: paidAmounts.map((a) => ({ amount: a })),
+      };
+    }
+
+    it('should return empty rows when no unpaid invoices exist', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([]);
+
+      const result = await service.getARAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(0);
+      expect(result.totals.totalBalance).toBe(0);
+      expect(result.asOfDate).toBe('2024-12-31');
+    });
+
+    it('should classify a current (not overdue) invoice correctly', async () => {
+      // dueDate is in the future relative to asOfDate
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        makeInvoice('inv-1', 'cust-1', 'Acme', 1000, new Date('2024-12-01'), new Date('2025-01-15')),
+      ]);
+
+      const result = await service.getARAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0].current).toBe(1000);
+      expect(result.rows[0].totalOverdue).toBe(0);
+      expect(result.rows[0].totalBalance).toBe(1000);
+    });
+
+    it('should classify invoices into correct aging bands', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        // 15 days overdue → 1-30 band
+        makeInvoice('inv-1', 'cust-1', 'Acme', 500, new Date('2024-11-01'), new Date('2024-12-16')),
+        // 45 days overdue → 31-60 band
+        makeInvoice('inv-2', 'cust-1', 'Acme', 300, new Date('2024-10-01'), new Date('2024-11-16')),
+        // 75 days overdue → 61-90 band
+        makeInvoice('inv-3', 'cust-1', 'Acme', 200, new Date('2024-09-01'), new Date('2024-10-17')),
+        // 120 days overdue → 90+ band
+        makeInvoice('inv-4', 'cust-1', 'Acme', 100, new Date('2024-07-01'), new Date('2024-09-02')),
+      ]);
+
+      const result = await service.getARAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(1);
+      const row = result.rows[0];
+      expect(row.days1to30).toBe(500);
+      expect(row.days31to60).toBe(300);
+      expect(row.days61to90).toBe(200);
+      expect(row.days90plus).toBe(100);
+      expect(row.totalOverdue).toBe(1100);
+      expect(row.totalBalance).toBe(1100);
+    });
+
+    it('should subtract payments from invoice balance', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        makeInvoice('inv-1', 'cust-1', 'Acme', 1000, new Date('2024-12-01'), new Date('2025-01-15'), [400, 200]),
+      ]);
+
+      const result = await service.getARAgingReport(asOfDate);
+
+      expect(result.rows[0].totalBalance).toBe(400); // 1000 - 400 - 200
+    });
+
+    it('should skip invoices fully paid via payments', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        makeInvoice('inv-1', 'cust-1', 'Acme', 1000, new Date('2024-12-01'), new Date('2025-01-15'), [1000]),
+      ]);
+
+      const result = await service.getARAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(0);
+    });
+
+    it('should group multiple invoices by customer', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        makeInvoice('inv-1', 'cust-1', 'Acme', 500, new Date('2024-12-01'), new Date('2025-01-15')),
+        makeInvoice('inv-2', 'cust-1', 'Acme', 300, new Date('2024-11-01'), new Date('2024-12-16')),
+        makeInvoice('inv-3', 'cust-2', 'Beta', 800, new Date('2024-12-01'), new Date('2025-01-10')),
+      ]);
+
+      const result = await service.getARAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(2);
+      // Sorted by totalBalance desc: Beta 800, Acme 500+300=800 (same, but order is stable)
+      expect(result.totals.totalBalance).toBe(1600);
+    });
+
+    it('should use issueDate as fallback when dueDate is null', async () => {
+      // dueDate null, issueDate = 2024-12-16 → 15 days overdue → 1-30 band
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        makeInvoice('inv-1', 'cust-1', 'Acme', 500, new Date('2024-12-16'), null),
+      ]);
+
+      const result = await service.getARAgingReport(asOfDate);
+
+      expect(result.rows[0].days1to30).toBe(500);
+    });
+
+    it('should compute totals across all customers', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        makeInvoice('inv-1', 'cust-1', 'Acme', 1000, new Date('2024-12-01'), new Date('2025-01-15')),
+        makeInvoice('inv-2', 'cust-2', 'Beta', 2000, new Date('2024-11-01'), new Date('2024-12-16')),
+      ]);
+
+      const result = await service.getARAgingReport(asOfDate);
+
+      expect(result.totals.current).toBe(1000);
+      expect(result.totals.days1to30).toBe(2000);
+      expect(result.totals.totalBalance).toBe(3000);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getAPAgingReport
+  // ---------------------------------------------------------------------------
+  describe('getAPAgingReport', () => {
+    const asOfDate = new Date('2024-12-31');
+
+    function makePO(
+      id: string,
+      supplierId: string,
+      supplierName: string,
+      total: number,
+      issueDate: Date,
+      paymentTerms: PaymentTerms = PaymentTerms.NET_30,
+    ) {
+      return {
+        id,
+        supplierId,
+        total,
+        issueDate,
+        supplier: { id: supplierId, name: supplierName, documentNumber: '800333444', paymentTerms },
+      };
+    }
+
+    it('should return empty rows when no unpaid POs exist', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([]);
+
+      const result = await service.getAPAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(0);
+      expect(result.totals.totalBalance).toBe(0);
+      expect(result.asOfDate).toBe('2024-12-31');
+    });
+
+    it('should classify a current PO (not overdue based on payment terms)', async () => {
+      // issueDate 2024-12-15 + NET_30 = due 2025-01-14, so current
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makePO('po-1', 'sup-1', 'Proveedor A', 5000, new Date('2024-12-15'), PaymentTerms.NET_30),
+      ]);
+
+      const result = await service.getAPAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0].current).toBe(5000);
+      expect(result.rows[0].totalOverdue).toBe(0);
+    });
+
+    it('should classify overdue POs into correct aging bands', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        // Due = 2024-12-16 (issueDate + 0 IMMEDIATE), 15 days overdue → 1-30
+        makePO('po-1', 'sup-1', 'Proveedor A', 1000, new Date('2024-12-16'), PaymentTerms.IMMEDIATE),
+        // Due = 2024-11-01 + 15 = 2024-11-16, 45 days overdue → 31-60
+        makePO('po-2', 'sup-1', 'Proveedor A', 2000, new Date('2024-11-01'), PaymentTerms.NET_15),
+        // Due = 2024-08-01 + 30 = 2024-08-31, 122 days overdue → 90+
+        makePO('po-3', 'sup-1', 'Proveedor A', 3000, new Date('2024-08-01'), PaymentTerms.NET_30),
+      ]);
+
+      const result = await service.getAPAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(1);
+      const row = result.rows[0];
+      expect(row.days1to30).toBe(1000);
+      expect(row.days31to60).toBe(2000);
+      expect(row.days90plus).toBe(3000);
+      expect(row.totalOverdue).toBe(6000);
+      expect(row.totalBalance).toBe(6000);
+    });
+
+    it('should group multiple POs by supplier', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makePO('po-1', 'sup-1', 'Proveedor A', 1000, new Date('2024-12-15'), PaymentTerms.NET_30),
+        makePO('po-2', 'sup-1', 'Proveedor A', 2000, new Date('2024-12-15'), PaymentTerms.NET_30),
+        makePO('po-3', 'sup-2', 'Proveedor B', 5000, new Date('2024-12-15'), PaymentTerms.NET_30),
+      ]);
+
+      const result = await service.getAPAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(2);
+      // Sorted by totalBalance desc: Proveedor B (5000) first
+      expect(result.rows[0].supplierName).toBe('Proveedor B');
+      expect(result.rows[0].totalBalance).toBe(5000);
+      expect(result.rows[1].totalBalance).toBe(3000);
+      expect(result.totals.totalBalance).toBe(8000);
+    });
+
+    it('should use correct payment terms days', async () => {
+      // NET_60: issueDate 2024-10-15 + 60 = due 2024-12-14, 17 days overdue → 1-30
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makePO('po-1', 'sup-1', 'Proveedor A', 1000, new Date('2024-10-15'), PaymentTerms.NET_60),
+      ]);
+
+      const result = await service.getAPAgingReport(asOfDate);
+
+      expect(result.rows[0].days1to30).toBe(1000);
+    });
+
+    it('should skip POs with zero balance', async () => {
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        { ...makePO('po-1', 'sup-1', 'Proveedor A', 0, new Date('2024-12-15'), PaymentTerms.NET_30) },
+      ]);
+
+      const result = await service.getAPAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(0);
     });
   });
 });

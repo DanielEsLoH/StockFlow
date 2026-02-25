@@ -6,6 +6,10 @@ import {
   AccountNature,
   JournalEntryStatus,
   JournalEntrySource,
+  PaymentStatus,
+  InvoiceStatus,
+  PurchaseOrderStatus,
+  PaymentTerms,
 } from '@prisma/client';
 
 /** Balance row for a single account */
@@ -128,6 +132,43 @@ export interface CashFlowReport {
   totalOutflows: number;
   netChange: number;
   closingBalance: number;
+}
+
+/** Aging totals bucket */
+export interface AgingTotals {
+  current: number;
+  days1to30: number;
+  days31to60: number;
+  days61to90: number;
+  days90plus: number;
+  totalOverdue: number;
+  totalBalance: number;
+}
+
+/** AR Aging row per customer */
+export interface ARAgingRow extends AgingTotals {
+  customerId: string;
+  customerName: string;
+  customerDocument: string;
+}
+
+export interface ARAgingReport {
+  asOfDate: string;
+  rows: ARAgingRow[];
+  totals: AgingTotals;
+}
+
+/** AP Aging row per supplier */
+export interface APAgingRow extends AgingTotals {
+  supplierId: string;
+  supplierName: string;
+  supplierDocument: string;
+}
+
+export interface APAgingReport {
+  asOfDate: string;
+  rows: APAgingRow[];
+  totals: AgingTotals;
 }
 
 @Injectable()
@@ -577,5 +618,198 @@ export class AccountingReportsService {
       netChange,
       closingBalance: openingBalance + netChange,
     };
+  }
+
+  /**
+   * 7. Cartera CxC — AR Aging Report.
+   * Unpaid invoices grouped by customer and days overdue.
+   */
+  async getARAgingReport(asOfDate: Date): Promise<ARAgingReport> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        tenantId,
+        paymentStatus: { not: PaymentStatus.PAID },
+        status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.VOID, InvoiceStatus.DRAFT] },
+        issueDate: { lte: asOfDate },
+      },
+      include: {
+        customer: { select: { id: true, name: true, documentNumber: true } },
+        payments: { select: { amount: true } },
+      },
+    });
+
+    // Group by customer
+    const customerMap = new Map<string, ARAgingRow>();
+
+    for (const invoice of invoices) {
+      const customerId = invoice.customerId ?? 'unknown';
+      const paidAmount = invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+      const balance = Number(invoice.total) - paidAmount;
+      if (balance <= 0) continue;
+
+      const dueDate = invoice.dueDate ?? invoice.issueDate;
+      const daysOverdue = Math.floor(
+        (asOfDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      if (!customerMap.has(customerId)) {
+        customerMap.set(customerId, {
+          customerId,
+          customerName: invoice.customer?.name ?? 'Sin cliente',
+          customerDocument: invoice.customer?.documentNumber ?? '',
+          current: 0,
+          days1to30: 0,
+          days31to60: 0,
+          days61to90: 0,
+          days90plus: 0,
+          totalOverdue: 0,
+          totalBalance: 0,
+        });
+      }
+
+      const row = customerMap.get(customerId)!;
+      row.totalBalance += balance;
+
+      if (daysOverdue <= 0) {
+        row.current += balance;
+      } else if (daysOverdue <= 30) {
+        row.days1to30 += balance;
+        row.totalOverdue += balance;
+      } else if (daysOverdue <= 60) {
+        row.days31to60 += balance;
+        row.totalOverdue += balance;
+      } else if (daysOverdue <= 90) {
+        row.days61to90 += balance;
+        row.totalOverdue += balance;
+      } else {
+        row.days90plus += balance;
+        row.totalOverdue += balance;
+      }
+    }
+
+    const rows = Array.from(customerMap.values()).sort(
+      (a, b) => b.totalBalance - a.totalBalance,
+    );
+
+    const totals: AgingTotals = {
+      current: rows.reduce((s, r) => s + r.current, 0),
+      days1to30: rows.reduce((s, r) => s + r.days1to30, 0),
+      days31to60: rows.reduce((s, r) => s + r.days31to60, 0),
+      days61to90: rows.reduce((s, r) => s + r.days61to90, 0),
+      days90plus: rows.reduce((s, r) => s + r.days90plus, 0),
+      totalOverdue: rows.reduce((s, r) => s + r.totalOverdue, 0),
+      totalBalance: rows.reduce((s, r) => s + r.totalBalance, 0),
+    };
+
+    this.logger.debug(`AR Aging: ${rows.length} customers, total balance ${totals.totalBalance}`);
+
+    return {
+      asOfDate: asOfDate.toISOString().split('T')[0],
+      rows,
+      totals,
+    };
+  }
+
+  /**
+   * 8. Cartera CxP — AP Aging Report.
+   * Unpaid received purchase orders grouped by supplier and days overdue.
+   */
+  async getAPAgingReport(asOfDate: Date): Promise<APAgingReport> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const orders = await this.prisma.purchaseOrder.findMany({
+      where: {
+        tenantId,
+        paymentStatus: { not: PaymentStatus.PAID },
+        status: PurchaseOrderStatus.RECEIVED,
+        issueDate: { lte: asOfDate },
+      },
+      include: {
+        supplier: { select: { id: true, name: true, documentNumber: true, paymentTerms: true } },
+      },
+    });
+
+    const supplierMap = new Map<string, APAgingRow>();
+
+    for (const order of orders) {
+      const supplierId = order.supplierId;
+      const balance = Number(order.total);
+      if (balance <= 0) continue;
+
+      // Calculate due date from payment terms
+      const termsDays = this.paymentTermsToDays(order.supplier.paymentTerms);
+      const dueDate = new Date(order.issueDate.getTime() + termsDays * 86400000);
+      const daysOverdue = Math.floor(
+        (asOfDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      if (!supplierMap.has(supplierId)) {
+        supplierMap.set(supplierId, {
+          supplierId,
+          supplierName: order.supplier.name,
+          supplierDocument: order.supplier.documentNumber,
+          current: 0,
+          days1to30: 0,
+          days31to60: 0,
+          days61to90: 0,
+          days90plus: 0,
+          totalOverdue: 0,
+          totalBalance: 0,
+        });
+      }
+
+      const row = supplierMap.get(supplierId)!;
+      row.totalBalance += balance;
+
+      if (daysOverdue <= 0) {
+        row.current += balance;
+      } else if (daysOverdue <= 30) {
+        row.days1to30 += balance;
+        row.totalOverdue += balance;
+      } else if (daysOverdue <= 60) {
+        row.days31to60 += balance;
+        row.totalOverdue += balance;
+      } else if (daysOverdue <= 90) {
+        row.days61to90 += balance;
+        row.totalOverdue += balance;
+      } else {
+        row.days90plus += balance;
+        row.totalOverdue += balance;
+      }
+    }
+
+    const rows = Array.from(supplierMap.values()).sort(
+      (a, b) => b.totalBalance - a.totalBalance,
+    );
+
+    const totals: AgingTotals = {
+      current: rows.reduce((s, r) => s + r.current, 0),
+      days1to30: rows.reduce((s, r) => s + r.days1to30, 0),
+      days31to60: rows.reduce((s, r) => s + r.days31to60, 0),
+      days61to90: rows.reduce((s, r) => s + r.days61to90, 0),
+      days90plus: rows.reduce((s, r) => s + r.days90plus, 0),
+      totalOverdue: rows.reduce((s, r) => s + r.totalOverdue, 0),
+      totalBalance: rows.reduce((s, r) => s + r.totalBalance, 0),
+    };
+
+    this.logger.debug(`AP Aging: ${rows.length} suppliers, total balance ${totals.totalBalance}`);
+
+    return {
+      asOfDate: asOfDate.toISOString().split('T')[0],
+      rows,
+      totals,
+    };
+  }
+
+  private paymentTermsToDays(terms: PaymentTerms): number {
+    switch (terms) {
+      case PaymentTerms.IMMEDIATE: return 0;
+      case PaymentTerms.NET_15: return 15;
+      case PaymentTerms.NET_30: return 30;
+      case PaymentTerms.NET_60: return 60;
+      default: return 30;
+    }
   }
 }

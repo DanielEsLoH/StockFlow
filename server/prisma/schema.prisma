@@ -597,6 +597,7 @@ model Customer {
   businessName   String?        @map("business_name")
   taxId          String?        @map("tax_id")
   notes          String?
+  creditLimit    Decimal?       @default(0) @map("credit_limit") @db.Decimal(12, 2)
   status         CustomerStatus @default(ACTIVE)
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")

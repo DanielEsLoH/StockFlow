@@ -381,3 +381,41 @@ export interface CashFlowReport {
   netChange: number;
   closingBalance: number;
 }
+
+// ============================
+// AR/AP Aging Reports
+// ============================
+
+export interface AgingTotals {
+  current: number;
+  days1to30: number;
+  days31to60: number;
+  days61to90: number;
+  days90plus: number;
+  totalOverdue: number;
+  totalBalance: number;
+}
+
+export interface ARAgingRow extends AgingTotals {
+  customerId: string;
+  customerName: string;
+  customerDocument: string;
+}
+
+export interface ARAgingReport {
+  asOfDate: string;
+  rows: ARAgingRow[];
+  totals: AgingTotals;
+}
+
+export interface APAgingRow extends AgingTotals {
+  supplierId: string;
+  supplierName: string;
+  supplierDocument: string;
+}
+
+export interface APAgingReport {
+  asOfDate: string;
+  rows: APAgingRow[];
+  totals: AgingTotals;
+}

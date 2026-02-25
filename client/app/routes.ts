@@ -173,6 +173,46 @@ export default [
     route("payroll/periods/:id", "routes/_app.payroll.periods.$id.tsx"),
     route("payroll/config", "routes/_app.payroll.config.tsx"),
 
+    // Cost Centers module
+    route("cost-centers", "routes/_app.cost-centers.tsx"),
+
+    // Remissions (Delivery Notes) module
+    route("remissions", "routes/_app.remissions.tsx"),
+    route("remissions/new", "routes/_app.remissions.new.tsx"),
+    route("remissions/:id", "routes/_app.remissions.$id.tsx"),
+
+    // Support Documents (Documento Soporte Electrónico) module
+    route(
+      "support-documents",
+      "routes/_app.support-documents.tsx",
+    ),
+    route(
+      "support-documents/new",
+      "routes/_app.support-documents.new.tsx",
+    ),
+    route(
+      "support-documents/:id",
+      "routes/_app.support-documents.$id.tsx",
+    ),
+
+    // Collection Reminders (Cobranza) module
+    route("collection", "routes/_app.collection.tsx"),
+
+    // Withholding Certificates module
+    route(
+      "withholding-certificates",
+      "routes/_app.withholding-certificates.tsx",
+    ),
+
+    // Kardex (Inventory Card) report
+    route("inventory/kardex", "routes/_app.inventory.kardex.tsx"),
+
+    // Payroll Benefits
+    route(
+      "payroll/benefits/:employeeId",
+      "routes/_app.payroll.benefits.$employeeId.tsx",
+    ),
+
     // Bank module
     route("bank/accounts", "routes/_app.bank.accounts.tsx"),
     route("bank/accounts/new", "routes/_app.bank.accounts.new.tsx"),

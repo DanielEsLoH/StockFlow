@@ -7,7 +7,9 @@ import { PayrollPeriodsController } from './payroll-periods.controller';
 import { PayrollPeriodsService } from './payroll-periods.service';
 import { PayrollEntriesController } from './payroll-entries.controller';
 import { PayrollEntriesService } from './payroll-entries.service';
+import { PayrollBenefitsController } from './payroll-benefits.controller';
 import { PayrollCalculationService } from './services/payroll-calculation.service';
+import { PayrollBenefitsService } from './services/payroll-benefits.service';
 import { PayrollCuneGeneratorService } from './services/payroll-cune-generator.service';
 import { PayrollXmlGeneratorService } from './services/payroll-xml-generator.service';
 import { PayrollDianService } from './services/payroll-dian.service';
@@ -18,6 +20,7 @@ import { PayrollDianService } from './services/payroll-dian.service';
     PayrollConfigController,
     PayrollPeriodsController,
     PayrollEntriesController,
+    PayrollBenefitsController,
   ],
   providers: [
     EmployeesService,
@@ -25,6 +28,7 @@ import { PayrollDianService } from './services/payroll-dian.service';
     PayrollPeriodsService,
     PayrollEntriesService,
     PayrollCalculationService,
+    PayrollBenefitsService,
     PayrollCuneGeneratorService,
     PayrollXmlGeneratorService,
     PayrollDianService,
@@ -35,6 +39,7 @@ import { PayrollDianService } from './services/payroll-dian.service';
     PayrollPeriodsService,
     PayrollEntriesService,
     PayrollCalculationService,
+    PayrollBenefitsService,
     PayrollDianService,
   ],
 })

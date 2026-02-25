@@ -16,11 +16,12 @@ import {
   ApiProduces,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { ReportsService } from './reports.service';
+import { ReportsService, type KardexReport } from './reports.service';
 import {
   ReportQueryDto,
   InventoryReportQueryDto,
   CustomersReportQueryDto,
+  KardexQueryDto,
   ReportFormat,
 } from './dto';
 import { JwtAuthGuard } from '../auth';
@@ -199,6 +200,61 @@ export class ReportsController {
     );
 
     this.sendReportResponse(res, buffer, 'reporte-clientes', query.format);
+  }
+
+  /**
+   * Generates a Kardex (inventory card) report for a specific product.
+   *
+   * The Kardex shows all entries, exits, and running balance for a product,
+   * which is a DIAN requirement in Colombia.
+   *
+   * @param query - Kardex query parameters (productId, warehouseId, fromDate, toDate)
+   * @returns KardexReport JSON with opening balance, movements, and closing balance
+   *
+   * @example
+   * GET /reports/kardex?productId=abc123
+   * GET /reports/kardex?productId=abc123&warehouseId=wh456&fromDate=2024-01-01&toDate=2024-12-31
+   */
+  @Get('reports/kardex')
+  @ApiOperation({
+    summary: 'Generate Kardex (inventory card) report',
+    description:
+      'Generates a Kardex report for a specific product showing all entries, exits, and running balance. Can optionally filter by warehouse and date range. Required by DIAN in Colombia. Rate limited to 50 reports per hour.',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Kardex report generated successfully (JSON with movements and balances)',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid query parameters',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Product or warehouse not found',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too Many Requests - Rate limit exceeded',
+  })
+  async getKardexReport(
+    @Query() query: KardexQueryDto,
+  ): Promise<KardexReport> {
+    this.logger.log(
+      `Generating Kardex report for product: ${query.productId}${query.warehouseId ? `, warehouse: ${query.warehouseId}` : ''}`,
+    );
+
+    return this.reportsService.getKardexReport(
+      query.productId,
+      query.warehouseId,
+      query.fromDate,
+      query.toDate,
+    );
   }
 
   /**

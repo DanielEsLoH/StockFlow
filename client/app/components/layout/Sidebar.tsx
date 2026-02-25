@@ -31,6 +31,12 @@ import {
   UserCheck,
   Calculator,
   Cog,
+  Truck,
+  Bell,
+  FileCheck,
+  Award,
+  Target,
+  ScrollText,
 } from "lucide-react";
 import { cn, getInitials, formatCurrency } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
@@ -99,6 +105,12 @@ const navSections: NavSection[] = [
         icon: ArrowLeftRight,
         permission: Permission.INVENTORY_TRANSFER,
       },
+      {
+        name: "Kardex",
+        href: "/inventory/kardex",
+        icon: ScrollText,
+        permission: Permission.INVENTORY_VIEW,
+      },
     ],
   },
   {
@@ -128,6 +140,18 @@ const navSections: NavSection[] = [
         icon: Users,
         permission: Permission.CUSTOMERS_VIEW,
       },
+      {
+        name: "Remisiones",
+        href: "/remissions",
+        icon: Truck,
+        permission: Permission.INVOICES_VIEW,
+      },
+      {
+        name: "Cobranza",
+        href: "/collection",
+        icon: Bell,
+        permission: Permission.INVOICES_VIEW,
+      },
     ],
   },
   {
@@ -143,6 +167,18 @@ const navSections: NavSection[] = [
         name: "Ordenes de Compra",
         href: "/purchases",
         icon: ShoppingCart,
+        permission: Permission.PURCHASE_ORDERS_VIEW,
+      },
+      {
+        name: "Doc. Soporte",
+        href: "/support-documents",
+        icon: FileCheck,
+        permission: Permission.PURCHASE_ORDERS_VIEW,
+      },
+      {
+        name: "Cert. Retencion",
+        href: "/withholding-certificates",
+        icon: Award,
         permission: Permission.PURCHASE_ORDERS_VIEW,
       },
     ],
@@ -172,6 +208,12 @@ const navSections: NavSection[] = [
         name: "Estados Financieros",
         href: "/accounting/reports",
         icon: PieChart,
+        permission: Permission.ACCOUNTING_VIEW,
+      },
+      {
+        name: "Centro de Costos",
+        href: "/cost-centers",
+        icon: Target,
         permission: Permission.ACCOUNTING_VIEW,
       },
     ],

@@ -1,5 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InvoiceStatus, PaymentStatus, CustomerStatus } from '@prisma/client';
+import {
+  InvoiceStatus,
+  PaymentStatus,
+  CustomerStatus,
+  MovementType,
+} from '@prisma/client';
 import PdfPrinter from 'pdfmake';
 import * as XLSX from 'xlsx';
 import { PrismaService } from '../prisma';
@@ -14,6 +19,41 @@ import {
   type InventoryReportTemplateData,
   type CustomersReportTemplateData,
 } from './templates';
+
+/**
+ * Represents a single movement entry in the Kardex report.
+ */
+export interface KardexMovement {
+  id: string;
+  date: Date;
+  type: MovementType;
+  description: string;
+  entries: number;
+  exits: number;
+  balance: number;
+  reference?: string;
+  warehouseName?: string;
+}
+
+/**
+ * Full Kardex (inventory card) report for a specific product.
+ * Shows opening balance, detailed movements, and closing balance.
+ */
+export interface KardexReport {
+  product: {
+    id: string;
+    sku: string;
+    name: string;
+    currentStock: number;
+    costPrice: number;
+  };
+  warehouse?: { id: string; name: string };
+  fromDate: string;
+  toDate: string;
+  openingBalance: number;
+  movements: KardexMovement[];
+  closingBalance: number;
+}
 
 /**
  * Font configuration for PDFMake
@@ -779,6 +819,272 @@ export class ReportsService {
       bookType: 'xlsx',
     }) as Buffer;
     return xlsxBuffer;
+  }
+
+  // ============================================================================
+  // KARDEX (INVENTORY CARD) REPORT
+  // ============================================================================
+
+  /**
+   * Generates a Kardex (inventory card) report for a specific product.
+   *
+   * The Kardex shows all entries, exits, and running balance for a product,
+   * which is a requirement by DIAN (Colombian tax authority).
+   *
+   * @param productId - Product ID to generate the Kardex for
+   * @param warehouseId - Optional warehouse filter
+   * @param fromDate - Optional start date (defaults to 30 days ago)
+   * @param toDate - Optional end date (defaults to now)
+   * @returns KardexReport with opening balance, movements, and closing balance
+   * @throws NotFoundException if product not found
+   */
+  async getKardexReport(
+    productId: string,
+    warehouseId?: string,
+    fromDate?: Date,
+    toDate?: Date,
+  ): Promise<KardexReport> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(
+      `Generating Kardex report for product ${productId} in tenant ${tenantId}`,
+    );
+
+    // Default date range: last 30 days if not specified
+    const effectiveToDate = toDate ?? new Date();
+    const effectiveFromDate =
+      fromDate ??
+      new Date(effectiveToDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Fetch product
+    const product = await this.prisma.product.findFirst({
+      where: { id: productId, tenantId },
+      select: {
+        id: true,
+        sku: true,
+        name: true,
+        stock: true,
+        costPrice: true,
+      },
+    });
+
+    if (!product) {
+      this.logger.warn(`Product not found: ${productId}`);
+      throw new NotFoundException('Producto no encontrado');
+    }
+
+    // Fetch warehouse if filtered
+    let warehouse: { id: string; name: string } | undefined;
+    if (warehouseId) {
+      const warehouseRecord = await this.prisma.warehouse.findFirst({
+        where: { id: warehouseId, tenantId },
+        select: { id: true, name: true },
+      });
+
+      if (!warehouseRecord) {
+        this.logger.warn(`Warehouse not found: ${warehouseId}`);
+        throw new NotFoundException('Bodega no encontrada');
+      }
+      warehouse = warehouseRecord;
+    }
+
+    // Build the base where clause for movements
+    const movementWhere: {
+      tenantId: string;
+      productId: string;
+      warehouseId?: string;
+    } = { tenantId, productId };
+
+    if (warehouseId) {
+      movementWhere.warehouseId = warehouseId;
+    }
+
+    // Calculate opening balance: sum of all movements BEFORE fromDate
+    const movementsBeforeRange = await this.prisma.stockMovement.findMany({
+      where: {
+        ...movementWhere,
+        createdAt: { lt: effectiveFromDate },
+      },
+      select: { type: true, quantity: true },
+    });
+
+    let openingBalance = 0;
+    for (const movement of movementsBeforeRange) {
+      const { entries, exits } = this.classifyMovement(
+        movement.type,
+        movement.quantity,
+      );
+      openingBalance += entries - exits;
+    }
+
+    // Fetch movements within date range, ordered by date ASC
+    const movementsInRange = await this.prisma.stockMovement.findMany({
+      where: {
+        ...movementWhere,
+        createdAt: {
+          gte: effectiveFromDate,
+          lte: effectiveToDate,
+        },
+      },
+      include: {
+        warehouse: { select: { name: true } },
+        purchaseOrder: {
+          select: { purchaseOrderNumber: true },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // For movements with invoiceId, batch-fetch invoice numbers
+    const invoiceIds = movementsInRange
+      .filter((m) => m.invoiceId)
+      .map((m) => m.invoiceId as string);
+
+    const invoiceMap = new Map<string, string>();
+    if (invoiceIds.length > 0) {
+      const invoices = await this.prisma.invoice.findMany({
+        where: { id: { in: invoiceIds }, tenantId },
+        select: { id: true, invoiceNumber: true },
+      });
+      for (const inv of invoices) {
+        invoiceMap.set(inv.id, inv.invoiceNumber);
+      }
+    }
+
+    // Build Kardex movements with running balance
+    let runningBalance = openingBalance;
+    const kardexMovements: KardexMovement[] = movementsInRange.map(
+      (movement) => {
+        const { entries, exits } = this.classifyMovement(
+          movement.type,
+          movement.quantity,
+        );
+        runningBalance += entries - exits;
+
+        const reference = this.buildMovementReference(
+          movement.invoiceId ? invoiceMap.get(movement.invoiceId) : undefined,
+          movement.purchaseOrder?.purchaseOrderNumber,
+        );
+
+        return {
+          id: movement.id,
+          date: movement.createdAt,
+          type: movement.type,
+          description: this.buildMovementDescription(
+            movement.type,
+            movement.reason ?? undefined,
+            movement.invoiceId ? invoiceMap.get(movement.invoiceId) : undefined,
+            movement.purchaseOrder?.purchaseOrderNumber,
+          ),
+          entries,
+          exits,
+          balance: runningBalance,
+          reference,
+          warehouseName: movement.warehouse?.name,
+        };
+      },
+    );
+
+    return {
+      product: {
+        id: product.id,
+        sku: product.sku,
+        name: product.name,
+        currentStock: product.stock,
+        costPrice: Number(product.costPrice),
+      },
+      warehouse,
+      fromDate: effectiveFromDate.toISOString(),
+      toDate: effectiveToDate.toISOString(),
+      openingBalance,
+      movements: kardexMovements,
+      closingBalance: runningBalance,
+    };
+  }
+
+  /**
+   * Classifies a stock movement into entries (IN) and exits (OUT).
+   *
+   * Type mapping:
+   * - PURCHASE -> entries (IN)
+   * - SALE -> exits (OUT)
+   * - RETURN -> entries (IN)
+   * - ADJUSTMENT -> entries if quantity > 0, exits if quantity < 0
+   * - TRANSFER -> exits (OUT) from source warehouse
+   * - DAMAGED -> exits (OUT)
+   */
+  private classifyMovement(
+    type: MovementType,
+    quantity: number,
+  ): { entries: number; exits: number } {
+    const absQuantity = Math.abs(quantity);
+
+    switch (type) {
+      case MovementType.PURCHASE:
+      case MovementType.RETURN:
+        return { entries: absQuantity, exits: 0 };
+
+      case MovementType.SALE:
+      case MovementType.DAMAGED:
+      case MovementType.TRANSFER:
+        return { entries: 0, exits: absQuantity };
+
+      case MovementType.ADJUSTMENT:
+        if (quantity > 0) {
+          return { entries: absQuantity, exits: 0 };
+        }
+        return { entries: 0, exits: absQuantity };
+
+      default:
+        return { entries: 0, exits: absQuantity };
+    }
+  }
+
+  /**
+   * Builds a human-readable description for a Kardex movement.
+   */
+  private buildMovementDescription(
+    type: MovementType,
+    reason?: string,
+    invoiceNumber?: string,
+    purchaseOrderNumber?: string,
+  ): string {
+    const typeLabels: Record<MovementType, string> = {
+      [MovementType.PURCHASE]: 'Compra',
+      [MovementType.SALE]: 'Venta',
+      [MovementType.RETURN]: 'Devolucion',
+      [MovementType.ADJUSTMENT]: 'Ajuste',
+      [MovementType.TRANSFER]: 'Transferencia',
+      [MovementType.DAMAGED]: 'Dano',
+    };
+
+    const label = typeLabels[type] || type;
+
+    if (invoiceNumber) {
+      return `${label} - Factura #${invoiceNumber}`;
+    }
+
+    if (purchaseOrderNumber) {
+      return `${label} - OC #${purchaseOrderNumber}`;
+    }
+
+    if (reason) {
+      return `${label} - ${reason}`;
+    }
+
+    return label;
+  }
+
+  /**
+   * Builds the reference string for a Kardex movement (invoice or PO number).
+   */
+  private buildMovementReference(
+    invoiceNumber?: string,
+    purchaseOrderNumber?: string,
+  ): string | undefined {
+    if (invoiceNumber) return invoiceNumber;
+    if (purchaseOrderNumber) return purchaseOrderNumber;
+    return undefined;
   }
 
   // ============================================================================

@@ -313,4 +313,63 @@ export const queryKeys = {
     all: ["payrollEntries"] as const,
     detail: (id: string) => [...queryKeys.payrollEntries.all, id] as const,
   },
+
+  // Cost Centers
+  costCenters: {
+    all: ["costCenters"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.costCenters.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.costCenters.all, id] as const,
+    options: () => [...queryKeys.costCenters.all, "options"] as const,
+  },
+
+  // Remissions
+  remissions: {
+    all: ["remissions"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.remissions.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.remissions.all, id] as const,
+    stats: () => [...queryKeys.remissions.all, "stats"] as const,
+  },
+
+  // Support Documents
+  supportDocuments: {
+    all: ["supportDocuments"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.supportDocuments.all, "list", filters] as const,
+    detail: (id: string) => [...queryKeys.supportDocuments.all, id] as const,
+    stats: () => [...queryKeys.supportDocuments.all, "stats"] as const,
+  },
+
+  // Collection
+  collection: {
+    all: ["collection"] as const,
+    reminders: (filters?: Record<string, unknown>) =>
+      [...queryKeys.collection.all, "reminders", filters] as const,
+    reminder: (id: string) => [...queryKeys.collection.all, "reminder", id] as const,
+    stats: () => [...queryKeys.collection.all, "stats"] as const,
+    dashboard: () => [...queryKeys.collection.all, "dashboard"] as const,
+    overdueInvoices: () =>
+      [...queryKeys.collection.all, "overdue-invoices"] as const,
+  },
+
+  // Withholding Certificates
+  withholdingCertificates: {
+    all: ["withholdingCertificates"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.withholdingCertificates.all, "list", filters] as const,
+    detail: (id: string) =>
+      [...queryKeys.withholdingCertificates.all, id] as const,
+    stats: (year?: number) =>
+      [...queryKeys.withholdingCertificates.all, "stats", year] as const,
+  },
+
+  // Kardex
+  kardex: {
+    all: ["kardex"] as const,
+    byProduct: (
+      productId: string,
+      params?: Record<string, unknown>,
+    ) => [...queryKeys.kardex.all, "product", productId, params] as const,
+  },
 };

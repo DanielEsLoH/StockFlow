@@ -1,4 +1,11 @@
-import { IsDate, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -99,6 +106,67 @@ export class InventoryReportQueryDto {
   @IsUUID('all', { message: 'El ID de categoria debe ser un UUID valido' })
   @IsOptional()
   categoryId?: string;
+}
+
+/**
+ * Query DTO for Kardex (inventory card) report.
+ * The Kardex is a detailed per-product inventory report showing all entries,
+ * exits, and running balance — required by DIAN in Colombia.
+ */
+export class KardexQueryDto {
+  /**
+   * Product ID to generate the Kardex for (required)
+   * @example "cmkcykam80004reya0hsdx337"
+   */
+  @ApiProperty({
+    description: 'Product ID to generate the Kardex for',
+    example: 'cmkcykam80004reya0hsdx337',
+  })
+  @IsString({ message: 'El ID del producto debe ser un texto valido' })
+  @IsNotEmpty({ message: 'El ID del producto es requerido' })
+  productId: string;
+
+  /**
+   * Optional warehouse ID to filter movements by warehouse
+   * @example "cmkcykam80004reya0hsdx338"
+   */
+  @ApiPropertyOptional({
+    description: 'Optional warehouse ID to filter movements by warehouse',
+    example: 'cmkcykam80004reya0hsdx338',
+  })
+  @IsString({ message: 'El ID de la bodega debe ser un texto valido' })
+  @IsOptional()
+  warehouseId?: string;
+
+  /**
+   * Start date for the Kardex period (inclusive)
+   * @example "2024-01-01T00:00:00.000Z"
+   */
+  @ApiPropertyOptional({
+    description: 'Start date for the Kardex period (inclusive)',
+    example: '2024-01-01T00:00:00.000Z',
+    type: String,
+    format: 'date-time',
+  })
+  @IsDate({ message: 'La fecha de inicio debe ser una fecha valida' })
+  @Type(() => Date)
+  @IsOptional()
+  fromDate?: Date;
+
+  /**
+   * End date for the Kardex period (inclusive)
+   * @example "2024-12-31T23:59:59.000Z"
+   */
+  @ApiPropertyOptional({
+    description: 'End date for the Kardex period (inclusive)',
+    example: '2024-12-31T23:59:59.000Z',
+    type: String,
+    format: 'date-time',
+  })
+  @IsDate({ message: 'La fecha de fin debe ser una fecha valida' })
+  @Type(() => Date)
+  @IsOptional()
+  toDate?: Date;
 }
 
 /**

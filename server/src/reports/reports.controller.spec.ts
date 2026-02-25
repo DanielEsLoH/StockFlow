@@ -1,13 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger, NotFoundException } from '@nestjs/common';
 import { ReportsController } from './reports.controller';
-import { ReportsService } from './reports.service';
+import { ReportsService, type KardexReport } from './reports.service';
 import {
   ReportQueryDto,
   InventoryReportQueryDto,
   CustomersReportQueryDto,
+  KardexQueryDto,
   ReportFormat,
 } from './dto';
+import { MovementType } from '@prisma/client';
 import type { Response } from 'express';
 import { ArcjetService } from '../arcjet/arcjet.service';
 
@@ -66,6 +68,7 @@ describe('ReportsController', () => {
       generateInventoryReport: jest.fn(),
       generateCustomersReport: jest.fn(),
       generateInvoicePdf: jest.fn(),
+      getKardexReport: jest.fn(),
     };
 
     const mockArcjetService = {
@@ -435,6 +438,120 @@ describe('ReportsController', () => {
   });
 
   // ============================================================================
+  // KARDEX REPORT
+  // ============================================================================
+
+  describe('getKardexReport', () => {
+    const mockKardexQuery: KardexQueryDto = {
+      productId: 'product-123',
+    };
+
+    const mockKardexQueryWithFilters: KardexQueryDto = {
+      productId: 'product-123',
+      warehouseId: 'warehouse-123',
+      fromDate: new Date('2024-01-01'),
+      toDate: new Date('2024-01-31'),
+    };
+
+    const mockKardexResult: KardexReport = {
+      product: {
+        id: 'product-123',
+        sku: 'SKU-001',
+        name: 'Test Product',
+        currentStock: 50,
+        costPrice: 100,
+      },
+      warehouse: { id: 'warehouse-123', name: 'Bodega Principal' },
+      fromDate: '2024-01-01T00:00:00.000Z',
+      toDate: '2024-01-31T23:59:59.000Z',
+      openingBalance: 70,
+      movements: [
+        {
+          id: 'mov-1',
+          date: new Date('2024-01-05T10:00:00.000Z'),
+          type: MovementType.PURCHASE,
+          description: 'Compra - OC #PO-00012',
+          entries: 20,
+          exits: 0,
+          balance: 90,
+          reference: 'PO-00012',
+          warehouseName: 'Bodega Principal',
+        },
+      ],
+      closingBalance: 90,
+    };
+
+    it('should return Kardex report JSON from service', async () => {
+      reportsService.getKardexReport.mockResolvedValue(mockKardexResult);
+
+      const result = await controller.getKardexReport(mockKardexQuery);
+
+      expect(reportsService.getKardexReport).toHaveBeenCalledWith(
+        'product-123',
+        undefined,
+        undefined,
+        undefined,
+      );
+      expect(result).toEqual(mockKardexResult);
+    });
+
+    it('should pass all filter parameters to service', async () => {
+      reportsService.getKardexReport.mockResolvedValue(mockKardexResult);
+
+      await controller.getKardexReport(mockKardexQueryWithFilters);
+
+      expect(reportsService.getKardexReport).toHaveBeenCalledWith(
+        'product-123',
+        'warehouse-123',
+        mockKardexQueryWithFilters.fromDate,
+        mockKardexQueryWithFilters.toDate,
+      );
+    });
+
+    it('should log report generation', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+      reportsService.getKardexReport.mockResolvedValue(mockKardexResult);
+
+      await controller.getKardexReport(mockKardexQuery);
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Generating Kardex report for product'),
+      );
+    });
+
+    it('should log warehouse in message when warehouseId is provided', async () => {
+      const logSpy = jest.spyOn(Logger.prototype, 'log');
+      reportsService.getKardexReport.mockResolvedValue(mockKardexResult);
+
+      await controller.getKardexReport(mockKardexQueryWithFilters);
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('warehouse: warehouse-123'),
+      );
+    });
+
+    describe('error handling', () => {
+      it('should propagate NotFoundException when product not found', async () => {
+        const error = new NotFoundException('Producto no encontrado');
+        reportsService.getKardexReport.mockRejectedValue(error);
+
+        await expect(
+          controller.getKardexReport(mockKardexQuery),
+        ).rejects.toThrow(NotFoundException);
+      });
+
+      it('should propagate service errors', async () => {
+        const error = new Error('Kardex report failed');
+        reportsService.getKardexReport.mockRejectedValue(error);
+
+        await expect(
+          controller.getKardexReport(mockKardexQuery),
+        ).rejects.toThrow(error);
+      });
+    });
+  });
+
+  // ============================================================================
   // INVOICE PDF
   // ============================================================================
 
@@ -593,6 +710,14 @@ describe('ReportsController', () => {
         ReportsController.prototype.getCustomersReport,
       );
       expect(customersPath).toBe('reports/customers');
+    });
+
+    it('should define kardex report endpoint at GET /reports/kardex', () => {
+      const kardexPath = Reflect.getMetadata(
+        'path',
+        ReportsController.prototype.getKardexReport,
+      );
+      expect(kardexPath).toBe('reports/kardex');
     });
 
     it('should define invoice PDF endpoint at GET /invoices/:id/pdf', () => {

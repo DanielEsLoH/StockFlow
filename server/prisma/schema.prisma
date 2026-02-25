@@ -225,11 +225,11 @@ enum EmployeeStatus {
 }
 
 enum ARLRiskLevel {
-  LEVEL_I   // 0.522%
-  LEVEL_II  // 1.044%
+  LEVEL_I // 0.522%
+  LEVEL_II // 1.044%
   LEVEL_III // 2.436%
-  LEVEL_IV  // 4.350%
-  LEVEL_V   // 6.960%
+  LEVEL_IV // 4.350%
+  LEVEL_V // 6.960%
 }
 
 enum PayrollPeriodType {
@@ -256,10 +256,10 @@ enum PayrollEntryStatus {
 }
 
 enum OvertimeType {
-  HED   // Hora extra diurna 1.25x
-  HEN   // Hora extra nocturna 1.75x
-  HDD   // Hora dominical/festiva diurna 2.0x
-  HDN   // Hora dominical/festiva nocturna 2.5x
+  HED // Hora extra diurna 1.25x
+  HEN // Hora extra nocturna 1.75x
+  HDD // Hora dominical/festiva diurna 2.0x
+  HDN // Hora dominical/festiva nocturna 2.5x
   HEDDF // Hora extra dominical/festiva diurna 2.5x
   HENDF // Hora extra nocturna dominical/festiva 2.75x
 }
@@ -326,85 +326,90 @@ enum NotificationPriority {
 // ============================================================================
 
 model Tenant {
-  id                     String            @id @default(cuid())
-  name                   String
-  slug                   String            @unique
-  email                  String
-  phone                  String?
-  status                 TenantStatus      @default(TRIAL)
-  plan                   SubscriptionPlan?
-  wompiPaymentSourceId   String?           @map("wompi_payment_source_id")
-  wompiCustomerEmail     String?           @map("wompi_customer_email")
-  maxUsers               Int               @default(1) @map("max_users")
-  maxProducts            Int               @default(100) @map("max_products")
-  maxInvoices            Int               @default(50) @map("max_invoices")
-  maxWarehouses          Int               @default(1) @map("max_warehouses")
-  maxEmployees           Int               @default(10) @map("max_employees")
-  createdAt              DateTime          @default(now()) @map("created_at")
-  updatedAt              DateTime          @updatedAt @map("updated_at")
+  id                   String            @id @default(cuid())
+  name                 String
+  slug                 String            @unique
+  email                String
+  phone                String?
+  status               TenantStatus      @default(TRIAL)
+  plan                 SubscriptionPlan?
+  wompiPaymentSourceId String?           @map("wompi_payment_source_id")
+  wompiCustomerEmail   String?           @map("wompi_customer_email")
+  maxUsers             Int               @default(1) @map("max_users")
+  maxProducts          Int               @default(100) @map("max_products")
+  maxInvoices          Int               @default(50) @map("max_invoices")
+  maxWarehouses        Int               @default(1) @map("max_warehouses")
+  maxEmployees         Int               @default(10) @map("max_employees")
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
 
-  users                 User[]
-  products              Product[]
-  customers             Customer[]
-  invoices              Invoice[]
-  warehouses            Warehouse[]
-  categories            Category[]
-  movements             StockMovement[]
-  payments              Payment[]
-  auditLogs             AuditLog[]
-  invitations           Invitation[]
-  notifications         Notification[]
-  subscription          Subscription?
-  cashRegisters         CashRegister[]
-  posSessions           POSSession[]
-  posSales              POSSale[]
-  cashRegisterMovements CashRegisterMovement[]
-  dianConfig            TenantDianConfig?
-  dianDocuments         DianDocument[]
-  billingTransactions   BillingTransaction[]
-  quotations            Quotation[]
-  suppliers             Supplier[]
-  purchaseOrders        PurchaseOrder[]
-  accounts              Account[]
-  accountingPeriods     AccountingPeriod[]
-  journalEntries        JournalEntry[]
-  accountingConfig      AccountingConfig?
-  bankAccounts          BankAccount[]
-  bankStatements        BankStatement[]
-  employees             Employee[]
-  payrollPeriods        PayrollPeriod[]
-  payrollEntries        PayrollEntry[]
-  payrollConfig         PayrollConfig?
+  users                   User[]
+  products                Product[]
+  customers               Customer[]
+  invoices                Invoice[]
+  warehouses              Warehouse[]
+  categories              Category[]
+  movements               StockMovement[]
+  payments                Payment[]
+  auditLogs               AuditLog[]
+  invitations             Invitation[]
+  notifications           Notification[]
+  subscription            Subscription?
+  cashRegisters           CashRegister[]
+  posSessions             POSSession[]
+  posSales                POSSale[]
+  cashRegisterMovements   CashRegisterMovement[]
+  dianConfig              TenantDianConfig?
+  dianDocuments           DianDocument[]
+  billingTransactions     BillingTransaction[]
+  quotations              Quotation[]
+  suppliers               Supplier[]
+  purchaseOrders          PurchaseOrder[]
+  accounts                Account[]
+  accountingPeriods       AccountingPeriod[]
+  journalEntries          JournalEntry[]
+  accountingConfig        AccountingConfig?
+  bankAccounts            BankAccount[]
+  bankStatements          BankStatement[]
+  employees               Employee[]
+  payrollPeriods          PayrollPeriod[]
+  payrollEntries          PayrollEntry[]
+  payrollConfig           PayrollConfig?
+  costCenters             CostCenter[]
+  remissions              Remission[]
+  supportDocuments        SupportDocument[]
+  collectionReminders     CollectionReminder[]
+  withholdingCertificates WithholdingCertificate[]
 
   @@map("tenants")
 }
 
 model User {
-  id                       String        @id @default(cuid())
-  tenantId                 String        @map("tenant_id")
-  email                    String        @unique
-  password                 String
-  firstName                String        @map("first_name")
-  lastName                 String        @map("last_name")
-  phone                    String?
-  avatar                   String?
-  googleId                 String?       @unique @map("google_id")
-  githubId                 String?       @unique @map("github_id")
-  authProvider             AuthProvider  @default(EMAIL) @map("auth_provider")
-  role                     UserRole      @default(EMPLOYEE)
-  status                   UserStatus    @default(PENDING)
-  emailVerified            Boolean       @default(false) @map("email_verified")
-  verificationToken        String?       @unique @map("verification_token")
-  verificationTokenExpiry  DateTime?     @map("verification_token_expiry")
-  refreshToken             String?       @map("refresh_token")
-  resetToken               String?       @map("reset_token")
-  resetTokenExpiry         DateTime?     @map("reset_token_expiry")
-  warehouseId              String?       @map("warehouse_id")
-  approvedAt               DateTime?     @map("approved_at")
-  approvedById             String?       @map("approved_by_id")
-  createdAt                DateTime      @default(now()) @map("created_at")
-  updatedAt                DateTime      @updatedAt @map("updated_at")
-  lastLoginAt              DateTime?     @map("last_login_at")
+  id                      String       @id @default(cuid())
+  tenantId                String       @map("tenant_id")
+  email                   String       @unique
+  password                String
+  firstName               String       @map("first_name")
+  lastName                String       @map("last_name")
+  phone                   String?
+  avatar                  String?
+  googleId                String?      @unique @map("google_id")
+  githubId                String?      @unique @map("github_id")
+  authProvider            AuthProvider @default(EMAIL) @map("auth_provider")
+  role                    UserRole     @default(EMPLOYEE)
+  status                  UserStatus   @default(PENDING)
+  emailVerified           Boolean      @default(false) @map("email_verified")
+  verificationToken       String?      @unique @map("verification_token")
+  verificationTokenExpiry DateTime?    @map("verification_token_expiry")
+  refreshToken            String?      @map("refresh_token")
+  resetToken              String?      @map("reset_token")
+  resetTokenExpiry        DateTime?    @map("reset_token_expiry")
+  warehouseId             String?      @map("warehouse_id")
+  approvedAt              DateTime?    @map("approved_at")
+  approvedById            String?      @map("approved_by_id")
+  createdAt               DateTime     @default(now()) @map("created_at")
+  updatedAt               DateTime     @updatedAt @map("updated_at")
+  lastLoginAt             DateTime?    @map("last_login_at")
 
   tenant              Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   warehouse           Warehouse?               @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
@@ -417,6 +422,8 @@ model User {
   permissionOverrides UserPermissionOverride[]
   quotations          Quotation[]
   purchaseOrders      PurchaseOrder[]
+  remissions          Remission[]
+  supportDocuments    SupportDocument[]
 
   @@index([tenantId])
   @@index([warehouseId])
@@ -481,13 +488,14 @@ model Product {
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
-  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category       Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category           Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   invoiceItems       InvoiceItem[]
   quotationItems     QuotationItem[]
   purchaseOrderItems PurchaseOrderItem[]
   movements          StockMovement[]
   warehouseStock     WarehouseStock[]
+  remissionItems     RemissionItem[]
 
   @@unique([tenantId, sku])
   @@index([tenantId])
@@ -519,6 +527,7 @@ model Warehouse {
   movements      StockMovement[]
   cashRegisters  CashRegister[]
   purchaseOrders PurchaseOrder[]
+  remissions     Remission[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -545,11 +554,11 @@ model WarehouseStock {
 }
 
 model StockMovement {
-  id          String       @id @default(cuid())
-  tenantId    String       @map("tenant_id")
-  productId   String       @map("product_id")
-  warehouseId String?      @map("warehouse_id")
-  userId      String?      @map("user_id")
+  id              String       @id @default(cuid())
+  tenantId        String       @map("tenant_id")
+  productId       String       @map("product_id")
+  warehouseId     String?      @map("warehouse_id")
+  userId          String?      @map("user_id")
   type            MovementType
   quantity        Int
   reason          String?
@@ -592,9 +601,11 @@ model Customer {
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
 
-  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoices   Invoice[]
-  quotations Quotation[]
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoices            Invoice[]
+  quotations          Quotation[]
+  remissions          Remission[]
+  collectionReminders CollectionReminder[]
 
   @@unique([tenantId, documentNumber])
   @@index([tenantId])
@@ -627,15 +638,17 @@ model Invoice {
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
-  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer      Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  warehouse     Warehouse?     @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  tenant                 Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer               Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  user                   User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  warehouse              Warehouse?           @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
   items                  InvoiceItem[]
   payments               Payment[]
   posSale                POSSale?
   dianDocuments          DianDocument[]
   convertedFromQuotation Quotation?
+  remissions             Remission[]
+  collectionReminders    CollectionReminder[]
 
   @@unique([tenantId, invoiceNumber])
   @@index([tenantId])
@@ -650,11 +663,11 @@ model Invoice {
 }
 
 model InvoiceItem {
-  id        String   @id @default(cuid())
-  invoiceId String   @map("invoice_id")
-  productId String?  @map("product_id")
-  quantity  Int      @default(1)
-  unitPrice Decimal  @default(0) @map("unit_price") @db.Decimal(10, 2)
+  id          String      @id @default(cuid())
+  invoiceId   String      @map("invoice_id")
+  productId   String?     @map("product_id")
+  quantity    Int         @default(1)
+  unitPrice   Decimal     @default(0) @map("unit_price") @db.Decimal(10, 2)
   taxRate     Decimal     @default(19) @map("tax_rate") @db.Decimal(5, 2)
   taxCategory TaxCategory @default(GRAVADO_19) @map("tax_category")
   discount    Decimal     @default(0) @db.Decimal(10, 2)
@@ -889,20 +902,20 @@ model CashRegister {
 }
 
 model POSSession {
-  id              String           @id @default(cuid())
-  tenantId        String           @map("tenant_id")
-  cashRegisterId  String           @map("cash_register_id")
-  userId          String           @map("user_id")
-  status          POSSessionStatus @default(ACTIVE)
-  openingAmount   Decimal          @map("opening_amount") @db.Decimal(10, 2)
-  closingAmount   Decimal?         @map("closing_amount") @db.Decimal(10, 2)
-  expectedAmount  Decimal?         @map("expected_amount") @db.Decimal(10, 2)
-  difference      Decimal?         @db.Decimal(10, 2)
-  openedAt        DateTime         @default(now()) @map("opened_at")
-  closedAt        DateTime?        @map("closed_at")
-  notes           String?
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
+  id             String           @id @default(cuid())
+  tenantId       String           @map("tenant_id")
+  cashRegisterId String           @map("cash_register_id")
+  userId         String           @map("user_id")
+  status         POSSessionStatus @default(ACTIVE)
+  openingAmount  Decimal          @map("opening_amount") @db.Decimal(10, 2)
+  closingAmount  Decimal?         @map("closing_amount") @db.Decimal(10, 2)
+  expectedAmount Decimal?         @map("expected_amount") @db.Decimal(10, 2)
+  difference     Decimal?         @db.Decimal(10, 2)
+  openedAt       DateTime         @default(now()) @map("opened_at")
+  closedAt       DateTime?        @map("closed_at")
+  notes          String?
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
 
   tenant       Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   cashRegister CashRegister           @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
@@ -986,42 +999,42 @@ model SalePayment {
 // ============================================================================
 
 model TenantDianConfig {
-  id                  String              @id @default(cuid())
-  tenantId            String              @unique @map("tenant_id")
-  nit                 String
-  dv                  String // Digito de verificacion
-  businessName        String              @map("business_name")
-  tradeName           String?             @map("trade_name")
-  taxResponsibilities TaxResponsibility[] @map("tax_responsibilities")
-  economicActivity    String              @map("economic_activity")
-  address             String
-  city                String
-  cityCode            String              @map("city_code")
-  department          String
-  departmentCode      String              @map("department_code")
-  country             String              @default("CO")
-  countryCode         String              @default("CO") @map("country_code")
-  postalCode          String?             @map("postal_code")
-  phone               String?
-  email               String
-  testMode            Boolean             @default(true) @map("test_mode")
-  softwareId          String?             @map("software_id")
-  softwarePin         String?             @map("software_pin")
-  technicalKey        String?             @map("technical_key")
-  certificateFile     Bytes?              @map("certificate_file")
-  certificatePassword String?             @map("certificate_password")
-  resolutionNumber    String?             @map("resolution_number")
-  resolutionDate      DateTime?           @map("resolution_date")
-  resolutionPrefix    String?             @map("resolution_prefix")
-  resolutionRangeFrom Int?                @map("resolution_range_from")
-  resolutionRangeTo   Int?                @map("resolution_range_to")
-  currentNumber              Int                 @default(1) @map("current_number")
-  creditNotePrefix           String?             @map("credit_note_prefix")
-  creditNoteCurrentNumber    Int                 @default(1) @map("credit_note_current_number")
-  debitNotePrefix            String?             @map("debit_note_prefix")
-  debitNoteCurrentNumber     Int                 @default(1) @map("debit_note_current_number")
-  createdAt                  DateTime            @default(now()) @map("created_at")
-  updatedAt                  DateTime            @updatedAt @map("updated_at")
+  id                      String              @id @default(cuid())
+  tenantId                String              @unique @map("tenant_id")
+  nit                     String
+  dv                      String // Digito de verificacion
+  businessName            String              @map("business_name")
+  tradeName               String?             @map("trade_name")
+  taxResponsibilities     TaxResponsibility[] @map("tax_responsibilities")
+  economicActivity        String              @map("economic_activity")
+  address                 String
+  city                    String
+  cityCode                String              @map("city_code")
+  department              String
+  departmentCode          String              @map("department_code")
+  country                 String              @default("CO")
+  countryCode             String              @default("CO") @map("country_code")
+  postalCode              String?             @map("postal_code")
+  phone                   String?
+  email                   String
+  testMode                Boolean             @default(true) @map("test_mode")
+  softwareId              String?             @map("software_id")
+  softwarePin             String?             @map("software_pin")
+  technicalKey            String?             @map("technical_key")
+  certificateFile         Bytes?              @map("certificate_file")
+  certificatePassword     String?             @map("certificate_password")
+  resolutionNumber        String?             @map("resolution_number")
+  resolutionDate          DateTime?           @map("resolution_date")
+  resolutionPrefix        String?             @map("resolution_prefix")
+  resolutionRangeFrom     Int?                @map("resolution_range_from")
+  resolutionRangeTo       Int?                @map("resolution_range_to")
+  currentNumber           Int                 @default(1) @map("current_number")
+  creditNotePrefix        String?             @map("credit_note_prefix")
+  creditNoteCurrentNumber Int                 @default(1) @map("credit_note_current_number")
+  debitNotePrefix         String?             @map("debit_note_prefix")
+  debitNoteCurrentNumber  Int                 @default(1) @map("debit_note_current_number")
+  createdAt               DateTime            @default(now()) @map("created_at")
+  updatedAt               DateTime            @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -1051,9 +1064,9 @@ model DianDocument {
   createdAt              DateTime           @default(now()) @map("created_at")
   updatedAt              DateTime           @updatedAt @map("updated_at")
 
-  tenant               Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoice              Invoice?      @relation(fields: [invoiceId], references: [id])
-  originalDianDocument DianDocument? @relation("NoteToOriginal", fields: [originalDianDocumentId], references: [id])
+  tenant               Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice              Invoice?       @relation(fields: [invoiceId], references: [id])
+  originalDianDocument DianDocument?  @relation("NoteToOriginal", fields: [originalDianDocumentId], references: [id])
   relatedNotes         DianDocument[] @relation("NoteToOriginal")
 
   @@index([tenantId])
@@ -1174,10 +1187,10 @@ model Quotation {
   createdAt            DateTime        @default(now()) @map("created_at")
   updatedAt            DateTime        @updatedAt @map("updated_at")
 
-  tenant             Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer           Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  user               User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  convertedToInvoice Invoice?      @relation(fields: [convertedToInvoiceId], references: [id], onDelete: SetNull)
+  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer           Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  user               User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  convertedToInvoice Invoice?        @relation(fields: [convertedToInvoiceId], references: [id], onDelete: SetNull)
   items              QuotationItem[]
 
   @@unique([tenantId, quotationNumber])
@@ -1234,8 +1247,10 @@ model Supplier {
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
 
-  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  purchaseOrders PurchaseOrder[]
+  tenant                  Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseOrders          PurchaseOrder[]
+  supportDocuments        SupportDocument[]
+  withholdingCertificates WithholdingCertificate[]
 
   @@unique([tenantId, documentNumber])
   @@index([tenantId])
@@ -1329,23 +1344,23 @@ model Account {
   bankAccount       BankAccount?
 
   // AccountingConfig relations
-  configCash               AccountingConfig[] @relation("CashAccount")
-  configBank               AccountingConfig[] @relation("BankAccount")
-  configAccountsReceivable AccountingConfig[] @relation("AccountsReceivableAccount")
-  configInventory          AccountingConfig[] @relation("InventoryAccount")
-  configAccountsPayable    AccountingConfig[] @relation("AccountsPayableAccount")
-  configIvaPorPagar        AccountingConfig[] @relation("IvaPorPagarAccount")
-  configIvaDescontable     AccountingConfig[] @relation("IvaDescontableAccount")
-  configRevenue            AccountingConfig[] @relation("RevenueAccount")
-  configCogs               AccountingConfig[] @relation("CogsAccount")
-  configInventoryAdj       AccountingConfig[] @relation("InventoryAdjustmentAccount")
-  configReteFuenteReceived AccountingConfig[] @relation("ReteFuenteReceivedAccount")
-  configReteFuentePayable  AccountingConfig[] @relation("ReteFuentePayableAccount")
-  configPayrollExpense     AccountingConfig[] @relation("PayrollExpenseAccount")
-  configPayrollPayable     AccountingConfig[] @relation("PayrollPayableAccount")
-  configPayrollRetentions  AccountingConfig[] @relation("PayrollRetentionsAccount")
+  configCash                 AccountingConfig[] @relation("CashAccount")
+  configBank                 AccountingConfig[] @relation("BankAccount")
+  configAccountsReceivable   AccountingConfig[] @relation("AccountsReceivableAccount")
+  configInventory            AccountingConfig[] @relation("InventoryAccount")
+  configAccountsPayable      AccountingConfig[] @relation("AccountsPayableAccount")
+  configIvaPorPagar          AccountingConfig[] @relation("IvaPorPagarAccount")
+  configIvaDescontable       AccountingConfig[] @relation("IvaDescontableAccount")
+  configRevenue              AccountingConfig[] @relation("RevenueAccount")
+  configCogs                 AccountingConfig[] @relation("CogsAccount")
+  configInventoryAdj         AccountingConfig[] @relation("InventoryAdjustmentAccount")
+  configReteFuenteReceived   AccountingConfig[] @relation("ReteFuenteReceivedAccount")
+  configReteFuentePayable    AccountingConfig[] @relation("ReteFuentePayableAccount")
+  configPayrollExpense       AccountingConfig[] @relation("PayrollExpenseAccount")
+  configPayrollPayable       AccountingConfig[] @relation("PayrollPayableAccount")
+  configPayrollRetentions    AccountingConfig[] @relation("PayrollRetentionsAccount")
   configPayrollContributions AccountingConfig[] @relation("PayrollContributionsAccount")
-  configPayrollProvisions  AccountingConfig[] @relation("PayrollProvisionsAccount")
+  configPayrollProvisions    AccountingConfig[] @relation("PayrollProvisionsAccount")
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -1356,17 +1371,17 @@ model Account {
 }
 
 model AccountingPeriod {
-  id        String                 @id @default(cuid())
-  tenantId  String                 @map("tenant_id")
-  name      String
-  startDate DateTime               @map("start_date")
-  endDate   DateTime               @map("end_date")
-  status    AccountingPeriodStatus @default(OPEN)
-  closedAt  DateTime?              @map("closed_at")
-  closedById String?               @map("closed_by_id")
-  notes     String?
-  createdAt DateTime               @default(now()) @map("created_at")
-  updatedAt DateTime               @updatedAt @map("updated_at")
+  id         String                 @id @default(cuid())
+  tenantId   String                 @map("tenant_id")
+  name       String
+  startDate  DateTime               @map("start_date")
+  endDate    DateTime               @map("end_date")
+  status     AccountingPeriodStatus @default(OPEN)
+  closedAt   DateTime?              @map("closed_at")
+  closedById String?                @map("closed_by_id")
+  notes      String?
+  createdAt  DateTime               @default(now()) @map("created_at")
+  updatedAt  DateTime               @updatedAt @map("updated_at")
 
   tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   journalEntries JournalEntry[]
@@ -1399,9 +1414,9 @@ model JournalEntry {
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")
 
-  tenant                   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  period                   AccountingPeriod?  @relation(fields: [periodId], references: [id], onDelete: SetNull)
-  lines                    JournalEntryLine[]
+  tenant                    Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  period                    AccountingPeriod?   @relation(fields: [periodId], references: [id], onDelete: SetNull)
+  lines                     JournalEntryLine[]
   matchedBankStatementLines BankStatementLine[] @relation("MatchedJournalEntry")
 
   @@unique([tenantId, entryNumber])
@@ -1421,12 +1436,14 @@ model JournalEntryLine {
   id             String  @id @default(cuid())
   journalEntryId String  @map("journal_entry_id")
   accountId      String  @map("account_id")
+  costCenterId   String? @map("cost_center_id")
   description    String?
   debit          Decimal @default(0) @db.Decimal(12, 2)
   credit         Decimal @default(0) @db.Decimal(12, 2)
 
   journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
   account      Account      @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  costCenter   CostCenter?  @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
 
   @@index([journalEntryId])
   @@index([accountId])
@@ -1434,47 +1451,47 @@ model JournalEntryLine {
 }
 
 model AccountingConfig {
-  id                      String  @id @default(cuid())
-  tenantId                String  @unique @map("tenant_id")
-  cashAccountId           String? @map("cash_account_id")
-  bankAccountId           String? @map("bank_account_id")
-  accountsReceivableId    String? @map("accounts_receivable_id")
-  inventoryAccountId      String? @map("inventory_account_id")
-  accountsPayableId       String? @map("accounts_payable_id")
-  ivaPorPagarId           String? @map("iva_por_pagar_id")
-  ivaDescontableId        String? @map("iva_descontable_id")
-  revenueAccountId        String? @map("revenue_account_id")
-  cogsAccountId           String? @map("cogs_account_id")
-  inventoryAdjustmentId   String? @map("inventory_adjustment_id")
-  reteFuenteReceivedId    String? @map("rete_fuente_received_id")
-  reteFuentePayableId     String? @map("rete_fuente_payable_id")
-  payrollExpenseId        String? @map("payroll_expense_id")
-  payrollPayableId        String? @map("payroll_payable_id")
-  payrollRetentionsId     String? @map("payroll_retentions_id")
-  payrollContributionsId  String? @map("payroll_contributions_id")
-  payrollProvisionsId     String? @map("payroll_provisions_id")
-  autoGenerateEntries     Boolean @default(false) @map("auto_generate_entries")
-  createdAt               DateTime @default(now()) @map("created_at")
-  updatedAt               DateTime @updatedAt @map("updated_at")
+  id                     String   @id @default(cuid())
+  tenantId               String   @unique @map("tenant_id")
+  cashAccountId          String?  @map("cash_account_id")
+  bankAccountId          String?  @map("bank_account_id")
+  accountsReceivableId   String?  @map("accounts_receivable_id")
+  inventoryAccountId     String?  @map("inventory_account_id")
+  accountsPayableId      String?  @map("accounts_payable_id")
+  ivaPorPagarId          String?  @map("iva_por_pagar_id")
+  ivaDescontableId       String?  @map("iva_descontable_id")
+  revenueAccountId       String?  @map("revenue_account_id")
+  cogsAccountId          String?  @map("cogs_account_id")
+  inventoryAdjustmentId  String?  @map("inventory_adjustment_id")
+  reteFuenteReceivedId   String?  @map("rete_fuente_received_id")
+  reteFuentePayableId    String?  @map("rete_fuente_payable_id")
+  payrollExpenseId       String?  @map("payroll_expense_id")
+  payrollPayableId       String?  @map("payroll_payable_id")
+  payrollRetentionsId    String?  @map("payroll_retentions_id")
+  payrollContributionsId String?  @map("payroll_contributions_id")
+  payrollProvisionsId    String?  @map("payroll_provisions_id")
+  autoGenerateEntries    Boolean  @default(false) @map("auto_generate_entries")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
 
-  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  cashAccount           Account? @relation("CashAccount", fields: [cashAccountId], references: [id], onDelete: SetNull)
-  bankAccount           Account? @relation("BankAccount", fields: [bankAccountId], references: [id], onDelete: SetNull)
-  accountsReceivable    Account? @relation("AccountsReceivableAccount", fields: [accountsReceivableId], references: [id], onDelete: SetNull)
-  inventoryAccount      Account? @relation("InventoryAccount", fields: [inventoryAccountId], references: [id], onDelete: SetNull)
-  accountsPayable       Account? @relation("AccountsPayableAccount", fields: [accountsPayableId], references: [id], onDelete: SetNull)
-  ivaPorPagar           Account? @relation("IvaPorPagarAccount", fields: [ivaPorPagarId], references: [id], onDelete: SetNull)
-  ivaDescontable        Account? @relation("IvaDescontableAccount", fields: [ivaDescontableId], references: [id], onDelete: SetNull)
-  revenueAccount        Account? @relation("RevenueAccount", fields: [revenueAccountId], references: [id], onDelete: SetNull)
-  cogsAccount           Account? @relation("CogsAccount", fields: [cogsAccountId], references: [id], onDelete: SetNull)
-  inventoryAdjustment   Account? @relation("InventoryAdjustmentAccount", fields: [inventoryAdjustmentId], references: [id], onDelete: SetNull)
-  reteFuenteReceived    Account? @relation("ReteFuenteReceivedAccount", fields: [reteFuenteReceivedId], references: [id], onDelete: SetNull)
-  reteFuentePayable     Account? @relation("ReteFuentePayableAccount", fields: [reteFuentePayableId], references: [id], onDelete: SetNull)
-  payrollExpense        Account? @relation("PayrollExpenseAccount", fields: [payrollExpenseId], references: [id], onDelete: SetNull)
-  payrollPayable        Account? @relation("PayrollPayableAccount", fields: [payrollPayableId], references: [id], onDelete: SetNull)
-  payrollRetentions     Account? @relation("PayrollRetentionsAccount", fields: [payrollRetentionsId], references: [id], onDelete: SetNull)
-  payrollContributions  Account? @relation("PayrollContributionsAccount", fields: [payrollContributionsId], references: [id], onDelete: SetNull)
-  payrollProvisions     Account? @relation("PayrollProvisionsAccount", fields: [payrollProvisionsId], references: [id], onDelete: SetNull)
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cashAccount          Account? @relation("CashAccount", fields: [cashAccountId], references: [id], onDelete: SetNull)
+  bankAccount          Account? @relation("BankAccount", fields: [bankAccountId], references: [id], onDelete: SetNull)
+  accountsReceivable   Account? @relation("AccountsReceivableAccount", fields: [accountsReceivableId], references: [id], onDelete: SetNull)
+  inventoryAccount     Account? @relation("InventoryAccount", fields: [inventoryAccountId], references: [id], onDelete: SetNull)
+  accountsPayable      Account? @relation("AccountsPayableAccount", fields: [accountsPayableId], references: [id], onDelete: SetNull)
+  ivaPorPagar          Account? @relation("IvaPorPagarAccount", fields: [ivaPorPagarId], references: [id], onDelete: SetNull)
+  ivaDescontable       Account? @relation("IvaDescontableAccount", fields: [ivaDescontableId], references: [id], onDelete: SetNull)
+  revenueAccount       Account? @relation("RevenueAccount", fields: [revenueAccountId], references: [id], onDelete: SetNull)
+  cogsAccount          Account? @relation("CogsAccount", fields: [cogsAccountId], references: [id], onDelete: SetNull)
+  inventoryAdjustment  Account? @relation("InventoryAdjustmentAccount", fields: [inventoryAdjustmentId], references: [id], onDelete: SetNull)
+  reteFuenteReceived   Account? @relation("ReteFuenteReceivedAccount", fields: [reteFuenteReceivedId], references: [id], onDelete: SetNull)
+  reteFuentePayable    Account? @relation("ReteFuentePayableAccount", fields: [reteFuentePayableId], references: [id], onDelete: SetNull)
+  payrollExpense       Account? @relation("PayrollExpenseAccount", fields: [payrollExpenseId], references: [id], onDelete: SetNull)
+  payrollPayable       Account? @relation("PayrollPayableAccount", fields: [payrollPayableId], references: [id], onDelete: SetNull)
+  payrollRetentions    Account? @relation("PayrollRetentionsAccount", fields: [payrollRetentionsId], references: [id], onDelete: SetNull)
+  payrollContributions Account? @relation("PayrollContributionsAccount", fields: [payrollContributionsId], references: [id], onDelete: SetNull)
+  payrollProvisions    Account? @relation("PayrollProvisionsAccount", fields: [payrollProvisionsId], references: [id], onDelete: SetNull)
 
   @@map("accounting_configs")
 }
@@ -1637,87 +1654,87 @@ model PayrollPeriod {
 }
 
 model PayrollEntry {
-  id                  String              @id @default(cuid())
-  tenantId            String              @map("tenant_id")
-  periodId            String              @map("period_id")
-  employeeId          String              @map("employee_id")
-  entryNumber         String              @map("entry_number")
-  status              PayrollEntryStatus  @default(DRAFT)
+  id          String             @id @default(cuid())
+  tenantId    String             @map("tenant_id")
+  periodId    String             @map("period_id")
+  employeeId  String             @map("employee_id")
+  entryNumber String             @map("entry_number")
+  status      PayrollEntryStatus @default(DRAFT)
 
   // Snapshot del empleado al momento del calculo
-  baseSalary          Decimal             @map("base_salary") @db.Decimal(12, 2)
-  salaryType          SalaryType          @map("salary_type")
-  daysWorked          Int                 @default(30) @map("days_worked")
+  baseSalary Decimal    @map("base_salary") @db.Decimal(12, 2)
+  salaryType SalaryType @map("salary_type")
+  daysWorked Int        @default(30) @map("days_worked")
 
   // === Devengados ===
-  sueldo              Decimal             @default(0) @db.Decimal(12, 2)
-  auxilioTransporte   Decimal             @default(0) @map("auxilio_transporte") @db.Decimal(12, 2)
-  horasExtras         Decimal             @default(0) @map("horas_extras") @db.Decimal(12, 2)
-  bonificaciones      Decimal             @default(0) @db.Decimal(12, 2)
-  comisiones          Decimal             @default(0) @db.Decimal(12, 2)
-  viaticos            Decimal             @default(0) @db.Decimal(12, 2)
-  incapacidad         Decimal             @default(0) @db.Decimal(12, 2)
-  licencia            Decimal             @default(0) @db.Decimal(12, 2)
-  vacaciones          Decimal             @default(0) @db.Decimal(12, 2)
-  primaServicios      Decimal             @default(0) @map("prima_servicios") @db.Decimal(12, 2)
-  cesantias           Decimal             @default(0) @db.Decimal(12, 2)
-  interesesCesantias  Decimal             @default(0) @map("intereses_cesantias") @db.Decimal(12, 2)
-  otrosDevengados     Decimal             @default(0) @map("otros_devengados") @db.Decimal(12, 2)
-  totalDevengados     Decimal             @default(0) @map("total_devengados") @db.Decimal(14, 2)
+  sueldo             Decimal @default(0) @db.Decimal(12, 2)
+  auxilioTransporte  Decimal @default(0) @map("auxilio_transporte") @db.Decimal(12, 2)
+  horasExtras        Decimal @default(0) @map("horas_extras") @db.Decimal(12, 2)
+  bonificaciones     Decimal @default(0) @db.Decimal(12, 2)
+  comisiones         Decimal @default(0) @db.Decimal(12, 2)
+  viaticos           Decimal @default(0) @db.Decimal(12, 2)
+  incapacidad        Decimal @default(0) @db.Decimal(12, 2)
+  licencia           Decimal @default(0) @db.Decimal(12, 2)
+  vacaciones         Decimal @default(0) @db.Decimal(12, 2)
+  primaServicios     Decimal @default(0) @map("prima_servicios") @db.Decimal(12, 2)
+  cesantias          Decimal @default(0) @db.Decimal(12, 2)
+  interesesCesantias Decimal @default(0) @map("intereses_cesantias") @db.Decimal(12, 2)
+  otrosDevengados    Decimal @default(0) @map("otros_devengados") @db.Decimal(12, 2)
+  totalDevengados    Decimal @default(0) @map("total_devengados") @db.Decimal(14, 2)
 
   // === Deducciones ===
-  saludEmpleado       Decimal             @default(0) @map("salud_empleado") @db.Decimal(12, 2)
-  pensionEmpleado     Decimal             @default(0) @map("pension_empleado") @db.Decimal(12, 2)
-  fondoSolidaridad    Decimal             @default(0) @map("fondo_solidaridad") @db.Decimal(12, 2)
-  retencionFuente     Decimal             @default(0) @map("retencion_fuente") @db.Decimal(12, 2)
-  sindicato           Decimal             @default(0) @db.Decimal(12, 2)
-  libranzas           Decimal             @default(0) @db.Decimal(12, 2)
-  otrasDeducciones    Decimal             @default(0) @map("otras_deducciones") @db.Decimal(12, 2)
-  totalDeducciones    Decimal             @default(0) @map("total_deducciones") @db.Decimal(14, 2)
+  saludEmpleado    Decimal @default(0) @map("salud_empleado") @db.Decimal(12, 2)
+  pensionEmpleado  Decimal @default(0) @map("pension_empleado") @db.Decimal(12, 2)
+  fondoSolidaridad Decimal @default(0) @map("fondo_solidaridad") @db.Decimal(12, 2)
+  retencionFuente  Decimal @default(0) @map("retencion_fuente") @db.Decimal(12, 2)
+  sindicato        Decimal @default(0) @db.Decimal(12, 2)
+  libranzas        Decimal @default(0) @db.Decimal(12, 2)
+  otrasDeducciones Decimal @default(0) @map("otras_deducciones") @db.Decimal(12, 2)
+  totalDeducciones Decimal @default(0) @map("total_deducciones") @db.Decimal(14, 2)
 
   // === Aportes Empleador (no se deducen del empleado) ===
-  saludEmpleador      Decimal             @default(0) @map("salud_empleador") @db.Decimal(12, 2)
-  pensionEmpleador    Decimal             @default(0) @map("pension_empleador") @db.Decimal(12, 2)
-  arlEmpleador        Decimal             @default(0) @map("arl_empleador") @db.Decimal(12, 2)
-  cajaEmpleador       Decimal             @default(0) @map("caja_empleador") @db.Decimal(12, 2)
-  senaEmpleador       Decimal             @default(0) @map("sena_empleador") @db.Decimal(12, 2)
-  icbfEmpleador       Decimal             @default(0) @map("icbf_empleador") @db.Decimal(12, 2)
+  saludEmpleador   Decimal @default(0) @map("salud_empleador") @db.Decimal(12, 2)
+  pensionEmpleador Decimal @default(0) @map("pension_empleador") @db.Decimal(12, 2)
+  arlEmpleador     Decimal @default(0) @map("arl_empleador") @db.Decimal(12, 2)
+  cajaEmpleador    Decimal @default(0) @map("caja_empleador") @db.Decimal(12, 2)
+  senaEmpleador    Decimal @default(0) @map("sena_empleador") @db.Decimal(12, 2)
+  icbfEmpleador    Decimal @default(0) @map("icbf_empleador") @db.Decimal(12, 2)
 
   // === Provision Prestaciones ===
-  provisionPrima      Decimal             @default(0) @map("provision_prima") @db.Decimal(12, 2)
-  provisionCesantias  Decimal             @default(0) @map("provision_cesantias") @db.Decimal(12, 2)
-  provisionIntereses  Decimal             @default(0) @map("provision_intereses") @db.Decimal(12, 2)
-  provisionVacaciones Decimal             @default(0) @map("provision_vacaciones") @db.Decimal(12, 2)
+  provisionPrima      Decimal @default(0) @map("provision_prima") @db.Decimal(12, 2)
+  provisionCesantias  Decimal @default(0) @map("provision_cesantias") @db.Decimal(12, 2)
+  provisionIntereses  Decimal @default(0) @map("provision_intereses") @db.Decimal(12, 2)
+  provisionVacaciones Decimal @default(0) @map("provision_vacaciones") @db.Decimal(12, 2)
 
   // === Neto ===
-  totalNeto           Decimal             @default(0) @map("total_neto") @db.Decimal(14, 2)
+  totalNeto Decimal @default(0) @map("total_neto") @db.Decimal(14, 2)
 
   // === DIAN Nomina Electronica ===
-  cune                String?             @unique
-  dianDocumentType    PayrollDocumentType? @map("dian_document_type")
-  dianStatus          DianDocumentStatus?  @map("dian_status")
-  xmlContent          String?             @map("xml_content") @db.Text
-  signedXml           String?             @map("signed_xml") @db.Text
-  dianTrackId         String?             @map("dian_track_id")
-  dianResponse        Json?               @map("dian_response")
-  errorMessage        String?             @map("error_message") @db.Text
-  sentAt              DateTime?           @map("sent_at")
-  acceptedAt          DateTime?           @map("accepted_at")
+  cune             String?              @unique
+  dianDocumentType PayrollDocumentType? @map("dian_document_type")
+  dianStatus       DianDocumentStatus?  @map("dian_status")
+  xmlContent       String?              @map("xml_content") @db.Text
+  signedXml        String?              @map("signed_xml") @db.Text
+  dianTrackId      String?              @map("dian_track_id")
+  dianResponse     Json?                @map("dian_response")
+  errorMessage     String?              @map("error_message") @db.Text
+  sentAt           DateTime?            @map("sent_at")
+  acceptedAt       DateTime?            @map("accepted_at")
 
   // Detalle horas extras como JSON
-  overtimeDetails     Json?               @map("overtime_details")
+  overtimeDetails Json? @map("overtime_details")
 
-  createdAt           DateTime            @default(now()) @map("created_at")
-  updatedAt           DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant            Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  period            PayrollPeriod   @relation(fields: [periodId], references: [id], onDelete: Cascade)
-  employee          Employee        @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  period   PayrollPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  employee Employee      @relation(fields: [employeeId], references: [id], onDelete: Restrict)
 
   // Self-reference para notas de ajuste
-  originalEntryId   String?         @map("original_entry_id")
-  originalEntry     PayrollEntry?   @relation("PayrollAdjustment", fields: [originalEntryId], references: [id])
-  adjustmentEntries PayrollEntry[]  @relation("PayrollAdjustment")
+  originalEntryId   String?        @map("original_entry_id")
+  originalEntry     PayrollEntry?  @relation("PayrollAdjustment", fields: [originalEntryId], references: [id])
+  adjustmentEntries PayrollEntry[] @relation("PayrollAdjustment")
 
   @@unique([tenantId, entryNumber])
   @@index([tenantId])
@@ -1729,31 +1746,242 @@ model PayrollEntry {
 }
 
 model PayrollConfig {
-  id                      String            @id @default(cuid())
-  tenantId                String            @unique @map("tenant_id")
+  id       String @id @default(cuid())
+  tenantId String @unique @map("tenant_id")
 
   // Parametros anuales (actualizar cada enero)
-  smmlv                   Decimal           @default(1423500) @db.Decimal(12, 2)
-  auxilioTransporteVal    Decimal           @default(200000) @map("auxilio_transporte_val") @db.Decimal(12, 2)
-  uvtValue                Decimal           @default(49799) @map("uvt_value") @db.Decimal(12, 2)
+  smmlv                Decimal @default(1423500) @db.Decimal(12, 2)
+  auxilioTransporteVal Decimal @default(200000) @map("auxilio_transporte_val") @db.Decimal(12, 2)
+  uvtValue             Decimal @default(49799) @map("uvt_value") @db.Decimal(12, 2)
 
   // Numeracion DIAN nomina
-  payrollPrefix           String?           @map("payroll_prefix")
-  payrollCurrentNumber    Int               @default(1) @map("payroll_current_number")
-  adjustmentPrefix        String?           @map("adjustment_prefix")
-  adjustmentCurrentNumber Int               @default(1) @map("adjustment_current_number")
+  payrollPrefix           String? @map("payroll_prefix")
+  payrollCurrentNumber    Int     @default(1) @map("payroll_current_number")
+  adjustmentPrefix        String? @map("adjustment_prefix")
+  adjustmentCurrentNumber Int     @default(1) @map("adjustment_current_number")
 
   // Software DIAN para nomina (puede diferir del de facturacion)
-  payrollSoftwareId       String?           @map("payroll_software_id")
-  payrollSoftwarePin      String?           @map("payroll_software_pin")
-  payrollTestSetId        String?           @map("payroll_test_set_id")
+  payrollSoftwareId  String? @map("payroll_software_id")
+  payrollSoftwarePin String? @map("payroll_software_pin")
+  payrollTestSetId   String? @map("payroll_test_set_id")
 
-  defaultPeriodType       PayrollPeriodType @default(MONTHLY) @map("default_period_type")
+  defaultPeriodType PayrollPeriodType @default(MONTHLY) @map("default_period_type")
 
-  createdAt               DateTime          @default(now()) @map("created_at")
-  updatedAt               DateTime          @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("payroll_configs")
+}
+
+// ============================================================================
+// COST CENTER MODEL
+// ============================================================================
+
+model CostCenter {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  code        String // e.g., "CC-001"
+  name        String // e.g., "Administración", "Ventas", "Producción"
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  journalEntryLines JournalEntryLine[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("cost_centers")
+}
+
+// ============================================================================
+// REMISSION (DELIVERY NOTE) MODELS
+// ============================================================================
+
+enum RemissionStatus {
+  DRAFT
+  DISPATCHED
+  DELIVERED
+  CANCELLED
+}
+
+model Remission {
+  id              String          @id @default(cuid())
+  tenantId        String          @map("tenant_id")
+  customerId      String?         @map("customer_id")
+  userId          String?         @map("user_id")
+  warehouseId     String?         @map("warehouse_id")
+  invoiceId       String?         @map("invoice_id")
+  remissionNumber String          @map("remission_number")
+  status          RemissionStatus @default(DRAFT)
+  issueDate       DateTime        @default(now()) @map("issue_date")
+  deliveryDate    DateTime?       @map("delivery_date")
+  deliveryAddress String?         @map("delivery_address")
+  transportInfo   String?         @map("transport_info")
+  notes           String?
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer  Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  user      User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  warehouse Warehouse?      @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  invoice   Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  items     RemissionItem[]
+
+  @@unique([tenantId, remissionNumber])
+  @@index([tenantId])
+  @@index([customerId])
+  @@map("remissions")
+}
+
+model RemissionItem {
+  id          String  @id @default(cuid())
+  remissionId String  @map("remission_id")
+  productId   String? @map("product_id")
+  description String
+  quantity    Int
+  unit        String  @default("unit")
+  notes       String?
+
+  remission Remission @relation(fields: [remissionId], references: [id], onDelete: Cascade)
+  product   Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@map("remission_items")
+}
+
+// ============================================================================
+// SUPPORT DOCUMENT (DOCUMENTO SOPORTE ELECTRÓNICO) MODELS
+// ============================================================================
+
+enum SupportDocumentStatus {
+  DRAFT
+  GENERATED
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+model SupportDocument {
+  id               String                @id @default(cuid())
+  tenantId         String                @map("tenant_id")
+  supplierId       String?               @map("supplier_id")
+  userId           String?               @map("user_id")
+  documentNumber   String                @map("document_number")
+  issueDate        DateTime              @default(now()) @map("issue_date")
+  supplierName     String                @map("supplier_name")
+  supplierDocument String                @map("supplier_document")
+  supplierDocType  String                @default("CC") @map("supplier_doc_type")
+  subtotal         Decimal               @default(0) @db.Decimal(12, 2)
+  tax              Decimal               @default(0) @db.Decimal(12, 2)
+  withholdings     Decimal               @default(0) @db.Decimal(12, 2)
+  total            Decimal               @default(0) @db.Decimal(12, 2)
+  status           SupportDocumentStatus @default(DRAFT)
+  dianCude         String?               @map("dian_cude")
+  dianXml          String?               @map("dian_xml")
+  notes            String?
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+
+  tenant   Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier Supplier?             @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  user     User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items    SupportDocumentItem[]
+
+  @@unique([tenantId, documentNumber])
+  @@index([tenantId])
+  @@map("support_documents")
+}
+
+model SupportDocumentItem {
+  id                String  @id @default(cuid())
+  supportDocumentId String  @map("support_document_id")
+  description       String
+  quantity          Decimal @db.Decimal(10, 2)
+  unitPrice         Decimal @map("unit_price") @db.Decimal(12, 2)
+  taxRate           Decimal @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  subtotal          Decimal @default(0) @db.Decimal(12, 2)
+  tax               Decimal @default(0) @db.Decimal(12, 2)
+  total             Decimal @default(0) @db.Decimal(12, 2)
+
+  supportDocument SupportDocument @relation(fields: [supportDocumentId], references: [id], onDelete: Cascade)
+
+  @@map("support_document_items")
+}
+
+// ============================================================================
+// COLLECTION REMINDER (COBRANZA AUTOMATIZADA) MODELS
+// ============================================================================
+
+enum CollectionReminderType {
+  BEFORE_DUE // Recordatorio antes del vencimiento
+  ON_DUE // Recordatorio el día del vencimiento
+  AFTER_DUE // Recordatorio después del vencimiento
+  MANUAL // Recordatorio manual
+}
+
+enum ReminderChannel {
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model CollectionReminder {
+  id          String                 @id @default(cuid())
+  tenantId    String                 @map("tenant_id")
+  invoiceId   String                 @map("invoice_id")
+  customerId  String?                @map("customer_id")
+  type        CollectionReminderType
+  channel     ReminderChannel        @default(EMAIL)
+  scheduledAt DateTime               @map("scheduled_at")
+  sentAt      DateTime?              @map("sent_at")
+  status      ReminderStatus         @default(PENDING)
+  message     String?
+  notes       String?
+  createdAt   DateTime               @default(now()) @map("created_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice  Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@index([status, scheduledAt])
+  @@map("collection_reminders")
+}
+
+// ============================================================================
+// WITHHOLDING CERTIFICATE MODEL
+// ============================================================================
+
+model WithholdingCertificate {
+  id                String   @id @default(cuid())
+  tenantId          String   @map("tenant_id")
+  supplierId        String   @map("supplier_id")
+  year              Int
+  certificateNumber String   @map("certificate_number")
+  totalBase         Decimal  @map("total_base") @db.Decimal(12, 2)
+  totalWithheld     Decimal  @map("total_withheld") @db.Decimal(12, 2)
+  withholdingType   String   @default("RENTA") @map("withholding_type") // RENTA, ICA, IVA
+  generatedAt       DateTime @default(now()) @map("generated_at")
+  pdfUrl            String?  @map("pdf_url")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, certificateNumber])
+  @@unique([tenantId, supplierId, year, withholdingType])
+  @@index([tenantId])
+  @@map("withholding_certificates")
 }

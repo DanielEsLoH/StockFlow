@@ -257,12 +257,21 @@ export class PayrollCalculationService {
     const senaEmpleador = this.round(ibc * SENA_EMPLEADOR);
     const icbfEmpleador = this.round(ibc * ICBF_EMPLEADOR);
 
-    // === Provisiones (sobre IBC, no sobre sueldo) ===
-    const provisionBase = isIntegral ? 0 : ibc;
-    const provisionPrima = this.round(provisionBase * PRIMA_RATE);
-    const provisionCesantias = this.round(provisionBase * CESANTIAS_RATE);
+    // === Provisiones (prestaciones sociales mensuales) ===
+    // Per Colombian labor law:
+    // - Prima/Cesantias base = baseSalary + auxilioTransporte
+    // - Vacaciones base = baseSalary only (no auxilio)
+    // - Salario integral: no provisions (already included)
+    // Monthly provision = base / 12 (prima, cesantias) or base / 24 (vacaciones)
+    // Proportional to days worked in the period.
+    const dayFraction = daysWorked / DAYS_PER_MONTH;
+    const benefitBase = isIntegral ? 0 : baseSalary + auxilioTransporteVal * (hasAuxilio ? 1 : 0);
+    const provisionPrima = this.round((benefitBase / 12) * dayFraction);
+    const provisionCesantias = this.round((benefitBase / 12) * dayFraction);
     const provisionIntereses = this.round(provisionCesantias * INTERESES_CESANTIAS_RATE);
-    const provisionVacaciones = this.round(provisionBase * VACACIONES_RATE);
+    const provisionVacaciones = isIntegral
+      ? 0
+      : this.round((baseSalary / 24) * dayFraction);
 
     // === Neto ===
     const totalNeto = this.round(totalDevengados - totalDeducciones);

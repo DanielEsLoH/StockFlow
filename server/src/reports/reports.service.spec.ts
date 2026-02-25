@@ -6,6 +6,7 @@ import {
   PaymentStatus,
   CustomerStatus,
   ProductStatus,
+  MovementType,
 } from '@prisma/client';
 import { ReportsService } from './reports.service';
 import { PrismaService } from '../prisma';
@@ -136,11 +137,20 @@ describe('ReportsService', () => {
   };
 
   const mockPrismaProduct = {
+    findFirst: jest.fn(),
     findMany: jest.fn(),
   };
 
   const mockPrismaCustomer = {
     findMany: jest.fn(),
+  };
+
+  const mockPrismaStockMovement = {
+    findMany: jest.fn(),
+  };
+
+  const mockPrismaWarehouse = {
+    findFirst: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -150,6 +160,8 @@ describe('ReportsService', () => {
       invoice: mockPrismaInvoice,
       product: mockPrismaProduct,
       customer: mockPrismaCustomer,
+      stockMovement: mockPrismaStockMovement,
+      warehouse: mockPrismaWarehouse,
     };
 
     const mockTenantContextService = {
@@ -1005,6 +1017,529 @@ describe('ReportsService', () => {
 
         expect(result).toBeInstanceOf(Buffer);
       });
+    });
+  });
+
+  // ============================================================================
+  // KARDEX REPORT
+  // ============================================================================
+
+  describe('getKardexReport', () => {
+    const mockKardexProduct = {
+      id: 'product-123',
+      sku: 'SKU-001',
+      name: 'Test Product',
+      stock: 50,
+      costPrice: 100,
+    };
+
+    const mockWarehouse = {
+      id: 'warehouse-123',
+      name: 'Bodega Principal',
+    };
+
+    const fromDate = new Date('2024-01-01T00:00:00.000Z');
+    const toDate = new Date('2024-01-31T23:59:59.000Z');
+
+    const mockMovementsBeforeRange = [
+      { type: MovementType.PURCHASE, quantity: 100 },
+      { type: MovementType.SALE, quantity: 30 },
+    ];
+
+    const mockMovementsInRange = [
+      {
+        id: 'mov-1',
+        type: MovementType.PURCHASE,
+        quantity: 20,
+        reason: null,
+        invoiceId: null,
+        purchaseOrderId: 'po-123',
+        purchaseOrder: { purchaseOrderNumber: 'PO-00012' },
+        warehouse: { name: 'Bodega Principal' },
+        createdAt: new Date('2024-01-05T10:00:00.000Z'),
+      },
+      {
+        id: 'mov-2',
+        type: MovementType.SALE,
+        quantity: 5,
+        reason: null,
+        invoiceId: 'invoice-456',
+        purchaseOrderId: null,
+        purchaseOrder: null,
+        warehouse: { name: 'Bodega Principal' },
+        createdAt: new Date('2024-01-10T14:00:00.000Z'),
+      },
+      {
+        id: 'mov-3',
+        type: MovementType.ADJUSTMENT,
+        quantity: -3,
+        reason: 'Conteo fisico',
+        invoiceId: null,
+        purchaseOrderId: null,
+        purchaseOrder: null,
+        warehouse: null,
+        createdAt: new Date('2024-01-15T09:00:00.000Z'),
+      },
+    ];
+
+    beforeEach(() => {
+      mockPrismaProduct.findFirst.mockResolvedValue(mockKardexProduct);
+      mockPrismaStockMovement.findMany
+        .mockResolvedValueOnce(mockMovementsBeforeRange) // opening balance query
+        .mockResolvedValueOnce(mockMovementsInRange); // in-range query
+      mockPrismaInvoice.findMany.mockResolvedValue([
+        { id: 'invoice-456', invoiceNumber: 'INV-00045' },
+      ]);
+    });
+
+    it('should return a valid Kardex report', async () => {
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.product).toEqual({
+        id: 'product-123',
+        sku: 'SKU-001',
+        name: 'Test Product',
+        currentStock: 50,
+        costPrice: 100,
+      });
+      expect(result.fromDate).toBe(fromDate.toISOString());
+      expect(result.toDate).toBe(toDate.toISOString());
+      expect(result.movements).toHaveLength(3);
+    });
+
+    it('should calculate opening balance from movements before date range', async () => {
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      // Opening: 100 (purchase) - 30 (sale) = 70
+      expect(result.openingBalance).toBe(70);
+    });
+
+    it('should calculate running balance for each movement', async () => {
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      // Opening: 70
+      // mov-1: PURCHASE +20 -> 90
+      // mov-2: SALE -5 -> 85
+      // mov-3: ADJUSTMENT -3 -> 82
+      expect(result.movements[0].balance).toBe(90);
+      expect(result.movements[1].balance).toBe(85);
+      expect(result.movements[2].balance).toBe(82);
+      expect(result.closingBalance).toBe(82);
+    });
+
+    it('should classify PURCHASE as entries', async () => {
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[0].entries).toBe(20);
+      expect(result.movements[0].exits).toBe(0);
+    });
+
+    it('should classify SALE as exits', async () => {
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[1].entries).toBe(0);
+      expect(result.movements[1].exits).toBe(5);
+    });
+
+    it('should classify negative ADJUSTMENT as exits', async () => {
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[2].entries).toBe(0);
+      expect(result.movements[2].exits).toBe(3);
+    });
+
+    it('should classify positive ADJUSTMENT as entries', async () => {
+      mockPrismaStockMovement.findMany
+        .mockReset()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: 'mov-adj',
+            type: MovementType.ADJUSTMENT,
+            quantity: 10,
+            reason: 'Ajuste positivo',
+            invoiceId: null,
+            purchaseOrderId: null,
+            purchaseOrder: null,
+            warehouse: null,
+            createdAt: new Date('2024-01-05T10:00:00.000Z'),
+          },
+        ]);
+      mockPrismaInvoice.findMany.mockResolvedValue([]);
+
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[0].entries).toBe(10);
+      expect(result.movements[0].exits).toBe(0);
+    });
+
+    it('should classify RETURN as entries', async () => {
+      mockPrismaStockMovement.findMany
+        .mockReset()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: 'mov-ret',
+            type: MovementType.RETURN,
+            quantity: 5,
+            reason: null,
+            invoiceId: 'invoice-456',
+            purchaseOrderId: null,
+            purchaseOrder: null,
+            warehouse: null,
+            createdAt: new Date('2024-01-05T10:00:00.000Z'),
+          },
+        ]);
+
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[0].entries).toBe(5);
+      expect(result.movements[0].exits).toBe(0);
+    });
+
+    it('should classify DAMAGED as exits', async () => {
+      mockPrismaStockMovement.findMany
+        .mockReset()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: 'mov-dmg',
+            type: MovementType.DAMAGED,
+            quantity: 2,
+            reason: 'Producto roto',
+            invoiceId: null,
+            purchaseOrderId: null,
+            purchaseOrder: null,
+            warehouse: null,
+            createdAt: new Date('2024-01-05T10:00:00.000Z'),
+          },
+        ]);
+      mockPrismaInvoice.findMany.mockResolvedValue([]);
+
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[0].entries).toBe(0);
+      expect(result.movements[0].exits).toBe(2);
+    });
+
+    it('should classify TRANSFER as exits', async () => {
+      mockPrismaStockMovement.findMany
+        .mockReset()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: 'mov-trf',
+            type: MovementType.TRANSFER,
+            quantity: 8,
+            reason: null,
+            invoiceId: null,
+            purchaseOrderId: null,
+            purchaseOrder: null,
+            warehouse: { name: 'Bodega Secundaria' },
+            createdAt: new Date('2024-01-05T10:00:00.000Z'),
+          },
+        ]);
+      mockPrismaInvoice.findMany.mockResolvedValue([]);
+
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[0].entries).toBe(0);
+      expect(result.movements[0].exits).toBe(8);
+    });
+
+    it('should build description with invoice number for sales', async () => {
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[1].description).toBe(
+        'Venta - Factura #INV-00045',
+      );
+      expect(result.movements[1].reference).toBe('INV-00045');
+    });
+
+    it('should build description with PO number for purchases', async () => {
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[0].description).toBe('Compra - OC #PO-00012');
+      expect(result.movements[0].reference).toBe('PO-00012');
+    });
+
+    it('should build description with reason for adjustments', async () => {
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[2].description).toBe(
+        'Ajuste - Conteo fisico',
+      );
+    });
+
+    it('should build plain description when no reference or reason', async () => {
+      mockPrismaStockMovement.findMany
+        .mockReset()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: 'mov-plain',
+            type: MovementType.DAMAGED,
+            quantity: 1,
+            reason: null,
+            invoiceId: null,
+            purchaseOrderId: null,
+            purchaseOrder: null,
+            warehouse: null,
+            createdAt: new Date('2024-01-05T10:00:00.000Z'),
+          },
+        ]);
+      mockPrismaInvoice.findMany.mockResolvedValue([]);
+
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[0].description).toBe('Dano');
+      expect(result.movements[0].reference).toBeUndefined();
+    });
+
+    it('should throw NotFoundException when product not found', async () => {
+      mockPrismaProduct.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.getKardexReport('non-existent', undefined, fromDate, toDate),
+      ).rejects.toThrow('Producto no encontrado');
+    });
+
+    it('should filter by warehouse when warehouseId is provided', async () => {
+      mockPrismaWarehouse.findFirst.mockResolvedValue(mockWarehouse);
+      mockPrismaStockMovement.findMany
+        .mockReset()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+      mockPrismaInvoice.findMany.mockResolvedValue([]);
+
+      const result = await service.getKardexReport(
+        'product-123',
+        'warehouse-123',
+        fromDate,
+        toDate,
+      );
+
+      expect(result.warehouse).toEqual(mockWarehouse);
+      expect(mockPrismaStockMovement.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            warehouseId: 'warehouse-123',
+          }),
+        }),
+      );
+    });
+
+    it('should throw NotFoundException when warehouse not found', async () => {
+      mockPrismaWarehouse.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.getKardexReport(
+          'product-123',
+          'non-existent-wh',
+          fromDate,
+          toDate,
+        ),
+      ).rejects.toThrow('Bodega no encontrada');
+    });
+
+    it('should use default date range when dates not provided', async () => {
+      mockPrismaStockMovement.findMany
+        .mockReset()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+      mockPrismaInvoice.findMany.mockResolvedValue([]);
+
+      const result = await service.getKardexReport('product-123');
+
+      // Should have fromDate and toDate set
+      expect(result.fromDate).toBeDefined();
+      expect(result.toDate).toBeDefined();
+
+      // Default range should be ~30 days
+      const from = new Date(result.fromDate);
+      const to = new Date(result.toDate);
+      const diffDays = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24);
+      expect(diffDays).toBeCloseTo(30, 0);
+    });
+
+    it('should handle empty movements', async () => {
+      mockPrismaStockMovement.findMany
+        .mockReset()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+      mockPrismaInvoice.findMany.mockResolvedValue([]);
+
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.openingBalance).toBe(0);
+      expect(result.movements).toHaveLength(0);
+      expect(result.closingBalance).toBe(0);
+    });
+
+    it('should include warehouseName in movements', async () => {
+      const result = await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(result.movements[0].warehouseName).toBe('Bodega Principal');
+      expect(result.movements[2].warehouseName).toBeUndefined();
+    });
+
+    it('should log debug message', async () => {
+      const debugSpy = jest.spyOn(Logger.prototype, 'debug');
+
+      await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(debugSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Generating Kardex report'),
+      );
+    });
+
+    it('should query tenant-scoped data', async () => {
+      await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(mockPrismaProduct.findFirst).toHaveBeenCalledWith({
+        where: { id: 'product-123', tenantId: mockTenantId },
+        select: {
+          id: true,
+          sku: true,
+          name: true,
+          stock: true,
+          costPrice: true,
+        },
+      });
+    });
+
+    it('should batch-fetch invoice numbers', async () => {
+      await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      expect(mockPrismaInvoice.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['invoice-456'] }, tenantId: mockTenantId },
+        select: { id: true, invoiceNumber: true },
+      });
+    });
+
+    it('should not fetch invoices when no movements have invoiceId', async () => {
+      mockPrismaStockMovement.findMany
+        .mockReset()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: 'mov-adj',
+            type: MovementType.ADJUSTMENT,
+            quantity: 5,
+            reason: 'Test',
+            invoiceId: null,
+            purchaseOrderId: null,
+            purchaseOrder: null,
+            warehouse: null,
+            createdAt: new Date('2024-01-05T10:00:00.000Z'),
+          },
+        ]);
+
+      await service.getKardexReport(
+        'product-123',
+        undefined,
+        fromDate,
+        toDate,
+      );
+
+      // Invoice findMany should NOT have been called (only the one from beforeEach reset matters)
+      // We need to check it was not called after the reset
+      expect(mockPrismaInvoice.findMany).not.toHaveBeenCalled();
     });
   });
 

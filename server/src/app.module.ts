@@ -34,7 +34,12 @@ import { QuotationsModule } from './quotations';
 import { PurchaseOrdersModule } from './purchase-orders';
 import { AccountingModule } from './accounting';
 import { BankModule } from './bank';
+import { CostCentersModule } from './cost-centers';
 import { PayrollModule } from './payroll/payroll.module';
+import { CollectionRemindersModule } from './collection-reminders';
+import { WithholdingCertificatesModule } from './withholding-certificates/withholding-certificates.module';
+import { SupportDocumentsModule } from './support-documents';
+import { RemissionsModule } from './remissions';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 import { PermissionsModule } from './common/permissions';
@@ -80,7 +85,12 @@ import { PermissionsModule } from './common/permissions';
     PurchaseOrdersModule,
     AccountingModule,
     BankModule,
+    CostCentersModule,
     PayrollModule,
+    CollectionRemindersModule,
+    WithholdingCertificatesModule,
+    SupportDocumentsModule,
+    RemissionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

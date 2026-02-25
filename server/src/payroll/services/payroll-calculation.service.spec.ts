@@ -257,10 +257,12 @@ describe('PayrollCalculationService', () => {
       expect(result.senaEmpleador).toBe(Math.round(SMMLV * 0.02));
       expect(result.icbfEmpleador).toBe(Math.round(SMMLV * 0.03));
 
-      // Provisiones
-      expect(result.provisionPrima).toBe(Math.round(SMMLV * 0.0833));
-      expect(result.provisionCesantias).toBe(Math.round(SMMLV * 0.0833));
-      expect(result.provisionVacaciones).toBe(Math.round(SMMLV * 0.0417));
+      // Provisiones (base = baseSalary + auxilioTransporte for prima/cesantias)
+      const benefitBase = SMMLV + AUXILIO_TRANSPORTE;
+      expect(result.provisionPrima).toBe(Math.round(benefitBase / 12));
+      expect(result.provisionCesantias).toBe(Math.round(benefitBase / 12));
+      // Vacaciones base = baseSalary only (no auxilio)
+      expect(result.provisionVacaciones).toBe(Math.round(SMMLV / 24));
 
       // Neto
       expect(result.totalNeto).toBe(result.totalDevengados - result.totalDeducciones);

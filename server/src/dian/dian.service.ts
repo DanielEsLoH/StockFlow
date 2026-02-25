@@ -26,8 +26,10 @@ import {
   DianDocumentStatus,
   DianDocumentType,
   CreditNoteReason,
+  MovementType,
 } from '@prisma/client';
 import { DebitNoteItem } from './services/xml-generator.service';
+import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
 
 export interface ProcessInvoiceResult {
   success: boolean;
@@ -50,6 +52,7 @@ export class DianService {
     private readonly cufeGenerator: CufeGeneratorService,
     private readonly dianClient: DianClientService,
     private readonly xmlSigner: XmlSignerService,
+    private readonly accountingBridge: AccountingBridgeService,
   ) {}
 
   // ============================================================================
@@ -596,6 +599,27 @@ export class DianService {
       },
     });
 
+    // Fire-and-forget: accounting entry + stock reversal
+    if (result.success) {
+      this.accountingBridge.onCreditNoteCreated({
+        tenantId,
+        dianDocumentId: document.id,
+        noteNumber,
+        invoiceNumber: invoice.invoiceNumber,
+        subtotal: Number(noteInvoice.subtotal),
+        tax: Number(noteInvoice.tax),
+        total: Number(noteInvoice.total),
+        reasonCode: dto.reasonCode,
+        items: noteInvoice.items.map((i) => ({
+          productId: i.product?.id ?? null,
+          quantity: Number(i.quantity),
+          product: i.product ? { costPrice: (i as any).product?.costPrice ?? 0 } : null,
+        })),
+      }).catch(() => {});
+
+      this.restoreStockForCreditNote(tenantId, invoice, noteInvoice, dto.reasonCode).catch(() => {});
+    }
+
     return {
       success: result.success,
       documentId: document.id,
@@ -759,6 +783,19 @@ export class DianService {
       },
     });
 
+    // Fire-and-forget: accounting entry
+    if (result.success) {
+      this.accountingBridge.onDebitNoteCreated({
+        tenantId,
+        dianDocumentId: document.id,
+        noteNumber,
+        invoiceNumber: invoice.invoiceNumber,
+        subtotal,
+        tax: totalTax,
+        total,
+      }).catch(() => {});
+    }
+
     return {
       success: result.success,
       documentId: document.id,
@@ -800,6 +837,65 @@ export class DianService {
   }
 
   // ─── Private helpers ────────────────────────────────────────────────────
+
+  /**
+   * Restore stock for credit notes that represent returns (DEVOLUCION_PARCIAL/TOTAL).
+   * Only runs when the original invoice has a warehouseId.
+   */
+  private async restoreStockForCreditNote(
+    tenantId: string,
+    originalInvoice: InvoiceWithDetails,
+    noteInvoice: InvoiceWithDetails,
+    reasonCode: string,
+  ): Promise<void> {
+    try {
+      if (reasonCode !== 'DEVOLUCION_PARCIAL' && reasonCode !== 'DEVOLUCION_TOTAL') return;
+      if (!originalInvoice.warehouseId) return;
+
+      const warehouseId = originalInvoice.warehouseId;
+      const itemsToRestore = noteInvoice.items.filter((i) => i.product?.id && Number(i.quantity) > 0);
+      if (itemsToRestore.length === 0) return;
+
+      await this.prisma.$transaction(async (tx) => {
+        for (const item of itemsToRestore) {
+          const productId = item.product!.id;
+          const qty = Number(item.quantity);
+
+          // Increment product stock
+          await tx.product.update({
+            where: { id: productId },
+            data: { stock: { increment: qty } },
+          });
+
+          // Increment warehouse stock
+          await tx.warehouseStock.upsert({
+            where: { warehouseId_productId: { warehouseId, productId } },
+            create: { warehouseId, productId, quantity: qty, tenantId },
+            update: { quantity: { increment: qty } },
+          });
+
+          // Create stock movement record
+          await tx.stockMovement.create({
+            data: {
+              tenantId,
+              productId,
+              warehouseId,
+              type: MovementType.RETURN,
+              quantity: qty,
+              reason: `Devolucion por nota credito`,
+            },
+          });
+        }
+      });
+
+      this.logger.debug(`Stock restored for ${itemsToRestore.length} items from credit note`);
+    } catch (error) {
+      this.logger.error(
+        'Failed to restore stock for credit note',
+        error instanceof Error ? error.stack : error,
+      );
+    }
+  }
 
   private async getAndValidateConfig(tenantId: string) {
     const config = await this.prisma.tenantDianConfig.findUnique({
@@ -935,6 +1031,7 @@ export class DianService {
     status?: DianDocumentStatus,
     fromDate?: Date,
     toDate?: Date,
+    documentType?: DianDocumentType,
   ) {
     const tenantId = this.tenantContext.requireTenantId();
 
@@ -942,6 +1039,10 @@ export class DianService {
 
     if (status) {
       where.status = status;
+    }
+
+    if (documentType) {
+      where.documentType = documentType;
     }
 
     if (fromDate || toDate) {

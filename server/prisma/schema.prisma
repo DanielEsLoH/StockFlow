@@ -1064,10 +1064,11 @@ model DianDocument {
   createdAt              DateTime           @default(now()) @map("created_at")
   updatedAt              DateTime           @updatedAt @map("updated_at")
 
-  tenant               Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoice              Invoice?       @relation(fields: [invoiceId], references: [id])
-  originalDianDocument DianDocument?  @relation("NoteToOriginal", fields: [originalDianDocumentId], references: [id])
-  relatedNotes         DianDocument[] @relation("NoteToOriginal")
+  tenant               Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice              Invoice?         @relation(fields: [invoiceId], references: [id])
+  originalDianDocument DianDocument?    @relation("NoteToOriginal", fields: [originalDianDocumentId], references: [id])
+  relatedNotes         DianDocument[]   @relation("NoteToOriginal")
+  journalEntries       JournalEntry[]   @relation("JournalEntryToDianDocument")
 
   @@index([tenantId])
   @@index([cufe])
@@ -1111,6 +1112,8 @@ enum JournalEntrySource {
   PERIOD_CLOSE
   PAYROLL_APPROVED
   PAYROLL_ADJUSTMENT
+  CREDIT_NOTE
+  DEBIT_NOTE
 }
 
 enum AccountingPeriodStatus {
@@ -1405,6 +1408,7 @@ model JournalEntry {
   paymentId       String?            @map("payment_id")
   purchaseOrderId String?            @map("purchase_order_id")
   stockMovementId String?            @map("stock_movement_id")
+  dianDocumentId  String?            @map("dian_document_id")
   totalDebit      Decimal            @default(0) @map("total_debit") @db.Decimal(12, 2)
   totalCredit     Decimal            @default(0) @map("total_credit") @db.Decimal(12, 2)
   createdById     String?            @map("created_by_id")
@@ -1416,6 +1420,7 @@ model JournalEntry {
 
   tenant                    Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   period                    AccountingPeriod?   @relation(fields: [periodId], references: [id], onDelete: SetNull)
+  dianDocument              DianDocument?       @relation("JournalEntryToDianDocument", fields: [dianDocumentId], references: [id], onDelete: SetNull)
   lines                     JournalEntryLine[]
   matchedBankStatementLines BankStatementLine[] @relation("MatchedJournalEntry")
 
@@ -1429,6 +1434,7 @@ model JournalEntry {
   @@index([paymentId])
   @@index([purchaseOrderId])
   @@index([stockMovementId])
+  @@index([dianDocumentId])
   @@map("journal_entries")
 }
 

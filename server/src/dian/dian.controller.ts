@@ -26,7 +26,7 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { UserRole, DianDocumentStatus } from '@prisma/client';
+import { UserRole, DianDocumentStatus, DianDocumentType } from '@prisma/client';
 import { DianService } from './dian.service';
 import {
   CreateDianConfigDto,
@@ -271,6 +271,7 @@ export class DianController {
   @ApiQuery({ name: 'status', required: false, enum: DianDocumentStatus })
   @ApiQuery({ name: 'fromDate', required: false, type: Date })
   @ApiQuery({ name: 'toDate', required: false, type: Date })
+  @ApiQuery({ name: 'documentType', required: false, enum: DianDocumentType })
   @ApiResponse({
     status: 200,
     description: 'List of documents',
@@ -282,6 +283,7 @@ export class DianController {
     @Query('status') status?: DianDocumentStatus,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
+    @Query('documentType') documentType?: DianDocumentType,
   ) {
     const pageNum = Math.max(1, parseInt(page ?? '1', 10) || 1);
     const limitNum = Math.min(
@@ -295,6 +297,7 @@ export class DianController {
       status,
       fromDate ? new Date(fromDate) : undefined,
       toDate ? new Date(toDate) : undefined,
+      documentType,
     );
   }
 

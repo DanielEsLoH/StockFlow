@@ -600,6 +600,170 @@ export class AccountingBridgeService {
   }
 
   /**
+   * Generate journal entry for a credit note (nota crédito).
+   * Reverses the original sale: CR Clientes, DR Ingresos, DR IVA.
+   * If reason is DEVOLUCION_PARCIAL, also reverses COGS.
+   */
+  async onCreditNoteCreated(params: {
+    tenantId: string;
+    dianDocumentId: string;
+    noteNumber: string;
+    invoiceNumber: string;
+    subtotal: number;
+    tax: number;
+    total: number;
+    reasonCode: string;
+    items?: { productId: string | null; quantity: number; product?: { costPrice: any } | null }[];
+  }): Promise<void> {
+    try {
+      const config = await this.configService.getConfigForTenant(params.tenantId);
+      if (!config?.autoGenerateEntries) return;
+
+      const { accountsReceivableId, revenueAccountId, ivaPorPagarId, cogsAccountId, inventoryAccountId } = config;
+      if (!accountsReceivableId || !revenueAccountId) return;
+
+      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+
+      // CR Clientes = total (reduce receivable)
+      lines.push({
+        accountId: accountsReceivableId,
+        description: `Nota credito ${params.noteNumber}`,
+        debit: 0,
+        credit: params.total,
+      });
+
+      // DR Ingresos = subtotal (reverse revenue)
+      lines.push({
+        accountId: revenueAccountId,
+        description: `Devolucion venta ${params.noteNumber}`,
+        debit: params.subtotal,
+        credit: 0,
+      });
+
+      // DR IVA por pagar = tax (reverse tax)
+      if (params.tax > 0 && ivaPorPagarId) {
+        lines.push({
+          accountId: ivaPorPagarId,
+          description: `Devolucion IVA ${params.noteNumber}`,
+          debit: params.tax,
+          credit: 0,
+        });
+      }
+
+      // COGS reversal for returns (DEVOLUCION_PARCIAL or DEVOLUCION_TOTAL)
+      if (
+        (params.reasonCode === 'DEVOLUCION_PARCIAL' || params.reasonCode === 'DEVOLUCION_TOTAL') &&
+        params.items &&
+        cogsAccountId &&
+        inventoryAccountId
+      ) {
+        const totalCogs = params.items.reduce((sum, item) => {
+          if (!item.product?.costPrice) return sum;
+          return sum + Number(item.product.costPrice) * item.quantity;
+        }, 0);
+
+        if (totalCogs > 0) {
+          lines.push({
+            accountId: cogsAccountId,
+            description: `Devolucion costo ${params.noteNumber}`,
+            debit: 0,
+            credit: totalCogs,
+          });
+
+          lines.push({
+            accountId: inventoryAccountId,
+            description: `Devolucion inventario ${params.noteNumber}`,
+            debit: totalCogs,
+            credit: 0,
+          });
+        }
+      }
+
+      await this.journalEntriesService.createAutoEntry({
+        tenantId: params.tenantId,
+        date: new Date(),
+        description: `Nota credito - ${params.noteNumber} (Factura ${params.invoiceNumber})`,
+        source: JournalEntrySource.CREDIT_NOTE,
+        dianDocumentId: params.dianDocumentId,
+        lines,
+      });
+
+      this.logger.debug(`Accounting entry generated for credit note ${params.noteNumber}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate accounting entry for credit note ${params.noteNumber}`,
+        error instanceof Error ? error.stack : error,
+      );
+    }
+  }
+
+  /**
+   * Generate journal entry for a debit note (nota débito).
+   * Additional charge: DR Clientes, CR Ingresos, CR IVA.
+   */
+  async onDebitNoteCreated(params: {
+    tenantId: string;
+    dianDocumentId: string;
+    noteNumber: string;
+    invoiceNumber: string;
+    subtotal: number;
+    tax: number;
+    total: number;
+  }): Promise<void> {
+    try {
+      const config = await this.configService.getConfigForTenant(params.tenantId);
+      if (!config?.autoGenerateEntries) return;
+
+      const { accountsReceivableId, revenueAccountId, ivaPorPagarId } = config;
+      if (!accountsReceivableId || !revenueAccountId) return;
+
+      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+
+      // DR Clientes = total (increase receivable)
+      lines.push({
+        accountId: accountsReceivableId,
+        description: `Nota debito ${params.noteNumber}`,
+        debit: params.total,
+        credit: 0,
+      });
+
+      // CR Ingresos = subtotal
+      lines.push({
+        accountId: revenueAccountId,
+        description: `Cargo adicional ${params.noteNumber}`,
+        debit: 0,
+        credit: params.subtotal,
+      });
+
+      // CR IVA por pagar = tax
+      if (params.tax > 0 && ivaPorPagarId) {
+        lines.push({
+          accountId: ivaPorPagarId,
+          description: `IVA nota debito ${params.noteNumber}`,
+          debit: 0,
+          credit: params.tax,
+        });
+      }
+
+      await this.journalEntriesService.createAutoEntry({
+        tenantId: params.tenantId,
+        date: new Date(),
+        description: `Nota debito - ${params.noteNumber} (Factura ${params.invoiceNumber})`,
+        source: JournalEntrySource.DEBIT_NOTE,
+        dianDocumentId: params.dianDocumentId,
+        lines,
+      });
+
+      this.logger.debug(`Accounting entry generated for debit note ${params.noteNumber}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate accounting entry for debit note ${params.noteNumber}`,
+        error instanceof Error ? error.stack : error,
+      );
+    }
+  }
+
+  /**
    * Map payment method to the appropriate PUC account.
    * CASH → Caja (1105), everything else → Bancos (1110)
    */

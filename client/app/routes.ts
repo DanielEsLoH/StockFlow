@@ -114,6 +114,12 @@ export default [
       "routes/_app.pos.cash-registers.$id.edit.tsx",
     ),
 
+    // Credit/Debit Notes
+    route("credit-notes", "routes/_app.credit-notes.tsx"),
+    route("credit-notes/:id", "routes/_app.credit-notes.$id.tsx"),
+    route("debit-notes", "routes/_app.debit-notes.tsx"),
+    route("debit-notes/:id", "routes/_app.debit-notes.$id.tsx"),
+
     // DIAN Electronic Invoicing module
     route("dian", "routes/_app.dian.tsx"),
     route("dian/config", "routes/_app.dian.config.tsx"),

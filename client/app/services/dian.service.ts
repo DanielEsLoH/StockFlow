@@ -138,6 +138,7 @@ export interface ListDocumentsParams {
   status?: DianDocumentStatus;
   fromDate?: string;
   toDate?: string;
+  documentType?: string;
 }
 
 export async function listDianDocuments(

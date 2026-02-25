@@ -488,6 +488,130 @@ describe('AccountingBridgeService', () => {
   // ---------------------------------------------------------------------------
   // Error resilience (cross-cutting)
   // ---------------------------------------------------------------------------
+  // onCreditNoteCreated
+  // ---------------------------------------------------------------------------
+  describe('onCreditNoteCreated', () => {
+    const creditNoteParams = {
+      tenantId: mockTenantId,
+      dianDocumentId: 'dian-cn-1',
+      noteNumber: 'NC-00000001',
+      invoiceNumber: 'FAC-001',
+      subtotal: 1000,
+      tax: 190,
+      total: 1190,
+      reasonCode: 'ANULACION',
+      items: [],
+    };
+
+    it('should CR Clientes and DR Ingresos + IVA', async () => {
+      await service.onCreditNoteCreated(creditNoteParams);
+
+      expect(mockJournalEntriesService.createAutoEntry).toHaveBeenCalledTimes(1);
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+
+      expect(call.source).toBe(JournalEntrySource.CREDIT_NOTE);
+      expect(call.dianDocumentId).toBe('dian-cn-1');
+
+      const lines = call.lines;
+      // CR Clientes = total
+      expect(lines[0]).toEqual(expect.objectContaining({ accountId: 'acc-ar', credit: 1190, debit: 0 }));
+      // DR Ingresos = subtotal
+      expect(lines[1]).toEqual(expect.objectContaining({ accountId: 'acc-rev', debit: 1000, credit: 0 }));
+      // DR IVA = tax
+      expect(lines[2]).toEqual(expect.objectContaining({ accountId: 'acc-iva-pp', debit: 190, credit: 0 }));
+    });
+
+    it('should include COGS reversal for DEVOLUCION_PARCIAL', async () => {
+      await service.onCreditNoteCreated({
+        ...creditNoteParams,
+        reasonCode: 'DEVOLUCION_PARCIAL',
+        items: [{ productId: 'p1', quantity: 2, product: { costPrice: 500 } }],
+      });
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const lines = call.lines;
+
+      // Should have 5 lines: CR Clientes, DR Ingresos, DR IVA, CR COGS, DR Inventario
+      expect(lines).toHaveLength(5);
+      expect(lines[3]).toEqual(expect.objectContaining({ accountId: 'acc-cogs', credit: 1000, debit: 0 }));
+      expect(lines[4]).toEqual(expect.objectContaining({ accountId: 'acc-inv', debit: 1000, credit: 0 }));
+    });
+
+    it('should skip COGS reversal for ANULACION', async () => {
+      await service.onCreditNoteCreated({
+        ...creditNoteParams,
+        reasonCode: 'ANULACION',
+        items: [{ productId: 'p1', quantity: 2, product: { costPrice: 500 } }],
+      });
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      expect(call.lines).toHaveLength(3); // No COGS lines
+    });
+
+    it('should skip when autoGenerateEntries is false', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({ ...fullConfig, autoGenerateEntries: false });
+      await service.onCreditNoteCreated(creditNoteParams);
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+    });
+
+    it('should not throw when createAutoEntry fails', async () => {
+      mockJournalEntriesService.createAutoEntry.mockRejectedValue(new Error('db error'));
+      await expect(service.onCreditNoteCreated(creditNoteParams)).resolves.toBeUndefined();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // onDebitNoteCreated
+  // ---------------------------------------------------------------------------
+  describe('onDebitNoteCreated', () => {
+    const debitNoteParams = {
+      tenantId: mockTenantId,
+      dianDocumentId: 'dian-dn-1',
+      noteNumber: 'ND-00000001',
+      invoiceNumber: 'FAC-001',
+      subtotal: 500,
+      tax: 95,
+      total: 595,
+    };
+
+    it('should DR Clientes and CR Ingresos + IVA', async () => {
+      await service.onDebitNoteCreated(debitNoteParams);
+
+      expect(mockJournalEntriesService.createAutoEntry).toHaveBeenCalledTimes(1);
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+
+      expect(call.source).toBe(JournalEntrySource.DEBIT_NOTE);
+      expect(call.dianDocumentId).toBe('dian-dn-1');
+
+      const lines = call.lines;
+      // DR Clientes = total
+      expect(lines[0]).toEqual(expect.objectContaining({ accountId: 'acc-ar', debit: 595, credit: 0 }));
+      // CR Ingresos = subtotal
+      expect(lines[1]).toEqual(expect.objectContaining({ accountId: 'acc-rev', debit: 0, credit: 500 }));
+      // CR IVA = tax
+      expect(lines[2]).toEqual(expect.objectContaining({ accountId: 'acc-iva-pp', debit: 0, credit: 95 }));
+    });
+
+    it('should skip IVA line when tax is 0', async () => {
+      await service.onDebitNoteCreated({ ...debitNoteParams, tax: 0, total: 500 });
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      expect(call.lines).toHaveLength(2); // No IVA line
+    });
+
+    it('should skip when autoGenerateEntries is false', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({ ...fullConfig, autoGenerateEntries: false });
+      await service.onDebitNoteCreated(debitNoteParams);
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+    });
+
+    it('should not throw when createAutoEntry fails', async () => {
+      mockJournalEntriesService.createAutoEntry.mockRejectedValue(new Error('db error'));
+      await expect(service.onDebitNoteCreated(debitNoteParams)).resolves.toBeUndefined();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   describe('error resilience', () => {
     it('should not propagate errors from getConfigForTenant', async () => {
       mockConfigService.getConfigForTenant.mockRejectedValue(

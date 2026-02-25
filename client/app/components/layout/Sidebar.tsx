@@ -37,6 +37,8 @@ import {
   Award,
   Target,
   ScrollText,
+  FileMinus,
+  FilePlus,
 } from "lucide-react";
 import { cn, getInitials, formatCurrency } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
@@ -126,6 +128,18 @@ const navSections: NavSection[] = [
         name: "Facturas",
         href: "/invoices",
         icon: FileText,
+        permission: Permission.INVOICES_VIEW,
+      },
+      {
+        name: "Notas Credito",
+        href: "/credit-notes",
+        icon: FileMinus,
+        permission: Permission.INVOICES_VIEW,
+      },
+      {
+        name: "Notas Debito",
+        href: "/debit-notes",
+        icon: FilePlus,
         permission: Permission.INVOICES_VIEW,
       },
       {

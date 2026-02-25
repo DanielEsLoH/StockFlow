@@ -7,8 +7,10 @@ import {
   DianClientService,
   XmlSignerService,
 } from './services';
+import { AccountingModule } from '../accounting/accounting.module';
 
 @Module({
+  imports: [AccountingModule],
   controllers: [DianController],
   providers: [
     DianService,

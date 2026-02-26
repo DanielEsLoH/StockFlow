@@ -258,7 +258,7 @@ export default function ExpensesPage() {
             icon={FileText}
             label="Pendientes"
             value={formatCurrency(statsByStatus.pending)}
-            color="secondary"
+            color="neutral"
             variant="gradient"
             animate
             animationDelay={0.3}

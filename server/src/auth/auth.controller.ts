@@ -27,6 +27,8 @@ import {
   LogoutResponse,
   VerifyEmailResponse,
   ResendVerificationResponse,
+  ForgotPasswordResponse,
+  ResetPasswordResponse,
   InvitationDetailsResponse,
   AcceptInvitationResponse,
 } from './auth.service';
@@ -36,6 +38,8 @@ import {
   RefreshTokenDto,
   VerifyEmailDto,
   ResendVerificationDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
   AcceptInvitationDto,
   OAuthUserDto,
 } from './dto';
@@ -354,6 +358,94 @@ export class AuthController {
       `Resend verification request for email: ${resendVerificationDto.email}`,
     );
     return this.authService.resendVerification(resendVerificationDto.email);
+  }
+
+  /**
+   * Initiates the password reset flow by sending a reset email
+   *
+   * Rate limit: 3 requests per 15 minutes per IP (prevents abuse)
+   *
+   * @param dto - Contains the email address
+   * @returns Generic success message (does not reveal if email exists)
+   *
+   * @example
+   * POST /auth/forgot-password
+   * {
+   *   "email": "user@example.com"
+   * }
+   */
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ requests: 3, window: '15m' })
+  @ApiOperation({
+    summary: 'Request password reset',
+    description:
+      'Sends a password reset email to the provided address. Rate limited to 3 requests per 15 minutes per IP. For security, always returns success regardless of whether email exists.',
+  })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Password reset email sent (if account exists)',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests - rate limit exceeded',
+  })
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+  ): Promise<ForgotPasswordResponse> {
+    this.logger.log(`Forgot password request for email: ${dto.email}`);
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  /**
+   * Resets a user's password using a valid reset token
+   *
+   * Rate limit: 5 requests per 15 minutes per IP
+   *
+   * @param dto - Contains the reset token and new password
+   * @returns Success message
+   *
+   * @example
+   * POST /auth/reset-password
+   * {
+   *   "token": "a1b2c3d4e5f6...",
+   *   "password": "NewSecurePassword123"
+   * }
+   */
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ requests: 5, window: '15m' })
+  @ApiOperation({
+    summary: 'Reset password with token',
+    description:
+      'Resets the user password using the token received via email. Token expires after 1 hour. Rate limited to 5 requests per 15 minutes per IP.',
+  })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Invalid reset token',
+  })
+  @ApiResponse({
+    status: 410,
+    description: 'Reset token has expired',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many requests - rate limit exceeded',
+  })
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+  ): Promise<ResetPasswordResponse> {
+    this.logger.log('Password reset request received');
+    return this.authService.resetPassword(dto.token, dto.password);
   }
 
   /**

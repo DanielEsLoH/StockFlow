@@ -124,6 +124,20 @@ export interface ResendVerificationResponse {
 }
 
 /**
+ * Response structure for forgot password
+ */
+export interface ForgotPasswordResponse {
+  message: string;
+}
+
+/**
+ * Response structure for reset password
+ */
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+/**
  * Response structure for getting invitation details
  */
 export interface InvitationDetailsResponse {
@@ -679,6 +693,116 @@ export class AuthService {
       });
 
     return { message: genericMessage };
+  }
+
+  /**
+   * Initiates the forgot password flow by generating a reset token and sending an email.
+   * Returns a generic message regardless of whether the email exists (security best practice).
+   *
+   * @param email - The email address to send the reset link to
+   * @returns Generic success message
+   */
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    const normalizedEmail = email.toLowerCase();
+    this.logger.debug(`Forgot password requested for: ${normalizedEmail}`);
+
+    const genericMessage =
+      'If an account exists with this email, a password reset link has been sent.';
+
+    const user = await this.prisma.user.findFirst({
+      where: { email: normalizedEmail },
+    });
+
+    if (!user) {
+      this.logger.debug(
+        `Forgot password - user not found: ${normalizedEmail}`,
+      );
+      return { message: genericMessage };
+    }
+
+    // Generate reset token (1 hour expiry)
+    const resetToken = this.generateVerificationToken();
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { resetToken, resetTokenExpiry },
+    });
+
+    // Send reset email asynchronously
+    this.brevoService
+      .sendPasswordResetEmail(user.email, resetToken, user.firstName)
+      .then((result) => {
+        if (result.success) {
+          this.logger.log(
+            `Password reset email sent successfully for user: ${user.email}`,
+          );
+        } else {
+          this.logger.warn(
+            `Password reset email failed for user: ${user.email} - ${result.error}`,
+          );
+        }
+      })
+      .catch((error) => {
+        this.logger.error(
+          `Password reset email threw error for user: ${user.email}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      });
+
+    return { message: genericMessage };
+  }
+
+  /**
+   * Resets a user's password using a valid reset token.
+   *
+   * @param token - The reset token from the email
+   * @param password - The new password
+   * @returns Success message
+   * @throws NotFoundException if token is invalid
+   * @throws GoneException if token has expired
+   */
+  async resetPassword(
+    token: string,
+    password: string,
+  ): Promise<ResetPasswordResponse> {
+    this.logger.debug(
+      `Reset password with token: ${token.substring(0, 8)}...`,
+    );
+
+    const user = await this.prisma.user.findFirst({
+      where: { resetToken: token },
+    });
+
+    if (!user) {
+      this.logger.warn('Password reset failed - invalid token');
+      throw new NotFoundException(
+        'Invalid or expired reset token. Please request a new password reset.',
+      );
+    }
+
+    if (user.resetTokenExpiry && user.resetTokenExpiry < new Date()) {
+      this.logger.warn(
+        `Password reset failed - token expired for user: ${user.email}`,
+      );
+      throw new GoneException(
+        'Reset token has expired. Please request a new password reset.',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, this.saltRounds);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
+
+    this.logger.log(`Password reset successfully for user: ${user.email}`);
+    return { message: 'Password has been reset successfully' };
   }
 
   /**

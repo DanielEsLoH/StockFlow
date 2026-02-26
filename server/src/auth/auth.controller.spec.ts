@@ -10,6 +10,8 @@ import {
   LogoutResponse,
   VerifyEmailResponse,
   ResendVerificationResponse,
+  ForgotPasswordResponse,
+  ResetPasswordResponse,
   InvitationDetailsResponse,
   AcceptInvitationResponse,
 } from './auth.service';
@@ -19,6 +21,8 @@ import {
   RefreshTokenDto,
   VerifyEmailDto,
   ResendVerificationDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
   AcceptInvitationDto,
   OAuthUserDto,
 } from './dto';
@@ -263,6 +267,8 @@ describe('AuthController', () => {
       getMe: jest.fn(),
       verifyEmail: jest.fn(),
       resendVerification: jest.fn(),
+      forgotPassword: jest.fn(),
+      resetPassword: jest.fn(),
       getInvitationDetails: jest.fn(),
       acceptInvitation: jest.fn(),
       handleOAuthLogin: jest.fn(),
@@ -576,6 +582,71 @@ describe('AuthController', () => {
 
       await expect(
         controller.resendVerification(resendVerificationDto),
+      ).rejects.toThrow(error);
+    });
+  });
+
+  describe('forgotPassword', () => {
+    const forgotPasswordDto: ForgotPasswordDto = {
+      email: 'test@example.com',
+    };
+
+    const mockForgotPasswordResponse: ForgotPasswordResponse = {
+      message:
+        'If an account exists with this email, a password reset link has been sent.',
+    };
+
+    it('should send forgot password email and return success message', async () => {
+      authService.forgotPassword.mockResolvedValue(mockForgotPasswordResponse);
+
+      const result = await controller.forgotPassword(forgotPasswordDto);
+
+      expect(result).toEqual(mockForgotPasswordResponse);
+      expect(authService.forgotPassword).toHaveBeenCalledWith(
+        forgotPasswordDto.email,
+      );
+      expect(authService.forgotPassword).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate errors from auth service', async () => {
+      const error = new Error('Service error');
+      authService.forgotPassword.mockRejectedValue(error);
+
+      await expect(
+        controller.forgotPassword(forgotPasswordDto),
+      ).rejects.toThrow(error);
+    });
+  });
+
+  describe('resetPassword', () => {
+    const resetPasswordDto: ResetPasswordDto = {
+      token: 'valid-reset-token',
+      password: 'NewPassword123',
+    };
+
+    const mockResetPasswordResponse: ResetPasswordResponse = {
+      message: 'Password has been reset successfully',
+    };
+
+    it('should reset password and return success message', async () => {
+      authService.resetPassword.mockResolvedValue(mockResetPasswordResponse);
+
+      const result = await controller.resetPassword(resetPasswordDto);
+
+      expect(result).toEqual(mockResetPasswordResponse);
+      expect(authService.resetPassword).toHaveBeenCalledWith(
+        resetPasswordDto.token,
+        resetPasswordDto.password,
+      );
+      expect(authService.resetPassword).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate errors from auth service', async () => {
+      const error = new Error('Invalid token');
+      authService.resetPassword.mockRejectedValue(error);
+
+      await expect(
+        controller.resetPassword(resetPasswordDto),
       ).rejects.toThrow(error);
     });
   });

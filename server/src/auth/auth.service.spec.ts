@@ -216,6 +216,7 @@ describe('AuthService', () => {
         .fn()
         .mockResolvedValue({ success: true }),
       sendVerificationEmail: jest.fn().mockResolvedValue({ success: true }),
+      sendPasswordResetEmail: jest.fn().mockResolvedValue({ success: true }),
       sendAdminUserVerifiedEmail: jest
         .fn()
         .mockResolvedValue({ success: true }),
@@ -3349,6 +3350,201 @@ describe('AuthService', () => {
       );
 
       sendNotifSpy.mockRestore();
+    });
+  });
+
+  describe('forgotPassword', () => {
+    const genericMessage =
+      'If an account exists with this email, a password reset link has been sent.';
+
+    beforeEach(() => {
+      (brevoService.sendPasswordResetEmail as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+    });
+
+    it('should generate reset token and send email when user exists', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
+
+      const result = await service.forgotPassword('test@example.com');
+
+      expect(result.message).toBe(genericMessage);
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: mockUser.id },
+        data: {
+          resetToken: expect.any(String),
+          resetTokenExpiry: expect.any(Date),
+        },
+      });
+    });
+
+    it('should return generic message when user not found', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+      const result = await service.forgotPassword('notfound@example.com');
+
+      expect(result.message).toBe(genericMessage);
+      expect(prismaService.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should normalize email to lowercase', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await service.forgotPassword('TEST@EXAMPLE.COM');
+
+      expect(prismaService.user.findFirst).toHaveBeenCalledWith({
+        where: { email: 'test@example.com' },
+      });
+    });
+
+    it('should set reset token expiry to 1 hour from now', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
+
+      const beforeCall = Date.now();
+      await service.forgotPassword('test@example.com');
+      const afterCall = Date.now();
+
+      const updateCall = (prismaService.user.update as jest.Mock).mock
+        .calls[0] as [
+        {
+          where: { id: string };
+          data: { resetToken: string; resetTokenExpiry: Date };
+        },
+      ];
+      const expiryDate = updateCall[0].data.resetTokenExpiry;
+      const expectedMinExpiry = beforeCall + 60 * 60 * 1000;
+      const expectedMaxExpiry = afterCall + 60 * 60 * 1000;
+
+      expect(expiryDate.getTime()).toBeGreaterThanOrEqual(expectedMinExpiry);
+      expect(expiryDate.getTime()).toBeLessThanOrEqual(expectedMaxExpiry);
+    });
+
+    it('should send password reset email asynchronously', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
+
+      await service.forgotPassword('test@example.com');
+
+      // Wait for async email operation
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(brevoService.sendPasswordResetEmail).toHaveBeenCalledWith(
+        mockUser.email,
+        expect.any(String),
+        mockUser.firstName,
+      );
+    });
+
+    it('should log warning when email send fails', async () => {
+      const warnSpy = jest.spyOn(Logger.prototype, 'warn');
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
+      (brevoService.sendPasswordResetEmail as jest.Mock).mockResolvedValue({
+        success: false,
+        error: 'Service unavailable',
+      });
+
+      await service.forgotPassword('test@example.com');
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Password reset email failed'),
+      );
+    });
+  });
+
+  describe('resetPassword', () => {
+    const userWithResetToken = {
+      ...mockUser,
+      resetToken: 'valid-reset-token',
+      resetTokenExpiry: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
+    };
+
+    it('should reset password with valid token', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        userWithResetToken,
+      );
+      (bcrypt.hash as jest.Mock).mockResolvedValue('newHashedPassword');
+      (prismaService.user.update as jest.Mock).mockResolvedValue({
+        ...userWithResetToken,
+        password: 'newHashedPassword',
+        resetToken: null,
+        resetTokenExpiry: null,
+      });
+
+      const result = await service.resetPassword(
+        'valid-reset-token',
+        'NewPassword123',
+      );
+
+      expect(result.message).toBe('Password has been reset successfully');
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: mockUser.id },
+        data: {
+          password: 'newHashedPassword',
+          resetToken: null,
+          resetTokenExpiry: null,
+        },
+      });
+    });
+
+    it('should throw NotFoundException for invalid token', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.resetPassword('invalid-token', 'NewPassword123'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw GoneException for expired token', async () => {
+      const expiredUser = {
+        ...userWithResetToken,
+        resetTokenExpiry: new Date(Date.now() - 1000), // 1 second ago
+      };
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        expiredUser,
+      );
+
+      await expect(
+        service.resetPassword('valid-reset-token', 'NewPassword123'),
+      ).rejects.toThrow(GoneException);
+    });
+
+    it('should hash password with 12 salt rounds', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        userWithResetToken,
+      );
+      (bcrypt.hash as jest.Mock).mockResolvedValue('newHashedPassword');
+      (prismaService.user.update as jest.Mock).mockResolvedValue(
+        userWithResetToken,
+      );
+
+      await service.resetPassword('valid-reset-token', 'NewPassword123');
+
+      expect(bcrypt.hash).toHaveBeenCalledWith('NewPassword123', 12);
+    });
+
+    it('should clear reset token after successful reset', async () => {
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValue(
+        userWithResetToken,
+      );
+      (bcrypt.hash as jest.Mock).mockResolvedValue('newHashedPassword');
+      (prismaService.user.update as jest.Mock).mockResolvedValue(
+        userWithResetToken,
+      );
+
+      await service.resetPassword('valid-reset-token', 'NewPassword123');
+
+      expect(prismaService.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            resetToken: null,
+            resetTokenExpiry: null,
+          }),
+        }),
+      );
     });
   });
 });

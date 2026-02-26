@@ -75,6 +75,7 @@ describe('ExpensesService', () => {
       $transaction: jest
         .fn()
         .mockImplementation((fn: (tx: any) => any) => fn(mockPrismaService)),
+      $queryRaw: jest.fn().mockResolvedValue([]),
     };
 
     const mockTenantContextService = {
@@ -219,9 +220,9 @@ describe('ExpensesService', () => {
     });
 
     it('should generate sequential expense number', async () => {
-      (prisma.expense.findFirst as jest.Mock).mockResolvedValue({
-        expenseNumber: 'GTO-00042',
-      });
+      (prisma.$queryRaw as jest.Mock).mockResolvedValue([
+        { expense_number: 'GTO-00042' },
+      ]);
       (prisma.expense.create as jest.Mock).mockResolvedValue({
         ...mockExpense,
         expenseNumber: 'GTO-00043',
@@ -560,8 +561,8 @@ describe('ExpensesService', () => {
 
       expect(accountingBridge.onExpensePaid).toHaveBeenCalledWith(
         expect.objectContaining({
+          id: 'expense-1',
           tenantId: mockTenantId,
-          expenseId: 'expense-1',
         }),
       );
     });

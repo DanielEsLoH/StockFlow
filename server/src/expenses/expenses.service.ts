@@ -635,22 +635,22 @@ export class ExpensesService {
     // Generate accounting entry (non-blocking)
     // Note: onExpensePaid will be added to AccountingBridgeService
     try {
-      await (this.accountingBridge as any).onExpensePaid({
+      await this.accountingBridge.onExpensePaid({
+        id: updatedExpense.id,
         tenantId,
-        expenseId: updatedExpense.id,
         expenseNumber: updatedExpense.expenseNumber,
         description: updatedExpense.description,
-        subtotal: Number(updatedExpense.subtotal),
-        tax: Number(updatedExpense.tax),
-        reteFuente: Number(updatedExpense.reteFuente),
-        total: Number(updatedExpense.total),
+        subtotal: updatedExpense.subtotal,
+        tax: updatedExpense.tax,
+        reteFuente: updatedExpense.reteFuente,
+        total: updatedExpense.total,
+        accountId: updatedExpense.accountId,
         paymentMethod: dto.paymentMethod,
-        expenseAccountId: updatedExpense.accountId,
-        costCenterId: updatedExpense.costCenterId,
+        paymentDate: updatedExpense.paymentDate,
+        issueDate: updatedExpense.issueDate,
       });
     } catch (error) {
-      // Log but don't block - accounting entries can be created manually
-      console.error('Failed to create expense journal entry:', error);
+      this.logger.error('Failed to create expense journal entry:', error);
     }
 
     return this.mapToResponse(updatedExpense);
@@ -824,15 +824,13 @@ export class ExpensesService {
   ): Promise<string> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    const last = await tx.expense.findFirst({
-      where: { tenantId },
-      orderBy: { createdAt: 'desc' },
-      select: { expenseNumber: true },
-    });
+    const result = await tx.$queryRaw<{ expense_number: string }[]>`
+      SELECT expense_number FROM expenses
+      WHERE tenant_id = ${tenantId}
+      ORDER BY created_at DESC LIMIT 1 FOR UPDATE`;
 
-    const nextNum = last
-      ? parseInt(last.expenseNumber.replace('GTO-', '')) + 1
-      : 1;
+    const last = result[0]?.expense_number;
+    const nextNum = last ? parseInt(last.replace('GTO-', '')) + 1 : 1;
 
     const expenseNumber = `GTO-${String(nextNum).padStart(5, '0')}`;
 

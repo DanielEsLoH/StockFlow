@@ -40,6 +40,9 @@ import {
   FileMinus,
   FilePlus,
   ShieldCheck,
+  MonitorSmartphone,
+  History,
+  Boxes,
 } from "lucide-react";
 import { cn, getInitials, formatCurrency } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
@@ -240,6 +243,29 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    label: "Punto de Venta",
+    items: [
+      {
+        name: "Ventas POS",
+        href: "/pos/sales",
+        icon: MonitorSmartphone,
+        permission: Permission.POS_VIEW_SESSIONS,
+      },
+      {
+        name: "Sesiones",
+        href: "/pos/sessions",
+        icon: History,
+        permission: Permission.POS_VIEW_SESSIONS,
+      },
+      {
+        name: "Cajas",
+        href: "/pos/cash-registers",
+        icon: Boxes,
+        permission: Permission.CASH_REGISTERS_VIEW,
+      },
+    ],
+  },
+  {
     label: "Bancos",
     items: [
       {
@@ -351,7 +377,7 @@ function CajaQuickAccess({
   onClick?: () => void;
 }) {
   return (
-    <Link to="/invoices/new" onClick={onClick}>
+    <Link to="/pos" onClick={onClick}>
       <motion.div
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}

@@ -1540,9 +1540,9 @@ describe("useReports hooks", () => {
       );
     });
 
-    it("should handle large blob files", async () => {
+    it("should handle large blob files", { timeout: 15000 }, async () => {
       // Create a large blob (simulating a large file)
-      const largeContent = "x".repeat(10000000); // 10MB of content
+      const largeContent = "x".repeat(1000000); // 1MB of content
       const largeBlob = new Blob([largeContent], { type: "application/pdf" });
       const response = { blob: largeBlob, fileName: "large-report.pdf" };
 

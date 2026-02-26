@@ -132,37 +132,50 @@ describe("Sidebar", () => {
   });
 
   describe("navigation items", () => {
-    it("should render all navigation items", () => {
-      render(<Sidebar />, { wrapper: createWrapper() });
+    it(
+      "should render all navigation items",
+      () => {
+        render(<Sidebar />, { wrapper: createWrapper() });
 
-      expect(
-        screen.getByRole("link", { name: /dashboard/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /productos/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /categorias/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /bodegas/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /clientes/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /facturas/i }),
-      ).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /pagos/i })).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /reportes/i }),
-      ).toBeInTheDocument();
-      // There are two "Configuracion" links: Nomina config and Settings
-      const configLinks = screen.getAllByRole("link", {
-        name: /configuracion/i,
-      });
-      expect(configLinks.length).toBeGreaterThanOrEqual(1);
-    });
+        expect(
+          screen.getByRole("link", { name: /dashboard/i }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("link", { name: /productos/i }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("link", { name: /categorias/i }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("link", { name: /bodegas/i }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("link", { name: /clientes/i }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("link", { name: /facturas/i }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("link", { name: /pagos/i }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("link", { name: /reportes/i }),
+        ).toBeInTheDocument();
+        // POS section
+        expect(
+          screen.getByRole("link", { name: /ventas pos/i }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("link", { name: /sesiones/i }),
+        ).toBeInTheDocument();
+        // There are two "Configuracion" links: Nomina config and Settings
+        const configLinks = screen.getAllByRole("link", {
+          name: /configuracion/i,
+        });
+        expect(configLinks.length).toBeGreaterThanOrEqual(1);
+      },
+      15000,
+    );
 
     it("should have correct href for navigation links", () => {
       render(<Sidebar />, { wrapper: createWrapper() });

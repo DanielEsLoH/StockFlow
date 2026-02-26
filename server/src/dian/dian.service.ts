@@ -925,7 +925,7 @@ export class DianService {
         items: {
           include: {
             product: {
-              select: { id: true, name: true },
+              select: { id: true, name: true, costPrice: true },
             },
           },
         },

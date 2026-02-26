@@ -119,7 +119,9 @@ export class AuditInterceptor implements NestInterceptor {
 
     // If no tenant context, skip (shouldn't happen in normal operation)
     if (!tenantId) {
-      this.logger.warn('No tenant context found for audit logging');
+      this.logger.error(
+        `Audit: no tenant context for ${request.method} ${request.url} (user: ${user?.userId})`,
+      );
       return next.handle();
     }
 

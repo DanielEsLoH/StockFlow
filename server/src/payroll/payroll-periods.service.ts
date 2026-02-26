@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TenantContextService } from '../common/services/tenant-context.service';
+import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
 import { PayrollCalculationService } from './services/payroll-calculation.service';
 import { PayrollConfigService } from './payroll-config.service';
 import { CreatePayrollPeriodDto } from './dto/create-payroll-period.dto';
@@ -25,6 +26,7 @@ export class PayrollPeriodsService {
     private readonly tenantContext: TenantContextService,
     private readonly calculationService: PayrollCalculationService,
     private readonly configService: PayrollConfigService,
+    private readonly accountingBridge: AccountingBridgeService,
   ) {}
 
   async findAll(page = 1, limit = 20) {
@@ -308,6 +310,36 @@ export class PayrollPeriodsService {
     });
 
     this.logger.log(`Periodo ${period.name} aprobado por ${userId}`);
+
+    // Generate accounting entry (non-blocking)
+    try {
+      const entries = period.entries;
+      await this.accountingBridge.onPayrollApproved({
+        tenantId,
+        periodId: period.id,
+        periodName: period.name,
+        totalDevengados: Number(period.totalDevengados),
+        totalDeducciones: Number(period.totalDeducciones),
+        totalNeto: Number(period.totalNeto),
+        totalSaludEmpleado: entries.reduce((s, e) => s + Number(e.saludEmpleado), 0),
+        totalPensionEmpleado: entries.reduce((s, e) => s + Number(e.pensionEmpleado), 0),
+        totalFondoSolidaridad: entries.reduce((s, e) => s + Number(e.fondoSolidaridad), 0),
+        totalRetencionFuente: entries.reduce((s, e) => s + Number(e.retencionFuente), 0),
+        totalSaludEmpleador: entries.reduce((s, e) => s + Number(e.saludEmpleador), 0),
+        totalPensionEmpleador: entries.reduce((s, e) => s + Number(e.pensionEmpleador), 0),
+        totalArlEmpleador: entries.reduce((s, e) => s + Number(e.arlEmpleador), 0),
+        totalCajaEmpleador: entries.reduce((s, e) => s + Number(e.cajaEmpleador), 0),
+        totalSenaEmpleador: entries.reduce((s, e) => s + Number(e.senaEmpleador), 0),
+        totalIcbfEmpleador: entries.reduce((s, e) => s + Number(e.icbfEmpleador), 0),
+        totalProvisionPrima: entries.reduce((s, e) => s + Number(e.provisionPrima), 0),
+        totalProvisionCesantias: entries.reduce((s, e) => s + Number(e.provisionCesantias), 0),
+        totalProvisionIntereses: entries.reduce((s, e) => s + Number(e.interesesCesantias), 0),
+        totalProvisionVacaciones: entries.reduce((s, e) => s + Number(e.provisionVacaciones), 0),
+      });
+    } catch (error) {
+      this.logger.error('Failed to create payroll journal entry:', error);
+    }
+
     return this.findOne(id);
   }
 
@@ -348,15 +380,15 @@ export class PayrollPeriodsService {
   }
 
   private async getNextEntryNumber(tx: any, tenantId: string): Promise<string> {
-    const lastEntry = await tx.payrollEntry.findFirst({
-      where: { tenantId },
-      orderBy: { createdAt: 'desc' },
-      select: { entryNumber: true },
-    });
+    const result = await tx.$queryRaw<{ entry_number: string }[]>`
+      SELECT entry_number FROM payroll_entries
+      WHERE tenant_id = ${tenantId}
+      ORDER BY created_at DESC LIMIT 1 FOR UPDATE`;
 
-    if (!lastEntry) return 'NOM-000001';
+    const last = result[0]?.entry_number;
+    if (!last) return 'NOM-000001';
 
-    const match = lastEntry.entryNumber.match(/(\d+)$/);
+    const match = last.match(/(\d+)$/);
     if (!match) return 'NOM-000001';
 
     const nextNum = parseInt(match[1], 10) + 1;

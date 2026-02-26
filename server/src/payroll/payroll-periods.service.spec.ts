@@ -6,6 +6,7 @@ import {
 import { PayrollPeriodsService } from './payroll-periods.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TenantContextService } from '../common/services/tenant-context.service';
+import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
 import { PayrollCalculationService } from './services/payroll-calculation.service';
 import { PayrollConfigService } from './payroll-config.service';
 import {
@@ -82,6 +83,7 @@ describe('PayrollPeriodsService', () => {
         findMany: jest.fn(),
       },
       $transaction: jest.fn((cb) => cb(prisma)),
+      $queryRaw: jest.fn().mockResolvedValue([]),
     };
 
     tenantContext = {
@@ -128,6 +130,10 @@ describe('PayrollPeriodsService', () => {
       getOrFail: jest.fn().mockResolvedValue(mockConfig),
     };
 
+    const accountingBridge = {
+      onPayrollApproved: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PayrollPeriodsService,
@@ -135,6 +141,7 @@ describe('PayrollPeriodsService', () => {
         { provide: TenantContextService, useValue: tenantContext },
         { provide: PayrollCalculationService, useValue: calculationService },
         { provide: PayrollConfigService, useValue: configService },
+        { provide: AccountingBridgeService, useValue: accountingBridge },
       ],
     }).compile();
 

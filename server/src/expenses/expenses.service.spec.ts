@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { ExpenseCategory, ExpenseStatus } from '@prisma/client';
+import { ExpenseCategory, ExpenseStatus, PaymentMethod } from '@prisma/client';
 import { ExpensesService } from './expenses.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
@@ -513,7 +513,7 @@ describe('ExpensesService', () => {
 
   describe('pay', () => {
     const payDto = {
-      paymentMethod: 'BANK_TRANSFER',
+      paymentMethod: PaymentMethod.BANK_TRANSFER,
       paymentReference: 'REF-001',
     };
 
@@ -529,7 +529,7 @@ describe('ExpensesService', () => {
       (prisma.expense.update as jest.Mock).mockResolvedValue({
         ...approvedExpense,
         status: ExpenseStatus.PAID,
-        paymentMethod: 'BANK_TRANSFER',
+        paymentMethod: PaymentMethod.BANK_TRANSFER,
         paymentReference: 'REF-001',
       });
 
@@ -540,7 +540,7 @@ describe('ExpensesService', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             status: ExpenseStatus.PAID,
-            paymentMethod: 'BANK_TRANSFER',
+            paymentMethod: PaymentMethod.BANK_TRANSFER,
             paymentReference: 'REF-001',
           }),
         }),

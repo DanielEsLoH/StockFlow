@@ -8,7 +8,12 @@ import { CufeGeneratorService } from './services/cufe-generator.service';
 import { DianClientService } from './services/dian-client.service';
 import { XmlSignerService } from './services/xml-signer.service';
 import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
-import { DianDocumentStatus, DianDocumentType } from '@prisma/client';
+import {
+  DianDocumentStatus,
+  DianDocumentType,
+  CreditNoteReason,
+  DebitNoteReason,
+} from '@prisma/client';
 
 describe('DianService', () => {
   let service: DianService;
@@ -989,8 +994,8 @@ describe('DianService', () => {
 
     const creditNoteDto = {
       invoiceId: 'invoice-123',
-      reason: 'DEVOLUCION_TOTAL' as any,
-      reasonCode: 'DEVOLUCION_TOTAL',
+      reason: 'Devolucion total de la factura',
+      reasonCode: CreditNoteReason.ANULACION,
     };
 
     const mockCreditNoteDoc = {
@@ -1277,8 +1282,8 @@ describe('DianService', () => {
 
     const debitNoteDto = {
       invoiceId: 'invoice-123',
-      reason: 'Correccion de valor' as any,
-      reasonCode: 'VALOR_ADICIONAL',
+      reason: 'Correccion de valor',
+      reasonCode: DebitNoteReason.CAMBIO_VALOR,
       items: [
         {
           description: 'Cargo adicional por transporte',

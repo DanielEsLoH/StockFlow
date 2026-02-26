@@ -273,7 +273,7 @@ describe('PayrollDianService', () => {
       (prisma.payrollPeriod.findFirst as jest.Mock).mockResolvedValue({
         id: 'period-1',
         tenantId: mockTenantId,
-        status: PayrollPeriodStatus.DRAFT,
+        status: PayrollPeriodStatus.OPEN,
       });
 
       await expect(

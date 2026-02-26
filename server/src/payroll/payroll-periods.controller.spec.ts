@@ -88,6 +88,7 @@ describe('PayrollPeriodsController', () => {
         name: 'Enero 2024',
         startDate: '2024-01-01' as any,
         endDate: '2024-01-31' as any,
+        paymentDate: '2024-01-31' as any,
         periodType: 'MONTHLY' as any,
       };
       service.create.mockResolvedValue(mockPeriodResponse as any);

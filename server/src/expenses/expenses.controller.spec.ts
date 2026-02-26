@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger, NotFoundException } from '@nestjs/common';
-import { ExpenseCategory, ExpenseStatus } from '@prisma/client';
+import { ExpenseCategory, ExpenseStatus, PaymentMethod } from '@prisma/client';
 import { ExpensesController } from './expenses.controller';
 import { ExpensesService } from './expenses.service';
 import { JwtAuthGuard } from '../auth';
@@ -180,7 +180,7 @@ describe('ExpensesController', () => {
 
   describe('pay', () => {
     it('should pay an expense', async () => {
-      const dto = { paymentMethod: 'CASH' };
+      const dto = { paymentMethod: PaymentMethod.CASH };
       service.pay.mockResolvedValue({
         ...mockExpense,
         status: ExpenseStatus.PAID,

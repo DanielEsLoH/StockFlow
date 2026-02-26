@@ -37,6 +37,9 @@ export const meta: Route.MetaFunction = () => {
 // CONSTANTS
 // ============================================================================
 
+const RETEFUENTE_THRESHOLD = 1_168_000;
+const RETEFUENTE_RATE = 0.11;
+
 const categoryOptions = [
   { value: "", label: "Seleccionar categoria" },
   ...Object.entries(ExpenseCategoryLabels).map(([value, label]) => ({
@@ -135,9 +138,22 @@ export default function EditExpensePage() {
     const sub = parseFloat(subtotal) || 0;
     const rate = parseFloat(taxRate) || 0;
     const tax = sub * (rate / 100);
-    const total = sub + tax;
-    return { subtotal: sub, tax, total };
-  }, [subtotal, taxRate]);
+
+    const isHonorarios = category === "HONORARIOS";
+    const reteFuente =
+      isHonorarios && sub >= RETEFUENTE_THRESHOLD
+        ? sub * RETEFUENTE_RATE
+        : 0;
+
+    const total = sub + tax - reteFuente;
+    return {
+      subtotal: sub,
+      tax,
+      reteFuente,
+      total,
+      showReteFuente: isHonorarios && sub >= RETEFUENTE_THRESHOLD,
+    };
+  }, [subtotal, taxRate, category]);
 
   // Submit handler
   const handleSubmit = useCallback(() => {
@@ -525,6 +541,25 @@ export default function EditExpensePage() {
                   {formatCurrency(calculations.tax)}
                 </span>
               </div>
+
+              {calculations.showReteFuente && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-amber-600 dark:text-amber-400">
+                    ReteFuente (11%)
+                  </span>
+                  <span className="font-medium text-amber-600 dark:text-amber-400">
+                    -{formatCurrency(calculations.reteFuente)}
+                  </span>
+                </div>
+              )}
+
+              {category === "HONORARIOS" && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  Se aplica retencion en la fuente del 11% por honorarios con
+                  base mayor o igual a{" "}
+                  {formatCurrency(RETEFUENTE_THRESHOLD)}.
+                </p>
+              )}
 
               {/* Divider */}
               <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent dark:via-neutral-700 my-2" />

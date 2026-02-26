@@ -18,6 +18,7 @@ import {
   useUpdateInvoiceItem,
   useRemoveInvoiceItem,
   useSendInvoiceToDian,
+  usePendingCollection,
 } from "./useInvoices";
 import { invoicesService } from "~/services/invoices.service";
 import { useAuthStore } from "~/stores/auth.store";
@@ -46,6 +47,7 @@ vi.mock("~/services/invoices.service", () => ({
     updateInvoiceItem: vi.fn(),
     removeInvoiceItem: vi.fn(),
     sendToDian: vi.fn(),
+    getPendingCollection: vi.fn(),
   },
 }));
 
@@ -2732,6 +2734,102 @@ describe("useInvoices hooks", () => {
       expect(toast.error).toHaveBeenCalledWith(
         "Error al enviar la factura a la DIAN",
       );
+    });
+  });
+
+  // ==========================================================================
+  // PENDING COLLECTION QUERY
+  // ==========================================================================
+
+  describe("usePendingCollection", () => {
+    const mockPendingInvoices = [
+      {
+        id: "inv-1",
+        invoiceNumber: "FAC-2024-0001",
+        customerId: "cust-1",
+        customer: { id: "cust-1", name: "Juan Perez" },
+        status: "PENDING" as const,
+        paymentStatus: "UNPAID" as const,
+        total: 5000000,
+        totalPaid: 0,
+        remainingBalance: 5000000,
+        dueDate: "2024-02-01T00:00:00Z",
+        issueDate: "2024-01-15T00:00:00Z",
+        daysOverdue: 10,
+      },
+      {
+        id: "inv-2",
+        invoiceNumber: "FAC-2024-0002",
+        customerId: "cust-2",
+        customer: { id: "cust-2", name: "Maria Garcia" },
+        status: "PENDING" as const,
+        paymentStatus: "PARTIALLY_PAID" as const,
+        total: 3000000,
+        totalPaid: 1000000,
+        remainingBalance: 2000000,
+        dueDate: "2024-02-15T00:00:00Z",
+        issueDate: "2024-01-20T00:00:00Z",
+        daysOverdue: 0,
+      },
+    ];
+
+    it("should fetch pending collection invoices", async () => {
+      vi.mocked(invoicesService.getPendingCollection).mockResolvedValue(
+        mockPendingInvoices,
+      );
+
+      const { result } = renderHook(() => usePendingCollection(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(result.current.data).toEqual(mockPendingInvoices);
+      expect(invoicesService.getPendingCollection).toHaveBeenCalled();
+    });
+
+    it("should return loading state initially", () => {
+      vi.mocked(invoicesService.getPendingCollection).mockImplementation(
+        () => new Promise(() => {}),
+      );
+
+      const { result } = renderHook(() => usePendingCollection(), {
+        wrapper: createWrapper(),
+      });
+
+      expect(result.current.isLoading).toBe(true);
+      expect(result.current.data).toBeUndefined();
+    });
+
+    it("should handle error state", async () => {
+      const error = new Error("Failed to fetch pending collection");
+      vi.mocked(invoicesService.getPendingCollection).mockRejectedValue(error);
+
+      const { result } = renderHook(() => usePendingCollection(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(result.current.error).toBeDefined();
+    });
+
+    it("should handle empty pending collection", async () => {
+      vi.mocked(invoicesService.getPendingCollection).mockResolvedValue([]);
+
+      const { result } = renderHook(() => usePendingCollection(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(result.current.data).toEqual([]);
     });
   });
 });

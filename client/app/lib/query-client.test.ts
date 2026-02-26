@@ -880,4 +880,700 @@ describe("Query Keys", () => {
       expect(queryKeys.billing.history()).toEqual(["billing", "history"]);
     });
   });
+
+  describe("quotations keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.quotations.all).toEqual(["quotations"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.quotations.list()).toEqual([
+        "quotations",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { status: "DRAFT", customerId: "cust-1" };
+      expect(queryKeys.quotations.list(filters)).toEqual([
+        "quotations",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.quotations.detail("quot-123")).toEqual([
+        "quotations",
+        "quot-123",
+      ]);
+    });
+
+    it("generates stats key", () => {
+      expect(queryKeys.quotations.stats()).toEqual(["quotations", "stats"]);
+    });
+  });
+
+  describe("suppliers keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.suppliers.all).toEqual(["suppliers"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.suppliers.list()).toEqual([
+        "suppliers",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { search: "Acme", isActive: true };
+      expect(queryKeys.suppliers.list(filters)).toEqual([
+        "suppliers",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.suppliers.detail("sup-456")).toEqual([
+        "suppliers",
+        "sup-456",
+      ]);
+    });
+
+    it("generates stats key", () => {
+      expect(queryKeys.suppliers.stats()).toEqual(["suppliers", "stats"]);
+    });
+  });
+
+  describe("purchaseOrders keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.purchaseOrders.all).toEqual(["purchaseOrders"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.purchaseOrders.list()).toEqual([
+        "purchaseOrders",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { status: "PENDING", supplierId: "sup-1" };
+      expect(queryKeys.purchaseOrders.list(filters)).toEqual([
+        "purchaseOrders",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.purchaseOrders.detail("po-789")).toEqual([
+        "purchaseOrders",
+        "po-789",
+      ]);
+    });
+
+    it("generates stats key", () => {
+      expect(queryKeys.purchaseOrders.stats()).toEqual([
+        "purchaseOrders",
+        "stats",
+      ]);
+    });
+
+    it("generates payments key", () => {
+      expect(queryKeys.purchaseOrders.payments("po-123")).toEqual([
+        "purchaseOrders",
+        "po-123",
+        "payments",
+      ]);
+    });
+  });
+
+  describe("accounting keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.accounting.all).toEqual(["accounting"]);
+    });
+
+    it("generates config key", () => {
+      expect(queryKeys.accounting.config()).toEqual(["accounting", "config"]);
+    });
+
+    it("generates accounts key", () => {
+      expect(queryKeys.accounting.accounts()).toEqual([
+        "accounting",
+        "accounts",
+      ]);
+    });
+
+    it("generates accountTree key", () => {
+      expect(queryKeys.accounting.accountTree()).toEqual([
+        "accounting",
+        "account-tree",
+      ]);
+    });
+
+    it("generates accountDetail key", () => {
+      expect(queryKeys.accounting.accountDetail("acc-1")).toEqual([
+        "accounting",
+        "account",
+        "acc-1",
+      ]);
+    });
+
+    it("generates journalEntries key without filters", () => {
+      expect(queryKeys.accounting.journalEntries()).toEqual([
+        "accounting",
+        "journal-entries",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates journalEntries key with filters", () => {
+      const filters = { periodId: "p-1" };
+      expect(queryKeys.accounting.journalEntries(filters)).toEqual([
+        "accounting",
+        "journal-entries",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates journalEntry key", () => {
+      expect(queryKeys.accounting.journalEntry("je-1")).toEqual([
+        "accounting",
+        "journal-entries",
+        "je-1",
+      ]);
+    });
+
+    it("generates periods key", () => {
+      expect(queryKeys.accounting.periods()).toEqual([
+        "accounting",
+        "periods",
+      ]);
+    });
+
+    it("generates trialBalance key", () => {
+      const params = { periodId: "p-1" };
+      expect(queryKeys.accounting.trialBalance(params)).toEqual([
+        "accounting",
+        "reports",
+        "trial-balance",
+        params,
+      ]);
+    });
+
+    it("generates generalJournal key", () => {
+      expect(queryKeys.accounting.generalJournal()).toEqual([
+        "accounting",
+        "reports",
+        "general-journal",
+        undefined,
+      ]);
+    });
+
+    it("generates generalLedger key", () => {
+      expect(queryKeys.accounting.generalLedger({ accountId: "a-1" })).toEqual([
+        "accounting",
+        "reports",
+        "general-ledger",
+        { accountId: "a-1" },
+      ]);
+    });
+
+    it("generates balanceSheet key", () => {
+      expect(queryKeys.accounting.balanceSheet()).toEqual([
+        "accounting",
+        "reports",
+        "balance-sheet",
+        undefined,
+      ]);
+    });
+
+    it("generates incomeStatement key", () => {
+      expect(queryKeys.accounting.incomeStatement()).toEqual([
+        "accounting",
+        "reports",
+        "income-statement",
+        undefined,
+      ]);
+    });
+
+    it("generates cashFlow key", () => {
+      expect(queryKeys.accounting.cashFlow()).toEqual([
+        "accounting",
+        "reports",
+        "cash-flow",
+        undefined,
+      ]);
+    });
+
+    it("generates costCenterBalance key", () => {
+      expect(
+        queryKeys.accounting.costCenterBalance({ costCenterId: "cc-1" }),
+      ).toEqual([
+        "accounting",
+        "reports",
+        "cost-center-balance",
+        { costCenterId: "cc-1" },
+      ]);
+    });
+
+    it("generates arAging key", () => {
+      expect(queryKeys.accounting.arAging()).toEqual([
+        "accounting",
+        "reports",
+        "ar-aging",
+        undefined,
+      ]);
+    });
+
+    it("generates apAging key", () => {
+      expect(queryKeys.accounting.apAging()).toEqual([
+        "accounting",
+        "reports",
+        "ap-aging",
+        undefined,
+      ]);
+    });
+
+    it("generates ivaDeclaration key", () => {
+      expect(queryKeys.accounting.ivaDeclaration({ year: 2024 })).toEqual([
+        "accounting",
+        "reports",
+        "iva-declaration",
+        { year: 2024 },
+      ]);
+    });
+
+    it("generates reteFuenteSummary key", () => {
+      expect(queryKeys.accounting.reteFuenteSummary()).toEqual([
+        "accounting",
+        "reports",
+        "retefuente-summary",
+        undefined,
+      ]);
+    });
+
+    it("generates ytdTaxSummary key", () => {
+      expect(queryKeys.accounting.ytdTaxSummary({ year: 2024 })).toEqual([
+        "accounting",
+        "reports",
+        "tax-summary",
+        { year: 2024 },
+      ]);
+    });
+  });
+
+  describe("bank keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.bank.all).toEqual(["bank"]);
+    });
+
+    it("generates accounts key without filters", () => {
+      expect(queryKeys.bank.accounts()).toEqual([
+        "bank",
+        "accounts",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates accounts key with filters", () => {
+      const filters = { currency: "COP" };
+      expect(queryKeys.bank.accounts(filters)).toEqual([
+        "bank",
+        "accounts",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates account detail key", () => {
+      expect(queryKeys.bank.account("ba-1")).toEqual([
+        "bank",
+        "accounts",
+        "ba-1",
+      ]);
+    });
+
+    it("generates statements key", () => {
+      expect(queryKeys.bank.statements("ba-1")).toEqual([
+        "bank",
+        "statements",
+        "account",
+        "ba-1",
+      ]);
+    });
+
+    it("generates statement detail key", () => {
+      expect(queryKeys.bank.statement("stmt-1")).toEqual([
+        "bank",
+        "statements",
+        "stmt-1",
+      ]);
+    });
+  });
+
+  describe("payrollEmployees keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.payrollEmployees.all).toEqual(["payrollEmployees"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.payrollEmployees.list()).toEqual([
+        "payrollEmployees",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { department: "Engineering" };
+      expect(queryKeys.payrollEmployees.list(filters)).toEqual([
+        "payrollEmployees",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.payrollEmployees.detail("emp-1")).toEqual([
+        "payrollEmployees",
+        "emp-1",
+      ]);
+    });
+  });
+
+  describe("payrollConfig keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.payrollConfig.all).toEqual(["payrollConfig"]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.payrollConfig.detail()).toEqual([
+        "payrollConfig",
+        "detail",
+      ]);
+    });
+  });
+
+  describe("payrollPeriods keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.payrollPeriods.all).toEqual(["payrollPeriods"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.payrollPeriods.list()).toEqual([
+        "payrollPeriods",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { year: 2024, month: 6 };
+      expect(queryKeys.payrollPeriods.list(filters)).toEqual([
+        "payrollPeriods",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.payrollPeriods.detail("pp-1")).toEqual([
+        "payrollPeriods",
+        "pp-1",
+      ]);
+    });
+  });
+
+  describe("payrollEntries keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.payrollEntries.all).toEqual(["payrollEntries"]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.payrollEntries.detail("pe-1")).toEqual([
+        "payrollEntries",
+        "pe-1",
+      ]);
+    });
+  });
+
+  describe("costCenters keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.costCenters.all).toEqual(["costCenters"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.costCenters.list()).toEqual([
+        "costCenters",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { isActive: true };
+      expect(queryKeys.costCenters.list(filters)).toEqual([
+        "costCenters",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.costCenters.detail("cc-1")).toEqual([
+        "costCenters",
+        "cc-1",
+      ]);
+    });
+
+    it("generates options key", () => {
+      expect(queryKeys.costCenters.options()).toEqual([
+        "costCenters",
+        "options",
+      ]);
+    });
+  });
+
+  describe("remissions keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.remissions.all).toEqual(["remissions"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.remissions.list()).toEqual([
+        "remissions",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { status: "DELIVERED" };
+      expect(queryKeys.remissions.list(filters)).toEqual([
+        "remissions",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.remissions.detail("rem-1")).toEqual([
+        "remissions",
+        "rem-1",
+      ]);
+    });
+
+    it("generates stats key", () => {
+      expect(queryKeys.remissions.stats()).toEqual(["remissions", "stats"]);
+    });
+  });
+
+  describe("supportDocuments keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.supportDocuments.all).toEqual(["supportDocuments"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.supportDocuments.list()).toEqual([
+        "supportDocuments",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { supplierId: "sup-1" };
+      expect(queryKeys.supportDocuments.list(filters)).toEqual([
+        "supportDocuments",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.supportDocuments.detail("sd-1")).toEqual([
+        "supportDocuments",
+        "sd-1",
+      ]);
+    });
+
+    it("generates stats key", () => {
+      expect(queryKeys.supportDocuments.stats()).toEqual([
+        "supportDocuments",
+        "stats",
+      ]);
+    });
+  });
+
+  describe("collection keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.collection.all).toEqual(["collection"]);
+    });
+
+    it("generates reminders key without filters", () => {
+      expect(queryKeys.collection.reminders()).toEqual([
+        "collection",
+        "reminders",
+        undefined,
+      ]);
+    });
+
+    it("generates reminders key with filters", () => {
+      const filters = { status: "PENDING" };
+      expect(queryKeys.collection.reminders(filters)).toEqual([
+        "collection",
+        "reminders",
+        filters,
+      ]);
+    });
+
+    it("generates reminder detail key", () => {
+      expect(queryKeys.collection.reminder("r-1")).toEqual([
+        "collection",
+        "reminder",
+        "r-1",
+      ]);
+    });
+
+    it("generates stats key", () => {
+      expect(queryKeys.collection.stats()).toEqual(["collection", "stats"]);
+    });
+
+    it("generates dashboard key", () => {
+      expect(queryKeys.collection.dashboard()).toEqual([
+        "collection",
+        "dashboard",
+      ]);
+    });
+
+    it("generates overdueInvoices key", () => {
+      expect(queryKeys.collection.overdueInvoices()).toEqual([
+        "collection",
+        "overdue-invoices",
+      ]);
+    });
+  });
+
+  describe("withholdingCertificates keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.withholdingCertificates.all).toEqual([
+        "withholdingCertificates",
+      ]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.withholdingCertificates.list()).toEqual([
+        "withholdingCertificates",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { year: 2024, supplierId: "sup-1" };
+      expect(queryKeys.withholdingCertificates.list(filters)).toEqual([
+        "withholdingCertificates",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.withholdingCertificates.detail("wc-1")).toEqual([
+        "withholdingCertificates",
+        "wc-1",
+      ]);
+    });
+
+    it("generates stats key without year", () => {
+      expect(queryKeys.withholdingCertificates.stats()).toEqual([
+        "withholdingCertificates",
+        "stats",
+        undefined,
+      ]);
+    });
+
+    it("generates stats key with year", () => {
+      expect(queryKeys.withholdingCertificates.stats(2024)).toEqual([
+        "withholdingCertificates",
+        "stats",
+        2024,
+      ]);
+    });
+  });
+
+  describe("kardex keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.kardex.all).toEqual(["kardex"]);
+    });
+
+    it("generates byProduct key without params", () => {
+      expect(queryKeys.kardex.byProduct("prod-1")).toEqual([
+        "kardex",
+        "product",
+        "prod-1",
+        undefined,
+      ]);
+    });
+
+    it("generates byProduct key with params", () => {
+      const params = { warehouseId: "wh-1", startDate: "2024-01-01" };
+      expect(queryKeys.kardex.byProduct("prod-1", params)).toEqual([
+        "kardex",
+        "product",
+        "prod-1",
+        params,
+      ]);
+    });
+  });
+
+  describe("auditLogs keys", () => {
+    it("generates all key", () => {
+      expect(queryKeys.auditLogs.all).toEqual(["auditLogs"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.auditLogs.list()).toEqual([
+        "auditLogs",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { action: "CREATE", entity: "Invoice" };
+      expect(queryKeys.auditLogs.list(filters)).toEqual([
+        "auditLogs",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates stats key without params", () => {
+      expect(queryKeys.auditLogs.stats()).toEqual([
+        "auditLogs",
+        "stats",
+        undefined,
+      ]);
+    });
+
+    it("generates stats key with params", () => {
+      const params = { period: "monthly" };
+      expect(queryKeys.auditLogs.stats(params)).toEqual([
+        "auditLogs",
+        "stats",
+        params,
+      ]);
+    });
+  });
 });

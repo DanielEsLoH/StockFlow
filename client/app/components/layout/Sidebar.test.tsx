@@ -157,9 +157,11 @@ describe("Sidebar", () => {
       expect(
         screen.getByRole("link", { name: /reportes/i }),
       ).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /configuracion/i }),
-      ).toBeInTheDocument();
+      // There are two "Configuracion" links: Nomina config and Settings
+      const configLinks = screen.getAllByRole("link", {
+        name: /configuracion/i,
+      });
+      expect(configLinks.length).toBeGreaterThanOrEqual(1);
     });
 
     it("should have correct href for navigation links", () => {

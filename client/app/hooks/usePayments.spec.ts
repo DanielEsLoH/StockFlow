@@ -10,6 +10,7 @@ import {
   useRecentPayments,
   usePaymentStats,
   useCreatePayment,
+  useCreatePaymentInline,
   useDeletePayment,
 } from "./usePayments";
 import { paymentsService } from "~/services/payments.service";
@@ -758,6 +759,148 @@ describe("usePayments hooks", () => {
       vi.mocked(paymentsService.createPayment).mockRejectedValue(new Error());
 
       const { result } = renderHook(() => useCreatePayment(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          invoiceId: "inv-1",
+          amount: 5000000,
+          method: "CASH",
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(toast.error).toHaveBeenCalledWith("Error al registrar el pago");
+    });
+  });
+
+  describe("useCreatePaymentInline", () => {
+    it("should create a payment inline without navigation", async () => {
+      const newPaymentData: CreatePaymentData = {
+        invoiceId: "inv-1",
+        amount: 3000000,
+        method: "CASH",
+        paymentDate: "2024-01-20T10:00:00Z",
+      };
+
+      const createdPayment: Payment = {
+        ...mockPayment,
+        ...newPaymentData,
+        id: "inline-id",
+      };
+
+      vi.mocked(paymentsService.createPayment).mockResolvedValue(
+        createdPayment,
+      );
+
+      const { wrapper, queryClient } = createWrapperWithClient();
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+      const { result } = renderHook(() => useCreatePaymentInline(), {
+        wrapper,
+      });
+
+      await act(async () => {
+        result.current.mutate(newPaymentData);
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(paymentsService.createPayment).toHaveBeenCalledWith(
+        newPaymentData,
+      );
+      expect(toast.success).toHaveBeenCalledWith(
+        "Pago registrado exitosamente",
+      );
+      // Should NOT navigate (that's the difference from useCreatePayment)
+      expect(mockNavigate).not.toHaveBeenCalled();
+      expect(invalidateSpy).toHaveBeenCalled();
+    });
+
+    it("should invalidate all related queries on inline creation success", async () => {
+      const createdPayment: Payment = {
+        ...mockPayment,
+        id: "inline-id",
+        invoiceId: "inv-99",
+      };
+
+      vi.mocked(paymentsService.createPayment).mockResolvedValue(
+        createdPayment,
+      );
+
+      const { wrapper, queryClient } = createWrapperWithClient();
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+      const { result } = renderHook(() => useCreatePaymentInline(), {
+        wrapper,
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          invoiceId: "inv-99",
+          amount: 1000000,
+          method: "CASH",
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.payments.all,
+      });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.payments.byInvoice("inv-99"),
+      });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.invoices.detail("inv-99"),
+      });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.invoices.all,
+      });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.payments.stats(),
+      });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: queryKeys.dashboard.all,
+      });
+    });
+
+    it("should show error toast on inline creation failure", async () => {
+      const error = new Error("Error al registrar el pago");
+      vi.mocked(paymentsService.createPayment).mockRejectedValue(error);
+
+      const { result } = renderHook(() => useCreatePaymentInline(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          invoiceId: "inv-1",
+          amount: 5000000,
+          method: "CASH",
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(toast.error).toHaveBeenCalledWith("Error al registrar el pago");
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it("should use default error message when error has no message", async () => {
+      vi.mocked(paymentsService.createPayment).mockRejectedValue(new Error());
+
+      const { result } = renderHook(() => useCreatePaymentInline(), {
         wrapper: createWrapper(),
       });
 

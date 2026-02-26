@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
@@ -75,6 +75,7 @@ const employeeFiltersParser = {
 };
 
 export default function EmployeesPage() {
+  const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
   const { filters, updateFilters, clearFilters } =
@@ -231,7 +232,7 @@ export default function EmployeesPage() {
               action={
                 hasActiveFilters
                   ? { label: "Limpiar filtros", onClick: clearFilters }
-                  : { label: "Agregar empleado", onClick: () => (window.location.href = "/payroll/employees/new") }
+                  : { label: "Agregar empleado", onClick: () => navigate("/payroll/employees/new") }
               }
             />
           ) : (
@@ -297,7 +298,7 @@ export default function EmployeesPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                           <Link to={`/payroll/employees/${employee.id}`}>
                             <Button variant="ghost" size="icon" title="Ver detalles">
                               <Eye className="h-4 w-4" />

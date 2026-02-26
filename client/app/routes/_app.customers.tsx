@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
@@ -87,6 +87,7 @@ const customerFiltersParser = {
 };
 
 export default function CustomersPage() {
+  const navigate = useNavigate();
   const { canCreateCustomers } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(
@@ -384,7 +385,7 @@ export default function CustomersPage() {
                   ? { label: "Limpiar filtros", onClick: clearFilters }
                   : {
                       label: "Agregar cliente",
-                      onClick: () => (window.location.href = "/customers/new"),
+                      onClick: () => navigate("/customers/new"),
                     }
               }
             />
@@ -510,7 +511,7 @@ export default function CustomersPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                             <Link to={`/customers/${customer.id}`}>
                               <Button
                                 variant="ghost"

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -44,6 +44,7 @@ import {
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { EmptyState } from "~/components/ui/EmptyState";
 import { DeleteModal } from "~/components/ui/DeleteModal";
+import { DateFilterInput } from "~/components/ui/DateFilterInput";
 import type { RemissionStatus, Remission } from "~/types/remission";
 import { remissionStatusLabels } from "~/types/remission";
 
@@ -101,30 +102,6 @@ interface RemissionFilters {
   limit?: number;
 }
 
-// Date filter input
-function DateFilterInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string | undefined;
-  onChange: (value: string | undefined) => void;
-  placeholder: string;
-}) {
-  return (
-    <div className="relative">
-      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
-      <Input
-        type="date"
-        placeholder={placeholder}
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value || undefined)}
-        className="pl-10"
-      />
-    </div>
-  );
-}
-
 // Table header
 function RemissionTableHeader() {
   return (
@@ -155,6 +132,7 @@ const remissionFiltersParser = {
 };
 
 export default function RemissionsPage() {
+  const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingRemission, setDeletingRemission] = useState<Remission | null>(null);
   const { filters, updateFilters, clearFilters } =
@@ -397,8 +375,7 @@ export default function RemissionsPage() {
                   ? { label: "Limpiar filtros", onClick: clearFilters }
                   : {
                       label: "Crear remision",
-                      onClick: () =>
-                        (window.location.href = "/remissions/new"),
+                      onClick: () => navigate("/remissions/new"),
                     }
               }
             />
@@ -447,7 +424,7 @@ export default function RemissionsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                           <Link to={`/remissions/${remission.id}`}>
                             <Button
                               variant="ghost"

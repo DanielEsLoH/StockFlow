@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePermissions } from "~/hooks/usePermissions";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
@@ -81,6 +81,7 @@ const productFiltersParser = {
 };
 
 export default function ProductsPage() {
+  const navigate = useNavigate();
   const { canCreateProducts } = usePermissions();
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [showFilters, setShowFilters] = useState(false);
@@ -385,7 +386,7 @@ export default function ProductsPage() {
                   ? { label: "Limpiar filtros", onClick: clearFilters }
                   : {
                       label: "Agregar producto",
-                      onClick: () => (window.location.href = "/products/new"),
+                      onClick: () => navigate("/products/new"),
                     }
               }
             />
@@ -499,7 +500,7 @@ export default function ProductsPage() {
 
                           {/* Actions */}
                           <TableCell>
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                               <Link to={`/products/${product.id}`}>
                                 <Button
                                   variant="ghost"
@@ -561,7 +562,7 @@ export default function ProductsPage() {
                         )}
 
                         {/* Overlay gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" />
 
                         {/* Status badge */}
                         <div className="absolute right-3 top-3">

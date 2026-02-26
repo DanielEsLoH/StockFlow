@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -46,6 +46,7 @@ import {
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { EmptyState } from "~/components/ui/EmptyState";
 import { DeleteModal } from "~/components/ui/DeleteModal";
+import { DateFilterInput } from "~/components/ui/DateFilterInput";
 import type { SupportDocumentStatus, SupportDocument } from "~/types/support-document";
 import { supportDocStatusLabels } from "~/types/support-document";
 
@@ -105,30 +106,6 @@ interface SupportDocumentFilters {
   limit?: number;
 }
 
-// Date filter input
-function DateFilterInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string | undefined;
-  onChange: (value: string | undefined) => void;
-  placeholder: string;
-}) {
-  return (
-    <div className="relative">
-      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
-      <Input
-        type="date"
-        placeholder={placeholder}
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value || undefined)}
-        className="pl-10"
-      />
-    </div>
-  );
-}
-
 // Table header
 function DocTableHeader() {
   return (
@@ -158,6 +135,7 @@ const docFiltersParser = {
 };
 
 export default function SupportDocumentsPage() {
+  const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingDoc, setDeletingDoc] = useState<SupportDocument | null>(null);
   const { filters, updateFilters, clearFilters } =
@@ -393,8 +371,7 @@ export default function SupportDocumentsPage() {
                   ? { label: "Limpiar filtros", onClick: clearFilters }
                   : {
                       label: "Crear documento",
-                      onClick: () =>
-                        (window.location.href = "/support-documents/new"),
+                      onClick: () => navigate("/support-documents/new"),
                     }
               }
             />
@@ -457,7 +434,7 @@ export default function SupportDocumentsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                           <Link to={`/support-documents/${doc.id}`}>
                             <Button
                               variant="ghost"

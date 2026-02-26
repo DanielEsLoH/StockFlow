@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePermissions } from "~/hooks/usePermissions";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
@@ -49,6 +49,7 @@ import {
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { DeleteModal } from "~/components/ui/DeleteModal";
 import { EmptyState } from "~/components/ui/EmptyState";
+import { DateFilterInput } from "~/components/ui/DateFilterInput";
 import type {
   InvoiceFilters,
   InvoiceSummary,
@@ -91,30 +92,6 @@ const pageSizeOptions = [
   { value: "25", label: "25 por pagina" },
   { value: "50", label: "50 por pagina" },
 ];
-
-// Date filter input component - extracted to avoid duplication
-function DateFilterInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string | undefined;
-  onChange: (value: string | undefined) => void;
-  placeholder: string;
-}) {
-  return (
-    <div className="relative">
-      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
-      <Input
-        type="date"
-        placeholder={placeholder}
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value || undefined)}
-        className="pl-10"
-      />
-    </div>
-  );
-}
 
 // Invoice table header component - extracted to avoid duplication
 function InvoiceTableHeader() {
@@ -210,6 +187,7 @@ const invoiceFiltersParser = {
 
 // Default export used by React Router
 export default function InvoicesPage() {
+  const navigate = useNavigate();
   const { canCreateInvoices } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingInvoice, setDeletingInvoice] = useState<InvoiceSummary | null>(
@@ -478,7 +456,7 @@ export default function InvoicesPage() {
                   ? { label: "Limpiar filtros", onClick: clearFilters }
                   : {
                       label: "Crear factura",
-                      onClick: () => (window.location.href = "/invoices/new"),
+                      onClick: () => navigate("/invoices/new"),
                     }
               }
             />
@@ -570,7 +548,7 @@ export default function InvoicesPage() {
                           <DianStatusIcon hasCufe={!!invoice.dianCufe} />
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                             <Link to={`/invoices/${invoice.id}`}>
                               <Button
                                 variant="ghost"

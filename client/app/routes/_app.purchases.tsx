@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePermissions } from "~/hooks/usePermissions";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
@@ -42,6 +42,7 @@ import {
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { DeleteModal } from "~/components/ui/DeleteModal";
 import { EmptyState } from "~/components/ui/EmptyState";
+import { DateFilterInput } from "~/components/ui/DateFilterInput";
 import type {
   PurchaseOrderFilters,
   PurchaseOrderSummary,
@@ -81,30 +82,6 @@ const pageSizeOptions = [
   { value: "50", label: "50 por pagina" },
 ];
 
-// Date filter input component - extracted to avoid duplication
-function DateFilterInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string | undefined;
-  onChange: (value: string | undefined) => void;
-  placeholder: string;
-}) {
-  return (
-    <div className="relative">
-      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
-      <Input
-        type="date"
-        placeholder={placeholder}
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value || undefined)}
-        className="pl-10"
-      />
-    </div>
-  );
-}
-
 // Purchase order table header component
 function PurchaseOrderTableHeader() {
   return (
@@ -140,6 +117,7 @@ const purchaseOrderFiltersParser = {
 
 // Default export used by React Router
 export default function PurchaseOrdersPage() {
+  const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission(Permission.PURCHASE_ORDERS_CREATE);
   const canDelete = hasPermission(Permission.PURCHASE_ORDERS_DELETE);
@@ -417,8 +395,7 @@ export default function PurchaseOrdersPage() {
                   ? { label: "Limpiar filtros", onClick: clearFilters }
                   : {
                       label: "Crear orden de compra",
-                      onClick: () =>
-                        (window.location.href = "/purchases/new"),
+                      onClick: () => navigate("/purchases/new"),
                     }
               }
             />
@@ -484,7 +461,7 @@ export default function PurchaseOrdersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                           <Link to={`/purchases/${order.id}`}>
                             <Button
                               variant="ghost"

@@ -260,7 +260,7 @@ export default function ProfilePage() {
                     disabled={uploadAvatar.isPending}
                     className={cn(
                       "absolute inset-0 rounded-full bg-black/50 flex items-center justify-center",
-                      "opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer",
+                      "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity cursor-pointer",
                       uploadAvatar.isPending && "opacity-100",
                     )}
                   >

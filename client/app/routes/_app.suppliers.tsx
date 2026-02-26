@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
@@ -76,6 +76,7 @@ const supplierFiltersParser = {
 };
 
 export default function SuppliersPage() {
+  const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const [showFilters, setShowFilters] = useState(false);
   const [deletingSupplier, setDeletingSupplier] = useState<Supplier | null>(
@@ -315,7 +316,7 @@ export default function SuppliersPage() {
                   ? { label: "Limpiar filtros", onClick: clearFilters }
                   : {
                       label: "Agregar proveedor",
-                      onClick: () => (window.location.href = "/suppliers/new"),
+                      onClick: () => navigate("/suppliers/new"),
                     }
               }
             />
@@ -396,7 +397,7 @@ export default function SuppliersPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                             <Link to={`/suppliers/${supplier.id}`}>
                               <Button
                                 variant="ghost"

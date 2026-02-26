@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
@@ -13,6 +13,8 @@ import {
   PlayCircle,
   PauseCircle,
   User,
+  History,
+  ShoppingCart,
 } from "lucide-react";
 import type { Route } from "./+types/_app.pos.sessions";
 import { cn, formatCurrency, formatDateTime } from "~/lib/utils";
@@ -21,6 +23,7 @@ import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/Input";
 import { Card } from "~/components/ui/Card";
 import { Badge } from "~/components/ui/Badge";
+import { StatCard } from "~/components/ui/StatCard";
 import { Select } from "~/components/ui/Select";
 import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
 import {
@@ -33,6 +36,7 @@ import {
   AnimatedTableRow,
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
+import { EmptyState } from "~/components/ui/EmptyState";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
 import type { POSSessionFilters } from "~/types/pos";
 
@@ -50,6 +54,12 @@ const statusOptions = [
   { value: "SUSPENDED", label: "Suspendidas" },
 ];
 
+const pageSizeOptions = [
+  { value: "10", label: "10 por pagina" },
+  { value: "25", label: "25 por pagina" },
+  { value: "50", label: "50 por pagina" },
+];
+
 const sessionsFiltersParser = {
   parse: (searchParams: URLSearchParams): POSSessionFilters => ({
     status:
@@ -62,7 +72,24 @@ const sessionsFiltersParser = {
   }),
 };
 
+// Table header component
+function SessionTableHeader() {
+  return (
+    <TableHeader>
+      <TableRow>
+        <TableHead>Caja</TableHead>
+        <TableHead className="hidden md:table-cell">Usuario</TableHead>
+        <TableHead className="hidden sm:table-cell">Apertura</TableHead>
+        <TableHead className="text-right">Ventas</TableHead>
+        <TableHead>Estado</TableHead>
+        <TableHead className="w-24">Acciones</TableHead>
+      </TableRow>
+    </TableHeader>
+  );
+}
+
 export default function POSSessionsPage() {
+  const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(false);
 
   const { filters, updateFilters, clearFilters } =
@@ -73,34 +100,39 @@ export default function POSSessionsPage() {
   const { data: sessionsData, isLoading, isError } = usePOSSessions(filters);
 
   const sessions = sessionsData?.data || [];
-  const meta = sessionsData?.meta;
+  const paginationMeta = sessionsData?.meta;
   const hasActiveFilters = filters.status || filters.fromDate || filters.toDate;
+
+  // Derive stats from sessions data
+  const activeSessions = sessions.filter((s) => s.status === "ACTIVE").length;
+  const closedSessions = sessions.filter((s) => s.status === "CLOSED").length;
+  const totalSales = sessions.reduce((sum, s) => sum + (s.totalSales || 0), 0);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "ACTIVE":
         return (
-          <Badge variant="success">
+          <Badge variant="success" size="sm">
             <PlayCircle className="h-3 w-3 mr-1" />
             Activa
           </Badge>
         );
       case "CLOSED":
         return (
-          <Badge variant="secondary">
+          <Badge variant="secondary" size="sm">
             <CheckCircle className="h-3 w-3 mr-1" />
             Cerrada
           </Badge>
         );
       case "SUSPENDED":
         return (
-          <Badge variant="warning">
+          <Badge variant="warning" size="sm">
             <PauseCircle className="h-3 w-3 mr-1" />
             Suspendida
           </Badge>
         );
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge size="sm">{status}</Badge>;
     }
   };
 
@@ -108,39 +140,81 @@ export default function POSSessionsPage() {
     <PageWrapper>
       {/* Header */}
       <PageSection className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-neutral-900 dark:text-white">
-            Sesiones de Caja
-          </h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">
-            Historial de turnos de caja
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500/20 to-accent-500/10 dark:from-primary-500/20 dark:to-accent-900/30">
+            <History className="h-7 w-7 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold font-display bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
+              Sesiones de Caja
+            </h1>
+            <p className="text-neutral-500 dark:text-neutral-400 mt-0.5">
+              {paginationMeta?.total || 0} sesiones en total
+            </p>
+          </div>
         </div>
         <Link to="/pos/open">
-          <Button>
-            <PlayCircle className="h-4 w-4 mr-2" />
+          <Button variant="gradient" leftIcon={<PlayCircle className="h-4 w-4" />}>
             Abrir Nuevo Turno
           </Button>
         </Link>
       </PageSection>
 
+      {/* Stats Cards */}
+      <PageSection>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            icon={History}
+            label="Total Sesiones"
+            value={paginationMeta?.total || 0}
+            color="primary"
+            variant="gradient"
+            animate
+            animationDelay={0}
+          />
+          <StatCard
+            icon={PlayCircle}
+            label="Activas"
+            value={activeSessions}
+            color="success"
+            variant="gradient"
+            animate
+            animationDelay={0.1}
+          />
+          <StatCard
+            icon={CheckCircle}
+            label="Cerradas"
+            value={closedSessions}
+            color="neutral"
+            variant="gradient"
+            animate
+            animationDelay={0.2}
+          />
+          <StatCard
+            icon={DollarSign}
+            label="Ventas Totales"
+            value={formatCurrency(totalSales)}
+            color="accent"
+            variant="gradient"
+            animate
+            animationDelay={0.3}
+          />
+        </div>
+      </PageSection>
+
       {/* Filters */}
       <PageSection>
-        <Card padding="md">
+        <Card variant="elevated" padding="md">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Button
-                variant="outline"
+                variant={showFilters ? "soft-primary" : "outline"}
                 onClick={() => setShowFilters(!showFilters)}
-                className={cn(
-                  showFilters &&
-                    "bg-primary-50 border-primary-500 text-primary-600 dark:bg-primary-900/20",
-                )}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
                 {hasActiveFilters && (
-                  <Badge variant="primary" className="ml-2">
+                  <Badge variant="gradient" size="xs" className="ml-2">
                     {
                       [filters.status, filters.fromDate, filters.toDate].filter(
                         Boolean,
@@ -180,26 +254,32 @@ export default function POSSessionsPage() {
                       }
                       placeholder="Todos los estados"
                     />
-                    <div className="space-y-1">
-                      <label className="text-sm text-neutral-500">Desde</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
                       <Input
                         type="date"
+                        placeholder="Desde"
                         value={filters.fromDate || ""}
                         onChange={(e) =>
                           updateFilters({
                             fromDate: e.target.value || undefined,
                           })
                         }
+                        className="pl-10"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-sm text-neutral-500">Hasta</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
                       <Input
                         type="date"
+                        placeholder="Hasta"
                         value={filters.toDate || ""}
                         onChange={(e) =>
-                          updateFilters({ toDate: e.target.value || undefined })
+                          updateFilters({
+                            toDate: e.target.value || undefined,
+                          })
                         }
+                        className="pl-10"
                       />
                     </div>
                   </div>
@@ -212,23 +292,10 @@ export default function POSSessionsPage() {
 
       {/* Table */}
       <PageSection>
-        <Card>
+        <Card variant="elevated">
           {isLoading ? (
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Caja</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    Usuario
-                  </TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    Apertura
-                  </TableHead>
-                  <TableHead>Ventas</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="w-[80px]">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
+              <SessionTableHeader />
               <TableBody>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <SkeletonTableRow key={i} columns={6} />
@@ -236,109 +303,83 @@ export default function POSSessionsPage() {
               </TableBody>
             </Table>
           ) : isError ? (
-            <div className="p-8 text-center">
-              <p className="text-error-500">Error al cargar las sesiones</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => window.location.reload()}
-              >
-                Reintentar
-              </Button>
-            </div>
+            <EmptyState
+              type="error"
+              title="Error al cargar sesiones"
+              description="Hubo un problema al cargar las sesiones. Por favor, intenta de nuevo."
+              action={{
+                label: "Reintentar",
+                onClick: () => window.location.reload(),
+              }}
+            />
           ) : sessions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="mb-6 text-neutral-300 dark:text-neutral-600">
-                <Clock className="h-16 w-16" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold text-neutral-900 dark:text-white">
-                {hasActiveFilters ? "Sin resultados" : "No hay sesiones"}
-              </h3>
-              <p className="mb-6 max-w-sm text-neutral-500 dark:text-neutral-400">
-                {hasActiveFilters
+            <EmptyState
+              icon={<History className="h-16 w-16" />}
+              title={hasActiveFilters ? "Sin resultados" : "No hay sesiones"}
+              description={
+                hasActiveFilters
                   ? "No se encontraron sesiones con los filtros aplicados."
-                  : "Aun no hay sesiones de caja registradas."}
-              </p>
-              {hasActiveFilters ? (
-                <Button variant="outline" onClick={clearFilters}>
-                  Limpiar filtros
-                </Button>
-              ) : (
-                <Link to="/pos/open">
-                  <Button>
-                    <PlayCircle className="h-4 w-4 mr-2" />
-                    Abrir Primer Turno
-                  </Button>
-                </Link>
-              )}
-            </div>
+                  : "Aun no hay sesiones de caja registradas."
+              }
+              action={
+                hasActiveFilters
+                  ? { label: "Limpiar filtros", onClick: clearFilters }
+                  : {
+                      label: "Abrir primer turno",
+                      onClick: () => navigate("/pos/open"),
+                    }
+              }
+            />
           ) : (
             <>
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Caja</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Usuario
-                    </TableHead>
-                    <TableHead className="hidden sm:table-cell">
-                      Apertura
-                    </TableHead>
-                    <TableHead>Ventas</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="w-[80px]">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
+                <SessionTableHeader />
                 <TableBody>
-                    {sessions.map((session, i) => (
-                      <AnimatedTableRow
-                        key={session.id}
-                        index={i}
-                        className="border-b border-neutral-200 dark:border-neutral-700 last:border-0"
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 dark:bg-primary-900/20">
-                              <Clock className="h-5 w-5 text-primary-500" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-neutral-900 dark:text-white">
-                                {session.cashRegister?.name || "Caja"}
-                              </p>
-                              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                {session.cashRegister?.warehouse?.name || ""}
-                              </p>
-                            </div>
+                  {sessions.map((session, i) => (
+                    <AnimatedTableRow
+                      key={session.id}
+                      index={i}
+                      className="group border-b border-neutral-200 dark:border-neutral-700 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500/10 to-primary-600/5 dark:from-primary-500/20 dark:to-primary-900/30">
+                            <ShoppingCart className="h-5 w-5 text-primary-500" />
                           </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex items-center gap-1.5">
-                            <User className="h-4 w-4 text-neutral-400" />
-                            <span className="text-neutral-700 dark:text-neutral-300">
-                              {session.user?.name ||
-                                `${session.user?.firstName || ""} ${session.user?.lastName || ""}`.trim() ||
-                                "Usuario"}
-                            </span>
+                          <div>
+                            <p className="font-medium text-neutral-900 dark:text-white">
+                              {session.cashRegister?.name || "Caja"}
+                            </p>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                              {session.cashRegister?.warehouse?.name || ""}
+                            </p>
                           </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="h-4 w-4 text-neutral-400" />
-                            <span className="text-neutral-700 dark:text-neutral-300">
-                              {formatDateTime(session.openedAt)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <DollarSign className="h-4 w-4 text-success-500" />
-                            <span className="font-semibold text-neutral-900 dark:text-white">
-                              {formatCurrency(session.totalSales || 0)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(session.status)}</TableCell>
-                        <TableCell>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex items-center gap-1.5">
+                          <User className="h-4 w-4 text-neutral-400" />
+                          <span className="text-neutral-700 dark:text-neutral-300">
+                            {session.user?.name ||
+                              `${session.user?.firstName || ""} ${session.user?.lastName || ""}`.trim() ||
+                              "Usuario"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <div className="flex items-center gap-1.5 text-sm text-neutral-700 dark:text-neutral-300">
+                          <Calendar className="h-3.5 w-3.5 text-neutral-400" />
+                          {formatDateTime(session.openedAt)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <p className="font-bold text-lg bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-300 bg-clip-text text-transparent">
+                          {formatCurrency(session.totalSales || 0)}
+                        </p>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(session.status)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                           <Link to={`/pos/sessions/${session.id}`}>
                             <Button
                               variant="ghost"
@@ -348,22 +389,34 @@ export default function POSSessionsPage() {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
-                        </TableCell>
-                      </AnimatedTableRow>
-                    ))}
+                        </div>
+                      </TableCell>
+                    </AnimatedTableRow>
+                  ))}
                 </TableBody>
               </Table>
 
-              {meta && meta.totalPages > 1 && (
+              {/* Pagination */}
+              {paginationMeta && paginationMeta.totalPages > 1 && (
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 border-t border-neutral-200 dark:border-neutral-700">
-                  <PaginationInfo
-                    currentPage={meta.page}
-                    pageSize={meta.limit}
-                    totalItems={meta.total}
-                  />
+                  <div className="flex items-center gap-4">
+                    <PaginationInfo
+                      currentPage={paginationMeta.page}
+                      pageSize={paginationMeta.limit}
+                      totalItems={paginationMeta.total}
+                    />
+                    <Select
+                      options={pageSizeOptions}
+                      value={String(filters.limit || 10)}
+                      onChange={(value) =>
+                        updateFilters({ limit: Number(value), page: 1 })
+                      }
+                      className="w-36"
+                    />
+                  </div>
                   <Pagination
-                    currentPage={meta.page}
-                    totalPages={meta.totalPages}
+                    currentPage={paginationMeta.page}
+                    totalPages={paginationMeta.totalPages}
                     onPageChange={(page) => updateFilters({ page })}
                   />
                 </div>

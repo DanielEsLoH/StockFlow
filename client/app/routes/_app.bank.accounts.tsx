@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Landmark,
   Plus,
@@ -37,6 +37,7 @@ export const meta: Route.MetaFunction = () => {
 };
 
 export default function BankAccountsPage() {
+  const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const { data: accounts, isLoading, isError } = useBankAccounts();
 
@@ -112,8 +113,7 @@ export default function BankAccountsPage() {
                 hasPermission(Permission.BANK_CREATE)
                   ? {
                       label: "Agregar cuenta",
-                      onClick: () =>
-                        (window.location.href = "/bank/accounts/new"),
+                      onClick: () => navigate("/bank/accounts/new"),
                     }
                   : undefined
               }
@@ -184,7 +184,7 @@ export default function BankAccountsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                         <Link to={`/bank/accounts/${account.id}`}>
                           <Button
                             variant="ghost"

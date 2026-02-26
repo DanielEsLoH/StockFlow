@@ -80,6 +80,13 @@ export default [
     route("invoices/:id", "routes/_app.invoices.$id.tsx"),
     route("invoices/:id/edit", "routes/_app.invoices.$id.edit.tsx"),
 
+    // Recurring Invoices
+    route("invoices/recurring", "routes/_app.invoices.recurring.tsx"),
+    route(
+      "invoices/recurring/new",
+      "routes/_app.invoices.recurring.new.tsx",
+    ),
+
     // Payments module
     route("payments", "routes/_app.payments.tsx"),
     route("payments/new", "routes/_app.payments.new.tsx"),

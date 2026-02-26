@@ -41,6 +41,7 @@ import { WithholdingCertificatesModule } from './withholding-certificates/withho
 import { SupportDocumentsModule } from './support-documents';
 import { RemissionsModule } from './remissions';
 import { ExpensesModule } from './expenses';
+import { RecurringInvoicesModule } from './recurring-invoices';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 import { PermissionsModule } from './common/permissions';
@@ -93,6 +94,7 @@ import { PermissionsModule } from './common/permissions';
     SupportDocumentsModule,
     RemissionsModule,
     ExpensesModule,
+    RecurringInvoicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

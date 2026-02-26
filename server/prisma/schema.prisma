@@ -321,6 +321,14 @@ enum NotificationPriority {
   URGENT
 }
 
+enum RecurringInterval {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
@@ -382,6 +390,7 @@ model Tenant {
   withholdingCertificates WithholdingCertificate[]
   purchasePayments        PurchasePayment[]
   expenses                Expense[]
+  recurringInvoices       RecurringInvoice[]
 
   @@map("tenants")
 }
@@ -609,6 +618,7 @@ model Customer {
   quotations          Quotation[]
   remissions          Remission[]
   collectionReminders CollectionReminder[]
+  recurringInvoices   RecurringInvoice[]
 
   @@unique([tenantId, documentNumber])
   @@index([tenantId])
@@ -652,6 +662,8 @@ model Invoice {
   convertedFromQuotation Quotation?
   remissions             Remission[]
   collectionReminders    CollectionReminder[]
+  recurringInvoice       RecurringInvoice?    @relation(fields: [recurringInvoiceId], references: [id], onDelete: SetNull)
+  recurringInvoiceId     String?              @map("recurring_invoice_id")
 
   @@unique([tenantId, invoiceNumber])
   @@index([tenantId])
@@ -2087,4 +2099,29 @@ model Expense {
   @@index([tenantId, category])
   @@index([tenantId, issueDate])
   @@map("expenses")
+}
+
+model RecurringInvoice {
+  id            String            @id @default(cuid())
+  tenantId      String            @map("tenant_id")
+  customerId    String            @map("customer_id")
+  warehouseId   String?           @map("warehouse_id")
+  notes         String?
+  items         Json
+  interval      RecurringInterval
+  nextIssueDate DateTime          @map("next_issue_date")
+  endDate       DateTime?         @map("end_date")
+  lastIssuedAt  DateTime?         @map("last_issued_at")
+  autoSend      Boolean           @default(false) @map("auto_send")
+  autoEmail     Boolean           @default(false) @map("auto_email")
+  isActive      Boolean           @default(true) @map("is_active")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id])
+  invoices Invoice[]
+
+  @@index([tenantId, isActive, nextIssueDate])
+  @@map("recurring_invoices")
 }

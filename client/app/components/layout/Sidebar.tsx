@@ -43,6 +43,7 @@ import {
   MonitorSmartphone,
   History,
   Boxes,
+  RefreshCw,
 } from "lucide-react";
 import { cn, getInitials, formatCurrency } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
@@ -132,6 +133,12 @@ const navSections: NavSection[] = [
         name: "Facturas",
         href: "/invoices",
         icon: FileText,
+        permission: Permission.INVOICES_VIEW,
+      },
+      {
+        name: "Recurrentes",
+        href: "/invoices/recurring",
+        icon: RefreshCw,
         permission: Permission.INVOICES_VIEW,
       },
       {

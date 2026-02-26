@@ -7,6 +7,7 @@ import { XmlGeneratorService } from './services/xml-generator.service';
 import { CufeGeneratorService } from './services/cufe-generator.service';
 import { DianClientService } from './services/dian-client.service';
 import { XmlSignerService } from './services/xml-signer.service';
+import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
 import { DianDocumentStatus, DianDocumentType } from '@prisma/client';
 
 describe('DianService', () => {
@@ -16,6 +17,8 @@ describe('DianService', () => {
   let xmlGenerator: jest.Mocked<XmlGeneratorService>;
   let cufeGenerator: jest.Mocked<CufeGeneratorService>;
   let dianClient: jest.Mocked<DianClientService>;
+  let xmlSigner: jest.Mocked<XmlSignerService>;
+  let accountingBridge: jest.Mocked<AccountingBridgeService>;
 
   const mockTenantId = 'tenant-123';
 
@@ -121,6 +124,19 @@ describe('DianService', () => {
         findFirst: jest.fn(),
         update: jest.fn(),
       },
+      product: {
+        update: jest.fn().mockResolvedValue({}),
+      },
+      warehouseStock: {
+        upsert: jest.fn().mockResolvedValue({}),
+      },
+      stockMovement: {
+        create: jest.fn().mockResolvedValue({}),
+      },
+      $transaction: jest.fn().mockImplementation((args: unknown) => {
+        if (Array.isArray(args)) return Promise.all(args);
+        return (args as (prisma: any) => Promise<any>)(mockPrismaService);
+      }),
     };
 
     const mockTenantContextService = {
@@ -129,11 +145,14 @@ describe('DianService', () => {
 
     const mockXmlGeneratorService = {
       generateInvoiceXml: jest.fn().mockReturnValue('<xml>generated</xml>'),
+      generateCreditNoteXml: jest.fn().mockReturnValue('<xml>credit-note</xml>'),
+      generateDebitNoteXml: jest.fn().mockReturnValue('<xml>debit-note</xml>'),
     };
 
     const mockCufeGeneratorService = {
       generateCufeFromInvoice: jest.fn().mockReturnValue('cufe-generated'),
       generateQrCodeData: jest.fn().mockReturnValue('qrcode-generated'),
+      generateCude: jest.fn().mockReturnValue('cude-generated'),
     };
 
     const mockDianClientService = {
@@ -165,6 +184,17 @@ describe('DianService', () => {
       signXml: jest.fn().mockReturnValue('<xml>signed</xml>'),
     };
 
+    const mockAccountingBridgeService = {
+      onInvoiceCreated: jest.fn(),
+      onInvoiceCancelled: jest.fn(),
+      onPaymentCreated: jest.fn(),
+      onPurchaseReceived: jest.fn(),
+      onStockAdjustment: jest.fn(),
+      onExpensePaid: jest.fn(),
+      onCreditNoteCreated: jest.fn().mockResolvedValue(undefined),
+      onDebitNoteCreated: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DianService,
@@ -174,6 +204,7 @@ describe('DianService', () => {
         { provide: CufeGeneratorService, useValue: mockCufeGeneratorService },
         { provide: DianClientService, useValue: mockDianClientService },
         { provide: XmlSignerService, useValue: mockXmlSignerService },
+        { provide: AccountingBridgeService, useValue: mockAccountingBridgeService },
       ],
     }).compile();
 
@@ -183,6 +214,8 @@ describe('DianService', () => {
     xmlGenerator = module.get(XmlGeneratorService);
     cufeGenerator = module.get(CufeGeneratorService);
     dianClient = module.get(DianClientService);
+    xmlSigner = module.get(XmlSignerService);
+    accountingBridge = module.get(AccountingBridgeService);
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -933,6 +966,622 @@ describe('DianService', () => {
       expect(result.rejected).toBe(10);
       expect(result.pending).toBe(10);
       expect(result.acceptanceRate).toBe('80.0');
+    });
+  });
+
+  // ============================================================================
+  // CREDIT NOTE TESTS
+  // ============================================================================
+
+  describe('processCreditNote', () => {
+    const mockConfigWithNotes = {
+      ...mockDianConfig,
+      creditNotePrefix: 'NC',
+      creditNoteCurrentNumber: 1,
+      debitNotePrefix: 'ND',
+      debitNoteCurrentNumber: 1,
+    };
+
+    const mockInvoiceWithWarehouse = {
+      ...mockInvoice,
+      warehouseId: 'warehouse-1',
+    };
+
+    const creditNoteDto = {
+      invoiceId: 'invoice-123',
+      reason: 'DEVOLUCION_TOTAL' as any,
+      reasonCode: 'DEVOLUCION_TOTAL',
+    };
+
+    const mockCreditNoteDoc = {
+      id: 'credit-note-doc-1',
+      tenantId: mockTenantId,
+      invoiceId: 'invoice-123',
+      documentType: DianDocumentType.NOTA_CREDITO,
+      documentNumber: 'NC00000001',
+      cude: 'cude-generated',
+      status: DianDocumentStatus.GENERATED,
+      xmlContent: '<xml>credit-note</xml>',
+    };
+
+    beforeEach(() => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockConfigWithNotes,
+      );
+      (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(
+        mockInvoiceWithWarehouse,
+      );
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue({
+        ...mockDianDocument,
+        status: DianDocumentStatus.ACCEPTED,
+        documentType: DianDocumentType.FACTURA_ELECTRONICA,
+      });
+      (prisma.dianDocument.create as jest.Mock).mockResolvedValue(
+        mockCreditNoteDoc,
+      );
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockConfigWithNotes,
+      );
+      (prisma.dianDocument.update as jest.Mock).mockResolvedValue(
+        mockCreditNoteDoc,
+      );
+    });
+
+    it('should process full credit note successfully', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-cn-1',
+        isValid: true,
+      });
+
+      const result = await service.processCreditNote(creditNoteDto);
+
+      expect(result.success).toBe(true);
+      expect(result.status).toBe(DianDocumentStatus.ACCEPTED);
+      expect(result.cufe).toBe('cude-generated');
+      expect(result.trackId).toBe('track-cn-1');
+      expect(result.message).toBe(
+        'Nota credito enviada y aceptada por la DIAN',
+      );
+      expect(cufeGenerator.generateCude).toHaveBeenCalled();
+      expect(xmlGenerator.generateCreditNoteXml).toHaveBeenCalled();
+    });
+
+    it('should process partial credit note with specific items', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-cn-2',
+        isValid: true,
+      });
+
+      const partialDto = {
+        ...creditNoteDto,
+        items: [{ invoiceItemId: 'item-123', quantity: 1 }],
+      };
+
+      const result = await service.processCreditNote(partialDto);
+
+      expect(result.success).toBe(true);
+      expect(xmlGenerator.generateCreditNoteXml).toHaveBeenCalled();
+    });
+
+    it('should generate correct note number from config', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-cn-3',
+        isValid: true,
+      });
+
+      await service.processCreditNote(creditNoteDto);
+
+      expect(prisma.dianDocument.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            documentType: DianDocumentType.NOTA_CREDITO,
+            documentNumber: 'NC00000001',
+            cude: 'cude-generated',
+          }),
+        }),
+      );
+    });
+
+    it('should use $transaction for atomic document creation and number increment', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-cn-4',
+        isValid: true,
+      });
+
+      await service.processCreditNote(creditNoteDto);
+
+      expect((prisma as any).$transaction).toHaveBeenCalled();
+      expect(prisma.tenantDianConfig.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { creditNoteCurrentNumber: { increment: 1 } },
+        }),
+      );
+    });
+
+    it('should throw BadRequestException when credit note prefix not configured', async () => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue({
+        ...mockConfigWithNotes,
+        creditNotePrefix: null,
+      });
+
+      await expect(
+        service.processCreditNote(creditNoteDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when no DIAN config exists', async () => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        service.processCreditNote(creditNoteDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when invoice not found', async () => {
+      (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.processCreditNote(creditNoteDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when original document not accepted by DIAN', async () => {
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.processCreditNote(creditNoteDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when item not found in original invoice', async () => {
+      const dtoWithBadItem = {
+        ...creditNoteDto,
+        items: [{ invoiceItemId: 'nonexistent-item', quantity: 1 }],
+      };
+
+      await expect(
+        service.processCreditNote(dtoWithBadItem),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when quantity exceeds original', async () => {
+      const dtoWithExcessQty = {
+        ...creditNoteDto,
+        items: [{ invoiceItemId: 'item-123', quantity: 999 }],
+      };
+
+      await expect(
+        service.processCreditNote(dtoWithExcessQty),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should set REJECTED status when DIAN rejects credit note', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: false,
+        isValid: false,
+        trackId: 'track-cn-rej',
+        statusDescription: 'Nota credito rechazada',
+        errors: ['Error en campo Z'],
+      });
+
+      const result = await service.processCreditNote(creditNoteDto);
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(DianDocumentStatus.REJECTED);
+      expect(result.message).toBe('Nota credito rechazada');
+      expect(result.errors).toEqual(['Error en campo Z']);
+    });
+
+    it('should set SENT status when DIAN result is pending', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: false,
+        isValid: undefined,
+        trackId: 'track-cn-pend',
+        statusDescription: 'Procesando',
+      });
+
+      const result = await service.processCreditNote(creditNoteDto);
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(DianDocumentStatus.SENT);
+    });
+
+    it('should use fallback error message when no statusDescription', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: false,
+        isValid: false,
+      });
+
+      const result = await service.processCreditNote(creditNoteDto);
+
+      expect(result.message).toBe('Error al enviar la nota credito');
+    });
+
+    it('should not block when accountingBridge.onCreditNoteCreated fails', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-cn-5',
+        isValid: true,
+      });
+      (accountingBridge.onCreditNoteCreated as jest.Mock).mockRejectedValue(
+        new Error('Accounting failed'),
+      );
+
+      const result = await service.processCreditNote(creditNoteDto);
+
+      expect(result.success).toBe(true);
+      expect(accountingBridge.onCreditNoteCreated).toHaveBeenCalled();
+    });
+
+    it('should call restoreStock for DEVOLUCION_TOTAL reason', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-cn-6',
+        isValid: true,
+      });
+
+      await service.processCreditNote(creditNoteDto);
+
+      // restoreStockForCreditNote is fire-and-forget, just verify no error
+      expect(accountingBridge.onCreditNoteCreated).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenantId: mockTenantId,
+          noteNumber: 'NC00000001',
+          invoiceNumber: 'INV-00001',
+        }),
+      );
+    });
+
+    it('should use default customer document when customer has no documentNumber', async () => {
+      const invoiceNoCustomerDoc = {
+        ...mockInvoiceWithWarehouse,
+        customer: { id: 'customer-123', name: 'Test', documentNumber: null },
+      };
+      (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(
+        invoiceNoCustomerDoc,
+      );
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-cn-7',
+        isValid: true,
+      });
+
+      await service.processCreditNote(creditNoteDto);
+
+      expect(cufeGenerator.generateCude).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customerDocument: '222222222222',
+        }),
+      );
+    });
+  });
+
+  // ============================================================================
+  // DEBIT NOTE TESTS
+  // ============================================================================
+
+  describe('processDebitNote', () => {
+    const mockConfigWithNotes = {
+      ...mockDianConfig,
+      creditNotePrefix: 'NC',
+      creditNoteCurrentNumber: 1,
+      debitNotePrefix: 'ND',
+      debitNoteCurrentNumber: 1,
+    };
+
+    const debitNoteDto = {
+      invoiceId: 'invoice-123',
+      reason: 'Correccion de valor' as any,
+      reasonCode: 'VALOR_ADICIONAL',
+      items: [
+        {
+          description: 'Cargo adicional por transporte',
+          quantity: 1,
+          unitPrice: 50000,
+          taxRate: 19,
+        },
+      ],
+    };
+
+    const mockDebitNoteDoc = {
+      id: 'debit-note-doc-1',
+      tenantId: mockTenantId,
+      invoiceId: 'invoice-123',
+      documentType: DianDocumentType.NOTA_DEBITO,
+      documentNumber: 'ND00000001',
+      cude: 'cude-generated',
+      status: DianDocumentStatus.GENERATED,
+      xmlContent: '<xml>debit-note</xml>',
+    };
+
+    beforeEach(() => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockConfigWithNotes,
+      );
+      (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(mockInvoice);
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue({
+        ...mockDianDocument,
+        status: DianDocumentStatus.ACCEPTED,
+        documentType: DianDocumentType.FACTURA_ELECTRONICA,
+      });
+      (prisma.dianDocument.create as jest.Mock).mockResolvedValue(
+        mockDebitNoteDoc,
+      );
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockConfigWithNotes,
+      );
+      (prisma.dianDocument.update as jest.Mock).mockResolvedValue(
+        mockDebitNoteDoc,
+      );
+    });
+
+    it('should process debit note successfully', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-dn-1',
+        isValid: true,
+      });
+
+      const result = await service.processDebitNote(debitNoteDto);
+
+      expect(result.success).toBe(true);
+      expect(result.status).toBe(DianDocumentStatus.ACCEPTED);
+      expect(result.cufe).toBe('cude-generated');
+      expect(result.message).toBe(
+        'Nota debito enviada y aceptada por la DIAN',
+      );
+      expect(cufeGenerator.generateCude).toHaveBeenCalled();
+      expect(xmlGenerator.generateDebitNoteXml).toHaveBeenCalled();
+    });
+
+    it('should calculate subtotal, tax, and total correctly from items', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-dn-2',
+        isValid: true,
+      });
+
+      const dtoWithMultipleItems = {
+        ...debitNoteDto,
+        items: [
+          { description: 'Item 1', quantity: 2, unitPrice: 100000, taxRate: 19 },
+          { description: 'Item 2', quantity: 1, unitPrice: 50000, taxRate: 19 },
+        ],
+      };
+
+      await service.processDebitNote(dtoWithMultipleItems);
+
+      // subtotal = (2*100000) + (1*50000) = 250000
+      // tax = (200000*0.19) + (50000*0.19) = 38000 + 9500 = 47500
+      // total = 250000 + 47500 = 297500
+      expect(cufeGenerator.generateCude).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subtotal: 250000,
+          tax01: 47500,
+          total: 297500,
+        }),
+      );
+    });
+
+    it('should generate correct note number from config', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-dn-3',
+        isValid: true,
+      });
+
+      await service.processDebitNote(debitNoteDto);
+
+      expect(prisma.dianDocument.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            documentType: DianDocumentType.NOTA_DEBITO,
+            documentNumber: 'ND00000001',
+          }),
+        }),
+      );
+    });
+
+    it('should use $transaction for atomic creation and number increment', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-dn-4',
+        isValid: true,
+      });
+
+      await service.processDebitNote(debitNoteDto);
+
+      expect((prisma as any).$transaction).toHaveBeenCalled();
+      expect(prisma.tenantDianConfig.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { debitNoteCurrentNumber: { increment: 1 } },
+        }),
+      );
+    });
+
+    it('should throw BadRequestException when debit note prefix not configured', async () => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue({
+        ...mockConfigWithNotes,
+        debitNotePrefix: null,
+      });
+
+      await expect(
+        service.processDebitNote(debitNoteDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when original document not accepted', async () => {
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.processDebitNote(debitNoteDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when invoice not found', async () => {
+      (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.processDebitNote(debitNoteDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should set REJECTED status when DIAN rejects debit note', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: false,
+        isValid: false,
+        trackId: 'track-dn-rej',
+        statusDescription: 'Nota debito rechazada',
+        errors: ['Error en campo W'],
+      });
+
+      const result = await service.processDebitNote(debitNoteDto);
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(DianDocumentStatus.REJECTED);
+      expect(result.message).toBe('Nota debito rechazada');
+      expect(result.errors).toEqual(['Error en campo W']);
+    });
+
+    it('should set SENT status when DIAN result is pending', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: false,
+        isValid: undefined,
+        trackId: 'track-dn-pend',
+      });
+
+      const result = await service.processDebitNote(debitNoteDto);
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(DianDocumentStatus.SENT);
+    });
+
+    it('should use fallback error message when no statusDescription', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: false,
+        isValid: false,
+      });
+
+      const result = await service.processDebitNote(debitNoteDto);
+
+      expect(result.message).toBe('Error al enviar la nota debito');
+    });
+
+    it('should fire-and-forget accountingBridge.onDebitNoteCreated on success', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-dn-5',
+        isValid: true,
+      });
+
+      await service.processDebitNote(debitNoteDto);
+
+      expect(accountingBridge.onDebitNoteCreated).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenantId: mockTenantId,
+          noteNumber: 'ND00000001',
+          invoiceNumber: 'INV-00001',
+        }),
+      );
+    });
+
+    it('should not call accountingBridge when DIAN rejects', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: false,
+        isValid: false,
+      });
+
+      await service.processDebitNote(debitNoteDto);
+
+      expect(accountingBridge.onDebitNoteCreated).not.toHaveBeenCalled();
+    });
+
+    it('should not block when accountingBridge.onDebitNoteCreated fails', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-dn-6',
+        isValid: true,
+      });
+      (accountingBridge.onDebitNoteCreated as jest.Mock).mockRejectedValue(
+        new Error('Accounting failed'),
+      );
+
+      const result = await service.processDebitNote(debitNoteDto);
+
+      expect(result.success).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // NOTE CONFIG TESTS
+  // ============================================================================
+
+  describe('setNoteConfig', () => {
+    it('should update only creditNotePrefix', async () => {
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
+
+      const result = await service.setNoteConfig({
+        creditNotePrefix: 'NC',
+      } as any);
+
+      expect(result.success).toBe(true);
+      expect(result.message).toBe('Configuracion de notas actualizada');
+      expect(prisma.tenantDianConfig.update).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        data: { creditNotePrefix: 'NC' },
+      });
+    });
+
+    it('should update all note config fields', async () => {
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
+
+      const result = await service.setNoteConfig({
+        creditNotePrefix: 'NC',
+        creditNoteStartNumber: 100,
+        debitNotePrefix: 'ND',
+        debitNoteStartNumber: 200,
+      } as any);
+
+      expect(result.success).toBe(true);
+      expect(prisma.tenantDianConfig.update).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        data: {
+          creditNotePrefix: 'NC',
+          creditNoteCurrentNumber: 100,
+          debitNotePrefix: 'ND',
+          debitNoteCurrentNumber: 200,
+        },
+      });
+    });
+
+    it('should update only debitNotePrefix and debitNoteStartNumber', async () => {
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
+
+      const result = await service.setNoteConfig({
+        debitNotePrefix: 'ND',
+        debitNoteStartNumber: 50,
+      } as any);
+
+      expect(result.success).toBe(true);
+      expect(prisma.tenantDianConfig.update).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        data: {
+          debitNotePrefix: 'ND',
+          debitNoteCurrentNumber: 50,
+        },
+      });
     });
   });
 });

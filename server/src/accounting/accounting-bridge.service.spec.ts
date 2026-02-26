@@ -5,11 +5,13 @@ import { AccountingBridgeService } from './accounting-bridge.service';
 import { JournalEntriesService } from './journal-entries.service';
 import { AccountingConfigService } from './accounting-config.service';
 import { AccountingConfigResponse } from './accounting-config.service';
+import { PrismaService } from '../prisma';
 
 describe('AccountingBridgeService', () => {
   let service: AccountingBridgeService;
   let mockJournalEntriesService: { createAutoEntry: jest.Mock };
   let mockConfigService: { getConfigForTenant: jest.Mock };
+  let mockPrismaService: { account: { findFirst: jest.Mock } };
 
   const mockTenantId = 'tenant-bridge';
 
@@ -50,11 +52,16 @@ describe('AccountingBridgeService', () => {
       getConfigForTenant: jest.fn().mockResolvedValue(fullConfig),
     };
 
+    mockPrismaService = {
+      account: { findFirst: jest.fn().mockResolvedValue(null) },
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AccountingBridgeService,
         { provide: JournalEntriesService, useValue: mockJournalEntriesService },
         { provide: AccountingConfigService, useValue: mockConfigService },
+        { provide: PrismaService, useValue: mockPrismaService },
       ],
     }).compile();
 

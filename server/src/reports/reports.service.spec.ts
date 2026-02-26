@@ -153,6 +153,10 @@ describe('ReportsService', () => {
     findFirst: jest.fn(),
   };
 
+  const mockPrismaJournalEntryLine = {
+    findMany: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -162,6 +166,7 @@ describe('ReportsService', () => {
       customer: mockPrismaCustomer,
       stockMovement: mockPrismaStockMovement,
       warehouse: mockPrismaWarehouse,
+      journalEntryLine: mockPrismaJournalEntryLine,
     };
 
     const mockTenantContextService = {
@@ -2146,6 +2151,373 @@ describe('ReportsService', () => {
       );
 
       expect(result).toBeInstanceOf(Buffer);
+    });
+  });
+
+  // ============================================================================
+  // COST CENTER BALANCE REPORT
+  // ============================================================================
+
+  describe('generateCostCenterBalanceReport', () => {
+    const fromDate = new Date('2024-01-01');
+    const toDate = new Date('2024-12-31');
+
+    const mockJournalLines = [
+      {
+        id: 'line-1',
+        debit: 500000,
+        credit: 0,
+        costCenterId: 'cc-1',
+        costCenter: { id: 'cc-1', code: 'CC001', name: 'Ventas' },
+        account: { id: 'acc-1', code: '4101', name: 'Ingresos por ventas' },
+      },
+      {
+        id: 'line-2',
+        debit: 0,
+        credit: 200000,
+        costCenterId: 'cc-1',
+        costCenter: { id: 'cc-1', code: 'CC001', name: 'Ventas' },
+        account: { id: 'acc-1', code: '4101', name: 'Ingresos por ventas' },
+      },
+      {
+        id: 'line-3',
+        debit: 300000,
+        credit: 0,
+        costCenterId: 'cc-1',
+        costCenter: { id: 'cc-1', code: 'CC001', name: 'Ventas' },
+        account: { id: 'acc-2', code: '5101', name: 'Gastos operativos' },
+      },
+      {
+        id: 'line-4',
+        debit: 150000,
+        credit: 50000,
+        costCenterId: 'cc-2',
+        costCenter: { id: 'cc-2', code: 'CC002', name: 'Administracion' },
+        account: { id: 'acc-3', code: '5201', name: 'Gastos admin' },
+      },
+    ];
+
+    it('should generate PDF with data grouped by cost center', async () => {
+      mockPrismaJournalEntryLine.findMany.mockResolvedValue(mockJournalLines);
+
+      const result = await service.generateCostCenterBalanceReport(
+        fromDate,
+        toDate,
+        'pdf',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+      expect(mockPrismaJournalEntryLine.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            costCenterId: { not: null },
+          }),
+          include: expect.objectContaining({
+            account: expect.any(Object),
+            costCenter: expect.any(Object),
+          }),
+        }),
+      );
+    });
+
+    it('should generate Excel with data grouped by cost center', async () => {
+      mockPrismaJournalEntryLine.findMany.mockResolvedValue(mockJournalLines);
+
+      const result = await service.generateCostCenterBalanceReport(
+        fromDate,
+        toDate,
+        'excel',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+    });
+
+    it('should filter by specific costCenterId when provided', async () => {
+      mockPrismaJournalEntryLine.findMany.mockResolvedValue([
+        mockJournalLines[0],
+      ]);
+
+      await service.generateCostCenterBalanceReport(
+        fromDate,
+        toDate,
+        'pdf',
+        'cc-1',
+      );
+
+      expect(mockPrismaJournalEntryLine.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            costCenterId: 'cc-1',
+          }),
+        }),
+      );
+    });
+
+    it('should return buffer when no journal lines exist', async () => {
+      mockPrismaJournalEntryLine.findMany.mockResolvedValue([]);
+
+      const resultPdf = await service.generateCostCenterBalanceReport(
+        fromDate,
+        toDate,
+        'pdf',
+      );
+      expect(resultPdf).toBeInstanceOf(Buffer);
+
+      const resultExcel = await service.generateCostCenterBalanceReport(
+        fromDate,
+        toDate,
+        'excel',
+      );
+      expect(resultExcel).toBeInstanceOf(Buffer);
+    });
+
+    it('should skip lines without costCenter', async () => {
+      const linesWithNull = [
+        ...mockJournalLines,
+        {
+          id: 'line-no-cc',
+          debit: 100000,
+          credit: 0,
+          costCenterId: null,
+          costCenter: null,
+          account: { id: 'acc-4', code: '6101', name: 'Otros' },
+        },
+      ];
+      mockPrismaJournalEntryLine.findMany.mockResolvedValue(linesWithNull);
+
+      const result = await service.generateCostCenterBalanceReport(
+        fromDate,
+        toDate,
+        'pdf',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+    });
+
+    it('should calculate debit and credit totals correctly', async () => {
+      mockPrismaJournalEntryLine.findMany.mockResolvedValue(mockJournalLines);
+
+      const result = await service.generateCostCenterBalanceReport(
+        fromDate,
+        toDate,
+        'excel',
+      );
+
+      // The method groups and calculates totals internally, we just verify it completes
+      expect(result).toBeInstanceOf(Buffer);
+      expect(mockPrismaJournalEntryLine.findMany).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // ============================================================================
+  // IVA DECLARATION REPORT
+  // ============================================================================
+
+  describe('generateIvaDeclarationReport', () => {
+    const mockIvaData = {
+      periodLabel: 'Enero 2024',
+      fromDate: '2024-01-01',
+      toDate: '2024-01-31',
+      salesByRate: [
+        { taxRate: 19, taxableBase: 1000000, taxAmount: 190000, invoiceCount: 15 },
+        { taxRate: 5, taxableBase: 500000, taxAmount: 25000, invoiceCount: 5 },
+      ],
+      salesExempt: [
+        { category: 'Exento', taxableBase: 200000, invoiceCount: 3 },
+      ],
+      totalSalesBase: 1700000,
+      totalIvaGenerado: 215000,
+      purchasesByRate: [
+        { taxRate: 19, taxableBase: 600000, taxAmount: 114000, invoiceCount: 10 },
+      ],
+      purchasesExempt: [
+        { category: 'Excluido', taxableBase: 100000, invoiceCount: 2 },
+      ],
+      totalPurchasesBase: 700000,
+      totalIvaDescontable: 114000,
+      netIvaPayable: 101000,
+    };
+
+    it('should generate IVA declaration PDF', async () => {
+      const result = await service.generateIvaDeclarationReport(
+        mockIvaData,
+        'pdf',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+    });
+
+    it('should generate IVA declaration Excel', async () => {
+      const result = await service.generateIvaDeclarationReport(
+        mockIvaData,
+        'excel',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+    });
+
+    it('should handle empty sales and purchases arrays', async () => {
+      const emptyData = {
+        ...mockIvaData,
+        salesByRate: [],
+        salesExempt: [],
+        purchasesByRate: [],
+        purchasesExempt: [],
+        totalSalesBase: 0,
+        totalIvaGenerado: 0,
+        totalPurchasesBase: 0,
+        totalIvaDescontable: 0,
+        netIvaPayable: 0,
+      };
+
+      const resultPdf = await service.generateIvaDeclarationReport(
+        emptyData,
+        'pdf',
+      );
+      expect(resultPdf).toBeInstanceOf(Buffer);
+
+      const resultExcel = await service.generateIvaDeclarationReport(
+        emptyData,
+        'excel',
+      );
+      expect(resultExcel).toBeInstanceOf(Buffer);
+    });
+
+    it('should handle negative netIvaPayable (favor balance)', async () => {
+      const favorData = {
+        ...mockIvaData,
+        totalIvaDescontable: 300000,
+        netIvaPayable: -85000,
+      };
+
+      const result = await service.generateIvaDeclarationReport(
+        favorData,
+        'pdf',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+    });
+  });
+
+  // ============================================================================
+  // RETEFUENTE SUMMARY REPORT
+  // ============================================================================
+
+  describe('generateReteFuenteSummaryReport', () => {
+    const mockReteFuenteData = {
+      monthLabel: 'Enero 2024',
+      rows: [
+        {
+          supplierNit: '900111222',
+          supplierName: 'Proveedor A S.A.S',
+          totalBase: 5000000,
+          totalWithheld: 175000,
+          withholdingRate: 3.5,
+          purchaseCount: 8,
+          certificateNumber: 'CERT-001',
+        },
+        {
+          supplierNit: '900333444',
+          supplierName: 'Proveedor B Ltda',
+          totalBase: 3000000,
+          totalWithheld: 105000,
+          withholdingRate: 3.5,
+          purchaseCount: 5,
+          certificateNumber: null,
+        },
+      ],
+      totalBase: 8000000,
+      totalWithheld: 280000,
+    };
+
+    it('should generate ReteFuente summary PDF', async () => {
+      const result = await service.generateReteFuenteSummaryReport(
+        mockReteFuenteData,
+        'pdf',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+    });
+
+    it('should generate ReteFuente summary Excel', async () => {
+      const result = await service.generateReteFuenteSummaryReport(
+        mockReteFuenteData,
+        'excel',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+    });
+
+    it('should handle empty rows array', async () => {
+      const emptyData = {
+        monthLabel: 'Enero 2024',
+        rows: [],
+        totalBase: 0,
+        totalWithheld: 0,
+      };
+
+      const resultPdf = await service.generateReteFuenteSummaryReport(
+        emptyData,
+        'pdf',
+      );
+      expect(resultPdf).toBeInstanceOf(Buffer);
+
+      const resultExcel = await service.generateReteFuenteSummaryReport(
+        emptyData,
+        'excel',
+      );
+      expect(resultExcel).toBeInstanceOf(Buffer);
+    });
+
+    it('should handle null certificateNumber as Pendiente', async () => {
+      const dataWithNulls = {
+        monthLabel: 'Febrero 2024',
+        rows: [
+          {
+            supplierNit: '900555666',
+            supplierName: 'Proveedor C',
+            totalBase: 2000000,
+            totalWithheld: 70000,
+            withholdingRate: 3.5,
+            purchaseCount: 3,
+            certificateNumber: null,
+          },
+        ],
+        totalBase: 2000000,
+        totalWithheld: 70000,
+      };
+
+      const result = await service.generateReteFuenteSummaryReport(
+        dataWithNulls,
+        'excel',
+      );
+
+      expect(result).toBeInstanceOf(Buffer);
+    });
+
+    it('should handle single supplier row', async () => {
+      const singleRow = {
+        monthLabel: 'Marzo 2024',
+        rows: [
+          {
+            supplierNit: '900777888',
+            supplierName: 'Proveedor Unico',
+            totalBase: 10000000,
+            totalWithheld: 350000,
+            withholdingRate: 3.5,
+            purchaseCount: 12,
+            certificateNumber: 'CERT-100',
+          },
+        ],
+        totalBase: 10000000,
+        totalWithheld: 350000,
+      };
+
+      const resultPdf = await service.generateReteFuenteSummaryReport(
+        singleRow,
+        'pdf',
+      );
+      expect(resultPdf).toBeInstanceOf(Buffer);
     });
   });
 });

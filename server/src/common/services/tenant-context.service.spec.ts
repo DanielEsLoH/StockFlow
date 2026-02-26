@@ -31,6 +31,8 @@ describe('TenantContextService', () => {
     maxProducts: 1000,
     maxInvoices: -1, // unlimited
     maxWarehouses: 5,
+    maxContadores: 1,
+    maxEmployees: 10,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -55,6 +57,9 @@ describe('TenantContextService', () => {
         count: jest.fn(),
       },
       warehouse: {
+        count: jest.fn(),
+      },
+      employee: {
         count: jest.fn(),
       },
     };
@@ -463,6 +468,7 @@ describe('TenantContextService', () => {
       (prismaService.product.count as jest.Mock).mockResolvedValue(500);
       (prismaService.invoice.count as jest.Mock).mockResolvedValue(100);
       (prismaService.warehouse.count as jest.Mock).mockResolvedValue(3);
+      ((prismaService as any).employee.count as jest.Mock).mockResolvedValue(2);
 
       const result = await service.getUsageSummary();
 
@@ -473,6 +479,7 @@ describe('TenantContextService', () => {
         products: { current: 500, limit: 1000, remaining: 500 },
         invoices: { current: 100, limit: -1, remaining: -1 },
         warehouses: { current: 3, limit: 5, remaining: 2 },
+        employees: { current: 2, limit: 10, remaining: 8 },
       });
     });
   });

@@ -336,6 +336,7 @@ describe('DianController', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
       );
     });
 
@@ -347,6 +348,7 @@ describe('DianController', () => {
       expect(service.listDocuments).toHaveBeenCalledWith(
         1,
         10,
+        undefined,
         undefined,
         undefined,
         undefined,
@@ -362,6 +364,7 @@ describe('DianController', () => {
         1,
         10,
         DianDocumentStatus.ACCEPTED,
+        undefined,
         undefined,
         undefined,
       );
@@ -384,6 +387,7 @@ describe('DianController', () => {
         undefined,
         new Date('2024-01-01'),
         new Date('2024-12-31'),
+        undefined,
       );
     });
   });

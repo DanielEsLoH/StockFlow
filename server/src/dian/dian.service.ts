@@ -21,6 +21,9 @@ import {
   GenerateCreditNoteDto,
   GenerateDebitNoteDto,
   SetNoteConfigDto,
+  ProcessPOSSaleDto,
+  GenerateNotaAjusteDto,
+  SetPosResolutionDto,
 } from './dto';
 import {
   DianDocumentStatus,
@@ -833,6 +836,420 @@ export class DianService {
     return {
       success: true,
       message: 'Configuracion de notas actualizada',
+    };
+  }
+
+  // ============================================================================
+  // POS DOCUMENTO EQUIVALENTE
+  // ============================================================================
+
+  /**
+   * Process a POS sale as Documento Equivalente Electronico
+   */
+  async processPOSSale(dto: ProcessPOSSaleDto): Promise<ProcessInvoiceResult> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.log(`Processing POS sale ${dto.invoiceId} as documento equivalente`);
+
+    // Get DIAN config
+    const config = await this.prisma.tenantDianConfig.findUnique({
+      where: { tenantId },
+    });
+
+    if (!config) {
+      throw new BadRequestException(
+        'Configuracion DIAN no encontrada. Configure primero los datos de facturacion electronica.',
+      );
+    }
+
+    if (!config.posResolutionNumber || !config.posResolutionPrefix) {
+      throw new BadRequestException(
+        'Resolucion POS no configurada. Configure primero la resolucion de documento equivalente.',
+      );
+    }
+
+    // Get invoice with details
+    const invoice = (await this.prisma.invoice.findFirst({
+      where: { id: dto.invoiceId, tenantId },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    })) as InvoiceWithDetails | null;
+
+    if (!invoice) {
+      throw new NotFoundException('Factura no encontrada');
+    }
+
+    // Check if already sent
+    const existingDoc = await this.prisma.dianDocument.findFirst({
+      where: { invoiceId: dto.invoiceId, tenantId, documentType: DianDocumentType.DOCUMENTO_EQUIVALENTE },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingDoc && existingDoc.status === 'ACCEPTED' && !dto.force) {
+      throw new BadRequestException(
+        'Esta factura ya fue enviada como documento equivalente y aceptada por la DIAN.',
+      );
+    }
+
+    // Generate document number
+    const documentNumber = `${config.posResolutionPrefix}${String(config.posCurrentNumber).padStart(8, '0')}`;
+
+    // Generate CUDE (NOT CUFE — documento equivalente uses softwarePin, not technicalKey)
+    const customerDocument = invoice.customer?.documentNumber || '222222222222';
+    const issueDate = new Date();
+    const cude = this.cufeGenerator.generateCude({
+      documentNumber,
+      issueDate,
+      issueTime: issueDate.toISOString().split('T')[1].split('.')[0] + '-05:00',
+      subtotal: Number(invoice.subtotal),
+      tax01: Number(invoice.tax),
+      tax04: 0,
+      tax03: 0,
+      total: Number(invoice.total),
+      supplierNit: config.nit,
+      customerDocument,
+      softwarePin: config.softwarePin || '',
+      testMode: config.testMode,
+    });
+
+    // Generate QR code data
+    const qrCode = this.cufeGenerator.generateQrCodeData(
+      { ...invoice, invoiceNumber: documentNumber } as any,
+      config,
+      cude,
+      customerDocument,
+    );
+
+    // Generate Documento Equivalente XML
+    const xml = this.xmlGenerator.generateDocumentoEquivalenteXml({
+      dianConfig: config,
+      invoice: { ...invoice, invoiceNumber: documentNumber } as any,
+      cufe: cude,
+      qrCode,
+    });
+
+    // Create document record
+    const document = await this.prisma.dianDocument.create({
+      data: {
+        tenantId,
+        invoiceId: dto.invoiceId,
+        documentType: DianDocumentType.DOCUMENTO_EQUIVALENTE,
+        documentNumber,
+        cude,
+        qrCode,
+        status: DianDocumentStatus.GENERATED,
+        xmlContent: xml,
+      },
+    });
+
+    // Sign XML with digital certificate
+    const signedXml = this.signXmlIfCertificateAvailable(xml, config);
+
+    await this.prisma.dianDocument.update({
+      where: { id: document.id },
+      data: { signedXml, status: DianDocumentStatus.SIGNED },
+    });
+
+    // Send to DIAN
+    const fileName = `de${config.posResolutionPrefix}${documentNumber}.xml`;
+    const result = await this.dianClient.sendDocument(config, signedXml, fileName);
+
+    // Update document status
+    const finalStatus = result.success
+      ? DianDocumentStatus.ACCEPTED
+      : result.isValid === false
+        ? DianDocumentStatus.REJECTED
+        : DianDocumentStatus.SENT;
+
+    await this.prisma.dianDocument.update({
+      where: { id: document.id },
+      data: {
+        status: finalStatus,
+        dianTrackId: result.trackId,
+        dianResponse: result as any,
+        errorMessage: result.errors?.join('; '),
+        sentAt: new Date(),
+        acceptedAt: result.success ? new Date() : undefined,
+      },
+    });
+
+    // Increment POS current number
+    await this.prisma.tenantDianConfig.update({
+      where: { tenantId },
+      data: { posCurrentNumber: { increment: 1 } },
+    });
+
+    // Update invoice with CUDE
+    if (result.success) {
+      await this.prisma.invoice.update({
+        where: { id: dto.invoiceId },
+        data: { dianCufe: cude },
+      });
+    }
+
+    return {
+      success: result.success,
+      documentId: document.id,
+      cufe: cude,
+      trackId: result.trackId,
+      status: finalStatus,
+      message: result.success
+        ? 'Documento equivalente enviado y aceptado por la DIAN'
+        : result.statusDescription || 'Error al enviar el documento equivalente',
+      errors: result.errors,
+    };
+  }
+
+  /**
+   * Process a Nota de Ajuste for a Documento Equivalente
+   */
+  async processNotaAjuste(dto: GenerateNotaAjusteDto): Promise<ProcessInvoiceResult> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.log(`Processing nota de ajuste for documento equivalente ${dto.documentoEquivalenteId}`);
+
+    // Get config and validate
+    const config = await this.getAndValidateConfig(tenantId);
+
+    if (!config.posNotePrefix) {
+      throw new BadRequestException(
+        'Prefijo de notas de ajuste POS no configurado. Configure en DIAN > Configuracion > Resolucion POS.',
+      );
+    }
+
+    // Find original Documento Equivalente
+    const originalDoc = await this.prisma.dianDocument.findFirst({
+      where: {
+        id: dto.documentoEquivalenteId,
+        tenantId,
+        documentType: DianDocumentType.DOCUMENTO_EQUIVALENTE,
+        status: DianDocumentStatus.ACCEPTED,
+      },
+    });
+
+    if (!originalDoc) {
+      throw new BadRequestException(
+        'Documento equivalente original no encontrado o no ha sido aceptado por la DIAN.',
+      );
+    }
+
+    if (!originalDoc.invoiceId) {
+      throw new BadRequestException(
+        'El documento equivalente no tiene factura asociada.',
+      );
+    }
+
+    // Get original invoice with details
+    const invoice = await this.getInvoiceWithDetails(originalDoc.invoiceId, tenantId);
+
+    // Build note invoice data (clone items or filter partial)
+    let noteInvoice: InvoiceWithDetails;
+    if (dto.items && dto.items.length > 0) {
+      // Partial adjustment — filter and adjust quantities
+      const adjustedItems = dto.items.map((noteItem) => {
+        const originalItem = invoice.items.find(
+          (i) => i.id === noteItem.invoiceItemId,
+        );
+        if (!originalItem) {
+          throw new BadRequestException(
+            `Item ${noteItem.invoiceItemId} no encontrado en la factura original`,
+          );
+        }
+        if (noteItem.quantity > Number(originalItem.quantity)) {
+          throw new BadRequestException(
+            `Cantidad a ajustar (${noteItem.quantity}) excede la cantidad original (${originalItem.quantity})`,
+          );
+        }
+        const ratio = noteItem.quantity / Number(originalItem.quantity);
+        return {
+          ...originalItem,
+          quantity: noteItem.quantity as any,
+          subtotal: (Number(originalItem.subtotal) * ratio) as any,
+          tax: (Number(originalItem.tax) * ratio) as any,
+          total: (Number(originalItem.total) * ratio) as any,
+        };
+      });
+
+      const subtotal = adjustedItems.reduce(
+        (sum, i) => sum + Number(i.subtotal),
+        0,
+      );
+      const tax = adjustedItems.reduce((sum, i) => sum + Number(i.tax), 0);
+      const total = subtotal + tax;
+
+      noteInvoice = {
+        ...invoice,
+        items: adjustedItems,
+        subtotal: subtotal as any,
+        tax: tax as any,
+        total: total as any,
+      };
+    } else {
+      // Full adjustment — clone all items
+      noteInvoice = { ...invoice };
+    }
+
+    // Generate note number
+    const noteNumber = `${config.posNotePrefix}${String(config.posNoteCurrentNumber).padStart(8, '0')}`;
+
+    // Generate CUDE (uses softwarePin, NOT technicalKey)
+    const customerDocument = invoice.customer?.documentNumber || '222222222222';
+    const issueDate = new Date();
+    const cude = this.cufeGenerator.generateCude({
+      documentNumber: noteNumber,
+      issueDate,
+      issueTime: issueDate.toISOString().split('T')[1].split('.')[0] + '-05:00',
+      subtotal: Number(noteInvoice.subtotal),
+      tax01: Number(noteInvoice.tax),
+      tax04: 0,
+      tax03: 0,
+      total: Number(noteInvoice.total),
+      supplierNit: config.nit,
+      customerDocument,
+      softwarePin: config.softwarePin || '',
+      testMode: config.testMode,
+    });
+
+    // Generate QR code data
+    const qrCode = `NumFac: ${noteNumber}\nFecFac: ${issueDate.toISOString().split('T')[0]}\nNitFac: ${config.nit}\nDocAdq: ${customerDocument}\nValFac: ${Number(noteInvoice.total).toFixed(2)}\nCUDE: ${cude}\nQRCode: https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=${cude}`;
+
+    // Generate Nota de Ajuste XML
+    const xml = this.xmlGenerator.generateNotaAjusteXml(
+      {
+        dianConfig: config,
+        invoice: { ...noteInvoice, invoiceNumber: noteNumber } as any,
+        cufe: cude,
+        qrCode,
+      },
+      {
+        documentNumber: originalDoc.documentNumber,
+        cude: originalDoc.cude || '',
+        issueDate: originalDoc.createdAt,
+      },
+      dto.reason,
+      dto.reasonCode,
+    );
+
+    // Create document and increment number atomically
+    const [document] = await this.prisma.$transaction([
+      this.prisma.dianDocument.create({
+        data: {
+          tenantId,
+          invoiceId: originalDoc.invoiceId,
+          originalDianDocumentId: originalDoc.id,
+          documentType: DianDocumentType.NOTA_AJUSTE,
+          documentNumber: noteNumber,
+          cude,
+          creditNoteReason: dto.reason,
+          qrCode,
+          status: DianDocumentStatus.GENERATED,
+          xmlContent: xml,
+        },
+      }),
+      this.prisma.tenantDianConfig.update({
+        where: { tenantId },
+        data: { posNoteCurrentNumber: { increment: 1 } },
+      }),
+    ]);
+
+    // Sign XML
+    const signedXml = this.signXmlIfCertificateAvailable(xml, config);
+
+    await this.prisma.dianDocument.update({
+      where: { id: document.id },
+      data: { signedXml, status: DianDocumentStatus.SIGNED },
+    });
+
+    // Send to DIAN
+    const fileName = `na${noteNumber}.xml`;
+    const result = await this.dianClient.sendDocument(config, signedXml, fileName);
+
+    // Update document status
+    const finalStatus = result.success
+      ? DianDocumentStatus.ACCEPTED
+      : result.isValid === false
+        ? DianDocumentStatus.REJECTED
+        : DianDocumentStatus.SENT;
+
+    await this.prisma.dianDocument.update({
+      where: { id: document.id },
+      data: {
+        status: finalStatus,
+        dianTrackId: result.trackId,
+        dianResponse: result as any,
+        errorMessage: result.errors?.join('; '),
+        sentAt: new Date(),
+        acceptedAt: result.success ? new Date() : undefined,
+      },
+    });
+
+    return {
+      success: result.success,
+      documentId: document.id,
+      cufe: cude,
+      trackId: result.trackId,
+      status: finalStatus,
+      message: result.success
+        ? 'Nota de ajuste enviada y aceptada por la DIAN'
+        : result.statusDescription || 'Error al enviar la nota de ajuste',
+      errors: result.errors,
+    };
+  }
+
+  /**
+   * Set POS resolution configuration for Documento Equivalente
+   */
+  async setPosResolution(dto: SetPosResolutionDto) {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.log(`Setting POS resolution for tenant ${tenantId}`);
+
+    // Ensure DIAN config exists first
+    const existing = await this.prisma.tenantDianConfig.findUnique({
+      where: { tenantId },
+    });
+
+    if (!existing) {
+      throw new BadRequestException(
+        'Configuracion DIAN no encontrada. Cree primero la configuracion basica antes de configurar la resolucion POS.',
+      );
+    }
+
+    const config = await this.prisma.tenantDianConfig.update({
+      where: { tenantId },
+      data: {
+        posResolutionNumber: dto.posResolutionNumber,
+        posResolutionDate: dto.posResolutionDate ? new Date(dto.posResolutionDate) : undefined,
+        posResolutionPrefix: dto.posResolutionPrefix,
+        posResolutionRangeFrom: dto.posResolutionRangeFrom,
+        posResolutionRangeTo: dto.posResolutionRangeTo,
+        posCurrentNumber: dto.posResolutionRangeFrom,
+        posNotePrefix: dto.posNotePrefix,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Resolucion POS configurada correctamente',
+      config: {
+        posResolutionNumber: config.posResolutionNumber,
+        posResolutionPrefix: config.posResolutionPrefix,
+        posResolutionRangeFrom: config.posResolutionRangeFrom,
+        posResolutionRangeTo: config.posResolutionRangeTo,
+        posCurrentNumber: config.posCurrentNumber,
+        posNotePrefix: config.posNotePrefix,
+      },
     };
   }
 

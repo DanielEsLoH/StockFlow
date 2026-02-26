@@ -345,6 +345,153 @@ ${this.generateDebitNoteLines(items)}
     return xml;
   }
 
+  /**
+   * Generate UBL 2.1 XML for a POS electronic equivalent document (Documento Equivalente)
+   */
+  generateDocumentoEquivalenteXml(config: XmlGeneratorConfig): string {
+    const { dianConfig, invoice, cufe, qrCode } = config;
+
+    this.logger.log(
+      `Generating Documento Equivalente XML for invoice ${invoice.invoiceNumber}`,
+    );
+
+    const issueDate = new Date(invoice.issueDate);
+    const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : issueDate;
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice ${this.formatNamespaces()}>
+  <ext:UBLExtensions>
+    <ext:UBLExtension>
+      <ext:ExtensionContent>
+        <sts:DianExtensions>
+          <sts:InvoiceControl>
+            <sts:InvoiceAuthorization>${dianConfig.posResolutionNumber || ''}</sts:InvoiceAuthorization>
+            <sts:AuthorizationPeriod>
+              <cbc:StartDate>${this.formatDate(dianConfig.posResolutionDate || dianConfig.resolutionDate || new Date())}</cbc:StartDate>
+              <cbc:EndDate>${this.formatDate(this.addYears(dianConfig.posResolutionDate || dianConfig.resolutionDate || new Date(), 2))}</cbc:EndDate>
+            </sts:AuthorizationPeriod>
+            <sts:AuthorizedInvoices>
+              <sts:Prefix>${dianConfig.posResolutionPrefix || ''}</sts:Prefix>
+              <sts:From>${dianConfig.posResolutionRangeFrom || 1}</sts:From>
+              <sts:To>${dianConfig.posResolutionRangeTo || 999999}</sts:To>
+            </sts:AuthorizedInvoices>
+          </sts:InvoiceControl>
+          <sts:InvoiceSource>
+            <cbc:IdentificationCode listAgencyID="6" listAgencyName="United Nations Economic Commission for Europe" listSchemeURI="urn:oasis:names:specification:ubl:codelist:gc:CountryIdentificationCode-2.1">CO</cbc:IdentificationCode>
+          </sts:InvoiceSource>
+          <sts:SoftwareProvider>
+            <sts:ProviderID schemeAgencyID="195" schemeAgencyName="CO, DIAN (Direccion de Impuestos y Aduanas Nacionales)" schemeID="${dianConfig.dv}" schemeName="31">${dianConfig.nit}</sts:ProviderID>
+            <sts:SoftwareID schemeAgencyID="195" schemeAgencyName="CO, DIAN (Direccion de Impuestos y Aduanas Nacionales)">${dianConfig.softwareId || ''}</sts:SoftwareID>
+          </sts:SoftwareProvider>
+          <sts:SoftwareSecurityCode schemeAgencyID="195" schemeAgencyName="CO, DIAN (Direccion de Impuestos y Aduanas Nacionales)">${this.generateSoftwareSecurityCode(dianConfig, invoice.invoiceNumber)}</sts:SoftwareSecurityCode>
+          <sts:AuthorizationProvider>
+            <sts:AuthorizationProviderID schemeAgencyID="195" schemeAgencyName="CO, DIAN (Direccion de Impuestos y Aduanas Nacionales)" schemeID="4" schemeName="31">800197268</sts:AuthorizationProviderID>
+          </sts:AuthorizationProvider>
+          <sts:QRCode>${qrCode}</sts:QRCode>
+        </sts:DianExtensions>
+      </ext:ExtensionContent>
+    </ext:UBLExtension>
+    <ext:UBLExtension>
+      <ext:ExtensionContent></ext:ExtensionContent>
+    </ext:UBLExtension>
+  </ext:UBLExtensions>
+  <cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>11</cbc:CustomizationID>
+  <cbc:ProfileID>DIAN 2.1</cbc:ProfileID>
+  <cbc:ProfileExecutionID>${dianConfig.testMode ? '2' : '1'}</cbc:ProfileExecutionID>
+  <cbc:ID>${invoice.invoiceNumber}</cbc:ID>
+  <cbc:UUID schemeID="${dianConfig.testMode ? '2' : '1'}" schemeName="CUDE-SHA384">${cufe}</cbc:UUID>
+  <cbc:IssueDate>${this.formatDate(issueDate)}</cbc:IssueDate>
+  <cbc:IssueTime>${this.formatTime(issueDate)}</cbc:IssueTime>
+  <cbc:DueDate>${this.formatDate(dueDate)}</cbc:DueDate>
+  <cbc:InvoiceTypeCode>03</cbc:InvoiceTypeCode>
+  <cbc:Note>Documento equivalente electronico POS</cbc:Note>
+  <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
+  <cbc:LineCountNumeric>${invoice.items.length}</cbc:LineCountNumeric>
+${this.generateSupplierParty(dianConfig)}
+${this.generateCustomerParty(invoice.customer)}
+${this.generatePaymentMeans(invoice)}
+${this.generateTaxTotal(invoice)}
+${this.generateLegalMonetaryTotal(invoice)}
+${this.generateInvoiceLines(invoice.items)}
+</Invoice>`;
+
+    return xml;
+  }
+
+  /**
+   * Generate UBL 2.1 XML for an adjustment note to a Documento Equivalente (Nota de Ajuste)
+   */
+  generateNotaAjusteXml(
+    config: XmlGeneratorConfig,
+    originalDoc: { documentNumber: string; cude: string; issueDate: Date },
+    reason: string,
+    reasonCode: string,
+  ): string {
+    const { dianConfig, invoice, cufe, qrCode } = config;
+
+    this.logger.log(
+      `Generating Nota de Ajuste XML for document ${invoice.invoiceNumber}`,
+    );
+
+    const issueDate = new Date();
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<CreditNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2" ${this.formatNamespacesWithoutRoot()}>
+  <ext:UBLExtensions>
+    <ext:UBLExtension>
+      <ext:ExtensionContent>
+        <sts:DianExtensions>
+          <sts:InvoiceSource>
+            <cbc:IdentificationCode listAgencyID="6" listAgencyName="United Nations Economic Commission for Europe">CO</cbc:IdentificationCode>
+          </sts:InvoiceSource>
+          <sts:SoftwareProvider>
+            <sts:ProviderID schemeAgencyID="195" schemeID="${dianConfig.dv}" schemeName="31">${dianConfig.nit}</sts:ProviderID>
+            <sts:SoftwareID schemeAgencyID="195">${dianConfig.softwareId || ''}</sts:SoftwareID>
+          </sts:SoftwareProvider>
+          <sts:SoftwareSecurityCode schemeAgencyID="195">${this.generateSoftwareSecurityCode(dianConfig, invoice.invoiceNumber)}</sts:SoftwareSecurityCode>
+          <sts:QRCode>${qrCode}</sts:QRCode>
+        </sts:DianExtensions>
+      </ext:ExtensionContent>
+    </ext:UBLExtension>
+    <ext:UBLExtension>
+      <ext:ExtensionContent></ext:ExtensionContent>
+    </ext:UBLExtension>
+  </ext:UBLExtensions>
+  <cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>25</cbc:CustomizationID>
+  <cbc:ProfileID>DIAN 2.1</cbc:ProfileID>
+  <cbc:ProfileExecutionID>${dianConfig.testMode ? '2' : '1'}</cbc:ProfileExecutionID>
+  <cbc:ID>${invoice.invoiceNumber}</cbc:ID>
+  <cbc:UUID schemeID="${dianConfig.testMode ? '2' : '1'}" schemeName="CUDE-SHA384">${cufe}</cbc:UUID>
+  <cbc:IssueDate>${this.formatDate(issueDate)}</cbc:IssueDate>
+  <cbc:IssueTime>${this.formatTime(issueDate)}</cbc:IssueTime>
+  <cbc:CreditNoteTypeCode listAgencyID="6" listID="UNCL1001">95</cbc:CreditNoteTypeCode>
+  <cbc:Note>${reason}</cbc:Note>
+  <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
+  <cbc:LineCountNumeric>${invoice.items.length}</cbc:LineCountNumeric>
+  <cac:DiscrepancyResponse>
+    <cbc:ReferenceID>${originalDoc.documentNumber}</cbc:ReferenceID>
+    <cbc:ResponseCode>${reasonCode}</cbc:ResponseCode>
+    <cbc:Description>${reason}</cbc:Description>
+  </cac:DiscrepancyResponse>
+  <cac:BillingReference>
+    <cac:InvoiceDocumentReference>
+      <cbc:ID>${originalDoc.documentNumber}</cbc:ID>
+      <cbc:UUID schemeName="CUDE-SHA384">${originalDoc.cude}</cbc:UUID>
+      <cbc:IssueDate>${this.formatDate(new Date(originalDoc.issueDate))}</cbc:IssueDate>
+    </cac:InvoiceDocumentReference>
+  </cac:BillingReference>
+${this.generateSupplierParty(dianConfig)}
+${this.generateCustomerParty(invoice.customer)}
+${this.generateTaxTotal(invoice)}
+${this.generateLegalMonetaryTotal(invoice)}
+${this.generateCreditNoteLines(invoice.items)}
+</CreditNote>`;
+
+    return xml;
+  }
+
   // ============================================================================
   // HELPER METHODS
   // ============================================================================

@@ -38,6 +38,9 @@ import {
   GenerateCreditNoteDto,
   GenerateDebitNoteDto,
   SetNoteConfigDto,
+  ProcessPOSSaleDto,
+  GenerateNotaAjusteDto,
+  SetPosResolutionDto,
 } from './dto';
 import { DianConfigEntity } from './entities/dian-config.entity';
 import {
@@ -253,6 +256,43 @@ export class DianController {
   async setNoteConfig(@Body() dto: SetNoteConfigDto) {
     this.logger.log('Setting note configuration');
     return this.dianService.setNoteConfig(dto);
+  }
+
+  // ============================================================================
+  // POS DOCUMENTO EQUIVALENTE ENDPOINTS
+  // ============================================================================
+
+  @Post('pos-sale')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Process POS sale as documento equivalente' })
+  @ApiResponse({ status: 200, description: 'Documento equivalente processed' })
+  @ApiResponse({ status: 400, description: 'Configuration missing or invalid' })
+  @ApiResponse({ status: 404, description: 'Invoice not found' })
+  async processPOSSale(@Body() dto: ProcessPOSSaleDto) {
+    this.logger.log(`Processing POS sale ${dto.invoiceId} as documento equivalente`);
+    return this.dianService.processPOSSale(dto);
+  }
+
+  @Post('nota-ajuste')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Generate nota de ajuste for POS document' })
+  @ApiResponse({ status: 200, description: 'Nota de ajuste generated' })
+  @ApiResponse({ status: 400, description: 'Invalid data or document not accepted' })
+  async processNotaAjuste(@Body() dto: GenerateNotaAjusteDto) {
+    this.logger.log(`Creating nota de ajuste for documento equivalente ${dto.documentoEquivalenteId}`);
+    return this.dianService.processNotaAjuste(dto);
+  }
+
+  @Post('config/pos-resolution')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set POS resolution configuration' })
+  @ApiResponse({ status: 200, description: 'POS resolution configured' })
+  async setPosResolution(@Body() dto: SetPosResolutionDto) {
+    this.logger.log('Setting POS resolution');
+    return this.dianService.setPosResolution(dto);
   }
 
   // ============================================================================

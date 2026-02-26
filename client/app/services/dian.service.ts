@@ -18,6 +18,9 @@ import type {
   GenerateDebitNoteDto,
   SetNoteConfigDto,
   NoteResult,
+  ProcessPOSSaleDto,
+  GenerateNotaAjusteDto,
+  SetPosResolutionDto,
 } from "~/types/dian";
 
 const BASE_URL = "/dian";
@@ -164,6 +167,37 @@ export async function downloadDianXml(id: string): Promise<Blob> {
   const response = await api.get(`${BASE_URL}/documents/${id}/xml`, {
     responseType: "blob",
   });
+  return response.data;
+}
+
+// POS Documento Equivalente endpoints
+export async function processPOSSale(
+  data: ProcessPOSSaleDto,
+): Promise<SendInvoiceResult> {
+  const response = await api.post<SendInvoiceResult>(
+    `${BASE_URL}/pos-sale`,
+    data,
+  );
+  return response.data;
+}
+
+export async function processNotaAjuste(
+  data: GenerateNotaAjusteDto,
+): Promise<NoteResult> {
+  const response = await api.post<NoteResult>(
+    `${BASE_URL}/nota-ajuste`,
+    data,
+  );
+  return response.data;
+}
+
+export async function setPosResolution(
+  data: SetPosResolutionDto,
+): Promise<{ success: boolean; message: string }> {
+  const response = await api.post<{ success: boolean; message: string }>(
+    `${BASE_URL}/config/pos-resolution`,
+    data,
+  );
   return response.data;
 }
 

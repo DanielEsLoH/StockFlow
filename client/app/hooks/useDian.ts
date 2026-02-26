@@ -16,6 +16,9 @@ import {
   createCreditNote,
   createDebitNote,
   setNoteConfig,
+  processPOSSale,
+  processNotaAjuste,
+  setPosResolution,
   type ListDocumentsParams,
 } from "~/services/dian.service";
 import { useIsQueryEnabled } from "./useIsQueryEnabled";
@@ -29,6 +32,9 @@ import type {
   GenerateCreditNoteDto,
   GenerateDebitNoteDto,
   SetNoteConfigDto,
+  ProcessPOSSaleDto,
+  GenerateNotaAjusteDto,
+  SetPosResolutionDto,
 } from "~/types/dian";
 
 // Query Keys
@@ -265,6 +271,62 @@ export function useDownloadDianXml() {
     },
     onError: (error: Error) => {
       toast.error(`Error al descargar XML: ${error.message}`);
+    },
+  });
+}
+
+// POS Documento Equivalente Hooks
+export function useProcessPOSSale() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ProcessPOSSaleDto) => processPOSSale(data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: dianKeys.documents() });
+      queryClient.invalidateQueries({ queryKey: dianKeys.stats() });
+      if (result.success) {
+        toast.success(result.message || "Documento equivalente POS generado exitosamente");
+      } else {
+        toast.warning(result.message);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al procesar venta POS: ${error.message}`);
+    },
+  });
+}
+
+export function useProcessNotaAjuste() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: GenerateNotaAjusteDto) => processNotaAjuste(data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: dianKeys.documents() });
+      queryClient.invalidateQueries({ queryKey: dianKeys.stats() });
+      if (result.success) {
+        toast.success(result.message || "Nota de ajuste creada exitosamente");
+      } else {
+        toast.warning(result.message);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al crear nota de ajuste: ${error.message}`);
+    },
+  });
+}
+
+export function useSetPosResolution() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: SetPosResolutionDto) => setPosResolution(data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: dianKeys.config() });
+      toast.success(result.message || "Resolucion POS configurada");
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`);
     },
   });
 }

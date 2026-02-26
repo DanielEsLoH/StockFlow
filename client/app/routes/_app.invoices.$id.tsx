@@ -1012,14 +1012,16 @@ export default function InvoiceDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Store className="h-5 w-5 text-primary-500" />
-                Facturacion Electronica DIAN
+                {invoice.source === "POS" ? "Documento Equivalente POS" : "Facturacion Electronica DIAN"}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    CUFE (Codigo Unico de Factura Electronica)
+                    {invoice.source === "POS"
+                      ? "CUDE (Codigo Unico de Documento Equivalente)"
+                      : "CUFE (Codigo Unico de Factura Electronica)"}
                   </p>
                   <p className="font-mono text-xs text-neutral-900 dark:text-white mt-1 break-all">
                     {invoice.dianCufe}

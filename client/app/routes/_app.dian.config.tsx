@@ -20,12 +20,14 @@ import {
   useSetResolution,
   useUploadCertificate,
   useSetNoteConfig,
+  useSetPosResolution,
 } from "~/hooks/useDian";
 import type {
   CreateDianConfigDto,
   SetDianSoftwareDto,
   SetDianResolutionDto,
   SetNoteConfigDto,
+  SetPosResolutionDto,
   TaxResponsibility,
 } from "~/types/dian";
 import { taxResponsibilityLabels } from "~/types/dian";
@@ -38,9 +40,10 @@ import {
   CheckCircle,
   Loader2,
   Hash,
+  ShoppingCart,
 } from "lucide-react";
 
-type ActiveTab = "company" | "software" | "resolution" | "certificate" | "notes";
+type ActiveTab = "company" | "software" | "resolution" | "certificate" | "notes" | "pos-resolution";
 
 export default function DianConfigPage() {
   const { data: config, isLoading } = useDianConfig();
@@ -50,6 +53,7 @@ export default function DianConfigPage() {
   const setResolution = useSetResolution();
   const uploadCertificate = useUploadCertificate();
   const setNoteConfigMutation = useSetNoteConfig();
+  const setPosResolutionMutation = useSetPosResolution();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("company");
 
@@ -93,6 +97,12 @@ export default function DianConfigPage() {
       label: "Notas",
       icon: Hash,
       complete: false,
+    },
+    {
+      id: "pos-resolution" as const,
+      label: "Resolucion POS",
+      icon: ShoppingCart,
+      complete: !!config?.posResolutionNumber,
     },
   ];
 
@@ -204,6 +214,17 @@ export default function DianConfigPage() {
             await setNoteConfigMutation.mutateAsync(data);
           }}
           isLoading={setNoteConfigMutation.isPending}
+        />
+      )}
+
+      {activeTab === "pos-resolution" && (
+        <PosResolutionForm
+          config={config}
+          hasConfig={!!config}
+          onSubmit={async (data) => {
+            await setPosResolutionMutation.mutateAsync(data);
+          }}
+          isLoading={setPosResolutionMutation.isPending}
         />
       )}
     </PageWrapper>
@@ -950,6 +971,176 @@ function NoteConfigForm({
           <Button type="submit" disabled={isLoading}>
             {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Guardar Configuracion de Notas
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+// POS Resolution Form
+function PosResolutionForm({
+  config,
+  hasConfig,
+  onSubmit,
+  isLoading,
+}: {
+  config: any;
+  hasConfig: boolean;
+  onSubmit: (data: SetPosResolutionDto) => Promise<void>;
+  isLoading: boolean;
+}) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SetPosResolutionDto>({
+    defaultValues: {
+      posResolutionNumber: config?.posResolutionNumber || "",
+      posResolutionDate: config?.posResolutionDate?.split("T")[0] || "",
+      posResolutionPrefix: config?.posResolutionPrefix || "",
+      posResolutionRangeFrom: config?.posResolutionRangeFrom || 1,
+      posResolutionRangeTo: config?.posResolutionRangeTo || 1000,
+      posNotePrefix: config?.posNotePrefix || "",
+    },
+  });
+
+  if (!hasConfig) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <p className="text-neutral-500">
+            Primero debes configurar los datos de la empresa
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Resolucion POS (Documento Equivalente)</CardTitle>
+        <CardDescription>
+          Datos de la autorizacion de numeracion para documentos equivalentes POS
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                htmlFor="posResolutionNumber"
+              >
+                Numero de Resolucion
+              </label>
+              <Input
+                id="posResolutionNumber"
+                {...register("posResolutionNumber", {
+                  required: "Numero de resolucion es requerido",
+                })}
+                placeholder="18760000002"
+              />
+              {errors.posResolutionNumber && (
+                <p className="text-sm text-error-500 mt-1">
+                  {errors.posResolutionNumber.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <label
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                htmlFor="posResolutionDate"
+              >
+                Fecha de Resolucion
+              </label>
+              <Input
+                id="posResolutionDate"
+                type="date"
+                {...register("posResolutionDate")}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              htmlFor="posResolutionPrefix"
+            >
+              Prefijo POS
+            </label>
+            <Input
+              id="posResolutionPrefix"
+              {...register("posResolutionPrefix", {
+                required: "Prefijo es requerido",
+              })}
+              placeholder="POS"
+            />
+            {errors.posResolutionPrefix && (
+              <p className="text-sm text-error-500 mt-1">
+                {errors.posResolutionPrefix.message}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                htmlFor="posResolutionRangeFrom"
+              >
+                Rango Desde
+              </label>
+              <Input
+                id="posResolutionRangeFrom"
+                type="number"
+                {...register("posResolutionRangeFrom", {
+                  required: "Rango inicial es requerido",
+                  valueAsNumber: true,
+                })}
+                placeholder="1"
+              />
+            </div>
+            <div>
+              <label
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                htmlFor="posResolutionRangeTo"
+              >
+                Rango Hasta
+              </label>
+              <Input
+                id="posResolutionRangeTo"
+                type="number"
+                {...register("posResolutionRangeTo", {
+                  required: "Rango final es requerido",
+                  valueAsNumber: true,
+                })}
+                placeholder="5000"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              htmlFor="posNotePrefix"
+            >
+              Prefijo Notas de Ajuste (Opcional)
+            </label>
+            <Input
+              id="posNotePrefix"
+              {...register("posNotePrefix")}
+              placeholder="NA"
+            />
+            <p className="text-sm text-neutral-500 mt-1">
+              Prefijo para las notas de ajuste sobre documentos equivalentes POS
+            </p>
+          </div>
+
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Guardar Resolucion POS
           </Button>
         </form>
       </CardContent>

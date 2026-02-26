@@ -187,6 +187,8 @@ enum DianDocumentType {
   FACTURA_ELECTRONICA
   NOTA_CREDITO
   NOTA_DEBITO
+  DOCUMENTO_EQUIVALENTE
+  NOTA_AJUSTE
 }
 
 enum CreditNoteReason {
@@ -1069,6 +1071,15 @@ model TenantDianConfig {
   creditNoteCurrentNumber Int                 @default(1) @map("credit_note_current_number")
   debitNotePrefix         String?             @map("debit_note_prefix")
   debitNoteCurrentNumber  Int                 @default(1) @map("debit_note_current_number")
+  // POS Document Resolution (Documento Equivalente)
+  posResolutionNumber     String?             @map("pos_resolution_number")
+  posResolutionDate       DateTime?           @map("pos_resolution_date")
+  posResolutionPrefix     String?             @map("pos_resolution_prefix")
+  posResolutionRangeFrom  Int?                @map("pos_resolution_range_from")
+  posResolutionRangeTo    Int?                @map("pos_resolution_range_to")
+  posCurrentNumber        Int                 @default(1) @map("pos_current_number")
+  posNotePrefix           String?             @map("pos_note_prefix")
+  posNoteCurrentNumber    Int                 @default(1) @map("pos_note_current_number")
   createdAt               DateTime            @default(now()) @map("created_at")
   updatedAt               DateTime            @updatedAt @map("updated_at")
 

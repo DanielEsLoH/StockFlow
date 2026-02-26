@@ -152,6 +152,8 @@ describe('DianService', () => {
       generateInvoiceXml: jest.fn().mockReturnValue('<xml>generated</xml>'),
       generateCreditNoteXml: jest.fn().mockReturnValue('<xml>credit-note</xml>'),
       generateDebitNoteXml: jest.fn().mockReturnValue('<xml>debit-note</xml>'),
+      generateDocumentoEquivalenteXml: jest.fn().mockReturnValue('<xml>documento-equivalente</xml>'),
+      generateNotaAjusteXml: jest.fn().mockReturnValue('<xml>nota-ajuste</xml>'),
     };
 
     const mockCufeGeneratorService = {
@@ -1587,6 +1589,326 @@ describe('DianService', () => {
           debitNoteCurrentNumber: 50,
         },
       });
+    });
+  });
+
+  // ============================================================================
+  // POS DOCUMENTO EQUIVALENTE TESTS
+  // ============================================================================
+
+  describe('processPOSSale', () => {
+    const mockPosConfig = {
+      ...mockDianConfig,
+      posResolutionNumber: '18764000001',
+      posResolutionDate: new Date('2024-06-01'),
+      posResolutionPrefix: 'POS',
+      posResolutionRangeFrom: 1,
+      posResolutionRangeTo: 500000,
+      posCurrentNumber: 1,
+      posNotePrefix: 'NAPOS',
+      posNoteCurrentNumber: 1,
+    };
+
+    const posSaleDto = {
+      invoiceId: 'invoice-123',
+    };
+
+    const mockPosDocument = {
+      id: 'pos-doc-1',
+      tenantId: mockTenantId,
+      invoiceId: 'invoice-123',
+      documentType: DianDocumentType.DOCUMENTO_EQUIVALENTE,
+      documentNumber: 'POS00000001',
+      cude: 'cude-generated',
+      status: DianDocumentStatus.GENERATED,
+      xmlContent: '<xml>documento-equivalente</xml>',
+    };
+
+    beforeEach(() => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockPosConfig,
+      );
+      (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(mockInvoice);
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.dianDocument.create as jest.Mock).mockResolvedValue(
+        mockPosDocument,
+      );
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockPosConfig,
+      );
+      (prisma.dianDocument.update as jest.Mock).mockResolvedValue(
+        mockPosDocument,
+      );
+      (prisma.invoice.update as jest.Mock).mockResolvedValue(mockInvoice);
+    });
+
+    it('should throw BadRequestException if POS resolution is not configured', async () => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue({
+        ...mockPosConfig,
+        posResolutionNumber: null,
+        posResolutionPrefix: null,
+      });
+
+      await expect(
+        service.processPOSSale(posSaleDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should process a POS sale and create a DOCUMENTO_EQUIVALENTE DianDocument', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-pos-1',
+        isValid: true,
+      });
+
+      const result = await service.processPOSSale(posSaleDto);
+
+      expect(result.success).toBe(true);
+      expect(result.status).toBe(DianDocumentStatus.ACCEPTED);
+      expect(result.cufe).toBe('cude-generated');
+      expect(result.trackId).toBe('track-pos-1');
+      expect(result.documentId).toBe('pos-doc-1');
+      expect(result.message).toBe(
+        'Documento equivalente enviado y aceptado por la DIAN',
+      );
+
+      // Verify CUDE generation (not CUFE)
+      expect(cufeGenerator.generateCude).toHaveBeenCalled();
+      expect(cufeGenerator.generateQrCodeData).toHaveBeenCalled();
+
+      // Verify Documento Equivalente XML generation
+      expect(xmlGenerator.generateDocumentoEquivalenteXml).toHaveBeenCalled();
+
+      // Verify document record creation with correct type
+      expect(prisma.dianDocument.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tenantId: mockTenantId,
+            invoiceId: 'invoice-123',
+            documentType: DianDocumentType.DOCUMENTO_EQUIVALENTE,
+            documentNumber: 'POS00000001',
+            cude: 'cude-generated',
+            status: DianDocumentStatus.GENERATED,
+          }),
+        }),
+      );
+
+      // Verify invoice updated with CUDE on success
+      expect(prisma.invoice.update).toHaveBeenCalledWith({
+        where: { id: 'invoice-123' },
+        data: { dianCufe: 'cude-generated' },
+      });
+    });
+
+    it('should increment posCurrentNumber after processing', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-pos-2',
+        isValid: true,
+      });
+
+      await service.processPOSSale(posSaleDto);
+
+      expect(prisma.tenantDianConfig.update).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        data: { posCurrentNumber: { increment: 1 } },
+      });
+    });
+  });
+
+  // ============================================================================
+  // NOTA DE AJUSTE TESTS
+  // ============================================================================
+
+  describe('processNotaAjuste', () => {
+    const mockPosConfig = {
+      ...mockDianConfig,
+      posResolutionNumber: '18764000001',
+      posResolutionPrefix: 'POS',
+      posCurrentNumber: 5,
+      posNotePrefix: 'NAPOS',
+      posNoteCurrentNumber: 1,
+    };
+
+    const mockOriginalDocEquiv = {
+      id: 'de-doc-1',
+      tenantId: mockTenantId,
+      invoiceId: 'invoice-123',
+      documentType: DianDocumentType.DOCUMENTO_EQUIVALENTE,
+      documentNumber: 'POS00000005',
+      cude: 'cude-original',
+      status: DianDocumentStatus.ACCEPTED,
+      createdAt: new Date('2026-02-20'),
+    };
+
+    const notaAjusteDto = {
+      documentoEquivalenteId: 'de-doc-1',
+      reason: 'Anulacion de documento equivalente',
+      reasonCode: '1',
+    };
+
+    const mockNotaAjusteDoc = {
+      id: 'nota-ajuste-doc-1',
+      tenantId: mockTenantId,
+      invoiceId: 'invoice-123',
+      originalDianDocumentId: 'de-doc-1',
+      documentType: DianDocumentType.NOTA_AJUSTE,
+      documentNumber: 'NAPOS00000001',
+      cude: 'cude-generated',
+      status: DianDocumentStatus.GENERATED,
+      xmlContent: '<xml>nota-ajuste</xml>',
+    };
+
+    beforeEach(() => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockPosConfig,
+      );
+      (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(mockInvoice);
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(
+        mockOriginalDocEquiv,
+      );
+      (prisma.dianDocument.create as jest.Mock).mockResolvedValue(
+        mockNotaAjusteDoc,
+      );
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue(
+        mockPosConfig,
+      );
+      (prisma.dianDocument.update as jest.Mock).mockResolvedValue(
+        mockNotaAjusteDoc,
+      );
+    });
+
+    it('should throw BadRequestException if documentoEquivalenteId does not exist', async () => {
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.processNotaAjuste(notaAjusteDto),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should create a NOTA_AJUSTE DianDocument referencing the original documento equivalente', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-na-1',
+        isValid: true,
+      });
+
+      const result = await service.processNotaAjuste(notaAjusteDto);
+
+      expect(result.success).toBe(true);
+      expect(result.status).toBe(DianDocumentStatus.ACCEPTED);
+      expect(result.cufe).toBe('cude-generated');
+      expect(result.trackId).toBe('track-na-1');
+      expect(result.documentId).toBe('nota-ajuste-doc-1');
+      expect(result.message).toBe(
+        'Nota de ajuste enviada y aceptada por la DIAN',
+      );
+
+      // Verify CUDE generation
+      expect(cufeGenerator.generateCude).toHaveBeenCalled();
+
+      // Verify Nota Ajuste XML generation
+      expect(xmlGenerator.generateNotaAjusteXml).toHaveBeenCalled();
+
+      // Verify document record created with correct type and reference
+      expect(prisma.dianDocument.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tenantId: mockTenantId,
+            invoiceId: 'invoice-123',
+            originalDianDocumentId: 'de-doc-1',
+            documentType: DianDocumentType.NOTA_AJUSTE,
+            documentNumber: 'NAPOS00000001',
+            cude: 'cude-generated',
+            status: DianDocumentStatus.GENERATED,
+          }),
+        }),
+      );
+    });
+
+    it('should increment posNoteCurrentNumber after processing', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: true,
+        trackId: 'track-na-2',
+        isValid: true,
+      });
+
+      await service.processNotaAjuste(notaAjusteDto);
+
+      expect((prisma as any).$transaction).toHaveBeenCalled();
+      expect(prisma.tenantDianConfig.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { posNoteCurrentNumber: { increment: 1 } },
+        }),
+      );
+    });
+  });
+
+  // ============================================================================
+  // POS RESOLUTION CONFIG TESTS
+  // ============================================================================
+
+  describe('setPosResolution', () => {
+    const setPosResolutionDto = {
+      posResolutionNumber: '18764000001',
+      posResolutionDate: '2024-06-01',
+      posResolutionPrefix: 'POS',
+      posResolutionRangeFrom: 1,
+      posResolutionRangeTo: 500000,
+      posNotePrefix: 'NAPOS',
+    };
+
+    it('should update POS resolution fields on TenantDianConfig', async () => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
+      (prisma.tenantDianConfig.update as jest.Mock).mockResolvedValue({
+        ...mockDianConfig,
+        posResolutionNumber: '18764000001',
+        posResolutionPrefix: 'POS',
+        posResolutionRangeFrom: 1,
+        posResolutionRangeTo: 500000,
+        posCurrentNumber: 1,
+        posNotePrefix: 'NAPOS',
+      });
+
+      const result = await service.setPosResolution(setPosResolutionDto);
+
+      expect(result.success).toBe(true);
+      expect(result.message).toBe('Resolucion POS configurada correctamente');
+      expect(result.config).toEqual(
+        expect.objectContaining({
+          posResolutionNumber: '18764000001',
+          posResolutionPrefix: 'POS',
+          posResolutionRangeFrom: 1,
+          posResolutionRangeTo: 500000,
+          posCurrentNumber: 1,
+          posNotePrefix: 'NAPOS',
+        }),
+      );
+
+      expect(prisma.tenantDianConfig.update).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        data: {
+          posResolutionNumber: '18764000001',
+          posResolutionDate: new Date('2024-06-01'),
+          posResolutionPrefix: 'POS',
+          posResolutionRangeFrom: 1,
+          posResolutionRangeTo: 500000,
+          posCurrentNumber: 1,
+          posNotePrefix: 'NAPOS',
+        },
+      });
+    });
+
+    it('should throw if no config exists', async () => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        service.setPosResolution(setPosResolutionDto),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

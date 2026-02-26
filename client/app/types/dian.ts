@@ -21,6 +21,8 @@ export enum DianDocumentType {
   FACTURA_ELECTRONICA = "FACTURA_ELECTRONICA",
   NOTA_CREDITO = "NOTA_CREDITO",
   NOTA_DEBITO = "NOTA_DEBITO",
+  DOCUMENTO_EQUIVALENTE = "DOCUMENTO_EQUIVALENTE",
+  NOTA_AJUSTE = "NOTA_AJUSTE",
 }
 
 export interface DianConfig {
@@ -50,6 +52,15 @@ export interface DianConfig {
   resolutionRangeFrom?: number;
   resolutionRangeTo?: number;
   currentNumber?: number;
+  // POS resolution fields
+  posResolutionNumber?: string;
+  posResolutionDate?: string;
+  posResolutionPrefix?: string;
+  posResolutionRangeFrom?: number;
+  posResolutionRangeTo?: number;
+  posCurrentNumber?: number;
+  posNotePrefix?: string;
+  posNoteCurrentNumber?: number;
   createdAt: string;
   updatedAt: string;
   // Computed fields
@@ -314,6 +325,8 @@ export const dianDocumentTypeLabels: Record<DianDocumentType, string> = {
   [DianDocumentType.FACTURA_ELECTRONICA]: "Factura Electronica",
   [DianDocumentType.NOTA_CREDITO]: "Nota Credito",
   [DianDocumentType.NOTA_DEBITO]: "Nota Debito",
+  [DianDocumentType.DOCUMENTO_EQUIVALENTE]: "Documento Equivalente POS",
+  [DianDocumentType.NOTA_AJUSTE]: "Nota de Ajuste",
 };
 
 export const taxResponsibilityLabels: Record<TaxResponsibility, string> = {
@@ -323,3 +336,26 @@ export const taxResponsibilityLabels: Record<TaxResponsibility, string> = {
   [TaxResponsibility.O_47]: "O-47 Regimen Simple de Tributacion",
   [TaxResponsibility.R_99_PN]: "R-99-PN No Responsable de IVA",
 };
+
+// ─── POS Documento Equivalente Types ──────────────────────────────────────
+
+export interface ProcessPOSSaleDto {
+  invoiceId: string;
+  force?: boolean;
+}
+
+export interface GenerateNotaAjusteDto {
+  documentoEquivalenteId: string;
+  reasonCode: string;
+  reason: string;
+  items?: CreditNoteItemDto[];
+}
+
+export interface SetPosResolutionDto {
+  posResolutionNumber: string;
+  posResolutionDate?: string;
+  posResolutionPrefix: string;
+  posResolutionRangeFrom: number;
+  posResolutionRangeTo: number;
+  posNotePrefix?: string;
+}

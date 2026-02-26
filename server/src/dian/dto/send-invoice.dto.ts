@@ -158,3 +158,67 @@ export class SetNoteConfigDto {
   @Min(1)
   debitNoteStartNumber?: number;
 }
+
+// ─── POS Documento Equivalente ─────────────────────────────────────────────
+
+export class ProcessPOSSaleDto {
+  @ApiProperty({ description: 'ID de la factura POS a enviar como documento equivalente' })
+  @IsString()
+  invoiceId: string;
+
+  @ApiPropertyOptional({ description: 'Forzar reenvio', default: false })
+  @IsOptional()
+  @IsBoolean()
+  force?: boolean;
+}
+
+export class GenerateNotaAjusteDto {
+  @ApiProperty({ description: 'ID del documento equivalente original (DianDocument ID)' })
+  @IsString()
+  documentoEquivalenteId: string;
+
+  @ApiProperty({ description: 'Codigo de razon (1-5)', example: '1' })
+  @IsString()
+  reasonCode: string;
+
+  @ApiProperty({ description: 'Motivo de la nota de ajuste' })
+  @IsString()
+  reason: string;
+
+  @ApiPropertyOptional({ description: 'Items parciales (si no se envian, se ajusta todo)' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreditNoteItemDto)
+  items?: CreditNoteItemDto[];
+}
+
+export class SetPosResolutionDto {
+  @ApiProperty({ description: 'Numero de resolucion POS' })
+  @IsString()
+  posResolutionNumber: string;
+
+  @ApiPropertyOptional({ description: 'Fecha de resolucion POS' })
+  @IsOptional()
+  @IsString()
+  posResolutionDate?: string;
+
+  @ApiProperty({ description: 'Prefijo POS (ej: POS)' })
+  @IsString()
+  posResolutionPrefix: string;
+
+  @ApiProperty({ description: 'Rango inicial' })
+  @IsInt()
+  @Min(1)
+  posResolutionRangeFrom: number;
+
+  @ApiProperty({ description: 'Rango final' })
+  @IsInt()
+  @Min(1)
+  posResolutionRangeTo: number;
+
+  @ApiPropertyOptional({ description: 'Prefijo para notas de ajuste POS' })
+  @IsOptional()
+  @IsString()
+  posNotePrefix?: string;
+}

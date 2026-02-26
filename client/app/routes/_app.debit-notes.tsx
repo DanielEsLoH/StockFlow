@@ -19,7 +19,6 @@ import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { useDianDocuments, useDownloadDianXml } from "~/hooks/useDian";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
 import { Button } from "~/components/ui/Button";
-import { Input } from "~/components/ui/Input";
 import { Card } from "~/components/ui/Card";
 import { Badge } from "~/components/ui/Badge";
 import { StatCard } from "~/components/ui/StatCard";
@@ -36,6 +35,7 @@ import {
 } from "~/components/ui/Table";
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { EmptyState } from "~/components/ui/EmptyState";
+import { DateFilterInput } from "~/components/ui/DateFilterInput";
 import {
   DianDocumentStatus,
   dianStatusLabels,
@@ -90,29 +90,6 @@ const filtersParser = {
   }),
 };
 
-function DateFilterInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string | undefined;
-  onChange: (value: string | undefined) => void;
-  placeholder: string;
-}) {
-  return (
-    <div className="relative">
-      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
-      <Input
-        type="date"
-        placeholder={placeholder}
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value || undefined)}
-        className="pl-10"
-      />
-    </div>
-  );
-}
-
 export default function DebitNotesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const { filters, updateFilters, clearFilters } =
@@ -133,7 +110,7 @@ export default function DebitNotesPage() {
   const total = meta?.total || 0;
   const totalPages = meta?.totalPages || 0;
 
-  const stats = useMemo(() => {
+  const pageStats = useMemo(() => {
     const all = documents;
     return {
       total,
@@ -172,7 +149,7 @@ export default function DebitNotesPage() {
           <StatCard
             icon={FilePlus}
             label="Total"
-            value={stats.total}
+            value={pageStats.total}
             subtitle="notas debito"
             color="primary"
             variant="gradient"
@@ -182,7 +159,7 @@ export default function DebitNotesPage() {
           <StatCard
             icon={CheckCircle}
             label="Aceptadas"
-            value={stats.accepted}
+            value={pageStats.accepted}
             color="success"
             variant="gradient"
             animate
@@ -191,7 +168,7 @@ export default function DebitNotesPage() {
           <StatCard
             icon={XCircle}
             label="Rechazadas"
-            value={stats.rejected}
+            value={pageStats.rejected}
             color="error"
             variant="gradient"
             animate
@@ -200,7 +177,7 @@ export default function DebitNotesPage() {
           <StatCard
             icon={Clock}
             label="En proceso"
-            value={stats.pending}
+            value={pageStats.pending}
             color="warning"
             variant="gradient"
             animate
@@ -388,11 +365,10 @@ export default function DebitNotesPage() {
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
                         <span className="text-sm text-neutral-600 dark:text-neutral-300">
-                          {(doc as any).creditNoteReason
+                          {doc.creditNoteReason
                             ? debitNoteReasonLabels[
-                                (doc as any)
-                                  .creditNoteReason as DebitNoteReason
-                              ] || (doc as any).creditNoteReason
+                                doc.creditNoteReason as DebitNoteReason
+                              ] || doc.creditNoteReason
                             : "—"}
                         </span>
                       </TableCell>
@@ -414,7 +390,7 @@ export default function DebitNotesPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                           <Link to={`/debit-notes/${doc.id}`}>
                             <Button
                               variant="ghost"

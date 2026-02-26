@@ -108,6 +108,7 @@ export interface DianDocument {
   dianTrackId?: string;
   dianResponse?: Record<string, unknown>;
   errorMessage?: string;
+  creditNoteReason?: string;
   createdAt: string;
   sentAt?: string;
   acceptedAt?: string;

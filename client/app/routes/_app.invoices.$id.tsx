@@ -38,6 +38,7 @@ import {
   useDeleteInvoice,
   useUpdateInvoiceStatus,
   useSendInvoiceToDian,
+  useSendInvoiceByEmail,
 } from "~/hooks/useInvoices";
 import { useDownloadDianXml } from "~/hooks/useDian";
 import { CreditNoteModal } from "~/components/dian/CreditNoteModal";
@@ -373,6 +374,7 @@ export default function InvoiceDetailPage() {
   const deleteInvoice = useDeleteInvoice();
   const updateStatus = useUpdateInvoiceStatus();
   const sendToDian = useSendInvoiceToDian();
+  const sendByEmail = useSendInvoiceByEmail();
   const downloadXml = useDownloadDianXml();
 
   // Calculate payment totals
@@ -402,6 +404,12 @@ export default function InvoiceDetailPage() {
   const handleSendToDian = () => {
     if (id) {
       sendToDian.mutate(id);
+    }
+  };
+
+  const handleSendByEmail = () => {
+    if (id) {
+      sendByEmail.mutate(id);
     }
   };
 
@@ -495,6 +503,20 @@ export default function InvoiceDetailPage() {
               onStatusChange={handleStatusChange}
               isLoading={updateStatus.isPending}
             />
+            {invoice.customer?.email && (
+              <Button
+                variant="outline"
+                onClick={handleSendByEmail}
+                disabled={sendByEmail.isPending}
+              >
+                {sendByEmail.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Mail className="h-4 w-4 mr-2" />
+                )}
+                Enviar por Email
+              </Button>
+            )}
             {canSendToDian && (
               <Button
                 variant="primary"

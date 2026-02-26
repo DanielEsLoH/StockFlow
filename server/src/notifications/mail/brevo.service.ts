@@ -475,6 +475,7 @@ export class BrevoService {
     dueDate: Date | null,
     tenantName: string,
     pdfBuffer?: Buffer,
+    xmlContent?: string,
   ): Promise<SendMailResult> {
     const dueDateDisplay = dueDate ? this.formatDate(dueDate) : 'Upon receipt';
 
@@ -528,6 +529,12 @@ export class BrevoService {
       attachments.push({
         name: `Invoice-${invoiceNumber}.pdf`,
         content: pdfBuffer.toString('base64'),
+      });
+    }
+    if (xmlContent) {
+      attachments.push({
+        name: `${invoiceNumber}.xml`,
+        content: Buffer.from(xmlContent).toString('base64'),
       });
     }
 

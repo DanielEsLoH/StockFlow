@@ -11,6 +11,8 @@ import { InvoicesService } from './invoices.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting';
+import { BrevoService } from '../notifications/mail/brevo.service';
+import { ReportsService } from '../reports/reports.service';
 import type {
   CreateInvoiceDto,
   UpdateInvoiceDto,
@@ -226,6 +228,20 @@ describe('InvoicesService', () => {
             onInvoiceCreated: jest.fn().mockResolvedValue(undefined),
             onPaymentCreated: jest.fn().mockResolvedValue(undefined),
             onInvoiceCancelled: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: BrevoService,
+          useValue: {
+            sendInvoiceEmail: jest.fn().mockResolvedValue({ success: true }),
+          },
+        },
+        {
+          provide: ReportsService,
+          useValue: {
+            generateInvoicePdf: jest
+              .fn()
+              .mockResolvedValue(Buffer.from('pdf')),
           },
         },
       ],

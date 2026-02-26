@@ -4,6 +4,8 @@ import { InvoicesService } from './invoices.service';
 import { PaymentsModule } from '../payments';
 import { DianModule } from '../dian';
 import { AccountingModule } from '../accounting';
+import { NotificationsModule } from '../notifications';
+import { ReportsModule } from '../reports';
 
 /**
  * InvoicesModule provides invoice management functionality including:
@@ -30,7 +32,13 @@ import { AccountingModule } from '../accounting';
  * - Monthly invoice limits are enforced per tenant plan
  */
 @Module({
-  imports: [forwardRef(() => PaymentsModule), DianModule, AccountingModule],
+  imports: [
+    forwardRef(() => PaymentsModule),
+    DianModule,
+    AccountingModule,
+    NotificationsModule,
+    ReportsModule,
+  ],
   controllers: [InvoicesController],
   providers: [InvoicesService],
   exports: [InvoicesService],

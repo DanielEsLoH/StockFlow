@@ -559,3 +559,23 @@ export function useSendInvoiceToDian() {
     },
   });
 }
+
+/**
+ * Send invoice by email to customer with PDF + XML attachments
+ */
+export function useSendInvoiceByEmail() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (invoiceId: string) => invoicesService.sendByEmail(invoiceId),
+    onSuccess: (_data, invoiceId) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.invoices.detail(invoiceId),
+      });
+      toast.success("Factura enviada por email exitosamente");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al enviar la factura por email");
+    },
+  });
+}

@@ -463,6 +463,34 @@ export class InvoicesController {
   }
 
   /**
+   * Sends an invoice by email to the customer with PDF and optional XML attachments.
+   *
+   * @param id - Invoice ID
+   * @returns Success message
+   */
+  @Post(':id/email')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Send invoice by email',
+    description:
+      'Sends the invoice to the customer email with PDF and XML attachments (if DIAN document exists).',
+  })
+  @ApiParam({ name: 'id', description: 'Invoice ID' })
+  @ApiResponse({ status: 200, description: 'Invoice email sent successfully' })
+  @ApiResponse({
+    status: 400,
+    description: 'Customer has no email address',
+  })
+  @ApiResponse({ status: 404, description: 'Invoice not found' })
+  async sendByEmail(
+    @Param('id') id: string,
+  ): Promise<{ message: string }> {
+    this.logger.log(`Sending invoice by email: ${id}`);
+    return this.invoicesService.sendByEmail(id);
+  }
+
+  /**
    * Cancels an invoice.
    * Only ADMIN users can cancel invoices.
    * Restores stock and creates return stock movements.

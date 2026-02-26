@@ -191,4 +191,12 @@ export const invoicesService = {
     );
     return data;
   },
+
+  // Send invoice by email to customer
+  async sendByEmail(id: string): Promise<{ message: string }> {
+    const { data } = await api.post<{ message: string }>(
+      `/invoices/${id}/email`,
+    );
+    return data;
+  },
 };

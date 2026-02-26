@@ -24,6 +24,8 @@ import {
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting';
+import { BrevoService } from '../notifications/mail/brevo.service';
+import { ReportsService } from '../reports/reports.service';
 import {
   CreateInvoiceDto,
   CheckoutInvoiceDto,
@@ -159,6 +161,8 @@ export class InvoicesService {
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
     private readonly accountingBridge: AccountingBridgeService,
+    private readonly brevoService: BrevoService,
+    private readonly reportsService: ReportsService,
   ) {}
 
   /**
@@ -2180,5 +2184,73 @@ export class InvoicesService {
         totalPages: total > 0 ? Math.ceil(total / limit) : 0,
       },
     };
+  }
+
+  /**
+   * Sends an invoice by email to the customer with PDF and optional XML attachments.
+   * If the invoice is in DRAFT status, it will also be marked as SENT.
+   */
+  async sendByEmail(id: string): Promise<{ message: string }> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const invoice = await this.prisma.invoice.findFirst({
+      where: { id, tenantId },
+      include: {
+        customer: true,
+        tenant: true,
+      },
+    });
+
+    if (!invoice) {
+      throw new NotFoundException('Factura no encontrada');
+    }
+
+    if (!invoice.customer?.email) {
+      throw new BadRequestException(
+        'El cliente no tiene correo electronico registrado',
+      );
+    }
+
+    // Generate PDF
+    const pdfBuffer = await this.reportsService.generateInvoicePdf(id);
+
+    // Get XML if DIAN document exists
+    let xmlContent: string | undefined;
+    const dianDoc = await this.prisma.dianDocument.findFirst({
+      where: { invoiceId: id, tenantId },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (dianDoc) {
+      xmlContent =
+        dianDoc.signedXml || dianDoc.xmlContent || undefined;
+    }
+
+    // Send email (fire and forget)
+    this.brevoService
+      .sendInvoiceEmail(
+        invoice.customer.email,
+        invoice.customer.name,
+        invoice.invoiceNumber,
+        Number(invoice.total),
+        invoice.dueDate,
+        invoice.tenant.name,
+        pdfBuffer,
+        xmlContent,
+      )
+      .catch((err) =>
+        this.logger.error(
+          `Failed to send invoice email: ${err instanceof Error ? err.message : err}`,
+        ),
+      );
+
+    // If draft, also mark as sent
+    if (invoice.status === InvoiceStatus.DRAFT) {
+      await this.prisma.invoice.update({
+        where: { id },
+        data: { status: InvoiceStatus.SENT },
+      });
+    }
+
+    return { message: 'Factura enviada por email exitosamente' };
   }
 }

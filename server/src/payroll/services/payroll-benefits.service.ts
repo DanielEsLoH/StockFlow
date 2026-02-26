@@ -498,7 +498,7 @@ export class PayrollBenefitsService {
       where: {
         tenantId,
         employeeId,
-        status: { in: ['APPROVED', 'CLOSED'] },
+        status: { in: ['APPROVED', 'SENT', 'ACCEPTED'] },
       },
       _sum: {
         provisionPrima: true,
@@ -508,10 +508,10 @@ export class PayrollBenefitsService {
       },
     });
 
-    const prima = Number(result._sum.provisionPrima ?? 0);
-    const cesantias = Number(result._sum.provisionCesantias ?? 0);
-    const intereses = Number(result._sum.provisionIntereses ?? 0);
-    const vacaciones = Number(result._sum.provisionVacaciones ?? 0);
+    const prima = Number(result._sum?.provisionPrima ?? 0);
+    const cesantias = Number(result._sum?.provisionCesantias ?? 0);
+    const intereses = Number(result._sum?.provisionIntereses ?? 0);
+    const vacaciones = Number(result._sum?.provisionVacaciones ?? 0);
 
     return {
       prima,

@@ -130,6 +130,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.BANK_IMPORT,
     Permission.BANK_RECONCILE,
 
+    // Expenses - Full access
+    Permission.EXPENSES_VIEW,
+    Permission.EXPENSES_CREATE,
+    Permission.EXPENSES_EDIT,
+    Permission.EXPENSES_DELETE,
+    Permission.EXPENSES_APPROVE,
+
     // Payroll - Full access
     Permission.PAYROLL_VIEW,
     Permission.PAYROLL_CREATE,
@@ -241,6 +248,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.BANK_VIEW,
     // Note: Cannot create bank accounts, import, or reconcile
 
+    // Expenses - View, create, edit (no delete, no approve)
+    Permission.EXPENSES_VIEW,
+    Permission.EXPENSES_CREATE,
+    Permission.EXPENSES_EDIT,
+
     // Payroll - View and basic edit
     Permission.PAYROLL_VIEW,
     Permission.PAYROLL_CREATE,
@@ -290,6 +302,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.BANK_RECONCILE,
     // Note: Cannot create bank accounts (ADMIN only)
 
+    // Expenses - View and approve (core function for accountants)
+    Permission.EXPENSES_VIEW,
+    Permission.EXPENSES_APPROVE,
+
     // Payroll - View only (for financial review)
     Permission.PAYROLL_VIEW,
   ],
@@ -329,6 +345,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 
     // Purchase Orders - view only
     Permission.PURCHASE_ORDERS_VIEW,
+
+    // Expenses - view only
+    Permission.EXPENSES_VIEW,
 
     // --- RESTRICTED AREAS ---
     // Inventory: No access (cannot view or adjust stock)

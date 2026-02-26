@@ -247,6 +247,7 @@ export class JournalEntriesService {
     purchaseOrderId?: string;
     stockMovementId?: string;
     dianDocumentId?: string;
+    expenseId?: string;
     lines: { accountId: string; costCenterId?: string; description?: string; debit: number; credit: number }[];
   }): Promise<JournalEntryResponse> {
     const totalDebit = params.lines.reduce((sum, l) => sum + l.debit, 0);
@@ -282,6 +283,7 @@ export class JournalEntriesService {
         purchaseOrderId: params.purchaseOrderId,
         stockMovementId: params.stockMovementId,
         dianDocumentId: params.dianDocumentId,
+        expenseId: params.expenseId,
         totalDebit,
         totalCredit,
         postedAt: new Date(),

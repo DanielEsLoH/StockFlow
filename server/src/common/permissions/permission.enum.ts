@@ -122,6 +122,13 @@ export enum Permission {
   PAYROLL_CONFIG = 'payroll:config',
   PAYROLL_SEND = 'payroll:send',
 
+  // === Expenses Module ===
+  EXPENSES_VIEW = 'expenses:view',
+  EXPENSES_CREATE = 'expenses:create',
+  EXPENSES_EDIT = 'expenses:edit',
+  EXPENSES_DELETE = 'expenses:delete',
+  EXPENSES_APPROVE = 'expenses:approve',
+
   // === Dashboard Module ===
   DASHBOARD_VIEW = 'dashboard:view',
 }
@@ -269,6 +276,16 @@ export const PERMISSION_CATEGORIES = {
       Permission.BANK_RECONCILE,
     ],
   },
+  expenses: {
+    label: 'Gastos',
+    permissions: [
+      Permission.EXPENSES_VIEW,
+      Permission.EXPENSES_CREATE,
+      Permission.EXPENSES_EDIT,
+      Permission.EXPENSES_DELETE,
+      Permission.EXPENSES_APPROVE,
+    ],
+  },
   payroll: {
     label: 'Nómina',
     permissions: [
@@ -397,6 +414,13 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   [Permission.BANK_CREATE]: 'Crear cuentas bancarias',
   [Permission.BANK_IMPORT]: 'Importar extractos bancarios',
   [Permission.BANK_RECONCILE]: 'Conciliar extractos',
+
+  // Expenses
+  [Permission.EXPENSES_VIEW]: 'Ver gastos',
+  [Permission.EXPENSES_CREATE]: 'Crear gastos',
+  [Permission.EXPENSES_EDIT]: 'Editar gastos',
+  [Permission.EXPENSES_DELETE]: 'Eliminar gastos',
+  [Permission.EXPENSES_APPROVE]: 'Aprobar gastos',
 
   // Payroll
   [Permission.PAYROLL_VIEW]: 'Ver nómina',

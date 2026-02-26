@@ -196,6 +196,12 @@ const navSections: NavSection[] = [
         icon: Award,
         permission: Permission.PURCHASE_ORDERS_VIEW,
       },
+      {
+        name: "Gastos",
+        href: "/expenses",
+        icon: Receipt,
+        permission: Permission.EXPENSES_VIEW,
+      },
     ],
   },
   {

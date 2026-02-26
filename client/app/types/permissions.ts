@@ -123,6 +123,13 @@ export enum Permission {
   PAYROLL_CONFIG = 'payroll:config',
   PAYROLL_SEND = 'payroll:send',
 
+  // === Expenses Module ===
+  EXPENSES_VIEW = 'expenses:view',
+  EXPENSES_CREATE = 'expenses:create',
+  EXPENSES_EDIT = 'expenses:edit',
+  EXPENSES_DELETE = 'expenses:delete',
+  EXPENSES_APPROVE = 'expenses:approve',
+
   // === Dashboard Module ===
   DASHBOARD_VIEW = 'dashboard:view',
 }
@@ -231,6 +238,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.BANK_CREATE,
     Permission.BANK_IMPORT,
     Permission.BANK_RECONCILE,
+    // Expenses - Full access
+    Permission.EXPENSES_VIEW,
+    Permission.EXPENSES_CREATE,
+    Permission.EXPENSES_EDIT,
+    Permission.EXPENSES_DELETE,
+    Permission.EXPENSES_APPROVE,
     // Payroll - Full access
     Permission.PAYROLL_VIEW,
     Permission.PAYROLL_CREATE,
@@ -309,6 +322,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.ACCOUNTING_VIEW,
     // Bank - View only
     Permission.BANK_VIEW,
+    // Expenses - View, create, edit
+    Permission.EXPENSES_VIEW,
+    Permission.EXPENSES_CREATE,
+    Permission.EXPENSES_EDIT,
     // Payroll - Operational
     Permission.PAYROLL_VIEW,
     Permission.PAYROLL_CREATE,
@@ -335,6 +352,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.SUPPLIERS_VIEW,
     // Purchase Orders - View only
     Permission.PURCHASE_ORDERS_VIEW,
+    // Expenses - View only
+    Permission.EXPENSES_VIEW,
     // --- RESTRICTED: No access to inventory, categories, warehouses, payments, DIAN, settings, cash registers ---
   ],
 
@@ -377,6 +396,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.BANK_VIEW,
     Permission.BANK_IMPORT,
     Permission.BANK_RECONCILE,
+    // Expenses - View and approve
+    Permission.EXPENSES_VIEW,
+    Permission.EXPENSES_APPROVE,
     // Payroll - View only
     Permission.PAYROLL_VIEW,
     // --- RESTRICTED: No POS, no create/edit/delete, no users, no settings, no cash registers ---
@@ -526,6 +548,16 @@ export const PERMISSION_CATEGORIES = {
       Permission.BANK_RECONCILE,
     ],
   },
+  expenses: {
+    label: 'Gastos',
+    permissions: [
+      Permission.EXPENSES_VIEW,
+      Permission.EXPENSES_CREATE,
+      Permission.EXPENSES_EDIT,
+      Permission.EXPENSES_DELETE,
+      Permission.EXPENSES_APPROVE,
+    ],
+  },
   payroll: {
     label: 'Nómina',
     permissions: [
@@ -654,6 +686,13 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   [Permission.BANK_CREATE]: 'Crear cuentas bancarias',
   [Permission.BANK_IMPORT]: 'Importar extractos bancarios',
   [Permission.BANK_RECONCILE]: 'Conciliar extractos',
+
+  // Expenses
+  [Permission.EXPENSES_VIEW]: 'Ver gastos',
+  [Permission.EXPENSES_CREATE]: 'Crear gastos',
+  [Permission.EXPENSES_EDIT]: 'Editar gastos',
+  [Permission.EXPENSES_DELETE]: 'Eliminar gastos',
+  [Permission.EXPENSES_APPROVE]: 'Aprobar gastos',
 
   // Payroll
   [Permission.PAYROLL_VIEW]: 'Ver nómina',

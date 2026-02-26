@@ -381,6 +381,7 @@ model Tenant {
   collectionReminders     CollectionReminder[]
   withholdingCertificates WithholdingCertificate[]
   purchasePayments        PurchasePayment[]
+  expenses                Expense[]
 
   @@map("tenants")
 }
@@ -1138,6 +1139,7 @@ enum JournalEntrySource {
   CREDIT_NOTE
   DEBIT_NOTE
   PURCHASE_PAYMENT
+  EXPENSE_PAID
 }
 
 enum AccountingPeriodStatus {
@@ -1278,6 +1280,7 @@ model Supplier {
   purchaseOrders          PurchaseOrder[]
   supportDocuments        SupportDocument[]
   withholdingCertificates WithholdingCertificate[]
+  expenses                Expense[]
 
   @@unique([tenantId, documentNumber])
   @@index([tenantId])
@@ -1389,6 +1392,7 @@ model Account {
   configPayrollRetentions    AccountingConfig[] @relation("PayrollRetentionsAccount")
   configPayrollContributions AccountingConfig[] @relation("PayrollContributionsAccount")
   configPayrollProvisions    AccountingConfig[] @relation("PayrollProvisionsAccount")
+  expenses                   Expense[]          @relation("ExpenseAccount")
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -1434,6 +1438,7 @@ model JournalEntry {
   purchaseOrderId String?            @map("purchase_order_id")
   stockMovementId String?            @map("stock_movement_id")
   dianDocumentId  String?            @map("dian_document_id")
+  expenseId       String?            @map("expense_id")
   totalDebit      Decimal            @default(0) @map("total_debit") @db.Decimal(12, 2)
   totalCredit     Decimal            @default(0) @map("total_credit") @db.Decimal(12, 2)
   createdById     String?            @map("created_by_id")
@@ -1460,6 +1465,7 @@ model JournalEntry {
   @@index([purchaseOrderId])
   @@index([stockMovementId])
   @@index([dianDocumentId])
+  @@index([expenseId])
   @@map("journal_entries")
 }
 
@@ -1822,6 +1828,7 @@ model CostCenter {
 
   tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   journalEntryLines JournalEntryLine[]
+  expenses          Expense[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -2015,4 +2022,69 @@ model WithholdingCertificate {
   @@unique([tenantId, supplierId, year, withholdingType])
   @@index([tenantId])
   @@map("withholding_certificates")
+}
+
+// ============================================================================
+// EXPENSES (GASTOS OPERATIVOS) MODELS
+// ============================================================================
+
+enum ExpenseCategory {
+  SERVICIOS_PUBLICOS
+  ARRIENDO
+  HONORARIOS
+  SEGUROS
+  PAPELERIA
+  MANTENIMIENTO
+  TRANSPORTE
+  PUBLICIDAD
+  IMPUESTOS_TASAS
+  ASEO_CAFETERIA
+  OTROS
+}
+
+enum ExpenseStatus {
+  DRAFT
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+model Expense {
+  id               String          @id @default(cuid())
+  tenantId         String          @map("tenant_id")
+  expenseNumber    String          @map("expense_number")
+  category         ExpenseCategory
+  description      String
+  supplierId       String?         @map("supplier_id")
+  accountId        String?         @map("account_id")
+  costCenterId     String?         @map("cost_center_id")
+  subtotal         Decimal         @default(0) @db.Decimal(12, 2)
+  taxRate          Decimal         @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  tax              Decimal         @default(0) @db.Decimal(12, 2)
+  reteFuente       Decimal         @default(0) @map("rete_fuente") @db.Decimal(12, 2)
+  total            Decimal         @default(0) @db.Decimal(12, 2)
+  status           ExpenseStatus   @default(DRAFT)
+  paymentMethod    PaymentMethod?  @map("payment_method")
+  paymentReference String?         @map("payment_reference")
+  paymentDate      DateTime?       @map("payment_date")
+  issueDate        DateTime        @default(now()) @map("issue_date")
+  dueDate          DateTime?       @map("due_date")
+  invoiceNumber    String?         @map("invoice_number")
+  approvedAt       DateTime?       @map("approved_at")
+  approvedById     String?         @map("approved_by_id")
+  createdById      String?         @map("created_by_id")
+  notes            String?
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier   Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  account    Account?    @relation("ExpenseAccount", fields: [accountId], references: [id], onDelete: SetNull)
+  costCenter CostCenter? @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, expenseNumber])
+  @@index([tenantId, status])
+  @@index([tenantId, category])
+  @@index([tenantId, issueDate])
+  @@map("expenses")
 }

@@ -40,6 +40,7 @@ import { CollectionRemindersModule } from './collection-reminders';
 import { WithholdingCertificatesModule } from './withholding-certificates/withholding-certificates.module';
 import { SupportDocumentsModule } from './support-documents';
 import { RemissionsModule } from './remissions';
+import { ExpensesModule } from './expenses';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 import { PermissionsModule } from './common/permissions';
@@ -91,6 +92,7 @@ import { PermissionsModule } from './common/permissions';
     WithholdingCertificatesModule,
     SupportDocumentsModule,
     RemissionsModule,
+    ExpensesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

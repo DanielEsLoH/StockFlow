@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PaymentMethod } from '@prisma/client';
+import { PaymentMethod, Prisma } from '@prisma/client';
 import { JournalEntriesService } from './journal-entries.service';
 import { AccountingConfigService } from './accounting-config.service';
 import { JournalEntrySource } from '@prisma/client';
+
+type Decimal = Prisma.Decimal;
+import { PrismaService } from '../prisma';
 import { RETE_FUENTE_RATE, RETE_FUENTE_MIN_BASE } from './tax-constants';
 
 /**
@@ -20,6 +23,7 @@ import { RETE_FUENTE_RATE, RETE_FUENTE_MIN_BASE } from './tax-constants';
  * 3. onPaymentCreated  → Payment entry (DR Caja/Bancos, CR Clientes)
  * 4. onPurchaseReceived → Purchase entry (DR Inventario, DR IVA descontable, CR Proveedores, ±ReteFuente)
  * 5. onStockAdjustment → Adjustment entry (DR/CR Inventario vs Gastos/Ingresos diversos)
+ * 6. onExpensePaid     → Expense entry (DR Gasto, DR IVA descontable, CR Caja/Bancos, CR ReteFuente)
  */
 @Injectable()
 export class AccountingBridgeService {
@@ -28,6 +32,7 @@ export class AccountingBridgeService {
   constructor(
     private readonly journalEntriesService: JournalEntriesService,
     private readonly configService: AccountingConfigService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -815,6 +820,127 @@ export class AccountingBridgeService {
     } catch (error) {
       this.logger.error(
         `Failed to generate accounting entry for debit note ${params.noteNumber}`,
+        error instanceof Error ? error.stack : error,
+      );
+    }
+  }
+
+  /**
+   * Generate journal entry for a paid expense.
+   * Called from ExpensesService when an expense is marked as paid.
+   *
+   * Entry:
+   *   DR 5XXX Cuenta Gasto = subtotal
+   *   DR 2408 IVA Descontable = tax (if > 0)
+   *   CR 1105 Caja / 1110 Bancos = total - reteFuente
+   *   CR 2365 ReteFuente por Pagar = reteFuente (if > 0)
+   */
+  async onExpensePaid(expense: {
+    id: string;
+    tenantId: string;
+    expenseNumber: string;
+    description: string;
+    subtotal: Decimal;
+    tax: Decimal;
+    reteFuente: Decimal;
+    total: Decimal;
+    accountId: string | null;
+    paymentMethod: string | null;
+    paymentDate: Date | null;
+    issueDate: Date;
+  }): Promise<void> {
+    try {
+      const config = await this.configService.getConfigForTenant(expense.tenantId);
+      if (!config?.autoGenerateEntries) return;
+
+      const { cashAccountId, bankAccountId, ivaDescontableId, reteFuentePayableId } = config;
+
+      // Determine the expense account: use expense.accountId if set, otherwise find default 5XXX account
+      let expenseAccountId = expense.accountId;
+      if (!expenseAccountId) {
+        const defaultExpenseAccount = await this.prisma.account.findFirst({
+          where: {
+            tenantId: expense.tenantId,
+            code: { startsWith: '5' },
+            isActive: true,
+          },
+          orderBy: { code: 'asc' },
+        });
+        expenseAccountId = defaultExpenseAccount?.id ?? null;
+      }
+
+      if (!expenseAccountId) {
+        this.logger.warn(`No expense account found for tenant ${expense.tenantId}, skipping expense entry`);
+        return;
+      }
+
+      // Determine payment account based on payment method
+      const paymentMethod = expense.paymentMethod as PaymentMethod | null;
+      const creditAccountId = paymentMethod === PaymentMethod.CASH
+        ? cashAccountId
+        : bankAccountId;
+
+      if (!creditAccountId) {
+        this.logger.warn(`No cash/bank account mapped for tenant ${expense.tenantId}, skipping expense entry`);
+        return;
+      }
+
+      const subtotal = Number(expense.subtotal);
+      const tax = Number(expense.tax);
+      const reteFuente = Number(expense.reteFuente);
+      const total = Number(expense.total);
+
+      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+
+      // DR 5XXX Cuenta Gasto = subtotal
+      lines.push({
+        accountId: expenseAccountId,
+        description: `Gasto ${expense.expenseNumber}`,
+        debit: subtotal,
+        credit: 0,
+      });
+
+      // DR 2408 IVA Descontable = tax (only if tax > 0)
+      if (tax > 0 && ivaDescontableId) {
+        lines.push({
+          accountId: ivaDescontableId,
+          description: `IVA gasto ${expense.expenseNumber}`,
+          debit: tax,
+          credit: 0,
+        });
+      }
+
+      // CR 1105/1110 Caja/Bancos = total - reteFuente
+      lines.push({
+        accountId: creditAccountId,
+        description: `Pago gasto ${expense.expenseNumber}`,
+        debit: 0,
+        credit: total - reteFuente,
+      });
+
+      // CR 2365 ReteFuente por Pagar = reteFuente (only if reteFuente > 0)
+      if (reteFuente > 0 && reteFuentePayableId) {
+        lines.push({
+          accountId: reteFuentePayableId,
+          description: `ReteFuente gasto ${expense.expenseNumber}`,
+          debit: 0,
+          credit: reteFuente,
+        });
+      }
+
+      await this.journalEntriesService.createAutoEntry({
+        tenantId: expense.tenantId,
+        date: expense.paymentDate ?? expense.issueDate,
+        description: `Gasto pagado - ${expense.expenseNumber} (${expense.description})`,
+        source: JournalEntrySource.EXPENSE_PAID,
+        expenseId: expense.id,
+        lines,
+      });
+
+      this.logger.debug(`Expense entry generated for ${expense.expenseNumber}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to generate expense entry for ${expense.expenseNumber}`,
         error instanceof Error ? error.stack : error,
       );
     }

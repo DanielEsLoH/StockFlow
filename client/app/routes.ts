@@ -247,6 +247,12 @@ export default [
     // Audit Logs
     route("audit-logs", "routes/_app.audit-logs.tsx"),
 
+    // Expenses module
+    route("expenses", "routes/_app.expenses.tsx"),
+    route("expenses/new", "routes/_app.expenses.new.tsx"),
+    route("expenses/:id", "routes/_app.expenses.$id.tsx"),
+    route("expenses/:id/edit", "routes/_app.expenses.$id.edit.tsx"),
+
     // Bank module
     route("bank/accounts", "routes/_app.bank.accounts.tsx"),
     route("bank/accounts/new", "routes/_app.bank.accounts.new.tsx"),

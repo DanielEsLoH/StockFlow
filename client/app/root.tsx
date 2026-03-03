@@ -28,7 +28,7 @@ export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
   { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
   { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-  { rel: "manifest", href: "/manifest.json" },
+  { rel: "manifest", href: "/manifest.webmanifest" },
 ];
 
 // Theme initialization script to prevent flash — session choice first, then system
@@ -47,6 +47,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#6366F1" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <Meta />
         <Links />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

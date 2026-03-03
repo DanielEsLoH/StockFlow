@@ -12,6 +12,9 @@ import { cn } from "~/lib/utils";
 import { useUIStore } from "~/stores/ui.store";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import { OfflineIndicator } from "~/components/pwa/OfflineIndicator";
+import { UpdateAvailable } from "~/components/pwa/UpdateAvailable";
+import { InstallPrompt } from "~/components/pwa/InstallPrompt";
 
 // Media query breakpoint for lg (1024px)
 const DESKTOP_BREAKPOINT = 1024;
@@ -62,6 +65,11 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950">
+      {/* PWA indicators (global, above everything) */}
+      <OfflineIndicator />
+      <UpdateAvailable />
+      <InstallPrompt />
+
       {/* Sidebar - handles both desktop (CSS) and mobile (state) internally */}
       <Sidebar />
 

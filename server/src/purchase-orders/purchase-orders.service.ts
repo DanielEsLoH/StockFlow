@@ -17,10 +17,12 @@ import {
   Warehouse,
   StockMovement,
   TaxCategory,
+  CurrencyCode,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting';
+import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import {
   CreatePurchaseOrderDto,
   UpdatePurchaseOrderDto,
@@ -138,6 +140,7 @@ export class PurchaseOrdersService {
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
     private readonly accountingBridge: AccountingBridgeService,
+    private readonly exchangeRatesService: ExchangeRatesService,
   ) {}
 
   /**
@@ -227,6 +230,32 @@ export class PurchaseOrdersService {
     );
     const poTotal = poSubtotal + poTax - poDiscount;
 
+    // Resolve currency and exchange rate
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { defaultCurrency: true },
+    });
+    const baseCurrency = tenant?.defaultCurrency ?? CurrencyCode.COP;
+    const poCurrency = dto.currency ?? baseCurrency;
+
+    let exchangeRateValue = 1;
+    let totalInBaseCurrency = poTotal;
+
+    if (poCurrency !== baseCurrency) {
+      try {
+        const { rate } = await this.exchangeRatesService.getLatestRate(
+          poCurrency,
+          baseCurrency,
+        );
+        exchangeRateValue = Number(rate);
+        totalInBaseCurrency = poTotal * exchangeRateValue;
+      } catch {
+        this.logger.warn(
+          `No exchange rate found for ${poCurrency}→${baseCurrency}, using 1:1`,
+        );
+      }
+    }
+
     // Create purchase order within a transaction
     const purchaseOrder = await this.prisma.$transaction(async (tx) => {
       const purchaseOrderNumber = await this.generatePurchaseOrderNumber(tx);
@@ -242,6 +271,9 @@ export class PurchaseOrdersService {
           tax: poTax,
           discount: poDiscount,
           total: poTotal,
+          currency: poCurrency,
+          exchangeRate: exchangeRateValue,
+          totalInBaseCurrency,
           issueDate: new Date(),
           expectedDeliveryDate: dto.expectedDeliveryDate ?? null,
           status: PurchaseOrderStatus.DRAFT,

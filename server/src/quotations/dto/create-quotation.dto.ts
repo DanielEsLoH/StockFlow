@@ -13,7 +13,7 @@ import {
   ArrayMinSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TaxCategory } from '@prisma/client';
+import { CurrencyCode, TaxCategory } from '@prisma/client';
 
 const CUID_PATTERN = /^c[a-z0-9]{24,}$/;
 
@@ -124,4 +124,21 @@ export class CreateQuotationDto {
   @IsString({ message: 'Las notas deben ser texto' })
   @IsOptional()
   notes?: string;
+
+  /**
+   * Currency code for the quotation (defaults to tenant's base currency)
+   * @example "USD"
+   */
+  @ApiPropertyOptional({
+    description:
+      'Currency code for the quotation (defaults to tenant base currency)',
+    enum: CurrencyCode,
+    example: 'COP',
+  })
+  @IsEnum(CurrencyCode, {
+    message:
+      'La moneda debe ser un código válido (COP, USD, EUR, MXN, PEN, BRL)',
+  })
+  @IsOptional()
+  currency?: CurrencyCode;
 }

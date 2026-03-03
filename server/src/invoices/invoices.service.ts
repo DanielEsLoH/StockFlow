@@ -20,12 +20,14 @@ import {
   Tenant,
   TenantDianConfig,
   TaxCategory,
+  CurrencyCode,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting';
 import { BrevoService } from '../notifications/mail/brevo.service';
 import { ReportsService } from '../reports/reports.service';
+import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import {
   CreateInvoiceDto,
   CheckoutInvoiceDto,
@@ -71,6 +73,9 @@ export interface InvoiceResponse {
   tax: number;
   discount: number;
   total: number;
+  currency: CurrencyCode;
+  exchangeRate: number;
+  totalInBaseCurrency: number;
   issueDate: Date;
   dueDate: Date | null;
   status: InvoiceStatus;
@@ -163,6 +168,7 @@ export class InvoicesService {
     private readonly accountingBridge: AccountingBridgeService,
     private readonly brevoService: BrevoService,
     private readonly reportsService: ReportsService,
+    private readonly exchangeRatesService: ExchangeRatesService,
   ) {}
 
   /**
@@ -541,6 +547,33 @@ export class InvoicesService {
       }
     }
 
+    // Resolve currency and exchange rate
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { defaultCurrency: true },
+    });
+    const baseCurrency = tenant?.defaultCurrency ?? CurrencyCode.COP;
+    const invoiceCurrency = dto.currency ?? baseCurrency;
+
+    let exchangeRateValue = 1;
+    let totalInBaseCurrency = invoiceTotal;
+
+    if (invoiceCurrency !== baseCurrency) {
+      try {
+        const { rate } = await this.exchangeRatesService.getLatestRate(
+          invoiceCurrency,
+          baseCurrency,
+        );
+        exchangeRateValue = Number(rate);
+        totalInBaseCurrency = invoiceTotal * exchangeRateValue;
+      } catch {
+        // If no rate found, log warning and use 1:1
+        this.logger.warn(
+          `No exchange rate found for ${invoiceCurrency}→${baseCurrency}, using 1:1`,
+        );
+      }
+    }
+
     // Create invoice within a transaction
     const invoice = await this.prisma.$transaction(async (tx) => {
       // Generate invoice number inside transaction to prevent race conditions
@@ -558,6 +591,9 @@ export class InvoicesService {
           tax: invoiceTax,
           discount: invoiceDiscount,
           total: invoiceTotal,
+          currency: invoiceCurrency,
+          exchangeRate: exchangeRateValue,
+          totalInBaseCurrency,
           issueDate: new Date(),
           dueDate: dto.dueDate ?? null,
           status: InvoiceStatus.DRAFT,
@@ -2074,6 +2110,9 @@ export class InvoicesService {
       tax: Number(invoice.tax),
       discount: Number(invoice.discount),
       total: Number(invoice.total),
+      currency: invoice.currency as CurrencyCode,
+      exchangeRate: Number(invoice.exchangeRate),
+      totalInBaseCurrency: Number(invoice.totalInBaseCurrency),
       issueDate: invoice.issueDate,
       dueDate: invoice.dueDate,
       status: invoice.status,

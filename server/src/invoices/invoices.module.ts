@@ -6,6 +6,7 @@ import { DianModule } from '../dian';
 import { AccountingModule } from '../accounting';
 import { NotificationsModule } from '../notifications';
 import { ReportsModule } from '../reports';
+import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
 
 /**
  * InvoicesModule provides invoice management functionality including:
@@ -38,6 +39,7 @@ import { ReportsModule } from '../reports';
     AccountingModule,
     NotificationsModule,
     ReportsModule,
+    ExchangeRatesModule,
   ],
   controllers: [InvoicesController],
   providers: [InvoicesService],

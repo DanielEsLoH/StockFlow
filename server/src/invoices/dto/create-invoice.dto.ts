@@ -14,7 +14,12 @@ import {
   ArrayMinSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { InvoiceSource, PaymentMethod, TaxCategory } from '@prisma/client';
+import {
+  CurrencyCode,
+  InvoiceSource,
+  PaymentMethod,
+  TaxCategory,
+} from '@prisma/client';
 
 // CUID pattern: starts with 'c' followed by lowercase letters and numbers, typically 25 chars
 // Example: clh1234567890abcdefghijkl or cmkcykam80004reya0hsdx337
@@ -208,6 +213,22 @@ export class CreateInvoiceDto {
   })
   @IsOptional()
   warehouseId?: string;
+
+  /**
+   * Currency code for the invoice (defaults to tenant's base currency)
+   * @example "USD"
+   */
+  @ApiPropertyOptional({
+    description:
+      'Currency code for the invoice (defaults to tenant base currency)',
+    enum: CurrencyCode,
+    example: 'COP',
+  })
+  @IsEnum(CurrencyCode, {
+    message: 'La moneda debe ser un código válido (COP, USD, EUR, MXN, PEN, BRL)',
+  })
+  @IsOptional()
+  currency?: CurrencyCode;
 }
 
 /**

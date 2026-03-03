@@ -13,6 +13,7 @@ import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting';
 import { BrevoService } from '../notifications/mail/brevo.service';
 import { ReportsService } from '../reports/reports.service';
+import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import type {
   CreateInvoiceDto,
   UpdateInvoiceDto,
@@ -208,6 +209,9 @@ describe('InvoicesService', () => {
       warehouse: {
         findFirst: jest.fn(),
       },
+      tenant: {
+        findUnique: jest.fn().mockResolvedValue({ defaultCurrency: 'COP' }),
+      },
       $transaction: jest.fn(),
     };
 
@@ -242,6 +246,15 @@ describe('InvoicesService', () => {
             generateInvoicePdf: jest
               .fn()
               .mockResolvedValue(Buffer.from('pdf')),
+          },
+        },
+        {
+          provide: ExchangeRatesService,
+          useValue: {
+            getLatestRate: jest
+              .fn()
+              .mockResolvedValue({ rate: { toNumber: () => 1 }, source: 'manual' }),
+            convertAmount: jest.fn(),
           },
         },
       ],

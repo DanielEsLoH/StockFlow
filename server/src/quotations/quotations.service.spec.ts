@@ -10,6 +10,7 @@ import { QuotationsService } from './quotations.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { InvoicesService } from '../invoices';
+import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import type {
   CreateQuotationDto,
   UpdateQuotationDto,
@@ -163,6 +164,9 @@ describe('QuotationsService', () => {
       customer: {
         findFirst: jest.fn(),
       },
+      tenant: {
+        findUnique: jest.fn().mockResolvedValue({ defaultCurrency: 'COP' }),
+      },
       $transaction: jest.fn(),
     };
 
@@ -181,6 +185,15 @@ describe('QuotationsService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
         { provide: InvoicesService, useValue: mockInvoicesService },
+        {
+          provide: ExchangeRatesService,
+          useValue: {
+            getLatestRate: jest
+              .fn()
+              .mockResolvedValue({ rate: { toNumber: () => 1 }, source: 'manual' }),
+            convertAmount: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

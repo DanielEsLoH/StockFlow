@@ -16,9 +16,11 @@ import {
   Product,
   Invoice,
   TaxCategory,
+  CurrencyCode,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import {
   CreateQuotationDto,
   UpdateQuotationDto,
@@ -134,6 +136,7 @@ export class QuotationsService {
     private readonly tenantContext: TenantContextService,
     @Inject(forwardRef(() => InvoicesService))
     private readonly invoicesService: InvoicesService,
+    private readonly exchangeRatesService: ExchangeRatesService,
   ) {}
 
   /**
@@ -219,6 +222,32 @@ export class QuotationsService {
     );
     const quotationTotal = quotationSubtotal + quotationTax - quotationDiscount;
 
+    // Resolve currency and exchange rate
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { defaultCurrency: true },
+    });
+    const baseCurrency = tenant?.defaultCurrency ?? CurrencyCode.COP;
+    const quotationCurrency = dto.currency ?? baseCurrency;
+
+    let exchangeRateValue = 1;
+    let totalInBaseCurrency = quotationTotal;
+
+    if (quotationCurrency !== baseCurrency) {
+      try {
+        const { rate } = await this.exchangeRatesService.getLatestRate(
+          quotationCurrency,
+          baseCurrency,
+        );
+        exchangeRateValue = Number(rate);
+        totalInBaseCurrency = quotationTotal * exchangeRateValue;
+      } catch {
+        this.logger.warn(
+          `No exchange rate found for ${quotationCurrency}→${baseCurrency}, using 1:1`,
+        );
+      }
+    }
+
     // Create quotation within a transaction
     const quotation = await this.prisma.$transaction(async (tx) => {
       const quotationNumber = await this.generateQuotationNumber(tx);
@@ -233,6 +262,9 @@ export class QuotationsService {
           tax: quotationTax,
           discount: quotationDiscount,
           total: quotationTotal,
+          currency: quotationCurrency,
+          exchangeRate: exchangeRateValue,
+          totalInBaseCurrency,
           issueDate: new Date(),
           validUntil: dto.validUntil ?? null,
           status: QuotationStatus.DRAFT,
@@ -736,6 +768,7 @@ export class QuotationsService {
       notes: quotation.notes ?? undefined,
       dueDate,
       source: 'MANUAL' as const,
+      currency: quotation.currency as CurrencyCode,
       items: quotation.items.map((item) => ({
         productId: item.productId!,
         quantity: item.quantity,

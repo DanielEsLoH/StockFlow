@@ -331,9 +331,36 @@ enum RecurringInterval {
   ANNUAL
 }
 
+enum CurrencyCode {
+  COP
+  USD
+  EUR
+  MXN
+  PEN
+  BRL
+}
+
 // ============================================================================
 // MODELS
 // ============================================================================
+
+model ExchangeRate {
+  id            String       @id @default(cuid())
+  tenantId      String       @map("tenant_id")
+  fromCurrency  CurrencyCode @map("from_currency")
+  toCurrency    CurrencyCode @map("to_currency")
+  rate          Decimal      @db.Decimal(18, 8)
+  effectiveDate DateTime     @default(now()) @map("effective_date")
+  source        String       @default("manual")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, fromCurrency, toCurrency, effectiveDate])
+  @@index([tenantId, fromCurrency, toCurrency])
+  @@map("exchange_rates")
+}
 
 model Tenant {
   id                   String            @id @default(cuid())
@@ -350,6 +377,7 @@ model Tenant {
   maxInvoices          Int               @default(50) @map("max_invoices")
   maxWarehouses        Int               @default(1) @map("max_warehouses")
   maxEmployees         Int               @default(10) @map("max_employees")
+  defaultCurrency      CurrencyCode      @default(COP) @map("default_currency")
   createdAt            DateTime          @default(now()) @map("created_at")
   updatedAt            DateTime          @updatedAt @map("updated_at")
 
@@ -393,6 +421,10 @@ model Tenant {
   purchasePayments        PurchasePayment[]
   expenses                Expense[]
   recurringInvoices       RecurringInvoice[]
+  exchangeRates           ExchangeRate[]
+  integrations            Integration[]
+  productMappings         ProductMapping[]
+  syncLogs                SyncLog[]
 
   @@map("tenants")
 }
@@ -509,6 +541,7 @@ model Product {
   movements          StockMovement[]
   warehouseStock     WarehouseStock[]
   remissionItems     RemissionItem[]
+  productMappings    ProductMapping[]
 
   @@unique([tenantId, sku])
   @@index([tenantId])
@@ -641,14 +674,17 @@ model Invoice {
   subtotal      Decimal       @default(0) @db.Decimal(10, 2)
   tax           Decimal       @default(0) @db.Decimal(10, 2)
   discount      Decimal       @default(0) @db.Decimal(10, 2)
-  total         Decimal       @default(0) @db.Decimal(10, 2)
-  issueDate     DateTime      @default(now()) @map("issue_date")
-  dueDate       DateTime?     @map("due_date")
-  status        InvoiceStatus @default(DRAFT)
-  paymentStatus PaymentStatus @default(UNPAID) @map("payment_status")
-  notes         String?
-  warehouseId   String?       @map("warehouse_id")
-  dianCufe      String?       @map("dian_cufe")
+  total              Decimal       @default(0) @db.Decimal(10, 2)
+  currency           CurrencyCode  @default(COP)
+  exchangeRate       Decimal       @default(1) @map("exchange_rate") @db.Decimal(18, 8)
+  totalInBaseCurrency Decimal      @default(0) @map("total_in_base_currency") @db.Decimal(12, 2)
+  issueDate          DateTime      @default(now()) @map("issue_date")
+  dueDate            DateTime?     @map("due_date")
+  status             InvoiceStatus @default(DRAFT)
+  paymentStatus      PaymentStatus @default(UNPAID) @map("payment_status")
+  notes              String?
+  warehouseId        String?       @map("warehouse_id")
+  dianCufe           String?       @map("dian_cufe")
   dianXml       String?       @map("dian_xml")
   dianPdf       String?       @map("dian_pdf")
   createdAt     DateTime      @default(now()) @map("created_at")
@@ -1231,6 +1267,9 @@ model Quotation {
   tax                  Decimal         @default(0) @db.Decimal(10, 2)
   discount             Decimal         @default(0) @db.Decimal(10, 2)
   total                Decimal         @default(0) @db.Decimal(10, 2)
+  currency             CurrencyCode    @default(COP)
+  exchangeRate         Decimal         @default(1) @map("exchange_rate") @db.Decimal(18, 8)
+  totalInBaseCurrency  Decimal         @default(0) @map("total_in_base_currency") @db.Decimal(12, 2)
   issueDate            DateTime        @default(now()) @map("issue_date")
   validUntil           DateTime?       @map("valid_until")
   status               QuotationStatus @default(DRAFT)
@@ -1328,6 +1367,9 @@ model PurchaseOrder {
   tax                  Decimal             @default(0) @db.Decimal(12, 2)
   discount             Decimal             @default(0) @db.Decimal(12, 2)
   total                Decimal             @default(0) @db.Decimal(12, 2)
+  currency             CurrencyCode        @default(COP)
+  exchangeRate         Decimal             @default(1) @map("exchange_rate") @db.Decimal(18, 8)
+  totalInBaseCurrency  Decimal             @default(0) @map("total_in_base_currency") @db.Decimal(12, 2)
   issueDate            DateTime            @default(now()) @map("issue_date")
   expectedDeliveryDate DateTime?           @map("expected_delivery_date")
   receivedDate         DateTime?           @map("received_date")
@@ -2137,4 +2179,109 @@ model RecurringInvoice {
 
   @@index([tenantId, isActive, nextIssueDate])
   @@map("recurring_invoices")
+}
+
+// =============================
+// E-COMMERCE INTEGRATIONS
+// =============================
+
+enum IntegrationPlatform {
+  SHOPIFY
+  MERCADOLIBRE
+  WOOCOMMERCE
+}
+
+enum IntegrationStatus {
+  PENDING
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+enum SyncDirection {
+  INBOUND   // From platform to StockFlow
+  OUTBOUND  // From StockFlow to platform
+  BOTH
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+model Integration {
+  id           String              @id @default(cuid())
+  tenantId     String              @map("tenant_id")
+  platform     IntegrationPlatform
+  status       IntegrationStatus   @default(PENDING)
+  name         String              // User-friendly name for the integration
+  shopUrl      String?             @map("shop_url") // e.g., mystore.myshopify.com
+  accessToken  String?             @map("access_token") // Encrypted OAuth token
+  refreshToken String?             @map("refresh_token")
+  tokenExpiry  DateTime?           @map("token_expiry")
+  webhookSecret String?            @map("webhook_secret")
+  syncDirection SyncDirection      @default(BOTH) @map("sync_direction")
+  syncProducts  Boolean            @default(true) @map("sync_products")
+  syncOrders    Boolean            @default(true) @map("sync_orders")
+  syncInventory Boolean            @default(true) @map("sync_inventory")
+  lastSyncAt   DateTime?           @map("last_sync_at")
+  metadata     Json?               // Platform-specific config (API version, etc.)
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  productMappings ProductMapping[]
+  syncLogs        SyncLog[]
+
+  @@unique([tenantId, platform, shopUrl])
+  @@index([tenantId, platform])
+  @@map("integrations")
+}
+
+model ProductMapping {
+  id              String              @id @default(cuid())
+  tenantId        String              @map("tenant_id")
+  integrationId   String              @map("integration_id")
+  productId       String              @map("product_id") // StockFlow product ID
+  externalId      String              @map("external_id") // Platform product ID
+  externalSku     String?             @map("external_sku")
+  externalUrl     String?             @map("external_url")
+  syncDirection   SyncDirection       @default(BOTH) @map("sync_direction")
+  lastSyncAt      DateTime?           @map("last_sync_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, externalId])
+  @@unique([integrationId, productId])
+  @@index([tenantId, integrationId])
+  @@map("product_mappings")
+}
+
+model SyncLog {
+  id            String              @id @default(cuid())
+  tenantId      String              @map("tenant_id")
+  integrationId String              @map("integration_id")
+  direction     SyncDirection
+  status        SyncStatus          @default(PENDING)
+  entityType    String              @map("entity_type") // "product", "order", "inventory"
+  totalItems    Int                 @default(0) @map("total_items")
+  processedItems Int                @default(0) @map("processed_items")
+  failedItems   Int                 @default(0) @map("failed_items")
+  errors        Json?               // Array of error details
+  startedAt     DateTime            @default(now()) @map("started_at")
+  completedAt   DateTime?           @map("completed_at")
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, integrationId, createdAt])
+  @@map("sync_logs")
 }

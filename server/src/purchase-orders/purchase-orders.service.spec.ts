@@ -10,6 +10,7 @@ import { PurchaseOrdersService } from './purchase-orders.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting';
+import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 
 const mockTenantId = 'tenant-123';
 const mockUserId = 'user-123';
@@ -179,6 +180,9 @@ describe('PurchaseOrdersService', () => {
       purchaseOrderItem: {
         createMany: jest.fn(),
       },
+      tenant: {
+        findUnique: jest.fn().mockResolvedValue({ defaultCurrency: 'COP' }),
+      },
       $transaction: jest.fn().mockImplementation(async (callback) => {
         return callback(mockTx);
       }),
@@ -199,6 +203,15 @@ describe('PurchaseOrdersService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
         { provide: AccountingBridgeService, useValue: mockAccountingBridgeService },
+        {
+          provide: ExchangeRatesService,
+          useValue: {
+            getLatestRate: jest
+              .fn()
+              .mockResolvedValue({ rate: { toNumber: () => 1 }, source: 'manual' }),
+            convertAmount: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

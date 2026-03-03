@@ -397,4 +397,31 @@ export const queryKeys = {
     stats: (params?: Record<string, unknown>) =>
       [...queryKeys.auditLogs.all, "stats", params] as const,
   },
+
+  // Exchange Rates
+  exchangeRates: {
+    all: ["exchangeRates"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      ["exchangeRates", "list", filters] as const,
+    currencies: () => ["exchangeRates", "currencies"] as const,
+    latest: (from: string, to: string) =>
+      ["exchangeRates", "latest", from, to] as const,
+  },
+
+  // Integrations
+  integrations: {
+    all: ["integrations"] as const,
+    list: () => ["integrations", "list"] as const,
+    detail: (id: string) => ["integrations", id] as const,
+    mappings: (id: string) => ["integrations", id, "mappings"] as const,
+    syncLogs: (id: string) => ["integrations", id, "logs"] as const,
+    unmapped: (id: string) => ["integrations", id, "unmapped"] as const,
+  },
+
+  // User Permissions (admin management)
+  userPermissions: {
+    all: ["userPermissions"] as const,
+    user: (userId: string) =>
+      [...queryKeys.userPermissions.all, userId] as const,
+  },
 };

@@ -12,6 +12,7 @@ import {
   X,
   RefreshCw,
   ShieldAlert,
+  Shield,
   Warehouse,
   ArrowUpRight,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { Link } from "react-router";
 import type { Route } from "./+types/_app.team";
 import { cn } from "~/lib/utils";
 import { useAuthStore } from "~/stores/auth.store";
+import { usePermissions } from "~/hooks/usePermissions";
 import { useTeamMembers } from "~/hooks/useTeamMembers";
 import { useWarehouses } from "~/hooks/useWarehouses";
 import {
@@ -58,6 +60,7 @@ import {
   DialogFooter,
 } from "~/components/ui/Modal";
 import { ConfirmModal } from "~/components/ui/Modal";
+import { PermissionEditor } from "~/components/team/PermissionEditor";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -161,8 +164,13 @@ export default function TeamPage() {
   const [cancellingInvitationId, setCancellingInvitationId] = useState<
     string | null
   >(null);
-  // Check if user has permission to access this page
-  const hasPermission = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
+  const [permissionEditorUser, setPermissionEditorUser] = useState<{
+    id: string;
+    name: string;
+    role: string;
+  } | null>(null);
+  const { canViewUsers, canManageUsers } = usePermissions();
+  const hasPermission = canViewUsers;
 
   // Queries
   const {
@@ -451,6 +459,9 @@ export default function TeamPage() {
                     <TableHead className="hidden sm:table-cell">
                       Fecha de ingreso
                     </TableHead>
+                    {canManageUsers && (
+                      <TableHead className="w-[80px]">Acciones</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -520,6 +531,27 @@ export default function TeamPage() {
                               : "-"}
                           </span>
                         </TableCell>
+                        {canManageUsers && (
+                          <TableCell>
+                            {member.role !== "SUPER_ADMIN" &&
+                              member.id !== user?.id && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() =>
+                                    setPermissionEditorUser({
+                                      id: member.id,
+                                      name: `${member.firstName} ${member.lastName}`,
+                                      role: member.role,
+                                    })
+                                  }
+                                  title="Gestionar permisos"
+                                >
+                                  <Shield className="h-4 w-4" />
+                                </Button>
+                              )}
+                          </TableCell>
+                        )}
                       </AnimatedTableRow>
                     );
                   })}
@@ -927,6 +959,19 @@ export default function TeamPage() {
         isLoading={cancelInvitation.isPending}
         variant="warning"
       />
+
+      {/* Permission Editor Modal */}
+      {permissionEditorUser && (
+        <PermissionEditor
+          open={!!permissionEditorUser}
+          onOpenChange={(open) => {
+            if (!open) setPermissionEditorUser(null);
+          }}
+          userId={permissionEditorUser.id}
+          userName={permissionEditorUser.name}
+          userRole={permissionEditorUser.role}
+        />
+      )}
     </PageWrapper>
   );
 }

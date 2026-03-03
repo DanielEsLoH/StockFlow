@@ -103,6 +103,7 @@ export default [
 
     // Settings and Profile
     route("settings", "routes/_app.settings.tsx"),
+    route("settings/currencies", "routes/_app.settings.currencies.tsx"),
     route("profile", "routes/_app.profile.tsx"),
 
     // Billing
@@ -265,6 +266,10 @@ export default [
     route("expenses/new", "routes/_app.expenses.new.tsx"),
     route("expenses/:id", "routes/_app.expenses.$id.tsx"),
     route("expenses/:id/edit", "routes/_app.expenses.$id.edit.tsx"),
+
+    // Integrations module
+    route("integrations", "routes/_app.integrations.tsx"),
+    route("integrations/:id", "routes/_app.integrations.$id.tsx"),
 
     // Bank module
     route("bank/accounts", "routes/_app.bank.accounts.tsx"),

@@ -129,6 +129,15 @@ export enum Permission {
   EXPENSES_DELETE = 'expenses:delete',
   EXPENSES_APPROVE = 'expenses:approve',
 
+  // === Exchange Rates Module ===
+  EXCHANGE_RATES_VIEW = 'exchange_rates:view',
+  EXCHANGE_RATES_MANAGE = 'exchange_rates:manage',
+
+  // === Integrations Module ===
+  INTEGRATIONS_VIEW = 'integrations:view',
+  INTEGRATIONS_MANAGE = 'integrations:manage',
+  INTEGRATIONS_SYNC = 'integrations:sync',
+
   // === Dashboard Module ===
   DASHBOARD_VIEW = 'dashboard:view',
 }
@@ -297,6 +306,18 @@ export const PERMISSION_CATEGORIES = {
       Permission.PAYROLL_SEND,
     ],
   },
+  exchangeRates: {
+    label: 'Tasas de Cambio',
+    permissions: [Permission.EXCHANGE_RATES_VIEW, Permission.EXCHANGE_RATES_MANAGE],
+  },
+  integrations: {
+    label: 'Integraciones',
+    permissions: [
+      Permission.INTEGRATIONS_VIEW,
+      Permission.INTEGRATIONS_MANAGE,
+      Permission.INTEGRATIONS_SYNC,
+    ],
+  },
   dashboard: {
     label: 'Dashboard',
     permissions: [Permission.DASHBOARD_VIEW],
@@ -429,6 +450,15 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   [Permission.PAYROLL_APPROVE]: 'Aprobar nómina',
   [Permission.PAYROLL_CONFIG]: 'Configurar nómina',
   [Permission.PAYROLL_SEND]: 'Enviar nómina a DIAN',
+
+  // Exchange Rates
+  [Permission.EXCHANGE_RATES_VIEW]: 'Ver tasas de cambio',
+  [Permission.EXCHANGE_RATES_MANAGE]: 'Gestionar tasas de cambio',
+
+  // Integrations
+  [Permission.INTEGRATIONS_VIEW]: 'Ver integraciones',
+  [Permission.INTEGRATIONS_MANAGE]: 'Gestionar integraciones',
+  [Permission.INTEGRATIONS_SYNC]: 'Sincronizar integraciones',
 
   // Dashboard
   [Permission.DASHBOARD_VIEW]: 'Ver dashboard',

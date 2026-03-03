@@ -144,6 +144,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.PAYROLL_APPROVE,
     Permission.PAYROLL_CONFIG,
     Permission.PAYROLL_SEND,
+    // Exchange Rates - Full access
+    Permission.EXCHANGE_RATES_VIEW,
+    Permission.EXCHANGE_RATES_MANAGE,
+    // Integrations - Full access
+    Permission.INTEGRATIONS_VIEW,
+    Permission.INTEGRATIONS_MANAGE,
+    Permission.INTEGRATIONS_SYNC,
   ],
 
   /**
@@ -258,6 +265,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.PAYROLL_CREATE,
     Permission.PAYROLL_EDIT,
     // Note: Cannot approve, configure, or send to DIAN (ADMIN only)
+
+    // Integrations - View and sync only
+    Permission.INTEGRATIONS_VIEW,
+    Permission.INTEGRATIONS_SYNC,
+    // Note: Cannot manage integrations (ADMIN only)
   ],
 
   /**
@@ -308,6 +320,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 
     // Payroll - View only (for financial review)
     Permission.PAYROLL_VIEW,
+
+    // Exchange Rates - View only (for financial review)
+    Permission.EXCHANGE_RATES_VIEW,
   ],
 
   [UserRole.EMPLOYEE]: [

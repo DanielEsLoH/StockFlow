@@ -6,7 +6,9 @@ import {
   MovementType,
   JournalEntryStatus,
 } from '@prisma/client';
-import PdfPrinter from 'pdfmake';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const PdfMakeModule = require('pdfmake/js/Printer.js');
+const PdfPrinter = PdfMakeModule.default || PdfMakeModule;
 import * as XLSX from 'xlsx';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
@@ -98,7 +100,7 @@ const fonts = {
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
-  private readonly pdfPrinter: PdfPrinter;
+  private readonly pdfPrinter: InstanceType<typeof PdfPrinter>;
 
   constructor(
     private readonly prisma: PrismaService,

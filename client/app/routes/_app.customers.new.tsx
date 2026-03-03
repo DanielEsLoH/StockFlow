@@ -30,6 +30,7 @@ const customerSchema = z.object({
   phone: z.string().max(20, "Maximo 20 caracteres").optional(),
   document: z.string().max(20, "Maximo 20 caracteres").optional(),
   documentType: z.enum(["CC", "NIT", "CE", "PASSPORT"]).optional(),
+  dv: z.string().max(1, "Maximo 1 caracter").optional(),
   type: z.enum(["INDIVIDUAL", "BUSINESS"]),
   address: z.string().max(200, "Maximo 200 caracteres").optional(),
   city: z.string().max(100, "Maximo 100 caracteres").optional(),
@@ -77,6 +78,7 @@ export default function NewCustomerPage() {
       phone: "",
       document: "",
       documentType: undefined,
+      dv: "",
       type: "INDIVIDUAL",
       address: "",
       city: "",
@@ -147,7 +149,7 @@ export default function NewCustomerPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_80px] gap-4">
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
                         Tipo de Documento
@@ -184,6 +186,16 @@ export default function NewCustomerPage() {
                           {errors.document.message}
                         </p>
                       )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                        DV
+                      </label>
+                      <Input
+                        {...register("dv")}
+                        placeholder="7"
+                        maxLength={1}
+                      />
                     </div>
                   </div>
                 </CardContent>

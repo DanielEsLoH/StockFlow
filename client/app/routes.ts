@@ -199,6 +199,10 @@ export default [
       "accounting/reports/tax-summary",
       "routes/_app.accounting.reports.tax-summary.tsx",
     ),
+    route(
+      "accounting/reports/exogena",
+      "routes/_app.accounting.reports.exogena.tsx",
+    ),
 
     // Payroll module
     route("payroll/employees", "routes/_app.payroll.employees.tsx"),

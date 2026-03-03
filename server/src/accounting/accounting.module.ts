@@ -11,6 +11,7 @@ import { AccountingSetupService } from './accounting-setup.service';
 import { AccountingBridgeService } from './accounting-bridge.service';
 import { AccountingReportsController } from './reports/accounting-reports.controller';
 import { AccountingReportsService } from './reports/accounting-reports.service';
+import { ExogenaService } from './reports/exogena.service';
 
 /**
  * AccountingModule provides the full accounting system:
@@ -47,10 +48,12 @@ import { AccountingReportsService } from './reports/accounting-reports.service';
     AccountingSetupService,
     AccountingBridgeService,
     AccountingReportsService,
+    ExogenaService,
   ],
   exports: [
     AccountsService,
     AccountingBridgeService,
+    ExogenaService,
   ],
 })
 export class AccountingModule {}

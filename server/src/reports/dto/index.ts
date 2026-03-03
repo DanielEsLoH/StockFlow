@@ -5,6 +5,7 @@ export {
   CustomersReportQueryDto,
   CostCenterBalanceQueryDto,
   IvaDeclarationQueryDto,
+  ExogenaQueryDto,
   ReteFuenteSummaryQueryDto,
   ReportFormat,
 } from './report-query.dto';

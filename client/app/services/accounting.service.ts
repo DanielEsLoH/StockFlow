@@ -24,6 +24,7 @@ import type {
   ReteFuenteSummaryReport,
   YtdTaxSummary,
 } from "~/types/accounting";
+import type { ExogenaReport } from "~/types/exogena";
 
 export const accountingService = {
   // Setup
@@ -322,5 +323,19 @@ export const accountingService = {
     const ext = format === "pdf" ? "pdf" : "xlsx";
     const fileName = `balance-centro-costo-${fromDate}-${toDate}.${ext}`;
     return { blob: data, fileName };
+  },
+
+  async getExogena(year: number): Promise<ExogenaReport> {
+    const { data } = await api.get<ExogenaReport>(
+      `/accounting/reports/exogena?year=${year}`,
+    );
+    return data;
+  },
+
+  async downloadExogena(year: number): Promise<{ blob: Blob; fileName: string }> {
+    const { data } = await api.get(`/reports/tax/exogena?year=${year}`, {
+      responseType: "blob",
+    });
+    return { blob: data, fileName: `exogena-${year}.xlsx` };
   },
 };

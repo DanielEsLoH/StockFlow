@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Logger, BadRequestException } from '@nestjs/common';
 import { AccountingReportsController } from './accounting-reports.controller';
 import { AccountingReportsService } from './accounting-reports.service';
+import { ExogenaService } from './exogena.service';
 import { JwtAuthGuard } from '../../auth';
 import { PermissionsGuard } from '../../common';
 
@@ -38,10 +39,15 @@ describe('AccountingReportsController', () => {
       getYtdTaxSummary: jest.fn().mockResolvedValue(mockYtdTaxSummary),
     };
 
+    const mockExogenaService = {
+      generateExogena: jest.fn().mockResolvedValue({ year: 2026, formatos: [] }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AccountingReportsController],
       providers: [
         { provide: AccountingReportsService, useValue: mockService },
+        { provide: ExogenaService, useValue: mockExogenaService },
       ],
     })
       .overrideGuard(JwtAuthGuard)

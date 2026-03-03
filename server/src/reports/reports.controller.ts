@@ -25,11 +25,13 @@ import {
   CostCenterBalanceQueryDto,
   IvaDeclarationQueryDto,
   ReteFuenteSummaryQueryDto,
+  ExogenaQueryDto,
   ReportFormat,
 } from './dto';
 import { JwtAuthGuard } from '../auth';
 import { RateLimitGuard, RateLimit } from '../arcjet';
 import { AccountingReportsService } from '../accounting/reports/accounting-reports.service';
+import { ExogenaService } from '../accounting/reports/exogena.service';
 
 /**
  * ReportsController handles all report generation endpoints.
@@ -54,6 +56,7 @@ export class ReportsController {
   constructor(
     private readonly reportsService: ReportsService,
     private readonly accountingReportsService: AccountingReportsService,
+    private readonly exogenaService: ExogenaService,
   ) {}
 
   /**
@@ -375,6 +378,21 @@ export class ReportsController {
     const data = await this.accountingReportsService.getReteFuenteSummary(query.year, query.month);
     const buffer = await this.reportsService.generateReteFuenteSummaryReport(data, query.format);
     this.sendReportResponse(res, buffer, `retefuente-${query.year}-${query.month}`, query.format as ReportFormat);
+  }
+
+  @Get('reports/tax/exogena')
+  @ApiOperation({ summary: 'Download Información Exógena Excel report' })
+  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiResponse({ status: 200, description: 'Exogena report Excel file' })
+  async downloadExogena(
+    @Query() query: ExogenaQueryDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    this.logger.log(`Generating Exogena report: year=${query.year}`);
+
+    const data = await this.exogenaService.generateExogena(query.year);
+    const buffer = this.reportsService.generateExogenaExcel(data);
+    this.sendReportResponse(res, buffer, `exogena-${query.year}`, ReportFormat.EXCEL);
   }
 
   /**

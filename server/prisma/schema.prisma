@@ -604,6 +604,7 @@ model Customer {
   phone          String?
   documentType   DocumentType   @default(CC) @map("document_type")
   documentNumber String         @map("document_number")
+  dv             String?        @map("dv")
   address        String?
   city           String?
   state          String?
@@ -1286,6 +1287,7 @@ model Supplier {
   phone          String?
   documentType   DocumentType   @default(NIT) @map("document_type")
   documentNumber String         @map("document_number")
+  dv             String?        @map("dv")
   address        String?
   city           String?
   state          String?

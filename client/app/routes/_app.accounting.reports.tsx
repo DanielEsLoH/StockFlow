@@ -15,6 +15,7 @@ import {
   Receipt,
   FileText,
   Calculator,
+  FileSpreadsheet,
 } from "lucide-react";
 import type { Route } from "./+types/_app.accounting.reports";
 import { Card } from "~/components/ui/Card";
@@ -125,6 +126,14 @@ const taxReports = [
     icon: Calculator,
     gradient: "from-success-500/20 to-accent-500/5",
     iconColor: "text-success-600 dark:text-success-400",
+  },
+  {
+    title: "Informacion Exogena",
+    description: "Medios magneticos anuales DIAN",
+    href: "/accounting/reports/exogena",
+    icon: FileSpreadsheet,
+    gradient: "from-warning-500/20 to-success-500/5",
+    iconColor: "text-warning-600 dark:text-warning-400",
   },
 ];
 

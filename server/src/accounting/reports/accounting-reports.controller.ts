@@ -5,6 +5,7 @@ import {
   UseGuards,
   Logger,
   BadRequestException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,6 +15,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { AccountingReportsService } from './accounting-reports.service';
+import { ExogenaService } from './exogena.service';
 import { JwtAuthGuard } from '../../auth';
 import { RequirePermissions, PermissionsGuard } from '../../common';
 import { Permission } from '../../common/permissions/permission.enum';
@@ -27,6 +29,7 @@ export class AccountingReportsController {
 
   constructor(
     private readonly reportsService: AccountingReportsService,
+    private readonly exogenaService: ExogenaService,
   ) {}
 
   @Get('trial-balance')
@@ -190,6 +193,15 @@ export class AccountingReportsController {
   ) {
     const y = this.parseYear(year);
     return this.reportsService.getYtdTaxSummary(y);
+  }
+
+  @Get('exogena')
+  @RequirePermissions(Permission.ACCOUNTING_VIEW)
+  @ApiOperation({ summary: 'Get información exógena (medios magnéticos)' })
+  @ApiQuery({ name: 'year', required: true, description: 'Tax year', type: Number })
+  @ApiResponse({ status: 200, description: 'Exogena report data' })
+  async getExogena(@Query('year', ParseIntPipe) year: number) {
+    return this.exogenaService.generateExogena(year);
   }
 
   // ─── PRIVATE HELPERS ──────────────────────────────────────────

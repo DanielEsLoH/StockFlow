@@ -10,6 +10,7 @@ export interface Customer {
   phone?: string;
   document?: string;
   documentType?: "CC" | "NIT" | "CE" | "PASSPORT";
+  dv?: string;
   type: CustomerType;
   address?: string;
   city?: string;
@@ -40,6 +41,7 @@ export interface CreateCustomerData {
   phone?: string;
   document?: string;
   documentType?: "CC" | "NIT" | "CE" | "PASSPORT";
+  dv?: string;
   type: CustomerType;
   address?: string;
   city?: string;

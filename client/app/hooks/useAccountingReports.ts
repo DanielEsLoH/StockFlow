@@ -15,6 +15,7 @@ import type {
   ReteFuenteSummaryReport,
   YtdTaxSummary,
 } from "~/types/accounting";
+import type { ExogenaReport } from "~/types/exogena";
 
 // ============================================================================
 // REPORT QUERIES
@@ -140,5 +141,15 @@ export function useYtdTaxSummary(year?: number) {
     queryFn: () => accountingService.getYtdTaxSummary(year!),
     staleTime: 1000 * 60 * 1,
     enabled: enabled && !!year,
+  });
+}
+
+export function useExogena(year: number) {
+  const enabled = useIsQueryEnabled();
+  return useQuery<ExogenaReport>({
+    queryKey: queryKeys.accounting.exogena({ year }),
+    queryFn: () => accountingService.getExogena(year),
+    staleTime: 1000 * 60 * 1,
+    enabled: enabled && year > 0,
   });
 }

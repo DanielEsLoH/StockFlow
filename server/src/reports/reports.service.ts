@@ -10,6 +10,7 @@ import PdfPrinter from 'pdfmake';
 import * as XLSX from 'xlsx';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import type { ExogenaReport } from '../accounting/reports/exogena.service';
 import {
   createInvoiceTemplate,
   createSalesReportTemplate,
@@ -1651,6 +1652,42 @@ export class ReportsService {
 
     const sheet = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(workbook, sheet, 'ReteFuente');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+  }
+
+  generateExogenaExcel(data: ExogenaReport): Buffer {
+    const workbook = XLSX.utils.book_new();
+
+    for (const formato of data.formatos) {
+      const rows: any[][] = [
+        [`Informacion Exogena - F${formato.formatNumber} - ${formato.name}`],
+        [`NIT: ${data.tenantNit} - ${data.tenantName}`],
+        [`Año Gravable: ${data.year}`],
+        [],
+        ['Concepto', 'Tipo Doc', 'No. Documento', 'DV', 'Razon Social', 'Direccion', 'Ciudad', 'Monto', 'IVA'],
+      ];
+
+      for (const row of formato.rows) {
+        rows.push([
+          row.conceptCode,
+          row.documentType,
+          row.documentNumber,
+          row.dv,
+          row.businessName,
+          row.address,
+          row.city,
+          row.amount,
+          row.taxAmount,
+        ]);
+      }
+
+      rows.push([]);
+      rows.push(['', '', '', '', '', '', 'TOTALES', formato.totalAmount, formato.totalTaxAmount]);
+
+      const sheet = XLSX.utils.aoa_to_sheet(rows);
+      XLSX.utils.book_append_sheet(workbook, sheet, `F${formato.formatNumber}`);
+    }
 
     return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
   }

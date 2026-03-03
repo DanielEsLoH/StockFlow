@@ -14,6 +14,7 @@ import { MovementType } from '@prisma/client';
 import type { Response } from 'express';
 import { ArcjetService } from '../arcjet/arcjet.service';
 import { AccountingReportsService } from '../accounting/reports/accounting-reports.service';
+import { ExogenaService } from '../accounting/reports/exogena.service';
 
 describe('ReportsController', () => {
   let controller: ReportsController;
@@ -91,12 +92,17 @@ describe('ReportsController', () => {
       getYtdTaxSummary: jest.fn().mockResolvedValue({}),
     };
 
+    const mockExogenaService = {
+      generateExogena: jest.fn().mockResolvedValue({ year: 2026, formatos: [] }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ReportsController],
       providers: [
         { provide: ReportsService, useValue: mockReportsService },
         { provide: ArcjetService, useValue: mockArcjetService },
         { provide: AccountingReportsService, useValue: mockAccountingReportsService },
+        { provide: ExogenaService, useValue: mockExogenaService },
       ],
     }).compile();
 

@@ -15,6 +15,7 @@ export interface Supplier {
   phone: string | null;
   documentType: string;
   documentNumber: string;
+  dv: string | null;
   address: string | null;
   city: string | null;
   state: string | null;
@@ -48,6 +49,7 @@ export interface CreateSupplierData {
   phone?: string;
   documentType?: string;
   documentNumber: string;
+  dv?: string;
   address?: string;
   city?: string;
   state?: string;

@@ -3,6 +3,7 @@ import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { PrismaModule } from '../prisma';
 import { CommonModule } from '../common';
+import { AccountingModule } from '../accounting/accounting.module';
 import { AccountingReportsService } from '../accounting/reports/accounting-reports.service';
 
 /**
@@ -19,7 +20,7 @@ import { AccountingReportsService } from '../accounting/reports/accounting-repor
  * All reports are tenant-scoped for data isolation.
  */
 @Module({
-  imports: [PrismaModule, CommonModule],
+  imports: [PrismaModule, CommonModule, AccountingModule],
   controllers: [ReportsController],
   providers: [ReportsService, AccountingReportsService],
   exports: [ReportsService],

@@ -99,6 +99,20 @@ export class UpdateCustomerDto {
   documentNumber?: string;
 
   /**
+   * Digito de verificacion (optional, 1 character)
+   * @example "7"
+   */
+  @ApiPropertyOptional({
+    description: 'Digito de verificacion',
+    example: '7',
+    maxLength: 1,
+  })
+  @IsString({ message: 'El DV debe ser una cadena de texto' })
+  @MaxLength(1, { message: 'El DV no puede exceder 1 caracter' })
+  @IsOptional()
+  dv?: string;
+
+  /**
    * Customer address (max 200 characters)
    * @example "Calle 123 #45-67, Bogota"
    */

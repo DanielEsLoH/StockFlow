@@ -255,6 +255,18 @@ export class IvaDeclarationQueryDto {
 }
 
 /**
+ * Query DTO for Exogena (Información Exógena / Medios Magnéticos) report
+ */
+export class ExogenaQueryDto {
+  @ApiProperty({ description: 'Tax year', example: 2025 })
+  @IsInt({ message: 'El año debe ser un número entero' })
+  @Min(2000)
+  @Max(2100)
+  @Type(() => Number)
+  year: number;
+}
+
+/**
  * Query DTO for ReteFuente summary report
  */
 export class ReteFuenteSummaryQueryDto {

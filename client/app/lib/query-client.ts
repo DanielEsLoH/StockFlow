@@ -287,6 +287,8 @@ export const queryKeys = {
       ["accounting", "reports", "retefuente-summary", params] as const,
     ytdTaxSummary: (params?: Record<string, unknown>) =>
       ["accounting", "reports", "tax-summary", params] as const,
+    exogena: (params?: Record<string, unknown>) =>
+      ["accounting", "reports", "exogena", params] as const,
   },
 
   // Bank

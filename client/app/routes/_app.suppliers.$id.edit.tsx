@@ -33,6 +33,7 @@ const supplierSchema = z.object({
     .string()
     .min(1, "El numero de documento es requerido")
     .max(20, "Maximo 20 caracteres"),
+  dv: z.string().max(1, "Maximo 1 caracter").optional(),
   email: z.string().email("Email invalido").or(z.literal("")).optional(),
   phone: z.string().max(20, "Maximo 20 caracteres").optional(),
   address: z.string().max(200, "Maximo 200 caracteres").optional(),
@@ -109,6 +110,7 @@ export default function EditSupplierPage() {
       name: "",
       documentType: "NIT",
       documentNumber: "",
+      dv: "",
       email: "",
       phone: "",
       address: "",
@@ -130,6 +132,7 @@ export default function EditSupplierPage() {
         name: supplier.name,
         documentType: supplier.documentType || "NIT",
         documentNumber: supplier.documentNumber || "",
+        dv: supplier.dv || "",
         email: supplier.email || "",
         phone: supplier.phone || "",
         address: supplier.address || "",
@@ -237,7 +240,7 @@ export default function EditSupplierPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_80px] gap-4">
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
                         Tipo de Documento
@@ -268,6 +271,16 @@ export default function EditSupplierPage() {
                           {errors.documentNumber.message}
                         </p>
                       )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                        DV
+                      </label>
+                      <Input
+                        {...register("dv")}
+                        placeholder="7"
+                        maxLength={1}
+                      />
                     </div>
                   </div>
 

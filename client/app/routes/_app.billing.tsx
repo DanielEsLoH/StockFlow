@@ -672,12 +672,7 @@ function BillingHistoryTable() {
 
 // Main Billing Page
 export default function BillingPage() {
-  const { canManageSettings } = usePermissions();
-
-  if (!canManageSettings) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
+  const { canManageSettings, isAuthenticated } = usePermissions();
   const [selectedPeriod, setSelectedPeriod] =
     useState<SubscriptionPeriod>("MONTHLY");
   const { data: subscription } = useSubscriptionStatus();
@@ -688,6 +683,12 @@ export default function BillingPage() {
   const [selectingPlan, setSelectingPlan] = useState<SubscriptionPlan | null>(
     null,
   );
+
+  // Only redirect if user is loaded and lacks permission
+  // During SSR/hydration, user may be null — the layout handles auth
+  if (isAuthenticated && !canManageSettings) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSelectPlan = async (
     plan: SubscriptionPlan,

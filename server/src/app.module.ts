@@ -42,6 +42,8 @@ import { SupportDocumentsModule } from './support-documents';
 import { RemissionsModule } from './remissions';
 import { ExpensesModule } from './expenses';
 import { RecurringInvoicesModule } from './recurring-invoices';
+import { ExchangeRatesModule } from './exchange-rates/exchange-rates.module';
+import { IntegrationsModule } from './integrations';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 import { PermissionsModule } from './common/permissions';
@@ -95,6 +97,8 @@ import { PermissionsModule } from './common/permissions';
     RemissionsModule,
     ExpensesModule,
     RecurringInvoicesModule,
+    ExchangeRatesModule,
+    IntegrationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

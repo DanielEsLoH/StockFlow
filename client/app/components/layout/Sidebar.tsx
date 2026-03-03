@@ -41,6 +41,7 @@ import {
   FilePlus,
   ShieldCheck,
   MonitorSmartphone,
+  Plug,
   History,
   Boxes,
   RefreshCw,
@@ -338,6 +339,18 @@ const navSections: NavSection[] = [
         href: "/audit-logs",
         icon: ShieldCheck,
         permission: Permission.AUDIT_VIEW,
+      },
+      {
+        name: "Integraciones",
+        href: "/integrations",
+        icon: Plug,
+        permission: Permission.INTEGRATIONS_VIEW,
+      },
+      {
+        name: "Monedas",
+        href: "/settings/currencies",
+        icon: ArrowLeftRight,
+        permission: Permission.EXCHANGE_RATES_VIEW,
       },
       {
         name: "Configuracion",

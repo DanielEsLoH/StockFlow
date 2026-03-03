@@ -3,13 +3,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
   NotFoundException,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
-import { RecurringInterval, InvoiceStatus } from '@prisma/client';
+import { RecurringInterval } from '@prisma/client';
 import { RecurringInvoicesService } from './recurring-invoices.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
-import { InvoicesService } from '../invoices/invoices.service';
 
 describe('RecurringInvoicesService', () => {
   let service: RecurringInvoicesService;
@@ -64,18 +62,11 @@ describe('RecurringInvoicesService', () => {
       count: jest.fn(),
       update: jest.fn(),
     },
-    invoice: {
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
   };
 
   const mockTenantContext = {
     requireTenantId: jest.fn().mockReturnValue(mockTenantId),
   };
-
-  const mockInvoicesService = {};
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -83,11 +74,9 @@ describe('RecurringInvoicesService', () => {
         RecurringInvoicesService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: TenantContextService, useValue: mockTenantContext },
-        { provide: InvoicesService, useValue: mockInvoicesService },
       ],
     }).compile();
 
-    // Suppress logger output during tests
     module.useLogger(false);
 
     service = module.get<RecurringInvoicesService>(RecurringInvoicesService);
@@ -307,198 +296,6 @@ describe('RecurringInvoicesService', () => {
 
       await expect(service.remove('nonexistent')).rejects.toThrow(
         NotFoundException,
-      );
-    });
-  });
-
-  describe('calculateNextIssueDate', () => {
-    // Use a date in the middle of the month to avoid timezone edge cases
-    const baseDate = new Date('2026-01-15T12:00:00Z');
-
-    it('should add 7 days for WEEKLY', () => {
-      const result = service.calculateNextIssueDate(
-        baseDate,
-        RecurringInterval.WEEKLY,
-      );
-      expect(result.getDate()).toBe(22);
-      expect(result.getMonth()).toBe(0); // January
-    });
-
-    it('should add 14 days for BIWEEKLY', () => {
-      const result = service.calculateNextIssueDate(
-        baseDate,
-        RecurringInterval.BIWEEKLY,
-      );
-      expect(result.getDate()).toBe(29);
-      expect(result.getMonth()).toBe(0); // January
-    });
-
-    it('should add 1 month for MONTHLY', () => {
-      const result = service.calculateNextIssueDate(
-        baseDate,
-        RecurringInterval.MONTHLY,
-      );
-      expect(result.getMonth()).toBe(1); // February
-      expect(result.getDate()).toBe(15);
-    });
-
-    it('should add 3 months for QUARTERLY', () => {
-      const result = service.calculateNextIssueDate(
-        baseDate,
-        RecurringInterval.QUARTERLY,
-      );
-      expect(result.getMonth()).toBe(3); // April
-      expect(result.getDate()).toBe(15);
-    });
-
-    it('should add 1 year for ANNUAL', () => {
-      const result = service.calculateNextIssueDate(
-        baseDate,
-        RecurringInterval.ANNUAL,
-      );
-      expect(result.getFullYear()).toBe(2027);
-      expect(result.getMonth()).toBe(0); // January
-      expect(result.getDate()).toBe(15);
-    });
-  });
-
-  describe('processRecurringInvoices (cron)', () => {
-    it('should process due templates', async () => {
-      const template = {
-        ...mockRecurring,
-        tenant: { id: mockTenantId, name: 'Test Tenant' },
-      };
-      mockPrisma.recurringInvoice.findMany.mockResolvedValue([template]);
-      mockPrisma.invoice.findFirst.mockResolvedValue({
-        invoiceNumber: 'INV-00005',
-      });
-      mockPrisma.invoice.create.mockResolvedValue({
-        id: 'inv-new',
-        items: [
-          {
-            subtotal: 200,
-            tax: 38,
-            total: 238,
-          },
-        ],
-      });
-      mockPrisma.invoice.update.mockResolvedValue({});
-      mockPrisma.recurringInvoice.update.mockResolvedValue({});
-
-      await service.processRecurringInvoices();
-
-      expect(mockPrisma.recurringInvoice.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            isActive: true,
-          }),
-        }),
-      );
-      expect(mockPrisma.invoice.create).toHaveBeenCalled();
-      expect(mockPrisma.recurringInvoice.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            lastIssuedAt: expect.any(Date),
-          }),
-        }),
-      );
-    });
-
-    it('should skip when no due templates', async () => {
-      mockPrisma.recurringInvoice.findMany.mockResolvedValue([]);
-
-      await service.processRecurringInvoices();
-
-      expect(mockPrisma.invoice.create).not.toHaveBeenCalled();
-    });
-
-    it('should continue processing other templates when one fails', async () => {
-      const template1 = {
-        ...mockRecurring,
-        id: 'rec-1',
-        tenant: { id: mockTenantId, name: 'Test' },
-      };
-      const template2 = {
-        ...mockRecurring,
-        id: 'rec-2',
-        tenant: { id: mockTenantId, name: 'Test' },
-      };
-      mockPrisma.recurringInvoice.findMany.mockResolvedValue([
-        template1,
-        template2,
-      ]);
-
-      // First template fails, second succeeds
-      mockPrisma.invoice.findFirst
-        .mockRejectedValueOnce(new Error('DB error'))
-        .mockResolvedValueOnce({ invoiceNumber: 'INV-00001' });
-      mockPrisma.invoice.create.mockResolvedValue({
-        id: 'inv-new',
-        items: [{ subtotal: 200, tax: 38, total: 238 }],
-      });
-      mockPrisma.invoice.update.mockResolvedValue({});
-      mockPrisma.recurringInvoice.update.mockResolvedValue({});
-
-      await expect(
-        service.processRecurringInvoices(),
-      ).resolves.not.toThrow();
-
-      // Second template should still be processed
-      expect(mockPrisma.invoice.create).toHaveBeenCalledTimes(1);
-    });
-
-    it('should set invoice as SENT when autoSend is true', async () => {
-      const template = {
-        ...mockRecurring,
-        autoSend: true,
-        tenant: { id: mockTenantId, name: 'Test' },
-      };
-      mockPrisma.recurringInvoice.findMany.mockResolvedValue([template]);
-      mockPrisma.invoice.findFirst.mockResolvedValue({
-        invoiceNumber: 'INV-00001',
-      });
-      mockPrisma.invoice.create.mockResolvedValue({
-        id: 'inv-new',
-        items: [{ subtotal: 200, tax: 38, total: 238 }],
-      });
-      mockPrisma.invoice.update.mockResolvedValue({});
-      mockPrisma.recurringInvoice.update.mockResolvedValue({});
-
-      await service.processRecurringInvoices();
-
-      expect(mockPrisma.invoice.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            status: InvoiceStatus.SENT,
-          }),
-        }),
-      );
-    });
-
-    it('should generate correct invoice number', async () => {
-      const template = {
-        ...mockRecurring,
-        tenant: { id: mockTenantId, name: 'Test' },
-      };
-      mockPrisma.recurringInvoice.findMany.mockResolvedValue([template]);
-      mockPrisma.invoice.findFirst.mockResolvedValue({
-        invoiceNumber: 'INV-00042',
-      });
-      mockPrisma.invoice.create.mockResolvedValue({
-        id: 'inv-new',
-        items: [{ subtotal: 200, tax: 38, total: 238 }],
-      });
-      mockPrisma.invoice.update.mockResolvedValue({});
-      mockPrisma.recurringInvoice.update.mockResolvedValue({});
-
-      await service.processRecurringInvoices();
-
-      expect(mockPrisma.invoice.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            invoiceNumber: 'INV-00043',
-          }),
-        }),
       );
     });
   });

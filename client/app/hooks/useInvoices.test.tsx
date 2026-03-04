@@ -18,6 +18,7 @@ import {
   useUpdateInvoiceItem,
   useRemoveInvoiceItem,
   useSendInvoiceToDian,
+  useSendInvoiceByEmail,
   usePendingCollection,
 } from "./useInvoices";
 import { invoicesService } from "~/services/invoices.service";
@@ -47,6 +48,7 @@ vi.mock("~/services/invoices.service", () => ({
     updateInvoiceItem: vi.fn(),
     removeInvoiceItem: vi.fn(),
     sendToDian: vi.fn(),
+    sendByEmail: vi.fn(),
     getPendingCollection: vi.fn(),
   },
 }));
@@ -2830,6 +2832,130 @@ describe("useInvoices hooks", () => {
       });
 
       expect(result.current.data).toEqual([]);
+    });
+  });
+
+  describe("useSendInvoiceByEmail", () => {
+    it("should send invoice by email on mutate", async () => {
+      vi.mocked(invoicesService.sendByEmail).mockResolvedValue({
+        success: true,
+      });
+
+      const { result } = renderHook(() => useSendInvoiceByEmail(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate("invoice-1");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(invoicesService.sendByEmail).toHaveBeenCalledWith("invoice-1");
+    });
+
+    it("should show success toast on success", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(invoicesService.sendByEmail).mockResolvedValue({
+        success: true,
+      });
+
+      const { result } = renderHook(() => useSendInvoiceByEmail(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate("invoice-1");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(toast.success).toHaveBeenCalledWith(
+        "Factura enviada por email exitosamente",
+      );
+    });
+
+    it("should show error toast on failure", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(invoicesService.sendByEmail).mockRejectedValue(
+        new Error("Email send failed"),
+      );
+
+      const { result } = renderHook(() => useSendInvoiceByEmail(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate("invoice-1");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(toast.error).toHaveBeenCalledWith("Email send failed");
+    });
+
+    it("should show default error message when error has no message", async () => {
+      const { toast } = await import("~/components/ui/Toast");
+      vi.mocked(invoicesService.sendByEmail).mockRejectedValue(
+        new Error(""),
+      );
+
+      const { result } = renderHook(() => useSendInvoiceByEmail(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate("invoice-1");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(toast.error).toHaveBeenCalledWith(
+        "Error al enviar la factura por email",
+      );
+    });
+
+    it("should update cache and invalidate queries on success", async () => {
+      vi.mocked(invoicesService.sendByEmail).mockResolvedValue({
+        success: true,
+      });
+
+      const queryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+
+      const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>{children}</MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      const { result } = renderHook(() => useSendInvoiceByEmail(), {
+        wrapper,
+      });
+
+      await act(async () => {
+        result.current.mutate("invoice-1");
+      });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(invalidateSpy).toHaveBeenCalled();
     });
   });
 });

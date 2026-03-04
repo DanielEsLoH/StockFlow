@@ -1576,4 +1576,118 @@ describe("Query Keys", () => {
       ]);
     });
   });
+
+  describe("queryKeys.accounting.exogena", () => {
+    it("generates exogena key without params", () => {
+      expect(queryKeys.accounting.exogena()).toEqual([
+        "accounting",
+        "reports",
+        "exogena",
+        undefined,
+      ]);
+    });
+
+    it("generates exogena key with params", () => {
+      const params = { year: 2024 };
+      expect(queryKeys.accounting.exogena(params)).toEqual([
+        "accounting",
+        "reports",
+        "exogena",
+        params,
+      ]);
+    });
+  });
+
+  describe("queryKeys.exchangeRates", () => {
+    it("generates all key", () => {
+      expect(queryKeys.exchangeRates.all).toEqual(["exchangeRates"]);
+    });
+
+    it("generates list key without filters", () => {
+      expect(queryKeys.exchangeRates.list()).toEqual([
+        "exchangeRates",
+        "list",
+        undefined,
+      ]);
+    });
+
+    it("generates list key with filters", () => {
+      const filters = { fromCurrency: "USD" };
+      expect(queryKeys.exchangeRates.list(filters)).toEqual([
+        "exchangeRates",
+        "list",
+        filters,
+      ]);
+    });
+
+    it("generates currencies key", () => {
+      expect(queryKeys.exchangeRates.currencies()).toEqual([
+        "exchangeRates",
+        "currencies",
+      ]);
+    });
+
+    it("generates latest key with from/to", () => {
+      expect(queryKeys.exchangeRates.latest("USD", "COP")).toEqual([
+        "exchangeRates",
+        "latest",
+        "USD",
+        "COP",
+      ]);
+    });
+  });
+
+  describe("queryKeys.integrations", () => {
+    it("generates all key", () => {
+      expect(queryKeys.integrations.all).toEqual(["integrations"]);
+    });
+
+    it("generates list key", () => {
+      expect(queryKeys.integrations.list()).toEqual(["integrations", "list"]);
+    });
+
+    it("generates detail key", () => {
+      expect(queryKeys.integrations.detail("int-1")).toEqual([
+        "integrations",
+        "int-1",
+      ]);
+    });
+
+    it("generates mappings key", () => {
+      expect(queryKeys.integrations.mappings("int-1")).toEqual([
+        "integrations",
+        "int-1",
+        "mappings",
+      ]);
+    });
+
+    it("generates syncLogs key", () => {
+      expect(queryKeys.integrations.syncLogs("int-1")).toEqual([
+        "integrations",
+        "int-1",
+        "logs",
+      ]);
+    });
+
+    it("generates unmapped key", () => {
+      expect(queryKeys.integrations.unmapped("int-1")).toEqual([
+        "integrations",
+        "int-1",
+        "unmapped",
+      ]);
+    });
+  });
+
+  describe("queryKeys.userPermissions", () => {
+    it("generates all key", () => {
+      expect(queryKeys.userPermissions.all).toEqual(["userPermissions"]);
+    });
+
+    it("generates user key", () => {
+      expect(queryKeys.userPermissions.user("user-1")).toEqual([
+        "userPermissions",
+        "user-1",
+      ]);
+    });
+  });
 });

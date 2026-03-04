@@ -5,6 +5,7 @@ interface UIState {
   sidebarOpen: boolean; // Desktop sidebar visibility (legacy, kept for compatibility)
   sidebarCollapsed: boolean; // Desktop sidebar collapsed state
   mobileSidebarOpen: boolean; // Mobile sidebar overlay state
+  expandedSidebarSection: string | null; // Accordion: only one section expanded at a time
 
   // Modals
   activeModal: string | null;
@@ -20,6 +21,8 @@ interface UIState {
   toggleSidebarCollapse: () => void;
   toggleMobileSidebar: () => void;
   setMobileSidebarOpen: (open: boolean) => void;
+  toggleSidebarSection: (label: string) => void;
+  setExpandedSidebarSection: (label: string | null) => void;
   openModal: (modalId: string, data?: unknown) => void;
   closeModal: () => void;
   setGlobalLoading: (loading: boolean, message?: string) => void;
@@ -30,6 +33,7 @@ export const useUIStore = create<UIState>((set) => ({
   sidebarOpen: true,
   sidebarCollapsed: false,
   mobileSidebarOpen: false, // Mobile sidebar hidden by default
+  expandedSidebarSection: null, // No section expanded by default (auto-expand via active route)
   activeModal: null,
   modalData: null,
   globalLoading: false,
@@ -54,6 +58,15 @@ export const useUIStore = create<UIState>((set) => ({
     })),
 
   setMobileSidebarOpen: (mobileSidebarOpen) => set({ mobileSidebarOpen }),
+
+  toggleSidebarSection: (label) =>
+    set((state) => ({
+      expandedSidebarSection:
+        state.expandedSidebarSection === label ? null : label,
+    })),
+
+  setExpandedSidebarSection: (expandedSidebarSection) =>
+    set({ expandedSidebarSection }),
 
   openModal: (activeModal, modalData = null) =>
     set({

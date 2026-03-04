@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -60,6 +60,7 @@ describe("Sidebar", () => {
       sidebarOpen: true,
       sidebarCollapsed: false,
       mobileSidebarOpen: false,
+      expandedSidebarSection: null,
       activeModal: null,
       modalData: null,
       globalLoading: false,
@@ -82,13 +83,10 @@ describe("Sidebar", () => {
     });
 
     it("should render desktop sidebar regardless of mobileSidebarOpen state", () => {
-      // Desktop sidebar is always visible (controlled by CSS hidden lg:flex)
-      // This test verifies the desktop sidebar is always rendered
       useUIStore.setState({ mobileSidebarOpen: false });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Desktop sidebar should always be in the DOM
       expect(screen.getByText("StockFlow")).toBeInTheDocument();
     });
 
@@ -97,7 +95,6 @@ describe("Sidebar", () => {
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Should have backdrop overlay for mobile (bg-black/60 with backdrop-blur)
       const backdrop = document.querySelector(
         ".lg\\:hidden.fixed.inset-0.z-40.bg-black\\/60",
       );
@@ -109,7 +106,6 @@ describe("Sidebar", () => {
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Should NOT have backdrop overlay for mobile when closed
       const backdrop = document.querySelector(
         ".lg\\:hidden.fixed.inset-0.z-40.bg-black\\/60",
       );
@@ -131,89 +127,157 @@ describe("Sidebar", () => {
     });
   });
 
-  describe("navigation items", () => {
-    it(
-      "should render all navigation items",
-      () => {
-        render(<Sidebar />, { wrapper: createWrapper() });
-
-        expect(
-          screen.getByRole("link", { name: /dashboard/i }),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByRole("link", { name: /productos/i }),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByRole("link", { name: /categorias/i }),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByRole("link", { name: /bodegas/i }),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByRole("link", { name: /clientes/i }),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByRole("link", { name: /facturas/i }),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByRole("link", { name: /pagos/i }),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByRole("link", { name: /reportes/i }),
-        ).toBeInTheDocument();
-        // POS section
-        expect(
-          screen.getByRole("link", { name: /ventas pos/i }),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByRole("link", { name: /sesiones/i }),
-        ).toBeInTheDocument();
-        // There are two "Configuracion" links: Nomina config and Settings
-        const configLinks = screen.getAllByRole("link", {
-          name: /configuracion/i,
-        });
-        expect(configLinks.length).toBeGreaterThanOrEqual(1);
-      },
-      15000,
-    );
-
-    it("should have correct href for navigation links", () => {
+  describe("dashboard item", () => {
+    it("should always render Dashboard link outside accordion", () => {
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute(
-        "href",
-        "/dashboard",
-      );
-      expect(screen.getByRole("link", { name: /productos/i })).toHaveAttribute(
-        "href",
-        "/products",
-      );
-      expect(screen.getByRole("link", { name: /categorias/i })).toHaveAttribute(
-        "href",
-        "/categories",
-      );
+      expect(
+        screen.getByRole("link", { name: /dashboard/i }),
+      ).toBeInTheDocument();
     });
 
-    it("should highlight active route", () => {
+    it("should highlight Dashboard when on /dashboard route", () => {
       render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
 
       const dashboardLink = screen.getByRole("link", { name: /dashboard/i });
       expect(dashboardLink.className).toContain("bg-primary-50");
     });
+  });
 
-    it("should highlight active route for products", () => {
+  describe("accordion sections", () => {
+    it("should render section headers for all sections", () => {
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      // All section headers should be visible as buttons
+      expect(screen.getByText("Inventario")).toBeInTheDocument();
+      expect(screen.getByText("Ventas")).toBeInTheDocument();
+      expect(screen.getByText("Compras")).toBeInTheDocument();
+      expect(screen.getByText("Contabilidad")).toBeInTheDocument();
+      // "Punto de Venta" text appears in CajaQuickAccess too, so use getAllByText
+      expect(screen.getAllByText("Punto de Venta").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText("Nomina")).toBeInTheDocument();
+      expect(screen.getByText("Administracion")).toBeInTheDocument();
+    });
+
+    it(
+      "should not show section items when section is collapsed",
+      () => {
+        // On /dashboard, no section should auto-expand
+        useUIStore.setState({ expandedSidebarSection: null });
+        render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
+
+        // Section items should NOT be visible when collapsed
+        expect(
+          screen.queryByRole("link", { name: /productos/i }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByRole("link", { name: /facturas/i }),
+        ).not.toBeInTheDocument();
+      },
+      15000,
+    );
+
+    it("should show section items when section is expanded", async () => {
+      useUIStore.setState({ expandedSidebarSection: "Inventario" });
+
+      render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
+
+      // Inventario items should be visible
+      expect(
+        screen.getByRole("link", { name: /productos/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: /categorias/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: /bodegas/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("should toggle section when clicking section header", async () => {
+      const user = userEvent.setup();
+      useUIStore.setState({ expandedSidebarSection: null });
+
+      render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
+
+      // Click the Inventario header
+      const inventarioButton = screen.getByText("Inventario");
+      await user.click(inventarioButton);
+
+      expect(useUIStore.getState().expandedSidebarSection).toBe("Inventario");
+    });
+
+    it("should close current section when opening another", async () => {
+      const user = userEvent.setup();
+      useUIStore.setState({ expandedSidebarSection: "Inventario" });
+
+      render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
+
+      // Click the Ventas header
+      const ventasButton = screen.getByText("Ventas");
+      await user.click(ventasButton);
+
+      // Should have switched to Ventas
+      expect(useUIStore.getState().expandedSidebarSection).toBe("Ventas");
+    });
+
+    it("should collapse section when clicking same header again", async () => {
+      const user = userEvent.setup();
+      useUIStore.setState({ expandedSidebarSection: "Inventario" });
+
+      render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
+
+      // Click the Inventario header again
+      const inventarioButton = screen.getByText("Inventario");
+      await user.click(inventarioButton);
+
+      expect(useUIStore.getState().expandedSidebarSection).toBeNull();
+    });
+
+    it("should auto-expand section containing active route", () => {
+      // Navigate to /products (in Inventario section)
+      render(<Sidebar />, { wrapper: createWrapper(["/products"]) });
+
+      // Inventario should be auto-expanded
+      expect(useUIStore.getState().expandedSidebarSection).toBe("Inventario");
+    });
+
+    it("should auto-expand Ventas section when on /invoices", () => {
+      render(<Sidebar />, { wrapper: createWrapper(["/invoices"]) });
+
+      expect(useUIStore.getState().expandedSidebarSection).toBe("Ventas");
+    });
+
+    it("should auto-expand Contabilidad section when on /bank/accounts", () => {
+      render(<Sidebar />, {
+        wrapper: createWrapper(["/bank/accounts"]),
+      });
+
+      // Bank accounts was merged into Contabilidad
+      expect(useUIStore.getState().expandedSidebarSection).toBe("Contabilidad");
+    });
+  });
+
+  describe("navigation items", () => {
+    it("should have correct href for navigation links when section is expanded", () => {
+      useUIStore.setState({ expandedSidebarSection: "Inventario" });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      expect(screen.getByRole("link", { name: /productos/i })).toHaveAttribute(
+        "href",
+        "/products",
+      );
+      expect(
+        screen.getByRole("link", { name: /categorias/i }),
+      ).toHaveAttribute("href", "/categories");
+    });
+
+    it("should highlight active route within expanded section", () => {
       render(<Sidebar />, { wrapper: createWrapper(["/products"]) });
 
       const productsLink = screen.getByRole("link", { name: /productos/i });
       expect(productsLink.className).toContain("bg-primary-50");
-    });
-
-    it("should highlight active route for nested paths", () => {
-      render(<Sidebar />, { wrapper: createWrapper(["/products/123/edit"]) });
-
-      const productsLink = screen.getByRole("link", { name: /productos/i });
-      // The NavLink should detect nested paths
-      expect(productsLink).toBeInTheDocument();
     });
   });
 
@@ -221,7 +285,6 @@ describe("Sidebar", () => {
     it("should render collapse button", () => {
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // The button has a title attribute
       expect(screen.getByTitle("Colapsar")).toBeInTheDocument();
     });
 
@@ -254,6 +317,17 @@ describe("Sidebar", () => {
 
       expect(useUIStore.getState().sidebarCollapsed).toBe(false);
     });
+
+    it("should show section icons with tooltips when collapsed", () => {
+      useUIStore.setState({ sidebarCollapsed: true });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      // Section buttons should have title attributes
+      expect(screen.getByTitle("Inventario")).toBeInTheDocument();
+      expect(screen.getByTitle("Ventas")).toBeInTheDocument();
+      expect(screen.getByTitle("Compras")).toBeInTheDocument();
+    });
   });
 
   describe("user section", () => {
@@ -280,7 +354,6 @@ describe("Sidebar", () => {
     it("should render user initials when no avatar", () => {
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // John Doe -> JD
       expect(screen.getByText("JD")).toBeInTheDocument();
     });
 
@@ -334,18 +407,15 @@ describe("Sidebar", () => {
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // The nav links still exist but text is hidden via animation
-      // We just verify the collapsed state affects the UI
       const sidebar = screen.getByRole("navigation").parentElement;
       expect(sidebar).toBeInTheDocument();
     });
 
-    it("should show title attributes on nav items when collapsed", async () => {
+    it("should show title attributes on dashboard link when collapsed", async () => {
       useUIStore.setState({ sidebarCollapsed: true });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // When collapsed, links should have title for tooltip
       const dashboardLink = screen.getByRole("link", { name: /dashboard/i });
       expect(dashboardLink).toHaveAttribute("title", "Dashboard");
     });
@@ -358,16 +428,13 @@ describe("Sidebar", () => {
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Find the backdrop (bg-black/60 with backdrop-blur)
       const backdrop = document.querySelector(
         ".lg\\:hidden.fixed.inset-0.z-40.bg-black\\/60",
       );
       expect(backdrop).toBeInTheDocument();
 
-      // Click the backdrop
       await user.click(backdrop as Element);
 
-      // Mobile sidebar should be closed
       expect(useUIStore.getState().mobileSidebarOpen).toBe(false);
     });
 
@@ -376,7 +443,6 @@ describe("Sidebar", () => {
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Close button should be present (aria-label "Cerrar menu")
       expect(screen.getByLabelText("Cerrar menu")).toBeInTheDocument();
     });
 
@@ -386,27 +452,24 @@ describe("Sidebar", () => {
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Click the close button
       const closeButton = screen.getByLabelText("Cerrar menu");
       await user.click(closeButton);
 
-      // Mobile sidebar should be closed
       expect(useUIStore.getState().mobileSidebarOpen).toBe(false);
     });
 
     it("should close mobile sidebar when clicking a navigation link", async () => {
       const user = userEvent.setup();
-      useUIStore.setState({ mobileSidebarOpen: true });
+      useUIStore.setState({
+        mobileSidebarOpen: true,
+        expandedSidebarSection: "Inventario",
+      });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Find a nav link and click it - there are multiple nav sections (desktop + mobile)
-      // so we need to get all links and click one from the mobile sidebar
       const productsLinks = screen.getAllByRole("link", { name: /productos/i });
-      // The mobile sidebar link will be the second one (after desktop)
       await user.click(productsLinks[productsLinks.length - 1]);
 
-      // Mobile sidebar should be closed after navigation
       expect(useUIStore.getState().mobileSidebarOpen).toBe(false);
     });
 
@@ -415,7 +478,6 @@ describe("Sidebar", () => {
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Mobile sidebar drawer should be present
       const mobileSidebar = document.querySelector(
         ".lg\\:hidden.fixed.inset-y-0.left-0.z-50",
       );
@@ -424,20 +486,22 @@ describe("Sidebar", () => {
   });
 
   describe("admin-only navigation items", () => {
-    it("should show Team item for admin users", () => {
+    it("should show Team item for admin users when section is expanded", () => {
       useAuthStore.setState({
         user: { ...mockUser, role: "ADMIN" },
       });
+      useUIStore.setState({ expandedSidebarSection: "Administracion" });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
       expect(screen.getByRole("link", { name: /equipo/i })).toBeInTheDocument();
     });
 
-    it("should show Team item for super admin users", () => {
+    it("should show Team item for super admin users when section is expanded", () => {
       useAuthStore.setState({
         user: { ...mockUser, role: "SUPER_ADMIN" },
       });
+      useUIStore.setState({ expandedSidebarSection: "Administracion" });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
@@ -448,6 +512,7 @@ describe("Sidebar", () => {
       useAuthStore.setState({
         user: { ...mockUser, role: "EMPLOYEE" },
       });
+      useUIStore.setState({ expandedSidebarSection: "Administracion" });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
@@ -456,17 +521,35 @@ describe("Sidebar", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("should show Team item for manager users (has USERS_VIEW permission)", () => {
+    it("should show Team item for manager users when section is expanded", () => {
       useAuthStore.setState({
         user: { ...mockUser, role: "MANAGER" },
       });
+      useUIStore.setState({ expandedSidebarSection: "Administracion" });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // MANAGER role has USERS_VIEW permission by default, so they can see the Team item
       expect(
         screen.getByRole("link", { name: /equipo/i }),
       ).toBeInTheDocument();
+    });
+  });
+
+  describe("merged sections", () => {
+    it("should include Cuentas Bancarias in Contabilidad section", () => {
+      useUIStore.setState({ expandedSidebarSection: "Contabilidad" });
+
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      expect(
+        screen.getByRole("link", { name: /cuentas bancarias/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("should not have a separate Bancos section", () => {
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      expect(screen.queryByText("Bancos")).not.toBeInTheDocument();
     });
   });
 });

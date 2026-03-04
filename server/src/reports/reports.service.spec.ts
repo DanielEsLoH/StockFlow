@@ -12,9 +12,9 @@ import { ReportsService } from './reports.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 
-// Mock pdfmake
-jest.mock('pdfmake', () => {
-  return jest.fn().mockImplementation(() => ({
+// Mock pdfmake/js/Printer.js (the actual import path used by the service)
+jest.mock('pdfmake/js/Printer.js', () => {
+  const MockPrinter = jest.fn().mockImplementation(() => ({
     createPdfKitDocument: jest.fn().mockReturnValue({
       on: jest.fn((event: string, callback: (data?: Buffer) => void) => {
         if (event === 'data') {
@@ -28,6 +28,7 @@ jest.mock('pdfmake', () => {
       end: jest.fn(),
     }),
   }));
+  return { __esModule: true, default: MockPrinter };
 });
 
 // Mock xlsx - iterate over the array to ensure coverage of map functions

@@ -93,7 +93,7 @@ describe('CashRegistersController', () => {
       const result = await controller.findAll('1', '10');
 
       expect(result).toEqual(mockPaginatedResponse);
-      expect(service.findAll).toHaveBeenCalledWith(1, 10, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined);
     });
 
     it('should use default pagination values', async () => {
@@ -101,7 +101,7 @@ describe('CashRegistersController', () => {
 
       await controller.findAll();
 
-      expect(service.findAll).toHaveBeenCalledWith(1, 10, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined);
     });
 
     it('should pass warehouseId filter', async () => {
@@ -109,7 +109,23 @@ describe('CashRegistersController', () => {
 
       await controller.findAll('1', '10', 'warehouse-123');
 
-      expect(service.findAll).toHaveBeenCalledWith(1, 10, 'warehouse-123');
+      expect(service.findAll).toHaveBeenCalledWith(1, 10, 'warehouse-123', undefined);
+    });
+
+    it('should pass status filter', async () => {
+      service.findAll.mockResolvedValue(mockPaginatedResponse);
+
+      await controller.findAll('1', '10', undefined, 'OPEN');
+
+      expect(service.findAll).toHaveBeenCalledWith(1, 10, undefined, 'OPEN');
+    });
+
+    it('should pass both warehouseId and status filters', async () => {
+      service.findAll.mockResolvedValue(mockPaginatedResponse);
+
+      await controller.findAll('1', '10', 'warehouse-123', 'CLOSED');
+
+      expect(service.findAll).toHaveBeenCalledWith(1, 10, 'warehouse-123', 'CLOSED');
     });
 
     it('should handle invalid page number by defaulting to 1', async () => {
@@ -118,7 +134,7 @@ describe('CashRegistersController', () => {
       await controller.findAll('invalid', '10');
 
       // Controller normalizes NaN to 1 with Math.max(1, parseInt(...) || 1)
-      expect(service.findAll).toHaveBeenCalledWith(1, 10, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined);
     });
 
     it('should return empty data when no cash registers exist', async () => {

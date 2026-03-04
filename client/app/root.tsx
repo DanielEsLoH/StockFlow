@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -41,12 +42,13 @@ const themeScript = `
   })();
 `;
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>StockFlow</title>
         <meta name="theme-color" content="#6366F1" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />

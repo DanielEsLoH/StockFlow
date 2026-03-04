@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, type ComponentType } from "react";
 import { motion } from "framer-motion";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import {
@@ -53,7 +53,6 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-  CardDivider,
 } from "~/components/ui/Card";
 import { Button } from "~/components/ui/Button";
 import { StatCard } from "~/components/ui/StatCard";
@@ -88,31 +87,31 @@ const activityTypeConfig: Record<
     icon: ShoppingCart,
     color: "text-success-600 dark:text-success-400",
     bgColor:
-      "bg-gradient-to-br from-success-500/20 to-success-600/10 dark:from-success-500/20 dark:to-success-900/30",
+      "bg-linear-to-br from-success-500/20 to-success-600/10 dark:from-success-500/20 dark:to-success-900/30",
   },
   product: {
     icon: Package,
     color: "text-primary-600 dark:text-primary-400",
     bgColor:
-      "bg-gradient-to-br from-primary-500/20 to-primary-600/10 dark:from-primary-500/20 dark:to-primary-900/30",
+      "bg-linear-to-br from-primary-500/20 to-primary-600/10 dark:from-primary-500/20 dark:to-primary-900/30",
   },
   customer: {
     icon: UserPlus,
     color: "text-accent-600 dark:text-accent-400",
     bgColor:
-      "bg-gradient-to-br from-accent-500/20 to-accent-600/10 dark:from-accent-500/20 dark:to-accent-900/30",
+      "bg-linear-to-br from-accent-500/20 to-accent-600/10 dark:from-accent-500/20 dark:to-accent-900/30",
   },
   invoice: {
     icon: FileText,
     color: "text-warning-600 dark:text-warning-400",
     bgColor:
-      "bg-gradient-to-br from-warning-500/20 to-warning-600/10 dark:from-warning-500/20 dark:to-warning-900/30",
+      "bg-linear-to-br from-warning-500/20 to-warning-600/10 dark:from-warning-500/20 dark:to-warning-900/30",
   },
   stock: {
     icon: AlertTriangle,
     color: "text-error-600 dark:text-error-400",
     bgColor:
-      "bg-gradient-to-br from-error-500/20 to-error-600/10 dark:from-error-500/20 dark:to-error-900/30",
+      "bg-linear-to-br from-error-500/20 to-error-600/10 dark:from-error-500/20 dark:to-error-900/30",
   },
 };
 
@@ -169,7 +168,7 @@ function ShimmerSkeleton({ className }: { className?: string }) {
         className,
       )}
     >
-      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent dark:via-white/10 animate-shimmer" />
+      <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent dark:via-white/10 animate-shimmer" />
     </div>
   );
 }
@@ -224,8 +223,9 @@ function exportChartToPNG(chartId: string, filename: string) {
     }
   };
 
-  img.src =
-    "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  const bytes = new TextEncoder().encode(svgData);
+  const binaryString = Array.from(bytes, (b) => String.fromCharCode(b)).join("");
+  img.src = "data:image/svg+xml;base64," + btoa(binaryString);
 }
 
 // Quick Action Card component
@@ -237,7 +237,7 @@ function QuickActionCard({
   gradient,
 }: {
   to: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   label: string;
   description: string;
   gradient: string;
@@ -249,7 +249,7 @@ function QuickActionCard({
         whileTap={{ scale: 0.98 }}
         className={cn(
           "relative overflow-hidden rounded-2xl p-4 h-full",
-          "bg-gradient-to-br shadow-lg transition-shadow hover:shadow-xl",
+          "bg-linear-to-br shadow-lg transition-shadow hover:shadow-xl",
           gradient,
         )}
       >
@@ -359,7 +359,7 @@ export default function DashboardPage() {
       >
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl sm:text-3xl font-bold font-display bg-gradient-to-r from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-bold font-display bg-linear-to-r from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
               Hola, {userName}
             </h1>
             <Badge variant="gradient" size="sm">
@@ -532,7 +532,7 @@ export default function DashboardPage() {
           <div className="p-6 pb-0">
             <CardHeader className="flex-row items-center justify-between p-0 mb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500/20 to-primary-600/10">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary-500/20 to-primary-600/10">
                   <TrendingUp className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                 </div>
                 <CardTitle>Ventas vs Periodo Anterior</CardTitle>
@@ -623,7 +623,7 @@ export default function DashboardPage() {
         {/* Category Distribution Pie Chart */}
         <Card variant="elevated" padding="md">
           <CardHeader className="pb-4 flex-row items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent-500/20 to-accent-600/10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-accent-500/20 to-accent-600/10">
               <Package className="h-5 w-5 text-accent-600 dark:text-accent-400" />
             </div>
             <CardTitle>Por Categoria</CardTitle>
@@ -699,7 +699,7 @@ export default function DashboardPage() {
           <div className="p-6 pb-0">
             <CardHeader className="flex-row items-center justify-between p-0 mb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-success-500/20 to-success-600/10">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-success-500/20 to-success-600/10">
                   <Package className="h-5 w-5 text-success-600 dark:text-success-400" />
                 </div>
                 <CardTitle>Productos mas Vendidos</CardTitle>
@@ -782,7 +782,7 @@ export default function DashboardPage() {
         <Card variant="elevated" padding="md">
           <CardHeader className="pb-4 flex-row items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-warning-500/20 to-warning-600/10">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-warning-500/20 to-warning-600/10">
                 <AlertTriangle className="h-5 w-5 text-warning-600 dark:text-warning-400" />
               </div>
               <CardTitle>Alertas de Stock</CardTitle>
@@ -848,7 +848,7 @@ export default function DashboardPage() {
           <div className="p-6 pb-0">
             <CardHeader className="flex-row items-center justify-between p-0 mb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500/20 to-primary-600/10">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary-500/20 to-primary-600/10">
                   <FileText className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                 </div>
                 <CardTitle>Facturas Recientes</CardTitle>
@@ -917,7 +917,7 @@ export default function DashboardPage() {
                         </Link>
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        <p className="text-sm text-neutral-900 dark:text-white truncate max-w-[120px] sm:max-w-none">
+                        <p className="text-sm text-neutral-900 dark:text-white truncate max-w-30 sm:max-w-none">
                           {invoice.customer}
                         </p>
                       </td>
@@ -986,7 +986,7 @@ export default function DashboardPage() {
         {/* Recent Activity */}
         <Card variant="elevated" padding="md">
           <CardHeader className="pb-4 flex-row items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent-500/20 to-accent-600/10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-accent-500/20 to-accent-600/10">
               <Activity className="h-5 w-5 text-accent-600 dark:text-accent-400" />
             </div>
             <CardTitle>Actividad Reciente</CardTitle>

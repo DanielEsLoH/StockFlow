@@ -37,7 +37,7 @@ export default tseslint.config(
   // React Router uses named exports (meta, loader, action, links, handle, headers, shouldRevalidate)
   // and default exports (route component) that are consumed by the framework
   {
-    files: ['app/routes/**/*.tsx', 'app/routes/**/*.ts'],
+    files: ['app/routes/**/*.tsx', 'app/routes/**/*.ts', 'app/root.tsx'],
     rules: {
       // Disable unused vars warnings for route exports consumed by React Router
       '@typescript-eslint/no-unused-vars': ['error', {

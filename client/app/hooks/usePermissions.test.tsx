@@ -44,7 +44,7 @@ describe("usePermissions", () => {
     vi.clearAllMocks();
   });
 
-  function mockAuthStore(user: typeof mockEmployee | null) {
+  function mockAuthStore(user: typeof mockEmployee | typeof mockManager | typeof mockAdmin | typeof mockSuperAdmin | null) {
     vi.mocked(useAuthStore).mockReturnValue({ user });
   }
 

@@ -45,6 +45,7 @@ const mockPreferences: UserPreferences = {
   language: "es",
   currency: "COP",
   dateFormat: "DD/MM/YYYY",
+  posPaperWidth: 80,
   notifications: {
     email: true,
     push: true,
@@ -65,6 +66,7 @@ const defaultPreferences: UserPreferences = {
   language: "es",
   currency: "COP",
   dateFormat: "DD/MM/YYYY",
+  posPaperWidth: 80,
   notifications: {
     email: true,
     push: true,

@@ -641,9 +641,9 @@ export default function InvoiceDetailPage() {
                 <p className="font-semibold text-neutral-900 dark:text-white">
                   {invoice.customer?.name || "Cliente desconocido"}
                 </p>
-                {invoice.customer?.documentNumber && (
+                {invoice.customer?.document && (
                   <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    {invoice.customer.documentType || "Doc"}: {invoice.customer.documentNumber}
+                    {invoice.customer.documentType || "Doc"}: {invoice.customer.document}
                   </p>
                 )}
               </div>
@@ -1148,7 +1148,7 @@ export default function InvoiceDetailPage() {
           date={invoice.issueDate}
           // Datos del cliente
           customerName={invoice.customer?.name}
-          customerDocument={invoice.customer?.documentNumber}
+          customerDocument={invoice.customer?.document}
           customerDocumentType={invoice.customer?.documentType ?? undefined}
           customerPhone={invoice.customer?.phone ?? undefined}
           customerAddress={invoice.customer?.address ?? undefined}

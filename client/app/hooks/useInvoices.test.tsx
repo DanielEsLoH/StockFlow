@@ -83,6 +83,7 @@ const mockInvoiceItem: InvoiceItem = {
   description: "iPhone 15 Pro Max",
   quantity: 1,
   unitPrice: 5999000,
+  taxRate: 19,
   discount: 0,
   tax: 19,
   subtotal: 5999000,
@@ -115,8 +116,8 @@ const mockInvoice: Invoice = {
   dueDate: "2024-01-20T10:00:00Z",
   items: [mockInvoiceItem],
   subtotal: 5999000,
-  taxAmount: 1139810,
-  discountAmount: 0,
+  tax: 1139810,
+  discount: 0,
   total: 7138810,
   notes: "Test invoice",
   createdAt: "2024-01-05T10:00:00Z",
@@ -149,8 +150,8 @@ const mockInvoiceSummary: InvoiceSummary = {
   dueDate: "2024-01-20T10:00:00Z",
   itemCount: 1,
   subtotal: 5999000,
-  taxAmount: 1139810,
-  discountAmount: 0,
+  tax: 1139810,
+  discount: 0,
   total: 7138810,
   createdAt: "2024-01-05T10:00:00Z",
   updatedAt: "2024-01-05T10:00:00Z",
@@ -175,9 +176,11 @@ const mockInvoiceStats: InvoiceStats = {
   invoicesByStatus: {
     DRAFT: 1,
     PENDING: 3,
+    SENT: 0,
     PAID: 4,
     OVERDUE: 1,
     CANCELLED: 1,
+    VOID: 0,
   },
 };
 
@@ -642,12 +645,10 @@ describe("useInvoices hooks", () => {
       await act(async () => {
         result.current.mutate({
           customerId: "1",
-          issueDate: "2024-01-05T10:00:00Z",
           dueDate: "2024-01-20T10:00:00Z",
           items: [
             {
               productId: "prod-1",
-              description: "iPhone 15 Pro Max",
               quantity: 1,
               unitPrice: 5999000,
             },
@@ -679,12 +680,10 @@ describe("useInvoices hooks", () => {
       await act(async () => {
         result.current.mutate({
           customerId: "1",
-          issueDate: "2024-01-05T10:00:00Z",
           dueDate: "2024-01-20T10:00:00Z",
           items: [
             {
               productId: "prod-1",
-              description: "iPhone 15 Pro Max",
               quantity: 1,
               unitPrice: 5999000,
             },
@@ -715,13 +714,10 @@ describe("useInvoices hooks", () => {
       await act(async () => {
         result.current.mutate({
           customerId: "1",
-          status: "DRAFT",
-          issueDate: "2024-01-05T10:00:00Z",
           dueDate: "2024-01-20T10:00:00Z",
           items: [
             {
               productId: "prod-1",
-              description: "iPhone 15 Pro Max",
               quantity: 1,
               unitPrice: 5999000,
             },
@@ -750,12 +746,10 @@ describe("useInvoices hooks", () => {
       await act(async () => {
         result.current.mutate({
           customerId: "1",
-          issueDate: "2024-01-05T10:00:00Z",
           dueDate: "2024-01-20T10:00:00Z",
           items: [
             {
               productId: "prod-1",
-              description: "iPhone 15 Pro Max",
               quantity: 1,
               unitPrice: 5999000,
             },
@@ -781,12 +775,10 @@ describe("useInvoices hooks", () => {
       await act(async () => {
         result.current.mutate({
           customerId: "1",
-          issueDate: "2024-01-05T10:00:00Z",
           dueDate: "2024-01-20T10:00:00Z",
           items: [
             {
               productId: "prod-1",
-              description: "iPhone 15 Pro Max",
               quantity: 1,
               unitPrice: 5999000,
             },
@@ -1334,6 +1326,7 @@ describe("useInvoices hooks", () => {
             description: "AirPods Pro",
             quantity: 1,
             unitPrice: 1099000,
+            taxRate: 19,
             discount: 0,
             tax: 19,
             subtotal: 1099000,
@@ -1356,7 +1349,6 @@ describe("useInvoices hooks", () => {
           invoiceId: "1",
           item: {
             productId: "prod-2",
-            description: "AirPods Pro",
             quantity: 1,
             unitPrice: 1099000,
           },
@@ -1386,7 +1378,6 @@ describe("useInvoices hooks", () => {
           invoiceId: "1",
           item: {
             productId: "prod-2",
-            description: "AirPods Pro",
             quantity: 2,
             unitPrice: 1099000,
             discount: 10,
@@ -1417,10 +1408,9 @@ describe("useInvoices hooks", () => {
           invoiceId: "1",
           item: {
             productId: "prod-2",
-            description: "AirPods Pro",
             quantity: 1,
             unitPrice: 1099000,
-            tax: 5,
+            taxRate: 5,
           },
         });
       });
@@ -1446,7 +1436,6 @@ describe("useInvoices hooks", () => {
           invoiceId: "1",
           item: {
             productId: "prod-2",
-            description: "AirPods Pro",
             quantity: 1,
             unitPrice: 1099000,
           },
@@ -1475,7 +1464,6 @@ describe("useInvoices hooks", () => {
           invoiceId: "1",
           item: {
             productId: "prod-2",
-            description: "AirPods Pro",
             quantity: 1,
             unitPrice: 1099000,
           },
@@ -1505,7 +1493,6 @@ describe("useInvoices hooks", () => {
           invoiceId: "2",
           item: {
             productId: "prod-2",
-            description: "AirPods Pro",
             quantity: 1,
             unitPrice: 1099000,
           },
@@ -1601,7 +1588,7 @@ describe("useInvoices hooks", () => {
       expect(toast.success).toHaveBeenCalledWith("Item actualizado");
     });
 
-    it("should update item description", async () => {
+    it("should update item quantity", async () => {
       const { toast } = await import("~/components/ui/Toast");
       const updatedInvoice = { ...mockInvoice };
       vi.mocked(invoicesService.updateInvoiceItem).mockResolvedValue(
@@ -1616,7 +1603,7 @@ describe("useInvoices hooks", () => {
         result.current.mutate({
           invoiceId: "1",
           itemId: "1-1",
-          data: { description: "iPhone 15 Pro Max 256GB" },
+          data: { quantity: 3 },
         });
       });
 
@@ -1743,6 +1730,7 @@ describe("useInvoices hooks", () => {
             description: "AirPods Pro",
             quantity: 1,
             unitPrice: 1099000,
+            taxRate: 19,
             discount: 0,
             tax: 19,
             subtotal: 1099000,
@@ -1922,7 +1910,6 @@ describe("useInvoices hooks", () => {
             items: [
               {
                 productId: "prod-1",
-                description: "Test Item",
                 quantity: 1,
                 unitPrice: 1000,
               },
@@ -2209,6 +2196,7 @@ describe("useInvoices hooks", () => {
         description: "AirPods Pro",
         quantity: 1,
         unitPrice: 1099000,
+        taxRate: 19,
         discount: 0,
         tax: 19,
         subtotal: 1099000,
@@ -2249,7 +2237,6 @@ describe("useInvoices hooks", () => {
           invoiceId: "1",
           item: {
             productId: "prod-2",
-            description: "AirPods Pro",
             quantity: 1,
             unitPrice: 1099000,
           },
@@ -2349,6 +2336,7 @@ describe("useInvoices hooks", () => {
         description: "AirPods Pro",
         quantity: 1,
         unitPrice: 1099000,
+        taxRate: 19,
         discount: 0,
         tax: 19,
         subtotal: 1099000,
@@ -2437,6 +2425,7 @@ describe("useInvoices hooks", () => {
             description: "AirPods Pro",
             quantity: 1,
             unitPrice: 1099000,
+            taxRate: 19,
             discount: 0,
             tax: 19,
             subtotal: 1099000,
@@ -2565,7 +2554,7 @@ describe("useInvoices hooks", () => {
       const { toast } = await import("~/components/ui/Toast");
       const checkoutResult = {
         ...mockInvoice,
-        status: "SENT",
+        status: "SENT" as const,
         invoiceNumber: "FAC-2024-0001",
         customerId: "1",
       };
@@ -2586,10 +2575,9 @@ describe("useInvoices hooks", () => {
               quantity: 2,
               unitPrice: 100000,
               discount: 0,
-              tax: 19,
+              taxRate: 19,
             },
           ],
-          issueDate: "2024-01-05",
           dueDate: "2024-01-20",
           immediatePayment: true,
           paymentMethod: "CASH",
@@ -2624,10 +2612,9 @@ describe("useInvoices hooks", () => {
               quantity: 999,
               unitPrice: 100000,
               discount: 0,
-              tax: 19,
+              taxRate: 19,
             },
           ],
-          issueDate: "2024-01-05",
           dueDate: "2024-01-20",
         });
       });
@@ -2653,7 +2640,6 @@ describe("useInvoices hooks", () => {
         result.current.mutate({
           customerId: "1",
           items: [],
-          issueDate: "2024-01-05",
           dueDate: "2024-01-20",
         });
       });
@@ -2838,7 +2824,7 @@ describe("useInvoices hooks", () => {
   describe("useSendInvoiceByEmail", () => {
     it("should send invoice by email on mutate", async () => {
       vi.mocked(invoicesService.sendByEmail).mockResolvedValue({
-        success: true,
+        message: "Email sent successfully",
       });
 
       const { result } = renderHook(() => useSendInvoiceByEmail(), {
@@ -2859,7 +2845,7 @@ describe("useInvoices hooks", () => {
     it("should show success toast on success", async () => {
       const { toast } = await import("~/components/ui/Toast");
       vi.mocked(invoicesService.sendByEmail).mockResolvedValue({
-        success: true,
+        message: "Email sent successfully",
       });
 
       const { result } = renderHook(() => useSendInvoiceByEmail(), {
@@ -2925,7 +2911,7 @@ describe("useInvoices hooks", () => {
 
     it("should update cache and invalidate queries on success", async () => {
       vi.mocked(invoicesService.sendByEmail).mockResolvedValue({
-        success: true,
+        message: "Email sent successfully",
       });
 
       const queryClient = new QueryClient({

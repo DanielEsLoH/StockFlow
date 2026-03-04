@@ -130,6 +130,7 @@ describe("settingsService", () => {
         language: "en",
         currency: "USD",
         dateFormat: "MM/DD/YYYY",
+        posPaperWidth: 80,
         notifications: {
           email: false,
           push: true,
@@ -218,6 +219,7 @@ describe("settingsService", () => {
         language: "en",
         currency: "USD",
         dateFormat: "YYYY-MM-DD",
+        posPaperWidth: 80,
         notifications: {
           email: false,
           push: true,
@@ -247,6 +249,7 @@ describe("settingsService", () => {
         language: "es",
         currency: "EUR",
         dateFormat: "DD/MM/YYYY",
+        posPaperWidth: 80,
         notifications: {
           email: true,
           push: false,
@@ -277,6 +280,7 @@ describe("settingsService", () => {
         language: "en",
         currency: "USD",
         dateFormat: "YYYY-MM-DD",
+        posPaperWidth: 80,
         notifications: {
           email: true,
           push: true,
@@ -368,6 +372,7 @@ describe("settingsService", () => {
         language: "en",
         currency: "USD",
         dateFormat: "YYYY-MM-DD",
+        posPaperWidth: 80,
         notifications: {
           email: false,
           push: false,

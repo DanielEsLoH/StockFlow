@@ -1083,7 +1083,7 @@ describe("ModuleShowcase", () => {
     expect(scrollIntoViewMock).toHaveBeenCalled();
 
     // Clean up
-    delete (Element.prototype as Record<string, unknown>).scrollIntoView;
+    delete (Element.prototype as unknown as Record<string, unknown>).scrollIntoView;
   });
 });
 

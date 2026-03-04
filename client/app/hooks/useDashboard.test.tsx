@@ -46,6 +46,8 @@ const mockStats: DashboardStats = {
   totalCustomers: 342,
   customersGrowth: 5.7,
   overdueInvoicesCount: 3,
+  todaySales: 0,
+  todayInvoiceCount: 0,
 };
 
 const mockCharts: DashboardCharts = {

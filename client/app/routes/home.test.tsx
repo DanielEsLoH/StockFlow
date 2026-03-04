@@ -90,7 +90,7 @@ vi.mock("framer-motion", async () => {
           return (props: Record<string, unknown>) =>
             ReactMod.createElement(tag, filterProps(props));
         }
-        return ({ children, ...props }: { children?: unknown } & Record<string, unknown>) =>
+        return ({ children, ...props }: { children?: React.ReactNode } & Record<string, unknown>) =>
           ReactMod.createElement(tag, filterProps(props), children);
       },
     },
@@ -98,7 +98,7 @@ vi.mock("framer-motion", async () => {
 
   return {
     motion: motionProxy,
-    AnimatePresence: ({ children }: { children?: unknown }) => children,
+    AnimatePresence: ({ children }: { children?: React.ReactNode }) => children,
     useMotionValue: () => ({ get: () => 0, set: () => {} }),
     useTransform: () => ({ get: () => 0 }),
     useScroll: () => ({ scrollYProgress: { get: () => 0 } }),

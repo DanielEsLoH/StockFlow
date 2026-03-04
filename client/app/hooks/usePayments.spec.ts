@@ -95,15 +95,7 @@ const mockPaymentsResponse: PaymentsResponse = {
 const mockPaymentStats: PaymentStats = {
   totalPayments: 14,
   totalReceived: 50000000,
-  totalPending: 0,
-  totalRefunded: 0,
-  totalProcessing: 0,
   averagePaymentValue: 5000000,
-  paymentsByStatus: {
-    UNPAID: 0,
-    PARTIALLY_PAID: 0,
-    PAID: 14,
-  },
   paymentsByMethod: {
     CASH: 3,
     CREDIT_CARD: 4,
@@ -120,6 +112,9 @@ const mockPaymentStats: PaymentStats = {
   todayTotal: 25000000,
   weekPayments: 10,
   weekTotal: 40000000,
+  pendingInvoicesCount: 0,
+  pendingAmount: 0,
+  overdueCount: 0,
 };
 
 // Helper to create a wrapper with QueryClient

@@ -163,7 +163,7 @@ export default function BankAccountsPage() {
                       </span>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      <Badge variant={account.accountType === "CHECKING" ? "primary" : "accent"}>
+                      <Badge variant={account.accountType === "CHECKING" ? "primary" : "secondary"}>
                         {BankAccountTypeLabels[account.accountType]}
                       </Badge>
                     </TableCell>

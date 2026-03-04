@@ -82,6 +82,7 @@ const mockProduct: Product = {
   salePrice: 100000,
   costPrice: 80000,
   taxRate: 19,
+  taxCategory: "GRAVADO_19",
   stock: 50,
   minStock: 10,
   maxStock: 100,

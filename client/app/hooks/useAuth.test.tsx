@@ -264,6 +264,7 @@ describe("useAuth", () => {
       const mockPermissions = ["products:read", "products:write"];
       vi.mocked(permissionsService.getMyPermissions).mockResolvedValue({
         permissions: mockPermissions,
+        role: 'ADMIN',
       });
 
       const { result } = renderHook(() => useAuth(), {

@@ -85,6 +85,7 @@ export class CashRegistersService {
     page = 1,
     limit = 10,
     warehouseId?: string,
+    status?: 'OPEN' | 'CLOSED' | 'SUSPENDED',
   ): Promise<PaginatedCashRegistersResponse> {
     const tenantId = this.tenantContext.requireTenantId();
     const skip = (page - 1) * limit;
@@ -96,6 +97,7 @@ export class CashRegistersService {
     const where: Prisma.CashRegisterWhereInput = {
       tenantId,
       ...(warehouseId && { warehouseId }),
+      ...(status && { status }),
     };
 
     const [cashRegisters, total] = await Promise.all([

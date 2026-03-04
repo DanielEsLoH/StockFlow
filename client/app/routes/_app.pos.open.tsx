@@ -42,7 +42,12 @@ export default function POSOpenPage() {
   const openSession = useOpenSession();
 
   const availableRegisters =
-    registersData?.data.filter((r) => r.status === "OPEN") || [];
+    registersData?.data.filter((r) => r.status === "OPEN" && !r.activeSession) ||
+    [];
+
+  const occupiedRegisters =
+    registersData?.data.filter((r) => r.status === "OPEN" && r.activeSession) ||
+    [];
 
   const registerOptions = [
     { value: "", label: "Seleccionar caja..." },
@@ -130,6 +135,19 @@ export default function POSOpenPage() {
                     <AlertCircle className="h-4 w-4" />
                     No hay cajas disponibles. Contacta al administrador.
                   </p>
+                )}
+                {occupiedRegisters.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {occupiedRegisters.map((r) => (
+                      <p
+                        key={r.id}
+                        className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1"
+                      >
+                        <span className="inline-block h-2 w-2 rounded-full bg-warning-400" />
+                        {r.name} — en uso (sesión activa)
+                      </p>
+                    ))}
+                  </div>
                 )}
               </div>
 

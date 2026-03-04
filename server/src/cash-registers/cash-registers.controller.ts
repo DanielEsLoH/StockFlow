@@ -85,6 +85,12 @@ export class CashRegistersController {
     type: String,
     description: 'Filter by warehouse ID',
   })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['OPEN', 'CLOSED', 'SUSPENDED'],
+    description: 'Filter by cash register status',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of cash registers retrieved successfully',
@@ -98,6 +104,7 @@ export class CashRegistersController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('warehouseId') warehouseId?: string,
+    @Query('status') status?: string,
   ): Promise<PaginatedCashRegistersResponse> {
     const pageNum = Math.max(1, parseInt(page ?? '1', 10) || 1);
     const limitNum = Math.min(
@@ -109,7 +116,12 @@ export class CashRegistersController {
       `Listing cash registers - page: ${pageNum}, limit: ${limitNum}`,
     );
 
-    return this.cashRegistersService.findAll(pageNum, limitNum, warehouseId);
+    return this.cashRegistersService.findAll(
+      pageNum,
+      limitNum,
+      warehouseId,
+      status as 'OPEN' | 'CLOSED' | 'SUSPENDED' | undefined,
+    );
   }
 
   /**

@@ -1,0 +1,12 @@
+export { LandingHeader, handleScrollToSection } from "./LandingHeader";
+export { HeroSection } from "./HeroSection";
+export { SocialProofBar } from "./SocialProofBar";
+export { ModuleShowcase } from "./ModuleShowcase";
+export { HowItWorks } from "./HowItWorks";
+export { DianCompliance } from "./DianCompliance";
+export { TestimonialsSection } from "./TestimonialsSection";
+export { PricingSection } from "./PricingSection";
+export { IntegrationsSection } from "./IntegrationsSection";
+export { PWASection } from "./PWASection";
+export { FinalCTA } from "./FinalCTA";
+export { LandingFooter } from "./LandingFooter";

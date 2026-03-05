@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { NavLink, useLocation } from "react-router";
-import { ChevronRight, LayoutDashboard } from "lucide-react";
+import { NavLink, Link, useLocation } from "react-router";
+import { ChevronRight, LayoutDashboard, ShoppingCart } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { usePermissions } from "~/hooks/usePermissions";
 import {
@@ -17,7 +17,7 @@ interface CollapsedSidebarProps {
 
 export function CollapsedSidebar({ onToggleCollapse }: CollapsedSidebarProps) {
   const location = useLocation();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, canSell } = usePermissions();
   const [openFlyoutId, setOpenFlyoutId] = useState<string | null>(null);
 
   const activeSectionId = useMemo(
@@ -87,6 +87,23 @@ export function CollapsedSidebar({ onToggleCollapse }: CollapsedSidebarProps) {
           <ChevronRight className="h-5 w-5" />
         </button>
       </div>
+
+      {/* Caja Quick Access — collapsed icon */}
+      {canSell && (
+        <Link
+          to="/pos"
+          className={cn(
+            "mx-3 my-3 flex items-center justify-center rounded-xl p-3",
+            "bg-gradient-to-br from-primary-500 via-primary-600 to-accent-600",
+            "shadow-lg shadow-primary-500/30",
+            "hover:shadow-xl hover:shadow-primary-500/40",
+            "transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]",
+          )}
+          title="Abrir Caja"
+        >
+          <ShoppingCart className="h-5 w-5 text-white" />
+        </Link>
+      )}
 
       {/* Navigation icons */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-3 sidebar-scrollbar">

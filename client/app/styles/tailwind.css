@@ -506,11 +506,25 @@
            px-3 py-2;
   }
 
-  /* Navigation item active indicator */
-  .nav-indicator {
-    @apply absolute left-0 top-1/2 -translate-y-1/2
-           w-1 h-8 rounded-r-full
-           bg-gradient-to-b from-primary-500 to-accent-500;
+  /* Sidebar thin scrollbar */
+  .sidebar-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neutral-200) transparent;
+  }
+  .dark .sidebar-scrollbar {
+    scrollbar-color: var(--color-neutral-700) transparent;
+  }
+  .sidebar-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .sidebar-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-neutral-200 dark:bg-neutral-700 rounded-full;
+  }
+  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-300 dark:bg-neutral-600;
   }
 }
 

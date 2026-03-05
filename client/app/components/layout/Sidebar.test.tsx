@@ -68,12 +68,10 @@ function createWrapper(initialEntries: string[] = ["/dashboard"]) {
 
 describe("Sidebar", () => {
   beforeEach(() => {
-    // Reset stores before each test
     useUIStore.setState({
       sidebarOpen: true,
       sidebarCollapsed: false,
       mobileSidebarOpen: false,
-      expandedSidebarSection: null,
       activeModal: null,
       modalData: null,
       globalLoading: false,
@@ -147,7 +145,7 @@ describe("Sidebar", () => {
   });
 
   describe("dashboard item", () => {
-    it("should always render Dashboard link outside accordion", () => {
+    it("should render Dashboard link", () => {
       render(<Sidebar />, { wrapper: createWrapper() });
 
       expect(
@@ -163,124 +161,53 @@ describe("Sidebar", () => {
     });
   });
 
-  describe("accordion sections", () => {
-    it("should render section headers for all sections", () => {
+  describe("flat grouped navigation", () => {
+    it("should render all section headers as non-interactive labels", () => {
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // All section headers should be visible as buttons
       expect(screen.getByText("Inventario")).toBeInTheDocument();
       expect(screen.getByText("Ventas")).toBeInTheDocument();
       expect(screen.getByText("Compras")).toBeInTheDocument();
       expect(screen.getByText("Contabilidad")).toBeInTheDocument();
-      // "Punto de Venta" text appears in CajaQuickAccess too, so use getAllByText
-      expect(screen.getAllByText("Punto de Venta").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("Nomina")).toBeInTheDocument();
       expect(screen.getByText("Administracion")).toBeInTheDocument();
+
+      // Section labels should NOT be buttons (not interactive)
+      const inventarioLabel = screen.getByText("Inventario");
+      expect(inventarioLabel.tagName).toBe("H3");
     });
 
-    it(
-      "should not show section items when section is collapsed",
-      () => {
-        // On /dashboard, no section should auto-expand
-        useUIStore.setState({ expandedSidebarSection: null });
-        render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
+    it("should render all navigation items visible without interaction", () => {
+      render(<Sidebar />, { wrapper: createWrapper() });
 
-        // Section items should NOT be visible when collapsed
-        expect(
-          screen.queryByRole("link", { name: /productos/i }),
-        ).not.toBeInTheDocument();
-        expect(
-          screen.queryByRole("link", { name: /facturas/i }),
-        ).not.toBeInTheDocument();
-      },
-      15000,
-    );
-
-    it("should show section items when section is expanded", async () => {
-      useUIStore.setState({ expandedSidebarSection: "Inventario" });
-
-      render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
-
-      // Inventario items should be visible
-      expect(
-        screen.getByRole("link", { name: /productos/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /categorias/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("link", { name: /bodegas/i }),
-      ).toBeInTheDocument();
+      // Items from various sections should all be visible
+      expect(screen.getByRole("link", { name: /productos/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /categorias/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /bodegas/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /cotizaciones/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /pagos/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /proveedores/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /plan de cuentas/i })).toBeInTheDocument();
     });
 
-    it("should toggle section when clicking section header", async () => {
-      const user = userEvent.setup();
-      useUIStore.setState({ expandedSidebarSection: null });
-
-      render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
-
-      // Click the Inventario header
-      const inventarioButton = screen.getByText("Inventario");
-      await user.click(inventarioButton);
-
-      expect(useUIStore.getState().expandedSidebarSection).toBe("Inventario");
-    });
-
-    it("should close current section when opening another", async () => {
-      const user = userEvent.setup();
-      useUIStore.setState({ expandedSidebarSection: "Inventario" });
-
-      render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
-
-      // Click the Ventas header
-      const ventasButton = screen.getByText("Ventas");
-      await user.click(ventasButton);
-
-      // Should have switched to Ventas
-      expect(useUIStore.getState().expandedSidebarSection).toBe("Ventas");
-    });
-
-    it("should collapse section when clicking same header again", async () => {
-      const user = userEvent.setup();
-      useUIStore.setState({ expandedSidebarSection: "Inventario" });
-
-      render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
-
-      // Click the Inventario header again
-      const inventarioButton = screen.getByText("Inventario");
-      await user.click(inventarioButton);
-
-      expect(useUIStore.getState().expandedSidebarSection).toBeNull();
-    });
-
-    it("should auto-expand section containing active route", () => {
-      // Navigate to /products (in Inventario section)
+    it("should highlight active route", () => {
       render(<Sidebar />, { wrapper: createWrapper(["/products"]) });
 
-      // Inventario should be auto-expanded
-      expect(useUIStore.getState().expandedSidebarSection).toBe("Inventario");
+      const productsLink = screen.getByRole("link", { name: /productos/i });
+      expect(productsLink.className).toContain("bg-primary-50");
+      expect(productsLink.className).toContain("border-primary-500");
     });
 
-    it("should auto-expand Ventas section when on /invoices", () => {
-      render(<Sidebar />, { wrapper: createWrapper(["/invoices"]) });
+    it("should highlight active route for nested paths", () => {
+      render(<Sidebar />, { wrapper: createWrapper(["/products/123"]) });
 
-      expect(useUIStore.getState().expandedSidebarSection).toBe("Ventas");
-    });
-
-    it("should auto-expand Contabilidad section when on /bank/accounts", () => {
-      render(<Sidebar />, {
-        wrapper: createWrapper(["/bank/accounts"]),
-      });
-
-      // Bank accounts was merged into Contabilidad
-      expect(useUIStore.getState().expandedSidebarSection).toBe("Contabilidad");
+      const productsLink = screen.getByRole("link", { name: /productos/i });
+      expect(productsLink.className).toContain("bg-primary-50");
     });
   });
 
   describe("navigation items", () => {
-    it("should have correct href for navigation links when section is expanded", () => {
-      useUIStore.setState({ expandedSidebarSection: "Inventario" });
-
+    it("should have correct href for navigation links", () => {
       render(<Sidebar />, { wrapper: createWrapper() });
 
       expect(screen.getByRole("link", { name: /productos/i })).toHaveAttribute(
@@ -290,13 +217,6 @@ describe("Sidebar", () => {
       expect(
         screen.getByRole("link", { name: /categorias/i }),
       ).toHaveAttribute("href", "/categories");
-    });
-
-    it("should highlight active route within expanded section", () => {
-      render(<Sidebar />, { wrapper: createWrapper(["/products"]) });
-
-      const productsLink = screen.getByRole("link", { name: /productos/i });
-      expect(productsLink.className).toContain("bg-primary-50");
     });
   });
 
@@ -342,7 +262,6 @@ describe("Sidebar", () => {
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Section buttons should have title attributes
       expect(screen.getByTitle("Inventario")).toBeInTheDocument();
       expect(screen.getByTitle("Ventas")).toBeInTheDocument();
       expect(screen.getByTitle("Compras")).toBeInTheDocument();
@@ -479,13 +398,11 @@ describe("Sidebar", () => {
 
     it("should close mobile sidebar when clicking a navigation link", async () => {
       const user = userEvent.setup();
-      useUIStore.setState({
-        mobileSidebarOpen: true,
-        expandedSidebarSection: "Inventario",
-      });
+      useUIStore.setState({ mobileSidebarOpen: true });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
+      // All items are visible in flat list — click Productos
       const productsLinks = screen.getAllByRole("link", { name: /productos/i });
       await user.click(productsLinks[productsLinks.length - 1]);
 
@@ -505,22 +422,20 @@ describe("Sidebar", () => {
   });
 
   describe("admin-only navigation items", () => {
-    it("should show Team item for admin users when section is expanded", () => {
+    it("should show Team item for admin users", () => {
       useAuthStore.setState({
         user: { ...mockUser, role: "ADMIN" },
       });
-      useUIStore.setState({ expandedSidebarSection: "Administracion" });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
       expect(screen.getByRole("link", { name: /equipo/i })).toBeInTheDocument();
     });
 
-    it("should show Team item for super admin users when section is expanded", () => {
+    it("should show Team item for super admin users", () => {
       useAuthStore.setState({
         user: { ...mockUser, role: "SUPER_ADMIN" },
       });
-      useUIStore.setState({ expandedSidebarSection: "Administracion" });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
@@ -531,7 +446,6 @@ describe("Sidebar", () => {
       useAuthStore.setState({
         user: { ...mockUser, role: "EMPLOYEE" },
       });
-      useUIStore.setState({ expandedSidebarSection: "Administracion" });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
@@ -540,11 +454,10 @@ describe("Sidebar", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("should show Team item for manager users when section is expanded", () => {
+    it("should show Team item for manager users", () => {
       useAuthStore.setState({
         user: { ...mockUser, role: "MANAGER" },
       });
-      useUIStore.setState({ expandedSidebarSection: "Administracion" });
 
       render(<Sidebar />, { wrapper: createWrapper() });
 
@@ -556,8 +469,6 @@ describe("Sidebar", () => {
 
   describe("merged sections", () => {
     it("should include Cuentas Bancarias in Contabilidad section", () => {
-      useUIStore.setState({ expandedSidebarSection: "Contabilidad" });
-
       render(<Sidebar />, { wrapper: createWrapper() });
 
       expect(
@@ -578,14 +489,12 @@ describe("Sidebar", () => {
 
       expect(screen.getByText("Resumen del dia")).toBeInTheDocument();
       expect(screen.getByText("Ventas hoy")).toBeInTheDocument();
-      expect(screen.getByText("Facturas")).toBeInTheDocument();
     });
 
     it("should render formatted sales amount", () => {
       mockStatsData = { todaySales: 1500000, todayInvoiceCount: 12 };
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // The formatCurrency function formats this
       expect(screen.getByText("12")).toBeInTheDocument();
     });
 
@@ -593,7 +502,6 @@ describe("Sidebar", () => {
       mockStatsData = undefined;
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Should still render with zero values
       expect(screen.getByText("Ventas hoy")).toBeInTheDocument();
       expect(screen.getByText("0")).toBeInTheDocument();
     });
@@ -612,8 +520,6 @@ describe("Sidebar", () => {
       render(<Sidebar />, { wrapper: createWrapper() });
 
       expect(screen.getByText("Abrir Caja")).toBeInTheDocument();
-      // "Punto de Venta" appears in both CajaQuickAccess and section header
-      expect(screen.getAllByText("Punto de Venta").length).toBeGreaterThanOrEqual(1);
     });
 
     it("should render as a link to /pos", () => {
@@ -623,11 +529,10 @@ describe("Sidebar", () => {
       expect(posLink).toHaveAttribute("href", "/pos");
     });
 
-    it("should show only icon when sidebar is collapsed", () => {
+    it("should not show CajaQuickAccess when collapsed", () => {
       useUIStore.setState({ sidebarCollapsed: true });
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Should NOT show text labels when collapsed
       expect(screen.queryByText("Abrir Caja")).not.toBeInTheDocument();
     });
 
@@ -637,11 +542,8 @@ describe("Sidebar", () => {
       });
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // EMPLOYEE may not have POS_SELL permission by default
-      // The button may or may not appear depending on DEFAULT_ROLE_PERMISSIONS
-      // This tests the permission filtering path
+      // EMPLOYEE may not have POS_SELL permission
       const posLinks = screen.queryAllByText("Abrir Caja");
-      // We simply verify the component renders without error
       expect(true).toBe(true);
     });
   });
@@ -651,7 +553,6 @@ describe("Sidebar", () => {
       useUIStore.setState({ sidebarCollapsed: true });
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Sections should show as icon buttons with title
       expect(screen.getByTitle("Inventario")).toBeInTheDocument();
       expect(screen.getByTitle("Ventas")).toBeInTheDocument();
       expect(screen.getByTitle("Compras")).toBeInTheDocument();
@@ -665,7 +566,6 @@ describe("Sidebar", () => {
       const inventarioBtn = screen.getByTitle("Inventario");
       fireEvent.click(inventarioBtn);
 
-      // Flyout renders via portal — items should now be visible
       expect(screen.getByText("Productos")).toBeInTheDocument();
       expect(screen.getByText("Categorias")).toBeInTheDocument();
       expect(screen.getByText("Bodegas")).toBeInTheDocument();
@@ -677,9 +577,7 @@ describe("Sidebar", () => {
 
       fireEvent.click(screen.getByTitle("Ventas"));
 
-      // Flyout header should show the section label
       expect(screen.getByText("Cotizaciones")).toBeInTheDocument();
-      expect(screen.getByText("Facturas")).toBeInTheDocument();
       expect(screen.getByText("Pagos")).toBeInTheDocument();
     });
 
@@ -689,11 +587,9 @@ describe("Sidebar", () => {
 
       const inventarioBtn = screen.getByTitle("Inventario");
 
-      // Open
       fireEvent.click(inventarioBtn);
       expect(screen.getByText("Productos")).toBeInTheDocument();
 
-      // Close
       fireEvent.click(inventarioBtn);
       expect(screen.queryByText("Productos")).not.toBeInTheDocument();
     });
@@ -706,7 +602,6 @@ describe("Sidebar", () => {
       fireEvent.click(inventarioBtn);
       expect(screen.getByText("Productos")).toBeInTheDocument();
 
-      // Click outside — uses capture phase mousedown
       act(() => {
         document.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
       });
@@ -768,46 +663,47 @@ describe("Sidebar", () => {
       expect(screen.queryByText("StockFlow")).not.toBeInTheDocument();
       expect(screen.queryByText("Acme Corporation")).not.toBeInTheDocument();
     });
+
+    it("should close flyout on Escape key", () => {
+      useUIStore.setState({ sidebarCollapsed: true });
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      fireEvent.click(screen.getByTitle("Inventario"));
+      expect(screen.getByText("Productos")).toBeInTheDocument();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(screen.queryByText("Productos")).not.toBeInTheDocument();
+    });
   });
 
-  describe("findActiveSectionLabel behavior", () => {
-    it("should auto-expand Compras section when on /suppliers", () => {
-      render(<Sidebar />, { wrapper: createWrapper(["/suppliers"]) });
-      expect(useUIStore.getState().expandedSidebarSection).toBe("Compras");
+  describe("sections with no permitted items", () => {
+    it("should hide entire section when user has no permissions for any item", () => {
+      useAuthStore.setState({
+        user: { ...mockUser, role: "EMPLOYEE" },
+      });
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      const links = screen.getAllByRole("link");
+      expect(links.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("divider between dashboard and sections", () => {
+    it("should render divider when expanded", () => {
+      render(<Sidebar />, { wrapper: createWrapper() });
+
+      const nav = screen.getByRole("navigation");
+      const divider = nav.querySelector(".h-px.bg-neutral-100");
+      expect(divider).toBeInTheDocument();
     });
 
-    it("should auto-expand Administracion section when on /settings", () => {
-      render(<Sidebar />, { wrapper: createWrapper(["/settings"]) });
-      expect(useUIStore.getState().expandedSidebarSection).toBe("Administracion");
-    });
+    it("should render divider in collapsed mode between dashboard and sections", () => {
+      useUIStore.setState({ sidebarCollapsed: true });
+      render(<Sidebar />, { wrapper: createWrapper() });
 
-    it("should auto-expand Nomina section when on /payroll/employees", () => {
-      render(<Sidebar />, { wrapper: createWrapper(["/payroll/employees"]) });
-      expect(useUIStore.getState().expandedSidebarSection).toBe("Nomina");
-    });
-
-    it("should auto-expand Punto de Venta section when on /pos/sales", () => {
-      render(<Sidebar />, { wrapper: createWrapper(["/pos/sales"]) });
-      // Use the label exactly as defined
-      expect(useUIStore.getState().expandedSidebarSection).toBe("Punto de Venta");
-    });
-
-    it("should not auto-expand any section when on /dashboard", () => {
-      useUIStore.setState({ expandedSidebarSection: null });
-      render(<Sidebar />, { wrapper: createWrapper(["/dashboard"]) });
-      // Dashboard is outside accordion, no section should be expanded
-      expect(useUIStore.getState().expandedSidebarSection).toBeNull();
-    });
-
-    it("should handle nested routes like /products/123", () => {
-      render(<Sidebar />, { wrapper: createWrapper(["/products/123"]) });
-      expect(useUIStore.getState().expandedSidebarSection).toBe("Inventario");
-    });
-
-    it("should handle /dashboard/sub-route as dashboard (no section)", () => {
-      useUIStore.setState({ expandedSidebarSection: null });
-      render(<Sidebar />, { wrapper: createWrapper(["/dashboard/overview"]) });
-      expect(useUIStore.getState().expandedSidebarSection).toBeNull();
+      const nav = screen.getByRole("navigation");
+      const divider = nav.querySelector(".h-px.bg-neutral-100");
+      expect(divider).toBeInTheDocument();
     });
   });
 
@@ -818,7 +714,6 @@ describe("Sidebar", () => {
       });
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Empty string falls through to the || fallback
       expect(screen.getByText("usuario@email.com")).toBeInTheDocument();
     });
 
@@ -835,7 +730,6 @@ describe("Sidebar", () => {
       useUIStore.setState({ sidebarCollapsed: true });
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      // Initials should still show in the avatar
       expect(screen.getByText("JD")).toBeInTheDocument();
     });
 
@@ -845,55 +739,6 @@ describe("Sidebar", () => {
 
       const logoutButton = screen.getByTitle("Cerrar sesion");
       expect(logoutButton).toBeDisabled();
-    });
-  });
-
-  describe("section item count badge", () => {
-    it("should display item count for each section", () => {
-      useUIStore.setState({ expandedSidebarSection: "Inventario" });
-      render(<Sidebar />, { wrapper: createWrapper() });
-
-      // Inventario has 6 items - find the count badge
-      const inventarioButton = screen.getByText("Inventario").closest("button");
-      expect(inventarioButton).toBeInTheDocument();
-      // The badge shows the number of filtered items
-      expect(within(inventarioButton!).getByText("6")).toBeInTheDocument();
-    });
-  });
-
-  describe("sections with no permitted items", () => {
-    it("should hide entire section when user has no permissions for any item", () => {
-      // Employee with minimal permissions won't see many sections
-      useAuthStore.setState({
-        user: { ...mockUser, role: "EMPLOYEE" },
-      });
-      render(<Sidebar />, { wrapper: createWrapper() });
-
-      // Some sections should be hidden if employee doesn't have permissions
-      // Checking that permission filtering works in general
-      const links = screen.getAllByRole("link");
-      expect(links.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe("divider between dashboard and sections", () => {
-    it("should render divider when expanded", () => {
-      render(<Sidebar />, { wrapper: createWrapper() });
-
-      // The divider is a thin hr between dashboard and sections
-      const nav = screen.getByRole("navigation");
-      const divider = nav.querySelector(".h-px.bg-neutral-100");
-      expect(divider).toBeInTheDocument();
-    });
-
-    it("should not render divider when collapsed", () => {
-      useUIStore.setState({ sidebarCollapsed: true });
-      render(<Sidebar />, { wrapper: createWrapper() });
-
-      const nav = screen.getByRole("navigation");
-      // The condition is: showDashboard && !isCollapsed
-      const dividers = nav.querySelectorAll(".h-px.bg-neutral-100");
-      expect(dividers.length).toBe(0);
     });
   });
 });

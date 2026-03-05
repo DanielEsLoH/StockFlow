@@ -34,7 +34,7 @@ import {
 } from './entities/pos-sale.entity';
 
 interface JwtUser {
-  id: string;
+  userId: string;
   tenantId: string;
   role: UserRole;
 }
@@ -82,7 +82,7 @@ export class POSSalesController {
     @CurrentUser() user: JwtUser,
   ): Promise<POSSaleWithDetails> {
     this.logger.log(`Creating POS sale with ${dto.items.length} items`);
-    return this.posSalesService.createSale(dto, user.id);
+    return this.posSalesService.createSale(dto, user.userId);
   }
 
   /**
@@ -128,7 +128,7 @@ export class POSSalesController {
     @CurrentUser() user: JwtUser,
   ): Promise<POSSaleWithDetails> {
     this.logger.log(`Voiding sale: ${id}`);
-    return this.posSalesService.voidSale(id, user.id, reason);
+    return this.posSalesService.voidSale(id, user.userId, reason);
   }
 
   /**

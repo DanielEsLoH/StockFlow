@@ -668,16 +668,20 @@ describe('IntegrationsController', () => {
           name: 'Product 3',
           sku: 'SKU-3',
           price: 29.99,
+          stock: 0,
           imageUrl: null,
           description: null,
+          url: null,
         },
         {
           externalId: 'ext-4',
           name: 'Product 4',
           sku: 'SKU-4',
           price: 39.99,
+          stock: 0,
           imageUrl: null,
           description: null,
+          url: null,
         },
       ];
       syncService.getUnmappedProducts.mockResolvedValue(unmapped);

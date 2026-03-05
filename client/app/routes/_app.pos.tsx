@@ -6,28 +6,32 @@ import {
   DollarSign,
   Clock,
   User,
-  CreditCard,
-  Banknote,
   LogOut,
   Maximize,
   Keyboard,
 } from "lucide-react";
 import type { Route } from "./+types/_app.pos";
 import { useCurrentSession, useCreateSale } from "~/hooks/usePOS";
+import { useIsQueryEnabled } from "~/hooks/useIsQueryEnabled";
 import { useProducts } from "~/hooks/useProducts";
 import { Button } from "~/components/ui/Button";
 import { Card } from "~/components/ui/Card";
-import { Badge } from "~/components/ui/Badge";
 import {
   POSCart,
   POSProductSearch,
   POSSplitPaymentModal,
+  POSTicketModal,
+  ProductCatalog,
 } from "~/components/pos";
-import { formatCurrency, formatDateTime } from "~/lib/utils";
+import { useCategories } from "~/hooks/useCategories";
+import { formatCurrency } from "~/lib/utils";
+import { useDashboardStats } from "~/hooks/useDashboard";
 import { useBarcodeScanner } from "~/hooks/useBarcodeScanner";
 import { usePOSKeyboard, toggleFullscreen } from "~/hooks/usePOSKeyboard";
-import type { CartItem, SalePaymentData } from "~/types/pos";
+import type { CartItem, SalePaymentData, POSSaleWithDetails } from "~/types/pos";
+import { PaymentMethodLabels } from "~/types/payment";
 import type { Product } from "~/types/product";
+import { useAuthStore } from "~/stores/auth.store";
 import { toast } from "sonner";
 
 export const meta: Route.MetaFunction = () => {
@@ -39,7 +43,10 @@ export const meta: Route.MetaFunction = () => {
 
 export default function POSPage() {
   const navigate = useNavigate();
+  const queryEnabled = useIsQueryEnabled();
   const { data: session, isLoading: isSessionLoading } = useCurrentSession();
+  const { data: dashboardStats } = useDashboardStats();
+  const tenant = useAuthStore((s) => s.tenant);
 
   // Get warehouseId from the cash register's assigned warehouse
   const warehouseId = session?.cashRegister?.warehouseId;
@@ -51,24 +58,50 @@ export default function POSPage() {
     ...(warehouseId && { warehouseId }),
   });
   const createSaleMutation = useCreateSale();
+  const { data: categories = [], isLoading: isCategoriesLoading } =
+    useCategories();
 
   // Cart state
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [globalDiscount, setGlobalDiscount] = useState(0);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [customerId, setCustomerId] = useState<string | undefined>();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Ticket modal state
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [lastSale, setLastSale] = useState<POSSaleWithDetails | null>(null);
+  const [lastPayments, setLastPayments] = useState<SalePaymentData[]>([]);
+
+  // Live timer
+  const [now, setNow] = useState(Date.now());
 
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const products = productsData?.data || [];
 
+  // Get cart quantity for a product (used by ProductCatalog badges)
+  const getCartQuantity = useCallback(
+    (productId: string) =>
+      cartItems.find((i) => i.productId === productId)?.quantity ?? 0,
+    [cartItems],
+  );
+
   // Redirect to open session if no active session
+  // Wait for queries to be enabled (auth hydrated) before deciding to redirect
   useEffect(() => {
-    if (!isSessionLoading && !session) {
+    if (queryEnabled && !isSessionLoading && !session) {
       navigate("/pos/open");
     }
-  }, [session, isSessionLoading, navigate]);
+  }, [session, isSessionLoading, navigate, queryEnabled]);
+
+  // Live timer — update every minute
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Calculate cart total
   const cartTotal = useMemo(() => {
@@ -209,7 +242,7 @@ export default function POSPage() {
   const handleCheckout = useCallback(
     async (payments: SalePaymentData[]) => {
       try {
-        await createSaleMutation.mutateAsync({
+        const sale = await createSaleMutation.mutateAsync({
           customerId,
           items: cartItems.map((item) => ({
             productId: item.productId,
@@ -222,11 +255,18 @@ export default function POSPage() {
           discountPercent: globalDiscount,
         });
 
-        toast.success("Venta procesada exitosamente");
+        // Save sale data for the ticket modal
+        setLastSale(sale);
+        setLastPayments(payments);
         setShowPaymentModal(false);
         clearCart();
-      } catch {
-        toast.error("Error al procesar la venta");
+        setShowTicketModal(true);
+      } catch (error: unknown) {
+        setShowPaymentModal(false);
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        const message =
+          axiosError?.response?.data?.message || "Error al procesar la venta";
+        toast.error(message);
       }
     },
     [cartItems, customerId, globalDiscount, createSaleMutation, clearCart],
@@ -246,7 +286,7 @@ export default function POSPage() {
 
   const sessionDuration = session.openedAt
     ? Math.floor(
-        (Date.now() - new Date(session.openedAt).getTime()) / 1000 / 60,
+        (now - new Date(session.openedAt).getTime()) / 1000 / 60,
       )
     : 0;
   const hours = Math.floor(sessionDuration / 60);
@@ -256,42 +296,69 @@ export default function POSPage() {
     <PageWrapper className="h-[calc(100vh-8rem)] flex flex-col gap-4">
       {/* Session Status Header */}
       <PageSection>
-        <Card className="bg-gradient-to-r from-primary-500 to-primary-600 text-white">
+        <Card className="bg-linear-to-r from-primary-600 via-primary-500 to-primary-600 text-white">
           <div className="p-4">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
                   <ShoppingCart className="h-5 w-5" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold font-display">
+                  <h1 className="text-xl font-bold font-display tracking-tight">
                     Punto de Venta
                   </h1>
-                  <p className="text-primary-100 text-sm">
+                  <p className="text-primary-100/80 text-xs">
                     Caja: {session.cashRegister?.name}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <Badge className="bg-white/20 text-white border-0">
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  {formatCurrency(session.totalSales || 0)}
-                </Badge>
-                <Badge className="bg-white/20 text-white border-0">
-                  <Clock className="h-4 w-4 mr-1" />
-                  {hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
-                </Badge>
-                <Badge className="bg-white/20 text-white border-0">
-                  <User className="h-4 w-4 mr-1" />
-                  {session.user?.firstName || "Usuario"}
-                </Badge>
+                {/* Sales indicator */}
+                <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-1.5">
+                  <p className="text-[10px] uppercase tracking-wider text-white/60">
+                    Ventas
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign className="h-3.5 w-3.5 text-white/70" />
+                    <span className="text-sm font-bold tabular-nums">
+                      {formatCurrency(dashboardStats?.todaySales ?? 0)}
+                    </span>
+                  </div>
+                </div>
 
+                {/* Duration indicator */}
+                <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-1.5">
+                  <p className="text-[10px] uppercase tracking-wider text-white/60">
+                    Tiempo
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-white/70" />
+                    <span className="text-sm font-bold tabular-nums">
+                      {hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* User indicator */}
+                <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-1.5">
+                  <p className="text-[10px] uppercase tracking-wider text-white/60">
+                    Cajero
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5 text-white/70" />
+                    <span className="text-sm font-bold">
+                      {session.user?.firstName || "Usuario"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-lg"
                     onClick={toggleFullscreen}
                     title="Pantalla completa (F11)"
                   >
@@ -301,7 +368,7 @@ export default function POSPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-white/10 border-white/30 text-white hover:bg-white/20"
+                      className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-lg"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
                       Cerrar
@@ -325,88 +392,65 @@ export default function POSPage() {
             products={products}
             isLoading={isProductsLoading}
             onSelectProduct={addToCart}
+            onSearchChange={setSearchQuery}
             inputRef={searchInputRef}
           />
 
-          {/* Keyboard Shortcuts Info */}
-          <div className="flex items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400">
-            <div className="flex items-center gap-1">
-              <Keyboard className="h-4 w-4" />
-              <span>Atajos:</span>
+          {/* Command Bar */}
+          <div className="flex items-center justify-between rounded-xl bg-neutral-50/80 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800/60 px-4 py-2">
+            {/* Keyboard shortcuts */}
+            <div className="hidden sm:flex items-center gap-2 text-xs text-neutral-400">
+              <Keyboard className="h-3.5 w-3.5" />
+              <kbd className="inline-flex items-center rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 py-0.5 font-mono text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shadow-[0_1px_0_0] shadow-neutral-200/80 dark:shadow-neutral-900/80">
+                F2
+              </kbd>
+              <span>Buscar</span>
+              <span className="text-neutral-200 dark:text-neutral-700">
+                &middot;
+              </span>
+              <kbd className="inline-flex items-center rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 py-0.5 font-mono text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shadow-[0_1px_0_0] shadow-neutral-200/80 dark:shadow-neutral-900/80">
+                F4
+              </kbd>
+              <span>Cobrar</span>
+              <span className="text-neutral-200 dark:text-neutral-700">
+                &middot;
+              </span>
+              <kbd className="inline-flex items-center rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-2 py-0.5 font-mono text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shadow-[0_1px_0_0] shadow-neutral-200/80 dark:shadow-neutral-900/80">
+                F11
+              </kbd>
+              <span>Pantalla completa</span>
             </div>
-            <span className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded text-xs">
-              F2
-            </span>
-            <span>Buscar</span>
-            <span className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded text-xs">
-              F4
-            </span>
-            <span>Cobrar</span>
-            <span className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded text-xs">
-              F11
-            </span>
-            <span>Pantalla completa</span>
+
+            {/* Quick action buttons */}
+            <div className="flex items-center gap-2">
+              <Link to="/pos/sales">
+                <Button variant="ghost" size="sm">
+                  <ShoppingCart className="h-4 w-4 mr-1.5" />
+                  Ventas
+                </Button>
+              </Link>
+              <Link to={`/pos/sessions/${session.id}`}>
+                <Button variant="ghost" size="sm">
+                  <Clock className="h-4 w-4 mr-1.5" />
+                  Reporte X
+                </Button>
+              </Link>
+            </div>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card padding="md">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-100 dark:bg-success-900/20">
-                  <DollarSign className="h-5 w-5 text-success-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-neutral-500">Ventas</p>
-                  <p className="text-lg font-bold">
-                    {formatCurrency(session.totalSales || 0)}
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card padding="md">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/20">
-                  <Banknote className="h-5 w-5 text-primary-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-neutral-500">Efectivo</p>
-                  <p className="text-lg font-bold">
-                    {formatCurrency(
-                      session.currentCash || session.openingAmount || 0,
-                    )}
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card padding="md">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-100 dark:bg-secondary-900/20">
-                  <CreditCard className="h-5 w-5 text-secondary-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-neutral-500">Transacciones</p>
-                  <p className="text-lg font-bold">{session.salesCount || 0}</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="flex gap-2">
-            <Link to="/pos/sales">
-              <Button variant="outline" size="sm">
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Ver Ventas
-              </Button>
-            </Link>
-            <Link to={`/pos/sessions/${session.id}`}>
-              <Button variant="outline" size="sm">
-                <Clock className="h-4 w-4 mr-2" />
-                Reporte X
-              </Button>
-            </Link>
+          {/* Product Catalog */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ProductCatalog
+              products={products}
+              categories={categories}
+              selectedCategory={selectedCategory}
+              searchQuery={searchQuery}
+              onSelectCategory={setSelectedCategory}
+              onAddToCart={addToCart}
+              getCartQuantity={getCartQuantity}
+              isLoadingProducts={isProductsLoading}
+              isLoadingCategories={isCategoriesLoading}
+            />
           </div>
         </div>
 
@@ -433,6 +477,48 @@ export default function POSPage() {
         total={cartTotal}
         isProcessing={createSaleMutation.isPending}
       />
+
+      {/* Ticket Modal — shown after successful sale */}
+      {lastSale?.invoice && (
+        <POSTicketModal
+          isOpen={showTicketModal}
+          onClose={() => setShowTicketModal(false)}
+          businessName={tenant?.name || "Mi Negocio"}
+          invoiceNumber={lastSale.invoice.invoiceNumber}
+          date={lastSale.createdAt || new Date().toISOString()}
+          cashierName={session.user?.firstName}
+          cashRegisterName={session.cashRegister?.name}
+          customerName={lastSale.invoice.customer?.name}
+          customerDocument={lastSale.invoice.customer?.documentNumber}
+          items={
+            lastSale.invoice.items?.map((item) => ({
+              name: item.productName,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              total: item.total ?? item.subtotal,
+              discount: item.discount,
+            })) ?? []
+          }
+          subtotal={lastSale.subtotal}
+          discountAmount={lastSale.discount}
+          taxAmount={lastSale.tax}
+          total={lastSale.total}
+          payments={lastSale.payments.map((p) => ({
+            method: p.method,
+            methodLabel:
+              PaymentMethodLabels[
+                p.method as keyof typeof PaymentMethodLabels
+              ] || p.method,
+            amount: p.amount,
+          }))}
+          change={Math.max(
+            0,
+            lastPayments.reduce((sum, p) => sum + p.amount, 0) -
+              lastSale.total,
+          )}
+          footerMessage="¡Gracias por su compra!"
+        />
+      )}
     </PageWrapper>
   );
 }

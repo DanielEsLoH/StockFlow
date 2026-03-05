@@ -322,13 +322,16 @@ export function useCreateSale() {
         queryKey: queryKeys.posSales.all,
       });
       void queryClient.invalidateQueries({
-        queryKey: queryKeys.posSessions.current(),
+        queryKey: queryKeys.posSessions.all,
       });
       void queryClient.invalidateQueries({
         queryKey: queryKeys.products.all,
       });
       void queryClient.invalidateQueries({
         queryKey: queryKeys.invoices.all,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.dashboard.all,
       });
       toast.success(`Venta #${sale.saleNumber} creada exitosamente`);
     },

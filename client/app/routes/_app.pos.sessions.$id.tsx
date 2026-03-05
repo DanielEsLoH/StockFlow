@@ -34,6 +34,7 @@ import {
   TableCell,
 } from "~/components/ui/Table";
 import { formatCurrency, formatDateTime } from "~/lib/utils";
+import { PaymentMethodLabels } from "~/types/payment";
 
 export const meta: Route.MetaFunction = () => {
   return [
@@ -78,14 +79,7 @@ const movementTypeLabels: Record<
   },
 };
 
-const paymentMethodLabels: Record<string, string> = {
-  CASH: "Efectivo",
-  CARD: "Tarjeta",
-  TRANSFER: "Transferencia",
-  NEQUI: "Nequi",
-  DAVIPLATA: "Daviplata",
-  PSE: "PSE",
-};
+const paymentMethodLabels: Record<string, string> = PaymentMethodLabels;
 
 export default function POSSessionDetailPage() {
   const { id } = useParams();
@@ -212,7 +206,7 @@ export default function POSSessionDetailPage() {
                   Ventas
                 </p>
                 <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                  {formatCurrency(report?.totalSales || 0)}
+                  {formatCurrency(report?.totalSalesAmount || 0)}
                 </p>
               </div>
             </div>
@@ -228,7 +222,7 @@ export default function POSSessionDetailPage() {
                   Transacciones
                 </p>
                 <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                  {report?.totalTransactions || 0}
+                  {report?.transactionCount || 0}
                 </p>
               </div>
             </div>
@@ -244,7 +238,7 @@ export default function POSSessionDetailPage() {
                   Esperado
                 </p>
                 <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                  {formatCurrency(report?.expectedCash || 0)}
+                  {formatCurrency(report?.expectedCashAmount || 0)}
                 </p>
               </div>
             </div>
@@ -386,37 +380,34 @@ export default function POSSessionDetailPage() {
                   />
                 ))}
               </div>
-            ) : report?.salesByPaymentMethod &&
-              Object.entries(report.salesByPaymentMethod).length > 0 ? (
+            ) : report?.salesByMethod && report.salesByMethod.length > 0 ? (
               <div className="space-y-3">
-                {Object.entries(report.salesByPaymentMethod).map(
-                  ([method, amount]) => (
-                    <div
-                      key={method}
-                      className="flex justify-between items-center"
-                    >
-                      <div className="flex items-center gap-2">
-                        {method === "CASH" ? (
-                          <Banknote className="h-5 w-5 text-success-500" />
-                        ) : (
-                          <CreditCard className="h-5 w-5 text-primary-500" />
-                        )}
-                        <span className="text-neutral-700 dark:text-neutral-300">
-                          {paymentMethodLabels[method] || method}
-                        </span>
-                      </div>
-                      <span className="font-semibold text-neutral-900 dark:text-white">
-                        {formatCurrency(Number(amount))}
+                {report.salesByMethod.map(({ method, total }) => (
+                  <div
+                    key={method}
+                    className="flex justify-between items-center"
+                  >
+                    <div className="flex items-center gap-2">
+                      {method === "CASH" ? (
+                        <Banknote className="h-5 w-5 text-success-500" />
+                      ) : (
+                        <CreditCard className="h-5 w-5 text-primary-500" />
+                      )}
+                      <span className="text-neutral-700 dark:text-neutral-300">
+                        {paymentMethodLabels[method] || method}
                       </span>
                     </div>
-                  ),
-                )}
+                    <span className="font-semibold text-neutral-900 dark:text-white">
+                      {formatCurrency(total)}
+                    </span>
+                  </div>
+                ))}
                 <div className="flex justify-between items-center pt-3 border-t border-neutral-200 dark:border-neutral-700">
                   <span className="font-medium text-neutral-900 dark:text-white">
                     Total
                   </span>
                   <span className="text-xl font-bold text-success-600">
-                    {formatCurrency(report.totalSales)}
+                    {formatCurrency(report.totalSalesAmount)}
                   </span>
                 </div>
               </div>

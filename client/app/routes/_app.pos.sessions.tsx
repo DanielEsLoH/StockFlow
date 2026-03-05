@@ -374,7 +374,7 @@ export default function POSSessionsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <p className="font-bold text-lg bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-300 bg-clip-text text-transparent">
-                          {formatCurrency(session.totalSales || 0)}
+                          {formatCurrency(session.summary?.totalSalesAmount || session.totalSales || 0)}
                         </p>
                       </TableCell>
                       <TableCell>{getStatusBadge(session.status)}</TableCell>

@@ -116,6 +116,13 @@ export interface POSSessionWithDetails extends POSSession {
   totalSales?: number;
   salesCount?: number;
   currentCash?: number;
+  summary?: {
+    totalSales: number;
+    totalSalesAmount: number;
+    totalCashIn: number;
+    totalCashOut: number;
+    salesByMethod: Record<string, number>;
+  };
 }
 
 export interface POSSessionsResponse {
@@ -185,17 +192,13 @@ export interface XZReport {
   totalCashSales: number;
   totalCardSales: number;
   totalOtherSales: number;
-  totalSales: number;
   totalSalesAmount: number;
   totalCashIn: number;
   totalCashOut: number;
-  expectedCash: number;
   expectedCashAmount: number;
   declaredCashAmount: number | null;
   difference: number | null;
-  totalTransactions: number;
   transactionCount: number;
-  salesByPaymentMethod: Record<string, number>;
   salesByMethod: Array<{
     method: PaymentMethod;
     count: number;
@@ -260,6 +263,12 @@ export interface POSSaleWithDetails extends POSSale {
   invoice?: {
     id: string;
     invoiceNumber: string;
+    customer?: {
+      id: string;
+      name: string;
+      documentNumber?: string;
+    } | null;
+    items?: POSSaleItem[];
   };
   payments: SalePayment[];
   session?: {

@@ -53,7 +53,7 @@ export default function POSClosePage() {
     );
   }
 
-  const expectedCash = xReport?.expectedCash || session.openingAmount || 0;
+  const expectedCash = xReport?.expectedCashAmount || session.openingAmount || 0;
   const closingAmountNum = parseFloat(closingAmount) || 0;
   const difference = closingAmountNum - expectedCash;
   const hasDifference = closingAmount && Math.abs(difference) > 0.01;
@@ -136,7 +136,7 @@ export default function POSClosePage() {
                       Total Ventas:
                     </span>
                     <span className="font-medium text-success-600">
-                      {formatCurrency(xReport?.totalSales || 0)}
+                      {formatCurrency(xReport?.totalSalesAmount || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -144,7 +144,7 @@ export default function POSClosePage() {
                       Transacciones:
                     </span>
                     <span className="font-medium text-neutral-900 dark:text-white">
-                      {xReport?.totalTransactions || 0}
+                      {xReport?.transactionCount || 0}
                     </span>
                   </div>
                 </div>
@@ -154,36 +154,38 @@ export default function POSClosePage() {
                   <h3 className="font-medium text-neutral-900 dark:text-white">
                     Desglose por Metodo
                   </h3>
-                  {xReport?.salesByPaymentMethod &&
-                  Object.entries(xReport.salesByPaymentMethod).length > 0 ? (
-                    Object.entries(xReport.salesByPaymentMethod).map(
-                      ([method, amount]) => (
-                        <div
-                          key={method}
-                          className="flex justify-between items-center"
-                        >
-                          <div className="flex items-center gap-2">
-                            {method === "CASH" ? (
-                              <Banknote className="h-4 w-4 text-success-500" />
-                            ) : (
-                              <CreditCard className="h-4 w-4 text-primary-500" />
-                            )}
-                            <span className="text-neutral-500 dark:text-neutral-400 capitalize">
-                              {method === "CASH"
-                                ? "Efectivo"
-                                : method === "CARD"
-                                  ? "Tarjeta"
-                                  : method === "TRANSFER"
-                                    ? "Transferencia"
-                                    : method}
-                            </span>
-                          </div>
-                          <span className="font-medium text-neutral-900 dark:text-white">
-                            {formatCurrency(Number(amount))}
+                  {xReport?.salesByMethod &&
+                  xReport.salesByMethod.length > 0 ? (
+                    xReport.salesByMethod.map(({ method, total }) => (
+                      <div
+                        key={method}
+                        className="flex justify-between items-center"
+                      >
+                        <div className="flex items-center gap-2">
+                          {method === "CASH" ? (
+                            <Banknote className="h-4 w-4 text-success-500" />
+                          ) : (
+                            <CreditCard className="h-4 w-4 text-primary-500" />
+                          )}
+                          <span className="text-neutral-500 dark:text-neutral-400 capitalize">
+                            {method === "CASH"
+                              ? "Efectivo"
+                              : method === "CREDIT_CARD" || method === "DEBIT_CARD"
+                                ? "Tarjeta"
+                                : method === "BANK_TRANSFER" || method === "WIRE_TRANSFER"
+                                  ? "Transferencia"
+                                  : method === "NEQUI"
+                                    ? "Nequi"
+                                    : method === "DAVIPLATA"
+                                      ? "Daviplata"
+                                      : method}
                           </span>
                         </div>
-                      ),
-                    )
+                        <span className="font-medium text-neutral-900 dark:text-white">
+                          {formatCurrency(total)}
+                        </span>
+                      </div>
+                    ))
                   ) : (
                     <p className="text-neutral-500 dark:text-neutral-400 text-sm">
                       Sin ventas registradas

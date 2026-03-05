@@ -18,7 +18,7 @@ describe('POSSalesController', () => {
   let service: jest.Mocked<POSSalesService>;
 
   const mockUser = {
-    id: 'user-123',
+    userId: 'user-123',
     tenantId: 'tenant-123',
     role: UserRole.ADMIN,
   };
@@ -130,7 +130,7 @@ describe('POSSalesController', () => {
       const result = await controller.createSale(createDto, mockUser);
 
       expect(result).toEqual(mockSaleWithDetails);
-      expect(service.createSale).toHaveBeenCalledWith(createDto, mockUser.id);
+      expect(service.createSale).toHaveBeenCalledWith(createDto, mockUser.userId);
     });
 
     it('should propagate BadRequestException for no active session', async () => {
@@ -167,7 +167,7 @@ describe('POSSalesController', () => {
       expect(result).toEqual(mockSaleWithDetails);
       expect(service.voidSale).toHaveBeenCalledWith(
         'sale-123',
-        mockUser.id,
+        mockUser.userId,
         'Customer return',
       );
     });

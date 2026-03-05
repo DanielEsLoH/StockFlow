@@ -117,6 +117,7 @@ describe('POSSalesService', () => {
 
   // Create a mock transaction client that shares state with prisma mock
   const createMockTx = (baseMock: any) => ({
+    $queryRaw: jest.fn().mockResolvedValue([{ max_num: 0n }]),
     pOSSale: {
       findFirst: jest.fn(),
       findMany: jest.fn(),

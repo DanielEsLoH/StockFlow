@@ -197,7 +197,12 @@ export class POSSalesService {
       }
     }
 
-    // Create everything in a transaction
+    // Create everything in a transaction (retry on unique constraint conflicts)
+    const MAX_RETRIES = 3;
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
     const sale = await this.prisma.$transaction(async (tx) => {
       // Generate sale number
       const saleNumber = await this.generateSaleNumber(tx, tenantId);
@@ -371,6 +376,24 @@ export class POSSalesService {
     this.logger.log(`POS sale created: ${sale.saleNumber} - Total: ${total}`);
 
     return this.buildSaleWithDetails(sale);
+      } catch (error) {
+        lastError = error;
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002' &&
+          attempt < MAX_RETRIES - 1
+        ) {
+          this.logger.warn(
+            `Sale creation unique conflict (attempt ${attempt + 1}), retrying...`,
+          );
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    // This should never be reached, but satisfies TypeScript
+    throw lastError;
   }
 
   /**
@@ -761,20 +784,16 @@ export class POSSalesService {
     tx: Prisma.TransactionClient,
     tenantId: string,
   ): Promise<string> {
-    const lastSale = await tx.pOSSale.findFirst({
-      where: { tenantId },
-      orderBy: { saleNumber: 'desc' },
-      select: { saleNumber: true },
-    });
+    // Use raw SQL to find the max sale number in POS-NNNNN format only.
+    // Seed data uses POS-TD-XXXX, POS-NN-XXXX etc. which must be excluded.
+    const result: Array<{ max_num: bigint | null }> = await tx.$queryRaw`
+      SELECT MAX(CAST(SUBSTRING("sale_number" FROM 'POS-([0-9]+)') AS INTEGER)) as max_num
+      FROM "pos_sales"
+      WHERE "tenant_id" = ${tenantId}
+      AND "sale_number" ~ '^POS-[0-9]+$'
+    `;
 
-    let nextNumber = 1;
-    if (lastSale?.saleNumber) {
-      const match = lastSale.saleNumber.match(/POS-(\d+)/);
-      if (match) {
-        nextNumber = parseInt(match[1], 10) + 1;
-      }
-    }
-
+    const nextNumber = Number(result[0]?.max_num ?? 0) + 1;
     return `POS-${nextNumber.toString().padStart(5, '0')}`;
   }
 

@@ -22,6 +22,7 @@ import {
   type CartTotals,
 } from "~/lib/pos-utils";
 import { Button } from "~/components/ui";
+import { CountBadge } from "~/components/ui/Badge";
 import type { Customer } from "~/types/customer";
 
 // ============================================================================
@@ -111,7 +112,7 @@ const CartItemRow = memo(function CartItemRow({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.2 }}
-      className="border-b border-neutral-100 dark:border-neutral-700/50 last:border-0"
+      className="group border-b border-neutral-100/80 transition-colors hover:bg-neutral-50/50 dark:border-neutral-800/50 dark:hover:bg-neutral-800/30 last:border-0"
     >
       {/* Index */}
       <td className="py-2 pr-2 text-center text-xs text-neutral-400 w-6">
@@ -136,7 +137,7 @@ const CartItemRow = memo(function CartItemRow({
           <button
             type="button"
             onClick={() => onDecrement(item.productId)}
-            className="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 bg-neutral-50 text-neutral-600 transition-colors hover:bg-neutral-100 active:scale-95 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
+            className="flex h-6 w-6 items-center justify-center rounded-md border border-neutral-200/80 bg-white text-neutral-500 transition-all hover:bg-neutral-50 hover:text-neutral-700 active:scale-95 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
           >
             <Minus className="h-3 w-3" />
           </button>
@@ -153,8 +154,8 @@ const CartItemRow = memo(function CartItemRow({
             className={cn(
               "flex h-6 w-6 items-center justify-center rounded border transition-colors active:scale-95",
               canIncrement
-                ? "border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-700 dark:text-neutral-300"
-                : "cursor-not-allowed border-neutral-100 bg-neutral-50 text-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-600",
+                ? "border-neutral-200/80 bg-white text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-200"
+                : "cursor-not-allowed border-neutral-100 bg-neutral-50 text-neutral-300 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-600",
             )}
           >
             <Plus className="h-3 w-3" />
@@ -194,7 +195,7 @@ const CartItemRow = memo(function CartItemRow({
       <td className="py-2 pl-2 text-right">
         <div className="flex flex-col items-end">
           <span
-            className="text-sm font-bold text-primary-600 dark:text-primary-400"
+            className="text-sm font-semibold text-primary-600 dark:text-primary-400"
             style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {formatCurrency(total)}
@@ -311,23 +312,23 @@ export function POSCartPro({
   return (
     <div
       className={cn(
-        "flex h-full flex-col rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-800",
+        "flex h-full flex-col rounded-2xl border border-neutral-200/80 bg-white shadow-md dark:border-neutral-800 dark:bg-neutral-900",
         className,
       )}
     >
       {/* ================================================================== */}
       {/* HEADER */}
       {/* ================================================================== */}
-      <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-4 py-2.5 dark:border-neutral-700">
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-          <h2 className="font-semibold text-neutral-900 dark:text-white">
+      <div className="flex shrink-0 items-center justify-between rounded-t-2xl border-b border-neutral-100 bg-neutral-50/80 px-4 py-3 dark:border-neutral-800 dark:bg-neutral-800/50">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-100 dark:bg-primary-900/30">
+            <ShoppingCart className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+          </div>
+          <h2 className="font-semibold font-display text-neutral-900 dark:text-white">
             Carrito
           </h2>
           {items.length > 0 && (
-            <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
-              {totals.itemCount}
-            </span>
+            <CountBadge count={totals.itemCount} variant="primary" size="sm" />
           )}
         </div>
 
@@ -336,10 +337,10 @@ export function POSCartPro({
             type="button"
             onClick={handleClearCart}
             className={cn(
-              "flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-colors",
+              "flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all",
               showClearConfirm
                 ? "bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-300"
-                : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-300",
+                : "text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300",
             )}
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -353,36 +354,40 @@ export function POSCartPro({
       {/* ================================================================== */}
       <div
         className={cn(
-          "shrink-0 border-b px-4 py-2",
+          "shrink-0 border-b px-4 py-2.5",
           !customer && items.length > 0
-            ? "border-warning-300 bg-warning-50 dark:border-warning-700 dark:bg-warning-900/20"
-            : "border-neutral-100 dark:border-neutral-700/50",
+            ? "border-warning-200 bg-warning-50/60 dark:border-warning-800/50 dark:bg-warning-900/10"
+            : "border-neutral-100 dark:border-neutral-800",
         )}
       >
         <button
           type="button"
           onClick={onSelectCustomer}
           className={cn(
-            "flex w-full items-center gap-2 rounded-lg p-2 text-left transition-colors",
+            "flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition-all",
             !customer && items.length > 0
-              ? "hover:bg-warning-100 dark:hover:bg-warning-900/30"
-              : "hover:bg-neutral-50 dark:hover:bg-neutral-700/50",
+              ? "hover:bg-warning-100/60 dark:hover:bg-warning-900/20"
+              : "hover:bg-neutral-50 dark:hover:bg-neutral-800/50",
           )}
         >
           <div
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full",
-              !customer && items.length > 0
-                ? "bg-warning-200 dark:bg-warning-800"
-                : "bg-neutral-100 dark:bg-neutral-700",
+              "flex h-9 w-9 items-center justify-center rounded-full ring-1 ring-inset",
+              customer
+                ? "bg-success-50 ring-success-200 dark:bg-success-900/20 dark:ring-success-800/50"
+                : !customer && items.length > 0
+                  ? "bg-warning-100 ring-warning-200 dark:bg-warning-900/20 dark:ring-warning-800/50"
+                  : "bg-neutral-100 ring-neutral-200 dark:bg-neutral-800 dark:ring-neutral-700",
             )}
           >
             <User
               className={cn(
                 "h-4 w-4",
-                !customer && items.length > 0
-                  ? "text-warning-700 dark:text-warning-300"
-                  : "text-neutral-500 dark:text-neutral-400",
+                customer
+                  ? "text-success-600 dark:text-success-400"
+                  : !customer && items.length > 0
+                    ? "text-warning-600 dark:text-warning-400"
+                    : "text-neutral-400 dark:text-neutral-500",
               )}
             />
           </div>
@@ -402,21 +407,21 @@ export function POSCartPro({
                   "text-sm",
                   items.length > 0
                     ? "font-medium text-warning-700 dark:text-warning-300"
-                    : "text-neutral-500 dark:text-neutral-400",
+                    : "text-neutral-400 dark:text-neutral-500",
                 )}
               >
                 {items.length > 0
-                  ? "⚠️ Seleccionar cliente para facturar"
+                  ? "Seleccionar cliente para facturar"
                   : "Seleccionar cliente..."}
               </p>
             )}
           </div>
           <Pencil
             className={cn(
-              "h-4 w-4",
+              "h-3.5 w-3.5 shrink-0",
               !customer && items.length > 0
-                ? "text-warning-600"
-                : "text-neutral-400",
+                ? "text-warning-500 dark:text-warning-400"
+                : "text-neutral-300 dark:text-neutral-600",
             )}
           />
         </button>
@@ -433,31 +438,31 @@ export function POSCartPro({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="flex flex-col items-center justify-center py-12 text-center px-4"
+              className="flex flex-col items-center justify-center py-16 text-center px-6"
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700">
-                <ShoppingCart className="h-8 w-8 text-neutral-400" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-dashed border-neutral-200 dark:border-neutral-700">
+                <ShoppingCart className="h-8 w-8 text-neutral-300 dark:text-neutral-600" />
               </div>
-              <h3 className="mt-4 font-medium text-neutral-900 dark:text-white">
+              <h3 className="mt-5 font-semibold text-neutral-700 dark:text-neutral-300">
                 Carrito vacio
               </h3>
-              <p className="mt-1 text-sm text-neutral-500">
-                Selecciona productos para agregar
+              <p className="mt-1.5 text-sm text-neutral-400 dark:text-neutral-500">
+                Selecciona productos o usa <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">F2</kbd> para buscar
               </p>
             </motion.div>
           ) : (
             <table className="w-full text-left">
-              <thead className="sticky top-0 bg-neutral-50 dark:bg-neutral-800/80 backdrop-blur-sm">
-                <tr className="text-xs text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-neutral-700">
-                  <th className="py-2 px-4 font-medium w-6">#</th>
-                  <th className="py-2 font-medium">Producto</th>
-                  <th className="py-2 px-1 font-medium text-center">Cant</th>
-                  <th className="py-2 px-1 font-medium text-right">Precio</th>
-                  <th className="py-2 px-2 font-medium text-right">Total</th>
+              <thead className="sticky top-0 z-10 bg-neutral-50/95 backdrop-blur-sm dark:bg-neutral-800/80">
+                <tr className="border-b border-neutral-200/80 dark:border-neutral-700/50">
+                  <th className="py-2 px-4 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 w-6">#</th>
+                  <th className="py-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">Producto</th>
+                  <th className="py-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 text-center">Cant</th>
+                  <th className="py-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 text-right">Precio</th>
+                  <th className="py-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 text-right">Total</th>
                   <th className="py-2 w-6"></th>
                 </tr>
               </thead>
-              <tbody className="px-4">
+              <tbody>
                 <AnimatePresence mode="popLayout">
                   {items.map((item, index) => (
                     <CartItemRow
@@ -482,11 +487,11 @@ export function POSCartPro({
       {/* NOTES SECTION (collapsible) */}
       {/* ================================================================== */}
       {items.length > 0 && (
-        <div className="shrink-0 border-t border-neutral-200 dark:border-neutral-700">
+        <div className="shrink-0 border-t border-neutral-100 dark:border-neutral-800">
           <button
             type="button"
             onClick={() => setShowNotes(!showNotes)}
-            className="flex w-full items-center justify-between px-4 py-2 text-sm text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-700/50"
+            className="flex w-full items-center justify-between px-4 py-2 text-sm text-neutral-500 hover:bg-neutral-50/50 dark:text-neutral-400 dark:hover:bg-neutral-800/30"
           >
             <span className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
@@ -517,7 +522,7 @@ export function POSCartPro({
                     onChange={(e) => onSetNotes(e.target.value)}
                     placeholder="Agregar notas..."
                     rows={2}
-                    className="w-full resize-none rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none dark:border-neutral-600 dark:bg-neutral-900 dark:text-white"
+                    className="w-full resize-none rounded-lg border border-neutral-200/80 bg-neutral-50/50 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-white"
                   />
                 </div>
               </motion.div>
@@ -530,14 +535,14 @@ export function POSCartPro({
       {/* TOTALS SECTION */}
       {/* ================================================================== */}
       {items.length > 0 && (
-        <div className="shrink-0 border-t border-neutral-200 px-4 py-3 dark:border-neutral-700">
+        <div className="shrink-0 border-t border-dashed border-neutral-300 bg-neutral-50/50 px-4 py-3 dark:border-neutral-600 dark:bg-neutral-800/30">
           {/* Subtotal */}
-          <div className="flex items-center justify-between text-sm mb-1">
+          <div className="flex items-center justify-between text-[13px] mb-1.5">
             <span className="text-neutral-500 dark:text-neutral-400">
               Subtotal
             </span>
             <span
-              className="font-medium text-neutral-900 dark:text-white"
+              className="font-medium text-neutral-800 dark:text-neutral-200"
               style={{ fontVariantNumeric: "tabular-nums" }}
             >
               {formatCurrency(totals.subtotal)}
@@ -545,7 +550,7 @@ export function POSCartPro({
           </div>
 
           {/* Global Discount */}
-          <div className="flex items-center justify-between text-sm mb-1">
+          <div className="flex items-center justify-between text-[13px] mb-1.5">
             <span className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400">
               <Percent className="h-3 w-3" />
               Descuento
@@ -561,7 +566,7 @@ export function POSCartPro({
                     onKeyDown={(e) =>
                       e.key === "Enter" && handleGlobalDiscountSubmit()
                     }
-                    className="w-12 rounded border border-primary-400 bg-white px-1 py-0.5 text-right text-sm dark:bg-neutral-800"
+                    className="w-12 rounded-md border border-primary-400 bg-white px-1.5 py-0.5 text-right text-sm focus:ring-1 focus:ring-primary-500/20 dark:bg-neutral-800"
                     autoFocus
                     min={0}
                     max={100}
@@ -575,10 +580,10 @@ export function POSCartPro({
                     setTempGlobalDiscount(globalDiscount.toString());
                     setIsEditingGlobalDiscount(true);
                   }}
-                  className="flex items-center gap-1 text-error-500 hover:underline"
+                  className="flex items-center gap-1 text-error-500 hover:text-error-600 transition-colors"
                 >
                   {globalDiscount > 0 ? `-${globalDiscount}%` : "0%"}
-                  <Pencil className="h-3 w-3" />
+                  <Pencil className="h-2.5 w-2.5" />
                 </button>
               )}
               {totals.discountAmount > 0 && (
@@ -593,28 +598,28 @@ export function POSCartPro({
           </div>
 
           {/* Tax */}
-          <div className="flex items-center justify-between text-sm mb-2">
+          <div className="flex items-center justify-between text-[13px] mb-2">
             <span className="text-neutral-500 dark:text-neutral-400">
               IVA
             </span>
             <span
-              className="font-medium text-neutral-900 dark:text-white"
+              className="font-medium text-neutral-800 dark:text-neutral-200"
               style={{ fontVariantNumeric: "tabular-nums" }}
             >
               {formatCurrency(totals.taxAmount)}
             </span>
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-neutral-200 dark:border-neutral-700 my-2" />
+          {/* Receipt-style dashed divider */}
+          <div className="border-t border-dashed border-neutral-300 dark:border-neutral-600 my-2.5" />
 
-          {/* Total */}
+          {/* Total — prominent display */}
           <div className="flex items-center justify-between mb-3">
-            <span className="text-lg font-bold text-neutral-900 dark:text-white">
-              TOTAL
+            <span className="text-base font-bold uppercase tracking-wide text-neutral-900 dark:text-white">
+              Total
             </span>
             <span
-              className="text-2xl font-bold text-primary-600 dark:text-primary-400"
+              className="rounded-lg bg-primary-50 px-3 py-1 text-2xl font-extrabold text-primary-600 dark:bg-primary-900/20 dark:text-primary-400"
               style={{ fontVariantNumeric: "tabular-nums" }}
             >
               {formatCurrency(totals.total)}
@@ -628,6 +633,7 @@ export function POSCartPro({
             {invoiceMode === "POS" && (
               <Button
                 type="button"
+                variant="success"
                 onClick={() => onCheckout("PAID")}
                 disabled={!canCheckout || isProcessing}
                 isLoading={isProcessing}
@@ -635,7 +641,8 @@ export function POSCartPro({
                 size="lg"
               >
                 <CreditCard className="mr-2 h-5 w-5" />
-                Cobrar (F4)
+                Cobrar
+                <span className="ml-1.5 text-sm font-normal opacity-70">(F4)</span>
               </Button>
             )}
 
@@ -649,7 +656,8 @@ export function POSCartPro({
               size={invoiceMode === "MANUAL" ? "lg" : "sm"}
             >
               <FileText className={cn("mr-2", invoiceMode === "MANUAL" ? "h-5 w-5" : "h-4 w-4")} />
-              {invoiceMode === "MANUAL" ? "Guardar Factura (F8)" : "Guardar Pendiente (F8)"}
+              {invoiceMode === "MANUAL" ? "Guardar Factura" : "Guardar Pendiente"}
+              <span className="ml-1.5 text-xs font-normal opacity-60">(F8)</span>
             </Button>
 
             {/* Warning message when checkout is disabled */}
@@ -661,12 +669,10 @@ export function POSCartPro({
           </div>
 
           {/* Keyboard shortcuts hint */}
-          <div className="mt-2 flex flex-wrap justify-center gap-2 text-xs text-neutral-400">
-            <span>F2: Buscar</span>
-            <span className="text-neutral-300 dark:text-neutral-600">|</span>
-            <span>F9: Limpiar</span>
-            <span className="text-neutral-300 dark:text-neutral-600">|</span>
-            <span>F11: Pantalla</span>
+          <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+            <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">F2 Buscar</kbd>
+            <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">F9 Limpiar</kbd>
+            <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">F11 Pantalla</kbd>
           </div>
         </div>
       )}

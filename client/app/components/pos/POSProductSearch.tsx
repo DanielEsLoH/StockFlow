@@ -8,6 +8,7 @@ interface POSProductSearchProps {
   products: Product[];
   isLoading: boolean;
   onSelectProduct: (product: Product) => void;
+  onSearchChange?: (query: string) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
@@ -15,6 +16,7 @@ export function POSProductSearch({
   products,
   isLoading,
   onSelectProduct,
+  onSearchChange,
   inputRef,
 }: POSProductSearchProps) {
   const [search, setSearch] = useState("");
@@ -86,12 +88,14 @@ export function POSProductSearch({
     setSearch("");
     setIsOpen(false);
     setSelectedIndex(0);
+    onSearchChange?.("");
   };
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setIsOpen(value.length >= 2);
     setSelectedIndex(0);
+    onSearchChange?.(value);
   };
 
   return (

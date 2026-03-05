@@ -23,44 +23,44 @@ describe('ExogenaService', () => {
     id: 'supplier-a',
     documentType: 'NIT',
     documentNumber: '900111222',
-    dv: '3',
+    dv: '3' as string | null,
     name: 'Supplier A Name',
-    businessName: 'Supplier A Business',
-    address: 'Calle 10 #20-30',
-    city: 'Bogota',
+    businessName: 'Supplier A Business' as string | null,
+    address: 'Calle 10 #20-30' as string | null,
+    city: 'Bogota' as string | null,
   };
 
   const mockSupplierB = {
     id: 'supplier-b',
     documentType: 'CC',
     documentNumber: '1234567890',
-    dv: null,
+    dv: null as string | null,
     name: 'Supplier B Name',
-    businessName: null,
-    address: null,
-    city: null,
+    businessName: null as string | null,
+    address: null as string | null,
+    city: null as string | null,
   };
 
   const mockCustomerA = {
     id: 'customer-a',
     documentType: 'NIT',
     documentNumber: '800999888',
-    dv: '1',
+    dv: '1' as string | null,
     name: 'Customer A Name',
-    businessName: 'Customer A Business',
-    address: 'Carrera 5 #15-10',
-    city: 'Medellin',
+    businessName: 'Customer A Business' as string | null,
+    address: 'Carrera 5 #15-10' as string | null,
+    city: 'Medellin' as string | null,
   };
 
   const mockCustomerB = {
     id: 'customer-b',
     documentType: 'CC',
     documentNumber: '9876543210',
-    dv: null,
+    dv: null as string | null,
     name: 'Customer B Name',
-    businessName: null,
-    address: null,
-    city: null,
+    businessName: null as string | null,
+    address: null as string | null,
+    city: null as string | null,
   };
 
   // ─── Prisma mock setup ─────────────────────────────────────
@@ -125,7 +125,7 @@ describe('ExogenaService', () => {
       total: overrides.total ?? 1190,
       issueDate: overrides.issueDate ?? new Date('2024-06-15'),
       status: overrides.status ?? PurchaseOrderStatus.RECEIVED,
-      paymentStatus: overrides.paymentStatus ?? PaymentStatus.PENDING,
+      paymentStatus: overrides.paymentStatus ?? PaymentStatus.UNPAID,
       items: overrides.items ?? [
         { taxRate: 19, subtotal: 1000, tax: 190 },
       ],
@@ -737,7 +737,7 @@ describe('ExogenaService', () => {
           customer: mockCustomerA,
           customerId: 'customer-a',
           total: 1000,
-          paymentStatus: PaymentStatus.PENDING,
+          paymentStatus: PaymentStatus.UNPAID,
           payments: [{ amount: 300 }],
         }),
       ]);
@@ -756,14 +756,14 @@ describe('ExogenaService', () => {
           customer: mockCustomerA,
           customerId: 'customer-a',
           total: 500,
-          paymentStatus: PaymentStatus.PARTIAL,
+          paymentStatus: PaymentStatus.PARTIALLY_PAID,
           payments: [{ amount: 500 }], // fully paid
         }),
         makeInvoice({
           customer: mockCustomerB,
           customerId: 'customer-b',
           total: 300,
-          paymentStatus: PaymentStatus.PARTIAL,
+          paymentStatus: PaymentStatus.PARTIALLY_PAID,
           payments: [{ amount: 400 }], // overpaid
         }),
       ]);
@@ -781,14 +781,14 @@ describe('ExogenaService', () => {
           customer: mockCustomerA,
           customerId: 'customer-a',
           total: 1000,
-          paymentStatus: PaymentStatus.PENDING,
+          paymentStatus: PaymentStatus.UNPAID,
           payments: [{ amount: 200 }],
         }),
         makeInvoice({
           customer: mockCustomerA,
           customerId: 'customer-a',
           total: 500,
-          paymentStatus: PaymentStatus.PENDING,
+          paymentStatus: PaymentStatus.UNPAID,
           payments: [],
         }),
       ]);
@@ -806,7 +806,7 @@ describe('ExogenaService', () => {
           customer: mockCustomerA,
           customerId: 'customer-a',
           total: 2000,
-          paymentStatus: PaymentStatus.PENDING,
+          paymentStatus: PaymentStatus.UNPAID,
           payments: [],
         }),
       ]);
@@ -823,7 +823,7 @@ describe('ExogenaService', () => {
           customer: mockCustomerA,
           customerId: 'customer-a',
           total: 1000,
-          paymentStatus: PaymentStatus.PARTIAL,
+          paymentStatus: PaymentStatus.PARTIALLY_PAID,
           payments: [{ amount: 100 }, { amount: 200 }, { amount: 150 }],
         }),
       ]);
@@ -840,7 +840,7 @@ describe('ExogenaService', () => {
           customer: mockCustomerA,
           customerId: 'customer-a',
           total: 1000,
-          paymentStatus: PaymentStatus.PENDING,
+          paymentStatus: PaymentStatus.UNPAID,
           payments: [],
         }),
       ]);
@@ -906,7 +906,7 @@ describe('ExogenaService', () => {
         makePurchaseOrder({
           supplier: mockSupplierA,
           total: 5000,
-          paymentStatus: PaymentStatus.PARTIAL,
+          paymentStatus: PaymentStatus.PARTIALLY_PAID,
           purchasePayments: [{ amount: 2000 }],
         }),
       ]);
@@ -1073,7 +1073,7 @@ describe('ExogenaService', () => {
           customerId: 'customer-a',
           total: 595,
           items: [{ taxRate: 19, subtotal: 500, tax: 95 }],
-          paymentStatus: PaymentStatus.PARTIAL,
+          paymentStatus: PaymentStatus.PARTIALLY_PAID,
           payments: [{ amount: 200 }],
         }),
       ]);

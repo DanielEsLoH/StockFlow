@@ -692,8 +692,8 @@ describe("Sidebar", () => {
     it("should render divider when expanded", () => {
       render(<Sidebar />, { wrapper: createWrapper() });
 
-      const nav = screen.getByRole("navigation");
-      const divider = nav.querySelector(".h-px.bg-neutral-100");
+      // Divider is pinned above the nav, in a parent container
+      const divider = document.querySelector(".h-px.bg-neutral-100");
       expect(divider).toBeInTheDocument();
     });
 

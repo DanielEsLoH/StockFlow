@@ -121,32 +121,28 @@ export function SidebarContent({
       {/* Caja Quick Access */}
       {canSell && <CajaQuickAccess onClick={onClose} />}
 
+      {/* Dashboard — pinned above scroll */}
+      {showDashboard && (
+        <div className="px-3 pt-2 pb-1">
+          <NavItem
+            name={dashboardItem.name}
+            href={dashboardItem.href}
+            icon={dashboardItem.icon}
+            onClick={onClose}
+            compact={!isMobile}
+          />
+          <div className="h-px bg-neutral-100 dark:bg-neutral-800 mx-2 mt-2" />
+        </div>
+      )}
+
       {/* Scrollable Navigation */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-4 sidebar-scrollbar">
-        {/* Dashboard */}
-        {showDashboard && (
-          <div className="mb-1 pt-2">
-            <NavItem
-              name={dashboardItem.name}
-              href={dashboardItem.href}
-              icon={dashboardItem.icon}
-              onClick={onClose}
-              compact={!isMobile}
-            />
-          </div>
-        )}
-
-        {/* Divider */}
-        {showDashboard && (
-          <div className="h-px bg-neutral-100 dark:bg-neutral-800 mx-2 mb-1 mt-1" />
-        )}
-
         {/* Grouped flat sections */}
         {filteredSections.map((section, index) => (
           <div key={section.id}>
             <SectionLabel
               label={section.label}
-              isFirst={index === 0 && !showDashboard}
+              isFirst={index === 0}
             />
             {section.items.map((item) => (
               <NavItem

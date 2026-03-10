@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PayrollPeriodsController } from './payroll-periods.controller';
 import { PayrollPeriodsService } from './payroll-periods.service';
+import { PayrollDianService } from './services/payroll-dian.service';
 import { JwtAuthGuard } from '../auth';
 import { PermissionsGuard } from '../common';
 
@@ -34,7 +35,13 @@ describe('PayrollPeriodsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PayrollPeriodsController],
-      providers: [{ provide: PayrollPeriodsService, useValue: mockService }],
+      providers: [
+        { provide: PayrollPeriodsService, useValue: mockService },
+        {
+          provide: PayrollDianService,
+          useValue: { submitPeriod: jest.fn() },
+        },
+      ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })

@@ -20,6 +20,7 @@ import { JwtAuthGuard } from '../auth';
 import { RequirePermissions, PermissionsGuard, Permission } from '../common';
 import { CurrentUser } from '../common/decorators';
 import { PayrollPeriodsService } from './payroll-periods.service';
+import { PayrollDianService } from './services/payroll-dian.service';
 import { CreatePayrollPeriodDto } from './dto/create-payroll-period.dto';
 
 @ApiTags('payroll-periods')
@@ -27,7 +28,10 @@ import { CreatePayrollPeriodDto } from './dto/create-payroll-period.dto';
 @Controller('payroll/periods')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PayrollPeriodsController {
-  constructor(private readonly periodsService: PayrollPeriodsService) {}
+  constructor(
+    private readonly periodsService: PayrollPeriodsService,
+    private readonly payrollDianService: PayrollDianService,
+  ) {}
 
   @Get()
   @RequirePermissions(Permission.PAYROLL_VIEW)
@@ -81,5 +85,13 @@ export class PayrollPeriodsController {
   @ApiParam({ name: 'id', type: String })
   async close(@Param('id') id: string) {
     return this.periodsService.closePeriod(id);
+  }
+
+  @Post(':id/submit-dian')
+  @RequirePermissions(Permission.PAYROLL_APPROVE)
+  @ApiOperation({ summary: 'Firmar y enviar todas las entradas del periodo a DIAN' })
+  @ApiParam({ name: 'id', type: String })
+  async submitToDian(@Param('id') id: string) {
+    return this.payrollDianService.submitPeriod(id);
   }
 }

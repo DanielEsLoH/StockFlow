@@ -137,6 +137,16 @@ export const payrollService = {
     return data;
   },
 
+  async submitPeriodToDian(id: string) {
+    const { data } = await api.post(`/payroll/periods/${id}/submit-dian`);
+    return data;
+  },
+
+  async submitEntryToDian(id: string) {
+    const { data } = await api.post(`/payroll/entries/${id}/submit-dian`);
+    return data;
+  },
+
   // ===== Payroll Entries =====
 
   async getEntry(id: string): Promise<PayrollEntryDetail> {

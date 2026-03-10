@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Put,
   Param,
   Body,
@@ -15,6 +16,7 @@ import {
 import { JwtAuthGuard } from '../auth';
 import { RequirePermissions, PermissionsGuard, Permission } from '../common';
 import { PayrollEntriesService } from './payroll-entries.service';
+import { PayrollDianService } from './services/payroll-dian.service';
 import { UpdatePayrollEntryDto } from './dto/update-payroll-entry.dto';
 
 @ApiTags('payroll-entries')
@@ -22,7 +24,10 @@ import { UpdatePayrollEntryDto } from './dto/update-payroll-entry.dto';
 @Controller('payroll/entries')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PayrollEntriesController {
-  constructor(private readonly entriesService: PayrollEntriesService) {}
+  constructor(
+    private readonly entriesService: PayrollEntriesService,
+    private readonly payrollDianService: PayrollDianService,
+  ) {}
 
   @Get(':id')
   @RequirePermissions(Permission.PAYROLL_VIEW)
@@ -38,5 +43,13 @@ export class PayrollEntriesController {
   @ApiParam({ name: 'id', type: String })
   async update(@Param('id') id: string, @Body() dto: UpdatePayrollEntryDto) {
     return this.entriesService.update(id, dto);
+  }
+
+  @Post(':id/submit-dian')
+  @RequirePermissions(Permission.PAYROLL_APPROVE)
+  @ApiOperation({ summary: 'Firmar y enviar entrada de nómina a DIAN' })
+  @ApiParam({ name: 'id', type: String })
+  async submitToDian(@Param('id') id: string) {
+    return this.payrollDianService.signAndSubmitEntry(id);
   }
 }

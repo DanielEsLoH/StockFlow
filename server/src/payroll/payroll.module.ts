@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccountingModule } from '../accounting/accounting.module';
+import { DianModule } from '../dian/dian.module';
 import { EmployeesController } from './employees.controller';
 import { EmployeesService } from './employees.service';
 import { PayrollConfigController } from './payroll-config.controller';
@@ -16,7 +17,7 @@ import { PayrollXmlGeneratorService } from './services/payroll-xml-generator.ser
 import { PayrollDianService } from './services/payroll-dian.service';
 
 @Module({
-  imports: [AccountingModule],
+  imports: [AccountingModule, DianModule],
   controllers: [
     EmployeesController,
     PayrollConfigController,

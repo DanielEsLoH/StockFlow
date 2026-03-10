@@ -277,6 +277,26 @@ export function useClosePeriod() {
   });
 }
 
+export function useSubmitPeriodToDian() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => payrollService.submitPeriodToDian(id),
+    onSuccess: (_data, id) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.payrollPeriods.all,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.payrollPeriods.detail(id),
+      });
+      toast.success("Nómina enviada a la DIAN exitosamente");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al enviar la nómina a DIAN");
+    },
+  });
+}
+
 // ============================================================================
 // PAYROLL ENTRY QUERIES & MUTATIONS
 // ============================================================================

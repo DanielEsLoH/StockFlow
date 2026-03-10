@@ -11,6 +11,8 @@ import { TenantContextService } from '../../common/services/tenant-context.servi
 import { PayrollConfigService } from '../payroll-config.service';
 import { PayrollXmlGeneratorService } from './payroll-xml-generator.service';
 import { PayrollCuneGeneratorService } from './payroll-cune-generator.service';
+import { XmlSignerService } from '../../dian/services/xml-signer.service';
+import { DianClientService } from '../../dian/services/dian-client.service';
 
 describe('PayrollDianService', () => {
   let service: PayrollDianService;
@@ -149,6 +151,17 @@ describe('PayrollDianService', () => {
         {
           provide: PayrollCuneGeneratorService,
           useValue: mockCuneGenerator,
+        },
+        {
+          provide: XmlSignerService,
+          useValue: { signXml: jest.fn().mockResolvedValue('<signed>xml</signed>') },
+        },
+        {
+          provide: DianClientService,
+          useValue: {
+            sendDocument: jest.fn().mockResolvedValue({ statusCode: 200, isValid: true }),
+            sendTestSetDocument: jest.fn().mockResolvedValue({ statusCode: 200, isValid: true }),
+          },
         },
       ],
     }).compile();

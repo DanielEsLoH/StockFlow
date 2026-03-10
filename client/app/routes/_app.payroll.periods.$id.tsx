@@ -8,6 +8,7 @@ import {
   Users,
   TrendingDown,
   TrendingUp,
+  Send,
 } from "lucide-react";
 import type { Route } from "./+types/_app.payroll.periods.$id";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
@@ -17,6 +18,7 @@ import {
   useCalculatePeriod,
   useApprovePeriod,
   useClosePeriod,
+  useSubmitPeriodToDian,
 } from "~/hooks/usePayroll";
 import {
   PayrollPeriodStatusLabels,
@@ -69,6 +71,7 @@ export default function PayrollPeriodDetailPage() {
   const calculatePeriod = useCalculatePeriod();
   const approvePeriod = useApprovePeriod();
   const closePeriod = useClosePeriod();
+  const submitToDian = useSubmitPeriodToDian();
 
   if (isLoading) return <LoadingSkeleton />;
 
@@ -91,6 +94,7 @@ export default function PayrollPeriodDetailPage() {
 
   const canCalculate = period.status === "OPEN" || period.status === "CALCULATING";
   const canApprove = period.status === "CALCULATED";
+  const canSubmitDian = period.status === "APPROVED";
   const canClose = period.status === "APPROVED" || period.status === "SENT_TO_DIAN";
 
   return (
@@ -139,6 +143,16 @@ export default function PayrollPeriodDetailPage() {
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Aprobar
+              </Button>
+            )}
+            {hasPermission(Permission.PAYROLL_APPROVE) && canSubmitDian && (
+              <Button
+                variant="primary"
+                onClick={() => submitToDian.mutate(id!)}
+                isLoading={submitToDian.isPending}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Enviar a DIAN
               </Button>
             )}
             {hasPermission(Permission.PAYROLL_APPROVE) && canClose && (

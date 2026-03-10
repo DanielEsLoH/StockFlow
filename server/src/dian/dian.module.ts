@@ -6,6 +6,7 @@ import {
   CufeGeneratorService,
   DianClientService,
   XmlSignerService,
+  EventXmlGeneratorService,
 } from './services';
 import { AccountingModule } from '../accounting/accounting.module';
 
@@ -18,7 +19,8 @@ import { AccountingModule } from '../accounting/accounting.module';
     CufeGeneratorService,
     DianClientService,
     XmlSignerService,
+    EventXmlGeneratorService,
   ],
-  exports: [DianService],
+  exports: [DianService, XmlSignerService, DianClientService],
 })
 export class DianModule {}

@@ -41,6 +41,7 @@ import {
   ProcessPOSSaleDto,
   GenerateNotaAjusteDto,
   SetPosResolutionDto,
+  SendEventDto,
 } from './dto';
 import { DianConfigEntity } from './entities/dian-config.entity';
 import {
@@ -391,5 +392,39 @@ export class DianController {
   async getStats() {
     this.logger.log('Getting DIAN stats');
     return this.dianService.getStats();
+  }
+
+  @Post('documents/:id/events')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Send DIAN event (ApplicationResponse) by document ID',
+    description: 'Send an event for a DIAN document.',
+  })
+  @ApiParam({ name: 'id', description: 'DIAN Document ID' })
+  @ApiResponse({ status: 200, description: 'Event sent' })
+  async sendEvent(
+    @Param('id') documentId: string,
+    @Body() dto: SendEventDto,
+  ) {
+    this.logger.log(`Sending event ${dto.eventCode} for document ${documentId}`);
+    return this.dianService.sendEvent(documentId, dto.eventCode, dto.rejectionReason);
+  }
+
+  @Post('invoices/:invoiceId/events')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Send DIAN event (ApplicationResponse) by invoice ID',
+    description: 'Finds the accepted DIAN document for the invoice and sends the event.',
+  })
+  @ApiParam({ name: 'invoiceId', description: 'Invoice ID' })
+  @ApiResponse({ status: 200, description: 'Event sent' })
+  async sendEventByInvoice(
+    @Param('invoiceId') invoiceId: string,
+    @Body() dto: SendEventDto,
+  ) {
+    this.logger.log(`Sending event ${dto.eventCode} for invoice ${invoiceId}`);
+    return this.dianService.sendEventByInvoice(invoiceId, dto.eventCode, dto.rejectionReason);
   }
 }

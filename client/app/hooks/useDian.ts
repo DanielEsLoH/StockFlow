@@ -19,7 +19,9 @@ import {
   processPOSSale,
   processNotaAjuste,
   setPosResolution,
+  sendDianEvent,
   type ListDocumentsParams,
+  type SendEventParams,
 } from "~/services/dian.service";
 import { useIsQueryEnabled } from "./useIsQueryEnabled";
 import type {
@@ -338,5 +340,24 @@ export function useDianStats() {
     queryKey: dianKeys.stats(),
     queryFn: getDianStats,
     enabled,
+  });
+}
+
+export function useSendDianEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: SendEventParams) => sendDianEvent(params),
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: dianKeys.all });
+      if (data.success) {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al enviar el evento DIAN");
+    },
   });
 }

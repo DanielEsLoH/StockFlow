@@ -40,7 +40,8 @@ import {
   useSendInvoiceToDian,
   useSendInvoiceByEmail,
 } from "~/hooks/useInvoices";
-import { useDownloadDianXml } from "~/hooks/useDian";
+import { useDownloadDianXml, useSendDianEvent } from "~/hooks/useDian";
+import { FileCheck, FileX, PackageCheck, Globe } from "lucide-react";
 import { CreditNoteModal } from "~/components/dian/CreditNoteModal";
 import { DebitNoteModal } from "~/components/dian/DebitNoteModal";
 import { usePaymentsByInvoice } from "~/hooks/usePayments";
@@ -376,6 +377,7 @@ export default function InvoiceDetailPage() {
   const sendToDian = useSendInvoiceToDian();
   const sendByEmail = useSendInvoiceByEmail();
   const downloadXml = useDownloadDianXml();
+  const sendEvent = useSendDianEvent();
 
   // Calculate payment totals
   const totalPaid = invoicePayments.reduce((sum, p) => sum + p.amount, 0);
@@ -481,6 +483,12 @@ export default function InvoiceDetailPage() {
                 <InvoiceStatusBadge status={invoice.status} size="lg" />
                 <PaymentStatusBadge status={invoice.paymentStatus as InvoicePaymentStatus} size="lg" />
                 <InvoiceSourceBadge source={invoice.source} />
+                {invoice.isExport && (
+                  <Badge variant="primary" size="sm">
+                    <Globe className="h-3 w-3 mr-1" />
+                    Exportación
+                  </Badge>
+                )}
                 <DianStatusBadge hasCufe={!!invoice.dianCufe} />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400 mt-1">
@@ -687,6 +695,40 @@ export default function InvoiceDetailPage() {
           </Card>
         </PageSection>
       </div>
+
+      {/* Export Invoice Info */}
+      {invoice.isExport && (
+        <PageSection>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-accent-500" />
+                Factura de Exportación
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">INCOTERMS</p>
+                  <p className="font-medium text-neutral-900 dark:text-white mt-1">
+                    {invoice.incoterms || "No especificado"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">País de Destino</p>
+                  <p className="font-medium text-neutral-900 dark:text-white mt-1">
+                    {invoice.destinationCountry || "No especificado"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">IVA</p>
+                  <p className="font-medium text-neutral-900 dark:text-white mt-1">0% (Exportación)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </PageSection>
+      )}
 
       {/* Invoice Details */}
       <div className="grid grid-cols-1 gap-6">
@@ -1071,6 +1113,50 @@ export default function InvoiceDetailPage() {
                 >
                   <FilePlus className="h-4 w-4 mr-2" />
                   Nota Debito
+                </Button>
+              </div>
+
+              {/* DIAN Events */}
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                <span className="w-full text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+                  Eventos DIAN
+                </span>
+                <Button
+                  variant="soft-success"
+                  size="sm"
+                  disabled={sendEvent.isPending}
+                  onClick={() =>
+                    sendEvent.mutate({ invoiceId: id!, eventCode: "030" })
+                  }
+                >
+                  <FileCheck className="h-4 w-4 mr-2" />
+                  Acuse de Recibo
+                </Button>
+                <Button
+                  variant="soft-primary"
+                  size="sm"
+                  disabled={sendEvent.isPending}
+                  onClick={() =>
+                    sendEvent.mutate({ invoiceId: id!, eventCode: "032" })
+                  }
+                >
+                  <PackageCheck className="h-4 w-4 mr-2" />
+                  Recibo del Bien
+                </Button>
+                <Button
+                  variant="soft-warning"
+                  size="sm"
+                  disabled={sendEvent.isPending}
+                  onClick={() =>
+                    sendEvent.mutate({
+                      invoiceId: id!,
+                      eventCode: "031",
+                      rejectionReason: "Reclamo de la factura",
+                    })
+                  }
+                >
+                  <FileX className="h-4 w-4 mr-2" />
+                  Reclamo
                 </Button>
               </div>
             </CardContent>

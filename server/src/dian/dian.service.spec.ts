@@ -7,6 +7,7 @@ import { XmlGeneratorService } from './services/xml-generator.service';
 import { CufeGeneratorService } from './services/cufe-generator.service';
 import { DianClientService } from './services/dian-client.service';
 import { XmlSignerService } from './services/xml-signer.service';
+import { EventXmlGeneratorService } from './services/event-xml-generator.service';
 import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
 import {
   DianDocumentStatus,
@@ -212,6 +213,16 @@ describe('DianService', () => {
         { provide: DianClientService, useValue: mockDianClientService },
         { provide: XmlSignerService, useValue: mockXmlSignerService },
         { provide: AccountingBridgeService, useValue: mockAccountingBridgeService },
+        {
+          provide: EventXmlGeneratorService,
+          useValue: {
+            generateApplicationResponseXml: jest.fn().mockReturnValue({
+              xml: '<xml>event</xml>',
+              cude: 'cude-hash',
+              documentNumber: 'EVT-001',
+            }),
+          },
+        },
       ],
     }).compile();
 

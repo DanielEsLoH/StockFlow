@@ -33,6 +33,7 @@ import {
 } from '@prisma/client';
 import { DebitNoteItem } from './services/xml-generator.service';
 import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
+import { EventXmlGeneratorService, type DianEventCode } from './services/event-xml-generator.service';
 
 export interface ProcessInvoiceResult {
   success: boolean;
@@ -56,6 +57,7 @@ export class DianService {
     private readonly dianClient: DianClientService,
     private readonly xmlSigner: XmlSignerService,
     private readonly accountingBridge: AccountingBridgeService,
+    private readonly eventXmlGenerator: EventXmlGeneratorService,
   ) {}
 
   // ============================================================================
@@ -343,12 +345,17 @@ export class DianService {
       qrCode,
     });
 
+    // Determine document type based on export flag
+    const docType = invoice.isExport
+      ? DianDocumentType.FACTURA_EXPORTACION
+      : DianDocumentType.FACTURA_ELECTRONICA;
+
     // Create document record
     const document = await this.prisma.dianDocument.create({
       data: {
         tenantId,
         invoiceId,
-        documentType: DianDocumentType.FACTURA_ELECTRONICA,
+        documentType: docType,
         documentNumber: invoice.invoiceNumber,
         cufe,
         qrCode,
@@ -1354,6 +1361,158 @@ export class DianService {
     }
 
     return invoice;
+  }
+
+  // ============================================================================
+  // DIAN EVENTS (ApplicationResponse)
+  // ============================================================================
+
+  async sendEvent(
+    documentId: string,
+    eventCode: DianEventCode,
+    rejectionReason?: string,
+  ) {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    // Get the original DIAN document
+    const dianDoc = await this.prisma.dianDocument.findFirst({
+      where: { id: documentId, tenantId },
+      include: { invoice: { include: { customer: true } } },
+    });
+
+    if (!dianDoc) throw new NotFoundException('Documento DIAN no encontrado');
+    if (!dianDoc.cufe) throw new BadRequestException('El documento no tiene CUFE');
+
+    if (eventCode === '031' && !rejectionReason) {
+      throw new BadRequestException('Se requiere motivo del reclamo para evento 031');
+    }
+
+    // Get DIAN config
+    const config = await this.prisma.tenantDianConfig.findUnique({
+      where: { tenantId },
+    });
+    if (!config) throw new BadRequestException('Configuración DIAN no encontrada');
+
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) throw new NotFoundException('Tenant no encontrado');
+
+    // Determine sender/receiver based on event type
+    // For received invoices: sender=us, receiver=invoice issuer
+    // For our own invoices: sender=customer, receiver=us
+    const senderNit = config.nit;
+    const senderDv = config.dv;
+    const senderName = config.businessName;
+    const receiverNit = dianDoc.invoice?.customer?.documentNumber ?? '';
+    const receiverDv = dianDoc.invoice?.customer?.dv ?? '';
+    const receiverName = dianDoc.invoice?.customer?.name ?? '';
+
+    const ambiente = config.testMode ? '2' : '1';
+
+    // Generate ApplicationResponse XML
+    const { xml, cude, documentNumber } =
+      this.eventXmlGenerator.generateApplicationResponseXml({
+        senderNit,
+        senderDv,
+        senderName,
+        receiverNit,
+        receiverDv,
+        receiverName,
+        invoiceNumber: dianDoc.documentNumber,
+        invoiceCufe: dianDoc.cufe,
+        invoiceIssueDate: dianDoc.createdAt.toISOString().split('T')[0],
+        eventCode,
+        rejectionReason,
+        softwareId: config.softwareId ?? '',
+        softwarePin: config.softwarePin ?? '',
+        ambiente: ambiente as '1' | '2',
+      });
+
+    // Create event document record
+    const eventDoc = await this.prisma.dianDocument.create({
+      data: {
+        tenantId,
+        invoiceId: dianDoc.invoiceId,
+        originalDianDocumentId: dianDoc.id,
+        documentType: DianDocumentType.EVENTO,
+        documentNumber,
+        cude,
+        status: DianDocumentStatus.GENERATED,
+        xmlContent: xml,
+      },
+    });
+
+    // Sign XML
+    const signedXml = this.signXmlIfCertificateAvailable(xml, config);
+
+    await this.prisma.dianDocument.update({
+      where: { id: eventDoc.id },
+      data: { signedXml, status: DianDocumentStatus.SIGNED },
+    });
+
+    // Send to DIAN
+    const fileName = `ar${documentNumber}.xml`;
+    const result = await this.dianClient.sendDocument(config, signedXml, fileName);
+
+    const finalStatus = result.success
+      ? DianDocumentStatus.ACCEPTED
+      : result.isValid === false
+        ? DianDocumentStatus.REJECTED
+        : DianDocumentStatus.SENT;
+
+    await this.prisma.dianDocument.update({
+      where: { id: eventDoc.id },
+      data: {
+        status: finalStatus,
+        dianTrackId: result.trackId,
+        dianResponse: result as any,
+        errorMessage: result.errors?.join('; '),
+        sentAt: new Date(),
+        acceptedAt: result.success ? new Date() : undefined,
+      },
+    });
+
+    this.logger.log(
+      `Evento ${eventCode} enviado para documento ${dianDoc.documentNumber}: ${finalStatus}`,
+    );
+
+    return {
+      success: result.success,
+      eventDocumentId: eventDoc.id,
+      cude,
+      trackId: result.trackId,
+      status: finalStatus,
+      message: result.success
+        ? `Evento ${eventCode} enviado y aceptado por la DIAN`
+        : result.statusDescription || 'Error al enviar el evento',
+      errors: result.errors,
+    };
+  }
+
+  async sendEventByInvoice(
+    invoiceId: string,
+    eventCode: DianEventCode,
+    rejectionReason?: string,
+  ) {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    // Find the primary DIAN document for this invoice (factura or documento equivalente)
+    const dianDoc = await this.prisma.dianDocument.findFirst({
+      where: {
+        invoiceId,
+        tenantId,
+        documentType: {
+          in: [DianDocumentType.FACTURA_ELECTRONICA, DianDocumentType.DOCUMENTO_EQUIVALENTE],
+        },
+        status: DianDocumentStatus.ACCEPTED,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!dianDoc) {
+      throw new NotFoundException('No se encontró documento DIAN aceptado para esta factura');
+    }
+
+    return this.sendEvent(dianDoc.id, eventCode, rejectionReason);
   }
 
   private signXmlIfCertificateAvailable(

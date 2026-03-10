@@ -206,3 +206,19 @@ export async function getDianStats(): Promise<DianStats> {
   const response = await api.get<DianStats>(`${BASE_URL}/stats`);
   return response.data;
 }
+
+export interface SendEventParams {
+  invoiceId: string;
+  eventCode: "030" | "031" | "032" | "033";
+  rejectionReason?: string;
+}
+
+export async function sendDianEvent(
+  params: SendEventParams,
+): Promise<{ success: boolean; message: string; errors?: string[] }> {
+  const response = await api.post(
+    `${BASE_URL}/invoices/${params.invoiceId}/events`,
+    { eventCode: params.eventCode, rejectionReason: params.rejectionReason },
+  );
+  return response.data;
+}

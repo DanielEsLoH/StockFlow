@@ -189,6 +189,8 @@ enum DianDocumentType {
   NOTA_DEBITO
   DOCUMENTO_EQUIVALENTE
   NOTA_AJUSTE
+  EVENTO
+  FACTURA_EXPORTACION
 }
 
 enum CreditNoteReason {
@@ -687,6 +689,9 @@ model Invoice {
   dianCufe           String?       @map("dian_cufe")
   dianXml       String?       @map("dian_xml")
   dianPdf       String?       @map("dian_pdf")
+  isExport      Boolean       @default(false) @map("is_export")
+  incoterms     String?       @map("incoterms")
+  destinationCountry String?  @map("destination_country")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 

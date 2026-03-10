@@ -94,6 +94,10 @@ export interface Invoice {
   discount: number;
   total: number;
   notes?: string;
+  // Export invoice fields
+  isExport?: boolean;
+  incoterms?: string;
+  destinationCountry?: string;
   // DIAN fields
   dianCufe?: string;
   dianXml?: string;
@@ -180,6 +184,9 @@ export interface CreateInvoiceData {
   notes?: string;
   source?: InvoiceSource;
   warehouseId?: string;
+  isExport?: boolean;
+  incoterms?: string;
+  destinationCountry?: string;
 }
 
 // Update invoice data

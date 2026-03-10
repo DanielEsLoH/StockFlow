@@ -21,6 +21,7 @@ import {
   TenantDianConfig,
   TaxCategory,
   CurrencyCode,
+  InvoiceSource,
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
@@ -82,6 +83,9 @@ export interface InvoiceResponse {
   source: 'MANUAL' | 'POS';
   paymentStatus: PaymentStatus;
   notes: string | null;
+  isExport: boolean;
+  incoterms: string | null;
+  destinationCountry: string | null;
   dianCufe: string | null;
   dianXml: string | null;
   dianPdf: string | null;
@@ -238,7 +242,7 @@ export class InvoicesService {
    *
    * @returns Invoice statistics including totals, amounts by status, and averages
    */
-  async getStats(): Promise<{
+  async getStats(source?: InvoiceSource): Promise<{
     totalInvoices: number;
     totalRevenue: number;
     pendingAmount: number;
@@ -250,9 +254,14 @@ export class InvoicesService {
 
     this.logger.debug(`Getting invoice statistics for tenant ${tenantId}`);
 
-    // Get all invoices for the tenant to calculate statistics
+    // Get invoices for the tenant, optionally filtered by source
+    const where: { tenantId: string; source?: InvoiceSource } = { tenantId };
+    if (source) {
+      where.source = source;
+    }
+
     const invoices = await this.prisma.invoice.findMany({
-      where: { tenantId },
+      where,
       select: {
         status: true,
         paymentStatus: true,
@@ -600,6 +609,9 @@ export class InvoicesService {
           source: dto.source ?? 'MANUAL',
           paymentStatus: PaymentStatus.UNPAID,
           notes: dto.notes ?? null,
+          isExport: dto.isExport ?? false,
+          incoterms: dto.isExport ? (dto.incoterms ?? null) : null,
+          destinationCountry: dto.isExport ? (dto.destinationCountry ?? null) : null,
         },
         include: {
           customer: true,
@@ -2119,6 +2131,9 @@ export class InvoicesService {
       source: invoice.source,
       paymentStatus: invoice.paymentStatus,
       notes: invoice.notes,
+      isExport: invoice.isExport ?? false,
+      incoterms: invoice.incoterms ?? null,
+      destinationCountry: invoice.destinationCountry ?? null,
       dianCufe: invoice.dianCufe,
       dianXml: invoice.dianXml,
       dianPdf: invoice.dianPdf,

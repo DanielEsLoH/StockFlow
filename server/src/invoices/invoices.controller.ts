@@ -20,7 +20,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
+import { UserRole, InvoiceSource } from '@prisma/client';
 import { InvoicesService } from './invoices.service';
 import type {
   InvoiceResponse,
@@ -128,9 +128,9 @@ export class InvoicesController {
     status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
   })
-  async getStats() {
+  async getStats(@Query('source') source?: InvoiceSource) {
     this.logger.log('Getting invoice statistics');
-    return this.invoicesService.getStats();
+    return this.invoicesService.getStats(source);
   }
 
   /**

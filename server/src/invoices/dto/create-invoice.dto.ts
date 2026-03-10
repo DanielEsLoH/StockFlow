@@ -229,6 +229,43 @@ export class CreateInvoiceDto {
   })
   @IsOptional()
   currency?: CurrencyCode;
+
+  /**
+   * Whether this is an export invoice (factura de exportación)
+   * @example false
+   */
+  @ApiPropertyOptional({
+    description: 'Whether this is an export invoice (factura de exportación)',
+    example: false,
+    default: false,
+  })
+  @IsBoolean({ message: 'isExport debe ser un booleano' })
+  @IsOptional()
+  isExport?: boolean = false;
+
+  /**
+   * INCOTERMS for export invoices (e.g., FOB, CIF, EXW)
+   * @example "FOB"
+   */
+  @ApiPropertyOptional({
+    description: 'INCOTERMS for export invoices (e.g., FOB, CIF, EXW)',
+    example: 'FOB',
+  })
+  @IsString({ message: 'Los INCOTERMS deben ser texto' })
+  @IsOptional()
+  incoterms?: string;
+
+  /**
+   * Destination country for export invoices
+   * @example "US"
+   */
+  @ApiPropertyOptional({
+    description: 'Destination country code for export invoices',
+    example: 'US',
+  })
+  @IsString({ message: 'El país de destino debe ser texto' })
+  @IsOptional()
+  destinationCountry?: string;
 }
 
 /**

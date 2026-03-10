@@ -10,6 +10,7 @@ import {
   Zap,
   Clock,
   Keyboard,
+  Globe,
 } from "lucide-react";
 import { Link } from "react-router";
 import type { Route } from "./+types/_app.invoices.new";
@@ -64,6 +65,9 @@ export default function POSPage() {
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [invoiceMode, setInvoiceMode] = useState<InvoiceMode>("POS");
+  const [isExportInvoice, setIsExportInvoice] = useState(false);
+  const [incoterms, setIncoterms] = useState("");
+  const [destinationCountry, setDestinationCountry] = useState("");
   const [lastInvoice, setLastInvoice] = useState<{
     invoiceNumber: string;
     items: typeof cart;
@@ -212,12 +216,15 @@ export default function POSPage() {
           warehouseId: selectedWarehouseId || undefined,
           immediatePayment: status === "PAID",
           paymentMethod: "CASH",
+          isExport: isExportInvoice || undefined,
+          incoterms: isExportInvoice && incoterms ? incoterms : undefined,
+          destinationCountry: isExportInvoice && destinationCountry ? destinationCountry : undefined,
           items: cart.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             discount: item.unitPrice * item.quantity * (item.discount / 100),
-            taxRate: item.tax,
+            taxRate: isExportInvoice ? 0 : item.tax,
           })),
         },
         {
@@ -255,6 +262,9 @@ export default function POSPage() {
       totals,
       notes,
       invoiceMode,
+      isExportInvoice,
+      incoterms,
+      destinationCountry,
       checkoutInvoice,
       setProcessing,
       resetState,
@@ -450,6 +460,22 @@ export default function POSPage() {
               Manual
             </button>
           </div>
+          {/* Export Invoice Toggle (Manual mode only) */}
+          {invoiceMode === "MANUAL" && (
+            <button
+              type="button"
+              onClick={() => setIsExportInvoice(!isExportInvoice)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors shrink-0",
+                isExportInvoice
+                  ? "bg-accent-500 text-white border-accent-500"
+                  : "bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700",
+              )}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              Exportación
+            </button>
+          )}
           <WarehouseSelect
             warehouses={warehouses}
             selectedWarehouseId={selectedWarehouseId}
@@ -468,6 +494,33 @@ export default function POSPage() {
             open={customerSelectOpen}
             onOpenChange={setCustomerSelectOpen}
           />
+
+          {/* Export Invoice Fields */}
+          {isExportInvoice && (
+            <>
+              <select
+                value={incoterms}
+                onChange={(e) => setIncoterms(e.target.value)}
+                className="h-9 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 text-xs text-neutral-900 dark:text-neutral-100 shrink-0"
+              >
+                <option value="">INCOTERMS</option>
+                <option value="EXW">EXW - Ex Works</option>
+                <option value="FCA">FCA - Free Carrier</option>
+                <option value="FOB">FOB - Free on Board</option>
+                <option value="CFR">CFR - Cost and Freight</option>
+                <option value="CIF">CIF - Cost, Insurance & Freight</option>
+                <option value="DAP">DAP - Delivered at Place</option>
+                <option value="DDP">DDP - Delivered Duty Paid</option>
+              </select>
+              <input
+                type="text"
+                value={destinationCountry}
+                onChange={(e) => setDestinationCountry(e.target.value)}
+                placeholder="País destino"
+                className="h-9 w-32 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 shrink-0"
+              />
+            </>
+          )}
 
           {/* Quick Action Buttons - Desktop only */}
           <div className="hidden lg:flex items-center gap-2 ml-auto">

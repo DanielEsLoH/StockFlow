@@ -171,8 +171,9 @@ export const invoicesService = {
   },
 
   // Get invoice statistics
-  async getInvoiceStats(): Promise<InvoiceStats> {
-    const { data } = await api.get<InvoiceStats>("/invoices/stats");
+  async getInvoiceStats(source?: string): Promise<InvoiceStats> {
+    const params = source ? { source } : undefined;
+    const { data } = await api.get<InvoiceStats>("/invoices/stats", { params });
     return data;
   },
 

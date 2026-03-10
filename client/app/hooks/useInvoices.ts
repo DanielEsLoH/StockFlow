@@ -75,13 +75,13 @@ export function useRecentInvoices(limit: number = 5) {
 }
 
 /**
- * Invoice statistics
+ * Invoice statistics, optionally filtered by source
  */
-export function useInvoiceStats() {
+export function useInvoiceStats(source?: string) {
   const enabled = useIsQueryEnabled();
   return useQuery<InvoiceStats>({
-    queryKey: queryKeys.invoices.stats(),
-    queryFn: () => invoicesService.getInvoiceStats(),
+    queryKey: [...queryKeys.invoices.stats(), source ?? "all"],
+    queryFn: () => invoicesService.getInvoiceStats(source),
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled,
   });

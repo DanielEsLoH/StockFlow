@@ -27,6 +27,8 @@ import { Badge } from "~/components/ui/Badge";
 import { StatCard } from "~/components/ui/StatCard";
 import { Select } from "~/components/ui/Select";
 import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
+import { ExportButton } from "~/components/ui/ExportButton";
+import type { ExportColumn } from "~/lib/export-utils";
 import {
   Table,
   TableHeader,
@@ -39,7 +41,7 @@ import {
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { EmptyState } from "~/components/ui/EmptyState";
 import { DateFilterInput } from "~/components/ui/DateFilterInput";
-import type { ExpenseCategory, ExpenseStatus } from "~/types/expense";
+import type { Expense, ExpenseCategory, ExpenseStatus } from "~/types/expense";
 import {
   ExpenseCategoryLabels,
   ExpenseStatusLabels,
@@ -52,6 +54,18 @@ import { Permission } from "~/types/permissions";
 export const meta: Route.MetaFunction = () => [
   { title: "Gastos - StockFlow" },
   { name: "description", content: "Gestion de gastos operativos" },
+];
+
+const exportColumns: ExportColumn<Expense>[] = [
+  { key: "expenseNumber", label: "No. Gasto" },
+  { key: "category", label: "Categoria", format: (v) => ExpenseCategoryLabels[v as ExpenseCategory] ?? String(v) },
+  { key: "description", label: "Descripcion" },
+  { key: "supplier.name", label: "Proveedor" },
+  { key: "issueDate", label: "Fecha", format: (v) => (v ? new Date(v as string).toLocaleDateString("es-CO") : "") },
+  { key: "subtotal", label: "Subtotal" },
+  { key: "tax", label: "Impuestos" },
+  { key: "total", label: "Total" },
+  { key: "status", label: "Estado", format: (v) => ExpenseStatusLabels[v as ExpenseStatus] ?? String(v) },
 ];
 
 // Status options for filter
@@ -287,6 +301,12 @@ export default function ExpensesPage() {
                   Limpiar
                 </Button>
               )}
+
+              <ExportButton
+                data={expenses}
+                columns={exportColumns}
+                filename="gastos"
+              />
             </div>
 
             {/* Filter options */}

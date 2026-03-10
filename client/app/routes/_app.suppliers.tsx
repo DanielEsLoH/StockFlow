@@ -31,6 +31,8 @@ import { Card } from "~/components/ui/Card";
 import { Badge } from "~/components/ui/Badge";
 import { Select } from "~/components/ui/Select";
 import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
+import { ExportButton } from "~/components/ui/ExportButton";
+import type { ExportColumn } from "~/lib/export-utils";
 import {
   Table,
   TableHeader,
@@ -56,6 +58,19 @@ export const meta: Route.MetaFunction = () => {
     { name: "description", content: "Gestion de proveedores" },
   ];
 };
+
+const exportColumns: ExportColumn<Supplier>[] = [
+  { key: "name", label: "Nombre" },
+  { key: "contactName", label: "Contacto" },
+  { key: "documentType", label: "Tipo Doc." },
+  { key: "documentNumber", label: "NIT/Documento" },
+  { key: "email", label: "Email" },
+  { key: "phone", label: "Telefono" },
+  { key: "city", label: "Ciudad" },
+  { key: "address", label: "Direccion" },
+  { key: "paymentTerms", label: "Condiciones de Pago", format: (v) => PaymentTermsLabels[v as keyof typeof PaymentTermsLabels] ?? String(v) },
+  { key: "status", label: "Estado", format: (v) => (v === "ACTIVE" ? "Activo" : "Inactivo") },
+];
 
 // Status options
 const statusOptions = [
@@ -236,6 +251,12 @@ export default function SuppliersPage() {
                   Limpiar
                 </Button>
               )}
+
+              <ExportButton
+                data={suppliers}
+                columns={exportColumns}
+                filename="proveedores"
+              />
             </div>
 
             {/* Filter options */}

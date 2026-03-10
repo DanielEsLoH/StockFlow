@@ -27,6 +27,8 @@ import { Card, CardHeader, CardTitle } from "~/components/ui/Card";
 import { Badge, StatusBadge } from "~/components/ui/Badge";
 import { Select } from "~/components/ui/Select";
 import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
+import { ExportButton } from "~/components/ui/ExportButton";
+import type { ExportColumn } from "~/lib/export-utils";
 import { EmptyState } from "~/components/ui/EmptyState";
 import {
   Table,
@@ -41,7 +43,7 @@ import {
   SkeletonProductCard,
   SkeletonTableRow,
 } from "~/components/ui/Skeleton";
-import type { ProductFilters, ProductStatus } from "~/types/product";
+import type { Product, ProductFilters, ProductStatus } from "~/types/product";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
 
 // Meta for SEO
@@ -58,6 +60,19 @@ const statusOptions = [
   { value: "ACTIVE", label: "Activo" },
   { value: "INACTIVE", label: "Inactivo" },
   { value: "DISCONTINUED", label: "Descontinuado" },
+];
+
+const exportColumns: ExportColumn<Product>[] = [
+  { key: "name", label: "Producto" },
+  { key: "sku", label: "SKU" },
+  { key: "barcode", label: "Codigo de Barras" },
+  { key: "category.name", label: "Categoria" },
+  { key: "salePrice", label: "Precio Venta" },
+  { key: "costPrice", label: "Precio Costo" },
+  { key: "stock", label: "Stock" },
+  { key: "minStock", label: "Stock Minimo" },
+  { key: "unit", label: "Unidad" },
+  { key: "status", label: "Estado" },
 ];
 
 // Items per page options
@@ -242,6 +257,12 @@ export default function ProductsPage() {
                   <LayoutGrid className="h-4 w-4" />
                 </button>
               </div>
+
+              <ExportButton
+                data={products}
+                columns={exportColumns}
+                filename="productos"
+              />
             </div>
 
             {/* Expanded filters */}

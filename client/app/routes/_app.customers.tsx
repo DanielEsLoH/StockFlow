@@ -34,6 +34,8 @@ import { Card } from "~/components/ui/Card";
 import { Badge } from "~/components/ui/Badge";
 import { Select } from "~/components/ui/Select";
 import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
+import { ExportButton } from "~/components/ui/ExportButton";
+import type { ExportColumn } from "~/lib/export-utils";
 import {
   Table,
   TableHeader,
@@ -46,7 +48,11 @@ import {
 import { SkeletonTableRow } from "~/components/ui/Skeleton";
 import { DeleteModal } from "~/components/ui/DeleteModal";
 import { EmptyState } from "~/components/ui/EmptyState";
-import type { CustomerFilters, Customer, CustomerType } from "~/types/customer";
+import type {
+  CustomerFilters,
+  Customer,
+  CustomerType,
+} from "~/types/customer";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
 import { usePermissions } from "~/hooks/usePermissions";
 
@@ -57,6 +63,18 @@ export const meta: Route.MetaFunction = () => {
     { name: "description", content: "Gestion de clientes" },
   ];
 };
+
+const exportColumns: ExportColumn<Customer>[] = [
+  { key: "name", label: "Nombre" },
+  { key: "documentType", label: "Tipo Doc." },
+  { key: "document", label: "Documento" },
+  { key: "email", label: "Email" },
+  { key: "phone", label: "Telefono" },
+  { key: "type", label: "Tipo", format: (v) => (v === "BUSINESS" ? "Empresa" : "Persona Natural") },
+  { key: "city", label: "Ciudad" },
+  { key: "address", label: "Direccion" },
+  { key: "isActive", label: "Estado", format: (v) => (v ? "Activo" : "Inactivo") },
+];
 
 // Type options
 const typeOptions = [
@@ -283,6 +301,12 @@ export default function CustomersPage() {
                   Limpiar
                 </Button>
               )}
+
+              <ExportButton
+                data={customers}
+                columns={exportColumns}
+                filename="clientes"
+              />
             </div>
 
             {/* Filter options */}

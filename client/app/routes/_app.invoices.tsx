@@ -37,6 +37,8 @@ import { Badge, StatusBadge } from "~/components/ui/Badge";
 import { StatCard } from "~/components/ui/StatCard";
 import { Select } from "~/components/ui/Select";
 import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
+import { ExportButton } from "~/components/ui/ExportButton";
+import type { ExportColumn } from "~/lib/export-utils";
 import {
   Table,
   TableHeader,
@@ -66,6 +68,29 @@ export const meta: Route.MetaFunction = () => {
     { name: "description", content: "Gestion de facturas" },
   ];
 };
+
+const invoiceStatusLabel: Record<string, string> = {
+  DRAFT: "Borrador",
+  PENDING: "Pendiente",
+  SENT: "Enviada",
+  PAID: "Pagada",
+  OVERDUE: "Vencida",
+  CANCELLED: "Cancelada",
+  VOID: "Anulada",
+};
+
+const exportColumns: ExportColumn<InvoiceSummary>[] = [
+  { key: "invoiceNumber", label: "No. Factura" },
+  { key: "customer.name", label: "Cliente" },
+  { key: "issueDate", label: "Fecha Emision", format: (v) => (v ? new Date(v as string).toLocaleDateString("es-CO") : "") },
+  { key: "dueDate", label: "Fecha Vencimiento", format: (v) => (v ? new Date(v as string).toLocaleDateString("es-CO") : "") },
+  { key: "subtotal", label: "Subtotal" },
+  { key: "tax", label: "Impuestos" },
+  { key: "discount", label: "Descuento" },
+  { key: "total", label: "Total" },
+  { key: "status", label: "Estado", format: (v) => invoiceStatusLabel[v as string] ?? String(v) },
+  { key: "source", label: "Origen", format: (v) => (v === "POS" ? "POS" : "Manual") },
+];
 
 // Status options for filter
 const statusOptions = [
@@ -200,7 +225,7 @@ export default function InvoicesPage() {
 
   // Queries
   const { data: invoicesData, isLoading, isError } = useInvoices(filters);
-  const { data: stats } = useInvoiceStats();
+  const { data: stats } = useInvoiceStats(filters.source);
   const deleteInvoice = useDeleteInvoice();
 
   // Customer options for filter
@@ -361,6 +386,12 @@ export default function InvoicesPage() {
                   Limpiar
                 </Button>
               )}
+
+              <ExportButton
+                data={invoices}
+                columns={exportColumns}
+                filename="facturas"
+              />
             </div>
 
             {/* Filter options */}
@@ -521,17 +552,21 @@ export default function InvoicesPage() {
                           </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
-                          <div
-                            className={cn(
-                              "flex items-center gap-1.5 text-sm",
-                              invoice.status === "OVERDUE"
-                                ? "text-error-600 dark:text-error-400"
-                                : "text-neutral-700 dark:text-neutral-300",
-                            )}
-                          >
-                            <Calendar className="h-3.5 w-3.5" />
-                            {formatDate(invoice.dueDate)}
-                          </div>
+                          {invoice.dueDate ? (
+                            <div
+                              className={cn(
+                                "flex items-center gap-1.5 text-sm",
+                                invoice.status === "OVERDUE"
+                                  ? "text-error-600 dark:text-error-400"
+                                  : "text-neutral-700 dark:text-neutral-300",
+                              )}
+                            >
+                              <Calendar className="h-3.5 w-3.5" />
+                              {formatDate(invoice.dueDate)}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-neutral-400">—</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <p className="font-bold text-lg bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-300 bg-clip-text text-transparent">

@@ -6,6 +6,7 @@ import {
   MovementType,
   JournalEntryStatus,
 } from '@prisma/client';
+import * as path from 'path';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const PdfMakeModule = require('pdfmake/js/Printer.js');
 const PdfPrinter = PdfMakeModule.default || PdfMakeModule;
@@ -80,14 +81,19 @@ interface CostCenterBalanceData {
 
 /**
  * Font configuration for PDFMake
- * Using Roboto fonts that are commonly available
+ * Points to actual .ttf font files bundled with pdfmake
  */
+const fontsDir = path.join(
+  path.dirname(require.resolve('pdfmake/package.json')),
+  'fonts',
+  'Roboto',
+);
 const fonts = {
   Roboto: {
-    normal: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bold: 'node_modules/pdfmake/build/vfs_fonts.js',
-    italics: 'node_modules/pdfmake/build/vfs_fonts.js',
-    bolditalics: 'node_modules/pdfmake/build/vfs_fonts.js',
+    normal: path.join(fontsDir, 'Roboto-Regular.ttf'),
+    bold: path.join(fontsDir, 'Roboto-Medium.ttf'),
+    italics: path.join(fontsDir, 'Roboto-Italic.ttf'),
+    bolditalics: path.join(fontsDir, 'Roboto-MediumItalic.ttf'),
   },
 };
 
@@ -1701,33 +1707,29 @@ export class ReportsService {
   /**
    * Generates a PDF buffer from a document definition.
    */
-  private generatePdfBuffer(docDefinition: object): Promise<Buffer> {
+  private async generatePdfBuffer(docDefinition: object): Promise<Buffer> {
+    // pdfmake 0.3.x: createPdfKitDocument is async (returns a Promise)
+    const pdfDoc = await this.pdfPrinter.createPdfKitDocument(
+      docDefinition as Parameters<
+        typeof this.pdfPrinter.createPdfKitDocument
+      >[0],
+    );
     return new Promise((resolve, reject) => {
-      try {
-        const pdfDoc = this.pdfPrinter.createPdfKitDocument(
-          docDefinition as Parameters<
-            typeof this.pdfPrinter.createPdfKitDocument
-          >[0],
-        );
-        const chunks: Buffer[] = [];
+      const chunks: Buffer[] = [];
 
-        pdfDoc.on('data', (chunk: Buffer) => {
-          chunks.push(chunk);
-        });
+      pdfDoc.on('data', (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
 
-        pdfDoc.on('end', () => {
-          const result = Buffer.concat(chunks);
-          resolve(result);
-        });
+      pdfDoc.on('end', () => {
+        resolve(Buffer.concat(chunks));
+      });
 
-        pdfDoc.on('error', (error: Error) => {
-          reject(error);
-        });
+      pdfDoc.on('error', (error: Error) => {
+        reject(error);
+      });
 
-        pdfDoc.end();
-      } catch (error) {
-        reject(error instanceof Error ? error : new Error(String(error)));
-      }
+      pdfDoc.end();
     });
   }
 

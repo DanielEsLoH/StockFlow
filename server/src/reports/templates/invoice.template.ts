@@ -388,7 +388,6 @@ export function createInvoiceTemplate(
           text: data.invoice.dianCufe,
           fontSize: 7,
           color: '#666666',
-          font: 'Courier',
         },
       ],
     });

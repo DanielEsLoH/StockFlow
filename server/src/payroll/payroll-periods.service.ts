@@ -333,7 +333,7 @@ export class PayrollPeriodsService {
         totalIcbfEmpleador: entries.reduce((s, e) => s + Number(e.icbfEmpleador), 0),
         totalProvisionPrima: entries.reduce((s, e) => s + Number(e.provisionPrima), 0),
         totalProvisionCesantias: entries.reduce((s, e) => s + Number(e.provisionCesantias), 0),
-        totalProvisionIntereses: entries.reduce((s, e) => s + Number(e.interesesCesantias), 0),
+        totalProvisionIntereses: entries.reduce((s, e) => s + Number(e.provisionIntereses), 0),
         totalProvisionVacaciones: entries.reduce((s, e) => s + Number(e.provisionVacaciones), 0),
       });
     } catch (error) {

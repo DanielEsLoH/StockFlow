@@ -29,7 +29,7 @@ import Hash from "lucide-react/dist/esm/icons/hash";
 import FileMinus from "lucide-react/dist/esm/icons/file-minus";
 import FilePlus from "lucide-react/dist/esm/icons/file-plus";
 import type { Route } from "./+types/_app.invoices.$id";
-import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
+import { PageWrapper, PageSection, AnimatedGrid, AnimatedGridItem } from "~/components/layout/PageWrapper";
 import { cn, formatDate, formatCurrency } from "~/lib/utils";
 import {
   useInvoice,
@@ -58,6 +58,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import type { InvoiceStatus, InvoiceSource, InvoicePaymentStatus } from "~/types/invoice";
 import { InvoicePaymentStatusLabels } from "~/types/invoice";
@@ -568,8 +569,9 @@ export default function InvoiceDetailPage() {
       </PageSection>
 
       {/* Emisor & Cliente */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <AnimatedGrid variant="detail" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Issuer / Emisor */}
+        <AnimatedGridItem variant="detail">
         <PageSection>
           <Card>
             <CardHeader>
@@ -636,8 +638,10 @@ export default function InvoiceDetailPage() {
             </CardContent>
           </Card>
         </PageSection>
+        </AnimatedGridItem>
 
         {/* Customer Information */}
+        <AnimatedGridItem variant="detail">
         <PageSection>
           <Card>
             <CardHeader>
@@ -700,7 +704,8 @@ export default function InvoiceDetailPage() {
             </CardContent>
           </Card>
         </PageSection>
-      </div>
+        </AnimatedGridItem>
+      </AnimatedGrid>
 
       {/* Export Invoice Info */}
       {invoice.isExport && (
@@ -899,8 +904,8 @@ export default function InvoiceDetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoice.items?.map((item) => (
-                    <TableRow key={item.id}>
+                  {invoice.items?.map((item, i) => (
+                    <AnimatedTableRow key={item.id} index={i}>
                       <TableCell>
                         <div>
                           <p className="font-medium text-neutral-900 dark:text-white">
@@ -934,7 +939,7 @@ export default function InvoiceDetailPage() {
                       <TableCell className="text-right font-medium">
                         {formatCurrency(item.subtotal)}
                       </TableCell>
-                    </TableRow>
+                    </AnimatedTableRow>
                   ))}
                 </TableBody>
               </Table>
@@ -1012,8 +1017,8 @@ export default function InvoiceDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {invoicePayments.map((payment) => (
-                      <TableRow key={payment.id}>
+                    {invoicePayments.map((payment, i) => (
+                      <AnimatedTableRow key={payment.id} index={i}>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
                             <Calendar className="h-3.5 w-3.5 text-neutral-400" />
@@ -1043,7 +1048,7 @@ export default function InvoiceDetailPage() {
                             {formatCurrency(payment.amount)}
                           </span>
                         </TableCell>
-                      </TableRow>
+                      </AnimatedTableRow>
                     ))}
                   </TableBody>
                 </Table>

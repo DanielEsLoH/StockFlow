@@ -1,25 +1,23 @@
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router";
-import {
-  ArrowLeft,
-  ShoppingCart,
-  Pencil,
-  Trash2,
-  Calendar,
-  User,
-  Warehouse,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Send,
-  Package,
-  Loader2,
-  Truck,
-  CreditCard,
-  DollarSign,
-} from "lucide-react";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import ShoppingCart from "lucide-react/dist/esm/icons/shopping-cart";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import User from "lucide-react/dist/esm/icons/user";
+import Warehouse from "lucide-react/dist/esm/icons/warehouse";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import Send from "lucide-react/dist/esm/icons/send";
+import Package from "lucide-react/dist/esm/icons/package";
+import Loader2 from "lucide-react/dist/esm/icons/loader-2";
+import Truck from "lucide-react/dist/esm/icons/truck";
+import CreditCard from "lucide-react/dist/esm/icons/credit-card";
+import DollarSign from "lucide-react/dist/esm/icons/dollar-sign";
 import type { Route } from "./+types/_app.purchases.$id";
-import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
+import { PageWrapper, PageSection, AnimatedGrid, AnimatedGridItem } from "~/components/layout/PageWrapper";
 import { formatDate, formatCurrency } from "~/lib/utils";
 import {
   usePurchaseOrder,
@@ -46,6 +44,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import type { PurchaseOrderStatus } from "~/types/purchase-order";
 import {
@@ -393,9 +392,9 @@ export default function PurchaseOrderDetailPage() {
       </PageSection>
 
       {/* Info grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <AnimatedGrid variant="detail" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Supplier data */}
-        <PageSection>
+        <AnimatedGridItem variant="detail">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -445,10 +444,10 @@ export default function PurchaseOrderDetailPage() {
               )}
             </CardContent>
           </Card>
-        </PageSection>
+        </AnimatedGridItem>
 
         {/* Warehouse data */}
-        <PageSection>
+        <AnimatedGridItem variant="detail">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -490,10 +489,10 @@ export default function PurchaseOrderDetailPage() {
               )}
             </CardContent>
           </Card>
-        </PageSection>
+        </AnimatedGridItem>
 
         {/* Order details */}
-        <PageSection>
+        <AnimatedGridItem variant="detail">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -554,8 +553,8 @@ export default function PurchaseOrderDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </PageSection>
-      </div>
+        </AnimatedGridItem>
+      </AnimatedGrid>
 
       {/* Items table */}
       <PageSection>
@@ -582,8 +581,8 @@ export default function PurchaseOrderDetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {order.items?.map((item) => (
-                    <TableRow key={item.id}>
+                  {order.items?.map((item, i) => (
+                    <AnimatedTableRow key={item.id} index={i}>
                       <TableCell>
                         <p className="font-medium text-neutral-900 dark:text-white">
                           {item.product?.name || "Producto eliminado"}
@@ -615,7 +614,7 @@ export default function PurchaseOrderDetailPage() {
                       <TableCell className="text-right font-medium">
                         {formatCurrency(item.total)}
                       </TableCell>
-                    </TableRow>
+                    </AnimatedTableRow>
                   ))}
                 </TableBody>
               </Table>

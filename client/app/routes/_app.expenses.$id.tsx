@@ -1,26 +1,24 @@
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ArrowLeft,
-  Receipt,
-  Pencil,
-  Trash2,
-  Calendar,
-  User,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Loader2,
-  CreditCard,
-  DollarSign,
-  FileText,
-  X,
-  Hash,
-  Building2,
-} from "lucide-react";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import Receipt from "lucide-react/dist/esm/icons/receipt";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import User from "lucide-react/dist/esm/icons/user";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import Loader2 from "lucide-react/dist/esm/icons/loader-2";
+import CreditCard from "lucide-react/dist/esm/icons/credit-card";
+import DollarSign from "lucide-react/dist/esm/icons/dollar-sign";
+import FileText from "lucide-react/dist/esm/icons/file-text";
+import X from "lucide-react/dist/esm/icons/x";
+import Hash from "lucide-react/dist/esm/icons/hash";
+import Building2 from "lucide-react/dist/esm/icons/building-2";
 import type { Route } from "./+types/_app.expenses.$id";
-import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
+import { PageWrapper, PageSection, AnimatedGrid, AnimatedGridItem } from "~/components/layout/PageWrapper";
 import { cn, formatDate, formatCurrency } from "~/lib/utils";
 import {
   useExpense,
@@ -517,9 +515,10 @@ export default function ExpenseDetailPage() {
       </PageSection>
 
       {/* Info grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <AnimatedGrid variant="detail" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Expense Info Card */}
-        <PageSection className="lg:col-span-2">
+        <AnimatedGridItem variant="detail" className="lg:col-span-2">
+        <PageSection>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -664,8 +663,10 @@ export default function ExpenseDetailPage() {
             </CardContent>
           </Card>
         </PageSection>
+        </AnimatedGridItem>
 
         {/* Right column */}
+        <AnimatedGridItem variant="detail">
         <PageSection className="space-y-6">
           {/* Supplier Card */}
           <Card>
@@ -784,7 +785,8 @@ export default function ExpenseDetailPage() {
             </Card>
           )}
         </PageSection>
-      </div>
+        </AnimatedGridItem>
+      </AnimatedGrid>
 
       {/* Notes */}
       {expense.notes && (

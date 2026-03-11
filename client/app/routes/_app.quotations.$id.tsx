@@ -1,26 +1,24 @@
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router";
-import {
-  ArrowLeft,
-  ClipboardList,
-  Pencil,
-  Trash2,
-  Calendar,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  Send,
-  FileText,
-  Loader2,
-  ArrowRight,
-} from "lucide-react";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import ClipboardList from "lucide-react/dist/esm/icons/clipboard-list";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import User from "lucide-react/dist/esm/icons/user";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import Phone from "lucide-react/dist/esm/icons/phone";
+import MapPin from "lucide-react/dist/esm/icons/map-pin";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle";
+import Send from "lucide-react/dist/esm/icons/send";
+import FileText from "lucide-react/dist/esm/icons/file-text";
+import Loader2 from "lucide-react/dist/esm/icons/loader-2";
+import ArrowRight from "lucide-react/dist/esm/icons/arrow-right";
 import type { Route } from "./+types/_app.quotations.$id";
-import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
+import { PageWrapper, PageSection, AnimatedGrid, AnimatedGridItem } from "~/components/layout/PageWrapper";
 import { cn, formatDate, formatCurrency } from "~/lib/utils";
 import {
   useQuotation,
@@ -43,6 +41,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import type { QuotationStatus } from "~/types/quotation";
 import { QuotationStatusLabels } from "~/types/quotation";
@@ -342,9 +341,9 @@ export default function QuotationDetailPage() {
       </PageSection>
 
       {/* Info grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <AnimatedGrid variant="detail" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quotation data */}
-        <PageSection>
+        <AnimatedGridItem variant="detail">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -428,10 +427,10 @@ export default function QuotationDetailPage() {
               )}
             </CardContent>
           </Card>
-        </PageSection>
+        </AnimatedGridItem>
 
         {/* Customer data */}
-        <PageSection>
+        <AnimatedGridItem variant="detail">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -499,8 +498,8 @@ export default function QuotationDetailPage() {
               )}
             </CardContent>
           </Card>
-        </PageSection>
-      </div>
+        </AnimatedGridItem>
+      </AnimatedGrid>
 
       {/* Items table */}
       <PageSection>
@@ -526,8 +525,8 @@ export default function QuotationDetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {quotation.items?.map((item) => (
-                    <TableRow key={item.id}>
+                  {quotation.items?.map((item, i) => (
+                    <AnimatedTableRow key={item.id} index={i}>
                       <TableCell>
                         <div>
                           <p className="font-medium text-neutral-900 dark:text-white">
@@ -561,7 +560,7 @@ export default function QuotationDetailPage() {
                       <TableCell className="text-right font-medium">
                         {formatCurrency(item.subtotal)}
                       </TableCell>
-                    </TableRow>
+                    </AnimatedTableRow>
                   ))}
                 </TableBody>
               </Table>

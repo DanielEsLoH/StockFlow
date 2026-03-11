@@ -1,24 +1,22 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import {
-  ArrowLeft,
-  Users,
-  Pencil,
-  Trash2,
-  Mail,
-  Phone,
-  MapPin,
-  Building2,
-  User,
-  Calendar,
-  CheckCircle,
-  XCircle,
-  DollarSign,
-  ShoppingCart,
-  TrendingUp,
-} from "lucide-react";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import Users from "lucide-react/dist/esm/icons/users";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import Phone from "lucide-react/dist/esm/icons/phone";
+import MapPin from "lucide-react/dist/esm/icons/map-pin";
+import Building2 from "lucide-react/dist/esm/icons/building-2";
+import User from "lucide-react/dist/esm/icons/user";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import DollarSign from "lucide-react/dist/esm/icons/dollar-sign";
+import ShoppingCart from "lucide-react/dist/esm/icons/shopping-cart";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
 import type { Route } from "./+types/_app.customers.$id";
-import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
+import { PageWrapper, PageSection, AnimatedGrid, AnimatedGridItem } from "~/components/layout/PageWrapper";
 import { formatDate, formatCurrency } from "~/lib/utils";
 import {
   useCustomer,
@@ -182,43 +180,51 @@ export default function CustomerDetailPage() {
 
       {/* Stats */}
       <PageSection>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            icon={ShoppingCart}
-            label="Total Compras"
-            value={stats?.totalInvoices || 0}
-            subtitle="facturas"
-            color="primary"
-          />
-          <StatCard
-            icon={DollarSign}
-            label="Total Gastado"
-            value={formatCurrency(stats?.totalSpent || 0)}
-            color="success"
-          />
-          <StatCard
-            icon={TrendingUp}
-            label="Promedio por Compra"
-            value={formatCurrency(stats?.averageOrderValue || 0)}
-            color="warning"
-          />
-          <StatCard
-            icon={Calendar}
-            label="Ultima Compra"
-            value={
-              stats?.lastPurchaseDate
-                ? formatDate(stats.lastPurchaseDate)
-                : "Sin compras"
-            }
-            color="primary"
-          />
-        </div>
+        <AnimatedGrid variant="stats" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <AnimatedGridItem variant="stats">
+            <StatCard
+              icon={ShoppingCart}
+              label="Total Compras"
+              value={stats?.totalInvoices || 0}
+              subtitle="facturas"
+              color="primary"
+            />
+          </AnimatedGridItem>
+          <AnimatedGridItem variant="stats">
+            <StatCard
+              icon={DollarSign}
+              label="Total Gastado"
+              value={formatCurrency(stats?.totalSpent || 0)}
+              color="success"
+            />
+          </AnimatedGridItem>
+          <AnimatedGridItem variant="stats">
+            <StatCard
+              icon={TrendingUp}
+              label="Promedio por Compra"
+              value={formatCurrency(stats?.averageOrderValue || 0)}
+              color="warning"
+            />
+          </AnimatedGridItem>
+          <AnimatedGridItem variant="stats">
+            <StatCard
+              icon={Calendar}
+              label="Ultima Compra"
+              value={
+                stats?.lastPurchaseDate
+                  ? formatDate(stats.lastPurchaseDate)
+                  : "Sin compras"
+              }
+              color="primary"
+            />
+          </AnimatedGridItem>
+        </AnimatedGrid>
       </PageSection>
 
       {/* Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <AnimatedGrid variant="detail" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Contact Info */}
-        <PageSection>
+        <AnimatedGridItem variant="detail">
           <Card>
             <CardHeader>
               <CardTitle>Informacion de Contacto</CardTitle>
@@ -278,10 +284,10 @@ export default function CustomerDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </PageSection>
+        </AnimatedGridItem>
 
         {/* Additional Info */}
-        <PageSection>
+        <AnimatedGridItem variant="detail">
           <Card>
             <CardHeader>
               <CardTitle>Informacion Adicional</CardTitle>
@@ -337,8 +343,8 @@ export default function CustomerDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </PageSection>
-      </div>
+        </AnimatedGridItem>
+      </AnimatedGrid>
 
       {/* Notes */}
       {customer.notes && (

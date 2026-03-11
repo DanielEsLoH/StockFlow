@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router";
-import {
-  ArrowLeft,
-  Pencil,
-  Trash2,
-  Package,
-  Tag,
-  Calendar,
-  Barcode,
-  AlertTriangle,
-  Warehouse,
-} from "lucide-react";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import Package from "lucide-react/dist/esm/icons/package";
+import Tag from "lucide-react/dist/esm/icons/tag";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import Barcode from "lucide-react/dist/esm/icons/barcode";
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle";
+import Warehouse from "lucide-react/dist/esm/icons/warehouse";
 import type { Route } from "./+types/_app.products.$id";
-import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
+import { PageWrapper, PageSection, AnimatedGrid, AnimatedGridItem } from "~/components/layout/PageWrapper";
 import { cn, formatCurrency, formatDate } from "~/lib/utils";
 import { useProduct, useDeleteProduct } from "~/hooks/useProducts";
 import { Button } from "~/components/ui/Button";
@@ -171,9 +169,9 @@ export default function ProductDetailPage() {
       </PageSection>
 
       {/* Content grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <AnimatedGrid variant="detail" className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Product image */}
-        <PageSection className="lg:col-span-1">
+        <AnimatedGridItem variant="detail" className="lg:col-span-1">
           <Card padding="none" className="overflow-hidden">
             <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-800">
               {product.imageUrl ? (
@@ -189,10 +187,10 @@ export default function ProductDetailPage() {
               )}
             </div>
           </Card>
-        </PageSection>
+        </AnimatedGridItem>
 
         {/* Product info */}
-        <PageSection className="space-y-6 lg:col-span-2">
+        <AnimatedGridItem variant="detail" className="space-y-6 lg:col-span-2">
           {/* Description */}
           {product.description && (
             <Card>
@@ -383,8 +381,8 @@ export default function ProductDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </PageSection>
-      </div>
+        </AnimatedGridItem>
+      </AnimatedGrid>
 
       {/* Delete Modal */}
       <DeleteModal

@@ -1,23 +1,21 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import {
-  ArrowLeft,
-  Building2,
-  Pencil,
-  Trash2,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  CheckCircle,
-  XCircle,
-  DollarSign,
-  ShoppingCart,
-  Clock,
-  User,
-} from "lucide-react";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import Building2 from "lucide-react/dist/esm/icons/building-2";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import Phone from "lucide-react/dist/esm/icons/phone";
+import MapPin from "lucide-react/dist/esm/icons/map-pin";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import DollarSign from "lucide-react/dist/esm/icons/dollar-sign";
+import ShoppingCart from "lucide-react/dist/esm/icons/shopping-cart";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import User from "lucide-react/dist/esm/icons/user";
 import type { Route } from "./+types/_app.suppliers.$id";
-import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
+import { PageWrapper, PageSection, AnimatedGrid, AnimatedGridItem } from "~/components/layout/PageWrapper";
 import { formatDate, formatCurrency } from "~/lib/utils";
 import {
   useSupplier,
@@ -170,27 +168,31 @@ export default function SupplierDetailPage() {
 
       {/* Stats */}
       <PageSection>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <StatCard
-            icon={ShoppingCart}
-            label="Total Ordenes"
-            value={supplier.totalOrders || 0}
-            subtitle="ordenes de compra"
-            color="primary"
-          />
-          <StatCard
-            icon={DollarSign}
-            label="Total Comprado"
-            value={formatCurrency(supplier.totalPurchased || 0)}
-            color="success"
-          />
-        </div>
+        <AnimatedGrid variant="stats" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <AnimatedGridItem variant="stats">
+            <StatCard
+              icon={ShoppingCart}
+              label="Total Ordenes"
+              value={supplier.totalOrders || 0}
+              subtitle="ordenes de compra"
+              color="primary"
+            />
+          </AnimatedGridItem>
+          <AnimatedGridItem variant="stats">
+            <StatCard
+              icon={DollarSign}
+              label="Total Comprado"
+              value={formatCurrency(supplier.totalPurchased || 0)}
+              color="success"
+            />
+          </AnimatedGridItem>
+        </AnimatedGrid>
       </PageSection>
 
       {/* Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <AnimatedGrid variant="detail" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Contact Info */}
-        <PageSection>
+        <AnimatedGridItem variant="detail">
           <Card>
             <CardHeader>
               <CardTitle>Informacion de Contacto</CardTitle>
@@ -268,10 +270,10 @@ export default function SupplierDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </PageSection>
+        </AnimatedGridItem>
 
         {/* Additional Info */}
-        <PageSection>
+        <AnimatedGridItem variant="detail">
           <Card>
             <CardHeader>
               <CardTitle>Informacion Adicional</CardTitle>
@@ -337,8 +339,8 @@ export default function SupplierDetailPage() {
               </div>
             </CardContent>
           </Card>
-        </PageSection>
-      </div>
+        </AnimatedGridItem>
+      </AnimatedGrid>
 
       {/* Notes */}
       {supplier.notes && (

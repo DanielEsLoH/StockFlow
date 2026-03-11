@@ -1,19 +1,17 @@
 import { Link, useParams } from "react-router";
-import {
-  FileMinus,
-  ArrowLeft,
-  Calendar,
-  Download,
-  CheckCircle,
-  XCircle,
-  Clock,
-  FileText,
-  User,
-  Hash,
-} from "lucide-react";
+import FileMinus from "lucide-react/dist/esm/icons/file-minus";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import Download from "lucide-react/dist/esm/icons/download";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import FileText from "lucide-react/dist/esm/icons/file-text";
+import User from "lucide-react/dist/esm/icons/user";
+import Hash from "lucide-react/dist/esm/icons/hash";
 import type { Route } from "./+types/_app.credit-notes.$id";
 import { formatDate, formatCurrency } from "~/lib/utils";
-import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
+import { PageWrapper, PageSection, AnimatedGrid, AnimatedGridItem } from "~/components/layout/PageWrapper";
 import { useDianDocument, useDownloadDianXml } from "~/hooks/useDian";
 import { Button } from "~/components/ui/Button";
 import { Card } from "~/components/ui/Card";
@@ -26,6 +24,7 @@ import {
   type CreditNoteReason,
 } from "~/types/dian";
 import { EmptyState } from "~/components/ui/EmptyState";
+import { AnimatedTableRow } from "~/components/ui/Table";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Detalle Nota Credito - StockFlow" },
@@ -114,8 +113,9 @@ export default function CreditNoteDetailPage() {
         </div>
       </PageSection>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-6">
+      <AnimatedGrid variant="detail" className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-6">
         {/* Document Info */}
+        <AnimatedGridItem variant="detail">
         <Card variant="elevated" padding="lg">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
             Informacion del Documento
@@ -182,8 +182,10 @@ export default function CreditNoteDetailPage() {
             )}
           </dl>
         </Card>
+        </AnimatedGridItem>
 
         {/* Customer & Totals */}
+        <AnimatedGridItem variant="detail">
         <Card variant="elevated" padding="lg">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
             Cliente y Totales
@@ -229,7 +231,8 @@ export default function CreditNoteDetailPage() {
             </div>
           )}
         </Card>
-      </div>
+        </AnimatedGridItem>
+      </AnimatedGrid>
 
       {/* Items */}
       {doc.invoice?.items && doc.invoice.items.length > 0 && (
@@ -264,8 +267,9 @@ export default function CreditNoteDetailPage() {
                 </thead>
                 <tbody>
                   {doc.invoice.items.map((item, idx) => (
-                    <tr
+                    <AnimatedTableRow
                       key={item.id}
+                      index={idx}
                       className="border-b border-neutral-100 dark:border-neutral-800 last:border-0"
                     >
                       <td className="py-2 text-neutral-700 dark:text-neutral-300">
@@ -286,7 +290,7 @@ export default function CreditNoteDetailPage() {
                       <td className="py-2 text-right font-medium text-neutral-900 dark:text-white">
                         {formatCurrency(Number(item.total))}
                       </td>
-                    </tr>
+                    </AnimatedTableRow>
                   ))}
                 </tbody>
               </table>

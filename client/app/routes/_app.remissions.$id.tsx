@@ -1,23 +1,21 @@
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router";
-import {
-  ArrowLeft,
-  Truck,
-  Trash2,
-  Calendar,
-  User,
-  MapPin,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Package,
-  Loader2,
-  Warehouse,
-  FileText,
-  Send,
-} from "lucide-react";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import Truck from "lucide-react/dist/esm/icons/truck";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import User from "lucide-react/dist/esm/icons/user";
+import MapPin from "lucide-react/dist/esm/icons/map-pin";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import Package from "lucide-react/dist/esm/icons/package";
+import Loader2 from "lucide-react/dist/esm/icons/loader-2";
+import Warehouse from "lucide-react/dist/esm/icons/warehouse";
+import FileText from "lucide-react/dist/esm/icons/file-text";
+import Send from "lucide-react/dist/esm/icons/send";
 import type { Route } from "./+types/_app.remissions.$id";
-import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
+import { PageWrapper, PageSection, AnimatedGrid, AnimatedGridItem } from "~/components/layout/PageWrapper";
 import { cn, formatDate } from "~/lib/utils";
 import {
   useRemission,
@@ -38,6 +36,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import type { RemissionStatus } from "~/types/remission";
 import { remissionStatusLabels } from "~/types/remission";
@@ -311,8 +310,9 @@ export default function RemissionDetailPage() {
       </PageSection>
 
       {/* Info grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <AnimatedGrid variant="detail" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Customer & general info */}
+        <AnimatedGridItem variant="detail">
         <PageSection>
           <Card>
             <CardHeader>
@@ -358,8 +358,10 @@ export default function RemissionDetailPage() {
             </CardContent>
           </Card>
         </PageSection>
+        </AnimatedGridItem>
 
         {/* Delivery info */}
+        <AnimatedGridItem variant="detail">
         <PageSection>
           <Card>
             <CardHeader>
@@ -394,7 +396,8 @@ export default function RemissionDetailPage() {
             </CardContent>
           </Card>
         </PageSection>
-      </div>
+        </AnimatedGridItem>
+      </AnimatedGrid>
 
       {/* Items table */}
       <PageSection>
@@ -416,9 +419,10 @@ export default function RemissionDetailPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(remission.items || []).map((item) => (
-                <TableRow
+              {(remission.items || []).map((item, i) => (
+                <AnimatedTableRow
                   key={item.id}
+                  index={i}
                   className="border-b border-neutral-200 dark:border-neutral-700 last:border-0"
                 >
                   <TableCell>
@@ -455,7 +459,7 @@ export default function RemissionDetailPage() {
                       {item.notes || "—"}
                     </p>
                   </TableCell>
-                </TableRow>
+                </AnimatedTableRow>
               ))}
               {(!remission.items || remission.items.length === 0) && (
                 <TableRow>

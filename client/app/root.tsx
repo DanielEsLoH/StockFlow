@@ -8,6 +8,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { MotionConfig } from "framer-motion";
 
 import type { Route } from "./+types/root";
 import { queryClient } from "~/lib/query-client";
@@ -67,13 +68,15 @@ export function Layout({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthInitializer>
-        <ToastProvider>
-          <Outlet />
-        </ToastProvider>
-      </AuthInitializer>
-    </QueryClientProvider>
+    <MotionConfig reducedMotion="user">
+      <QueryClientProvider client={queryClient}>
+        <AuthInitializer>
+          <ToastProvider>
+            <Outlet />
+          </ToastProvider>
+        </AuthInitializer>
+      </QueryClientProvider>
+    </MotionConfig>
   );
 }
 

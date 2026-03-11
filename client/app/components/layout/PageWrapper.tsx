@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
-import { pageVariants, pageItemVariants } from "~/lib/animations";
+import type { Variants } from "framer-motion";
+import {
+  pageVariants,
+  pageItemVariants,
+  statGridVariants,
+  statItemVariants,
+  detailGridVariants,
+  detailItemVariants,
+} from "~/lib/animations";
 
 interface PageWrapperProps {
   children: React.ReactNode;
@@ -57,6 +65,35 @@ interface PageSectionProps {
 export function PageSection({ children, className }: PageSectionProps) {
   return (
     <motion.div variants={pageItemVariants} className={className}>
+      {children}
+    </motion.div>
+  );
+}
+
+interface AnimatedGridProps {
+  children: React.ReactNode;
+  className?: string;
+  variant?: "stats" | "detail";
+}
+
+export function AnimatedGrid({ children, className, variant = "stats" }: AnimatedGridProps) {
+  const variants = variant === "stats" ? statGridVariants : detailGridVariants;
+  return (
+    <motion.div
+      variants={variants}
+      initial="hidden"
+      animate="visible"
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+export function AnimatedGridItem({ children, className, variant = "stats" }: AnimatedGridProps) {
+  const variants = variant === "stats" ? statItemVariants : detailItemVariants;
+  return (
+    <motion.div variants={variants} className={className}>
       {children}
     </motion.div>
   );

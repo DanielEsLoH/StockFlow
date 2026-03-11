@@ -187,6 +187,70 @@ export const modalContentVariants: Variants = {
 };
 
 // ============================================================================
+// DETAIL GRID VARIANTS — staggered info cards on detail pages
+// ============================================================================
+
+export const detailGridVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.05 },
+  },
+};
+
+export const detailItemVariants: Variants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3, ease },
+  },
+};
+
+// ============================================================================
+// STAT GRID VARIANTS — staggered stat cards on dashboards/detail pages
+// ============================================================================
+
+export const statGridVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.07 },
+  },
+};
+
+export const statItemVariants: Variants = {
+  hidden: { opacity: 0, y: 16, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.35, ease },
+  },
+};
+
+// ============================================================================
+// FORM SECTION VARIANTS — staggered card sections in new/edit pages
+// ============================================================================
+
+export const formSectionVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 },
+  },
+};
+
+export const formCardVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease },
+  },
+};
+
+// ============================================================================
 // COLLAPSE VARIANTS — expand/collapse for filters
 // ============================================================================
 

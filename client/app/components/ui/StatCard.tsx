@@ -8,6 +8,7 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { transitions } from "~/lib/animations";
 import { Card, CardContent } from "~/components/ui/Card";
 
 // Preset color schemes with gradient backgrounds for premium look
@@ -149,6 +150,15 @@ export function StatCard({
     );
   };
 
+  // Micro-interaction props for clickable cards
+  const interactionProps = onClick
+    ? {
+        whileHover: { y: -2 },
+        whileTap: { scale: 0.98 },
+        transition: transitions.micro,
+      }
+    : {};
+
   // Loading skeleton
   if (isLoading) {
     return (
@@ -215,10 +225,15 @@ export function StatCard({
             delay: animationDelay,
             ease: [0.16, 1, 0.3, 1],
           }}
+          {...interactionProps}
         >
           {content}
         </motion.div>
       );
+    }
+
+    if (onClick) {
+      return <motion.div {...interactionProps}>{content}</motion.div>;
     }
 
     return content;
@@ -269,10 +284,15 @@ export function StatCard({
             delay: animationDelay,
             ease: [0.16, 1, 0.3, 1],
           }}
+          {...interactionProps}
         >
           {content}
         </motion.div>
       );
+    }
+
+    if (onClick) {
+      return <motion.div {...interactionProps}>{content}</motion.div>;
     }
 
     return content;
@@ -333,10 +353,15 @@ export function StatCard({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3, delay: animationDelay }}
+          {...interactionProps}
         >
           {content}
         </motion.div>
       );
+    }
+
+    if (onClick) {
+      return <motion.div {...interactionProps}>{content}</motion.div>;
     }
 
     return content;
@@ -392,10 +417,15 @@ export function StatCard({
           delay: animationDelay,
           ease: [0.16, 1, 0.3, 1],
         }}
+        {...interactionProps}
       >
         {content}
       </motion.div>
     );
+  }
+
+  if (onClick) {
+    return <motion.div {...interactionProps}>{content}</motion.div>;
   }
 
   return content;

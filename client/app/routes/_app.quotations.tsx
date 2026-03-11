@@ -31,6 +31,8 @@ import { Badge } from "~/components/ui/Badge";
 import { StatCard } from "~/components/ui/StatCard";
 import { Select } from "~/components/ui/Select";
 import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
+import { ExportButton } from "~/components/ui/ExportButton";
+import type { ExportColumn } from "~/lib/export-utils";
 import {
   Table,
   TableHeader,
@@ -51,6 +53,7 @@ import type {
 } from "~/types/quotation";
 import { QuotationStatusLabels } from "~/types/quotation";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
+import { useListPageHotkeys } from "~/hooks/useListPageHotkeys";
 import { useCustomerOptions } from "~/hooks/useCustomerOptions";
 
 // Meta for SEO - used by React Router
@@ -60,6 +63,35 @@ export const meta: Route.MetaFunction = () => {
     { name: "description", content: "Gestion de cotizaciones" },
   ];
 };
+
+// Export columns for quotations
+const exportColumns: ExportColumn<QuotationSummary>[] = [
+  { key: "quotationNumber", label: "No. Cotizacion" },
+  { key: "customer.name", label: "Cliente" },
+  {
+    key: "issueDate",
+    label: "Fecha",
+    format: (v) =>
+      v ? new Date(v as string).toLocaleDateString("es-CO") : "",
+  },
+  {
+    key: "validUntil",
+    label: "Valida hasta",
+    format: (v) =>
+      v ? new Date(v as string).toLocaleDateString("es-CO") : "",
+  },
+  {
+    key: "total",
+    label: "Total",
+    format: (v) => (v != null ? Number(v).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }) : ""),
+  },
+  {
+    key: "status",
+    label: "Estado",
+    format: (v) =>
+      QuotationStatusLabels[v as QuotationStatus] ?? String(v),
+  },
+];
 
 // Status options for filter
 const statusOptions = [
@@ -133,6 +165,8 @@ export default function QuotationsPage() {
     useUrlFilters<QuotationFilters>({
       parserConfig: quotationFiltersParser,
     });
+
+  useListPageHotkeys({ createUrl: canCreateQuotations ? "/quotations/new" : undefined, onClearFilters: clearFilters });
 
   // Queries
   const {
@@ -303,6 +337,12 @@ export default function QuotationsPage() {
                   Limpiar
                 </Button>
               )}
+
+              <ExportButton
+                data={quotations}
+                columns={exportColumns}
+                filename="cotizaciones"
+              />
             </div>
 
             {/* Filter options */}

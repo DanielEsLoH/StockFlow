@@ -207,7 +207,6 @@ export default defineConfig({
           // - react-router, @react-router
           // - @radix-ui
           // - framer-motion
-          // - recharts
           // - @tanstack/react-query
           // - react-hook-form
         },

@@ -36,6 +36,8 @@ import { Badge } from "~/components/ui/Badge";
 import { StatCard } from "~/components/ui/StatCard";
 import { Select } from "~/components/ui/Select";
 import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
+import { ExportButton } from "~/components/ui/ExportButton";
+import type { ExportColumn } from "~/lib/export-utils";
 import {
   Table,
   TableHeader,
@@ -75,6 +77,30 @@ export const meta: Route.MetaFunction = () => {
     { name: "description", content: "Gestion de pagos" },
   ];
 };
+
+// Export columns for payments
+const exportColumns: ExportColumn<PaymentSummary>[] = [
+  { key: "invoice.invoiceNumber", label: "Factura" },
+  { key: "invoice.customer.name", label: "Cliente" },
+  {
+    key: "amount",
+    label: "Monto",
+    format: (v) => (v != null ? Number(v).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }) : ""),
+  },
+  {
+    key: "method",
+    label: "Metodo",
+    format: (v) =>
+      PaymentMethodLabels[v as PaymentMethod] ?? String(v),
+  },
+  { key: "reference", label: "Referencia" },
+  {
+    key: "paymentDate",
+    label: "Fecha",
+    format: (v) =>
+      v ? new Date(v as string).toLocaleDateString("es-CO") : "",
+  },
+];
 
 // Method options for filter
 const methodOptions = [
@@ -351,6 +377,12 @@ export default function PaymentsPage() {
                   Limpiar
                 </Button>
               )}
+
+              <ExportButton
+                data={payments}
+                columns={exportColumns}
+                filename="pagos"
+              />
             </div>
 
             {/* Filter options */}

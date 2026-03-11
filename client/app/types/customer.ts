@@ -39,14 +39,12 @@ export interface CreateCustomerData {
   name: string;
   email: string;
   phone?: string;
-  document?: string;
-  documentType?: "CC" | "NIT" | "CE" | "PASSPORT";
+  documentNumber: string;
+  documentType: "CC" | "NIT" | "CE" | "PASSPORT" | "RUT" | "DNI" | "OTHER";
   dv?: string;
-  type: CustomerType;
   address?: string;
   city?: string;
   notes?: string;
-  isActive?: boolean;
 }
 
 export type UpdateCustomerData = Partial<CreateCustomerData>;

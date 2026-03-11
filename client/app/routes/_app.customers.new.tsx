@@ -28,14 +28,16 @@ const customerSchema = z.object({
     .max(100, "Maximo 100 caracteres"),
   email: z.email({ message: "Email invalido" }),
   phone: z.string().max(20, "Maximo 20 caracteres").optional(),
-  document: z.string().max(20, "Maximo 20 caracteres").optional(),
-  documentType: z.enum(["CC", "NIT", "CE", "PASSPORT"]).optional(),
+  documentNumber: z
+    .string()
+    .min(5, "Minimo 5 caracteres")
+    .max(20, "Maximo 20 caracteres"),
+  documentType: z.enum(["CC", "NIT", "CE", "PASSPORT", "RUT", "DNI", "OTHER"]),
   dv: z.string().max(1, "Maximo 1 caracter").optional(),
   type: z.enum(["INDIVIDUAL", "BUSINESS"]),
   address: z.string().max(200, "Maximo 200 caracteres").optional(),
   city: z.string().max(100, "Maximo 100 caracteres").optional(),
   notes: z.string().max(500, "Maximo 500 caracteres").optional(),
-  isActive: z.boolean(),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -48,17 +50,13 @@ const typeOptions = [
 
 // Document type options
 const documentTypeOptions = [
-  { value: "", label: "Seleccionar tipo" },
   { value: "CC", label: "Cedula de Ciudadania" },
   { value: "NIT", label: "NIT" },
   { value: "CE", label: "Cedula de Extranjeria" },
   { value: "PASSPORT", label: "Pasaporte" },
-];
-
-// Status options
-const statusOptions = [
-  { value: "true", label: "Activo" },
-  { value: "false", label: "Inactivo" },
+  { value: "RUT", label: "RUT" },
+  { value: "DNI", label: "DNI" },
+  { value: "OTHER", label: "Otro" },
 ];
 
 export default function NewCustomerPage() {
@@ -76,23 +74,27 @@ export default function NewCustomerPage() {
       name: "",
       email: "",
       phone: "",
-      document: "",
-      documentType: undefined,
+      documentNumber: "",
+      documentType: "CC",
       dv: "",
       type: "INDIVIDUAL",
       address: "",
       city: "",
       notes: "",
-      isActive: true,
     },
   });
 
   const customerType = watch("type");
 
   const onSubmit = (data: CustomerFormData) => {
+    const { type, ...customerData } = data;
     createCustomer.mutate({
-      ...data,
-      documentType: data.documentType || undefined,
+      ...customerData,
+      phone: data.phone || undefined,
+      dv: data.dv || undefined,
+      address: data.address || undefined,
+      city: data.city || undefined,
+      notes: data.notes || undefined,
     });
   };
 
@@ -160,10 +162,8 @@ export default function NewCustomerPage() {
                         render={({ field }) => (
                           <Select
                             options={documentTypeOptions}
-                            value={field.value || ""}
-                            onChange={(value) =>
-                              field.onChange(value || undefined)
-                            }
+                            value={field.value}
+                            onChange={field.onChange}
                           />
                         )}
                       />
@@ -173,17 +173,17 @@ export default function NewCustomerPage() {
                         Numero de Documento
                       </label>
                       <Input
-                        {...register("document")}
+                        {...register("documentNumber")}
                         placeholder={
                           customerType === "BUSINESS"
                             ? "900123456-7"
                             : "12345678"
                         }
-                        error={!!errors.document}
+                        error={!!errors.documentNumber}
                       />
-                      {errors.document && (
+                      {errors.documentNumber && (
                         <p className="mt-1 text-sm text-error-500">
-                          {errors.document.message}
+                          {errors.documentNumber.message}
                         </p>
                       )}
                     </div>
@@ -333,28 +333,6 @@ export default function NewCustomerPage() {
                       ? "Para empresas y negocios"
                       : "Para personas naturales"}
                   </p>
-                </CardContent>
-              </Card>
-            </PageSection>
-
-            {/* Status */}
-            <PageSection>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Estado</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Controller
-                    name="isActive"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        options={statusOptions}
-                        value={String(field.value)}
-                        onChange={(value) => field.onChange(value === "true")}
-                      />
-                    )}
-                  />
                 </CardContent>
               </Card>
             </PageSection>

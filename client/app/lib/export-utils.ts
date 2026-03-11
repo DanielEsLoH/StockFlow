@@ -53,3 +53,34 @@ export function exportToCSV<T>(
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+export async function exportToExcel<T>(
+  data: T[],
+  columns: ExportColumn<T>[],
+  fileName: string,
+): Promise<void> {
+  const XLSX = await import("xlsx");
+
+  const headers = columns.map((c) => c.label);
+  const rows = data.map((row) =>
+    columns.map((col) => {
+      const raw = getNestedValue(row, col.key);
+      return col.format ? col.format(raw, row) : raw == null ? "" : raw;
+    }),
+  );
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+  // Auto-size columns
+  ws["!cols"] = headers.map((h, i) => {
+    const maxLen = Math.max(
+      h.length,
+      ...rows.map((r) => String(r[i] ?? "").length),
+    );
+    return { wch: Math.min(maxLen + 2, 50) };
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Datos");
+  XLSX.writeFile(wb, `${fileName}.xlsx`);
+}

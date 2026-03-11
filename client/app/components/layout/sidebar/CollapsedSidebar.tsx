@@ -112,6 +112,7 @@ export function CollapsedSidebar({ onToggleCollapse }: CollapsedSidebarProps) {
           <div className="py-1">
             <NavLink
               to={dashboardItem.href}
+              prefetch="intent"
               className={cn(
                 "flex items-center justify-center w-full h-10 rounded-xl transition-all duration-200",
                 isDashboardActive

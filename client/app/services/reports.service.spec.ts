@@ -10,7 +10,7 @@ vi.mock("~/lib/api", () => ({
 
 import { api } from "~/lib/api";
 
-const mockApi = vi.mocked(api);
+const mockApi = vi.mocked(api, true);
 
 describe("reportsService", () => {
   const mockBlob = new Blob(["test"], { type: "application/pdf" });

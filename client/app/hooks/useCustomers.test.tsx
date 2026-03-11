@@ -445,9 +445,8 @@ describe("useCustomers hooks", () => {
           name: "Juan Carlos Perez",
           email: "jcperez@email.com",
           phone: "+57 300 123 4567",
-          document: "1234567890",
+          documentNumber: "1234567890",
           documentType: "CC",
-          type: "INDIVIDUAL",
           address: "Calle 80 #45-12",
           city: "Bogota",
         });
@@ -478,9 +477,8 @@ describe("useCustomers hooks", () => {
           name: "Distribuidora ABC S.A.S",
           email: "compras@distribuidoraabc.com",
           phone: "+57 1 234 5678",
-          document: "900123456-7",
+          documentNumber: "900123456-7",
           documentType: "NIT",
-          type: "BUSINESS",
           address: "Zona Industrial, Bodega 15",
           city: "Medellin",
         });
@@ -509,7 +507,8 @@ describe("useCustomers hooks", () => {
         result.current.mutate({
           name: "New Customer",
           email: "new@email.com",
-          type: "INDIVIDUAL",
+          documentNumber: "12345678",
+          documentType: "CC",
         });
       });
 
@@ -534,7 +533,8 @@ describe("useCustomers hooks", () => {
         result.current.mutate({
           name: "New Customer",
           email: "new@email.com",
-          type: "INDIVIDUAL",
+          documentNumber: "12345678",
+          documentType: "CC",
         });
       });
 
@@ -560,7 +560,8 @@ describe("useCustomers hooks", () => {
         result.current.mutate({
           name: "New Customer",
           email: "existing@email.com",
-          type: "INDIVIDUAL",
+          documentNumber: "12345678",
+          documentType: "CC",
         });
       });
 
@@ -649,7 +650,7 @@ describe("useCustomers hooks", () => {
       await act(async () => {
         result.current.mutate({
           id: "1",
-          data: { isActive: false },
+          data: { name: "Updated Name" },
         });
       });
 

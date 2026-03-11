@@ -30,6 +30,8 @@ import { Badge } from "~/components/ui/Badge";
 import { StatCard } from "~/components/ui/StatCard";
 import { Select } from "~/components/ui/Select";
 import { Pagination, PaginationInfo } from "~/components/ui/Pagination";
+import { ExportButton } from "~/components/ui/ExportButton";
+import type { ExportColumn } from "~/lib/export-utils";
 import {
   Table,
   TableHeader,
@@ -54,6 +56,7 @@ import {
 } from "~/types/purchase-order";
 import { Permission } from "~/types/permissions";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
+import { useListPageHotkeys } from "~/hooks/useListPageHotkeys";
 import { useSupplierOptions } from "~/hooks/useSupplierOptions";
 import { useWarehouses } from "~/hooks/useWarehouses";
 
@@ -64,6 +67,36 @@ export const meta: Route.MetaFunction = () => {
     { name: "description", content: "Gestion de ordenes de compra" },
   ];
 };
+
+// Export columns for purchase orders
+const exportColumns: ExportColumn<PurchaseOrderSummary>[] = [
+  { key: "purchaseOrderNumber", label: "No. OC" },
+  { key: "supplier.name", label: "Proveedor" },
+  { key: "warehouse.name", label: "Bodega" },
+  {
+    key: "issueDate",
+    label: "Fecha",
+    format: (v) =>
+      v ? new Date(v as string).toLocaleDateString("es-CO") : "",
+  },
+  {
+    key: "expectedDeliveryDate",
+    label: "Fecha Entrega",
+    format: (v) =>
+      v ? new Date(v as string).toLocaleDateString("es-CO") : "",
+  },
+  {
+    key: "total",
+    label: "Total",
+    format: (v) => (v != null ? Number(v).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }) : ""),
+  },
+  {
+    key: "status",
+    label: "Estado",
+    format: (v) =>
+      PurchaseOrderStatusLabels[v as PurchaseOrderStatus] ?? String(v),
+  },
+];
 
 // Status options for filter
 const statusOptions = [
@@ -128,6 +161,8 @@ export default function PurchaseOrdersPage() {
     useUrlFilters<PurchaseOrderFilters>({
       parserConfig: purchaseOrderFiltersParser,
     });
+
+  useListPageHotkeys({ createUrl: canCreate ? "/purchases/new" : undefined, onClearFilters: clearFilters });
 
   // Queries
   const {
@@ -298,6 +333,12 @@ export default function PurchaseOrdersPage() {
                   Limpiar
                 </Button>
               )}
+
+              <ExportButton
+                data={orders}
+                columns={exportColumns}
+                filename="ordenes-de-compra"
+              />
             </div>
 
             {/* Filter options */}

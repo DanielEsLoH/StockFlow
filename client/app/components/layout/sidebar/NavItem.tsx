@@ -16,6 +16,7 @@ export function NavItem({ name, href, icon: Icon, onClick, compact = true }: Nav
   return (
     <NavLink
       to={href}
+      prefetch="intent"
       onClick={onClick}
       className={cn(
         "group flex items-center gap-3 rounded-lg",

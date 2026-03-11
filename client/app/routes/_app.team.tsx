@@ -591,8 +591,8 @@ export default function TeamPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pendingInvitations.map((invitation) => (
-                        <TableRow key={invitation.id}>
+                      {pendingInvitations.map((invitation, index) => (
+                        <AnimatedTableRow key={invitation.id} index={index}>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Mail className="h-4 w-4 text-neutral-400" />
@@ -660,7 +660,7 @@ export default function TeamPage() {
                               </Button>
                             </div>
                           </TableCell>
-                        </TableRow>
+                        </AnimatedTableRow>
                       ))}
                     </TableBody>
                   </Table>
@@ -746,13 +746,13 @@ export default function TeamPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {invitations.map((invitation) => {
+                      {invitations.map((invitation, index) => {
                         const statusInfo =
                           invitationStatusConfig[invitation.status] ||
                           invitationStatusConfig.PENDING;
                         const isPending = invitation.status === "PENDING";
                         return (
-                          <TableRow key={invitation.id}>
+                          <AnimatedTableRow key={invitation.id} index={index}>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Mail className="h-4 w-4 text-neutral-400" />
@@ -821,7 +821,7 @@ export default function TeamPage() {
                                 </div>
                               )}
                             </TableCell>
-                          </TableRow>
+                          </AnimatedTableRow>
                         );
                       })}
                     </TableBody>

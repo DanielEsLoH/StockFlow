@@ -38,6 +38,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  AnimatedTableRow,
 } from "~/components/ui/Table";
 import { DeleteModal } from "~/components/ui/DeleteModal";
 import type { WithholdingCertificate } from "~/types/withholding-certificate";
@@ -265,8 +266,8 @@ export default function WithholdingCertificatesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {certificates.map((cert) => (
-                      <TableRow key={cert.id}>
+                    {certificates.map((cert, index) => (
+                      <AnimatedTableRow key={cert.id} index={index}>
                         <TableCell>
                           <p className="font-medium text-neutral-900 dark:text-white">
                             {cert.certificateNumber}
@@ -329,7 +330,7 @@ export default function WithholdingCertificatesPage() {
                             </Button>
                           </div>
                         </TableCell>
-                      </TableRow>
+                      </AnimatedTableRow>
                     ))}
                   </TableBody>
                 </Table>

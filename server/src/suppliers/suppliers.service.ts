@@ -14,6 +14,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { CacheService, CACHE_KEYS, CACHE_TTL } from '../cache';
 import { CreateSupplierDto, UpdateSupplierDto } from './dto';
 
 /**
@@ -80,6 +81,7 @@ export class SuppliersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
+    private readonly cache: CacheService,
   ) {}
 
   /**
@@ -207,8 +209,12 @@ export class SuppliersService {
    */
   async findOne(id: string): Promise<SupplierResponse> {
     const tenantId = this.tenantContext.requireTenantId();
+    const cacheKey = this.cache.generateKey(CACHE_KEYS.SUPPLIER, tenantId, id);
 
     this.logger.debug(`Finding supplier ${id} in tenant ${tenantId}`);
+
+    const cached = await this.cache.get<SupplierResponse>(cacheKey);
+    if (cached) return cached;
 
     const supplier = await this.prisma.supplier.findFirst({
       where: { id, tenantId },
@@ -225,7 +231,9 @@ export class SuppliersService {
       throw new NotFoundException(`Supplier with ID ${id} not found`);
     }
 
-    return this.mapToSupplierResponse(supplier);
+    const response = this.mapToSupplierResponse(supplier);
+    await this.cache.set(cacheKey, response, CACHE_TTL.SUPPLIERS);
+    return response;
   }
 
   /**
@@ -281,6 +289,8 @@ export class SuppliersService {
     });
 
     this.logger.log(`Supplier created: ${supplier.name} (${supplier.id})`);
+
+    await this.invalidateCache(tenantId);
 
     return this.mapToSupplierResponse(supplier);
   }
@@ -387,6 +397,8 @@ export class SuppliersService {
       `Supplier updated: ${updatedSupplier.name} (${updatedSupplier.id})`,
     );
 
+    await this.invalidateCache(tenantId, id);
+
     return this.mapToSupplierResponse(updatedSupplier);
   }
 
@@ -430,6 +442,8 @@ export class SuppliersService {
     await this.prisma.supplier.delete({ where: { id } });
 
     this.logger.log(`Supplier deleted: ${supplier.name} (${supplier.id})`);
+
+    await this.invalidateCache(tenantId, id);
   }
 
   /**
@@ -472,6 +486,21 @@ export class SuppliersService {
       createdAt: supplier.createdAt,
       updatedAt: supplier.updatedAt,
     };
+  }
+
+  /**
+   * Invalidates supplier-related cache entries for a tenant.
+   */
+  private async invalidateCache(
+    tenantId: string,
+    supplierId?: string,
+  ): Promise<void> {
+    await this.cache.invalidate(CACHE_KEYS.SUPPLIERS, tenantId);
+    if (supplierId) {
+      const key = this.cache.generateKey(CACHE_KEYS.SUPPLIER, tenantId, supplierId);
+      await this.cache.del(key);
+    }
+    await this.cache.invalidate(CACHE_KEYS.DASHBOARD, tenantId);
   }
 
   /**

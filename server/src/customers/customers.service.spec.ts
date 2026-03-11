@@ -9,6 +9,7 @@ import { DocumentType, CustomerStatus } from '@prisma/client';
 import { CustomersService } from './customers.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { CacheService } from '../cache';
 import type { CreateCustomerDto, UpdateCustomerDto } from './dto';
 
 describe('CustomersService', () => {
@@ -80,6 +81,7 @@ describe('CustomersService', () => {
         update: jest.fn(),
         delete: jest.fn(),
         count: jest.fn(),
+        groupBy: jest.fn(),
       },
       invoice: {
         count: jest.fn(),
@@ -97,11 +99,20 @@ describe('CustomersService', () => {
       }),
     };
 
+    const mockCacheService = {
+      get: jest.fn().mockResolvedValue(undefined),
+      set: jest.fn().mockResolvedValue(undefined),
+      del: jest.fn().mockResolvedValue(undefined),
+      invalidate: jest.fn().mockResolvedValue(undefined),
+      generateKey: jest.fn((...args: string[]) => args.join(':')),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CustomersService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
+        { provide: CacheService, useValue: mockCacheService },
       ],
     }).compile();
 
@@ -1096,7 +1107,7 @@ describe('CustomersService', () => {
 
   describe('getCities', () => {
     it('should return unique cities sorted alphabetically', async () => {
-      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([
+      (prismaService.customer.groupBy as jest.Mock).mockResolvedValue([
         { city: 'Bogota' },
         { city: 'Cali' },
         { city: 'Medellin' },
@@ -1108,7 +1119,7 @@ describe('CustomersService', () => {
     });
 
     it('should filter out null cities', async () => {
-      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([
+      (prismaService.customer.groupBy as jest.Mock).mockResolvedValue([
         { city: 'Bogota' },
         { city: null },
       ]);
@@ -1119,7 +1130,7 @@ describe('CustomersService', () => {
     });
 
     it('should return empty array when no customers', async () => {
-      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.customer.groupBy as jest.Mock).mockResolvedValue([]);
 
       const result = await service.getCities();
 
@@ -1127,7 +1138,7 @@ describe('CustomersService', () => {
     });
 
     it('should require tenant context', async () => {
-      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.customer.groupBy as jest.Mock).mockResolvedValue([]);
 
       await service.getCities();
 
@@ -1135,20 +1146,20 @@ describe('CustomersService', () => {
     });
 
     it('should scope query to tenant', async () => {
-      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.customer.groupBy as jest.Mock).mockResolvedValue([]);
 
       await service.getCities();
 
-      expect(prismaService.customer.findMany).toHaveBeenCalledWith({
-        where: { tenantId: mockTenantId },
-        select: { city: true },
-        distinct: ['city'],
+      expect(prismaService.customer.groupBy).toHaveBeenCalledWith({
+        by: ['city'],
+        where: { tenantId: mockTenantId, city: { not: null } },
+        orderBy: { city: 'asc' },
       });
     });
 
     it('should log debug when getting cities', async () => {
       const debugSpy = jest.spyOn(Logger.prototype, 'debug');
-      (prismaService.customer.findMany as jest.Mock).mockResolvedValue([]);
+      (prismaService.customer.groupBy as jest.Mock).mockResolvedValue([]);
 
       await service.getCities();
 

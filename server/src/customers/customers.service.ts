@@ -8,6 +8,7 @@ import {
 import { Customer, DocumentType, CustomerStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { CacheService, CACHE_KEYS, CACHE_TTL } from '../cache';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto';
 
 /**
@@ -28,6 +29,7 @@ export interface CustomerResponse {
   notes: string | null;
   status: CustomerStatus;
   isActive: boolean;
+  type: 'INDIVIDUAL' | 'BUSINESS';
   totalPurchases: number;
   totalSpent: number;
   tenantId: string;
@@ -62,6 +64,7 @@ export class CustomersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
+    private readonly cache: CacheService,
   ) {}
 
   /**
@@ -74,16 +77,13 @@ export class CustomersService {
 
     this.logger.debug(`Getting unique cities for tenant ${tenantId}`);
 
-    const customers = await this.prisma.customer.findMany({
-      where: { tenantId },
-      select: { city: true },
-      distinct: ['city'],
+    const cities = await this.prisma.customer.groupBy({
+      by: ['city'],
+      where: { tenantId, city: { not: null } },
+      orderBy: { city: 'asc' },
     });
 
-    return customers
-      .map((c) => c.city)
-      .filter((city): city is string => city !== null)
-      .sort();
+    return cities.map((c) => c.city).filter((city): city is string => city !== null);
   }
 
   /**
@@ -176,8 +176,12 @@ export class CustomersService {
    */
   async findOne(id: string): Promise<CustomerResponse> {
     const tenantId = this.tenantContext.requireTenantId();
+    const cacheKey = this.cache.generateKey(CACHE_KEYS.CUSTOMER, tenantId, id);
 
     this.logger.debug(`Finding customer ${id} in tenant ${tenantId}`);
+
+    const cached = await this.cache.get<CustomerResponse>(cacheKey);
+    if (cached) return cached;
 
     const customer = await this.prisma.customer.findFirst({
       where: { id, tenantId },
@@ -188,7 +192,9 @@ export class CustomersService {
       throw new NotFoundException(`Customer with ID ${id} not found`);
     }
 
-    return this.mapToCustomerResponse(customer);
+    const response = this.mapToCustomerResponse(customer);
+    await this.cache.set(cacheKey, response, CACHE_TTL.CUSTOMERS);
+    return response;
   }
 
   /**
@@ -242,6 +248,7 @@ export class CustomersService {
 
     this.logger.log(`Customer created: ${customer.name} (${customer.id})`);
 
+    await this.invalidateCache(tenantId);
     return this.mapToCustomerResponse(customer);
   }
 
@@ -335,6 +342,7 @@ export class CustomersService {
       `Customer updated: ${updatedCustomer.name} (${updatedCustomer.id})`,
     );
 
+    await this.invalidateCache(tenantId, id);
     return this.mapToCustomerResponse(updatedCustomer);
   }
 
@@ -378,6 +386,7 @@ export class CustomersService {
     await this.prisma.customer.delete({ where: { id } });
 
     this.logger.log(`Customer deleted: ${customer.name} (${customer.id})`);
+    await this.invalidateCache(tenantId, id);
   }
 
   /**
@@ -404,6 +413,7 @@ export class CustomersService {
       notes: customer.notes,
       status: customer.status,
       isActive: customer.status === CustomerStatus.ACTIVE,
+      type: customer.documentType === DocumentType.NIT ? 'BUSINESS' : 'INDIVIDUAL',
       totalPurchases: customer.invoices?.length ?? 0,
       totalSpent: customer.invoices?.reduce(
         (sum, inv) => sum + Number(inv.total),
@@ -418,6 +428,21 @@ export class CustomersService {
   /**
    * Builds a paginated response from customers and pagination params
    */
+  /**
+   * Invalidates customer-related cache entries for a tenant.
+   */
+  private async invalidateCache(
+    tenantId: string,
+    customerId?: string,
+  ): Promise<void> {
+    await this.cache.invalidate(CACHE_KEYS.CUSTOMERS, tenantId);
+    if (customerId) {
+      const key = this.cache.generateKey(CACHE_KEYS.CUSTOMER, tenantId, customerId);
+      await this.cache.del(key);
+    }
+    await this.cache.invalidate(CACHE_KEYS.DASHBOARD, tenantId);
+  }
+
   private buildPaginatedResponse(
     customers: (Customer & { invoices?: { total: any }[] })[],
     total: number,

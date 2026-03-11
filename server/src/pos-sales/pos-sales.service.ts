@@ -761,9 +761,11 @@ export class POSSalesService {
         (subtotal - totalDiscount) * (globalDiscountPercent / 100);
       totalDiscount += globalDiscount;
 
-      // Recalculate tax after global discount
+      // Recalculate tax proportionally after global discount
       const subtotalAfterAllDiscounts = subtotal - totalDiscount;
-      // Note: This is simplified. In practice, you might want to recalculate per item.
+      const proportionRemaining =
+        subtotal > 0 ? subtotalAfterAllDiscounts / subtotal : 0;
+      totalTax = totalTax * proportionRemaining;
     }
 
     const total = subtotal - totalDiscount + totalTax;

@@ -14,6 +14,7 @@ import { AccountingBridgeService } from '../accounting';
 import { BrevoService } from '../notifications/mail/brevo.service';
 import { ReportsService } from '../reports/reports.service';
 import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
+import { CacheService } from '../cache';
 import type {
   CreateInvoiceDto,
   UpdateInvoiceDto,
@@ -255,6 +256,16 @@ describe('InvoicesService', () => {
               .fn()
               .mockResolvedValue({ rate: { toNumber: () => 1 }, source: 'manual' }),
             convertAmount: jest.fn(),
+          },
+        },
+        {
+          provide: CacheService,
+          useValue: {
+            get: jest.fn().mockResolvedValue(undefined),
+            set: jest.fn().mockResolvedValue(undefined),
+            del: jest.fn().mockResolvedValue(undefined),
+            invalidate: jest.fn().mockResolvedValue(undefined),
+            generateKey: jest.fn((...args: string[]) => args.join(':')),
           },
         },
       ],

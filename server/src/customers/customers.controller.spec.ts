@@ -28,6 +28,7 @@ describe('CustomersController', () => {
     businessName: null,
     taxId: null,
     notes: 'Cliente preferencial',
+    type: 'INDIVIDUAL' as const,
     status: CustomerStatus.ACTIVE,
     isActive: true,
     totalPurchases: 0,

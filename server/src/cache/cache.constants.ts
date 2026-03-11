@@ -21,6 +21,14 @@ export const CACHE_KEYS = {
   WAREHOUSES: 'warehouses',
   /** Single warehouse cache prefix */
   WAREHOUSE: 'warehouse',
+  /** Invoices cache prefix */
+  INVOICES: 'invoices',
+  /** Single invoice cache prefix */
+  INVOICE: 'invoice',
+  /** Suppliers cache prefix */
+  SUPPLIERS: 'suppliers',
+  /** Single supplier cache prefix */
+  SUPPLIER: 'supplier',
   /** User cache prefix */
   USER: 'user',
 } as const;
@@ -50,6 +58,10 @@ export const CACHE_TTL = {
   WAREHOUSES: 900,
   /** Customer data (5 minutes) */
   CUSTOMERS: 300,
+  /** Invoice data (5 minutes) */
+  INVOICES: 300,
+  /** Supplier data (5 minutes) */
+  SUPPLIERS: 300,
 } as const;
 
 /**

@@ -264,10 +264,32 @@ export class DianService {
 
     this.logger.log(`Processing invoice ${invoiceId} for DIAN`);
 
-    // Get DIAN config
-    const config = await this.prisma.tenantDianConfig.findUnique({
-      where: { tenantId },
-    });
+    // Fetch config, invoice, and existing doc in parallel (all independent)
+    const [config, invoice, existingDoc] = await Promise.all([
+      this.prisma.tenantDianConfig.findUnique({
+        where: { tenantId },
+      }),
+      this.prisma.invoice.findFirst({
+        where: { id: invoiceId, tenantId },
+        include: {
+          customer: true,
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      }) as Promise<InvoiceWithDetails | null>,
+      this.prisma.dianDocument.findFirst({
+        where: { invoiceId, tenantId },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
 
     if (!config) {
       throw new BadRequestException(
@@ -287,33 +309,9 @@ export class DianService {
       );
     }
 
-    // Get invoice with details
-    const invoice = (await this.prisma.invoice.findFirst({
-      where: { id: invoiceId, tenantId },
-      include: {
-        customer: true,
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    })) as InvoiceWithDetails | null;
-
     if (!invoice) {
       throw new NotFoundException('Factura no encontrada');
     }
-
-    // Check if already sent
-    const existingDoc = await this.prisma.dianDocument.findFirst({
-      where: { invoiceId, tenantId },
-      orderBy: { createdAt: 'desc' },
-    });
 
     if (existingDoc && existingDoc.status === 'ACCEPTED' && !force) {
       throw new BadRequestException(
@@ -438,27 +436,25 @@ export class DianService {
       `Processing credit note for invoice ${dto.invoiceId}`,
     );
 
-    // Get config and validate
-    const config = await this.getAndValidateConfig(tenantId);
+    // Fetch config, invoice, and original doc in parallel (all independent)
+    const [config, invoice, originalDoc] = await Promise.all([
+      this.getAndValidateConfig(tenantId),
+      this.getInvoiceWithDetails(dto.invoiceId, tenantId),
+      this.prisma.dianDocument.findFirst({
+        where: {
+          invoiceId: dto.invoiceId,
+          tenantId,
+          documentType: DianDocumentType.FACTURA_ELECTRONICA,
+          status: DianDocumentStatus.ACCEPTED,
+        },
+      }),
+    ]);
 
     if (!config.creditNotePrefix) {
       throw new BadRequestException(
         'Prefijo de notas credito no configurado. Configure en DIAN > Configuracion > Notas.',
       );
     }
-
-    // Get original invoice with details
-    const invoice = await this.getInvoiceWithDetails(dto.invoiceId, tenantId);
-
-    // Find original accepted DIAN document
-    const originalDoc = await this.prisma.dianDocument.findFirst({
-      where: {
-        invoiceId: dto.invoiceId,
-        tenantId,
-        documentType: DianDocumentType.FACTURA_ELECTRONICA,
-        status: DianDocumentStatus.ACCEPTED,
-      },
-    });
 
     if (!originalDoc) {
       throw new BadRequestException(
@@ -655,26 +651,25 @@ export class DianService {
       `Processing debit note for invoice ${dto.invoiceId}`,
     );
 
-    const config = await this.getAndValidateConfig(tenantId);
+    // Fetch config, invoice, and original doc in parallel (all independent)
+    const [config, invoice, originalDoc] = await Promise.all([
+      this.getAndValidateConfig(tenantId),
+      this.getInvoiceWithDetails(dto.invoiceId, tenantId),
+      this.prisma.dianDocument.findFirst({
+        where: {
+          invoiceId: dto.invoiceId,
+          tenantId,
+          documentType: DianDocumentType.FACTURA_ELECTRONICA,
+          status: DianDocumentStatus.ACCEPTED,
+        },
+      }),
+    ]);
 
     if (!config.debitNotePrefix) {
       throw new BadRequestException(
         'Prefijo de notas debito no configurado. Configure en DIAN > Configuracion > Notas.',
       );
     }
-
-    // Get original invoice
-    const invoice = await this.getInvoiceWithDetails(dto.invoiceId, tenantId);
-
-    // Find original accepted DIAN document
-    const originalDoc = await this.prisma.dianDocument.findFirst({
-      where: {
-        invoiceId: dto.invoiceId,
-        tenantId,
-        documentType: DianDocumentType.FACTURA_ELECTRONICA,
-        status: DianDocumentStatus.ACCEPTED,
-      },
-    });
 
     if (!originalDoc) {
       throw new BadRequestException(
@@ -1387,13 +1382,12 @@ export class DianService {
       throw new BadRequestException('Se requiere motivo del reclamo para evento 031');
     }
 
-    // Get DIAN config
-    const config = await this.prisma.tenantDianConfig.findUnique({
-      where: { tenantId },
-    });
+    // Fetch config and tenant in parallel (both independent, only need tenantId)
+    const [config, tenant] = await Promise.all([
+      this.prisma.tenantDianConfig.findUnique({ where: { tenantId } }),
+      this.prisma.tenant.findUnique({ where: { id: tenantId } }),
+    ]);
     if (!config) throw new BadRequestException('Configuración DIAN no encontrada');
-
-    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId } });
     if (!tenant) throw new NotFoundException('Tenant no encontrado');
 
     // Determine sender/receiver based on event type

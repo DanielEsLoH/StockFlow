@@ -670,15 +670,15 @@ describe('POSSalesService', () => {
         id: 'sale-123',
         saleNumber: 'POS-00001',
         subtotal: 100,
-        tax: 19,
+        tax: 18.05,
         discount: 5,
-        total: 114,
+        total: 113.05,
         createdAt: new Date(),
       });
       mockTx.salePayment.create.mockResolvedValue({
         id: 'payment-123',
         method: PaymentMethod.CASH,
-        amount: 114,
+        amount: 113.05,
       });
 
       (prisma.$transaction as jest.Mock).mockImplementation(
@@ -695,7 +695,7 @@ describe('POSSalesService', () => {
 
       const dtoWithGlobalDiscount = {
         items: [{ productId: mockProductId, quantity: 1 }],
-        payments: [{ method: PaymentMethod.CASH, amount: 114 }],
+        payments: [{ method: PaymentMethod.CASH, amount: 113.05 }],
         discountPercent: 5,
       };
 

@@ -25,6 +25,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { CacheService, CACHE_KEYS, CACHE_TTL } from '../cache';
 import { AccountingBridgeService } from '../accounting';
 import { BrevoService } from '../notifications/mail/brevo.service';
 import { ReportsService } from '../reports/reports.service';
@@ -169,6 +170,7 @@ export class InvoicesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
+    private readonly cache: CacheService,
     private readonly accountingBridge: AccountingBridgeService,
     private readonly brevoService: BrevoService,
     private readonly reportsService: ReportsService,
@@ -414,8 +416,12 @@ export class InvoicesService {
    */
   async findOne(id: string): Promise<InvoiceResponse> {
     const tenantId = this.tenantContext.requireTenantId();
+    const cacheKey = this.cache.generateKey(CACHE_KEYS.INVOICE, tenantId, id);
 
     this.logger.debug(`Finding invoice ${id} in tenant ${tenantId}`);
+
+    const cached = await this.cache.get<InvoiceResponse>(cacheKey);
+    if (cached) return cached;
 
     const invoice = await this.prisma.invoice.findFirst({
       where: { id, tenantId },
@@ -441,7 +447,9 @@ export class InvoicesService {
       throw new NotFoundException('Factura no encontrada');
     }
 
-    return this.mapToInvoiceResponse(invoice);
+    const response = this.mapToInvoiceResponse(invoice);
+    await this.cache.set(cacheKey, response, CACHE_TTL.INVOICES);
+    return response;
   }
 
   /**
@@ -536,19 +544,16 @@ export class InvoicesService {
 
     // Check credit limit if applicable
     if (customerCreditLimit !== null && dto.customerId) {
-      const unpaidInvoices = await this.prisma.invoice.findMany({
+      const unpaidResult = await this.prisma.invoice.aggregate({
         where: {
           tenantId,
           customerId: dto.customerId,
           paymentStatus: { not: 'PAID' },
           status: { notIn: ['CANCELLED', 'VOID', 'DRAFT'] },
         },
-        select: { total: true },
+        _sum: { total: true },
       });
-      const totalUnpaid = unpaidInvoices.reduce(
-        (sum, inv) => sum + Number(inv.total),
-        0,
-      );
+      const totalUnpaid = Number(unpaidResult._sum.total || 0);
       if (totalUnpaid + invoiceTotal > customerCreditLimit) {
         throw new BadRequestException(
           `El cliente excede su limite de credito. Limite: $${customerCreditLimit.toLocaleString('es-CO')}, Saldo pendiente: $${totalUnpaid.toLocaleString('es-CO')}, Nueva factura: $${invoiceTotal.toLocaleString('es-CO')}`,
@@ -724,6 +729,8 @@ export class InvoicesService {
       `Invoice created: ${invoice.invoiceNumber} (${invoice.id})`,
     );
 
+    await this.invalidateCache(tenantId);
+
     // Non-blocking: generate automatic accounting entry
     this.accountingBridge.onInvoiceCreated({
       tenantId: invoice.tenantId,
@@ -811,6 +818,8 @@ export class InvoicesService {
     this.logger.log(
       `Checkout completed: ${updatedInvoice.invoiceNumber} (${updatedInvoice.id}), paid: ${dto.immediatePayment ?? false}`,
     );
+
+    await this.invalidateCache(tenantId, updatedInvoice.id);
 
     // Non-blocking: generate payment accounting entry for POS immediate payment
     if (dto.immediatePayment) {
@@ -920,6 +929,8 @@ export class InvoicesService {
       `Invoice marked as paid: ${updatedInvoice.invoiceNumber} (${updatedInvoice.id})`,
     );
 
+    await this.invalidateCache(tenantId, id);
+
     return this.mapToInvoiceResponse(updatedInvoice);
   }
 
@@ -990,6 +1001,8 @@ export class InvoicesService {
     this.logger.log(
       `Invoice updated: ${updatedInvoice.invoiceNumber} (${updatedInvoice.id})`,
     );
+
+    await this.invalidateCache(tenantId, id);
 
     return this.mapToInvoiceResponse(updatedInvoice);
   }
@@ -1100,6 +1113,8 @@ export class InvoicesService {
     this.logger.log(
       `Invoice deleted: ${invoice.invoiceNumber} (${invoice.id})`,
     );
+
+    await this.invalidateCache(tenantId, id);
   }
 
   /**
@@ -1158,6 +1173,8 @@ export class InvoicesService {
     this.logger.log(
       `Invoice sent: ${updatedInvoice.invoiceNumber} (${updatedInvoice.id})`,
     );
+
+    await this.invalidateCache(tenantId, id);
 
     return this.mapToInvoiceResponse(updatedInvoice);
   }
@@ -1285,6 +1302,8 @@ export class InvoicesService {
     this.logger.log(
       `Invoice cancelled: ${cancelledInvoice.invoiceNumber} (${cancelledInvoice.id})`,
     );
+
+    await this.invalidateCache(tenantId, id);
 
     // Non-blocking: generate reverse accounting entry
     this.accountingBridge.onInvoiceCancelled({
@@ -1479,6 +1498,8 @@ export class InvoicesService {
     this.logger.log(
       `Item added to invoice ${invoice.invoiceNumber}: product ${product.name}, qty ${dto.quantity}`,
     );
+
+    await this.invalidateCache(tenantId, invoiceId);
 
     return this.mapToInvoiceResponse(updatedInvoice);
   }
@@ -1702,6 +1723,8 @@ export class InvoicesService {
       `Item ${itemId} updated on invoice ${invoice.invoiceNumber}`,
     );
 
+    await this.invalidateCache(tenantId, invoiceId);
+
     return this.mapToInvoiceResponse(updatedInvoice);
   }
 
@@ -1861,6 +1884,8 @@ export class InvoicesService {
     this.logger.log(
       `Item ${itemId} deleted from invoice ${invoice.invoiceNumber}`,
     );
+
+    await this.invalidateCache(tenantId, invoiceId);
 
     return this.mapToInvoiceResponse(updatedInvoice);
   }
@@ -2221,6 +2246,21 @@ export class InvoicesService {
   }
 
   /**
+   * Invalidates invoice-related cache entries for a tenant.
+   */
+  private async invalidateCache(
+    tenantId: string,
+    invoiceId?: string,
+  ): Promise<void> {
+    await this.cache.invalidate(CACHE_KEYS.INVOICES, tenantId);
+    if (invoiceId) {
+      const key = this.cache.generateKey(CACHE_KEYS.INVOICE, tenantId, invoiceId);
+      await this.cache.del(key);
+    }
+    await this.cache.invalidate(CACHE_KEYS.DASHBOARD, tenantId);
+  }
+
+  /**
    * Builds a paginated response from invoices and pagination params.
    */
   private buildPaginatedResponse(
@@ -2303,6 +2343,7 @@ export class InvoicesService {
         where: { id },
         data: { status: InvoiceStatus.SENT },
       });
+      await this.invalidateCache(tenantId, id);
     }
 
     return { message: 'Factura enviada por email exitosamente' };

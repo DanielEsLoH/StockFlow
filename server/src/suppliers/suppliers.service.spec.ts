@@ -9,6 +9,7 @@ import { CustomerStatus, DocumentType, PaymentTerms } from '@prisma/client';
 import { SuppliersService } from './suppliers.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { CacheService } from '../cache';
 
 const mockTenantId = 'tenant-123';
 
@@ -73,11 +74,20 @@ describe('SuppliersService', () => {
       requireTenantId: jest.fn().mockReturnValue(mockTenantId),
     };
 
+    const mockCacheService = {
+      get: jest.fn().mockResolvedValue(undefined),
+      set: jest.fn().mockResolvedValue(undefined),
+      del: jest.fn().mockResolvedValue(undefined),
+      invalidate: jest.fn().mockResolvedValue(undefined),
+      generateKey: jest.fn((...args: string[]) => args.join(':')),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SuppliersService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
+        { provide: CacheService, useValue: mockCacheService },
       ],
     }).compile();
 

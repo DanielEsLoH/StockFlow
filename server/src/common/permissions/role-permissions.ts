@@ -225,12 +225,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.CASH_REGISTERS_VIEW,
     // Note: Cannot manage cash registers
 
-    // Quotations - Full access
+    // Quotations - Create/Edit/Convert but not delete
     Permission.QUOTATIONS_VIEW,
     Permission.QUOTATIONS_CREATE,
     Permission.QUOTATIONS_EDIT,
-    Permission.QUOTATIONS_DELETE,
     Permission.QUOTATIONS_CONVERT,
+    // Note: Cannot delete quotations (ADMIN only)
 
     // Suppliers - View, create, edit (no delete)
     Permission.SUPPLIERS_VIEW,
@@ -260,11 +260,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.EXPENSES_CREATE,
     Permission.EXPENSES_EDIT,
 
-    // Payroll - View and basic edit
+    // Payroll - View only (create/edit is admin function)
     Permission.PAYROLL_VIEW,
-    Permission.PAYROLL_CREATE,
-    Permission.PAYROLL_EDIT,
-    // Note: Cannot approve, configure, or send to DIAN (ADMIN only)
+    // Note: Cannot create, edit, approve, configure, or send to DIAN (ADMIN only)
 
     // Integrations - View and sync only
     Permission.INTEGRATIONS_VIEW,
@@ -272,12 +270,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Note: Cannot manage integrations (ADMIN only)
   ],
 
-  /**
-   * EMPLOYEE: Sales-focused access within their assigned warehouse
-   * Can sell via POS, create invoices, view products and categories.
-   * All operations are strictly scoped to their assigned warehouse.
-   * Cannot access inventory, reports, settings, users, or admin features.
-   */
   /**
    * CONTADOR: Read-only financial access across the entire tenant
    * Can view all financial data, reports, and audit logs.
@@ -325,55 +317,40 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.EXCHANGE_RATES_VIEW,
   ],
 
+  /**
+   * EMPLOYEE: Minimal access - POS sales and customer lookup only.
+   * All other permissions must be granted individually via UserPermissionOverride.
+   */
   [UserRole.EMPLOYEE]: [
-    // Dashboard - basic overview of their warehouse
+    // Dashboard - basic overview
     Permission.DASHBOARD_VIEW,
 
-    // POS - primary function: sell within their warehouse
+    // POS - primary function: sell
     Permission.POS_SELL,
-    // Note: Cannot refund, discount, open drawer, view/close sessions
 
-    // Products - view only (to check prices when selling)
-    Permission.PRODUCTS_VIEW,
-    // Note: Cannot create, edit, or delete products
-
-    // Categories - view only (to filter products when selling)
-    Permission.CATEGORIES_VIEW,
-    // Note: Cannot manage categories
-
-    // Invoices - view and create within their warehouse
-    Permission.INVOICES_VIEW,
-    Permission.INVOICES_CREATE,
-    // Note: Cannot edit, send, or cancel invoices
-
-    // Customers - view and create (to register new customers during sales)
+    // Customers - view only (to look up customers during POS sales)
     Permission.CUSTOMERS_VIEW,
-    Permission.CUSTOMERS_CREATE,
-    // Note: Cannot edit or delete customers
-
-    // Quotations - view and create
-    Permission.QUOTATIONS_VIEW,
-    Permission.QUOTATIONS_CREATE,
-
-    // Suppliers - view only
-    Permission.SUPPLIERS_VIEW,
-
-    // Purchase Orders - view only
-    Permission.PURCHASE_ORDERS_VIEW,
-
-    // Expenses - view only
-    Permission.EXPENSES_VIEW,
 
     // --- RESTRICTED AREAS ---
-    // Inventory: No access (cannot view or adjust stock)
-    // Warehouses: No access (locked to assigned warehouse)
-    // Payments: No access (handled by admin/manager)
+    // Products: No access (POS interface shows products for selling)
+    // Categories: No access (admin function)
+    // Invoices: No access (POS handles invoice generation automatically)
+    // Quotations: No access (manager/sales manager function)
+    // Suppliers: No access (confidential business data)
+    // Purchase Orders: No access (admin/manager function)
+    // Expenses: No access (financial data)
+    // Inventory: No access
+    // Warehouses: No access
+    // Payments: No access
     // Reports: No access
     // DIAN: No access
     // Users: No access
     // Settings: No access
     // Audit: No access
-    // Cash Registers: No access (uses POS directly)
+    // Cash Registers: No access
+    // Accounting: No access
+    // Bank: No access
+    // Payroll: No access
   ],
 };
 

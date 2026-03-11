@@ -270,26 +270,24 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 
   MANAGER: [
-    // Dashboard
+    // Dashboard - scoped to their warehouse
     Permission.DASHBOARD_VIEW,
-    // POS - Operational access
+    // POS - Full operational access within their warehouse
     Permission.POS_SELL,
     Permission.POS_REFUND,
     Permission.POS_DISCOUNT,
     Permission.POS_VIEW_SESSIONS,
     Permission.POS_CLOSE_SESSION,
     Permission.POS_CASH_MOVEMENT,
-    // Inventory - Operational access
+    // Inventory - Adjust within their warehouse only (no inter-warehouse transfers)
     Permission.INVENTORY_VIEW,
     Permission.INVENTORY_ADJUST,
-    Permission.INVENTORY_TRANSFER,
     // Products - Create/Edit but not delete
     Permission.PRODUCTS_VIEW,
     Permission.PRODUCTS_CREATE,
     Permission.PRODUCTS_EDIT,
-    // Categories - Full access
+    // Categories - View only (manage is admin function)
     Permission.CATEGORIES_VIEW,
-    Permission.CATEGORIES_MANAGE,
     // Warehouses - View only
     Permission.WAREHOUSES_VIEW,
     // Invoices - Operational access (no cancel)
@@ -306,22 +304,16 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.CUSTOMERS_EDIT,
     // Reports - View only
     Permission.REPORTS_VIEW,
-    // DIAN - View and send
+    // DIAN - View only (send is admin/contador function)
     Permission.DIAN_VIEW,
-    Permission.DIAN_SEND,
-    // Users - View only
+    // Users - View team only
     Permission.USERS_VIEW,
-    // Settings - View only
-    Permission.SETTINGS_VIEW,
-    // Audit - View only
-    Permission.AUDIT_VIEW,
     // Cash Registers - View only
     Permission.CASH_REGISTERS_VIEW,
-    // Quotations - Full access
+    // Quotations - Create/Edit/Convert but not delete
     Permission.QUOTATIONS_VIEW,
     Permission.QUOTATIONS_CREATE,
     Permission.QUOTATIONS_EDIT,
-    Permission.QUOTATIONS_DELETE,
     Permission.QUOTATIONS_CONVERT,
     // Suppliers - View, create, edit (no delete)
     Permission.SUPPLIERS_VIEW,
@@ -338,42 +330,46 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.ACCOUNTING_VIEW,
     // Bank - View only
     Permission.BANK_VIEW,
-    // Expenses - View, create, edit
+    // Expenses - View, create, edit (no approve, no delete)
     Permission.EXPENSES_VIEW,
     Permission.EXPENSES_CREATE,
     Permission.EXPENSES_EDIT,
-    // Payroll - Operational
+    // Payroll - View only (create/edit is admin function)
     Permission.PAYROLL_VIEW,
-    Permission.PAYROLL_CREATE,
-    Permission.PAYROLL_EDIT,
     // Integrations - View and sync only
     Permission.INTEGRATIONS_VIEW,
     Permission.INTEGRATIONS_SYNC,
+    // --- RESTRICTED: No inventory transfer, no categories manage, no DIAN send,
+    // no settings, no audit, no quotations delete, no payroll create/edit ---
   ],
 
   EMPLOYEE: [
     // Dashboard - basic overview
     Permission.DASHBOARD_VIEW,
-    // POS - primary function for sales staff
+    // POS - primary function: sell
     Permission.POS_SELL,
-    // Products - view only (to check prices when selling)
-    Permission.PRODUCTS_VIEW,
-    // Invoices - view and create (for processing sales)
-    Permission.INVOICES_VIEW,
-    Permission.INVOICES_CREATE,
-    // Customers - view and create (to register new customers during sales)
+    // Customers - view only (to look up customers during POS sales)
     Permission.CUSTOMERS_VIEW,
-    Permission.CUSTOMERS_CREATE,
-    // Quotations - View and create
-    Permission.QUOTATIONS_VIEW,
-    Permission.QUOTATIONS_CREATE,
-    // Suppliers - View only
-    Permission.SUPPLIERS_VIEW,
-    // Purchase Orders - View only
-    Permission.PURCHASE_ORDERS_VIEW,
-    // Expenses - View only
-    Permission.EXPENSES_VIEW,
-    // --- RESTRICTED: No access to inventory, categories, warehouses, payments, DIAN, settings, cash registers ---
+    // --- RESTRICTED AREAS ---
+    // Products: No access (POS interface shows products for selling)
+    // Categories: No access (admin function)
+    // Invoices: No access (POS handles invoice generation automatically)
+    // Quotations: No access (manager/sales manager function)
+    // Suppliers: No access (confidential business data)
+    // Purchase Orders: No access (admin/manager function)
+    // Expenses: No access (financial data)
+    // Inventory: No access
+    // Warehouses: No access
+    // Payments: No access
+    // Reports: No access
+    // DIAN: No access
+    // Users: No access
+    // Settings: No access
+    // Audit: No access
+    // Cash Registers: No access
+    // Accounting: No access
+    // Bank: No access
+    // Payroll: No access
   ],
 
   CONTADOR: [

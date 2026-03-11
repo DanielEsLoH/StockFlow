@@ -1,35 +1,33 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import {
-  ArrowLeft,
-  FileText,
-  Pencil,
-  Trash2,
-  Printer,
-  Calendar,
-  User,
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  ChevronDown,
-  Send,
-  Download,
-  Store,
-  ShoppingCart,
-  Loader2,
-  CreditCard,
-  Banknote,
-  Smartphone,
-  DollarSign,
-  Hash,
-  FileMinus,
-  FilePlus,
-} from "lucide-react";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import FileText from "lucide-react/dist/esm/icons/file-text";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import Printer from "lucide-react/dist/esm/icons/printer";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import User from "lucide-react/dist/esm/icons/user";
+import Building2 from "lucide-react/dist/esm/icons/building-2";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import Phone from "lucide-react/dist/esm/icons/phone";
+import MapPin from "lucide-react/dist/esm/icons/map-pin";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle";
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
+import Send from "lucide-react/dist/esm/icons/send";
+import Download from "lucide-react/dist/esm/icons/download";
+import Store from "lucide-react/dist/esm/icons/store";
+import ShoppingCart from "lucide-react/dist/esm/icons/shopping-cart";
+import Loader2 from "lucide-react/dist/esm/icons/loader-2";
+import CreditCard from "lucide-react/dist/esm/icons/credit-card";
+import Banknote from "lucide-react/dist/esm/icons/banknote";
+import Smartphone from "lucide-react/dist/esm/icons/smartphone";
+import DollarSign from "lucide-react/dist/esm/icons/dollar-sign";
+import Hash from "lucide-react/dist/esm/icons/hash";
+import FileMinus from "lucide-react/dist/esm/icons/file-minus";
+import FilePlus from "lucide-react/dist/esm/icons/file-plus";
 import type { Route } from "./+types/_app.invoices.$id";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { cn, formatDate, formatCurrency } from "~/lib/utils";
@@ -41,7 +39,10 @@ import {
   useSendInvoiceByEmail,
 } from "~/hooks/useInvoices";
 import { useDownloadDianXml, useSendDianEvent } from "~/hooks/useDian";
-import { FileCheck, FileX, PackageCheck, Globe } from "lucide-react";
+import FileCheck from "lucide-react/dist/esm/icons/file-check";
+import FileX from "lucide-react/dist/esm/icons/file-x";
+import PackageCheck from "lucide-react/dist/esm/icons/package-check";
+import Globe from "lucide-react/dist/esm/icons/globe";
 import { CreditNoteModal } from "~/components/dian/CreditNoteModal";
 import { DebitNoteModal } from "~/components/dian/DebitNoteModal";
 import { usePaymentsByInvoice } from "~/hooks/usePayments";
@@ -65,6 +66,7 @@ import type { PaymentMethod } from "~/types/payment";
 import { POSTicketModal } from "~/components/pos";
 import { PaymentModal } from "~/components/payments/PaymentModal";
 import { useUserPreferences } from "~/hooks/useSettings";
+import { Breadcrumb } from "~/components/ui/Breadcrumb";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -468,6 +470,10 @@ export default function InvoiceDetailPage() {
     <PageWrapper>
       {/* Header */}
       <PageSection>
+        <Breadcrumb items={[
+          { label: "Facturas", href: "/invoices" },
+          { label: `Factura ${invoice.invoiceNumber}` },
+        ]} />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             <Link to="/invoices">

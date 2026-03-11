@@ -3,21 +3,19 @@ import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePermissions } from "~/hooks/usePermissions";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
-import {
-  Search,
-  Plus,
-  Filter,
-  Package,
-  Eye,
-  Pencil,
-  ChevronDown,
-  AlertTriangle,
-  X,
-  LayoutGrid,
-  LayoutList,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react";
+import Search from "lucide-react/dist/esm/icons/search";
+import Plus from "lucide-react/dist/esm/icons/plus";
+import Filter from "lucide-react/dist/esm/icons/filter";
+import Package from "lucide-react/dist/esm/icons/package";
+import Eye from "lucide-react/dist/esm/icons/eye";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle";
+import X from "lucide-react/dist/esm/icons/x";
+import LayoutGrid from "lucide-react/dist/esm/icons/layout-grid";
+import LayoutList from "lucide-react/dist/esm/icons/layout-list";
+import Sparkles from "lucide-react/dist/esm/icons/sparkles";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
 import type { Route } from "./+types/_app.products";
 import { cn, formatCurrency, debounce } from "~/lib/utils";
 import { useProducts, useCategories, useWarehouses } from "~/hooks/useProducts";
@@ -45,6 +43,7 @@ import {
 } from "~/components/ui/Skeleton";
 import type { Product, ProductFilters, ProductStatus } from "~/types/product";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
+import { useListPageHotkeys } from "~/hooks/useListPageHotkeys";
 
 // Meta for SEO
 export const meta: Route.MetaFunction = () => {
@@ -106,6 +105,8 @@ export default function ProductsPage() {
       parserConfig: productFiltersParser,
     });
 
+  useListPageHotkeys({ createUrl: canCreateProducts ? "/products/new" : undefined, onClearFilters: clearFilters });
+
   // Queries
   const {
     data: productsData,
@@ -117,21 +118,15 @@ export default function ProductsPage() {
   const { data: warehouses = [] } = useWarehouses();
 
   // Category and warehouse options
-  const categoryOptions = useMemo(
-    () => [
-      { value: "", label: "Todas las categorias" },
-      ...categories.map((c) => ({ value: c.id, label: c.name })),
-    ],
-    [categories],
-  );
+  const categoryOptions = [
+    { value: "", label: "Todas las categorias" },
+    ...categories.map((c) => ({ value: c.id, label: c.name })),
+  ];
 
-  const warehouseOptions = useMemo(
-    () => [
-      { value: "", label: "Todas las bodegas" },
-      ...warehouses.map((w) => ({ value: w.id, label: w.name })),
-    ],
-    [warehouses],
-  );
+  const warehouseOptions = [
+    { value: "", label: "Todas las bodegas" },
+    ...warehouses.map((w) => ({ value: w.id, label: w.name })),
+  ];
 
   // Debounced search
   const debouncedSearch = useMemo(

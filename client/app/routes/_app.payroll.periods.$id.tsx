@@ -1,15 +1,13 @@
 import { Link, useParams, useNavigate } from "react-router";
-import {
-  ArrowLeft,
-  Calculator,
-  CheckCircle,
-  Lock,
-  DollarSign,
-  Users,
-  TrendingDown,
-  TrendingUp,
-  Send,
-} from "lucide-react";
+import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
+import Calculator from "lucide-react/dist/esm/icons/calculator";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import Lock from "lucide-react/dist/esm/icons/lock";
+import DollarSign from "lucide-react/dist/esm/icons/dollar-sign";
+import Users from "lucide-react/dist/esm/icons/users";
+import TrendingDown from "lucide-react/dist/esm/icons/trending-down";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
+import Send from "lucide-react/dist/esm/icons/send";
 import type { Route } from "./+types/_app.payroll.periods.$id";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { formatCurrency, formatDate } from "~/lib/utils";
@@ -43,6 +41,7 @@ import {
 import { EmptyState } from "~/components/ui/EmptyState";
 import { usePermissions } from "~/hooks/usePermissions";
 import { Permission } from "~/types/permissions";
+import { Breadcrumb } from "~/components/ui/Breadcrumb";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Periodo de Nomina - StockFlow" },
@@ -101,6 +100,10 @@ export default function PayrollPeriodDetailPage() {
     <PageWrapper>
       {/* Header */}
       <PageSection>
+        <Breadcrumb items={[
+          { label: "Periodos de Nómina", href: "/payroll/periods" },
+          { label: period.name },
+        ]} />
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             <Link to="/payroll/periods">

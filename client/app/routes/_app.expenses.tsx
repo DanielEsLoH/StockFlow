@@ -1,24 +1,23 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Search,
-  Filter,
-  Eye,
-  X,
-  Calendar,
-  Receipt,
-  Plus,
-  CheckCircle,
-  Clock,
-  XCircle,
-  FileText,
-} from "lucide-react";
+import Search from "lucide-react/dist/esm/icons/search";
+import Filter from "lucide-react/dist/esm/icons/filter";
+import Eye from "lucide-react/dist/esm/icons/eye";
+import X from "lucide-react/dist/esm/icons/x";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import Receipt from "lucide-react/dist/esm/icons/receipt";
+import Plus from "lucide-react/dist/esm/icons/plus";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import FileText from "lucide-react/dist/esm/icons/file-text";
 import type { Route } from "./+types/_app.expenses";
 import { cn, debounce, formatDate, formatCurrency } from "~/lib/utils";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
 import { useExpenses, useExpenseStats } from "~/hooks/useExpenses";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
+import { useListPageHotkeys } from "~/hooks/useListPageHotkeys";
 import { usePermissions } from "~/hooks/usePermissions";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/Input";
@@ -144,6 +143,8 @@ export default function ExpensesPage() {
     useUrlFilters<ExpenseListFilters>({
       parserConfig: filtersParser,
     });
+
+  useListPageHotkeys({ createUrl: canCreate ? "/expenses/new" : undefined, onClearFilters: clearFilters });
 
   // Queries
   const {

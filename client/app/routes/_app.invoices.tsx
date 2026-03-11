@@ -3,26 +3,24 @@ import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePermissions } from "~/hooks/usePermissions";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
-import {
-  Search,
-  Plus,
-  Filter,
-  FileText,
-  Eye,
-  Pencil,
-  Trash2,
-  X,
-  Calendar,
-  Clock,
-  AlertTriangle,
-  CheckCircle,
-  ShoppingCart,
-  Store,
-  TrendingUp,
-  Receipt,
-  Warehouse,
-  User,
-} from "lucide-react";
+import Search from "lucide-react/dist/esm/icons/search";
+import Plus from "lucide-react/dist/esm/icons/plus";
+import Filter from "lucide-react/dist/esm/icons/filter";
+import FileText from "lucide-react/dist/esm/icons/file-text";
+import Eye from "lucide-react/dist/esm/icons/eye";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import X from "lucide-react/dist/esm/icons/x";
+import Calendar from "lucide-react/dist/esm/icons/calendar";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import ShoppingCart from "lucide-react/dist/esm/icons/shopping-cart";
+import Store from "lucide-react/dist/esm/icons/store";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
+import Receipt from "lucide-react/dist/esm/icons/receipt";
+import Warehouse from "lucide-react/dist/esm/icons/warehouse";
+import User from "lucide-react/dist/esm/icons/user";
 import type { Route } from "./+types/_app.invoices";
 import { cn, debounce, formatCurrency, formatDate } from "~/lib/utils";
 import {
@@ -59,6 +57,7 @@ import type {
   InvoiceSource,
 } from "~/types/invoice";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
+import { useListPageHotkeys } from "~/hooks/useListPageHotkeys";
 import { useCustomerOptions } from "~/hooks/useCustomerOptions";
 
 // Meta for SEO - used by React Router
@@ -222,6 +221,8 @@ export default function InvoicesPage() {
     useUrlFilters<InvoiceFilters>({
       parserConfig: invoiceFiltersParser,
     });
+
+  useListPageHotkeys({ createUrl: canCreateInvoices ? "/invoices/new" : undefined, onClearFilters: clearFilters });
 
   // Queries
   const { data: invoicesData, isLoading, isError } = useInvoices(filters);

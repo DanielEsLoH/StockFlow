@@ -2,25 +2,23 @@ import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
-import {
-  Search,
-  Plus,
-  Filter,
-  Users,
-  Eye,
-  Pencil,
-  Trash2,
-  X,
-  Mail,
-  Phone,
-  Building2,
-  User,
-  CheckCircle,
-  XCircle,
-  TrendingUp,
-  UserPlus,
-  MapPin,
-} from "lucide-react";
+import Search from "lucide-react/dist/esm/icons/search";
+import Plus from "lucide-react/dist/esm/icons/plus";
+import Filter from "lucide-react/dist/esm/icons/filter";
+import Users from "lucide-react/dist/esm/icons/users";
+import Eye from "lucide-react/dist/esm/icons/eye";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import X from "lucide-react/dist/esm/icons/x";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import Phone from "lucide-react/dist/esm/icons/phone";
+import Building2 from "lucide-react/dist/esm/icons/building-2";
+import User from "lucide-react/dist/esm/icons/user";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
+import UserPlus from "lucide-react/dist/esm/icons/user-plus";
+import MapPin from "lucide-react/dist/esm/icons/map-pin";
 import type { Route } from "./+types/_app.customers";
 import { cn, debounce, formatCurrency } from "~/lib/utils";
 import {
@@ -54,6 +52,7 @@ import type {
   CustomerType,
 } from "~/types/customer";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
+import { useListPageHotkeys } from "~/hooks/useListPageHotkeys";
 import { usePermissions } from "~/hooks/usePermissions";
 
 // Meta for SEO
@@ -67,13 +66,13 @@ export const meta: Route.MetaFunction = () => {
 const exportColumns: ExportColumn<Customer>[] = [
   { key: "name", label: "Nombre" },
   { key: "documentType", label: "Tipo Doc." },
-  { key: "document", label: "Documento" },
+  { key: "documentNumber", label: "Documento" },
   { key: "email", label: "Email" },
   { key: "phone", label: "Telefono" },
   { key: "type", label: "Tipo", format: (v) => (v === "BUSINESS" ? "Empresa" : "Persona Natural") },
   { key: "city", label: "Ciudad" },
   { key: "address", label: "Direccion" },
-  { key: "isActive", label: "Estado", format: (v) => (v ? "Activo" : "Inactivo") },
+  { key: "status", label: "Estado", format: (v) => (v === "ACTIVE" ? "Activo" : "Inactivo") },
 ];
 
 // Type options
@@ -116,19 +115,18 @@ export default function CustomersPage() {
       parserConfig: customerFiltersParser,
     });
 
+  useListPageHotkeys({ createUrl: canCreateCustomers ? "/customers/new" : undefined, onClearFilters: clearFilters });
+
   // Queries
   const { data: customersData, isLoading, isError } = useCustomers(filters);
   const { data: cities = [] } = useCustomerCities();
   const deleteCustomer = useDeleteCustomer();
 
   // City options
-  const cityOptions = useMemo(
-    () => [
-      { value: "", label: "Todas las ciudades" },
-      ...cities.map((city) => ({ value: city, label: city })),
-    ],
-    [cities],
-  );
+  const cityOptions = [
+    { value: "", label: "Todas las ciudades" },
+    ...cities.map((city) => ({ value: city, label: city })),
+  ];
 
   // Debounced search
   const debouncedSearch = useMemo(

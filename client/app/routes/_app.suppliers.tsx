@@ -2,22 +2,20 @@ import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
-import {
-  Search,
-  Plus,
-  Filter,
-  Eye,
-  Pencil,
-  Trash2,
-  X,
-  Mail,
-  Phone,
-  Building2,
-  CheckCircle,
-  XCircle,
-  MapPin,
-  Clock,
-} from "lucide-react";
+import Search from "lucide-react/dist/esm/icons/search";
+import Plus from "lucide-react/dist/esm/icons/plus";
+import Filter from "lucide-react/dist/esm/icons/filter";
+import Eye from "lucide-react/dist/esm/icons/eye";
+import Pencil from "lucide-react/dist/esm/icons/pencil";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import X from "lucide-react/dist/esm/icons/x";
+import Mail from "lucide-react/dist/esm/icons/mail";
+import Phone from "lucide-react/dist/esm/icons/phone";
+import Building2 from "lucide-react/dist/esm/icons/building-2";
+import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
+import XCircle from "lucide-react/dist/esm/icons/x-circle";
+import MapPin from "lucide-react/dist/esm/icons/map-pin";
+import Clock from "lucide-react/dist/esm/icons/clock";
 import type { Route } from "./+types/_app.suppliers";
 import { cn, debounce, formatCurrency } from "~/lib/utils";
 import {
@@ -48,6 +46,7 @@ import { EmptyState } from "~/components/ui/EmptyState";
 import type { SupplierFilters, Supplier, SupplierStatus } from "~/types/supplier";
 import { PaymentTermsLabels } from "~/types/supplier";
 import { useUrlFilters } from "~/hooks/useUrlFilters";
+import { useListPageHotkeys } from "~/hooks/useListPageHotkeys";
 import { usePermissions } from "~/hooks/usePermissions";
 import { Permission } from "~/types/permissions";
 
@@ -101,6 +100,8 @@ export default function SuppliersPage() {
     useUrlFilters<SupplierFilters>({
       parserConfig: supplierFiltersParser,
     });
+
+  useListPageHotkeys({ createUrl: hasPermission(Permission.SUPPLIERS_CREATE) ? "/suppliers/new" : undefined, onClearFilters: clearFilters });
 
   // Queries
   const { data: suppliersData, isLoading, isError } = useSuppliers(filters);

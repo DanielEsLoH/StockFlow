@@ -1,28 +1,26 @@
 import { useState, useCallback, type ComponentType } from "react";
 import { motion } from "framer-motion";
 import { PageWrapper, PageSection } from "~/components/layout/PageWrapper";
-import {
-  Package,
-  FileText,
-  Users,
-  DollarSign,
-  AlertTriangle,
-  ArrowRight,
-  RefreshCw,
-  Plus,
-  UserPlus,
-  FileBarChart,
-  Download,
-  Image as ImageIcon,
-  Eye,
-  MoreVertical,
-  ShoppingCart,
-  Clock,
-  Activity,
-  TrendingUp,
-  Sparkles,
-  ChevronRight,
-} from "lucide-react";
+import Package from "lucide-react/dist/esm/icons/package";
+import FileText from "lucide-react/dist/esm/icons/file-text";
+import Users from "lucide-react/dist/esm/icons/users";
+import DollarSign from "lucide-react/dist/esm/icons/dollar-sign";
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle";
+import ArrowRight from "lucide-react/dist/esm/icons/arrow-right";
+import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
+import Plus from "lucide-react/dist/esm/icons/plus";
+import UserPlus from "lucide-react/dist/esm/icons/user-plus";
+import FileBarChart from "lucide-react/dist/esm/icons/file-bar-chart";
+import Download from "lucide-react/dist/esm/icons/download";
+import ImageIcon from "lucide-react/dist/esm/icons/image";
+import Eye from "lucide-react/dist/esm/icons/eye";
+import MoreVertical from "lucide-react/dist/esm/icons/more-vertical";
+import ShoppingCart from "lucide-react/dist/esm/icons/shopping-cart";
+import Clock from "lucide-react/dist/esm/icons/clock";
+import Activity from "lucide-react/dist/esm/icons/activity";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
+import Sparkles from "lucide-react/dist/esm/icons/sparkles";
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import {
   AreaChart,
   Area,
@@ -109,9 +107,9 @@ const activityTypeConfig: Record<
   },
   stock: {
     icon: AlertTriangle,
-    color: "text-error-600 dark:text-error-400",
+    color: "text-warning-600 dark:text-warning-400",
     bgColor:
-      "bg-linear-to-br from-error-500/20 to-error-600/10 dark:from-error-500/20 dark:to-error-900/30",
+      "bg-linear-to-br from-warning-500/20 to-warning-600/10 dark:from-warning-500/20 dark:to-warning-900/30",
   },
 };
 
@@ -150,6 +148,64 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
               {entry.name === "Ventas" || entry.name === "Periodo Anterior"
                 ? formatCurrency(entry.value)
                 : entry.value}
+            </span>
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
+// Dark-mode-aware tooltip for charts that don't use CustomTooltip
+function ChartTooltip({ active, payload, label }: CustomTooltipProps) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/95 dark:bg-neutral-800/95 backdrop-blur-xl border border-neutral-200/60 dark:border-neutral-700/60 rounded-xl shadow-xl p-3">
+        {label && (
+          <p className="text-sm font-semibold text-neutral-900 dark:text-white mb-2">
+            {label}
+          </p>
+        )}
+        {payload.map((entry: TooltipPayloadEntry, index: number) => (
+          <p
+            key={index}
+            className="text-sm flex items-center gap-2"
+            style={{ color: entry.color }}
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            {entry.name}:{" "}
+            <span className="font-semibold text-neutral-900 dark:text-white">
+              {formatCurrency(entry.value)}
+            </span>
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
+function PieCategoryTooltip({ active, payload }: CustomTooltipProps) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/95 dark:bg-neutral-800/95 backdrop-blur-xl border border-neutral-200/60 dark:border-neutral-700/60 rounded-xl shadow-xl p-3">
+        {payload.map((entry: TooltipPayloadEntry, index: number) => (
+          <p
+            key={index}
+            className="text-sm flex items-center gap-2"
+            style={{ color: entry.color }}
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: entry.color }}
+            />
+            {entry.name}:{" "}
+            <span className="font-semibold text-neutral-900 dark:text-white">
+              {entry.value}%
             </span>
           </p>
         ))}
@@ -649,16 +705,7 @@ export default function DashboardPage() {
                       ),
                     )}
                   </Pie>
-                  <Tooltip
-                    formatter={(value) => `${value}%`}
-                    contentStyle={{
-                      backgroundColor: "rgba(255, 255, 255, 0.95)",
-                      backdropFilter: "blur(12px)",
-                      border: "1px solid rgba(229, 231, 235, 0.6)",
-                      borderRadius: "12px",
-                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-                    }}
-                  />
+                  <Tooltip content={<PieCategoryTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -757,15 +804,7 @@ export default function DashboardPage() {
                     tickLine={false}
                     width={120}
                   />
-                  <Tooltip
-                    formatter={(value) => formatCurrency(Number(value))}
-                    contentStyle={{
-                      backgroundColor: "rgba(255, 255, 255, 0.95)",
-                      backdropFilter: "blur(12px)",
-                      border: "1px solid rgba(229, 231, 235, 0.6)",
-                      borderRadius: "12px",
-                    }}
-                  />
+                  <Tooltip content={<ChartTooltip />} />
                   <Bar
                     dataKey="sales"
                     name="Ventas"

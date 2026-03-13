@@ -16,6 +16,8 @@ import { PrismaModule, PrismaService } from '../src/prisma';
 import { AuthModule } from '../src/auth';
 import { CommonModule } from '../src/common';
 import { ArcjetModule, ArcjetService } from '../src/arcjet';
+import { CacheModule } from '../src/cache';
+import { PermissionsModule } from '../src/common/permissions';
 import { configuration, validateEnv } from '../src/config';
 import { TenantMiddleware } from '../src/common';
 import { InvoicesModule } from '../src/invoices';
@@ -126,6 +128,8 @@ interface PaymentResponse {
     }),
     PrismaModule,
     CommonModule,
+    CacheModule,
+    PermissionsModule,
     ArcjetModule,
     AuthModule,
     ProductsModule,
@@ -291,6 +295,26 @@ describe('Invoices E2E Tests', () => {
       },
     });
 
+    // Create Test Warehouse (required for invoice creation)
+    const warehouse = await prisma.warehouse.create({
+      data: {
+        tenantId: tenant.id,
+        name: `Test Warehouse ${testIdentifier}`,
+        code: `WH-${testIdentifier}`,
+        isMain: true,
+      },
+    });
+
+    // Assign warehouse to MANAGER (WarehouseGuard requires non-admin users to have a warehouse)
+    // EMPLOYEE (staffUser) intentionally left without warehouse to test 403 behavior
+    await prisma.user.updateMany({
+      where: {
+        tenantId: tenant.id,
+        role: UserRole.MANAGER,
+      },
+      data: { warehouseId: warehouse.id },
+    });
+
     // Create Test Product 1
     const createdProduct1 = await prisma.product.create({
       data: {
@@ -398,6 +422,16 @@ describe('Invoices E2E Tests', () => {
 
     // Delete invoices
     await prisma.invoice.deleteMany({
+      where: { tenantId: tenant.id },
+    });
+
+    // Delete warehouse stocks
+    await prisma.warehouseStock.deleteMany({
+      where: { warehouse: { tenantId: tenant.id } },
+    });
+
+    // Delete warehouses
+    await prisma.warehouse.deleteMany({
       where: { tenantId: tenant.id },
     });
 

@@ -18,6 +18,8 @@ import { CommonModule } from '../src/common';
 import { ProductsModule } from '../src/products';
 import { CategoriesModule } from '../src/categories';
 import { ArcjetModule, ArcjetService } from '../src/arcjet';
+import { CacheModule } from '../src/cache';
+import { PermissionsModule } from '../src/common/permissions';
 import { configuration, validateEnv } from '../src/config';
 import { UserRole, ProductStatus } from '@prisma/client';
 import { TenantMiddleware } from '../src/common';
@@ -99,6 +101,8 @@ interface ErrorResponse {
     }),
     PrismaModule,
     CommonModule,
+    CacheModule,
+    PermissionsModule,
     ArcjetModule,
     AuthModule,
     ProductsModule,
@@ -702,7 +706,7 @@ describe('Products E2E Tests', () => {
         description: 'A complete product description',
         costPrice: 75,
         salePrice: 150,
-        taxRate: 21,
+        taxCategory: 'GRAVADO_19',
         stock: 50,
         minStock: 10,
         barcode: `BARCODE-${testIdentifier}`,
@@ -723,7 +727,7 @@ describe('Products E2E Tests', () => {
       expect(body.description).toBe(createDto.description);
       expect(body.costPrice).toBe(createDto.costPrice);
       expect(body.salePrice).toBe(createDto.salePrice);
-      expect(body.taxRate).toBe(createDto.taxRate);
+      expect(body.taxRate).toBe(19);
       expect(body.stock).toBe(createDto.stock);
       expect(body.minStock).toBe(createDto.minStock);
       expect(body.barcode).toBe(createDto.barcode);
@@ -774,7 +778,7 @@ describe('Products E2E Tests', () => {
   // ==========================================================================
 
   describe('POST /products - Validation errors', () => {
-    it('should return validation error for missing sku', async () => {
+    it('should auto-generate SKU when not provided', async () => {
       const response = await request(app.getHttpServer())
         .post('/products')
         .set('Authorization', `Bearer ${adminUserA.accessToken}`)
@@ -783,13 +787,11 @@ describe('Products E2E Tests', () => {
           costPrice: 50,
           salePrice: 100,
         })
-        .expect(400);
+        .expect(201);
 
-      const body = response.body as ValidationErrorResponse;
-      expect(body.message).toBeInstanceOf(Array);
-      expect(body.message.some((m) => m.toLowerCase().includes('sku'))).toBe(
-        true,
-      );
+      const body = response.body as ProductResponse;
+      expect(body.sku).toBeDefined();
+      expect(body.sku.length).toBeGreaterThan(0);
     });
 
     it('should return validation error for missing name', async () => {
@@ -892,16 +894,16 @@ describe('Products E2E Tests', () => {
       expect(body.message).toBeInstanceOf(Array);
     });
 
-    it('should return validation error for taxRate over 100', async () => {
+    it('should return validation error for invalid taxCategory', async () => {
       const response = await request(app.getHttpServer())
         .post('/products')
         .set('Authorization', `Bearer ${adminUserA.accessToken}`)
         .send({
-          sku: 'SKU-HIGH-TAX',
-          name: 'Product with high tax rate',
+          sku: 'SKU-BAD-TAX',
+          name: 'Product with invalid tax category',
           costPrice: 50,
           salePrice: 100,
-          taxRate: 150,
+          taxCategory: 'INVALID_CATEGORY',
         })
         .expect(400);
 

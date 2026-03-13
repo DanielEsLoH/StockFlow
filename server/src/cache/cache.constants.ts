@@ -31,6 +31,8 @@ export const CACHE_KEYS = {
   SUPPLIER: 'supplier',
   /** User cache prefix */
   USER: 'user',
+  /** DIAN configuration cache prefix */
+  DIAN_CONFIG: 'dian-config',
 } as const;
 
 /**
@@ -62,6 +64,8 @@ export const CACHE_TTL = {
   INVOICES: 300,
   /** Supplier data (5 minutes) */
   SUPPLIERS: 300,
+  /** DIAN config (5 minutes) - rarely changes */
+  DIAN_CONFIG: 300,
 } as const;
 
 /**

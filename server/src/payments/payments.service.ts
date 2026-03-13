@@ -13,6 +13,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { CacheService, CACHE_KEYS } from '../cache';
 import { AccountingBridgeService } from '../accounting';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePaymentDto, FilterPaymentsDto } from './dto';
@@ -87,6 +88,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
+    private readonly cache: CacheService,
     private readonly notificationsService: NotificationsService,
     private readonly accountingBridge: AccountingBridgeService,
   ) {}
@@ -123,17 +125,68 @@ export class PaymentsService {
     const startOfWeek = new Date(startOfToday);
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
 
-    // Get all payments for the tenant
-    const payments = await this.prisma.payment.findMany({
-      where: { tenantId },
-      select: {
-        amount: true,
-        method: true,
-        paymentDate: true,
-      },
-    });
+    // Aggregate payment stats using database queries instead of loading all records
+    const [allTimeAgg, todayAgg, weekAgg, methodCounts, pendingStats, overdueAgg] =
+      await Promise.all([
+        // Total payments + total received
+        this.prisma.payment.aggregate({
+          where: { tenantId },
+          _count: true,
+          _sum: { amount: true },
+          _avg: { amount: true },
+        }),
+        // Today's payments
+        this.prisma.payment.aggregate({
+          where: { tenantId, paymentDate: { gte: startOfToday } },
+          _count: true,
+          _sum: { amount: true },
+        }),
+        // This week's payments
+        this.prisma.payment.aggregate({
+          where: { tenantId, paymentDate: { gte: startOfWeek } },
+          _count: true,
+          _sum: { amount: true },
+        }),
+        // Payments grouped by method
+        this.prisma.payment.groupBy({
+          by: ['method'],
+          where: { tenantId },
+          _count: true,
+        }),
+        // Pending invoices: total pending amount using raw SQL for efficiency
+        this.prisma.$queryRawUnsafe<
+          Array<{ pending_count: bigint; pending_amount: number }>
+        >(
+          `SELECT COUNT(*) as pending_count,
+                  COALESCE(SUM(i.total - COALESCE(p.paid, 0)), 0) as pending_amount
+           FROM "Invoice" i
+           LEFT JOIN (SELECT "invoiceId", SUM(amount) as paid FROM "Payment" GROUP BY "invoiceId") p
+             ON p."invoiceId" = i.id
+           WHERE i."tenantId" = $1
+             AND i."paymentStatus" IN ('UNPAID', 'PARTIALLY_PAID')
+             AND i.status NOT IN ('DRAFT', 'CANCELLED', 'VOID')`,
+          tenantId,
+        ),
+        // Overdue invoices count
+        this.prisma.invoice.count({
+          where: {
+            tenantId,
+            paymentStatus: { in: ['UNPAID', 'PARTIALLY_PAID'] },
+            status: { notIn: ['DRAFT', 'CANCELLED', 'VOID'] },
+            dueDate: { lt: now },
+          },
+        }),
+      ]);
 
-    // Initialize method counts
+    const totalPayments = allTimeAgg._count;
+    const totalReceived = Number(allTimeAgg._sum.amount ?? 0);
+    const averagePaymentValue = Number(allTimeAgg._avg.amount ?? 0);
+    const todayPayments = todayAgg._count;
+    const todayTotal = Number(todayAgg._sum.amount ?? 0);
+    const weekPayments = weekAgg._count;
+    const weekTotal = Number(weekAgg._sum.amount ?? 0);
+
+    // Build paymentsByMethod map
     const paymentsByMethod: Record<PaymentMethod, number> = {
       [PaymentMethod.CASH]: 0,
       [PaymentMethod.CREDIT_CARD]: 0,
@@ -144,66 +197,14 @@ export class PaymentsService {
       [PaymentMethod.DAVIPLATA]: 0,
       [PaymentMethod.OTHER]: 0,
     };
-
-    let totalReceived = 0;
-    let todayPayments = 0;
-    let todayTotal = 0;
-    let weekPayments = 0;
-    let weekTotal = 0;
-
-    // Calculate statistics in a single pass
-    for (const payment of payments) {
-      const amount = Number(payment.amount);
-
-      // Count by method
-      paymentsByMethod[payment.method]++;
-
-      // Total received
-      totalReceived += amount;
-
-      // Today's payments
-      if (payment.paymentDate >= startOfToday) {
-        todayPayments++;
-        todayTotal += amount;
-      }
-
-      // This week's payments
-      if (payment.paymentDate >= startOfWeek) {
-        weekPayments++;
-        weekTotal += amount;
-      }
+    for (const mc of methodCounts) {
+      paymentsByMethod[mc.method] = mc._count;
     }
 
-    const totalPayments = payments.length;
-    const averagePaymentValue =
-      totalPayments > 0 ? totalReceived / totalPayments : 0;
-
-    // Get pending collection stats from invoices
-    const pendingInvoices = await this.prisma.invoice.findMany({
-      where: {
-        tenantId,
-        paymentStatus: { in: ['UNPAID', 'PARTIALLY_PAID'] },
-        status: { notIn: ['DRAFT', 'CANCELLED', 'VOID'] },
-      },
-      select: {
-        total: true,
-        dueDate: true,
-        payments: { select: { amount: true } },
-      },
-    });
-
-    let pendingAmount = 0;
-    let overdueCount = 0;
-    for (const inv of pendingInvoices) {
-      const invPaid = inv.payments.reduce(
-        (sum, p) => sum + Number(p.amount),
-        0,
-      );
-      pendingAmount += Math.max(0, Number(inv.total) - invPaid);
-      if (inv.dueDate && new Date(inv.dueDate) < now) {
-        overdueCount++;
-      }
-    }
+    const pendingRow = pendingStats[0];
+    const pendingAmount = Number(pendingRow?.pending_amount ?? 0);
+    const pendingInvoicesCount = Number(pendingRow?.pending_count ?? 0);
+    const overdueCount = overdueAgg;
 
     return {
       totalPayments,
@@ -214,7 +215,7 @@ export class PaymentsService {
       todayTotal,
       weekPayments,
       weekTotal,
-      pendingInvoicesCount: pendingInvoices.length,
+      pendingInvoicesCount,
       pendingAmount,
       overdueCount,
     };
@@ -394,93 +395,112 @@ export class PaymentsService {
       `Recording payment for invoice ${dto.invoiceId} in tenant ${tenantId}`,
     );
 
-    // Find the invoice with existing payments
-    const invoice = await this.prisma.invoice.findFirst({
-      where: { id: dto.invoiceId, tenantId },
-      include: {
-        payments: true,
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    if (!invoice) {
-      this.logger.warn(`Invoice not found: ${dto.invoiceId}`);
-      throw new NotFoundException('Factura no encontrada');
-    }
-
-    // Calculate total already paid
-    const totalPaid = invoice.payments.reduce(
-      (sum, payment) => sum + Number(payment.amount),
-      0,
-    );
-
-    // Calculate remaining balance
-    const invoiceTotal = Number(invoice.total);
-    const remainingBalance = invoiceTotal - totalPaid;
-
-    // Verify payment doesn't exceed remaining balance
-    if (dto.amount > remainingBalance) {
-      this.logger.warn(
-        `Payment amount ${dto.amount} exceeds remaining balance ${remainingBalance} for invoice ${invoice.invoiceNumber}`,
-      );
-      throw new BadRequestException(
-        `El monto del pago (${dto.amount}) excede el saldo pendiente (${remainingBalance.toFixed(2)})`,
-      );
-    }
-
-    // Calculate new payment status
-    const newTotalPaid = totalPaid + dto.amount;
-    const newPaymentStatus = this.calculatePaymentStatus(
-      newTotalPaid,
-      invoiceTotal,
-    );
-
-    // Create payment within a transaction
-    const payment = await this.prisma.$transaction(async (tx) => {
-      // Create the payment record
-      const newPayment = await tx.payment.create({
-        data: {
+    // All payment logic inside transaction with row-level locking to prevent race conditions
+    const { payment, invoice, newPaymentStatus, totalPaid } =
+      await this.prisma.$transaction(async (tx) => {
+        // Lock the invoice row to prevent concurrent payment creation
+        const [lockedInvoice] = await tx.$queryRawUnsafe<
+          Array<{
+            id: string;
+            tenantId: string;
+            total: number;
+            paymentStatus: string;
+            invoiceNumber: string;
+          }>
+        >(
+          `SELECT id, "tenantId", total, "paymentStatus", "invoiceNumber" FROM "Invoice" WHERE id = $1 AND "tenantId" = $2 FOR UPDATE`,
+          dto.invoiceId,
           tenantId,
-          invoiceId: dto.invoiceId,
-          amount: dto.amount,
-          method: dto.method,
-          reference: dto.reference ?? null,
-          notes: dto.notes ?? null,
-          paymentDate: dto.paymentDate ?? new Date(),
-        },
-        include: {
-          invoice: {
-            include: {
-              customer: {
-                select: {
-                  id: true,
-                  name: true,
+        );
+
+        if (!lockedInvoice) {
+          throw new NotFoundException('Factura no encontrada');
+        }
+
+        // Get customer info (no lock needed)
+        const invoiceWithCustomer = await tx.invoice.findFirst({
+          where: { id: dto.invoiceId, tenantId },
+          include: {
+            payments: true,
+            customer: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+        });
+
+        if (!invoiceWithCustomer) {
+          throw new NotFoundException('Factura no encontrada');
+        }
+
+        // Calculate total already paid (within transaction, after lock)
+        const txTotalPaid = invoiceWithCustomer.payments.reduce(
+          (sum, p) => sum + Number(p.amount),
+          0,
+        );
+
+        const invoiceTotal = Number(lockedInvoice.total);
+        const remainingBalance = invoiceTotal - txTotalPaid;
+
+        // Verify payment doesn't exceed remaining balance
+        if (dto.amount > remainingBalance) {
+          this.logger.warn(
+            `Payment amount ${dto.amount} exceeds remaining balance ${remainingBalance} for invoice ${lockedInvoice.invoiceNumber}`,
+          );
+          throw new BadRequestException(
+            `El monto del pago (${dto.amount}) excede el saldo pendiente (${remainingBalance.toFixed(2)})`,
+          );
+        }
+
+        const txNewTotalPaid = txTotalPaid + dto.amount;
+        const txNewPaymentStatus = this.calculatePaymentStatus(
+          txNewTotalPaid,
+          invoiceTotal,
+        );
+
+        // Create the payment record
+        const newPayment = await tx.payment.create({
+          data: {
+            tenantId,
+            invoiceId: dto.invoiceId,
+            amount: dto.amount,
+            method: dto.method,
+            reference: dto.reference ?? null,
+            notes: dto.notes ?? null,
+            paymentDate: dto.paymentDate ?? new Date(),
+          },
+          include: {
+            invoice: {
+              include: {
+                customer: {
+                  select: { id: true, name: true },
                 },
               },
             },
           },
-        },
-      });
-
-      // Update invoice payment status if changed
-      if (invoice.paymentStatus !== newPaymentStatus) {
-        await tx.invoice.update({
-          where: { id: dto.invoiceId },
-          data: { paymentStatus: newPaymentStatus },
         });
 
-        // Update the payment's invoice relation with new status
-        newPayment.invoice.paymentStatus = newPaymentStatus;
-      }
+        // Update invoice payment status if changed
+        if (invoiceWithCustomer.paymentStatus !== txNewPaymentStatus) {
+          await tx.invoice.update({
+            where: { id: dto.invoiceId },
+            data: { paymentStatus: txNewPaymentStatus },
+          });
+          newPayment.invoice.paymentStatus = txNewPaymentStatus;
+        }
 
-      return newPayment;
-    });
+        return {
+          payment: newPayment,
+          invoice: invoiceWithCustomer,
+          newPaymentStatus: txNewPaymentStatus,
+          totalPaid: txNewTotalPaid,
+        };
+      });
+
+    // Invalidate invoice and dashboard cache after payment status change
+    await this.cache.invalidate(CACHE_KEYS.INVOICES, tenantId);
+    const invoiceCacheKey = this.cache.generateKey(CACHE_KEYS.INVOICE, tenantId, dto.invoiceId);
+    await this.cache.del(invoiceCacheKey);
+    await this.cache.invalidate(CACHE_KEYS.DASHBOARD, tenantId);
 
     this.logger.log(
       `Payment recorded: ${payment.id} for invoice ${invoice.invoiceNumber}, amount: ${dto.amount}, new status: ${newPaymentStatus}`,
@@ -574,6 +594,12 @@ export class PaymentsService {
         });
       }
     });
+
+    // Invalidate invoice and dashboard cache after payment deletion
+    await this.cache.invalidate(CACHE_KEYS.INVOICES, tenantId);
+    const invoiceCacheKey = this.cache.generateKey(CACHE_KEYS.INVOICE, tenantId, payment.invoiceId);
+    await this.cache.del(invoiceCacheKey);
+    await this.cache.invalidate(CACHE_KEYS.DASHBOARD, tenantId);
 
     this.logger.log(
       `Payment deleted: ${id} from invoice ${payment.invoice.invoiceNumber}, new status: ${newPaymentStatus}`,

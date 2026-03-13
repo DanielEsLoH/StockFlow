@@ -53,6 +53,12 @@ describe('ExpensesController', () => {
       PAID: 3,
       CANCELLED: 0,
     } as Record<ExpenseStatus, number>,
+    totalsByStatus: {
+      DRAFT: 200000,
+      APPROVED: 100000,
+      PAID: 300000,
+      CANCELLED: 0,
+    } as Record<ExpenseStatus, number>,
     totalsByCategory: { SERVICIOS_PUBLICOS: 500000 },
     grandTotal: 500000,
   };

@@ -89,6 +89,7 @@ export interface PaginatedExpensesResponse {
  */
 export interface ExpenseStatsResponse {
   countsByStatus: Record<ExpenseStatus, number>;
+  totalsByStatus: Record<ExpenseStatus, number>;
   totalsByCategory: Record<string, number>;
   grandTotal: number;
 }
@@ -759,13 +760,20 @@ export class ExpensesService {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    // Get all expenses for counts by status (all time)
-    const allExpenses = await this.prisma.expense.findMany({
-      where: { tenantId },
-      select: { status: true },
+    // Aggregate counts and totals by status for current month
+    const statusAggregates = await this.prisma.expense.groupBy({
+      by: ['status'],
+      where: {
+        tenantId,
+        issueDate: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+      _count: { status: true },
+      _sum: { total: true },
     });
 
-    // Initialize status counts
     const countsByStatus: Record<ExpenseStatus, number> = {
       [ExpenseStatus.DRAFT]: 0,
       [ExpenseStatus.APPROVED]: 0,
@@ -773,12 +781,21 @@ export class ExpensesService {
       [ExpenseStatus.CANCELLED]: 0,
     };
 
-    for (const expense of allExpenses) {
-      countsByStatus[expense.status]++;
+    const totalsByStatus: Record<ExpenseStatus, number> = {
+      [ExpenseStatus.DRAFT]: 0,
+      [ExpenseStatus.APPROVED]: 0,
+      [ExpenseStatus.PAID]: 0,
+      [ExpenseStatus.CANCELLED]: 0,
+    };
+
+    for (const row of statusAggregates) {
+      countsByStatus[row.status] = row._count.status;
+      totalsByStatus[row.status] = Number(row._sum.total ?? 0);
     }
 
-    // Get current month expenses for totals by category and grand total
-    const monthExpenses = await this.prisma.expense.findMany({
+    // Aggregate current month expenses by category at the database level
+    const categoryAggregates = await this.prisma.expense.groupBy({
+      by: ['category'],
       where: {
         tenantId,
         issueDate: {
@@ -787,24 +804,21 @@ export class ExpensesService {
         },
         status: { not: ExpenseStatus.CANCELLED },
       },
-      select: {
-        category: true,
-        total: true,
-      },
+      _sum: { total: true },
     });
 
     const totalsByCategory: Record<string, number> = {};
     let grandTotal = 0;
 
-    for (const expense of monthExpenses) {
-      const amount = Number(expense.total);
-      totalsByCategory[expense.category] =
-        (totalsByCategory[expense.category] ?? 0) + amount;
+    for (const row of categoryAggregates) {
+      const amount = Number(row._sum.total ?? 0);
+      totalsByCategory[row.category] = amount;
       grandTotal += amount;
     }
 
     return {
       countsByStatus,
+      totalsByStatus,
       totalsByCategory,
       grandTotal,
     };

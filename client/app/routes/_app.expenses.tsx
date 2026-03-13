@@ -169,18 +169,13 @@ export default function ExpensesPage() {
   };
 
   // Derive stats values
-  const statsByStatus = useMemo(() => {
-    const byStatus = stats?.byStatus || [];
-    const approved = byStatus.find((s) => s.status === "APPROVED");
-    const paid = byStatus.find((s) => s.status === "PAID");
-    const draft = byStatus.find((s) => s.status === "DRAFT");
-    return {
-      totalMonth: stats?.totalAmount || 0,
-      approved: approved?.total || 0,
-      paid: paid?.total || 0,
-      pending: draft?.total || 0,
-    };
-  }, [stats]);
+  const totals = stats?.totalsByStatus;
+  const statsByStatus = {
+    totalMonth: stats?.grandTotal || 0,
+    approved: totals?.APPROVED || 0,
+    paid: totals?.PAID || 0,
+    pending: totals?.DRAFT || 0,
+  };
 
   const expenses = expensesData?.data || [];
   const paginationMeta = expensesData?.meta;

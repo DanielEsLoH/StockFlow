@@ -62,6 +62,7 @@ describe('ExpensesService', () => {
         update: jest.fn(),
         delete: jest.fn(),
         count: jest.fn(),
+        groupBy: jest.fn(),
       },
       supplier: {
         findFirst: jest.fn(),
@@ -694,20 +695,18 @@ describe('ExpensesService', () => {
 
   describe('getStats', () => {
     it('should return expense statistics', async () => {
-      (prisma.expense.findMany as jest.Mock)
+      (prisma.expense.groupBy as jest.Mock)
         .mockResolvedValueOnce([
-          // All expenses for status counts
-          { status: ExpenseStatus.DRAFT },
-          { status: ExpenseStatus.DRAFT },
-          { status: ExpenseStatus.APPROVED },
-          { status: ExpenseStatus.PAID },
-          { status: ExpenseStatus.CANCELLED },
+          // Status aggregates
+          { status: ExpenseStatus.DRAFT, _count: { status: 2 }, _sum: { total: 200000 } },
+          { status: ExpenseStatus.APPROVED, _count: { status: 1 }, _sum: { total: 100000 } },
+          { status: ExpenseStatus.PAID, _count: { status: 1 }, _sum: { total: 300000 } },
+          { status: ExpenseStatus.CANCELLED, _count: { status: 1 }, _sum: { total: 50000 } },
         ])
         .mockResolvedValueOnce([
-          // Current month expenses for category totals
-          { category: ExpenseCategory.SERVICIOS_PUBLICOS, total: 119000 },
-          { category: ExpenseCategory.SERVICIOS_PUBLICOS, total: 50000 },
-          { category: ExpenseCategory.HONORARIOS, total: 500000 },
+          // Category aggregates (current month)
+          { category: ExpenseCategory.SERVICIOS_PUBLICOS, _sum: { total: 169000 } },
+          { category: ExpenseCategory.HONORARIOS, _sum: { total: 500000 } },
         ]);
 
       const result = await service.getStats();
@@ -717,6 +716,12 @@ describe('ExpensesService', () => {
         APPROVED: 1,
         PAID: 1,
         CANCELLED: 1,
+      });
+      expect(result.totalsByStatus).toEqual({
+        DRAFT: 200000,
+        APPROVED: 100000,
+        PAID: 300000,
+        CANCELLED: 50000,
       });
       expect(result.totalsByCategory).toEqual({
         SERVICIOS_PUBLICOS: 169000,

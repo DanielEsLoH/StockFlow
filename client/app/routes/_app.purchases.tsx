@@ -280,7 +280,7 @@ export default function PurchaseOrdersPage() {
           <StatCard
             icon={CheckCircle}
             label="Recibidas"
-            value={stats?.totalReceived || 0}
+            value={(stats?.totalReceived || 0).toLocaleString("es-CO")}
             color="success"
             variant="gradient"
             animate

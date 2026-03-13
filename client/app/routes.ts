@@ -137,6 +137,7 @@ export default [
     route("dian/documents/:id", "routes/_app.dian.documents.$id.tsx"),
 
     // Accounting module
+    route("accounting", "routes/_app.accounting.tsx"),
     route("accounting/accounts", "routes/_app.accounting.accounts.tsx"),
     route(
       "accounting/journal-entries",

@@ -42,12 +42,12 @@ export default function POSOpenPage() {
   const openSession = useOpenSession();
 
   const availableRegisters =
-    registersData?.data.filter((r) => r.status === "OPEN" && !r.activeSession) ||
-    [];
+    registersData?.data.filter(
+      (r) => (r.status === "OPEN" || r.status === "CLOSED") && !r.activeSession,
+    ) || [];
 
   const occupiedRegisters =
-    registersData?.data.filter((r) => r.status === "OPEN" && r.activeSession) ||
-    [];
+    registersData?.data.filter((r) => r.activeSession) || [];
 
   const registerOptions = [
     { value: "", label: "Seleccionar caja..." },

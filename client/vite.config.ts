@@ -203,15 +203,8 @@ export default defineConfig({
             return "vendor-zod";
           }
 
-          // Recharts + D3 (~200KB) - only used in Dashboard and reports
-          if (
-            id.includes("node_modules/recharts") ||
-            id.includes("node_modules/d3-")
-          ) {
-            return "vendor-charts";
-          }
-
-          // Let Vite handle chunking for React-dependent libraries:
+          // Let Vite handle chunking for React-dependent libraries
+          // (recharts, @radix-ui, framer-motion, etc.):
           // - react-router, @react-router
           // - @radix-ui
           // - framer-motion

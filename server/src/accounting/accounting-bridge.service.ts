@@ -68,6 +68,11 @@ export class AccountingBridgeService {
       }
 
       // Determine debit account: Caja for POS immediate payment, Clientes for credit sales
+      if (params.isPosImmediate && !cashAccountId) {
+        this.logger.warn(
+          `POS sale ${params.invoiceNumber} requires cash account but cashAccountId is not configured. Falling back to accounts receivable.`,
+        );
+      }
       const debitAccountId = (params.isPosImmediate && cashAccountId) ? cashAccountId : accountsReceivableId;
 
       const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
@@ -560,29 +565,29 @@ export class AccountingBridgeService {
         });
       }
 
-      // DR Aportes patronales
+      // DR Aportes patronales (gasto)
       const totalAportes =
         params.totalSaludEmpleador + params.totalPensionEmpleador +
         params.totalArlEmpleador + params.totalCajaEmpleador +
         params.totalSenaEmpleador + params.totalIcbfEmpleador;
 
-      if (totalAportes > 0 && payrollContributionsId) {
+      if (totalAportes > 0) {
         lines.push({
-          accountId: payrollContributionsId,
+          accountId: payrollExpenseId,
           description: `Aportes patronales ${params.periodName}`,
           debit: totalAportes,
           credit: 0,
         });
       }
 
-      // DR Provisiones prestaciones
+      // DR Provisiones prestaciones (gasto)
       const totalProvisiones =
         params.totalProvisionPrima + params.totalProvisionCesantias +
         params.totalProvisionIntereses + params.totalProvisionVacaciones;
 
-      if (totalProvisiones > 0 && payrollProvisionsId) {
+      if (totalProvisiones > 0) {
         lines.push({
-          accountId: payrollProvisionsId,
+          accountId: payrollExpenseId,
           description: `Provisiones ${params.periodName}`,
           debit: totalProvisiones,
           credit: 0,

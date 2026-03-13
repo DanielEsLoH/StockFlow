@@ -62,6 +62,31 @@ export class UpdateAccountingConfigDto {
   @IsOptional()
   reteFuentePayableId?: string;
 
+  @ApiPropertyOptional({ description: 'Payroll expense account ID (PUC 5105)' })
+  @IsString()
+  @IsOptional()
+  payrollExpenseId?: string;
+
+  @ApiPropertyOptional({ description: 'Payroll payable account ID (PUC 2505)' })
+  @IsString()
+  @IsOptional()
+  payrollPayableId?: string;
+
+  @ApiPropertyOptional({ description: 'Payroll retentions account ID (PUC 2380)' })
+  @IsString()
+  @IsOptional()
+  payrollRetentionsId?: string;
+
+  @ApiPropertyOptional({ description: 'Payroll contributions account ID (PUC 2380)' })
+  @IsString()
+  @IsOptional()
+  payrollContributionsId?: string;
+
+  @ApiPropertyOptional({ description: 'Payroll provisions account ID (PUC 2610)' })
+  @IsString()
+  @IsOptional()
+  payrollProvisionsId?: string;
+
   @ApiPropertyOptional({
     description: 'Enable automatic journal entry generation',
     default: false,

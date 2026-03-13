@@ -553,7 +553,7 @@ describe('PaymentsService', () => {
     });
 
     it('should calculate remaining balance considering existing payments', async () => {
-      createTxMock(mockInvoiceWithPayments as typeof mockInvoice & { payments: Array<{ id: string; amount: number }> });
+      createTxMock(mockInvoiceWithPayments as any);
 
       // Invoice total is 1000, existing payment is 300, remaining is 700
       const paymentDto: CreatePaymentDto = {
@@ -567,7 +567,7 @@ describe('PaymentsService', () => {
     });
 
     it('should allow exact remaining balance payment', async () => {
-      createTxMock(mockInvoiceWithPayments as typeof mockInvoice & { payments: Array<{ id: string; amount: number }> });
+      createTxMock(mockInvoiceWithPayments as any);
 
       const paymentDto: CreatePaymentDto = {
         ...createDto,
@@ -670,7 +670,7 @@ describe('PaymentsService', () => {
       it('should update invoice to PAID when fully paid', async () => {
         const { getInvoiceUpdateData } = createStatusTxMock(
           { ...mockInvoice, paymentStatus: PaymentStatus.UNPAID, payments: [] },
-          { ...mockPayment, amount: 1000, invoice: { ...mockPayment.invoice, paymentStatus: PaymentStatus.PAID } },
+          { ...mockPayment, amount: 1000, invoice: { ...mockPayment.invoice, paymentStatus: PaymentStatus.PAID } } as any,
         );
 
         await service.create({ ...createDto, amount: 1000 });
@@ -684,8 +684,8 @@ describe('PaymentsService', () => {
 
       it('should update PARTIALLY_PAID to PAID when remaining balance is paid', async () => {
         const { getInvoiceUpdateData } = createStatusTxMock(
-          mockInvoiceWithPayments as typeof mockInvoice & { payments: Array<{ id: string; amount: number }> },
-          { ...mockPayment, amount: 700, invoice: { ...mockPayment.invoice, paymentStatus: PaymentStatus.PAID } },
+          mockInvoiceWithPayments as any,
+          { ...mockPayment, amount: 700, invoice: { ...mockPayment.invoice, paymentStatus: PaymentStatus.PAID } } as any,
         );
 
         await service.create({ ...createDto, amount: 700 });
@@ -699,7 +699,7 @@ describe('PaymentsService', () => {
 
       it('should not update invoice status if already correct', async () => {
         const { getInvoiceUpdateCalled } = createStatusTxMock(
-          { ...mockInvoiceWithPayments, paymentStatus: PaymentStatus.PARTIALLY_PAID } as typeof mockInvoice & { payments: Array<{ id: string; amount: number }> },
+          { ...mockInvoiceWithPayments, paymentStatus: PaymentStatus.PARTIALLY_PAID } as any,
           { ...mockPayment, amount: 200, invoice: { ...mockPayment.invoice, paymentStatus: PaymentStatus.PARTIALLY_PAID } },
         );
 

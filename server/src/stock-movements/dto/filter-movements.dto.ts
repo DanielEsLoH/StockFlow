@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsDate, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { MovementType } from '@prisma/client';
 import { PaginationDto } from '../../common/dto';
@@ -17,7 +17,8 @@ export class FilterMovementsDto extends PaginationDto {
     description: 'Filter by product ID',
     example: 'clxxxxxxxxxxxxxxxxxxxxxxxxx',
   })
-  @IsUUID('all', { message: 'El ID del producto debe ser un UUID valido' })
+  @IsString({ message: 'El ID del producto debe ser una cadena de texto' })
+  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID del producto debe ser un CUID valido' })
   @IsOptional()
   productId?: string;
 
@@ -29,7 +30,8 @@ export class FilterMovementsDto extends PaginationDto {
     description: 'Filter by warehouse ID',
     example: 'clxxxxxxxxxxxxxxxxxxxxxxxxx',
   })
-  @IsUUID('all', { message: 'El ID del almacen debe ser un UUID valido' })
+  @IsString({ message: 'El ID del almacen debe ser una cadena de texto' })
+  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID del almacen debe ser un CUID valido' })
   @IsOptional()
   warehouseId?: string;
 

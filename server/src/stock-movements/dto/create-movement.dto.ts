@@ -2,7 +2,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUUID,
+  Matches,
   MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -21,7 +21,8 @@ export class CreateMovementDto {
     description: 'Product ID to adjust stock for',
     example: 'clxxxxxxxxxxxxxxxxxxxxxxxxx',
   })
-  @IsUUID('all', { message: 'El ID del producto debe ser un UUID valido' })
+  @IsString({ message: 'El ID del producto debe ser una cadena de texto' })
+  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID del producto debe ser un CUID valido' })
   productId: string;
 
   /**
@@ -32,7 +33,8 @@ export class CreateMovementDto {
     description: 'Warehouse ID where the adjustment occurs',
     example: 'clxxxxxxxxxxxxxxxxxxxxxxxxx',
   })
-  @IsUUID('all', { message: 'El ID del almacen debe ser un UUID valido' })
+  @IsString({ message: 'El ID del almacen debe ser una cadena de texto' })
+  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID del almacen debe ser un CUID valido' })
   @IsOptional()
   warehouseId?: string;
 

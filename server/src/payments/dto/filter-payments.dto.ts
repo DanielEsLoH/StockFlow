@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsDate, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethod } from '@prisma/client';
 import { PaginationDto } from '../../common/dto';
@@ -17,7 +17,8 @@ export class FilterPaymentsDto extends PaginationDto {
     description: 'Filter by invoice ID',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @IsUUID('all', { message: 'El ID de la factura debe ser un UUID valido' })
+  @IsString({ message: 'El ID de la factura debe ser una cadena de texto' })
+  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID de la factura debe ser un CUID valido' })
   @IsOptional()
   invoiceId?: string;
 

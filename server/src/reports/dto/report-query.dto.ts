@@ -5,7 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
+  Matches,
   Min,
   Max,
 } from 'class-validator';
@@ -75,7 +75,8 @@ export class ReportQueryDto {
     description: 'Optional category ID to filter results',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @IsUUID('all', { message: 'El ID de categoria debe ser un UUID valido' })
+  @IsString({ message: 'El ID de categoria debe ser una cadena de texto' })
+  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID de categoria debe ser un CUID valido' })
   @IsOptional()
   categoryId?: string;
 }
@@ -106,7 +107,8 @@ export class InventoryReportQueryDto {
     description: 'Optional category ID to filter results',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @IsUUID('all', { message: 'El ID de categoria debe ser un UUID valido' })
+  @IsString({ message: 'El ID de categoria debe ser una cadena de texto' })
+  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID de categoria debe ser un CUID valido' })
   @IsOptional()
   categoryId?: string;
 }

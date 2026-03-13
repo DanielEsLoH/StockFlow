@@ -7,6 +7,7 @@ import {
   Min,
   Max,
   MinLength,
+  Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaxCategory } from '@prisma/client';
@@ -79,6 +80,7 @@ export class CreateProductDto {
     example: 'clx1234567890abcdef',
   })
   @IsString({ message: 'Category ID must be a string' })
+  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID de la categoría debe ser un CUID valido' })
   @IsOptional()
   categoryId?: string;
 

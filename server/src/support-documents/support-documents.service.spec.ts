@@ -6,8 +6,10 @@ import {
 } from '@nestjs/common';
 import { SupportDocumentStatus } from '@prisma/client';
 import { SupportDocumentsService } from './support-documents.service';
+import { SupportDocumentXmlService } from './support-document-xml.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common/services';
+import { CacheService } from '../cache';
 
 describe('SupportDocumentsService', () => {
   let service: SupportDocumentsService;
@@ -95,6 +97,9 @@ describe('SupportDocumentsService', () => {
       supplier: {
         findFirst: jest.fn(),
       },
+      tenantDianConfig: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
       $transaction: jest
         .fn()
         .mockImplementation((fn) => fn(mockPrismaService)),
@@ -104,11 +109,27 @@ describe('SupportDocumentsService', () => {
       requireTenantId: jest.fn().mockReturnValue(mockTenantId),
     };
 
+    const mockXmlService = {
+      generateCuds: jest.fn().mockReturnValue('mock-cuds-hash'),
+      generateQrCodeData: jest.fn().mockReturnValue('mock-qr-data'),
+      generateSupportDocumentXml: jest.fn().mockReturnValue('<Invoice>mock</Invoice>'),
+    };
+
+    const mockCacheService = {
+      get: jest.fn().mockResolvedValue(undefined),
+      set: jest.fn().mockResolvedValue(undefined),
+      del: jest.fn().mockResolvedValue(undefined),
+      invalidate: jest.fn().mockResolvedValue(undefined),
+      generateKey: jest.fn((...args: string[]) => args.join(':')),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SupportDocumentsService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
+        { provide: SupportDocumentXmlService, useValue: mockXmlService },
+        { provide: CacheService, useValue: mockCacheService },
       ],
     }).compile();
 
@@ -651,7 +672,11 @@ describe('SupportDocumentsService', () => {
       expect(result.status).toBe(SupportDocumentStatus.GENERATED);
       expect(prisma.supportDocument.update).toHaveBeenCalledWith({
         where: { id: 'sd-1' },
-        data: { status: SupportDocumentStatus.GENERATED },
+        data: {
+          status: SupportDocumentStatus.GENERATED,
+          dianXml: null,
+          dianCude: null,
+        },
         include: { items: true, supplier: true, user: true },
       });
     });

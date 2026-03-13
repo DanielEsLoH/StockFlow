@@ -44,6 +44,12 @@ export interface CreateSupportDocumentData {
   items: { description: string; quantity: number; unitPrice: number; taxRate: number }[];
 }
 
+export interface SupportDocumentStats {
+  totalDocuments: number;
+  totalValue: number;
+  documentsByStatus: Record<SupportDocumentStatus, number>;
+}
+
 export const supportDocStatusLabels: Record<SupportDocumentStatus, string> = {
   DRAFT: 'Borrador',
   GENERATED: 'Generado',

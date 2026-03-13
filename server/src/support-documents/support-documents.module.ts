@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SupportDocumentsController } from './support-documents.controller';
 import { SupportDocumentsService } from './support-documents.service';
+import { SupportDocumentXmlService } from './support-document-xml.service';
 
 /**
  * SupportDocumentsModule provides Documento Soporte Electronico management:
@@ -8,6 +9,7 @@ import { SupportDocumentsService } from './support-documents.service';
  * - Document status transitions (DRAFT -> GENERATED -> SENT -> ACCEPTED/REJECTED)
  * - Auto-generated document numbers (DS-00001, DS-00002...)
  * - Item-level and aggregate total calculations
+ * - DIAN-compliant UBL 2.1 XML generation with CUDS
  *
  * This module depends on:
  * - PrismaModule (global) - for database access
@@ -20,12 +22,12 @@ import { SupportDocumentsService } from './support-documents.service';
  * Business Rules:
  * - Document numbers are unique per tenant and auto-generated (DS-XXXXX)
  * - Only DRAFT documents can be updated or deleted
- * - DIAN XML generation will be added in a future iteration
+ * - DIAN XML generation produces UBL 2.1 type 05 (Documento Soporte)
  * - Support documents are for purchases from non-invoicers (no obligados a facturar)
  */
 @Module({
   controllers: [SupportDocumentsController],
-  providers: [SupportDocumentsService],
+  providers: [SupportDocumentsService, SupportDocumentXmlService],
   exports: [SupportDocumentsService],
 })
 export class SupportDocumentsModule {}

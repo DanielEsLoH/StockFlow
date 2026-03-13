@@ -126,10 +126,10 @@ export interface PayExpenseData {
 }
 
 export interface ExpenseStats {
-  total: number;
-  totalAmount: number;
-  byStatus: { status: ExpenseStatus; count: number; total: number }[];
-  byCategory: { category: ExpenseCategory; count: number; total: number }[];
+  countsByStatus: Record<ExpenseStatus, number>;
+  totalsByStatus: Record<ExpenseStatus, number>;
+  totalsByCategory: Record<ExpenseCategory, number>;
+  grandTotal: number;
 }
 
 export interface ExpensesResponse {

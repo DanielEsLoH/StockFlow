@@ -1,6 +1,7 @@
 import { api } from "~/lib/api";
 import type {
   SupportDocument,
+  SupportDocumentStats,
   CreateSupportDocumentData,
 } from "~/types/support-document";
 
@@ -32,7 +33,7 @@ export const supportDocumentsService = {
 
   getStats: () =>
     api
-      .get<Record<string, number>>("/support-documents/stats")
+      .get<SupportDocumentStats>("/support-documents/stats")
       .then((r) => r.data),
 
   create: (data: CreateSupportDocumentData) =>

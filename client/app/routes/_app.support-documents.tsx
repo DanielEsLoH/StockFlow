@@ -211,7 +211,7 @@ export default function SupportDocumentsPage() {
           <StatCard
             icon={FileText}
             label="Total Documentos"
-            value={stats?.total || 0}
+            value={stats?.totalDocuments || 0}
             subtitle="en el sistema"
             color="primary"
             variant="gradient"
@@ -221,7 +221,7 @@ export default function SupportDocumentsPage() {
           <StatCard
             icon={Clock}
             label="Borradores"
-            value={stats?.DRAFT || 0}
+            value={stats?.documentsByStatus?.DRAFT || 0}
             color="warning"
             variant="gradient"
             animate
@@ -230,7 +230,7 @@ export default function SupportDocumentsPage() {
           <StatCard
             icon={CheckCircle}
             label="Aceptados"
-            value={stats?.ACCEPTED || 0}
+            value={stats?.documentsByStatus?.ACCEPTED || 0}
             color="success"
             variant="gradient"
             animate

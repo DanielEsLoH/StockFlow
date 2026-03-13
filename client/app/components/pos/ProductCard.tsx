@@ -75,6 +75,8 @@ export const ProductCard = memo(function ProductCard({
           <img
             src={product.imageUrl}
             alt={product.name}
+            loading="lazy"
+            decoding="async"
             className="h-8 w-8 sm:h-10 sm:w-10 rounded-md sm:rounded-lg object-cover"
           />
         ) : (

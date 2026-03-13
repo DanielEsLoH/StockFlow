@@ -8,6 +8,7 @@ import {
   SupportDocument,
   SupportDocumentItem,
   SupportDocumentStatus,
+  TenantDianConfig,
   Supplier,
   User,
   Prisma,
@@ -19,6 +20,11 @@ import {
   UpdateSupportDocumentDto,
   FilterSupportDocumentsDto,
 } from './dto';
+import {
+  SupportDocumentXmlService,
+  SupportDocumentWithDetails,
+} from './support-document-xml.service';
+import { CacheService, CACHE_KEYS, CACHE_TTL, getCacheKey } from '../cache';
 
 /**
  * Support document item data returned in responses
@@ -110,6 +116,8 @@ export class SupportDocumentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
+    private readonly xmlService: SupportDocumentXmlService,
+    private readonly cache: CacheService,
   ) {}
 
   /**
@@ -527,7 +535,7 @@ export class SupportDocumentsService {
 
     const document = await this.prisma.supportDocument.findFirst({
       where: { id, tenantId },
-      include: { items: true },
+      include: { items: true, supplier: true },
     });
 
     if (!document) {
@@ -548,13 +556,58 @@ export class SupportDocumentsService {
       );
     }
 
-    // TODO: Generate DIAN-compliant XML here in the future
-    // For now, just transition the status
+    // Generate DIAN-compliant XML if tenant has a DIAN configuration
+    let dianXml: string | null = null;
+    let dianCude: string | null = null;
+
+    const cacheKey = getCacheKey(CACHE_KEYS.DIAN_CONFIG, tenantId);
+    const cachedConfig = await this.cache.get<TenantDianConfig>(cacheKey);
+    let dianConfig: TenantDianConfig | null = cachedConfig ?? null;
+    if (!dianConfig) {
+      dianConfig = await this.prisma.tenantDianConfig.findUnique({
+        where: { tenantId },
+      });
+      if (dianConfig) {
+        await this.cache.set(cacheKey, dianConfig, CACHE_TTL.DIAN_CONFIG);
+      }
+    }
+
+    if (dianConfig) {
+      const docWithDetails = document as SupportDocumentWithDetails;
+
+      // Generate CUDS (Codigo Unico de Documento Soporte)
+      dianCude = this.xmlService.generateCuds(docWithDetails, dianConfig);
+
+      // Generate QR code data
+      const qrCode = this.xmlService.generateQrCodeData(
+        docWithDetails,
+        dianConfig,
+        dianCude,
+      );
+
+      // Generate UBL 2.1 XML
+      dianXml = this.xmlService.generateSupportDocumentXml({
+        dianConfig,
+        document: docWithDetails,
+        cuds: dianCude,
+        qrCode,
+      });
+
+      this.logger.log(
+        `Generated DIAN XML for support document ${document.documentNumber}`,
+      );
+    } else {
+      this.logger.warn(
+        `No DIAN config found for tenant ${tenantId}, skipping XML generation`,
+      );
+    }
 
     const updatedDocument = await this.prisma.supportDocument.update({
       where: { id },
       data: {
         status: SupportDocumentStatus.GENERATED,
+        dianXml,
+        dianCude,
       },
       include: {
         items: true,

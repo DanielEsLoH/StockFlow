@@ -447,18 +447,32 @@ export function POSCartPro({
                 Carrito vacio
               </h3>
               <p className="mt-1.5 text-sm text-neutral-400 dark:text-neutral-500">
-                Selecciona productos o usa <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">F2</kbd> para buscar
+                Selecciona productos o usa{" "}
+                <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                  F2
+                </kbd>{" "}
+                para buscar
               </p>
             </motion.div>
           ) : (
             <table className="w-full text-left">
               <thead className="sticky top-0 z-10 bg-neutral-50/95 backdrop-blur-sm dark:bg-neutral-800/80">
                 <tr className="border-b border-neutral-200/80 dark:border-neutral-700/50">
-                  <th className="py-2 px-4 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 w-6">#</th>
-                  <th className="py-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">Producto</th>
-                  <th className="py-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 text-center">Cant</th>
-                  <th className="py-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 text-right">Precio</th>
-                  <th className="py-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 text-right">Total</th>
+                  <th className="py-2 px-4 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 w-6">
+                    #
+                  </th>
+                  <th className="py-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                    Producto
+                  </th>
+                  <th className="py-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 text-center">
+                    Cant
+                  </th>
+                  <th className="py-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 text-right">
+                    Precio
+                  </th>
+                  <th className="py-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 text-right">
+                    Total
+                  </th>
                   <th className="py-2 w-6"></th>
                 </tr>
               </thead>
@@ -599,9 +613,7 @@ export function POSCartPro({
 
           {/* Tax */}
           <div className="flex items-center justify-between text-[13px] mb-2">
-            <span className="text-neutral-500 dark:text-neutral-400">
-              IVA
-            </span>
+            <span className="text-neutral-500 dark:text-neutral-400">IVA</span>
             <span
               className="font-medium text-neutral-800 dark:text-neutral-200"
               style={{ fontVariantNumeric: "tabular-nums" }}
@@ -642,7 +654,9 @@ export function POSCartPro({
               >
                 <CreditCard className="mr-2 h-5 w-5" />
                 Cobrar
-                <span className="ml-1.5 text-sm font-normal opacity-70">(F4)</span>
+                <span className="ml-1.5 text-sm font-normal opacity-70">
+                  (F4)
+                </span>
               </Button>
             )}
 
@@ -655,9 +669,18 @@ export function POSCartPro({
               className="w-full"
               size={invoiceMode === "MANUAL" ? "lg" : "sm"}
             >
-              <FileText className={cn("mr-2", invoiceMode === "MANUAL" ? "h-5 w-5" : "h-4 w-4")} />
-              {invoiceMode === "MANUAL" ? "Guardar Factura" : "Guardar Pendiente"}
-              <span className="ml-1.5 text-xs font-normal opacity-60">(F8)</span>
+              <FileText
+                className={cn(
+                  "mr-2",
+                  invoiceMode === "MANUAL" ? "h-5 w-5" : "h-4 w-4",
+                )}
+              />
+              {invoiceMode === "MANUAL"
+                ? "Guardar Factura"
+                : "Guardar Pendiente"}
+              <span className="ml-1.5 text-xs font-normal opacity-60">
+                (F8)
+              </span>
             </Button>
 
             {/* Warning message when checkout is disabled */}
@@ -670,9 +693,15 @@ export function POSCartPro({
 
           {/* Keyboard shortcuts hint */}
           <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-            <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">F2 Buscar</kbd>
-            <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">F9 Limpiar</kbd>
-            <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">F11 Pantalla</kbd>
+            <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">
+              F2 Buscar
+            </kbd>
+            <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">
+              F9 Limpiar
+            </kbd>
+            <kbd className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500">
+              F11 Pantalla
+            </kbd>
           </div>
         </div>
       )}

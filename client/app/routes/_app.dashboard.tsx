@@ -46,12 +46,7 @@ import {
   formatRelativeTime,
 } from "~/lib/utils";
 import { useDashboard } from "~/hooks/useDashboard";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "~/components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
 import { Button } from "~/components/ui/Button";
 import { StatCard } from "~/components/ui/StatCard";
 import { Badge, StatusBadge } from "~/components/ui/Badge";
@@ -280,7 +275,9 @@ function exportChartToPNG(chartId: string, filename: string) {
   };
 
   const bytes = new TextEncoder().encode(svgData);
-  const binaryString = Array.from(bytes, (b) => String.fromCharCode(b)).join("");
+  const binaryString = Array.from(bytes, (b) => String.fromCharCode(b)).join(
+    "",
+  );
   img.src = "data:image/svg+xml;base64," + btoa(binaryString);
 }
 
@@ -329,7 +326,12 @@ function QuickActionCard({
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
-  const { canCreateProducts, canCreateInvoices, canCreateCustomers, canViewReports } = usePermissions();
+  const {
+    canCreateProducts,
+    canCreateInvoices,
+    canCreateCustomers,
+    canViewReports,
+  } = usePermissions();
 
   const [dateRange, setDateRange] = useState<string>("30d");
   const days = parseInt(dateRange) || 30;
@@ -410,9 +412,7 @@ export default function DashboardPage() {
   return (
     <PageWrapper>
       {/* Header with greeting and Date Range Filter */}
-      <PageSection
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-      >
+      <PageSection className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl sm:text-3xl font-bold font-display bg-linear-to-r from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
@@ -530,9 +530,7 @@ export default function DashboardPage() {
       </PageSection>
 
       {/* Stats Grid - Premium Gradient Cards */}
-      <PageSection
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-      >
+      <PageSection className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           label="Ventas Totales"
           value={formatCurrency(stats?.totalSales || 0)}
@@ -576,9 +574,7 @@ export default function DashboardPage() {
       </PageSection>
 
       {/* Charts Row */}
-      <PageSection
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-      >
+      <PageSection className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sales Area Chart */}
         <Card
           variant="elevated"
@@ -711,17 +707,19 @@ export default function DashboardPage() {
             </div>
             <div className="mt-2">
               <div className="flex flex-wrap gap-x-3 gap-y-1">
-                {(charts?.categoryDistribution || []).slice(0, 5).map((entry, index) => (
-                  <div key={index} className="flex items-center gap-1.5">
-                    <span
-                      className="inline-block h-2.5 w-2.5 rounded-sm shrink-0"
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span className="text-xs text-neutral-600 dark:text-neutral-400">
-                      {entry.name}
-                    </span>
-                  </div>
-                ))}
+                {(charts?.categoryDistribution || [])
+                  .slice(0, 5)
+                  .map((entry, index) => (
+                    <div key={index} className="flex items-center gap-1.5">
+                      <span
+                        className="inline-block h-2.5 w-2.5 rounded-sm shrink-0"
+                        style={{ backgroundColor: entry.color }}
+                      />
+                      <span className="text-xs text-neutral-600 dark:text-neutral-400">
+                        {entry.name}
+                      </span>
+                    </div>
+                  ))}
                 {(charts?.categoryDistribution || []).length > 5 && (
                   <span className="text-xs text-neutral-400 dark:text-neutral-500">
                     +{(charts?.categoryDistribution || []).length - 5} mas
@@ -734,9 +732,7 @@ export default function DashboardPage() {
       </PageSection>
 
       {/* Middle Row - Products Chart and Low Stock Alerts */}
-      <PageSection
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-      >
+      <PageSection className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Top Products Bar Chart */}
         <Card
           variant="elevated"
@@ -875,9 +871,7 @@ export default function DashboardPage() {
       </PageSection>
 
       {/* Bottom Row - Recent Invoices and Recent Activity */}
-      <PageSection
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-      >
+      <PageSection className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Invoices Table */}
         <Card
           variant="elevated"

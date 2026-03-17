@@ -1,14 +1,23 @@
 // Subscription plans
-export type SubscriptionPlan = 'EMPRENDEDOR' | 'PYME' | 'PRO' | 'PLUS';
+export type SubscriptionPlan = "EMPRENDEDOR" | "PYME" | "PRO" | "PLUS";
 
 // Subscription periods
-export type SubscriptionPeriod = 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
+export type SubscriptionPeriod = "MONTHLY" | "QUARTERLY" | "ANNUAL";
 
 // Subscription status
-export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'SUSPENDED' | 'CANCELLED';
+export type SubscriptionStatus =
+  | "ACTIVE"
+  | "EXPIRED"
+  | "SUSPENDED"
+  | "CANCELLED";
 
 // Billing transaction status
-export type BillingStatus = 'PENDING' | 'APPROVED' | 'DECLINED' | 'VOIDED' | 'ERROR';
+export type BillingStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "DECLINED"
+  | "VOIDED"
+  | "ERROR";
 
 // Subscription status response from GET /subscriptions/status
 export interface SubscriptionStatusResponse {

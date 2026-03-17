@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateAccountingConfigDto {
@@ -94,4 +94,23 @@ export class UpdateAccountingConfigDto {
   @IsBoolean()
   @IsOptional()
   autoGenerateEntries?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'ReteFuente purchase withholding rate (e.g. 0.025 for 2.5%)',
+    default: 0.025,
+  })
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  @IsOptional()
+  reteFuentePurchaseRate?: number;
+
+  @ApiPropertyOptional({
+    description: 'Minimum purchase base (COP) above which ReteFuente applies',
+    default: 523740,
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  reteFuenteMinBase?: number;
 }

@@ -24,6 +24,8 @@ export interface AccountingConfigResponse {
   payrollContributionsId: string | null;
   payrollProvisionsId: string | null;
   autoGenerateEntries: boolean;
+  reteFuentePurchaseRate: number;
+  reteFuenteMinBase: number;
   isConfigured: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -107,6 +109,8 @@ export class AccountingConfigService {
       payrollContributionsId: config.payrollContributionsId,
       payrollProvisionsId: config.payrollProvisionsId,
       autoGenerateEntries: config.autoGenerateEntries,
+      reteFuentePurchaseRate: Number(config.reteFuentePurchaseRate),
+      reteFuenteMinBase: Number(config.reteFuenteMinBase),
       isConfigured,
       createdAt: config.createdAt,
       updatedAt: config.updatedAt,

@@ -332,7 +332,7 @@ describe("usePermissions", () => {
       expect(result.current.canDiscount).toBe(false);
       expect(result.current.canViewInventory).toBe(false);
       expect(result.current.canAdjustInventory).toBe(false);
-      expect(result.current.canViewProducts).toBe(true);
+      expect(result.current.canViewProducts).toBe(false);
       expect(result.current.canCreateProducts).toBe(false);
       expect(result.current.canManageUsers).toBe(false);
     });

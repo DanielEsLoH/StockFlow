@@ -1318,6 +1318,7 @@ export class InvoicesService {
         quantity: item.quantity,
         product: item.product ? { costPrice: item.product.costPrice } : null,
       })),
+      isPosImmediate: cancelledInvoice.source === 'POS',
     }).catch(() => {});
 
     return this.mapToInvoiceResponse(cancelledInvoice);

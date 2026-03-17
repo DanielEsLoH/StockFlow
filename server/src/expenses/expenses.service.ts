@@ -760,15 +760,11 @@ export class ExpensesService {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    // Aggregate counts and totals by status for current month
+    // Aggregate counts and totals by status (all-time, not month-filtered)
     const statusAggregates = await this.prisma.expense.groupBy({
       by: ['status'],
       where: {
         tenantId,
-        issueDate: {
-          gte: startOfMonth,
-          lte: endOfMonth,
-        },
       },
       _count: { status: true },
       _sum: { total: true },

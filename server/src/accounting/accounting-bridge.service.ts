@@ -6,7 +6,6 @@ import { JournalEntrySource } from '@prisma/client';
 
 type Decimal = Prisma.Decimal;
 import { PrismaService } from '../prisma';
-import { RETE_FUENTE_RATE, RETE_FUENTE_MIN_BASE } from './tax-constants';
 
 /**
  * AccountingBridgeService generates automatic journal entries from business events.
@@ -106,7 +105,7 @@ export class AccountingBridgeService {
       // COGS: DR Costo de ventas, CR Inventario
       const totalCogs = params.items.reduce((sum, item) => {
         if (!item.product?.costPrice) return sum;
-        return sum + Number(item.product.costPrice) * item.quantity;
+        return sum + Math.round(Number(item.product.costPrice) * item.quantity * 100) / 100;
       }, 0);
 
       if (totalCogs > 0) {
@@ -155,19 +154,23 @@ export class AccountingBridgeService {
     tax: number;
     total: number;
     items: { productId: string | null; quantity: number; product?: { costPrice: any } | null }[];
+    isPosImmediate?: boolean;
   }): Promise<void> {
     try {
       const config = await this.configService.getConfigForTenant(params.tenantId);
       if (!config?.autoGenerateEntries) return;
 
-      const { accountsReceivableId, revenueAccountId, ivaPorPagarId, cogsAccountId, inventoryAccountId } = config;
+      const { accountsReceivableId, cashAccountId, revenueAccountId, ivaPorPagarId, cogsAccountId, inventoryAccountId } = config;
       if (!accountsReceivableId || !revenueAccountId || !cogsAccountId || !inventoryAccountId) return;
+
+      // Use the same account that was debited in the original sale entry
+      const creditAccountId = (params.isPosImmediate && cashAccountId) ? cashAccountId : accountsReceivableId;
 
       const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
 
-      // Reverse: CR Clientes = total
+      // Reverse: CR Clientes/Caja = total
       lines.push({
-        accountId: accountsReceivableId,
+        accountId: creditAccountId,
         description: `Anulacion Factura ${params.invoiceNumber}`,
         debit: 0,
         credit: params.total,
@@ -194,7 +197,7 @@ export class AccountingBridgeService {
       // Reverse COGS
       const totalCogs = params.items.reduce((sum, item) => {
         if (!item.product?.costPrice) return sum;
-        return sum + Number(item.product.costPrice) * item.quantity;
+        return sum + Math.round(Number(item.product.costPrice) * item.quantity * 100) / 100;
       }, 0);
 
       if (totalCogs > 0) {
@@ -402,14 +405,16 @@ export class AccountingBridgeService {
         });
       }
 
-      // ReteFuente V1: 2.5% on base > $523,740
+      // ReteFuente: configurable rate on base > configurable minimum
+      const reteFuenteRate = config.reteFuentePurchaseRate;
+      const reteFuenteMinBase = config.reteFuenteMinBase;
       let reteFuente = 0;
-      if (reteFuentePayableId && params.subtotal > RETE_FUENTE_MIN_BASE) {
-        reteFuente = Math.round(params.subtotal * RETE_FUENTE_RATE);
+      if (reteFuentePayableId && params.subtotal > reteFuenteMinBase) {
+        reteFuente = Math.round(params.subtotal * reteFuenteRate * 100) / 100;
 
         lines.push({
           accountId: reteFuentePayableId,
-          description: `ReteFuente compra ${params.purchaseOrderNumber} (2.5%)`,
+          description: `ReteFuente compra ${params.purchaseOrderNumber} (${(reteFuenteRate * 100).toFixed(1)}%)`,
           debit: 0,
           credit: reteFuente,
         });
@@ -726,7 +731,7 @@ export class AccountingBridgeService {
       ) {
         const totalCogs = params.items.reduce((sum, item) => {
           if (!item.product?.costPrice) return sum;
-          return sum + Number(item.product.costPrice) * item.quantity;
+          return sum + Math.round(Number(item.product.costPrice) * item.quantity * 100) / 100;
         }, 0);
 
         if (totalCogs > 0) {

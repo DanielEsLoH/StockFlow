@@ -1008,12 +1008,58 @@ export class AccountingReportsService {
     const purchasesByRate = Array.from(purchasesRateMap.values()).sort((a, b) => b.taxRate - a.taxRate);
     const purchasesExempt = Array.from(purchasesExemptMap.values());
 
-    const totalSalesBase = salesByRate.reduce((s, r) => s + r.taxableBase, 0) + salesExempt.reduce((s, r) => s + r.taxableBase, 0);
-    const totalIvaGenerado = salesByRate.reduce((s, r) => s + r.taxAmount, 0);
+    // --- Credit/Debit note adjustments from journal entries ---
+    const noteEntries = await this.prisma.journalEntry.findMany({
+      where: {
+        tenantId,
+        status: JournalEntryStatus.POSTED,
+        source: { in: [JournalEntrySource.CREDIT_NOTE, JournalEntrySource.DEBIT_NOTE] },
+        date: { gte: from, lte: to },
+      },
+      include: {
+        lines: {
+          include: { account: { select: { code: true } } },
+        },
+      },
+    });
+
+    let creditNoteIvaAdjustment = 0;
+    let creditNoteBaseAdjustment = 0;
+    let debitNoteIvaAdjustment = 0;
+    let debitNoteBaseAdjustment = 0;
+
+    for (const entry of noteEntries) {
+      for (const line of entry.lines) {
+        const code = line.account?.code ?? '';
+        // IVA accounts start with 2408
+        if (code.startsWith('2408') || code.startsWith('2404')) {
+          const amount = Number(line.debit) - Number(line.credit);
+          if (entry.source === JournalEntrySource.CREDIT_NOTE) {
+            creditNoteIvaAdjustment += amount; // positive = debit = IVA reduction
+          } else {
+            debitNoteIvaAdjustment += Math.abs(amount); // credit = IVA increase
+          }
+        }
+        // Revenue accounts start with 41
+        if (code.startsWith('41')) {
+          const amount = Number(line.debit) - Number(line.credit);
+          if (entry.source === JournalEntrySource.CREDIT_NOTE) {
+            creditNoteBaseAdjustment += amount; // positive = debit = base reduction
+          } else {
+            debitNoteBaseAdjustment += Math.abs(amount); // credit = base increase
+          }
+        }
+      }
+    }
+
+    const totalSalesBase = salesByRate.reduce((s, r) => s + r.taxableBase, 0) + salesExempt.reduce((s, r) => s + r.taxableBase, 0)
+      - creditNoteBaseAdjustment + debitNoteBaseAdjustment;
+    const totalIvaGenerado = salesByRate.reduce((s, r) => s + r.taxAmount, 0)
+      - creditNoteIvaAdjustment + debitNoteIvaAdjustment;
     const totalPurchasesBase = purchasesByRate.reduce((s, r) => s + r.taxableBase, 0) + purchasesExempt.reduce((s, r) => s + r.taxableBase, 0);
     const totalIvaDescontable = purchasesByRate.reduce((s, r) => s + r.taxAmount, 0);
 
-    this.logger.debug(`IVA Declaration ${year}-${bimonthlyPeriod}: generado=${totalIvaGenerado}, descontable=${totalIvaDescontable}`);
+    this.logger.debug(`IVA Declaration ${year}-${bimonthlyPeriod}: generado=${totalIvaGenerado}, descontable=${totalIvaDescontable}, NC adj=${creditNoteIvaAdjustment}, ND adj=${debitNoteIvaAdjustment}`);
 
     return {
       year,

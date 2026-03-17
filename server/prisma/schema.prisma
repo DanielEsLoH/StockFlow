@@ -1580,6 +1580,8 @@ model AccountingConfig {
   payrollContributionsId String?  @map("payroll_contributions_id")
   payrollProvisionsId    String?  @map("payroll_provisions_id")
   autoGenerateEntries    Boolean  @default(false) @map("auto_generate_entries")
+  reteFuentePurchaseRate Decimal  @default(0.025) @map("rete_fuente_purchase_rate") @db.Decimal(5, 4)
+  reteFuenteMinBase      Decimal  @default(523740) @map("rete_fuente_min_base") @db.Decimal(12, 2)
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 

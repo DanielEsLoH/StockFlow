@@ -62,6 +62,8 @@ export interface PaginatedJournalEntriesResponse {
   };
 }
 
+const MAX_ENTRY_NUMBER_RETRIES = 3;
+
 @Injectable()
 export class JournalEntriesService {
   private readonly logger = new Logger(JournalEntriesService.name);
@@ -194,43 +196,59 @@ export class JournalEntriesService {
       throw new BadRequestException('Una o mas cuentas no existen o estan inactivas');
     }
 
-    // Generate entry number
-    const entryNumber = await this.generateEntryNumber(tenantId);
+    // Generate entry number with retry on unique constraint collision
+    for (let attempt = 0; attempt < MAX_ENTRY_NUMBER_RETRIES; attempt++) {
+      const entryNumber = await this.generateEntryNumber(tenantId);
 
-    const entry = await this.prisma.journalEntry.create({
-      data: {
-        tenantId,
-        entryNumber,
-        date: new Date(dto.date),
-        description: dto.description,
-        source: JournalEntrySource.MANUAL,
-        status: JournalEntryStatus.DRAFT,
-        periodId: dto.periodId,
-        totalDebit,
-        totalCredit,
-        createdById: userId,
-        lines: {
-          create: dto.lines.map((l) => ({
-            accountId: l.accountId,
-            costCenterId: l.costCenterId,
-            description: l.description,
-            debit: l.debit,
-            credit: l.credit,
-          })),
-        },
-      },
-      include: {
-        lines: {
-          include: {
-            account: { select: { code: true, name: true } },
-            costCenter: { select: { code: true, name: true } },
+      try {
+        const entry = await this.prisma.journalEntry.create({
+          data: {
+            tenantId,
+            entryNumber,
+            date: new Date(dto.date),
+            description: dto.description,
+            source: JournalEntrySource.MANUAL,
+            status: JournalEntryStatus.DRAFT,
+            periodId: dto.periodId,
+            totalDebit,
+            totalCredit,
+            createdById: userId,
+            lines: {
+              create: dto.lines.map((l) => ({
+                accountId: l.accountId,
+                costCenterId: l.costCenterId,
+                description: l.description,
+                debit: l.debit,
+                credit: l.credit,
+              })),
+            },
           },
-        },
-      },
-    });
+          include: {
+            lines: {
+              include: {
+                account: { select: { code: true, name: true } },
+                costCenter: { select: { code: true, name: true } },
+              },
+            },
+          },
+        });
 
-    this.logger.log(`Manual journal entry created: ${entryNumber}`);
-    return this.mapToResponse(entry);
+        this.logger.log(`Manual journal entry created: ${entryNumber}`);
+        return this.mapToResponse(entry);
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002' &&
+          attempt < MAX_ENTRY_NUMBER_RETRIES - 1
+        ) {
+          this.logger.warn(`Entry number collision (${entryNumber}), retrying...`);
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new ConflictException('No se pudo generar un numero de asiento unico');
   }
 
   /**
@@ -267,48 +285,64 @@ export class JournalEntriesService {
       },
     });
 
-    const entryNumber = await this.generateEntryNumber(params.tenantId);
+    for (let attempt = 0; attempt < MAX_ENTRY_NUMBER_RETRIES; attempt++) {
+      const entryNumber = await this.generateEntryNumber(params.tenantId);
 
-    const entry = await this.prisma.journalEntry.create({
-      data: {
-        tenantId: params.tenantId,
-        entryNumber,
-        date: params.date,
-        description: params.description,
-        source: params.source,
-        status: JournalEntryStatus.POSTED,
-        periodId: period?.id,
-        invoiceId: params.invoiceId,
-        paymentId: params.paymentId,
-        purchaseOrderId: params.purchaseOrderId,
-        stockMovementId: params.stockMovementId,
-        dianDocumentId: params.dianDocumentId,
-        expenseId: params.expenseId,
-        totalDebit,
-        totalCredit,
-        postedAt: new Date(),
-        lines: {
-          create: params.lines.map((l) => ({
-            accountId: l.accountId,
-            costCenterId: l.costCenterId,
-            description: l.description,
-            debit: l.debit,
-            credit: l.credit,
-          })),
-        },
-      },
-      include: {
-        lines: {
-          include: {
-            account: { select: { code: true, name: true } },
-            costCenter: { select: { code: true, name: true } },
+      try {
+        const entry = await this.prisma.journalEntry.create({
+          data: {
+            tenantId: params.tenantId,
+            entryNumber,
+            date: params.date,
+            description: params.description,
+            source: params.source,
+            status: JournalEntryStatus.POSTED,
+            periodId: period?.id,
+            invoiceId: params.invoiceId,
+            paymentId: params.paymentId,
+            purchaseOrderId: params.purchaseOrderId,
+            stockMovementId: params.stockMovementId,
+            dianDocumentId: params.dianDocumentId,
+            expenseId: params.expenseId,
+            totalDebit,
+            totalCredit,
+            postedAt: new Date(),
+            lines: {
+              create: params.lines.map((l) => ({
+                accountId: l.accountId,
+                costCenterId: l.costCenterId,
+                description: l.description,
+                debit: l.debit,
+                credit: l.credit,
+              })),
+            },
           },
-        },
-      },
-    });
+          include: {
+            lines: {
+              include: {
+                account: { select: { code: true, name: true } },
+                costCenter: { select: { code: true, name: true } },
+              },
+            },
+          },
+        });
 
-    this.logger.log(`Auto journal entry created: ${entryNumber} (${params.source})`);
-    return this.mapToResponse(entry);
+        this.logger.log(`Auto journal entry created: ${entryNumber} (${params.source})`);
+        return this.mapToResponse(entry);
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002' &&
+          attempt < MAX_ENTRY_NUMBER_RETRIES - 1
+        ) {
+          this.logger.warn(`Entry number collision (${entryNumber}), retrying...`);
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new ConflictException('No se pudo generar un numero de asiento unico');
   }
 
   async postEntry(id: string): Promise<JournalEntryResponse> {

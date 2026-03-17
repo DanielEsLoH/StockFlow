@@ -36,6 +36,8 @@ describe('AccountingBridgeService', () => {
     payrollContributionsId: 'acc-pay-cont',
     payrollProvisionsId: 'acc-pay-prov',
     autoGenerateEntries: true,
+    reteFuentePurchaseRate: 0.025,
+    reteFuenteMinBase: 523740,
     isConfigured: true,
     createdAt: new Date(),
     updatedAt: new Date(),

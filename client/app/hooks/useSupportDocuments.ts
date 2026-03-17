@@ -43,10 +43,12 @@ export function useSupportDocument(id: string) {
 }
 
 export function useSupportDocumentStats() {
+  const enabled = useIsQueryEnabled();
   return useQuery<SupportDocumentStats>({
     queryKey: queryKeys.supportDocuments.stats(),
     queryFn: () => supportDocumentsService.getStats(),
     staleTime: 1000 * 60 * 2,
+    enabled,
   });
 }
 

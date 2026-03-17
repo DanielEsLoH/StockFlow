@@ -50,9 +50,11 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      // In production, block requests without an Origin header to prevent
+      // CSRF-style attacks that bypass same-origin policy checks.
+      // In development, allow no-origin for curl/Postman/server-to-server.
       if (!origin) {
-        return callback(null, true);
+        return callback(null, !isProduction);
       }
 
       if (allowedOrigins.has(normalizeUrl(origin))) {
@@ -89,7 +91,7 @@ async function bootstrap() {
           scriptSrc: [
             "'self'",
             "'unsafe-inline'",
-            "'unsafe-eval'",
+            ...(isProduction ? [] : ["'unsafe-eval'"]),
             'https://checkout.wompi.co',
           ],
           styleSrc: [

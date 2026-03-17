@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import * as crypto from 'crypto';
 import {
   UnauthorizedException,
   ConflictException,
@@ -342,13 +343,14 @@ describe('AuthService', () => {
       });
     });
 
-    it('should update user with refresh token and last login time', async () => {
+    it('should update user with hashed refresh token and last login time', async () => {
       await service.login('test@example.com', 'password123');
 
+      const expectedHash = crypto.createHash('sha256').update(mockTokens.refreshToken).digest('hex');
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
         data: {
-          refreshToken: mockTokens.refreshToken,
+          refreshToken: expectedHash,
           lastLoginAt: expect.any(Date),
         },
       });
@@ -681,6 +683,7 @@ describe('AuthService', () => {
 
   describe('refreshTokens', () => {
     const validRefreshToken = 'valid-refresh-token';
+    const hashToken = (t: string) => crypto.createHash('sha256').update(t).digest('hex');
     const validPayload = {
       sub: 'user-123',
       email: 'test@example.com',
@@ -691,7 +694,7 @@ describe('AuthService', () => {
 
     const userWithStoredToken = {
       ...mockUser,
-      refreshToken: validRefreshToken,
+      refreshToken: hashToken(validRefreshToken),
       tenant: mockTenant,
     };
 
@@ -733,7 +736,7 @@ describe('AuthService', () => {
 
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        data: { refreshToken: 'new-refresh-token' },
+        data: { refreshToken: hashToken('new-refresh-token') },
       });
     });
 
@@ -1261,7 +1264,7 @@ describe('AuthService', () => {
       };
       const userWithToken = {
         ...mockUser,
-        refreshToken: 'valid-refresh-token',
+        refreshToken: crypto.createHash('sha256').update('valid-refresh-token').digest('hex'),
         tenant: mockTenant,
       };
 
@@ -1366,9 +1369,10 @@ describe('AuthService', () => {
 
       await service.getMe(mockUser.id);
 
+      const expectedHash = crypto.createHash('sha256').update(mockTokens.refreshToken).digest('hex');
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        data: { refreshToken: mockTokens.refreshToken },
+        data: { refreshToken: expectedHash },
       });
     });
 
@@ -1677,8 +1681,9 @@ describe('AuthService', () => {
 
       await service.verifyEmail(validToken);
 
+      const hashedToken = crypto.createHash('sha256').update(validToken).digest('hex');
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { verificationToken: validToken },
+        where: { verificationToken: hashedToken },
         include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
       });
     });
@@ -2123,10 +2128,11 @@ describe('AuthService', () => {
 
       await service.acceptInvitation(acceptDto);
 
+      const expectedHash = crypto.createHash('sha256').update(mockTokens.refreshToken).digest('hex');
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: createdUser.id },
         data: {
-          refreshToken: mockTokens.refreshToken,
+          refreshToken: expectedHash,
           lastLoginAt: expect.any(Date),
         },
       });
@@ -2623,7 +2629,8 @@ describe('AuthService', () => {
         const updateCalls = (prismaService.user.update as jest.Mock).mock
           .calls as Array<[{ data: Record<string, unknown> }]>;
         const lastCall = updateCalls[updateCalls.length - 1];
-        expect(lastCall[0].data.refreshToken).toBe(mockTokens.refreshToken);
+        const expectedHash = crypto.createHash('sha256').update(mockTokens.refreshToken).digest('hex');
+        expect(lastCall[0].data.refreshToken).toBe(expectedHash);
         expect(lastCall[0].data.lastLoginAt).toBeInstanceOf(Date);
       });
     });

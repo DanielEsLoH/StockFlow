@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { UnauthorizedException, Logger } from '@nestjs/common';
 import { Request } from 'express';
+import * as crypto from 'crypto';
 import { JwtRefreshStrategy } from './jwt-refresh.strategy';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -16,8 +17,9 @@ describe('JwtRefreshStrategy', () => {
   let strategy: JwtRefreshStrategy;
   let prismaService: jest.Mocked<PrismaService>;
 
-  // Test data
+  // Test data — DB stores SHA-256 hash, not plaintext
   const validRefreshToken = 'valid-refresh-token';
+  const hashedRefreshToken = crypto.createHash('sha256').update(validRefreshToken).digest('hex');
 
   const mockTenant = {
     id: 'tenant-123',
@@ -66,7 +68,7 @@ describe('JwtRefreshStrategy', () => {
     avatar: null,
     role: UserRole.EMPLOYEE,
     status: UserStatus.ACTIVE,
-    refreshToken: validRefreshToken,
+    refreshToken: hashedRefreshToken,
     resetToken: null,
     resetTokenExpiry: null,
     createdAt: new Date(),

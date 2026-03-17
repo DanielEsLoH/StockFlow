@@ -168,6 +168,15 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly saltRounds = 12;
 
+  /**
+   * Hash a high-entropy token (refresh/reset) using SHA-256.
+   * SHA-256 is appropriate here because these tokens are cryptographically
+   * random (32 bytes / 256 bits of entropy) and immune to dictionary attacks.
+   */
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
@@ -302,11 +311,11 @@ export class AuthService {
       user.tenantId,
     );
 
-    // Update refresh token and lastLoginAt in database
+    // Store hashed refresh token in database
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
-        refreshToken: tokens.refreshToken,
+        refreshToken: this.hashToken(tokens.refreshToken),
         lastLoginAt: new Date(),
       },
     });
@@ -392,7 +401,7 @@ export class AuthService {
     const verificationToken = this.generateVerificationToken();
     const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Create tenant and user in a transaction
+    // Create tenant and user in a transaction (store hashed token)
     const result = await this.prisma.$transaction(async (tx) => {
       // Create the tenant with TRIAL status (pending approval)
       const tenant = await tx.tenant.create({
@@ -415,7 +424,7 @@ export class AuthService {
           status: UserStatus.PENDING, // Requires super admin approval
           role: UserRole.ADMIN, // Admin since they created the company
           emailVerified: false,
-          verificationToken,
+          verificationToken: this.hashToken(verificationToken),
           verificationTokenExpiry,
         },
       });
@@ -516,9 +525,9 @@ export class AuthService {
       `Verifying email with token: ${token.substring(0, 8)}...`,
     );
 
-    // Find user by verification token with tenant info
+    // Find user by hashed verification token with tenant info
     const user = await this.prisma.user.findUnique({
-      where: { verificationToken: token },
+      where: { verificationToken: this.hashToken(token) },
       include: {
         tenant: true,
         warehouse: { select: { id: true, name: true, code: true } },
@@ -649,20 +658,20 @@ export class AuthService {
       return { message: genericMessage };
     }
 
-    // Generate new verification token
+    // Generate new verification token (store hash, send plaintext)
     const verificationToken = this.generateVerificationToken();
     const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Update user with new token
+    // Update user with hashed token
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
-        verificationToken,
+        verificationToken: this.hashToken(verificationToken),
         verificationTokenExpiry,
       },
     });
 
-    // Send verification email asynchronously
+    // Send plaintext token in email (user submits it back, we hash and compare)
     const frontendUrl =
       this.configService.get<string>('app.frontendUrl') ||
       'http://localhost:5173';
@@ -720,16 +729,16 @@ export class AuthService {
       return { message: genericMessage };
     }
 
-    // Generate reset token (1 hour expiry)
+    // Generate reset token (1 hour expiry), store hash in DB
     const resetToken = this.generateVerificationToken();
     const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { resetToken, resetTokenExpiry },
+      data: { resetToken: this.hashToken(resetToken), resetTokenExpiry },
     });
 
-    // Send reset email asynchronously
+    // Send plaintext token in email (user submits it back, we hash and compare)
     this.brevoService
       .sendPasswordResetEmail(user.email, resetToken, user.firstName)
       .then((result) => {
@@ -770,8 +779,9 @@ export class AuthService {
       `Reset password with token: ${token.substring(0, 8)}...`,
     );
 
+    const hashedResetToken = this.hashToken(token);
     const user = await this.prisma.user.findFirst({
-      where: { resetToken: token },
+      where: { resetToken: hashedResetToken },
     });
 
     if (!user) {
@@ -850,8 +860,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    // Verify the refresh token matches what's stored in the database
-    if (user.refreshToken !== refreshToken) {
+    // Verify the refresh token hash matches what's stored in the database
+    if (user.refreshToken !== this.hashToken(refreshToken)) {
       this.logger.warn(
         `Refresh failed - token mismatch for user: ${user.email}`,
       );
@@ -872,10 +882,10 @@ export class AuthService {
       user.tenantId,
     );
 
-    // Update the stored refresh token
+    // Store hashed refresh token
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { refreshToken: tokens.refreshToken },
+      data: { refreshToken: this.hashToken(tokens.refreshToken) },
     });
 
     this.logger.log(`Tokens refreshed successfully for user: ${user.email}`);
@@ -956,10 +966,10 @@ export class AuthService {
       user.tenantId,
     );
 
-    // Update the stored refresh token
+    // Store hashed refresh token
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { refreshToken: tokens.refreshToken },
+      data: { refreshToken: this.hashToken(tokens.refreshToken) },
     });
 
     return {
@@ -1213,11 +1223,11 @@ export class AuthService {
       result.tenantId,
     );
 
-    // Store refresh token
+    // Store hashed refresh token
     await this.prisma.user.update({
       where: { id: result.id },
       data: {
-        refreshToken: tokens.refreshToken,
+        refreshToken: this.hashToken(tokens.refreshToken),
         lastLoginAt: new Date(),
       },
     });
@@ -1415,11 +1425,11 @@ export class AuthService {
       user.tenantId,
     );
 
-    // Update refresh token and lastLoginAt
+    // Store hashed refresh token
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
-        refreshToken: tokens.refreshToken,
+        refreshToken: this.hashToken(tokens.refreshToken),
         lastLoginAt: new Date(),
       },
     });

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 import { Request } from 'express';
+import * as crypto from 'crypto';
 import { UserStatus, TenantStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtPayload, RequestUser } from '../types';
@@ -105,8 +106,9 @@ export class JwtRefreshStrategy extends PassportStrategy(
       throw new UnauthorizedException('User not found');
     }
 
-    // Verify the refresh token matches what's stored in the database
-    if (user.refreshToken !== refreshToken) {
+    // Verify the refresh token hash matches what's stored in the database
+    const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    if (user.refreshToken !== hashedToken) {
       this.logger.warn(`Refresh token mismatch for user: ${user.email}`);
       throw new UnauthorizedException('Invalid refresh token');
     }

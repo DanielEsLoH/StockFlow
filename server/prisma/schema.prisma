@@ -427,6 +427,8 @@ model Tenant {
   integrations            Integration[]
   productMappings         ProductMapping[]
   syncLogs                SyncLog[]
+  physicalCounts          PhysicalInventoryCount[]
+  physicalCountItems      PhysicalCountItem[]
 
   @@map("tenants")
 }
@@ -469,8 +471,11 @@ model User {
   permissionOverrides UserPermissionOverride[]
   quotations          Quotation[]
   purchaseOrders      PurchaseOrder[]
-  remissions          Remission[]
-  supportDocuments    SupportDocument[]
+  remissions                 Remission[]
+  supportDocuments           SupportDocument[]
+  countsStarted              PhysicalInventoryCount[] @relation("CountStartedBy")
+  countsCompleted            PhysicalInventoryCount[] @relation("CountCompletedBy")
+  countItemsCounted          PhysicalCountItem[]      @relation("CountItemCountedBy")
 
   @@index([tenantId])
   @@index([warehouseId])
@@ -544,6 +549,7 @@ model Product {
   warehouseStock     WarehouseStock[]
   remissionItems     RemissionItem[]
   productMappings    ProductMapping[]
+  physicalCountItems PhysicalCountItem[]
 
   @@unique([tenantId, sku])
   @@index([tenantId])
@@ -575,7 +581,8 @@ model Warehouse {
   movements      StockMovement[]
   cashRegisters  CashRegister[]
   purchaseOrders PurchaseOrder[]
-  remissions     Remission[]
+  remissions      Remission[]
+  physicalCounts  PhysicalInventoryCount[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -1464,6 +1471,8 @@ model Account {
   configPayrollRetentions    AccountingConfig[] @relation("PayrollRetentionsAccount")
   configPayrollContributions AccountingConfig[] @relation("PayrollContributionsAccount")
   configPayrollProvisions    AccountingConfig[] @relation("PayrollProvisionsAccount")
+  configReteIca              AccountingConfig[] @relation("ReteIcaAccount")
+  configReteIva              AccountingConfig[] @relation("ReteIvaAccount")
   expenses                   Expense[]          @relation("ExpenseAccount")
 
   @@unique([tenantId, code])
@@ -1582,6 +1591,14 @@ model AccountingConfig {
   autoGenerateEntries    Boolean  @default(false) @map("auto_generate_entries")
   reteFuentePurchaseRate Decimal  @default(0.025) @map("rete_fuente_purchase_rate") @db.Decimal(5, 4)
   reteFuenteMinBase      Decimal  @default(523740) @map("rete_fuente_min_base") @db.Decimal(12, 2)
+  reteIcaAccountId       String?  @map("rete_ica_account_id")
+  reteIcaRate            Decimal  @default(0) @map("rete_ica_rate") @db.Decimal(5, 4)
+  reteIcaMinBase         Decimal  @default(0) @map("rete_ica_min_base") @db.Decimal(12, 2)
+  reteIcaEnabled         Boolean  @default(false) @map("rete_ica_enabled")
+  reteIvaAccountId       String?  @map("rete_iva_account_id")
+  reteIvaRate            Decimal  @default(0) @map("rete_iva_rate") @db.Decimal(5, 4)
+  reteIvaMinBase         Decimal  @default(0) @map("rete_iva_min_base") @db.Decimal(12, 2)
+  reteIvaEnabled         Boolean  @default(false) @map("rete_iva_enabled")
   createdAt              DateTime @default(now()) @map("created_at")
   updatedAt              DateTime @updatedAt @map("updated_at")
 
@@ -1603,6 +1620,8 @@ model AccountingConfig {
   payrollRetentions    Account? @relation("PayrollRetentionsAccount", fields: [payrollRetentionsId], references: [id], onDelete: SetNull)
   payrollContributions Account? @relation("PayrollContributionsAccount", fields: [payrollContributionsId], references: [id], onDelete: SetNull)
   payrollProvisions    Account? @relation("PayrollProvisionsAccount", fields: [payrollProvisionsId], references: [id], onDelete: SetNull)
+  reteIcaAccount       Account? @relation("ReteIcaAccount", fields: [reteIcaAccountId], references: [id], onDelete: SetNull)
+  reteIvaAccount       Account? @relation("ReteIvaAccount", fields: [reteIvaAccountId], references: [id], onDelete: SetNull)
 
   @@map("accounting_configs")
 }
@@ -2291,4 +2310,66 @@ model SyncLog {
 
   @@index([tenantId, integrationId, createdAt])
   @@map("sync_logs")
+}
+
+// ============================
+// Physical Inventory Count
+// ============================
+
+enum PhysicalCountStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model PhysicalInventoryCount {
+  id            String               @id @default(cuid())
+  tenantId      String               @map("tenant_id")
+  warehouseId   String               @map("warehouse_id")
+  status        PhysicalCountStatus  @default(DRAFT)
+  countDate     DateTime             @default(now()) @map("count_date")
+  startedAt     DateTime?            @map("started_at")
+  completedAt   DateTime?            @map("completed_at")
+  startedById   String?              @map("started_by_id")
+  completedById String?              @map("completed_by_id")
+  notes         String?
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  warehouse   Warehouse            @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  startedBy   User?                @relation("CountStartedBy", fields: [startedById], references: [id], onDelete: SetNull)
+  completedBy User?                @relation("CountCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+  items       PhysicalCountItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([warehouseId])
+  @@map("physical_inventory_counts")
+}
+
+model PhysicalCountItem {
+  id               String   @id @default(cuid())
+  countId          String   @map("count_id")
+  tenantId         String   @map("tenant_id")
+  productId        String   @map("product_id")
+  systemQuantity   Int      @map("system_quantity")
+  physicalQuantity Int      @map("physical_quantity")
+  variance         Int      @default(0)
+  countedById      String?  @map("counted_by_id")
+  countedAt        DateTime? @map("counted_at")
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  count     PhysicalInventoryCount @relation(fields: [countId], references: [id], onDelete: Cascade)
+  tenant    Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product   Product                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  countedBy User?                  @relation("CountItemCountedBy", fields: [countedById], references: [id], onDelete: SetNull)
+
+  @@unique([countId, productId])
+  @@index([countId])
+  @@index([tenantId])
+  @@map("physical_count_items")
 }

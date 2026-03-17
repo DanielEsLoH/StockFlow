@@ -20,9 +20,9 @@ import { PrismaService } from '../prisma';
  * 1. onInvoiceCreated  → Sale entry (DR Clientes/Caja, CR Ingresos, CR IVA, DR COGS, CR Inventario)
  * 2. onInvoiceCancelled → Reverse of original sale entry
  * 3. onPaymentCreated  → Payment entry (DR Caja/Bancos, CR Clientes)
- * 4. onPurchaseReceived → Purchase entry (DR Inventario, DR IVA descontable, CR Proveedores, ±ReteFuente)
+ * 4. onPurchaseReceived → Purchase entry (DR Inventario, DR IVA descontable, CR Proveedores, ±ReteFuente, ±ReteICA, ±ReteIVA)
  * 5. onStockAdjustment → Adjustment entry (DR/CR Inventario vs Gastos/Ingresos diversos)
- * 6. onExpensePaid     → Expense entry (DR Gasto, DR IVA descontable, CR Caja/Bancos, CR ReteFuente)
+ * 6. onExpensePaid     → Expense entry (DR Gasto, DR IVA descontable, CR Caja/Bancos, CR ReteFuente, ±ReteICA, ±ReteIVA)
  */
 @Injectable()
 export class AccountingBridgeService {
@@ -420,12 +420,41 @@ export class AccountingBridgeService {
         });
       }
 
-      // CR Proveedores = total - reteFuente
+      // ReteICA: municipal withholding on subtotal
+      let reteIca = 0;
+      if (config.reteIcaEnabled && config.reteIcaAccountId && params.subtotal > config.reteIcaMinBase) {
+        reteIca = Math.round(params.subtotal * config.reteIcaRate * 100) / 100;
+        if (reteIca > 0) {
+          lines.push({
+            accountId: config.reteIcaAccountId,
+            description: `ReteICA compra ${params.purchaseOrderNumber} (${(config.reteIcaRate * 1000).toFixed(1)}‰)`,
+            debit: 0,
+            credit: reteIca,
+          });
+        }
+      }
+
+      // ReteIVA: withholding on IVA amount
+      let reteIva = 0;
+      if (config.reteIvaEnabled && config.reteIvaAccountId && params.tax > config.reteIvaMinBase) {
+        reteIva = Math.round(params.tax * config.reteIvaRate * 100) / 100;
+        if (reteIva > 0) {
+          lines.push({
+            accountId: config.reteIvaAccountId,
+            description: `ReteIVA compra ${params.purchaseOrderNumber} (${(config.reteIvaRate * 100).toFixed(1)}%)`,
+            debit: 0,
+            credit: reteIva,
+          });
+        }
+      }
+
+      // CR Proveedores = total - retenciones
+      const totalRetenciones = reteFuente + reteIca + reteIva;
       lines.push({
         accountId: accountsPayableId,
         description: `Proveedor ${params.purchaseOrderNumber}`,
         debit: 0,
-        credit: params.total - reteFuente,
+        credit: params.total - totalRetenciones,
       });
 
       await this.journalEntriesService.createAutoEntry({
@@ -936,6 +965,46 @@ export class AccountingBridgeService {
           debit: 0,
           credit: reteFuente,
         });
+      }
+
+      // CR ReteICA = subtotal * reteIcaRate (if enabled and base > min)
+      let reteIca = 0;
+      if (config.reteIcaEnabled && config.reteIcaAccountId && subtotal > config.reteIcaMinBase) {
+        reteIca = Math.round(subtotal * config.reteIcaRate * 100) / 100;
+        if (reteIca > 0) {
+          lines.push({
+            accountId: config.reteIcaAccountId,
+            description: `ReteICA gasto ${expense.expenseNumber}`,
+            debit: 0,
+            credit: reteIca,
+          });
+
+          // Adjust payment account credit to subtract ReteICA
+          const paymentLine = lines.find(l => l.accountId === creditAccountId);
+          if (paymentLine) {
+            paymentLine.credit -= reteIca;
+          }
+        }
+      }
+
+      // CR ReteIVA = tax * reteIvaRate (if enabled and tax > min)
+      let reteIva = 0;
+      if (config.reteIvaEnabled && config.reteIvaAccountId && tax > config.reteIvaMinBase) {
+        reteIva = Math.round(tax * config.reteIvaRate * 100) / 100;
+        if (reteIva > 0) {
+          lines.push({
+            accountId: config.reteIvaAccountId,
+            description: `ReteIVA gasto ${expense.expenseNumber}`,
+            debit: 0,
+            credit: reteIva,
+          });
+
+          // Adjust payment account credit to subtract ReteIVA
+          const paymentLine = lines.find(l => l.accountId === creditAccountId);
+          if (paymentLine) {
+            paymentLine.credit -= reteIva;
+          }
+        }
       }
 
       await this.journalEntriesService.createAutoEntry({

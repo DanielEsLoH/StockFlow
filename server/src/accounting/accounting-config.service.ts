@@ -26,6 +26,14 @@ export interface AccountingConfigResponse {
   autoGenerateEntries: boolean;
   reteFuentePurchaseRate: number;
   reteFuenteMinBase: number;
+  reteIcaAccountId: string | null;
+  reteIcaRate: number;
+  reteIcaMinBase: number;
+  reteIcaEnabled: boolean;
+  reteIvaAccountId: string | null;
+  reteIvaRate: number;
+  reteIvaMinBase: number;
+  reteIvaEnabled: boolean;
   isConfigured: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -111,6 +119,14 @@ export class AccountingConfigService {
       autoGenerateEntries: config.autoGenerateEntries,
       reteFuentePurchaseRate: Number(config.reteFuentePurchaseRate),
       reteFuenteMinBase: Number(config.reteFuenteMinBase),
+      reteIcaAccountId: config.reteIcaAccountId,
+      reteIcaRate: Number(config.reteIcaRate),
+      reteIcaMinBase: Number(config.reteIcaMinBase),
+      reteIcaEnabled: config.reteIcaEnabled,
+      reteIvaAccountId: config.reteIvaAccountId,
+      reteIvaRate: Number(config.reteIvaRate),
+      reteIvaMinBase: Number(config.reteIvaMinBase),
+      reteIvaEnabled: config.reteIvaEnabled,
       isConfigured,
       createdAt: config.createdAt,
       updatedAt: config.updatedAt,

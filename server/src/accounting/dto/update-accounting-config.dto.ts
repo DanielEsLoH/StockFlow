@@ -113,4 +113,68 @@ export class UpdateAccountingConfigDto {
   @Min(0)
   @IsOptional()
   reteFuenteMinBase?: number;
+
+  @ApiPropertyOptional({ description: 'ReteICA account ID (PUC 2368)' })
+  @IsString()
+  @IsOptional()
+  reteIcaAccountId?: string;
+
+  @ApiPropertyOptional({
+    description: 'ReteICA withholding rate (e.g. 0.0069 for 6.9‰)',
+    default: 0,
+  })
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  @IsOptional()
+  reteIcaRate?: number;
+
+  @ApiPropertyOptional({
+    description: 'Minimum base (COP) above which ReteICA applies',
+    default: 0,
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  reteIcaMinBase?: number;
+
+  @ApiPropertyOptional({
+    description: 'Enable ReteICA withholding on purchases/expenses',
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  reteIcaEnabled?: boolean;
+
+  @ApiPropertyOptional({ description: 'ReteIVA account ID (PUC 2367)' })
+  @IsString()
+  @IsOptional()
+  reteIvaAccountId?: string;
+
+  @ApiPropertyOptional({
+    description: 'ReteIVA withholding rate (e.g. 0.15 for 15%)',
+    default: 0,
+  })
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  @IsOptional()
+  reteIvaRate?: number;
+
+  @ApiPropertyOptional({
+    description: 'Minimum IVA base (COP) above which ReteIVA applies',
+    default: 0,
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  reteIvaMinBase?: number;
+
+  @ApiPropertyOptional({
+    description: 'Enable ReteIVA withholding on purchases/expenses',
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  reteIvaEnabled?: boolean;
 }

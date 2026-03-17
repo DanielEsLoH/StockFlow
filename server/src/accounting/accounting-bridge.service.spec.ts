@@ -38,6 +38,14 @@ describe('AccountingBridgeService', () => {
     autoGenerateEntries: true,
     reteFuentePurchaseRate: 0.025,
     reteFuenteMinBase: 523740,
+    reteIcaAccountId: 'acc-rica',
+    reteIcaRate: 0.0069,
+    reteIcaMinBase: 0,
+    reteIcaEnabled: false,
+    reteIvaAccountId: 'acc-riva',
+    reteIvaRate: 0.15,
+    reteIvaMinBase: 0,
+    reteIvaEnabled: false,
     isConfigured: true,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -398,6 +406,89 @@ describe('AccountingBridgeService', () => {
       expect(apLine.credit).toBe(714_000 - reteFuente);
     });
 
+    it('should apply ReteICA when enabled and subtotal > minBase', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        reteIcaEnabled: true,
+        reteIcaRate: 0.0069,
+        reteIcaMinBase: 0,
+      });
+
+      await service.onPurchaseReceived(purchaseParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const ricaLine = call.lines.find((l: any) => l.accountId === 'acc-rica');
+      expect(ricaLine).toBeDefined();
+      // 600000 * 0.0069 = 4140
+      expect(ricaLine.credit).toBe(Math.round(600_000 * 0.0069 * 100) / 100);
+    });
+
+    it('should NOT apply ReteICA when disabled', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        reteIcaEnabled: false,
+      });
+
+      await service.onPurchaseReceived(purchaseParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const ricaLine = call.lines.find((l: any) => l.accountId === 'acc-rica');
+      expect(ricaLine).toBeUndefined();
+    });
+
+    it('should NOT apply ReteICA when subtotal <= minBase', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        reteIcaEnabled: true,
+        reteIcaMinBase: 1_000_000,
+      });
+
+      await service.onPurchaseReceived(purchaseParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const ricaLine = call.lines.find((l: any) => l.accountId === 'acc-rica');
+      expect(ricaLine).toBeUndefined();
+    });
+
+    it('should apply ReteIVA when enabled and tax > minBase', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        reteIvaEnabled: true,
+        reteIvaRate: 0.15,
+        reteIvaMinBase: 0,
+      });
+
+      await service.onPurchaseReceived(purchaseParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const rivaLine = call.lines.find((l: any) => l.accountId === 'acc-riva');
+      expect(rivaLine).toBeDefined();
+      // 114000 * 0.15 = 17100
+      expect(rivaLine.credit).toBe(Math.round(114_000 * 0.15 * 100) / 100);
+    });
+
+    it('should reduce Proveedores credit by all retentions (ReteFuente + ReteICA + ReteIVA)', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        reteIcaEnabled: true,
+        reteIcaRate: 0.0069,
+        reteIcaMinBase: 0,
+        reteIvaEnabled: true,
+        reteIvaRate: 0.15,
+        reteIvaMinBase: 0,
+      });
+
+      await service.onPurchaseReceived(purchaseParams);
+
+      const reteFuente = Math.round(600_000 * 0.025);
+      const reteIca = Math.round(600_000 * 0.0069 * 100) / 100;
+      const reteIva = Math.round(114_000 * 0.15 * 100) / 100;
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const apLine = call.lines.find((l: any) => l.accountId === 'acc-ap');
+      expect(apLine.credit).toBe(714_000 - reteFuente - reteIca - reteIva);
+    });
+
     it('should not throw when createAutoEntry fails', async () => {
       mockJournalEntriesService.createAutoEntry.mockRejectedValue(
         new Error('constraint'),
@@ -617,6 +708,91 @@ describe('AccountingBridgeService', () => {
     it('should not throw when createAutoEntry fails', async () => {
       mockJournalEntriesService.createAutoEntry.mockRejectedValue(new Error('db error'));
       await expect(service.onDebitNoteCreated(debitNoteParams)).resolves.toBeUndefined();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // onExpensePaid
+  // ---------------------------------------------------------------------------
+  describe('onExpensePaid', () => {
+    const makeDecimal = (n: number) => ({ valueOf: () => n, toString: () => String(n) }) as any;
+    const expenseParams = {
+      id: 'exp-1',
+      tenantId: mockTenantId,
+      expenseNumber: 'GTO-001',
+      description: 'Servicios profesionales',
+      subtotal: makeDecimal(1_000_000),
+      tax: makeDecimal(190_000),
+      reteFuente: makeDecimal(25_000),
+      total: makeDecimal(1_190_000),
+      accountId: 'acc-expense-custom',
+      paymentMethod: 'CASH',
+      paymentDate: new Date(),
+      issueDate: new Date(),
+    };
+
+    it('should apply ReteICA when enabled', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        reteIcaEnabled: true,
+        reteIcaRate: 0.0069,
+        reteIcaMinBase: 0,
+      });
+
+      await service.onExpensePaid(expenseParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const ricaLine = call.lines.find((l: any) => l.accountId === 'acc-rica');
+      expect(ricaLine).toBeDefined();
+      expect(ricaLine.credit).toBe(Math.round(1_000_000 * 0.0069 * 100) / 100);
+    });
+
+    it('should apply ReteIVA when enabled', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        reteIvaEnabled: true,
+        reteIvaRate: 0.15,
+        reteIvaMinBase: 0,
+      });
+
+      await service.onExpensePaid(expenseParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const rivaLine = call.lines.find((l: any) => l.accountId === 'acc-riva');
+      expect(rivaLine).toBeDefined();
+      expect(rivaLine.credit).toBe(Math.round(190_000 * 0.15 * 100) / 100);
+    });
+
+    it('should reduce payment credit by ReteICA + ReteIVA', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        reteIcaEnabled: true,
+        reteIcaRate: 0.0069,
+        reteIcaMinBase: 0,
+        reteIvaEnabled: true,
+        reteIvaRate: 0.15,
+        reteIvaMinBase: 0,
+      });
+
+      await service.onExpensePaid(expenseParams);
+
+      const reteIca = Math.round(1_000_000 * 0.0069 * 100) / 100;
+      const reteIva = Math.round(190_000 * 0.15 * 100) / 100;
+      const reteFuente = 25_000;
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const paymentLine = call.lines.find((l: any) => l.accountId === 'acc-cash' && l.credit > 0);
+      expect(paymentLine.credit).toBe(1_190_000 - reteFuente - reteIca - reteIva);
+    });
+
+    it('should NOT apply ReteICA/ReteIVA when disabled', async () => {
+      await service.onExpensePaid(expenseParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const ricaLine = call.lines.find((l: any) => l.accountId === 'acc-rica');
+      const rivaLine = call.lines.find((l: any) => l.accountId === 'acc-riva');
+      expect(ricaLine).toBeUndefined();
+      expect(rivaLine).toBeUndefined();
     });
   });
 

@@ -9,6 +9,7 @@ import { DianClientService } from './services/dian-client.service';
 import { XmlSignerService } from './services/xml-signer.service';
 import { EventXmlGeneratorService } from './services/event-xml-generator.service';
 import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
+import { ConfigService } from '@nestjs/config';
 import {
   DianDocumentStatus,
   DianDocumentType,
@@ -221,6 +222,12 @@ describe('DianService', () => {
               cude: 'cude-hash',
               documentNumber: 'EVT-001',
             }),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue('test-jwt-secret'),
           },
         },
       ],

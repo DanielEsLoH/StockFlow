@@ -70,14 +70,21 @@ export class PayrollCuneGeneratorService {
   }
 
   /**
-   * Generate current timestamp in DIAN format
+   * Generate current timestamp in DIAN format using Colombia timezone (America/Bogota, UTC-5).
+   * Colombia does not observe DST so the offset is always -05:00.
    */
   generateTimestamp(): { date: string; time: string } {
-    const now = new Date();
-    const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const colombiaDate = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }),
+    );
+    const year = colombiaDate.getFullYear();
+    const month = String(colombiaDate.getMonth() + 1).padStart(2, '0');
+    const day = String(colombiaDate.getDate()).padStart(2, '0');
+    const hours = String(colombiaDate.getHours()).padStart(2, '0');
+    const minutes = String(colombiaDate.getMinutes()).padStart(2, '0');
+    const seconds = String(colombiaDate.getSeconds()).padStart(2, '0');
+
+    const date = `${year}-${month}-${day}`;
     const time = `${hours}:${minutes}:${seconds}-05:00`;
     return { date, time };
   }

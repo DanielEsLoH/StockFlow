@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma';
 import { TenantContextService } from '../../common';
 import {
+  ExpenseCategory,
+  ExpenseStatus,
   InvoiceStatus,
   PaymentStatus,
   PurchaseOrderStatus,
@@ -130,6 +132,7 @@ export class ExogenaService {
       entry.tax += Number(order.tax);
     }
 
+    // Purchase orders = compras de bienes (concepto 5001)
     const rows: ExogenaThirdPartyRow[] = Array.from(supplierMap.values()).map(
       ({ supplier, subtotal, tax }) => ({
         conceptCode: '5001',
@@ -143,6 +146,66 @@ export class ExogenaService {
         taxAmount: tax,
       }),
     );
+
+    // Expenses = servicios/arriendo/honorarios (conceptos 5002/5004/5005)
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        tenantId,
+        status: { in: [ExpenseStatus.APPROVED, ExpenseStatus.PAID] },
+        issueDate: { gte: from, lte: to },
+      },
+      include: {
+        supplier: {
+          select: {
+            id: true,
+            documentType: true,
+            documentNumber: true,
+            dv: true,
+            name: true,
+            businessName: true,
+            address: true,
+            city: true,
+          },
+        },
+      },
+    });
+
+    const expenseSupplierMap = new Map<
+      string,
+      { supplier: (typeof expenses)[0]['supplier']; subtotal: number; tax: number; conceptCode: string }
+    >();
+
+    for (const expense of expenses) {
+      if (!expense.supplier) continue;
+      const conceptCode = this.mapExpenseCategoryToConcepto(expense.category);
+      const key = `${expense.supplier.id}-${conceptCode}`;
+      if (!expenseSupplierMap.has(key)) {
+        expenseSupplierMap.set(key, {
+          supplier: expense.supplier,
+          subtotal: 0,
+          tax: 0,
+          conceptCode,
+        });
+      }
+      const entry = expenseSupplierMap.get(key)!;
+      entry.subtotal += Number(expense.subtotal);
+      entry.tax += Number(expense.tax);
+    }
+
+    for (const { supplier, subtotal, tax, conceptCode } of expenseSupplierMap.values()) {
+      if (!supplier) continue;
+      rows.push({
+        conceptCode,
+        documentType: supplier.documentType,
+        documentNumber: supplier.documentNumber,
+        dv: supplier.dv ?? '',
+        businessName: supplier.businessName ?? supplier.name,
+        address: supplier.address ?? '',
+        city: supplier.city ?? '',
+        amount: subtotal,
+        taxAmount: tax,
+      });
+    }
 
     const totalAmount = rows.reduce((sum, r) => sum + r.amount, 0);
     const totalTaxAmount = rows.reduce((sum, r) => sum + r.taxAmount, 0);
@@ -537,5 +600,20 @@ export class ExogenaService {
       totalAmount,
       totalTaxAmount: 0,
     };
+  }
+
+  /**
+   * Map expense category to DIAN Exógena concepto code (Formato 1001).
+   * 5001 = Compras de bienes, 5002 = Servicios, 5004 = Arrendamientos, 5005 = Honorarios
+   */
+  private mapExpenseCategoryToConcepto(category: ExpenseCategory): string {
+    switch (category) {
+      case ExpenseCategory.ARRIENDO:
+        return '5004';
+      case ExpenseCategory.HONORARIOS:
+        return '5005';
+      default:
+        return '5002'; // Servicios (default for expenses)
+    }
   }
 }

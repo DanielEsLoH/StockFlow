@@ -69,6 +69,7 @@ describe('ExogenaService', () => {
     tenant: { findUnique: jest.fn() },
     purchaseOrder: { findMany: jest.fn() },
     invoice: { findMany: jest.fn() },
+    expense: { findMany: jest.fn() },
   };
 
   const mockTenantContextService = {
@@ -174,6 +175,7 @@ describe('ExogenaService', () => {
     });
     mockPrismaService.purchaseOrder.findMany.mockResolvedValue([]);
     mockPrismaService.invoice.findMany.mockResolvedValue([]);
+    mockPrismaService.expense.findMany.mockResolvedValue([]);
   }
 
   /** Finds a formato by number from an ExogenaReport */

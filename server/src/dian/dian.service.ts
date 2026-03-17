@@ -33,6 +33,8 @@ import {
 } from '@prisma/client';
 import { DebitNoteItem } from './services/xml-generator.service';
 import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
+import { ConfigService } from '@nestjs/config';
+import { encrypt, decrypt } from '../common/crypto.util';
 import { EventXmlGeneratorService, type DianEventCode } from './services/event-xml-generator.service';
 
 export interface ProcessInvoiceResult {
@@ -58,7 +60,12 @@ export class DianService {
     private readonly xmlSigner: XmlSignerService,
     private readonly accountingBridge: AccountingBridgeService,
     private readonly eventXmlGenerator: EventXmlGeneratorService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private getEncryptionSecret(): string {
+    return this.configService.get<string>('jwt.secret') || 'stockflow-default-key';
+  }
 
   // ============================================================================
   // CONFIGURATION MANAGEMENT
@@ -229,11 +236,13 @@ export class DianService {
       );
     }
 
+    const encryptedPassword = encrypt(password, this.getEncryptionSecret());
+
     await this.prisma.tenantDianConfig.update({
       where: { tenantId },
       data: {
         certificateFile: new Uint8Array(file),
-        certificatePassword: password,
+        certificatePassword: encryptedPassword,
       },
     });
 
@@ -311,6 +320,19 @@ export class DianService {
 
     if (!invoice) {
       throw new NotFoundException('Factura no encontrada');
+    }
+
+    // Validate invoice number is within resolution range
+    if (config.resolutionRangeFrom && config.resolutionRangeTo) {
+      const numMatch = invoice.invoiceNumber.match(/(\d+)$/);
+      if (numMatch) {
+        const invoiceNum = parseInt(numMatch[1], 10);
+        if (invoiceNum > config.resolutionRangeTo) {
+          throw new BadRequestException(
+            `Número de factura ${invoice.invoiceNumber} excede el rango autorizado por la DIAN (${config.resolutionRangeFrom}-${config.resolutionRangeTo}). Debe solicitar una nueva resolución.`,
+          );
+        }
+      }
     }
 
     if (existingDoc && existingDoc.status === 'ACCEPTED' && !force) {
@@ -1514,9 +1536,16 @@ export class DianService {
     config: { certificateFile: Uint8Array | null; certificatePassword: string | null },
   ): string {
     if (config.certificateFile && config.certificatePassword) {
+      let password = config.certificatePassword;
+      try {
+        password = decrypt(config.certificatePassword, this.getEncryptionSecret());
+      } catch {
+        // Password might not be encrypted yet (legacy data), use as-is
+        this.logger.debug('Certificate password not encrypted, using raw value');
+      }
       const certContents = this.xmlSigner.loadCertificate(
         Buffer.from(config.certificateFile),
-        config.certificatePassword,
+        password,
       );
       return this.xmlSigner.signXml(
         xml,

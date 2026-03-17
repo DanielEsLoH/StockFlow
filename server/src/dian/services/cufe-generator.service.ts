@@ -188,6 +188,7 @@ export class CufeGeneratorService {
     invoice: Invoice,
     config: TenantDianConfig,
     customerDocument: string,
+    taxes?: { inc?: number; ica?: number },
   ): string {
     const issueDate = new Date(invoice.issueDate);
 
@@ -197,8 +198,8 @@ export class CufeGeneratorService {
       issueTime: this.formatTime(issueDate),
       subtotal: Number(invoice.subtotal) || 0,
       tax01: Number(invoice.tax) || 0, // IVA
-      tax04: 0, // INC - would need to be calculated separately
-      tax03: 0, // ICA - would need to be calculated separately
+      tax04: taxes?.inc ?? 0, // INC (Impuesto Nacional al Consumo)
+      tax03: taxes?.ica ?? 0, // ICA (Impuesto de Industria y Comercio)
       total: Number(invoice.total) || 0,
       supplierNit: config.nit,
       customerDocument: customerDocument || '222222222222',

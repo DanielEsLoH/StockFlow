@@ -9,6 +9,7 @@ import { AccountingPeriodStatus } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingPeriodsService } from './accounting-periods.service';
+import { JournalEntriesService } from './journal-entries.service';
 
 describe('AccountingPeriodsService', () => {
   let service: AccountingPeriodsService;
@@ -56,10 +57,20 @@ describe('AccountingPeriodsService', () => {
       journalEntry: {
         count: jest.fn(),
       },
+      journalEntryLine: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      account: {
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
     };
 
     const mockTenantContext = {
       requireTenantId: jest.fn().mockReturnValue(mockTenantId),
+    };
+
+    const mockJournalEntries = {
+      createAutoEntry: jest.fn().mockResolvedValue({ id: 'closing-entry' }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -67,6 +78,7 @@ describe('AccountingPeriodsService', () => {
         AccountingPeriodsService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: TenantContextService, useValue: mockTenantContext },
+        { provide: JournalEntriesService, useValue: mockJournalEntries },
       ],
     }).compile();
 

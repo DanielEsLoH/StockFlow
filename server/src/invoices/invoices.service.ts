@@ -651,6 +651,24 @@ export class InvoicesService {
         invoiceWarehouseId ??
         (await this.getDefaultWarehouseId(tx, tenantId));
 
+      // Validate warehouse stock availability before decrementing
+      for (const item of itemsData) {
+        const warehouseStockRecord = await tx.warehouseStock.findUnique({
+          where: {
+            warehouseId_productId: {
+              warehouseId,
+              productId: item.productId,
+            },
+          },
+        });
+        const available = warehouseStockRecord?.quantity ?? 0;
+        if (available < item.quantity) {
+          throw new BadRequestException(
+            `Stock insuficiente para "${item.productName}" en bodega. Disponible: ${available}, Solicitado: ${item.quantity}`,
+          );
+        }
+      }
+
       // Reduce stock and create stock movements in parallel
       await Promise.all([
         // Update product stock for all items (global)
@@ -666,20 +684,14 @@ export class InvoicesService {
         ),
         // Update warehouse stock for all items (per-warehouse)
         ...itemsData.map((item) =>
-          tx.warehouseStock.upsert({
+          tx.warehouseStock.update({
             where: {
               warehouseId_productId: {
                 warehouseId,
                 productId: item.productId,
               },
             },
-            update: { quantity: { decrement: item.quantity } },
-            create: {
-              tenantId,
-              warehouseId,
-              productId: item.productId,
-              quantity: -item.quantity,
-            },
+            data: { quantity: { decrement: item.quantity } },
           }),
         ),
         // Create stock movement records for all items

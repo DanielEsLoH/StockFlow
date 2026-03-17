@@ -8,6 +8,7 @@ import {
 import { POSSalesService } from './pos-sales.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
 import {
   POSSessionStatus,
   InvoiceStatus,
@@ -142,6 +143,7 @@ describe('POSSalesService', () => {
       create: jest.fn(),
     },
     warehouseStock: {
+      findUnique: jest.fn().mockResolvedValue({ quantity: 100 }),
       upsert: jest.fn(),
       update: jest.fn(),
     },
@@ -188,6 +190,7 @@ describe('POSSalesService', () => {
         create: jest.fn(),
       },
       warehouseStock: {
+        findUnique: jest.fn().mockResolvedValue({ quantity: 100 }),
         upsert: jest.fn(),
         update: jest.fn(),
       },
@@ -204,11 +207,17 @@ describe('POSSalesService', () => {
       requireTenantId: jest.fn().mockReturnValue(mockTenantId),
     };
 
+    const mockAccountingBridgeService = {
+      onInvoiceCreated: jest.fn().mockResolvedValue(undefined),
+      onInvoiceCancelled: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         POSSalesService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
+        { provide: AccountingBridgeService, useValue: mockAccountingBridgeService },
       ],
     }).compile();
 
@@ -474,6 +483,7 @@ describe('POSSalesService', () => {
       (prisma.product.findMany as jest.Mock).mockResolvedValue([
         lowStockProduct,
       ]);
+      (prisma.warehouseStock.findUnique as jest.Mock).mockResolvedValue({ quantity: 0 });
 
       const dtoWithHighQuantity = {
         items: [{ productId: mockProductId, quantity: 10 }],

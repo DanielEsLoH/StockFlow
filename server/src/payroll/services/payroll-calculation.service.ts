@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ARLRiskLevel, SalaryType } from '@prisma/client';
 
 // ===== Colombian Labor Law Constants (2026) =====
@@ -208,6 +208,13 @@ export class PayrollCalculationService {
     } = params;
 
     const isIntegral = salaryType === SalaryType.INTEGRAL;
+
+    // Validate integral salary meets minimum threshold (13 SMMLV)
+    if (isIntegral && !this.isValidIntegralSalary(baseSalary, smmlv)) {
+      throw new BadRequestException(
+        `Salario integral (${baseSalary}) debe ser al menos 13 SMMLV (${MIN_INTEGRAL_SMMLV * smmlv}). Ajuste el salario del empleado.`,
+      );
+    }
 
     // === Devengados ===
     const sueldo = this.calculateSueldo(baseSalary, daysWorked);

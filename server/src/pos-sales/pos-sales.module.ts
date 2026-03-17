@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { POSSalesController } from './pos-sales.controller';
 import { POSSalesService } from './pos-sales.service';
+import { AccountingModule } from '../accounting/accounting.module';
 
 /**
  * POSSalesModule provides POS sale functionality including:
@@ -11,12 +12,14 @@ import { POSSalesService } from './pos-sales.service';
  * This module depends on:
  * - PrismaModule (global) - for database access
  * - CommonModule (global) - for TenantContextService
+ * - AccountingModule - for journal entry generation
  * - AuthModule - for guards and decorators (imported at app level)
  *
  * All endpoints are protected by JwtAuthGuard and RolesGuard.
  * Multi-tenant isolation is enforced through TenantContextService.
  */
 @Module({
+  imports: [AccountingModule],
   controllers: [POSSalesController],
   providers: [POSSalesService],
   exports: [POSSalesService],

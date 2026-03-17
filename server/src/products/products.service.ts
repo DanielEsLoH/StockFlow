@@ -738,20 +738,74 @@ export class ProductsService {
       `Stock adjusted for ${product.name}: ${product.stock} -> ${newStock} (${adjustmentType})`,
     );
 
+    // Sync WarehouseStock if warehouseId is provided
+    if (dto.warehouseId) {
+      const warehouseStock = await this.prisma.warehouseStock.findUnique({
+        where: {
+          warehouseId_productId: {
+            warehouseId: dto.warehouseId,
+            productId: id,
+          },
+        },
+      });
+
+      const currentWhStock = warehouseStock?.quantity ?? 0;
+      let newWhStock: number;
+
+      switch (adjustmentType) {
+        case StockAdjustmentType.SET:
+          newWhStock = dto.quantity;
+          break;
+        case StockAdjustmentType.ADD:
+          newWhStock = currentWhStock + dto.quantity;
+          break;
+        case StockAdjustmentType.SUBTRACT:
+          newWhStock = currentWhStock - dto.quantity;
+          break;
+        default:
+          newWhStock = dto.quantity;
+      }
+
+      if (newWhStock < 0) {
+        throw new BadRequestException(
+          `Stock adjustment would result in negative warehouse stock (${newWhStock}). Current warehouse stock: ${currentWhStock}`,
+        );
+      }
+
+      await this.prisma.warehouseStock.upsert({
+        where: {
+          warehouseId_productId: {
+            warehouseId: dto.warehouseId,
+            productId: id,
+          },
+        },
+        update: { quantity: newWhStock },
+        create: {
+          warehouseId: dto.warehouseId,
+          productId: id,
+          quantity: newWhStock,
+          tenantId,
+        },
+      });
+    }
+
     // Create stock movement record for audit trail
+    const movementQuantity =
+      adjustmentType === StockAdjustmentType.SET
+        ? newStock - product.stock
+        : adjustmentType === StockAdjustmentType.ADD
+          ? dto.quantity
+          : -dto.quantity;
+
     await this.prisma.stockMovement.create({
       data: {
         tenantId,
         productId: id,
         type: 'ADJUSTMENT',
-        quantity:
-          adjustmentType === StockAdjustmentType.SET
-            ? newStock - product.stock
-            : adjustmentType === StockAdjustmentType.ADD
-              ? dto.quantity
-              : -dto.quantity,
+        quantity: movementQuantity,
         reason: dto.reason,
         notes: dto.notes,
+        ...(dto.warehouseId && { warehouseId: dto.warehouseId }),
       },
     });
 

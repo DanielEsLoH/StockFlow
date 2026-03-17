@@ -1113,7 +1113,7 @@ export class AccountingReportsService {
       if (subtotal <= RETE_FUENTE_MIN_BASE) continue;
 
       const supplierId = order.supplierId;
-      const withheld = Math.round(subtotal * RETE_FUENTE_RATE);
+      const withheld = Math.round(subtotal * RETE_FUENTE_RATE * 100) / 100;
 
       if (!supplierMap.has(supplierId)) {
         supplierMap.set(supplierId, {
@@ -1213,7 +1213,7 @@ export class AccountingReportsService {
       const subtotal = Number(po.subtotal);
       if (subtotal > RETE_FUENTE_MIN_BASE) {
         reteFuenteBaseYtd += subtotal;
-        reteFuenteWithheldYtd += Math.round(subtotal * RETE_FUENTE_RATE);
+        reteFuenteWithheldYtd += Math.round(subtotal * RETE_FUENTE_RATE * 100) / 100;
       }
     }
 

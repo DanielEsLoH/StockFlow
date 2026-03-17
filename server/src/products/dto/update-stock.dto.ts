@@ -1,4 +1,4 @@
-import { IsInt, IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsInt, IsString, IsOptional, IsEnum, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
@@ -70,4 +70,17 @@ export class UpdateStockDto {
   @IsString({ message: 'Notes must be a string' })
   @IsOptional()
   notes?: string;
+
+  /**
+   * Warehouse ID to apply the adjustment to.
+   * When provided, also updates the specific WarehouseStock record.
+   * @example "uuid-of-warehouse"
+   */
+  @ApiPropertyOptional({
+    description: 'Warehouse ID to sync stock adjustment with',
+    example: 'uuid-of-warehouse',
+  })
+  @IsUUID('4', { message: 'warehouseId must be a valid UUID' })
+  @IsOptional()
+  warehouseId?: string;
 }

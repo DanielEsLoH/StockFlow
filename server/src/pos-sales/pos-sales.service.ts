@@ -19,6 +19,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
+import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
 import { CreateSaleDto, SaleItemDto, SalePaymentDto } from './dto';
 
 /**
@@ -112,6 +113,7 @@ export class POSSalesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
+    private readonly accountingBridge: AccountingBridgeService,
   ) {}
 
   /**
@@ -187,10 +189,23 @@ export class POSSalesService {
       );
     }
 
-    // Check stock availability
+    // Check stock availability (warehouse-specific if available)
+    const warehouseId = session.cashRegister.warehouseId;
     for (const item of dto.items) {
       const product = productMap.get(item.productId)!;
-      if (product.stock < item.quantity) {
+      if (warehouseId) {
+        const warehouseStockRecord = await this.prisma.warehouseStock.findUnique({
+          where: {
+            warehouseId_productId: { warehouseId, productId: item.productId },
+          },
+        });
+        const available = warehouseStockRecord?.quantity ?? 0;
+        if (available < item.quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for "${product.name}" in warehouse. Available: ${available}, Requested: ${item.quantity}`,
+          );
+        }
+      } else if (product.stock < item.quantity) {
         throw new BadRequestException(
           `Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}`,
         );
@@ -301,20 +316,22 @@ export class POSSalesService {
           }),
         ),
 
-        // Create cash register movements for each payment
-        ...dto.payments.map((payment) =>
-          tx.cashRegisterMovement.create({
-            data: {
-              tenantId,
-              sessionId: session.id,
-              saleId: posSale.id,
-              type: CashMovementType.SALE,
-              amount: payment.amount,
-              method: payment.method,
-              reference: payment.reference,
-            },
-          }),
-        ),
+        // Create cash register movements only for CASH payments (card payments don't affect cash drawer)
+        ...dto.payments
+          .filter((payment) => payment.method === 'CASH')
+          .map((payment) =>
+            tx.cashRegisterMovement.create({
+              data: {
+                tenantId,
+                sessionId: session.id,
+                saleId: posSale.id,
+                type: CashMovementType.SALE,
+                amount: payment.amount,
+                method: payment.method,
+                reference: payment.reference,
+              },
+            }),
+          ),
 
         // Decrement product stock for all items
         ...dto.items.map((item) =>
@@ -374,6 +391,28 @@ export class POSSalesService {
     });
 
     this.logger.log(`POS sale created: ${sale.saleNumber} - Total: ${total}`);
+
+    // Generate accounting journal entries for the POS sale (fire-and-forget)
+    try {
+      await this.accountingBridge.onInvoiceCreated({
+        tenantId,
+        invoiceId: sale.invoice.id,
+        invoiceNumber: sale.invoice.invoiceNumber,
+        subtotal,
+        tax,
+        total,
+        items: dto.items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          product: { costPrice: productMap.get(item.productId)?.costPrice ?? 0 },
+        })),
+        isPosImmediate: true,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to create accounting entries for POS sale ${sale.saleNumber}: ${error}`,
+      );
+    }
 
     return this.buildSaleWithDetails(sale);
       } catch (error) {

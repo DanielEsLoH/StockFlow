@@ -161,6 +161,7 @@ describe('InvoicesService', () => {
       },
       warehouseStock: {
         findUnique: jest.fn().mockResolvedValue({ quantity: 100 }),
+        update: jest.fn().mockResolvedValue({ quantity: 98 }),
         upsert: jest.fn().mockResolvedValue({ quantity: 98 }),
       },
     };

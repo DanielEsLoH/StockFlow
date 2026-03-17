@@ -9,7 +9,8 @@ import { TenantContextService } from '../common/services/tenant-context.service'
 import { PayrollCalculationService } from './services/payroll-calculation.service';
 import { PayrollConfigService } from './payroll-config.service';
 import { UpdatePayrollEntryDto } from './dto/update-payroll-entry.dto';
-import { PayrollEntryStatus } from '@prisma/client';
+import { CreatePayrollAdjustmentDto, AdjustmentNoteType } from './dto/create-payroll-adjustment.dto';
+import { PayrollEntryStatus, PayrollDocumentType } from '@prisma/client';
 
 @Injectable()
 export class PayrollEntriesService {
@@ -159,6 +160,187 @@ export class PayrollEntriesService {
 
     this.logger.log(`Entrada ${entry.entryNumber} recalculada`);
     return this.mapToDetailResponse(updated);
+  }
+
+  /**
+   * Create a Nómina de Ajuste (tipo 103) referencing an existing entry.
+   * The original entry must be SENT or ACCEPTED by DIAN.
+   */
+  async createAdjustment(originalEntryId: string, dto: CreatePayrollAdjustmentDto) {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const original = await this.prisma.payrollEntry.findFirst({
+      where: { id: originalEntryId, tenantId },
+      include: { employee: true, period: true },
+    });
+
+    if (!original) {
+      throw new NotFoundException('Entrada de nómina original no encontrada');
+    }
+
+    if (!original.cune) {
+      throw new BadRequestException(
+        'La entrada original debe tener CUNE generado (enviada o aceptada por DIAN)',
+      );
+    }
+
+    if (
+      original.status !== PayrollEntryStatus.SENT &&
+      original.status !== PayrollEntryStatus.ACCEPTED
+    ) {
+      throw new BadRequestException(
+        `Solo se pueden ajustar entradas enviadas o aceptadas por DIAN. Estado actual: ${original.status}`,
+      );
+    }
+
+    const config = await this.configService.getOrFail();
+
+    // Generate adjustment entry number
+    const prefix = config.adjustmentPrefix ?? 'NA';
+    const currentNum = config.adjustmentCurrentNumber ?? 1;
+    const entryNumber = `${prefix}-${String(currentNum).padStart(6, '0')}`;
+
+    // For DELETE type, zero out everything; for REPLACE, recalculate with overrides
+    let adjustmentData: any;
+
+    if (dto.tipoNota === AdjustmentNoteType.DELETE) {
+      adjustmentData = {
+        daysWorked: 0,
+        sueldo: 0,
+        auxilioTransporte: 0,
+        horasExtras: 0,
+        bonificaciones: 0,
+        comisiones: 0,
+        viaticos: 0,
+        incapacidad: 0,
+        licencia: 0,
+        vacaciones: 0,
+        otrosDevengados: 0,
+        totalDevengados: 0,
+        saludEmpleado: 0,
+        pensionEmpleado: 0,
+        fondoSolidaridad: 0,
+        retencionFuente: 0,
+        sindicato: 0,
+        libranzas: 0,
+        otrasDeducciones: 0,
+        totalDeducciones: 0,
+        saludEmpleador: 0,
+        pensionEmpleador: 0,
+        arlEmpleador: 0,
+        cajaEmpleador: 0,
+        senaEmpleador: 0,
+        icbfEmpleador: 0,
+        provisionPrima: 0,
+        provisionCesantias: 0,
+        provisionIntereses: 0,
+        provisionVacaciones: 0,
+        totalNeto: 0,
+      };
+    } else {
+      // REPLACE: recalculate with overridden values
+      const result = this.calculationService.calculatePayrollEntry({
+        baseSalary: Number(original.baseSalary),
+        salaryType: original.employee.salaryType,
+        daysWorked: dto.daysWorked ?? Number(original.daysWorked),
+        arlRiskLevel: original.employee.arlRiskLevel,
+        auxilioTransporte: original.employee.auxilioTransporte,
+        smmlv: config.smmlv,
+        auxilioTransporteVal: config.auxilioTransporteVal,
+        uvtValue: config.uvtValue,
+        overtime: (original.overtimeDetails as any[]) ?? [],
+        bonificaciones: dto.bonificaciones ?? Number(original.bonificaciones),
+        comisiones: dto.comisiones ?? Number(original.comisiones),
+        viaticos: dto.viaticos ?? Number(original.viaticos),
+        incapacidadDias: 0,
+        licenciaDias: 0,
+        vacacionesDias: 0,
+        sindicato: dto.sindicato ?? Number(original.sindicato),
+        libranzas: dto.libranzas ?? Number(original.libranzas),
+        otrasDeducciones: dto.otrasDeducciones ?? Number(original.otrasDeducciones),
+        otrosDevengados: dto.otrosDevengados ?? Number(original.otrosDevengados),
+      });
+
+      adjustmentData = {
+        daysWorked: dto.daysWorked ?? Number(original.daysWorked),
+        sueldo: result.sueldo,
+        auxilioTransporte: result.auxilioTransporte,
+        horasExtras: result.horasExtras,
+        bonificaciones: result.bonificaciones,
+        comisiones: result.comisiones,
+        viaticos: result.viaticos,
+        incapacidad: result.incapacidad,
+        licencia: result.licencia,
+        vacaciones: result.vacaciones,
+        otrosDevengados: result.otrosDevengados,
+        totalDevengados: result.totalDevengados,
+        saludEmpleado: result.saludEmpleado,
+        pensionEmpleado: result.pensionEmpleado,
+        fondoSolidaridad: result.fondoSolidaridad,
+        retencionFuente: result.retencionFuente,
+        sindicato: result.sindicato,
+        libranzas: result.libranzas,
+        otrasDeducciones: result.otrasDeducciones,
+        totalDeducciones: result.totalDeducciones,
+        saludEmpleador: result.saludEmpleador,
+        pensionEmpleador: result.pensionEmpleador,
+        arlEmpleador: result.arlEmpleador,
+        cajaEmpleador: result.cajaEmpleador,
+        senaEmpleador: result.senaEmpleador,
+        icbfEmpleador: result.icbfEmpleador,
+        provisionPrima: result.provisionPrima,
+        provisionCesantias: result.provisionCesantias,
+        provisionIntereses: result.provisionIntereses,
+        provisionVacaciones: result.provisionVacaciones,
+        totalNeto: result.totalNeto,
+      };
+    }
+
+    const adjustmentEntry = await this.prisma.payrollEntry.create({
+      data: {
+        tenantId,
+        periodId: original.periodId,
+        employeeId: original.employeeId,
+        entryNumber,
+        status: PayrollEntryStatus.CALCULATED,
+        baseSalary: original.baseSalary,
+        salaryType: original.salaryType,
+        dianDocumentType: PayrollDocumentType.NOMINA_AJUSTE,
+        originalEntryId: original.id,
+        overtimeDetails: (original.overtimeDetails as any) ?? [],
+        notes: dto.reason ?? null,
+        ...adjustmentData,
+      },
+      include: {
+        employee: {
+          select: {
+            firstName: true,
+            lastName: true,
+            documentNumber: true,
+            documentType: true,
+            contractType: true,
+            salaryType: true,
+            arlRiskLevel: true,
+            epsName: true,
+            afpName: true,
+            cajaName: true,
+          },
+        },
+        period: { select: { name: true, startDate: true, endDate: true } },
+      },
+    });
+
+    // Increment adjustment number
+    await this.prisma.payrollConfig.update({
+      where: { tenantId },
+      data: { adjustmentCurrentNumber: currentNum + 1 },
+    });
+
+    this.logger.log(
+      `Ajuste tipo 103 creado: ${entryNumber} (referencia: ${original.entryNumber}, tipo: ${dto.tipoNota === AdjustmentNoteType.DELETE ? 'Eliminar' : 'Reemplazar'})`,
+    );
+
+    return this.mapToDetailResponse(adjustmentEntry);
   }
 
   private mapToDetailResponse(entry: any) {

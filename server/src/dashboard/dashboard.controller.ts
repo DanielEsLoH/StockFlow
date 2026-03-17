@@ -290,4 +290,14 @@ export class DashboardController {
 
     return this.dashboardService.getDashboard();
   }
+
+  @Get('onboarding')
+  @ApiOperation({
+    summary: 'Get onboarding status',
+    description: 'Returns setup completion status for the tenant with a checklist of required steps',
+  })
+  @ApiResponse({ status: 200, description: 'Onboarding status' })
+  async getOnboardingStatus() {
+    return this.dashboardService.getOnboardingStatus();
+  }
 }

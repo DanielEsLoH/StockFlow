@@ -1391,4 +1391,56 @@ export class DashboardService {
     const growth = ((current - previous) / previous) * 100;
     return Math.round(growth * 100) / 100;
   }
+
+  /**
+   * Get onboarding status for the current tenant.
+   * Returns which setup steps have been completed.
+   */
+  async getOnboardingStatus(): Promise<{
+    completed: boolean;
+    steps: { key: string; label: string; done: boolean }[];
+    progress: number;
+  }> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const [
+      productCount,
+      warehouseCount,
+      customerCount,
+      accountCount,
+      accountingConfig,
+      dianConfig,
+      employeeCount,
+    ] = await Promise.all([
+      this.prisma.product.count({ where: { tenantId } }),
+      this.prisma.warehouse.count({ where: { tenantId } }),
+      this.prisma.customer.count({ where: { tenantId } }),
+      this.prisma.account.count({ where: { tenantId } }),
+      this.prisma.accountingConfig.findUnique({ where: { tenantId } }),
+      this.prisma.dianConfig.findFirst({ where: { tenantId } }),
+      this.prisma.employee.count({ where: { tenantId } }),
+    ]);
+
+    const steps = [
+      { key: 'warehouse', label: 'Crear al menos una bodega', done: warehouseCount > 0 },
+      { key: 'products', label: 'Agregar productos al inventario', done: productCount > 0 },
+      { key: 'customers', label: 'Registrar al menos un cliente', done: customerCount > 0 },
+      { key: 'accounting', label: 'Configurar plan de cuentas (PUC)', done: accountCount > 0 },
+      {
+        key: 'accountingConfig',
+        label: 'Vincular cuentas contables principales',
+        done: !!(accountingConfig?.cashAccountId && accountingConfig?.revenueAccountId),
+      },
+      { key: 'dian', label: 'Configurar facturación electrónica DIAN', done: !!dianConfig?.nit },
+    ];
+
+    const doneCount = steps.filter((s) => s.done).length;
+    const progress = Math.round((doneCount / steps.length) * 100);
+
+    return {
+      completed: doneCount === steps.length,
+      steps,
+      progress,
+    };
+  }
 }

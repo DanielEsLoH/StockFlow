@@ -18,6 +18,7 @@ import type {
   POSSalesResponse,
   POSSaleFilters,
   CreateSaleData,
+  CreatePartialReturnData,
 } from "~/types/pos";
 
 // ============================================================================
@@ -191,6 +192,17 @@ export const posSalesService = {
       {
         reason,
       },
+    );
+    return data;
+  },
+
+  async partialReturn(
+    saleId: string,
+    returnData: CreatePartialReturnData,
+  ): Promise<POSSaleWithDetails> {
+    const { data } = await api.post<POSSaleWithDetails>(
+      `/pos-sales/${saleId}/partial-return`,
+      returnData,
     );
     return data;
   },

@@ -25,7 +25,7 @@ import type {
   POSSaleWithDetails,
   PaginatedSalesResponse,
 } from './pos-sales.service';
-import { CreateSaleDto } from './dto';
+import { CreateSaleDto, CreatePartialReturnDto } from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { CurrentUser, Roles } from '../common/decorators';
 import {
@@ -129,6 +129,38 @@ export class POSSalesController {
   ): Promise<POSSaleWithDetails> {
     this.logger.log(`Voiding sale: ${id}`);
     return this.posSalesService.voidSale(id, user.userId, reason);
+  }
+
+  /**
+   * Processes a partial return for a POS sale.
+   */
+  @Post(':id/partial-return')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.EMPLOYEE)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Process a partial return',
+    description:
+      'Processes a partial return for a POS sale. Returns selected items, restores stock, creates refund movements, and generates accounting reversal entries.',
+  })
+  @ApiParam({ name: 'id', description: 'Sale ID to process return for' })
+  @ApiResponse({
+    status: 200,
+    description: 'Partial return processed successfully',
+    type: POSSaleWithDetailsEntity,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Sale voided, quantity exceeds available, or payment mismatch',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Sale or item not found' })
+  async partialReturn(
+    @Param('id') id: string,
+    @Body() dto: CreatePartialReturnDto,
+    @CurrentUser() user: JwtUser,
+  ): Promise<POSSaleWithDetails> {
+    this.logger.log(`Processing partial return for sale: ${id}`);
+    return this.posSalesService.partialReturn(id, dto, user.userId);
   }
 
   /**

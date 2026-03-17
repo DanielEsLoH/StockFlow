@@ -196,6 +196,7 @@ describe('POSSalesService', () => {
       },
       stockMovement: {
         create: jest.fn(),
+        findMany: jest.fn(),
       },
       user: {
         findFirst: jest.fn(),
@@ -1289,6 +1290,256 @@ describe('POSSalesService', () => {
       await service.voidSale('sale-123', mockUserId, 'reason');
 
       expect(mockTx.cashRegisterMovement.create).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('partialReturn', () => {
+    const mockSaleForReturn = {
+      ...mockSale,
+      invoice: {
+        ...mockInvoice,
+        status: InvoiceStatus.SENT,
+        items: [
+          {
+            id: 'item-123',
+            productId: mockProductId,
+            product: { id: mockProductId, name: 'Test Product', sku: 'TEST-001', costPrice: 50 },
+            quantity: 5,
+            unitPrice: 100,
+            taxRate: 19,
+            discount: 0,
+            subtotal: 500,
+            tax: 95,
+            total: 595,
+          },
+          {
+            id: 'item-456',
+            productId: 'product-456',
+            product: { id: 'product-456', name: 'Product 2', sku: 'TEST-002', costPrice: 80 },
+            quantity: 3,
+            unitPrice: 200,
+            taxRate: 19,
+            discount: 0,
+            subtotal: 600,
+            tax: 114,
+            total: 714,
+          },
+        ],
+      },
+      session: {
+        id: mockSessionId,
+        status: POSSessionStatus.ACTIVE,
+        cashRegister: {
+          id: 'cash-register-123',
+          name: 'Caja Principal',
+          code: 'CAJA-001',
+          warehouseId: 'warehouse-123',
+        },
+      },
+    };
+
+    it('should throw NotFoundException when sale not found', async () => {
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.partialReturn('nonexistent', {
+          items: [{ invoiceItemId: 'item-123', quantity: 1 }],
+          payments: [{ method: PaymentMethod.CASH, amount: 119 }],
+        }, mockUserId),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when sale is voided', async () => {
+      const voidedSale = {
+        ...mockSaleForReturn,
+        invoice: { ...mockSaleForReturn.invoice, status: InvoiceStatus.VOID },
+      };
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(voidedSale);
+
+      await expect(
+        service.partialReturn('sale-123', {
+          items: [{ invoiceItemId: 'item-123', quantity: 1 }],
+          payments: [{ method: PaymentMethod.CASH, amount: 119 }],
+        }, mockUserId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when invoice item not found', async () => {
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(mockSaleForReturn);
+      (prisma.stockMovement.findMany as jest.Mock).mockResolvedValue([]);
+
+      await expect(
+        service.partialReturn('sale-123', {
+          items: [{ invoiceItemId: 'nonexistent-item', quantity: 1 }],
+          payments: [{ method: PaymentMethod.CASH, amount: 119 }],
+        }, mockUserId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when return quantity exceeds available', async () => {
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(mockSaleForReturn);
+      // Already returned 4 of 5 units
+      (prisma.stockMovement.findMany as jest.Mock).mockResolvedValue([
+        { productId: mockProductId, quantity: 4 },
+      ]);
+
+      await expect(
+        service.partialReturn('sale-123', {
+          items: [{ invoiceItemId: 'item-123', quantity: 2 }],
+          payments: [{ method: PaymentMethod.CASH, amount: 238 }],
+        }, mockUserId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when refund payments do not match', async () => {
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(mockSaleForReturn);
+      (prisma.stockMovement.findMany as jest.Mock).mockResolvedValue([]);
+
+      // Return 1 item: subtotal=100, tax=19, total=119 but paying 50
+      await expect(
+        service.partialReturn('sale-123', {
+          items: [{ invoiceItemId: 'item-123', quantity: 1 }],
+          payments: [{ method: PaymentMethod.CASH, amount: 50 }],
+        }, mockUserId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should process partial return successfully', async () => {
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(mockSaleForReturn);
+      (prisma.stockMovement.findMany as jest.Mock).mockResolvedValue([]);
+
+      const mockTx = createMockTx(prisma);
+      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        return callback(mockTx);
+      });
+
+      // Mock findOne call at the end
+      const updatedSale = {
+        ...mockSaleForReturn,
+        invoice: { ...mockSaleForReturn.invoice },
+      };
+      // Second findFirst call is for the findOne at the end
+      (prisma.pOSSale.findFirst as jest.Mock)
+        .mockResolvedValueOnce(mockSaleForReturn)
+        .mockResolvedValueOnce(updatedSale);
+
+      // Return 2 of 5 units of item-123: subtotal=200, tax=38, total=238
+      const result = await service.partialReturn('sale-123', {
+        items: [{ invoiceItemId: 'item-123', quantity: 2, reason: 'Defectuoso' }],
+        payments: [{ method: PaymentMethod.CASH, amount: 238 }],
+      }, mockUserId);
+
+      expect(result).toBeDefined();
+      expect(mockTx.product.update).toHaveBeenCalledWith({
+        where: { id: mockProductId },
+        data: { stock: { increment: 2 } },
+      });
+      expect(mockTx.warehouseStock.update).toHaveBeenCalled();
+      expect(mockTx.stockMovement.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            type: MovementType.RETURN,
+            quantity: 2,
+            productId: mockProductId,
+          }),
+        }),
+      );
+      expect(mockTx.cashRegisterMovement.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            type: CashMovementType.REFUND,
+            amount: 238,
+          }),
+        }),
+      );
+    });
+
+    it('should process return of multiple items', async () => {
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(mockSaleForReturn);
+      (prisma.stockMovement.findMany as jest.Mock).mockResolvedValue([]);
+
+      const mockTx = createMockTx(prisma);
+      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        return callback(mockTx);
+      });
+
+      (prisma.pOSSale.findFirst as jest.Mock)
+        .mockResolvedValueOnce(mockSaleForReturn)
+        .mockResolvedValueOnce(mockSaleForReturn);
+
+      // Return 1 of item-123 (total=119) + 1 of item-456 (total=238)
+      // item-123: 500/5=100 sub per unit, 95/5=19 tax per unit, 595/5=119 total per unit
+      // item-456: 600/3=200 sub per unit, 114/3=38 tax per unit, 714/3=238 total per unit
+      const refundTotal = 119 + 238; // = 357
+      const result = await service.partialReturn('sale-123', {
+        items: [
+          { invoiceItemId: 'item-123', quantity: 1 },
+          { invoiceItemId: 'item-456', quantity: 1 },
+        ],
+        payments: [{ method: PaymentMethod.CASH, amount: refundTotal }],
+      }, mockUserId);
+
+      expect(result).toBeDefined();
+      // Should update stock for both products
+      expect(mockTx.product.update).toHaveBeenCalledTimes(2);
+      expect(mockTx.stockMovement.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('should respect previously returned quantities', async () => {
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(mockSaleForReturn);
+      // Already returned 3 of 5 units of product-123
+      (prisma.stockMovement.findMany as jest.Mock).mockResolvedValue([
+        { productId: mockProductId, quantity: 3 },
+      ]);
+
+      const mockTx = createMockTx(prisma);
+      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        return callback(mockTx);
+      });
+
+      (prisma.pOSSale.findFirst as jest.Mock)
+        .mockResolvedValueOnce(mockSaleForReturn)
+        .mockResolvedValueOnce(mockSaleForReturn);
+
+      // Can still return 2 more (5 - 3 = 2 available)
+      const result = await service.partialReturn('sale-123', {
+        items: [{ invoiceItemId: 'item-123', quantity: 2 }],
+        payments: [{ method: PaymentMethod.CASH, amount: 238 }],
+      }, mockUserId);
+
+      expect(result).toBeDefined();
+    });
+
+    it('should handle return without warehouse', async () => {
+      const saleNoWarehouse = {
+        ...mockSaleForReturn,
+        session: {
+          ...mockSaleForReturn.session,
+          cashRegister: {
+            ...mockSaleForReturn.session.cashRegister,
+            warehouseId: null,
+          },
+        },
+      };
+      (prisma.pOSSale.findFirst as jest.Mock).mockResolvedValue(saleNoWarehouse);
+      (prisma.stockMovement.findMany as jest.Mock).mockResolvedValue([]);
+
+      const mockTx = createMockTx(prisma);
+      (prisma.$transaction as jest.Mock).mockImplementation(async (callback) => {
+        return callback(mockTx);
+      });
+
+      (prisma.pOSSale.findFirst as jest.Mock)
+        .mockResolvedValueOnce(saleNoWarehouse)
+        .mockResolvedValueOnce(saleNoWarehouse);
+
+      const result = await service.partialReturn('sale-123', {
+        items: [{ invoiceItemId: 'item-123', quantity: 1 }],
+        payments: [{ method: PaymentMethod.CASH, amount: 119 }],
+      }, mockUserId);
+
+      expect(result).toBeDefined();
+      expect(mockTx.warehouseStock.update).not.toHaveBeenCalled();
     });
   });
 });

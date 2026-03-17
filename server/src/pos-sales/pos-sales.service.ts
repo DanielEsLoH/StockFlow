@@ -20,7 +20,7 @@ import {
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
-import { CreateSaleDto, SaleItemDto, SalePaymentDto } from './dto';
+import { CreateSaleDto, SaleItemDto, SalePaymentDto, CreatePartialReturnDto } from './dto';
 
 /**
  * Sale payment response
@@ -609,6 +609,253 @@ export class POSSalesService {
     this.logger.log(`Sale voided: ${sale.saleNumber}`);
 
     return this.buildSaleWithDetails(voidedSale!);
+  }
+
+  /**
+   * Processes a partial return for a POS sale.
+   * Returns selected items (full or partial quantity), restores stock,
+   * creates refund cash movements, and generates accounting reversal entries.
+   */
+  async partialReturn(
+    saleId: string,
+    dto: CreatePartialReturnDto,
+    userId: string,
+  ): Promise<POSSaleWithDetails> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(`Processing partial return for sale ${saleId}`);
+
+    // Find the sale with all details
+    const sale = await this.prisma.pOSSale.findFirst({
+      where: { id: saleId, tenantId },
+      include: {
+        invoice: {
+          include: {
+            items: {
+              include: {
+                product: true,
+              },
+            },
+            customer: {
+              select: { id: true, name: true, documentNumber: true },
+            },
+          },
+        },
+        payments: true,
+        session: {
+          include: {
+            cashRegister: {
+              select: { id: true, name: true, code: true, warehouseId: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!sale) {
+      throw new NotFoundException(`Sale with ID ${saleId} not found`);
+    }
+
+    // Validate sale is not already voided
+    if (
+      sale.invoice.status === InvoiceStatus.VOID ||
+      sale.invoice.status === InvoiceStatus.CANCELLED
+    ) {
+      throw new BadRequestException('Cannot return items from a voided or cancelled sale');
+    }
+
+    // Build a map of invoice items for quick lookup
+    const invoiceItemMap = new Map(
+      sale.invoice.items.map((item: any) => [item.id, item]),
+    );
+
+    // Validate all return items exist in the sale
+    for (const returnItem of dto.items) {
+      const invoiceItem = invoiceItemMap.get(returnItem.invoiceItemId);
+      if (!invoiceItem) {
+        throw new BadRequestException(
+          `Invoice item ${returnItem.invoiceItemId} not found in sale ${sale.saleNumber}`,
+        );
+      }
+    }
+
+    // Query already-returned quantities for this invoice (via RETURN stock movements)
+    const existingReturns = await this.prisma.stockMovement.findMany({
+      where: {
+        tenantId,
+        invoiceId: sale.invoiceId,
+        type: MovementType.RETURN,
+      },
+      select: { productId: true, quantity: true },
+    });
+
+    // Aggregate returned quantities per product
+    const returnedByProduct = new Map<string, number>();
+    for (const ret of existingReturns) {
+      if (ret.productId) {
+        const current = returnedByProduct.get(ret.productId) ?? 0;
+        returnedByProduct.set(ret.productId, current + ret.quantity);
+      }
+    }
+
+    // Validate quantities and calculate refund totals
+    let refundSubtotal = 0;
+    let refundTax = 0;
+    let refundTotal = 0;
+
+    const validatedItems: Array<{
+      invoiceItem: any;
+      returnQuantity: number;
+      reason: string | undefined;
+      itemRefundSubtotal: number;
+      itemRefundTax: number;
+      itemRefundTotal: number;
+    }> = [];
+
+    for (const returnItem of dto.items) {
+      const invoiceItem = invoiceItemMap.get(returnItem.invoiceItemId)!;
+      const alreadyReturned = invoiceItem.productId
+        ? (returnedByProduct.get(invoiceItem.productId) ?? 0)
+        : 0;
+      const availableToReturn = invoiceItem.quantity - alreadyReturned;
+
+      if (returnItem.quantity > availableToReturn) {
+        const productName = invoiceItem.product?.name ?? 'Unknown';
+        throw new BadRequestException(
+          `Cannot return ${returnItem.quantity} units of "${productName}". ` +
+          `Original: ${invoiceItem.quantity}, already returned: ${alreadyReturned}, available: ${availableToReturn}`,
+        );
+      }
+
+      // Calculate proportional refund for this item
+      const pricePerUnit = Number(invoiceItem.subtotal) / invoiceItem.quantity;
+      const taxPerUnit = Number(invoiceItem.tax) / invoiceItem.quantity;
+      const totalPerUnit = Number(invoiceItem.total) / invoiceItem.quantity;
+
+      const itemRefundSubtotal = Math.round(pricePerUnit * returnItem.quantity * 100) / 100;
+      const itemRefundTax = Math.round(taxPerUnit * returnItem.quantity * 100) / 100;
+      const itemRefundTotal = Math.round(totalPerUnit * returnItem.quantity * 100) / 100;
+
+      refundSubtotal += itemRefundSubtotal;
+      refundTax += itemRefundTax;
+      refundTotal += itemRefundTotal;
+
+      validatedItems.push({
+        invoiceItem,
+        returnQuantity: returnItem.quantity,
+        reason: returnItem.reason,
+        itemRefundSubtotal,
+        itemRefundTax,
+        itemRefundTotal,
+      });
+    }
+
+    // Validate refund payments total matches the calculated refund total
+    const paymentsTotal = dto.payments.reduce((sum, p) => sum + p.amount, 0);
+    if (Math.abs(paymentsTotal - refundTotal) > 0.01) {
+      throw new BadRequestException(
+        `Refund payments total (${paymentsTotal}) does not match calculated refund (${refundTotal})`,
+      );
+    }
+
+    // Process the return in a transaction
+    const warehouseId = sale.session.cashRegister.warehouseId;
+
+    await this.prisma.$transaction(async (tx) => {
+      await Promise.all([
+        // Create refund cash register movements (only CASH refunds affect the drawer)
+        ...dto.payments
+          .filter((p) => p.method === 'CASH')
+          .map((payment) =>
+            tx.cashRegisterMovement.create({
+              data: {
+                tenantId,
+                sessionId: sale.sessionId,
+                saleId: sale.id,
+                type: CashMovementType.REFUND,
+                amount: payment.amount,
+                method: payment.method,
+                reference: payment.reference,
+                notes: `Devolución parcial: ${dto.reason ?? 'Sin motivo'}`,
+              },
+            }),
+          ),
+
+        // Restore product stock for returned items
+        ...validatedItems
+          .filter((v) => v.invoiceItem.productId)
+          .map((v) =>
+            tx.product.update({
+              where: { id: v.invoiceItem.productId },
+              data: { stock: { increment: v.returnQuantity } },
+            }),
+          ),
+
+        // Restore warehouse stock (if applicable)
+        ...(warehouseId
+          ? validatedItems
+              .filter((v) => v.invoiceItem.productId)
+              .map((v) =>
+                tx.warehouseStock.update({
+                  where: {
+                    warehouseId_productId: {
+                      warehouseId,
+                      productId: v.invoiceItem.productId,
+                    },
+                  },
+                  data: { quantity: { increment: v.returnQuantity } },
+                }),
+              )
+          : []),
+
+        // Create return stock movements
+        ...validatedItems
+          .filter((v) => v.invoiceItem.productId)
+          .map((v) =>
+            tx.stockMovement.create({
+              data: {
+                tenantId,
+                productId: v.invoiceItem.productId,
+                warehouseId,
+                userId,
+                type: MovementType.RETURN,
+                quantity: v.returnQuantity,
+                reason: `Devolución parcial POS ${sale.saleNumber}: ${v.reason ?? dto.reason ?? 'Sin motivo'}`,
+                invoiceId: sale.invoiceId,
+              },
+            }),
+          ),
+      ]);
+    });
+
+    this.logger.log(
+      `Partial return processed for sale ${sale.saleNumber}: ${validatedItems.length} items, refund $${refundTotal}`,
+    );
+
+    // Generate accounting reversal entry (fire-and-forget)
+    try {
+      await this.accountingBridge.onInvoiceCancelled({
+        tenantId,
+        invoiceId: sale.invoiceId,
+        invoiceNumber: sale.invoice.invoiceNumber,
+        subtotal: refundSubtotal,
+        tax: refundTax,
+        total: refundTotal,
+        items: validatedItems.map((v) => ({
+          productId: v.invoiceItem.productId,
+          quantity: v.returnQuantity,
+          product: v.invoiceItem.product,
+        })),
+        isPosImmediate: true,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to create accounting entries for partial return on sale ${sale.saleNumber}: ${error}`,
+      );
+    }
+
+    // Return updated sale details
+    return this.findOne(saleId);
   }
 
   /**

@@ -90,6 +90,7 @@ describe('POSSalesController', () => {
     const mockPOSSalesService = {
       createSale: jest.fn(),
       voidSale: jest.fn(),
+      partialReturn: jest.fn(),
       findOne: jest.fn(),
       findAll: jest.fn(),
     };
@@ -202,6 +203,46 @@ describe('POSSalesController', () => {
       await expect(
         controller.voidSale('sale-123', 'reason', mockUser),
       ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('partialReturn', () => {
+    const returnDto = {
+      items: [{ invoiceItemId: 'item-123', quantity: 1 }],
+      payments: [{ method: PaymentMethod.CASH, amount: 119 }],
+    };
+
+    it('should process a partial return', async () => {
+      service.partialReturn.mockResolvedValue(mockSaleWithDetails);
+
+      const result = await controller.partialReturn('sale-123', returnDto, mockUser);
+
+      expect(result).toEqual(mockSaleWithDetails);
+      expect(service.partialReturn).toHaveBeenCalledWith(
+        'sale-123',
+        returnDto,
+        mockUser.userId,
+      );
+    });
+
+    it('should propagate BadRequestException', async () => {
+      service.partialReturn.mockRejectedValue(
+        new BadRequestException('Cannot return items from a voided sale'),
+      );
+
+      await expect(
+        controller.partialReturn('sale-123', returnDto, mockUser),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should propagate NotFoundException', async () => {
+      service.partialReturn.mockRejectedValue(
+        new NotFoundException('Sale not found'),
+      );
+
+      await expect(
+        controller.partialReturn('nonexistent', returnDto, mockUser),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

@@ -27,6 +27,7 @@ import type {
   POSSalesResponse,
   POSSaleFilters,
   CreateSaleData,
+  CreatePartialReturnData,
 } from "~/types/pos";
 
 // ============================================================================
@@ -366,6 +367,39 @@ export function useVoidSale() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Error al anular la venta");
+    },
+  });
+}
+
+export function usePartialReturn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      saleId,
+      data,
+    }: {
+      saleId: string;
+      data: CreatePartialReturnData;
+    }) => posSalesService.partialReturn(saleId, data),
+    onSuccess: (sale) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.posSales.all,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.posSessions.current(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.products.all,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.invoices.all,
+      });
+      queryClient.setQueryData(queryKeys.posSales.detail(sale.id), sale);
+      toast.success(`Devolución parcial procesada para venta #${sale.saleNumber}`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error al procesar la devolución");
     },
   });
 }

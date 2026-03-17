@@ -323,6 +323,28 @@ export interface POSSaleFilters {
 }
 
 // ============================================================================
+// POS PARTIAL RETURN TYPES
+// ============================================================================
+
+export interface ReturnItemData {
+  invoiceItemId: string;
+  quantity: number;
+  reason?: string;
+}
+
+export interface RefundPaymentData {
+  method: PaymentMethod;
+  amount: number;
+  reference?: string;
+}
+
+export interface CreatePartialReturnData {
+  items: ReturnItemData[];
+  payments: RefundPaymentData[];
+  reason?: string;
+}
+
+// ============================================================================
 // POS CART TYPES
 // ============================================================================
 

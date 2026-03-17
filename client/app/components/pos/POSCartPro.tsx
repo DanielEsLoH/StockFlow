@@ -268,7 +268,6 @@ export function POSCartPro({
   canCheckout,
   customer,
   globalDiscount,
-  onUpdateQuantity,
   onUpdatePrice,
   onUpdateItemDiscount,
   onIncrement,

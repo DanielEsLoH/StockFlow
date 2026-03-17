@@ -1,0 +1,20 @@
+{
+  "version": "0.2",
+  "language": "en,es",
+  "import": ["@cspell/dict-es-es/cspell-ext.json"],
+  "words": [
+    "nums",
+    "stockflow",
+    "Ultimos",
+    "Analisis",
+    "aparecera",
+    "atencion",
+    "aqui",
+    "Aqui",
+    "grafico",
+    "rapida",
+    "dias",
+    "vacio"
+  ],
+  "ignorePaths": ["node_modules", "dist", "build", ".react-router"]
+}

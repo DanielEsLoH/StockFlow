@@ -93,7 +93,7 @@ describe('HealthController', () => {
       await controller.check();
 
       const checks = healthCheckService.check.mock.calls[0][0];
-      expect(checks.length).toBe(3);
+      expect(checks.length).toBe(4);
     });
 
     it('should call prismaHealth.isHealthy with correct key', async () => {

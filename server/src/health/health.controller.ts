@@ -8,7 +8,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { PrismaHealthIndicator } from './indicators';
-import { HEALTH_KEYS, MEMORY_THRESHOLDS } from './health.constants';
+import { HEALTH_KEYS, MEMORY_THRESHOLDS, DISK_THRESHOLDS } from './health.constants';
 
 /**
  * Health check response structure.
@@ -86,6 +86,13 @@ export class HealthController {
           HEALTH_KEYS.MEMORY + '_rss',
           MEMORY_THRESHOLDS.RSS,
         ),
+
+      // Disk health check - minimum 10% free space on root
+      () =>
+        this.diskHealth.checkStorage(HEALTH_KEYS.DISK, {
+          path: '/',
+          thresholdPercent: DISK_THRESHOLDS.MIN_FREE_PERCENT,
+        }),
     ]);
   }
 

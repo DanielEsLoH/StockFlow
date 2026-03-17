@@ -47,7 +47,7 @@ describe('LoggingInterceptor', () => {
     mockExecutionContext = {
       switchToHttp: jest.fn().mockReturnValue({
         getRequest: () => mockRequest,
-        getResponse: jest.fn(),
+        getResponse: () => ({ statusCode: 200 }),
       }),
       getType: jest.fn().mockReturnValue('http'),
       getClass: jest.fn(),
@@ -95,14 +95,17 @@ describe('LoggingInterceptor', () => {
       expect(customInterceptor).toBeDefined();
     });
 
-    it('should default to disabled in production', () => {
+    it('should default to enabled in production (plain format)', (done) => {
       process.env.NODE_ENV = 'production';
       const prodInterceptor = new LoggingInterceptor();
 
-      prodInterceptor.intercept(mockExecutionContext, mockCallHandler);
-
-      // In production, logging should be disabled by default
-      expect(logSpy).not.toHaveBeenCalled();
+      const result = prodInterceptor.intercept(mockExecutionContext, mockCallHandler);
+      result.subscribe({
+        complete: () => {
+          expect(logSpy).toHaveBeenCalled();
+          done();
+        },
+      });
     });
   });
 
@@ -384,13 +387,20 @@ describe('LoggingInterceptor', () => {
   });
 
   describe('production mode', () => {
-    it('should not log in production when enabled is not explicitly set', () => {
+    it('should log in production by default (plain format, no colors)', (done) => {
       process.env.NODE_ENV = 'production';
       const prodInterceptor = new LoggingInterceptor();
 
-      prodInterceptor.intercept(mockExecutionContext, mockCallHandler);
-
-      expect(logSpy).not.toHaveBeenCalled();
+      const result = prodInterceptor.intercept(mockExecutionContext, mockCallHandler);
+      result.subscribe({
+        complete: () => {
+          expect(logSpy).toHaveBeenCalled();
+          const logMessage = getFirstLogMessage(logSpy);
+          // No ANSI colors in production
+          expect(logMessage).not.toContain('\x1b[');
+          done();
+        },
+      });
     });
 
     it('should log in production when enabled is explicitly true', (done) => {
@@ -483,7 +493,7 @@ describe('LoggingInterceptor', () => {
           const logMessage = getFirstLogMessage(logSpy);
           // Should not contain ANSI escape codes
           expect(logMessage).not.toContain('\x1b[');
-          expect(logMessage).toBe('GET /api/products - 0ms');
+          expect(logMessage).toBe('GET /api/products 200 - 0ms');
           done();
         },
       });

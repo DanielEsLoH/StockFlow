@@ -114,7 +114,7 @@ export class LoggingInterceptor implements NestInterceptor {
       '/live',
     ];
     this.coloredOutput = options.coloredOutput ?? isDevelopment;
-    this.enabled = options.enabled ?? isDevelopment;
+    this.enabled = options.enabled ?? true;
   }
 
   /**
@@ -132,6 +132,7 @@ export class LoggingInterceptor implements NestInterceptor {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
+    const response = context.switchToHttp().getResponse();
     const { method, url } = request;
 
     // Skip excluded routes
@@ -145,12 +146,12 @@ export class LoggingInterceptor implements NestInterceptor {
       tap({
         next: () => {
           const duration = this.calculateDuration(startTime);
-          this.logRequest(method, url, duration);
+          this.logRequest(method, url, duration, false, response.statusCode);
         },
-        error: () => {
-          // Log even on error, so we can see failed requests
+        error: (err) => {
           const duration = this.calculateDuration(startTime);
-          this.logRequest(method, url, duration, true);
+          const statusCode = err?.status ?? err?.statusCode ?? 500;
+          this.logRequest(method, url, duration, true, statusCode);
         },
       }),
     );
@@ -184,11 +185,12 @@ export class LoggingInterceptor implements NestInterceptor {
     url: string,
     duration: number,
     isError = false,
+    statusCode = 200,
   ): void {
     if (this.coloredOutput) {
       this.logWithColors(method, url, duration, isError);
     } else {
-      this.logPlain(method, url, duration);
+      this.logPlain(method, url, duration, statusCode);
     }
   }
 
@@ -220,8 +222,8 @@ export class LoggingInterceptor implements NestInterceptor {
   /**
    * Logs request without colors (for production or non-TTY environments)
    */
-  private logPlain(method: string, url: string, duration: number): void {
-    this.logger.log(`${method} ${url} - ${duration}ms`);
+  private logPlain(method: string, url: string, duration: number, statusCode = 200): void {
+    this.logger.log(`${method} ${url} ${statusCode} - ${duration}ms`);
   }
 
   /**

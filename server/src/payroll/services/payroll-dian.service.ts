@@ -74,6 +74,9 @@ export class PayrollDianService {
     const { date, time } = this.cuneGenerator.generateTimestamp();
     const ambiente = config.payrollTestSetId ? '2' : '1';
 
+    const isAdjustment = entry.dianDocumentType === PayrollDocumentType.NOMINA_AJUSTE;
+    const tipoXML = isAdjustment ? '103' : '102';
+
     // Generate CUNE
     const cune = this.cuneGenerator.generateCune({
       numNIE: entry.entryNumber,
@@ -86,11 +89,23 @@ export class PayrollDianService {
       docEmp: entry.employee.documentNumber,
       tipoAmb: ambiente,
       softwarePin: config.payrollSoftwarePin ?? '',
-      tipoXML: '102',
+      tipoXML,
     });
 
-    // Generate XML
-    const xml = this.xmlGenerator.generateNominaIndividualXml({
+    // For adjustments, get original entry's CUNE
+    let originalCune: string | undefined;
+    let originalEntryNumber: string | undefined;
+    if (isAdjustment && entry.originalEntryId) {
+      const originalEntry = await this.prisma.payrollEntry.findUnique({
+        where: { id: entry.originalEntryId },
+        select: { cune: true, entryNumber: true },
+      });
+      originalCune = originalEntry?.cune ?? undefined;
+      originalEntryNumber = originalEntry?.entryNumber ?? undefined;
+    }
+
+    // Generate XML - use appropriate generator based on document type
+    const xmlParams = {
       employer: {
         nit: dianConfig.nit,
         dv: dianConfig.dv,
@@ -155,20 +170,30 @@ export class PayrollDianService {
         cajaEmpleador: Number(entry.cajaEmpleador),
         senaEmpleador: Number(entry.senaEmpleador),
         icbfEmpleador: Number(entry.icbfEmpleador),
+        ...(isAdjustment && {
+          tipoNota: (entry as any).notes === 'DELETE' ? '2' : '1',
+          cuneReferenciadoPred: originalCune,
+        }),
       },
       softwareId: config.payrollSoftwareId ?? '',
       softwarePin: config.payrollSoftwarePin ?? '',
       ambiente,
-    });
+    };
+
+    const xml = isAdjustment
+      ? this.xmlGenerator.generateNominaAjusteXml(xmlParams)
+      : this.xmlGenerator.generateNominaIndividualXml(xmlParams);
 
     // Update entry with generated XML and CUNE
     await this.prisma.payrollEntry.update({
       where: { id: entryId },
       data: {
         cune,
-        dianDocumentType: PayrollDocumentType.NOMINA_INDIVIDUAL,
+        dianDocumentType: isAdjustment
+          ? PayrollDocumentType.NOMINA_AJUSTE
+          : PayrollDocumentType.NOMINA_INDIVIDUAL,
         xmlContent: xml,
-        status: PayrollEntryStatus.APPROVED, // stays approved until sent
+        status: PayrollEntryStatus.APPROVED,
       },
     });
 

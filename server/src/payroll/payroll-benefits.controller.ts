@@ -5,6 +5,8 @@ import {
   Param,
   Body,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,6 +16,13 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth';
 import { RequirePermissions, PermissionsGuard, Permission } from '../common';
+import { CurrentUser } from '../common/decorators';
+
+interface JwtUser {
+  userId: string;
+  tenantId: string;
+  role: string;
+}
 import { PayrollBenefitsService } from './services/payroll-benefits.service';
 import {
   CalculateBenefitPaymentDto,
@@ -81,6 +90,31 @@ export class PayrollBenefitsController {
       : undefined;
     return this.benefitsService.getLiquidationPreview(
       employeeId,
+      terminationDate,
+    );
+  }
+
+  @Post('liquidation/:employeeId/execute')
+  @RequirePermissions(Permission.PAYROLL_APPROVE)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Ejecutar liquidacion: calcular, registrar y terminar al empleado',
+    description:
+      'Ejecuta la liquidacion completa: calcula prestaciones, crea entrada de nomina, ' +
+      'y cambia el estado del empleado a TERMINATED. Esta accion es irreversible.',
+  })
+  @ApiParam({ name: 'employeeId', type: String })
+  async executeLiquidation(
+    @Param('employeeId') employeeId: string,
+    @Body() dto: CalculateLiquidationDto,
+    @CurrentUser() user: JwtUser,
+  ) {
+    const terminationDate = dto.terminationDate
+      ? new Date(dto.terminationDate)
+      : undefined;
+    return this.benefitsService.executeLiquidation(
+      employeeId,
+      user.userId,
       terminationDate,
     );
   }

@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { TenantContextService } from '../../common/services/tenant-context.service';
 import { PayrollConfigService } from '../payroll-config.service';
-import { SalaryType, EmployeeStatus } from '@prisma/client';
+import { SalaryType, EmployeeStatus, PayrollEntryStatus } from '@prisma/client';
 
 // ===== Colombian Social Benefits Constants =====
 
@@ -340,6 +340,155 @@ export class PayrollBenefitsService {
       totalBenefits,
       accumulatedProvisions,
       netPayable,
+    };
+  }
+
+  /**
+   * Execute a liquidation: calculate benefits, record them, and terminate the employee.
+   * This is the "real" liquidation — it changes employee status to TERMINATED.
+   */
+  async executeLiquidation(
+    employeeId: string,
+    userId: string,
+    terminationDate?: Date,
+  ): Promise<LiquidationPreview & { executed: true; employeeStatus: string }> {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    // First get the preview (all calculations)
+    const preview = await this.getLiquidationPreview(employeeId, terminationDate);
+
+    const employee = await this.prisma.employee.findFirst({
+      where: { id: employeeId, tenantId },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Empleado no encontrado');
+    }
+
+    if (employee.status === EmployeeStatus.TERMINATED) {
+      throw new BadRequestException('El empleado ya fue liquidado');
+    }
+
+    const endDate = terminationDate ?? new Date();
+
+    // Execute in transaction
+    await this.prisma.$transaction(async (tx: any) => {
+      // 1. Update employee status to TERMINATED
+      await tx.employee.update({
+        where: { id: employeeId },
+        data: {
+          status: EmployeeStatus.TERMINATED,
+          endDate,
+        },
+      });
+
+      // 2. Create a payroll entry recording the liquidation amounts
+      const config = await this.configService.getOrFail();
+      const prefix = config.payrollPrefix ?? 'NOM';
+      const currentNum = config.payrollCurrentNumber ?? 1;
+      const entryNumber = `LIQ-${prefix}-${String(currentNum).padStart(6, '0')}`;
+
+      // Find or create a "liquidation period" for this year
+      const year = endDate.getFullYear();
+      const month = endDate.getMonth();
+      const periodStart = new Date(year, month, 1);
+      const periodEnd = new Date(year, month + 1, 0);
+
+      let period = await tx.payrollPeriod.findFirst({
+        where: {
+          tenantId,
+          name: { contains: 'Liquidacion' },
+          startDate: { gte: periodStart },
+          endDate: { lte: periodEnd },
+        },
+      });
+
+      if (!period) {
+        period = await tx.payrollPeriod.create({
+          data: {
+            tenantId,
+            name: `Liquidacion ${endDate.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}`,
+            periodType: 'MONTHLY',
+            startDate: periodStart,
+            endDate: periodEnd,
+            paymentDate: endDate,
+            status: 'APPROVED',
+            totalDevengados: 0,
+            totalDeducciones: 0,
+            totalNeto: 0,
+            employeeCount: 0,
+          },
+        });
+      }
+
+      // Sum benefit amounts by type for the entry
+      const primaAmount = preview.benefits.find((b) => b.concept === 'Prima de servicios')?.amount ?? 0;
+      const cesantiasAmount = preview.benefits.find((b) => b.concept === 'Cesantias')?.amount ?? 0;
+      const interesesAmount = preview.benefits.find((b) => b.concept === 'Intereses sobre cesantias')?.amount ?? 0;
+      const vacacionesAmount = preview.benefits.find((b) => b.concept === 'Vacaciones')?.amount ?? 0;
+
+      await tx.payrollEntry.create({
+        data: {
+          tenantId,
+          periodId: period.id,
+          employeeId,
+          entryNumber,
+          status: PayrollEntryStatus.APPROVED,
+          baseSalary: employee.baseSalary,
+          salaryType: employee.salaryType,
+          daysWorked: 0,
+          sueldo: 0,
+          auxilioTransporte: 0,
+          horasExtras: 0,
+          bonificaciones: 0,
+          comisiones: 0,
+          viaticos: 0,
+          incapacidad: 0,
+          licencia: 0,
+          vacaciones: vacacionesAmount,
+          primaServicios: primaAmount,
+          cesantias: cesantiasAmount,
+          interesesCesantias: interesesAmount,
+          otrosDevengados: 0,
+          totalDevengados: preview.totalBenefits,
+          saludEmpleado: 0,
+          pensionEmpleado: 0,
+          fondoSolidaridad: 0,
+          retencionFuente: 0,
+          sindicato: 0,
+          libranzas: 0,
+          otrasDeducciones: 0,
+          totalDeducciones: 0,
+          saludEmpleador: 0,
+          pensionEmpleador: 0,
+          arlEmpleador: 0,
+          cajaEmpleador: 0,
+          senaEmpleador: 0,
+          icbfEmpleador: 0,
+          provisionPrima: 0,
+          provisionCesantias: 0,
+          provisionIntereses: 0,
+          provisionVacaciones: 0,
+          totalNeto: preview.netPayable,
+          notes: `Liquidacion ${employee.firstName} ${employee.lastName} - ${endDate.toISOString().split('T')[0]}`,
+        },
+      });
+
+      // Increment payroll number
+      await tx.payrollConfig.update({
+        where: { tenantId },
+        data: { payrollCurrentNumber: currentNum + 1 },
+      });
+    });
+
+    this.logger.log(
+      `Liquidacion ejecutada: ${employee.firstName} ${employee.lastName} (${employee.documentNumber}), neto: $${preview.netPayable.toLocaleString('es-CO')}`,
+    );
+
+    return {
+      ...preview,
+      executed: true,
+      employeeStatus: EmployeeStatus.TERMINATED,
     };
   }
 

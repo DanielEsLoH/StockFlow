@@ -1,34 +1,23 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Package,
-  FileText,
-  ShoppingCart,
-  BookOpen,
-  MonitorSmartphone,
-  UserCheck,
-  Settings,
-  Menu,
-  X,
-  ChevronDown,
-} from "lucide-react";
+import { motion } from "framer-motion";
+import { Package, Menu, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
 
 // ---------------------------------------------------------------------------
-// Scroll helper
+// Scroll helper — exported for use by other landing components
 // ---------------------------------------------------------------------------
 
 export function handleScrollToSection(
-  e: React.MouseEvent<HTMLAnchorElement>,
+  e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>,
   href: string,
-  onScrollComplete?: () => void,
+  onComplete?: () => void,
 ): void {
   if (href.startsWith("#")) {
     e.preventDefault();
-    onScrollComplete?.();
+    onComplete?.();
     const el = document.querySelector(href);
     if (el) {
       const y = el.getBoundingClientRect().top + window.scrollY - 80;
@@ -41,59 +30,8 @@ export function handleScrollToSection(
 // Data
 // ---------------------------------------------------------------------------
 
-interface ProductCategory {
-  icon: React.ElementType;
-  name: string;
-  description: string;
-  href: string;
-}
-
-const productCategories: ProductCategory[] = [
-  {
-    icon: Package,
-    name: "Inventario",
-    description: "Control de stock multi-bodega en tiempo real",
-    href: "#features",
-  },
-  {
-    icon: FileText,
-    name: "Ventas",
-    description: "Facturacion electronica y cotizaciones",
-    href: "#features",
-  },
-  {
-    icon: ShoppingCart,
-    name: "Compras",
-    description: "Ordenes de compra y gestion de proveedores",
-    href: "#features",
-  },
-  {
-    icon: BookOpen,
-    name: "Contabilidad",
-    description: "Libros contables y reportes financieros",
-    href: "#features",
-  },
-  {
-    icon: MonitorSmartphone,
-    name: "POS",
-    description: "Punto de venta rapido y sin conexion",
-    href: "#features",
-  },
-  {
-    icon: UserCheck,
-    name: "Nomina",
-    description: "Liquidacion de nomina y seguridad social",
-    href: "#features",
-  },
-  {
-    icon: Settings,
-    name: "Administracion",
-    description: "Roles, permisos y configuracion global",
-    href: "#features",
-  },
-];
-
 const navLinks = [
+  { label: "Producto", href: "#features" },
   { label: "Precios", href: "#precios" },
   { label: "DIAN", href: "#dian" },
   { label: "Empresa", href: "#empresa" },
@@ -121,88 +59,7 @@ function Logo() {
 }
 
 // ---------------------------------------------------------------------------
-// Mega-menu (desktop)
-// ---------------------------------------------------------------------------
-
-function MegaMenu({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open, onClose]);
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          ref={ref}
-          initial={{ opacity: 0, y: 8, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 8, scale: 0.98 }}
-          transition={{ duration: 0.18, ease: "easeOut" }}
-          className="absolute left-1/2 top-full z-50 mt-2 w-[640px] -translate-x-1/2
-                     rounded-2xl border border-neutral-200/70 bg-white/95 p-5
-                     shadow-xl shadow-neutral-900/5 backdrop-blur-xl
-                     dark:border-neutral-700/60 dark:bg-neutral-900/95 dark:shadow-black/20"
-        >
-          <div className="mb-3 px-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-              Modulos
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-1">
-            {productCategories.map((cat) => (
-              <a
-                key={cat.name}
-                href={cat.href}
-                onClick={(e) =>
-                  handleScrollToSection(e, cat.href, onClose)
-                }
-                className="group flex items-start gap-3 rounded-xl p-3
-                           transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
-              >
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
-                              bg-primary-50 text-primary-600
-                              transition-colors group-hover:bg-primary-100
-                              dark:bg-primary-900/20 dark:text-primary-400
-                              dark:group-hover:bg-primary-900/40"
-                >
-                  <cat.icon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                    {cat.name}
-                  </p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-                    {cat.description}
-                  </p>
-                </div>
-              </a>
-            ))}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Mobile menu
+// Mobile menu — fullscreen overlay with portal
 // ---------------------------------------------------------------------------
 
 function MobileMenu({
@@ -212,133 +69,85 @@ function MobileMenu({
   open: boolean;
   onClose: (scrollTarget?: string) => void;
 }) {
-  const [productOpen, setProductOpen] = useState(false);
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
+    null,
+  );
 
   useEffect(() => {
     setPortalContainer(document.body);
   }, []);
 
-  if (!open) return null;
-  if (!portalContainer) return null;
+  if (!open || !portalContainer) return null;
 
   return createPortal(
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[9998] bg-black/40"
-        onClick={onClose}
+        className="fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm"
+        onClick={() => onClose()}
       />
 
-      {/* Panel — no framer motion, instant render */}
+      {/* Panel */}
       <div
-        className="fixed inset-0 z-[9999]
-                   overflow-y-auto
+        className="fixed inset-0 z-[9999] overflow-y-auto
                    bg-white dark:bg-neutral-900"
       >
-            {/* Panel header */}
-            <div className="flex h-16 items-center justify-between px-5">
-              <Logo />
-              <button
-                onClick={onClose}
-                aria-label="Cerrar menu"
-                className="flex h-10 w-10 items-center justify-center rounded-xl
-                           text-neutral-500 transition-colors hover:bg-neutral-100
-                           dark:text-neutral-400 dark:hover:bg-neutral-800"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+        {/* Header */}
+        <div className="flex h-16 items-center justify-between px-5">
+          <Logo />
+          <button
+            onClick={() => onClose()}
+            aria-label="Cerrar menu"
+            className="flex h-10 w-10 items-center justify-center rounded-xl
+                       text-neutral-500 transition-colors hover:bg-neutral-100
+                       dark:text-neutral-400 dark:hover:bg-neutral-800"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-            {/* Nav */}
-            <nav className="space-y-1 px-4 pb-6 pt-2">
-              {/* Producto accordion */}
-              <div>
-                <button
-                  onClick={() => setProductOpen(!productOpen)}
-                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5
-                             text-left text-sm font-medium text-neutral-700 transition-colors
-                             hover:bg-neutral-50 dark:text-neutral-200 dark:hover:bg-neutral-800/60"
-                >
-                  Producto
-                  <ChevronDown
-                    className={cn(
-                      "h-4 w-4 text-neutral-400 transition-transform duration-200",
-                      productOpen && "rotate-180",
-                    )}
-                  />
-                </button>
-                <AnimatePresence initial={false}>
-                  {productOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="space-y-1 pb-2 pl-3 pt-1">
-                        {productCategories.map((cat) => (
-                          <button
-                            key={cat.name}
-                            type="button"
-                            onClick={() => onClose(cat.href)}
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2
-                                       text-sm text-neutral-600 transition-colors
-                                       hover:bg-neutral-50 hover:text-neutral-900
-                                       dark:text-neutral-400 dark:hover:bg-neutral-800/60
-                                       dark:hover:text-neutral-100"
-                          >
-                            <cat.icon className="h-4 w-4 shrink-0 text-primary-500" />
-                            <span>{cat.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+        {/* Nav links */}
+        <nav className="space-y-1 px-4 pb-6 pt-2">
+          {navLinks.map((link) => (
+            <button
+              key={link.label}
+              type="button"
+              onClick={() => onClose(link.href)}
+              className="block w-full rounded-xl px-3 py-3 text-left text-base
+                         font-medium text-neutral-700 transition-colors
+                         hover:bg-neutral-50
+                         dark:text-neutral-200 dark:hover:bg-neutral-800/60"
+            >
+              {link.label}
+            </button>
+          ))}
 
-              {/* Other links */}
-              {navLinks.map((link) => (
-                <button
-                  key={link.label}
-                  type="button"
-                  onClick={() => onClose(link.href)}
-                  className="block w-full text-left rounded-xl px-3 py-2.5 text-sm font-medium
-                             text-neutral-700 transition-colors hover:bg-neutral-50
-                             dark:text-neutral-200 dark:hover:bg-neutral-800/60"
-                >
-                  {link.label}
-                </button>
-              ))}
+          {/* Divider */}
+          <div className="my-4 border-t border-neutral-200 dark:border-neutral-700/60" />
 
-              {/* Divider */}
-              <div className="my-4 border-t border-neutral-200 dark:border-neutral-700/60" />
-
-              {/* CTAs */}
-              <Link
-                to="/login"
-                onClick={onClose}
-                className="block rounded-xl px-3 py-2.5 text-center text-sm font-medium
-                           text-neutral-700 transition-colors hover:bg-neutral-50
-                           dark:text-neutral-200 dark:hover:bg-neutral-800/60"
-              >
-                Iniciar Sesion
-              </Link>
-              <Link
-                to="/register"
-                onClick={onClose}
-                className="block rounded-xl bg-gradient-to-r from-primary-500 to-accent-600
-                           px-3 py-2.5 text-center text-sm font-semibold text-white
-                           shadow-md shadow-primary-500/20 transition-shadow
-                           hover:shadow-lg hover:shadow-primary-500/30"
-              >
-                Empieza Gratis
-              </Link>
-            </nav>
-          </div>
-        </>,
+          {/* CTAs */}
+          <Link
+            to="/login"
+            onClick={() => onClose()}
+            className="block rounded-xl px-3 py-3 text-center text-base font-medium
+                       text-neutral-700 transition-colors hover:bg-neutral-50
+                       dark:text-neutral-200 dark:hover:bg-neutral-800/60"
+          >
+            Iniciar Sesion
+          </Link>
+          <Link
+            to="/register"
+            onClick={() => onClose()}
+            className="block rounded-xl bg-gradient-to-r from-primary-500 to-accent-600
+                       px-3 py-3 text-center text-base font-semibold text-white
+                       shadow-md shadow-primary-500/20 transition-shadow
+                       hover:shadow-lg hover:shadow-primary-500/30"
+          >
+            Empieza Gratis
+          </Link>
+        </nav>
+      </div>
+    </>,
     portalContainer,
   );
 }
@@ -349,7 +158,6 @@ function MobileMenu({
 
 export function LandingHeader({ isMounted }: { isMounted: boolean }) {
   const [scrolled, setScrolled] = useState(false);
-  const [megaOpen, setMegaOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Track scroll
@@ -362,7 +170,7 @@ export function LandingHeader({ isMounted }: { isMounted: boolean }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close mobile on resize
+  // Close mobile on resize to desktop
   useEffect(() => {
     function onResize() {
       if (window.innerWidth >= 1024 && mobileOpen) {
@@ -373,9 +181,6 @@ export function LandingHeader({ isMounted }: { isMounted: boolean }) {
     return () => window.removeEventListener("resize", onResize);
   }, [mobileOpen]);
 
-  // No body scroll lock needed — fullscreen menu covers everything
-
-  const closeMega = useCallback(() => setMegaOpen(false), []);
   const pendingScrollRef = useRef<string | null>(null);
 
   const closeMobile = useCallback((scrollTarget?: string) => {
@@ -390,6 +195,7 @@ export function LandingHeader({ isMounted }: { isMounted: boolean }) {
     if (!mobileOpen && pendingScrollRef.current) {
       const target = pendingScrollRef.current;
       pendingScrollRef.current = null;
+      // Small delay to let the fullscreen menu unmount before scrolling
       setTimeout(() => {
         const el = document.querySelector(target);
         if (el) {
@@ -417,32 +223,8 @@ export function LandingHeader({ isMounted }: { isMounted: boolean }) {
         {/* Left: Logo */}
         <Logo />
 
-        {/* Center: Desktop nav */}
+        {/* Center: Desktop nav — simple links, no dropdown */}
         <div className="hidden items-center gap-1 lg:flex">
-          {/* Producto dropdown trigger */}
-          <div className="relative">
-            <button
-              onClick={() => setMegaOpen(!megaOpen)}
-              onMouseEnter={() => setMegaOpen(true)}
-              className={cn(
-                "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                megaOpen
-                  ? "text-primary-600 dark:text-primary-400"
-                  : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white",
-              )}
-            >
-              Producto
-              <ChevronDown
-                className={cn(
-                  "h-3.5 w-3.5 transition-transform duration-200",
-                  megaOpen && "rotate-180",
-                )}
-              />
-            </button>
-            <MegaMenu open={megaOpen} onClose={closeMega} />
-          </div>
-
-          {/* Other links */}
           {navLinks.map((link) => (
             <a
               key={link.label}

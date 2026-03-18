@@ -44,24 +44,24 @@ const productoLinks: FooterLink[] = [
 ];
 
 const solucionesLinks: FooterLink[] = [
-  { label: "Retail", href: "#" },
-  { label: "Distribuci\u00f3n", href: "#" },
-  { label: "Servicios", href: "#" },
-  { label: "Restaurantes", href: "#" },
-  { label: "Contadur\u00eda", href: "#" },
+  { label: "Retail", href: "#features" },
+  { label: "Distribución", href: "#features" },
+  { label: "Servicios", href: "#features" },
+  { label: "Restaurantes", href: "#features" },
+  { label: "Contaduría", href: "#features" },
 ];
 
 const recursosLinks: FooterLink[] = [
-  { label: "Blog", href: "#" },
-  { label: "Centro de Ayuda", href: "#" },
-  { label: "API Docs", href: "#" },
-  { label: "Contacto", href: "#" },
+  { label: "Blog", href: "#empresa" },
+  { label: "Centro de Ayuda", href: "#empresa" },
+  { label: "API Docs", href: "#empresa" },
+  { label: "Contacto", href: "#empresa" },
 ];
 
 const legalLinks: FooterLink[] = [
-  { label: "T\u00e9rminos", href: "#" },
-  { label: "Privacidad", href: "#" },
-  { label: "Cookies", href: "#" },
+  { label: "Términos", href: "#empresa" },
+  { label: "Privacidad", href: "#empresa" },
+  { label: "Cookies", href: "#empresa" },
 ];
 
 const socialLinks = [
@@ -148,8 +148,8 @@ export function LandingFooter() {
             </Link>
 
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
-              La plataforma integral de inventario, facturaci&oacute;n
-              electr&oacute;nica y gesti&oacute;n empresarial dise&ntilde;ada
+              La plataforma integral de inventario, facturación
+              electrónica y gestión empresarial diseñada
               para Colombia.
             </p>
 
@@ -165,7 +165,7 @@ export function LandingFooter() {
               )}
             >
               <MessageCircle className="h-4 w-4" />
-              Escr&iacute;benos por WhatsApp
+              Escríbenos por WhatsApp
             </a>
           </div>
 

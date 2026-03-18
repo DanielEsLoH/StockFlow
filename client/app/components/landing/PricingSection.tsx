@@ -281,7 +281,7 @@ export function PricingSection({
 
                 {/* CTA */}
                 <Link
-                  to="/register"
+                  to={`/register?plan=${plan.name.toLowerCase()}`}
                   className={cn(
                     "mt-8 block rounded-xl px-4 py-3 text-center text-sm font-semibold transition-all",
                     plan.highlighted

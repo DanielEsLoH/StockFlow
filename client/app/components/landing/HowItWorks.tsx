@@ -79,17 +79,17 @@ export function HowItWorks({ isMounted }: { isMounted: boolean }) {
             >
               {/* Connector line between steps */}
               {index < howItWorksSteps.length - 1 && (
-                <div className="absolute left-1/2 top-12 hidden h-0.5 w-full bg-linear-to-r from-primary-300 to-accent-300 dark:from-primary-700 dark:to-accent-700 md:block" />
+                <div className="absolute left-1/2 top-12 hidden h-0.5 w-full bg-gradient-to-r from-primary-300 to-accent-300 dark:from-primary-700 dark:to-accent-700 md:block" />
               )}
 
               {/* Step circle */}
               <div className="relative mx-auto mb-6 flex h-24 w-24 items-center justify-center">
-                <div className="absolute inset-0 rounded-full bg-linear-to-br from-primary-100 to-accent-100 dark:from-primary-900/30 dark:to-accent-900/30" />
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary-100 to-accent-100 dark:from-primary-900/30 dark:to-accent-900/30" />
                 <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md dark:bg-neutral-800">
                   <step.icon className="h-7 w-7 text-primary-500" />
                 </div>
                 {/* Step number badge */}
-                <div className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-r from-primary-500 to-accent-500 text-xs font-bold text-white shadow-sm">
+                <div className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-primary-500 to-accent-500 text-xs font-bold text-white shadow-sm">
                   {step.step}
                 </div>
               </div>

@@ -39,6 +39,8 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
+    // Ensure landing always starts at the top
+    window.scrollTo(0, 0);
   }, []);
 
   return (

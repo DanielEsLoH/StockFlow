@@ -20,6 +20,7 @@ import {
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
+import { DianService } from '../dian/dian.service';
 import { CreateSaleDto, SaleItemDto, SalePaymentDto, CreatePartialReturnDto } from './dto';
 
 /**
@@ -114,6 +115,7 @@ export class POSSalesService {
     private readonly prisma: PrismaService,
     private readonly tenantContext: TenantContextService,
     private readonly accountingBridge: AccountingBridgeService,
+    private readonly dianService: DianService,
   ) {}
 
   /**
@@ -413,6 +415,26 @@ export class POSSalesService {
         `Failed to create accounting entries for POS sale ${sale.saleNumber}: ${error}`,
       );
     }
+
+    // Transmit documento equivalente to DIAN (fire-and-forget)
+    this.dianService
+      .processPOSSale({ invoiceId: sale.invoice.id })
+      .then((result) => {
+        if (result.success) {
+          this.logger.log(
+            `DIAN: POS sale ${sale.saleNumber} transmitted successfully (trackId: ${result.trackId})`,
+          );
+        } else {
+          this.logger.warn(
+            `DIAN: POS sale ${sale.saleNumber} transmission failed: ${result.message}`,
+          );
+        }
+      })
+      .catch((error) => {
+        this.logger.error(
+          `DIAN: Failed to transmit POS sale ${sale.saleNumber}: ${error}`,
+        );
+      });
 
     return this.buildSaleWithDetails(sale);
       } catch (error) {

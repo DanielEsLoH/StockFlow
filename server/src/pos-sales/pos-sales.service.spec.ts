@@ -9,6 +9,7 @@ import { POSSalesService } from './pos-sales.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
+import { DianService } from '../dian/dian.service';
 import {
   POSSessionStatus,
   InvoiceStatus,
@@ -213,12 +214,17 @@ describe('POSSalesService', () => {
       onInvoiceCancelled: jest.fn().mockResolvedValue(undefined),
     };
 
+    const mockDianService = {
+      processPOSSale: jest.fn().mockResolvedValue({ success: true, trackId: 'track-123', message: 'OK' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         POSSalesService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
         { provide: AccountingBridgeService, useValue: mockAccountingBridgeService },
+        { provide: DianService, useValue: mockDianService },
       ],
     }).compile();
 

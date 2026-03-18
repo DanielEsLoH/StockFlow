@@ -1270,7 +1270,7 @@ export class AccountingReportsService {
     });
 
     // Total debit/credit from journal lines
-    const lines = await this.prisma.journalLine.findMany({
+    const lines = await this.prisma.journalEntryLine.findMany({
       where: {
         journalEntry: {
           tenantId,
@@ -1298,7 +1298,7 @@ export class AccountingReportsService {
       const mStart = new Date(year, m, 1);
       const mEnd = new Date(year, m + 1, 1);
 
-      const mLines = await this.prisma.journalLine.findMany({
+      const mLines = await this.prisma.journalEntryLine.findMany({
         where: {
           journalEntry: {
             tenantId,
@@ -1323,8 +1323,8 @@ export class AccountingReportsService {
       });
     }
 
-    // Top 10 accounts by total movement
-    const topAccounts = await this.prisma.journalLine.groupBy({
+    // Top 10 accounts by total debit movement
+    const topAccounts = await this.prisma.journalEntryLine.groupBy({
       by: ['accountId'],
       where: {
         journalEntry: {
@@ -1333,8 +1333,8 @@ export class AccountingReportsService {
         },
       },
       _sum: { debit: true, credit: true },
-      _count: true,
-      orderBy: { _count: { _all: 'desc' } },
+      _count: { accountId: true },
+      orderBy: { _sum: { debit: 'desc' } },
       take: 10,
     });
 
@@ -1352,9 +1352,9 @@ export class AccountingReportsService {
         code: acc?.code || '',
         name: acc?.name || '',
         type: acc?.type || '',
-        totalDebits: Math.round((Number(a._sum.debit) || 0) * 100) / 100,
-        totalCredits: Math.round((Number(a._sum.credit) || 0) * 100) / 100,
-        transactionCount: a._count,
+        totalDebits: Math.round((Number(a._sum?.debit) || 0) * 100) / 100,
+        totalCredits: Math.round((Number(a._sum?.credit) || 0) * 100) / 100,
+        transactionCount: a._count?.accountId ?? 0,
       };
     });
 

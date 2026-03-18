@@ -419,24 +419,12 @@ export class PayrollReportsService {
     const startDate = new Date(year, 0, 1);
     const endDate = new Date(year + 1, 0, 1);
 
-    // Get all periods for the year
+    // Get all periods for the year with entry counts
     const periods = await this.prisma.payrollPeriod.findMany({
       where: {
         tenantId,
         startDate: { gte: startDate },
         endDate: { lt: endDate },
-      },
-      include: {
-        _count: { select: { entries: true } },
-        entries: {
-          select: {
-            basicSalary: true,
-            totalEarnings: true,
-            totalDeductions: true,
-            netPay: true,
-            status: true,
-          },
-        },
       },
       orderBy: { startDate: 'desc' },
     });
@@ -450,7 +438,7 @@ export class PayrollReportsService {
       where: { tenantId },
     });
 
-    // Aggregate totals from approved/closed periods
+    // Aggregate totals from approved/closed periods using pre-calculated fields
     let totalEarnings = 0;
     let totalDeductions = 0;
     let totalNetPay = 0;
@@ -465,15 +453,9 @@ export class PayrollReportsService {
 
     for (const period of periods) {
       const month = period.startDate.getMonth();
-      let monthEarnings = 0;
-      let monthDeductions = 0;
-      let monthNetPay = 0;
-
-      for (const entry of period.entries) {
-        monthEarnings += Number(entry.totalEarnings) || 0;
-        monthDeductions += Number(entry.totalDeductions) || 0;
-        monthNetPay += Number(entry.netPay) || 0;
-      }
+      const monthEarnings = Number(period.totalDevengados) || 0;
+      const monthDeductions = Number(period.totalDeducciones) || 0;
+      const monthNetPay = Number(period.totalNeto) || 0;
 
       if (
         period.status === 'APPROVED' ||
@@ -500,7 +482,7 @@ export class PayrollReportsService {
       status: p.status,
       startDate: p.startDate,
       endDate: p.endDate,
-      entriesCount: p._count.entries,
+      entriesCount: p.employeeCount,
     }));
 
     return {

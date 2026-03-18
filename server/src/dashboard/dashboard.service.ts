@@ -1417,7 +1417,7 @@ export class DashboardService {
       this.prisma.customer.count({ where: { tenantId } }),
       this.prisma.account.count({ where: { tenantId } }),
       this.prisma.accountingConfig.findUnique({ where: { tenantId } }),
-      this.prisma.dianConfig.findFirst({ where: { tenantId } }),
+      this.prisma.tenantDianConfig.findFirst({ where: { tenantId } }),
       this.prisma.employee.count({ where: { tenantId } }),
     ]);
 

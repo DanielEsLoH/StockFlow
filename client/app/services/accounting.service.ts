@@ -338,4 +338,11 @@ export const accountingService = {
     });
     return { blob: data, fileName: `exogena-${year}.xlsx` };
   },
+
+  async getDashboard(year: number) {
+    const { data } = await api.get(`/accounting/reports/dashboard`, {
+      params: { year },
+    });
+    return data;
+  },
 };

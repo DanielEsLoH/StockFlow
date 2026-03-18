@@ -57,4 +57,14 @@ export class PayrollReportsController {
   ) {
     return this.reportsService.getEmployeeYtdReport(employeeId, year);
   }
+
+  @Get('dashboard')
+  @RequirePermissions(Permission.PAYROLL_VIEW)
+  @ApiOperation({ summary: 'Dashboard de nómina con métricas agregadas' })
+  @ApiQuery({ name: 'year', type: Number, required: false, description: 'Año (default: actual)' })
+  async getDashboard(
+    @Query('year') year?: number,
+  ) {
+    return this.reportsService.getDashboard(year || new Date().getFullYear());
+  }
 }

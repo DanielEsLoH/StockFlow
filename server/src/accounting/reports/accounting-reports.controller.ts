@@ -204,6 +204,15 @@ export class AccountingReportsController {
     return this.exogenaService.generateExogena(year);
   }
 
+  @Get('dashboard')
+  @RequirePermissions(Permission.ACCOUNTING_VIEW)
+  @ApiOperation({ summary: 'Dashboard contable con métricas agregadas' })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Año (default: actual)' })
+  async getDashboard(@Query('year') year?: string) {
+    const y = year ? parseInt(year, 10) : new Date().getFullYear();
+    return this.reportsService.getDashboard(y);
+  }
+
   // ─── PRIVATE HELPERS ──────────────────────────────────────────
 
   private parseDate(dateStr: string): Date {

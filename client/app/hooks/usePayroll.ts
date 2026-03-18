@@ -341,3 +341,12 @@ export function useUpdatePayrollEntry() {
     },
   });
 }
+
+export function usePayrollDashboard(year: number) {
+  const enabled = useIsQueryEnabled();
+  return useQuery({
+    queryKey: [...queryKeys.payrollPeriods.all, "dashboard", year],
+    queryFn: () => payrollService.getDashboard(year),
+    enabled,
+  });
+}

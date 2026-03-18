@@ -409,4 +409,117 @@ export class PayrollReportsService {
       },
     };
   }
+
+  /**
+   * Dashboard with aggregated payroll metrics for the year.
+   */
+  async getDashboard(year: number) {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const startDate = new Date(year, 0, 1);
+    const endDate = new Date(year + 1, 0, 1);
+
+    // Get all periods for the year
+    const periods = await this.prisma.payrollPeriod.findMany({
+      where: {
+        tenantId,
+        startDate: { gte: startDate },
+        endDate: { lt: endDate },
+      },
+      include: {
+        _count: { select: { entries: true } },
+        entries: {
+          select: {
+            basicSalary: true,
+            totalEarnings: true,
+            totalDeductions: true,
+            netPay: true,
+            status: true,
+          },
+        },
+      },
+      orderBy: { startDate: 'desc' },
+    });
+
+    // Active employees count
+    const activeEmployees = await this.prisma.employee.count({
+      where: { tenantId, status: 'ACTIVE' },
+    });
+
+    const totalEmployees = await this.prisma.employee.count({
+      where: { tenantId },
+    });
+
+    // Aggregate totals from approved/closed periods
+    let totalEarnings = 0;
+    let totalDeductions = 0;
+    let totalNetPay = 0;
+    let approvedPeriods = 0;
+
+    const monthlyTotals: {
+      month: number;
+      earnings: number;
+      deductions: number;
+      netPay: number;
+    }[] = [];
+
+    for (const period of periods) {
+      const month = period.startDate.getMonth();
+      let monthEarnings = 0;
+      let monthDeductions = 0;
+      let monthNetPay = 0;
+
+      for (const entry of period.entries) {
+        monthEarnings += Number(entry.totalEarnings) || 0;
+        monthDeductions += Number(entry.totalDeductions) || 0;
+        monthNetPay += Number(entry.netPay) || 0;
+      }
+
+      if (
+        period.status === 'APPROVED' ||
+        period.status === 'CLOSED'
+      ) {
+        totalEarnings += monthEarnings;
+        totalDeductions += monthDeductions;
+        totalNetPay += monthNetPay;
+        approvedPeriods++;
+      }
+
+      monthlyTotals.push({
+        month,
+        earnings: Math.round(monthEarnings * 100) / 100,
+        deductions: Math.round(monthDeductions * 100) / 100,
+        netPay: Math.round(monthNetPay * 100) / 100,
+      });
+    }
+
+    // Recent periods summary
+    const recentPeriods = periods.slice(0, 6).map((p) => ({
+      id: p.id,
+      name: p.name,
+      status: p.status,
+      startDate: p.startDate,
+      endDate: p.endDate,
+      entriesCount: p._count.entries,
+    }));
+
+    return {
+      year,
+      activeEmployees,
+      totalEmployees,
+      periodsCount: periods.length,
+      approvedPeriods,
+      totals: {
+        earnings: Math.round(totalEarnings * 100) / 100,
+        deductions: Math.round(totalDeductions * 100) / 100,
+        netPay: Math.round(totalNetPay * 100) / 100,
+      },
+      averagePayroll:
+        approvedPeriods > 0
+          ? Math.round((totalNetPay / approvedPeriods) * 100) / 100
+          : 0,
+      monthlyTotals,
+      recentPeriods,
+    };
+  }
 }

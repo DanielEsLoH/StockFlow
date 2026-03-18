@@ -166,4 +166,11 @@ export const payrollService = {
     );
     return data;
   },
+
+  async getDashboard(year: number) {
+    const { data } = await api.get(`/payroll/reports/dashboard`, {
+      params: { year },
+    });
+    return data;
+  },
 };

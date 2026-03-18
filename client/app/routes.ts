@@ -218,6 +218,13 @@ export default [
     route("payroll/periods/:id", "routes/_app.payroll.periods.$id.tsx"),
     route("payroll/entries/:id", "routes/_app.payroll.entries.$id.tsx"),
     route("payroll/config", "routes/_app.payroll.config.tsx"),
+    route("payroll/dashboard", "routes/_app.payroll.dashboard.tsx"),
+
+    // Accounting dashboard
+    route(
+      "accounting/dashboard",
+      "routes/_app.accounting.dashboard.tsx",
+    ),
 
     // Cost Centers module
     route("cost-centers", "routes/_app.cost-centers.tsx"),

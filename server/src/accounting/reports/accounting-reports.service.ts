@@ -1251,4 +1251,124 @@ export class AccountingReportsService {
     const to = new Date(year, startMonth + 2, 0, 23, 59, 59, 999);
     return { from, to, label: `${periodNames[period - 1]} ${year}` };
   }
+
+  /**
+   * Dashboard with aggregated accounting metrics for the year.
+   */
+  async getDashboard(year: number) {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    const startDate = new Date(year, 0, 1);
+    const endDate = new Date(year + 1, 0, 1);
+
+    // Total journal entries this year
+    const entriesCount = await this.prisma.journalEntry.count({
+      where: {
+        tenantId,
+        date: { gte: startDate, lt: endDate },
+      },
+    });
+
+    // Total debit/credit from journal lines
+    const lines = await this.prisma.journalLine.findMany({
+      where: {
+        journalEntry: {
+          tenantId,
+          date: { gte: startDate, lt: endDate },
+        },
+      },
+      select: { debit: true, credit: true },
+    });
+
+    let totalDebits = 0;
+    let totalCredits = 0;
+    for (const line of lines) {
+      totalDebits += Number(line.debit) || 0;
+      totalCredits += Number(line.credit) || 0;
+    }
+
+    // Accounts count
+    const accountsCount = await this.prisma.account.count({
+      where: { tenantId },
+    });
+
+    // Monthly entry counts for chart
+    const monthlyEntries: { month: number; count: number; debits: number; credits: number }[] = [];
+    for (let m = 0; m < 12; m++) {
+      const mStart = new Date(year, m, 1);
+      const mEnd = new Date(year, m + 1, 1);
+
+      const mLines = await this.prisma.journalLine.findMany({
+        where: {
+          journalEntry: {
+            tenantId,
+            date: { gte: mStart, lt: mEnd },
+          },
+        },
+        select: { debit: true, credit: true },
+      });
+
+      let mDebits = 0;
+      let mCredits = 0;
+      for (const l of mLines) {
+        mDebits += Number(l.debit) || 0;
+        mCredits += Number(l.credit) || 0;
+      }
+
+      monthlyEntries.push({
+        month: m,
+        count: mLines.length,
+        debits: Math.round(mDebits * 100) / 100,
+        credits: Math.round(mCredits * 100) / 100,
+      });
+    }
+
+    // Top 10 accounts by total movement
+    const topAccounts = await this.prisma.journalLine.groupBy({
+      by: ['accountId'],
+      where: {
+        journalEntry: {
+          tenantId,
+          date: { gte: startDate, lt: endDate },
+        },
+      },
+      _sum: { debit: true, credit: true },
+      _count: true,
+      orderBy: { _count: { _all: 'desc' } },
+      take: 10,
+    });
+
+    const accountIds = topAccounts.map((a) => a.accountId);
+    const accounts = await this.prisma.account.findMany({
+      where: { id: { in: accountIds } },
+      select: { id: true, code: true, name: true, type: true },
+    });
+    const accountMap = new Map(accounts.map((a) => [a.id, a]));
+
+    const topAccountsWithNames = topAccounts.map((a) => {
+      const acc = accountMap.get(a.accountId);
+      return {
+        accountId: a.accountId,
+        code: acc?.code || '',
+        name: acc?.name || '',
+        type: acc?.type || '',
+        totalDebits: Math.round((Number(a._sum.debit) || 0) * 100) / 100,
+        totalCredits: Math.round((Number(a._sum.credit) || 0) * 100) / 100,
+        transactionCount: a._count,
+      };
+    });
+
+    return {
+      year,
+      entriesCount,
+      accountsCount,
+      totals: {
+        debits: Math.round(totalDebits * 100) / 100,
+        credits: Math.round(totalCredits * 100) / 100,
+        balanced: Math.abs(totalDebits - totalCredits) < 0.01,
+      },
+      monthlyEntries,
+      topAccounts: topAccountsWithNames,
+    };
+  }
 }

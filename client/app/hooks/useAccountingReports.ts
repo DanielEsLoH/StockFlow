@@ -153,3 +153,13 @@ export function useExogena(year: number) {
     enabled: enabled && year > 0,
   });
 }
+
+export function useAccountingDashboard(year: number) {
+  const enabled = useIsQueryEnabled();
+  return useQuery({
+    queryKey: [...queryKeys.accounting.all, "dashboard", year],
+    queryFn: () => accountingService.getDashboard(year),
+    staleTime: 1000 * 60 * 5,
+    enabled: enabled && year > 0,
+  });
+}

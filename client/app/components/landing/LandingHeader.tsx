@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -27,10 +28,11 @@ export function handleScrollToSection(
 ): void {
   if (href.startsWith("#")) {
     e.preventDefault();
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-      onScrollComplete?.();
+    onScrollComplete?.();
+    const el = document.querySelector(href);
+    if (el) {
+      const y = el.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: y, behavior: "smooth" });
     }
   }
 }
@@ -51,43 +53,43 @@ const productCategories: ProductCategory[] = [
     icon: Package,
     name: "Inventario",
     description: "Control de stock multi-bodega en tiempo real",
-    href: "#inventario",
+    href: "#features",
   },
   {
     icon: FileText,
     name: "Ventas",
     description: "Facturacion electronica y cotizaciones",
-    href: "#ventas",
+    href: "#features",
   },
   {
     icon: ShoppingCart,
     name: "Compras",
     description: "Ordenes de compra y gestion de proveedores",
-    href: "#compras",
+    href: "#features",
   },
   {
     icon: BookOpen,
     name: "Contabilidad",
     description: "Libros contables y reportes financieros",
-    href: "#contabilidad",
+    href: "#features",
   },
   {
     icon: MonitorSmartphone,
     name: "POS",
     description: "Punto de venta rapido y sin conexion",
-    href: "#pos",
+    href: "#features",
   },
   {
     icon: UserCheck,
     name: "Nomina",
     description: "Liquidacion de nomina y seguridad social",
-    href: "#nomina",
+    href: "#features",
   },
   {
     icon: Settings,
     name: "Administracion",
     description: "Roles, permisos y configuracion global",
-    href: "#administracion",
+    href: "#features",
   },
 ];
 
@@ -208,34 +210,32 @@ function MobileMenu({
   onClose,
 }: {
   open: boolean;
-  onClose: () => void;
+  onClose: (scrollTarget?: string) => void;
 }) {
   const [productOpen, setProductOpen] = useState(false);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
 
-  return (
-    <AnimatePresence>
-      {open && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-            onClick={onClose}
-          />
+  useEffect(() => {
+    setPortalContainer(document.body);
+  }, []);
 
-          {/* Panel */}
-          <motion.div
-            initial={{ opacity: 0, x: "100%" }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed inset-y-0 right-0 z-50 w-full max-w-sm
-                       overflow-y-auto border-l border-neutral-200/60
-                       bg-white dark:border-neutral-700/60 dark:bg-neutral-900"
-          >
+  if (!open) return null;
+  if (!portalContainer) return null;
+
+  return createPortal(
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[9998] bg-black/40"
+        onClick={onClose}
+      />
+
+      {/* Panel — no framer motion, instant render */}
+      <div
+        className="fixed inset-0 z-[9999]
+                   overflow-y-auto
+                   bg-white dark:bg-neutral-900"
+      >
             {/* Panel header */}
             <div className="flex h-16 items-center justify-between px-5">
               <Logo />
@@ -279,13 +279,11 @@ function MobileMenu({
                     >
                       <div className="space-y-1 pb-2 pl-3 pt-1">
                         {productCategories.map((cat) => (
-                          <a
+                          <button
                             key={cat.name}
-                            href={cat.href}
-                            onClick={(e) =>
-                              handleScrollToSection(e, cat.href, onClose)
-                            }
-                            className="flex items-center gap-3 rounded-lg px-3 py-2
+                            type="button"
+                            onClick={() => onClose(cat.href)}
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2
                                        text-sm text-neutral-600 transition-colors
                                        hover:bg-neutral-50 hover:text-neutral-900
                                        dark:text-neutral-400 dark:hover:bg-neutral-800/60
@@ -293,7 +291,7 @@ function MobileMenu({
                           >
                             <cat.icon className="h-4 w-4 shrink-0 text-primary-500" />
                             <span>{cat.name}</span>
-                          </a>
+                          </button>
                         ))}
                       </div>
                     </motion.div>
@@ -303,18 +301,16 @@ function MobileMenu({
 
               {/* Other links */}
               {navLinks.map((link) => (
-                <a
+                <button
                   key={link.label}
-                  href={link.href}
-                  onClick={(e) =>
-                    handleScrollToSection(e, link.href, onClose)
-                  }
-                  className="block rounded-xl px-3 py-2.5 text-sm font-medium
+                  type="button"
+                  onClick={() => onClose(link.href)}
+                  className="block w-full text-left rounded-xl px-3 py-2.5 text-sm font-medium
                              text-neutral-700 transition-colors hover:bg-neutral-50
                              dark:text-neutral-200 dark:hover:bg-neutral-800/60"
                 >
                   {link.label}
-                </a>
+                </button>
               ))}
 
               {/* Divider */}
@@ -341,10 +337,9 @@ function MobileMenu({
                 Empieza Gratis
               </Link>
             </nav>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          </div>
+        </>,
+    portalContainer,
   );
 }
 
@@ -378,28 +373,41 @@ export function LandingHeader({ isMounted }: { isMounted: boolean }) {
     return () => window.removeEventListener("resize", onResize);
   }, [mobileOpen]);
 
-  // Lock body scroll when mobile menu is open
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [mobileOpen]);
+  // No body scroll lock needed — fullscreen menu covers everything
 
   const closeMega = useCallback(() => setMegaOpen(false), []);
-  const closeMobile = useCallback(() => setMobileOpen(false), []);
+  const pendingScrollRef = useRef<string | null>(null);
+
+  const closeMobile = useCallback((scrollTarget?: string) => {
+    if (scrollTarget) {
+      pendingScrollRef.current = scrollTarget;
+    }
+    setMobileOpen(false);
+  }, []);
+
+  // Handle pending scroll after menu closes
+  useEffect(() => {
+    if (!mobileOpen && pendingScrollRef.current) {
+      const target = pendingScrollRef.current;
+      pendingScrollRef.current = null;
+      setTimeout(() => {
+        const el = document.querySelector(target);
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top: y, behavior: "smooth" });
+        }
+      }, 100);
+    }
+  }, [mobileOpen]);
 
   return (
     <motion.header
       initial={isMounted ? { y: -20, opacity: 0 } : false}
-      animate={{ y: 0, opacity: 1 }}
+      animate={{ y: 0, opacity: mobileOpen ? 0 : 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
       className={cn(
         "fixed inset-x-0 top-0 z-50 h-16 transition-all duration-300",
+        mobileOpen && "pointer-events-none",
         scrolled
           ? "border-b border-neutral-200/60 bg-white/80 shadow-sm shadow-neutral-900/5 backdrop-blur-lg dark:border-neutral-700/50 dark:bg-neutral-900/80 dark:shadow-black/10"
           : "bg-transparent",

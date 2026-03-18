@@ -129,7 +129,7 @@ export function PricingSection({
 }) {
   return (
     <section
-      id="pricing"
+      id="precios"
       className="bg-white py-20 sm:py-28 dark:bg-neutral-950"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

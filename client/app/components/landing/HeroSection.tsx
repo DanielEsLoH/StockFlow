@@ -1,5 +1,6 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, ChevronRight, Play } from "lucide-react";
 import { cn } from "~/lib/utils";
 
@@ -18,6 +19,44 @@ const staggerContainer = {
     },
   },
 };
+
+const modules = [
+  "Inventario",
+  "Facturación DIAN",
+  "Punto de Venta",
+  "Contabilidad",
+  "Nómina Electrónica",
+  "Compras",
+];
+
+function TypingModule({ isMounted }: { isMounted: boolean }) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % modules.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [isMounted]);
+
+  return (
+    <span className="inline-block min-w-[200px] sm:min-w-[280px]">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={modules[index]}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="inline-block bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent dark:from-primary-400 dark:to-accent-400"
+        >
+          {modules[index]}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
 
 export function HeroSection({ isMounted }: { isMounted: boolean }) {
   return (
@@ -61,28 +100,34 @@ export function HeroSection({ isMounted }: { isMounted: boolean }) {
                 )}
               >
                 <ShieldCheck className="h-4 w-4" />
-                Proveedor Tecnológico DIAN
+                Proveedor Tecnológico Autorizado DIAN
               </span>
             </motion.div>
 
-            {/* Headline */}
+            {/* Headline with typing animation */}
             <motion.h1
               variants={fadeInUp}
               className="font-display text-4xl font-extrabold tracking-tight text-neutral-900 sm:text-5xl lg:text-6xl dark:text-white"
             >
-              Tu negocio, bajo{" "}
-              <span className="bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent dark:from-primary-400 dark:to-accent-400">
-                control total
-              </span>
+              Todo tu negocio en un solo lugar
             </motion.h1>
 
-            {/* Subheadline - keyword middot list */}
+            {/* Animated module name */}
+            <motion.div
+              variants={fadeInUp}
+              className="mt-4 font-display text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl"
+            >
+              <TypingModule isMounted={isMounted} />
+            </motion.div>
+
+            {/* Subheadline */}
             <motion.p
               variants={fadeInUp}
-              className="mt-5 text-base font-medium tracking-wide text-neutral-500 sm:text-lg dark:text-neutral-400"
+              className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-neutral-600 sm:text-lg dark:text-neutral-400"
             >
-              Inventario &middot; Facturación DIAN &middot; POS &middot;
-              Contabilidad &middot; Nómina
+              La plataforma integral para PYMEs colombianas. Gestiona inventario,
+              factura electrónicamente ante la DIAN, vende desde tu punto de venta
+              y lleva tu contabilidad — todo conectado.
             </motion.p>
 
             {/* CTAs */}
@@ -101,7 +146,7 @@ export function HeroSection({ isMounted }: { isMounted: boolean }) {
                   "dark:shadow-primary-900/30",
                 )}
               >
-                Empieza Gratis
+                Empieza Gratis — 15 días
                 <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
               </Link>
 
@@ -126,8 +171,7 @@ export function HeroSection({ isMounted }: { isMounted: boolean }) {
               variants={fadeInUp}
               className="mt-8 text-sm text-neutral-400 dark:text-neutral-500"
             >
-              Más de 500 empresas colombianas confían en StockFlow &middot; Sin
-              tarjeta de crédito
+              Sin tarjeta de crédito &middot; Configuración en minutos &middot; Soporte incluido
             </motion.p>
           </motion.div>
 

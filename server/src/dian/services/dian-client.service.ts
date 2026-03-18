@@ -254,7 +254,45 @@ export class DianClientService {
 
   // HTTP request handler
 
+  private readonly maxRetries = 3;
+  private readonly retryBaseDelayMs = 1000;
+
   private async sendSoapRequest(
+    endpoint: string,
+    soapEnvelope: string,
+    action: string,
+  ): Promise<string> {
+    let lastError: Error | undefined;
+
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        return await this.doSoapRequest(endpoint, soapEnvelope, action);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        const isRetryable =
+          lastError.message.includes('timeout') ||
+          lastError.message.includes('ECONNRESET') ||
+          lastError.message.includes('ECONNREFUSED') ||
+          lastError.message.includes('ETIMEDOUT') ||
+          lastError.message.includes('HTTP 5');
+
+        if (!isRetryable || attempt === this.maxRetries) {
+          throw lastError;
+        }
+
+        const delay =
+          this.retryBaseDelayMs * Math.pow(2, attempt);
+        this.logger.warn(
+          `DIAN request failed (attempt ${attempt + 1}/${this.maxRetries + 1}), retrying in ${delay}ms: ${lastError.message}`,
+        );
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+
+    throw lastError;
+  }
+
+  private doSoapRequest(
     endpoint: string,
     soapEnvelope: string,
     action: string,

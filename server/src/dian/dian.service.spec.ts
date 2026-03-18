@@ -140,6 +140,9 @@ describe('DianService', () => {
       stockMovement: {
         create: jest.fn().mockResolvedValue({}),
       },
+      accountingConfig: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
       $transaction: jest.fn().mockImplementation((args: unknown) => {
         if (Array.isArray(args)) return Promise.all(args);
         return (args as (prisma: any) => Promise<any>)(mockPrismaService);
@@ -517,12 +520,13 @@ describe('DianService', () => {
         '123456789',
       );
 
-      // Verify XML generation
+      // Verify XML generation (withholdings: [] when no accounting config)
       expect(xmlGenerator.generateInvoiceXml).toHaveBeenCalledWith({
         dianConfig: mockDianConfig,
         invoice: mockInvoice,
         cufe: 'cufe-generated',
         qrCode: 'qrcode-generated',
+        withholdings: [],
       });
 
       // Verify document record creation

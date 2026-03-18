@@ -81,6 +81,8 @@ describe('DianClientService', () => {
     }).compile();
 
     service = module.get<DianClientService>(DianClientService);
+    // Disable retry delays in tests
+    (service as any).retryBaseDelayMs = 0;
 
     // Suppress logger output during tests
     jest.spyOn(Logger.prototype, 'log').mockImplementation();

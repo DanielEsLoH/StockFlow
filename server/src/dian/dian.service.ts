@@ -9,6 +9,7 @@ import { TenantContextService } from '../common';
 import {
   XmlGeneratorService,
   InvoiceWithDetails,
+  WithholdingTax,
 } from './services/xml-generator.service';
 import { CufeGeneratorService } from './services/cufe-generator.service';
 import { DianClientService } from './services/dian-client.service';
@@ -357,12 +358,20 @@ export class DianService {
       customerDocument,
     );
 
+    // Calculate withholding taxes from accounting config
+    const withholdings = await this.calculateWithholdings(
+      tenantId,
+      Number(invoice.subtotal) || 0,
+      Number(invoice.tax) || 0,
+    );
+
     // Generate XML
     const xml = this.xmlGenerator.generateInvoiceXml({
       dianConfig: config,
       invoice,
       cufe,
       qrCode,
+      withholdings,
     });
 
     // Determine document type based on export flag
@@ -556,6 +565,13 @@ export class DianService {
     // Generate QR code data for credit note
     const qrCode = `NumFac: ${noteNumber}\nFecFac: ${issueDate.toISOString().split('T')[0]}\nNitFac: ${config.nit}\nDocAdq: ${customerDocument}\nValFac: ${Number(noteInvoice.total).toFixed(2)}\nCUDE: ${cude}\nQRCode: https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=${cude}`;
 
+    // Calculate withholdings for credit note
+    const cnWithholdings = await this.calculateWithholdings(
+      tenantId,
+      Number(noteInvoice.subtotal) || 0,
+      Number(noteInvoice.tax) || 0,
+    );
+
     // Generate XML with dynamic responseCode
     const xml = this.xmlGenerator.generateCreditNoteXml(
       {
@@ -563,6 +579,7 @@ export class DianService {
         invoice: { ...noteInvoice, invoiceNumber: noteNumber } as any,
         cufe: cude,
         qrCode,
+        withholdings: cnWithholdings,
       },
       invoice,
       dto.reason,
@@ -740,6 +757,13 @@ export class DianService {
 
     const qrCode = `NumFac: ${noteNumber}\nFecFac: ${new Date().toISOString().split('T')[0]}\nNitFac: ${config.nit}\nDocAdq: ${customerDocument}\nValFac: ${total.toFixed(2)}\nCUDE: ${cude}\nQRCode: https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=${cude}`;
 
+    // Calculate withholdings for debit note
+    const dnWithholdings = await this.calculateWithholdings(
+      tenantId,
+      subtotal,
+      totalTax,
+    );
+
     // Generate XML — use a synthetic "invoice" with the note number
     const xml = this.xmlGenerator.generateDebitNoteXml(
       {
@@ -747,6 +771,7 @@ export class DianService {
         invoice: { ...invoice, invoiceNumber: noteNumber } as any,
         cufe: cude,
         qrCode,
+        withholdings: dnWithholdings,
       },
       invoice,
       dto.reason,
@@ -955,12 +980,20 @@ export class DianService {
       customerDocument,
     );
 
+    // Calculate withholdings for POS document
+    const posWithholdings = await this.calculateWithholdings(
+      tenantId,
+      Number(invoice.subtotal) || 0,
+      Number(invoice.tax) || 0,
+    );
+
     // Generate Documento Equivalente XML
     const xml = this.xmlGenerator.generateDocumentoEquivalenteXml({
       dianConfig: config,
       invoice: { ...invoice, invoiceNumber: documentNumber } as any,
       cufe: cude,
       qrCode,
+      withholdings: posWithholdings,
     });
 
     // Create document record
@@ -1148,6 +1181,13 @@ export class DianService {
     // Generate QR code data
     const qrCode = `NumFac: ${noteNumber}\nFecFac: ${issueDate.toISOString().split('T')[0]}\nNitFac: ${config.nit}\nDocAdq: ${customerDocument}\nValFac: ${Number(noteInvoice.total).toFixed(2)}\nCUDE: ${cude}\nQRCode: https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=${cude}`;
 
+    // Calculate withholdings for nota de ajuste
+    const naWithholdings = await this.calculateWithholdings(
+      tenantId,
+      Number(noteInvoice.subtotal) || 0,
+      Number(noteInvoice.tax) || 0,
+    );
+
     // Generate Nota de Ajuste XML
     const xml = this.xmlGenerator.generateNotaAjusteXml(
       {
@@ -1155,6 +1195,7 @@ export class DianService {
         invoice: { ...noteInvoice, invoiceNumber: noteNumber } as any,
         cufe: cude,
         qrCode,
+        withholdings: naWithholdings,
       },
       {
         documentNumber: originalDoc.documentNumber,
@@ -1792,5 +1833,66 @@ export class DianService {
       remainingNumbers,
       acceptanceRate: total > 0 ? ((accepted / total) * 100).toFixed(1) : 0,
     };
+  }
+
+  /**
+   * Calculate withholding taxes from AccountingConfig for XML generation.
+   * Returns only applicable withholdings (enabled + amount exceeds min base).
+   */
+  private async calculateWithholdings(
+    tenantId: string,
+    subtotal: number,
+    tax: number,
+  ): Promise<WithholdingTax[]> {
+    const config = await this.prisma.accountingConfig.findUnique({
+      where: { tenantId },
+    });
+
+    if (!config) return [];
+
+    const withholdings: WithholdingTax[] = [];
+
+    // ReteFuente (code 06) — applies on subtotal
+    const reteFuenteRate = Number(config.reteFuentePurchaseRate) || 0;
+    const reteFuenteMinBase = Number(config.reteFuenteMinBase) || 0;
+    if (reteFuenteRate > 0 && subtotal >= reteFuenteMinBase) {
+      withholdings.push({
+        schemeId: '06',
+        schemeName: 'ReteRenta',
+        taxableAmount: subtotal,
+        taxAmount: Math.round(subtotal * reteFuenteRate * 100) / 100,
+        percent: reteFuenteRate * 100,
+      });
+    }
+
+    // ReteICA (code 05) — applies on subtotal
+    const reteIcaEnabled = config.reteIcaEnabled;
+    const reteIcaRate = Number(config.reteIcaRate) || 0;
+    const reteIcaMinBase = Number(config.reteIcaMinBase) || 0;
+    if (reteIcaEnabled && reteIcaRate > 0 && subtotal >= reteIcaMinBase) {
+      withholdings.push({
+        schemeId: '05',
+        schemeName: 'ReteICA',
+        taxableAmount: subtotal,
+        taxAmount: Math.round(subtotal * reteIcaRate * 100) / 100,
+        percent: reteIcaRate * 100,
+      });
+    }
+
+    // ReteIVA (code 07) — applies on IVA amount
+    const reteIvaEnabled = config.reteIvaEnabled;
+    const reteIvaRate = Number(config.reteIvaRate) || 0;
+    const reteIvaMinBase = Number(config.reteIvaMinBase) || 0;
+    if (reteIvaEnabled && reteIvaRate > 0 && tax >= reteIvaMinBase) {
+      withholdings.push({
+        schemeId: '07',
+        schemeName: 'ReteIVA',
+        taxableAmount: tax,
+        taxAmount: Math.round(tax * reteIvaRate * 100) / 100,
+        percent: reteIvaRate * 100,
+      });
+    }
+
+    return withholdings;
   }
 }

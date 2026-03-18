@@ -19,11 +19,26 @@ export interface InvoiceWithDetails extends Invoice {
   items: InvoiceItemWithProduct[];
 }
 
+export interface WithholdingTax {
+  /** DIAN tax scheme ID: 06=ReteFuente, 05=ReteICA, 07=ReteIVA */
+  schemeId: string;
+  /** DIAN tax scheme name */
+  schemeName: string;
+  /** Taxable base amount */
+  taxableAmount: number;
+  /** Calculated withholding amount */
+  taxAmount: number;
+  /** Withholding rate as percentage (e.g. 2.5 for 2.5%) */
+  percent: number;
+}
+
 export interface XmlGeneratorConfig {
   dianConfig: TenantDianConfig;
   invoice: InvoiceWithDetails;
   cufe: string;
   qrCode: string;
+  /** Optional withholding taxes (ReteFuente, ReteICA, ReteIVA) */
+  withholdings?: WithholdingTax[];
 }
 
 export interface DebitNoteItem {
@@ -99,7 +114,7 @@ export class XmlGeneratorService {
    * Generate UBL 2.1 XML for an electronic invoice
    */
   generateInvoiceXml(config: XmlGeneratorConfig): string {
-    const { dianConfig, invoice, cufe, qrCode } = config;
+    const { dianConfig, invoice, cufe, qrCode, withholdings } = config;
 
     this.logger.log(`Generating XML for invoice ${invoice.invoiceNumber}`);
 
@@ -144,7 +159,7 @@ export class XmlGeneratorService {
     </ext:UBLExtension>
   </ext:UBLExtensions>
   <cbc:UBLVersionID>UBL 2.1</cbc:UBLVersionID>
-  <cbc:CustomizationID>10</cbc:CustomizationID>
+  <cbc:CustomizationID>${invoice.isExport ? '32' : '10'}</cbc:CustomizationID>
   <cbc:ProfileID>DIAN 2.1</cbc:ProfileID>
   <cbc:ProfileExecutionID>${dianConfig.testMode ? '2' : '1'}</cbc:ProfileExecutionID>
   <cbc:ID>${invoice.invoiceNumber}</cbc:ID>
@@ -152,14 +167,15 @@ export class XmlGeneratorService {
   <cbc:IssueDate>${this.formatDate(issueDate)}</cbc:IssueDate>
   <cbc:IssueTime>${this.formatTime(issueDate)}</cbc:IssueTime>
   <cbc:DueDate>${this.formatDate(dueDate)}</cbc:DueDate>
-  <cbc:InvoiceTypeCode>01</cbc:InvoiceTypeCode>
-  <cbc:Note>${invoice.notes || 'Factura electronica'}</cbc:Note>
-  <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
+  <cbc:InvoiceTypeCode>${invoice.isExport ? '02' : '01'}</cbc:InvoiceTypeCode>
+  <cbc:Note>${invoice.notes || (invoice.isExport ? 'Factura de exportacion' : 'Factura electronica')}</cbc:Note>
+  <cbc:DocumentCurrencyCode>${invoice.isExport && invoice.currency ? invoice.currency : 'COP'}</cbc:DocumentCurrencyCode>
   <cbc:LineCountNumeric>${invoice.items.length}</cbc:LineCountNumeric>
 ${this.generateSupplierParty(dianConfig)}
 ${this.generateCustomerParty(invoice.customer)}
 ${this.generatePaymentMeans(invoice)}
 ${this.generateTaxTotal(invoice)}
+${this.generateWithholdingTaxTotals(withholdings)}
 ${this.generateLegalMonetaryTotal(invoice)}
 ${this.generateInvoiceLines(invoice.items)}
 </Invoice>`;
@@ -176,7 +192,7 @@ ${this.generateInvoiceLines(invoice.items)}
     reason: string,
     reasonCode: CreditNoteReason,
   ): string {
-    const { dianConfig, invoice, cufe, qrCode } = config;
+    const { dianConfig, invoice, cufe, qrCode, withholdings } = config;
     const responseCode = CREDIT_NOTE_RESPONSE_CODES[reasonCode];
 
     this.logger.log(
@@ -234,6 +250,7 @@ ${this.generateInvoiceLines(invoice.items)}
 ${this.generateSupplierParty(dianConfig)}
 ${this.generateCustomerParty(invoice.customer)}
 ${this.generateTaxTotal(invoice)}
+${this.generateWithholdingTaxTotals(withholdings)}
 ${this.generateLegalMonetaryTotal(invoice)}
 ${this.generateCreditNoteLines(invoice.items)}
 </CreditNote>`;
@@ -251,7 +268,7 @@ ${this.generateCreditNoteLines(invoice.items)}
     reasonCode: DebitNoteReason,
     items: DebitNoteItem[],
   ): string {
-    const { dianConfig, invoice, cufe, qrCode } = config;
+    const { dianConfig, invoice, cufe, qrCode, withholdings } = config;
     const responseCode = DEBIT_NOTE_RESPONSE_CODES[reasonCode];
 
     this.logger.log(
@@ -333,6 +350,7 @@ ${this.generateCustomerParty(originalInvoice.customer)}
       </cac:TaxCategory>
     </cac:TaxSubtotal>
   </cac:TaxTotal>
+${this.generateWithholdingTaxTotals(withholdings)}
   <cac:RequestedMonetaryTotal>
     <cbc:LineExtensionAmount currencyID="COP">${subtotal.toFixed(2)}</cbc:LineExtensionAmount>
     <cbc:TaxExclusiveAmount currencyID="COP">${subtotal.toFixed(2)}</cbc:TaxExclusiveAmount>
@@ -349,7 +367,7 @@ ${this.generateDebitNoteLines(items)}
    * Generate UBL 2.1 XML for a POS electronic equivalent document (Documento Equivalente)
    */
   generateDocumentoEquivalenteXml(config: XmlGeneratorConfig): string {
-    const { dianConfig, invoice, cufe, qrCode } = config;
+    const { dianConfig, invoice, cufe, qrCode, withholdings } = config;
 
     this.logger.log(
       `Generating Documento Equivalente XML for invoice ${invoice.invoiceNumber}`,
@@ -412,6 +430,7 @@ ${this.generateSupplierParty(dianConfig)}
 ${this.generateCustomerParty(invoice.customer)}
 ${this.generatePaymentMeans(invoice)}
 ${this.generateTaxTotal(invoice)}
+${this.generateWithholdingTaxTotals(withholdings)}
 ${this.generateLegalMonetaryTotal(invoice)}
 ${this.generateInvoiceLines(invoice.items)}
 </Invoice>`;
@@ -428,7 +447,7 @@ ${this.generateInvoiceLines(invoice.items)}
     reason: string,
     reasonCode: string,
   ): string {
-    const { dianConfig, invoice, cufe, qrCode } = config;
+    const { dianConfig, invoice, cufe, qrCode, withholdings } = config;
 
     this.logger.log(
       `Generating Nota de Ajuste XML for document ${invoice.invoiceNumber}`,
@@ -485,6 +504,7 @@ ${this.generateInvoiceLines(invoice.items)}
 ${this.generateSupplierParty(dianConfig)}
 ${this.generateCustomerParty(invoice.customer)}
 ${this.generateTaxTotal(invoice)}
+${this.generateWithholdingTaxTotals(withholdings)}
 ${this.generateLegalMonetaryTotal(invoice)}
 ${this.generateCreditNoteLines(invoice.items)}
 </CreditNote>`;
@@ -722,6 +742,32 @@ ${this.generateCreditNoteLines(invoice.items)}
       </cac:TaxCategory>
     </cac:TaxSubtotal>
   </cac:TaxTotal>`;
+  }
+
+  private generateWithholdingTaxTotals(
+    withholdings?: WithholdingTax[],
+  ): string {
+    if (!withholdings || withholdings.length === 0) return '';
+
+    return withholdings
+      .filter((w) => w.taxAmount > 0)
+      .map(
+        (w) => `  <cac:WithholdingTaxTotal>
+    <cbc:TaxAmount currencyID="COP">${w.taxAmount.toFixed(2)}</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="COP">${w.taxableAmount.toFixed(2)}</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="COP">${w.taxAmount.toFixed(2)}</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:Percent>${w.percent.toFixed(2)}</cbc:Percent>
+        <cac:TaxScheme>
+          <cbc:ID>${w.schemeId}</cbc:ID>
+          <cbc:Name>${w.schemeName}</cbc:Name>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:WithholdingTaxTotal>`,
+      )
+      .join('\n');
   }
 
   private generateLegalMonetaryTotal(invoice: Invoice): string {

@@ -41,7 +41,7 @@ function RotatingModule({ isMounted }: { isMounted: boolean }) {
   }, [isMounted]);
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" initial={false}>
       <motion.span
         key={modules[index]}
         initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
@@ -57,32 +57,6 @@ function RotatingModule({ isMounted }: { isMounted: boolean }) {
   );
 }
 
-function FloatingBadge({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8, y: 10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.5, delay, ease: "easeOut" }}
-      className={cn(
-        "absolute hidden lg:flex items-center gap-2 rounded-xl px-3 py-2",
-        "border border-neutral-200/60 bg-white/90 shadow-lg shadow-neutral-900/5 backdrop-blur-md",
-        "dark:border-neutral-700/60 dark:bg-neutral-800/90 dark:shadow-black/20",
-        "text-xs font-medium text-neutral-600 dark:text-neutral-300",
-        className,
-      )}
-    >
-      {children}
-    </motion.div>
-  );
-}
 
 export function HeroSection({ isMounted }: { isMounted: boolean }) {
   return (
@@ -213,22 +187,7 @@ export function HeroSection({ isMounted }: { isMounted: boolean }) {
             transition={{ duration: 0.8, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="relative mx-auto mt-16 max-w-5xl"
           >
-            {/* Floating badges around the dashboard */}
-            <FloatingBadge className="-left-4 top-1/4 xl:-left-16" delay={1.0}>
-              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-green-100 dark:bg-green-900/30">
-                <ShieldCheck className="h-3 w-3 text-green-600 dark:text-green-400" />
-              </span>
-              DIAN Validado
-            </FloatingBadge>
-
-            <FloatingBadge className="-right-4 top-1/3 xl:-right-16" delay={1.2}>
-              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary-100 dark:bg-primary-900/30">
-                <Sparkles className="h-3 w-3 text-primary-600 dark:text-primary-400" />
-              </span>
-              +30 módulos
-            </FloatingBadge>
-
-            {/* Dashboard with subtle 3D perspective */}
+            {/* Dashboard mockup */}
             <div
               className={cn(
                 "overflow-hidden rounded-xl border border-neutral-200/80 bg-white",

@@ -203,8 +203,13 @@ export default defineConfig({
             return "vendor-zod";
           }
 
+          // Recharts - keep all modules in one chunk to avoid circular dependency warnings
+          if (id.includes("node_modules/recharts")) {
+            return "vendor-recharts";
+          }
+
           // Let Vite handle chunking for React-dependent libraries
-          // (recharts, @radix-ui, framer-motion, etc.):
+          // (@radix-ui, framer-motion, etc.):
           // - react-router, @react-router
           // - @radix-ui
           // - framer-motion

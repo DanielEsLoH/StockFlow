@@ -154,7 +154,7 @@ export function HeroSection({ isMounted }: { isMounted: boolean }) {
       <FloatingModules isMounted={isMounted} />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="pb-12 pt-16 sm:pt-24 lg:pt-28">
+        <div className="pb-20 pt-16 sm:pt-24 lg:pt-28">
           <motion.div
             variants={staggerContainer}
             initial={isMounted ? "hidden" : false}

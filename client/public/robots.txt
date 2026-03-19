@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /accept-invitation
+Disallow: /oauth
+Disallow: /system-admin
+
+Sitemap: https://www.stockflow.com.co/sitemap.xml

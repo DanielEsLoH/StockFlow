@@ -317,21 +317,30 @@ export class BrevoService {
   private getEmailTemplate(content: string, title: string): string {
     return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background-color: #f4f4f5;">
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f5;">
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background-color: #f5f3ff;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f3ff;">
     <tr>
       <td style="padding: 40px 20px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);">
           <!-- Header -->
           <tr>
-            <td style="padding: 32px 40px; background-color: #2563eb; border-radius: 8px 8px 0 0;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">StockFlow</h1>
+            <td style="padding: 28px 40px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 12px 12px 0 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="vertical-align: middle; padding-right: 12px;">
+                    <div style="width: 36px; height: 36px; background-color: rgba(255,255,255,0.2); border-radius: 10px; text-align: center; line-height: 36px; font-size: 18px;">📦</div>
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.01em;">Stock<span style="opacity: 0.85;">Flow</span></h1>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <!-- Content -->
@@ -342,12 +351,15 @@ export class BrevoService {
           </tr>
           <!-- Footer -->
           <tr>
-            <td style="padding: 24px 40px; background-color: #f9fafb; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; color: #6b7280; font-size: 14px; text-align: center;">
-                &copy; ${new Date().getFullYear()} StockFlow. All rights reserved.
+            <td style="padding: 24px 40px; background-color: #fafafe; border-radius: 0 0 12px 12px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; color: #6b7280; font-size: 13px; text-align: center;">
+                &copy; ${new Date().getFullYear()} StockFlow. Todos los derechos reservados.
               </p>
               <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 12px; text-align: center;">
-                This is an automated message. Please do not reply directly to this email.
+                Este es un mensaje automático. Por favor no respondas directamente a este correo.
+              </p>
+              <p style="margin: 12px 0 0 0; text-align: center;">
+                <a href="https://www.stockflow.com.co" style="color: #6366f1; font-size: 12px; text-decoration: none;">stockflow.com.co</a>
               </p>
             </td>
           </tr>
@@ -366,9 +378,11 @@ export class BrevoService {
    * @returns Formatted currency string
    */
   private formatCurrency(amount: number): string {
-    return amount.toLocaleString('en-US', {
+    return amount.toLocaleString('es-CO', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     });
   }
 
@@ -379,7 +393,7 @@ export class BrevoService {
    * @returns Formatted date string
    */
   private formatDate(date: Date): string {
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('es-CO', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -394,12 +408,14 @@ export class BrevoService {
    */
   private formatPaymentMethod(method: string): string {
     const methodMap: Record<string, string> = {
-      CASH: 'Cash',
-      CREDIT_CARD: 'Credit Card',
-      DEBIT_CARD: 'Debit Card',
-      BANK_TRANSFER: 'Bank Transfer',
-      CHECK: 'Check',
-      OTHER: 'Other',
+      CASH: 'Efectivo',
+      CREDIT_CARD: 'Tarjeta de Crédito',
+      DEBIT_CARD: 'Tarjeta Débito',
+      BANK_TRANSFER: 'Transferencia Bancaria',
+      CHECK: 'Cheque',
+      NEQUI: 'Nequi',
+      DAVIPLATA: 'Daviplata',
+      OTHER: 'Otro',
     };
 
     return methodMap[method] || method;
@@ -434,7 +450,7 @@ export class BrevoService {
       </p>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${this.frontendUrl}/login" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Get Started
             </a>
@@ -442,7 +458,7 @@ export class BrevoService {
         </tr>
       </table>
       <p style="margin: 24px 0 0 0; color: #6b7280; font-size: 14px;">
-        Need help? Contact our support team at <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a>
+        Need help? Contact our support team at <a href="mailto:support@stockflow.com" style="color: #6366f1;">support@stockflow.com</a>
       </p>`;
 
     const htmlContent = this.getEmailTemplate(content, 'Welcome to StockFlow');
@@ -574,7 +590,7 @@ export class BrevoService {
       </p>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px 0;">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${resetUrl}" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Reset Password
             </a>
@@ -586,7 +602,7 @@ export class BrevoService {
       </p>
       <p style="margin: 24px 0 0 0; color: #6b7280; font-size: 14px;">
         If the button doesn't work, copy and paste this URL into your browser:<br>
-        <a href="${resetUrl}" style="color: #2563eb; word-break: break-all;">${resetUrl}</a>
+        <a href="${resetUrl}" style="color: #6366f1; word-break: break-all;">${resetUrl}</a>
       </p>`;
 
     const htmlContent = this.getEmailTemplate(content, 'Reset Your Password');
@@ -648,7 +664,7 @@ export class BrevoService {
       </table>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${this.frontendUrl}/products" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               View Products
             </a>
@@ -905,7 +921,7 @@ export class BrevoService {
       </table>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${adminPanelUrl}" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Ir al panel de administracion
             </a>
@@ -970,7 +986,7 @@ export class BrevoService {
         El proceso de aprobacion normalmente toma entre 24-48 horas habiles.
       </p>
       <p style="margin: 0; color: #6b7280; font-size: 14px;">
-        Si tienes alguna pregunta, no dudes en contactarnos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a>
+        Si tienes alguna pregunta, no dudes en contactarnos en <a href="mailto:support@stockflow.com" style="color: #6366f1;">support@stockflow.com</a>
       </p>`;
 
     const htmlContent = this.getEmailTemplate(
@@ -1013,7 +1029,7 @@ export class BrevoService {
       </p>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px 0;">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${verificationUrl}" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Verificar correo electronico
             </a>
@@ -1030,7 +1046,7 @@ export class BrevoService {
       </p>
       <p style="margin: 24px 0 0 0; color: #6b7280; font-size: 14px;">
         Si el boton no funciona, copia y pega esta URL en tu navegador:<br>
-        <a href="${verificationUrl}" style="color: #2563eb; word-break: break-all;">${verificationUrl}</a>
+        <a href="${verificationUrl}" style="color: #6366f1; word-break: break-all;">${verificationUrl}</a>
       </p>`;
 
     const htmlContent = this.getEmailTemplate(
@@ -1101,7 +1117,7 @@ export class BrevoService {
       </table>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px 0;">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${invitationUrl}" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Aceptar invitacion
             </a>
@@ -1162,7 +1178,7 @@ export class BrevoService {
       </p>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px 0;">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${this.frontendUrl}/login" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Iniciar sesion
             </a>
@@ -1179,7 +1195,7 @@ export class BrevoService {
         <li>Invitar a miembros de tu equipo</li>
       </ul>
       <p style="margin: 0; color: #6b7280; font-size: 14px;">
-        Si tienes alguna pregunta, no dudes en contactarnos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a>
+        Si tienes alguna pregunta, no dudes en contactarnos en <a href="mailto:support@stockflow.com" style="color: #6366f1;">support@stockflow.com</a>
       </p>`;
 
     const htmlContent = this.getEmailTemplate(
@@ -1261,7 +1277,7 @@ export class BrevoService {
       </table>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${adminPanelUrl}" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Aprobar usuario
             </a>
@@ -1347,7 +1363,7 @@ export class BrevoService {
         Para continuar disfrutando de todos los beneficios de StockFlow sin interrupcion, contacta a nuestro equipo para renovar tu suscripcion.
       </p>
       <p style="margin: 0; color: #6b7280; font-size: 14px;">
-        Si tienes alguna pregunta, contactanos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a>
+        Si tienes alguna pregunta, contactanos en <a href="mailto:support@stockflow.com" style="color: #6366f1;">support@stockflow.com</a>
       </p>`;
 
     const htmlContent = this.getEmailTemplate(
@@ -1426,7 +1442,7 @@ export class BrevoService {
         <strong>Nota:</strong> Tus datos se mantendran seguros durante 30 dias. Despues de este periodo, podrian ser eliminados.
       </p>
       <p style="margin: 0; color: #6b7280; font-size: 14px;">
-        Contactanos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a> para renovar tu suscripcion.
+        Contactanos en <a href="mailto:support@stockflow.com" style="color: #6366f1;">support@stockflow.com</a> para renovar tu suscripcion.
       </p>`;
 
     const htmlContent = this.getEmailTemplate(
@@ -1517,7 +1533,7 @@ export class BrevoService {
       </ul>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${this.frontendUrl}/dashboard" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Ir al dashboard
             </a>
@@ -1590,7 +1606,7 @@ export class BrevoService {
         Tu acceso a StockFlow ha sido suspendido. Si crees que esto es un error o deseas resolver esta situacion, contacta a nuestro equipo de soporte.
       </p>
       <p style="margin: 0; color: #6b7280; font-size: 14px;">
-        Contactanos en <a href="mailto:support@stockflow.com" style="color: #2563eb;">support@stockflow.com</a>
+        Contactanos en <a href="mailto:support@stockflow.com" style="color: #6366f1;">support@stockflow.com</a>
       </p>`;
 
     const htmlContent = this.getEmailTemplate(
@@ -1653,7 +1669,7 @@ export class BrevoService {
               <tr>
                 <td style="padding: 8px 0;">
                   <span style="color: #6b7280; font-size: 14px;">Nuevo plan</span><br>
-                  <span style="color: #2563eb; font-size: 20px; font-weight: 600;">${newPlanName}</span>
+                  <span style="color: #6366f1; font-size: 20px; font-weight: 600;">${newPlanName}</span>
                 </td>
               </tr>
             </table>
@@ -1668,7 +1684,7 @@ export class BrevoService {
       </ul>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${this.frontendUrl}/dashboard" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Ir al dashboard
             </a>
@@ -1803,7 +1819,7 @@ export class BrevoService {
       ${infoTable}
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${this.frontendUrl}/billing" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Administrar suscripción
             </a>
@@ -1840,7 +1856,7 @@ export class BrevoService {
       </ul>
       <table role="presentation" cellspacing="0" cellpadding="0" border="0">
         <tr>
-          <td style="border-radius: 6px; background-color: #2563eb;">
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
             <a href="${this.frontendUrl}/dashboard" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
               Ir al dashboard
             </a>

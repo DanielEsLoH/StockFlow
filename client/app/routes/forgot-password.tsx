@@ -9,6 +9,7 @@ import { Toaster } from "sonner";
 import { useAuth } from "~/hooks/useAuth";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/Input";
+import { StockFlowLogo } from "~/components/ui/StockFlowLogo";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import { requireGuest } from "~/lib/auth.server";
 import type { Route } from "./+types/forgot-password";
@@ -108,19 +109,7 @@ export default function ForgotPasswordPage() {
             transition={{ duration: 0.6 }}
           >
             <Link to="/" className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                <svg
-                  className="h-7 w-7"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-label="StockFlow logo"
-                  role="img"
-                >
-                  <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM10 4h4v3h-4V4zm10 16H4V9h16v11z" />
-                  <path d="M13 12h-2v3H8v2h3v3h2v-3h3v-2h-3z" />
-                </svg>
-              </div>
-              <span className="font-display text-2xl font-bold">StockFlow</span>
+              <StockFlowLogo size="lg" showText variant="white" />
             </Link>
           </motion.div>
 

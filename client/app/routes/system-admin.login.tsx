@@ -16,6 +16,7 @@ import {
 import { useSystemAdminAuth } from "~/hooks/useSystemAdmin";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/Input";
+import { StockFlowLogo } from "~/components/ui/StockFlowLogo";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import {
   requireSystemAdminGuest,
@@ -122,15 +123,7 @@ export default function SystemAdminLoginPage() {
             transition={{ duration: 0.6 }}
           >
             <Link to="/" className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                <Shield className="h-7 w-7 text-amber-400" />
-              </div>
-              <div>
-                <span className="font-display text-2xl font-bold">
-                  StockFlow
-                </span>
-                <p className="text-sm text-neutral-400">System Admin</p>
-              </div>
+              <StockFlowLogo size="lg" showText variant="white" />
             </Link>
           </motion.div>
 

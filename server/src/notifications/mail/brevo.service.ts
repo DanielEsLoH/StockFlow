@@ -334,7 +334,16 @@ export class BrevoService {
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                 <tr>
                   <td style="vertical-align: middle; padding-right: 12px;">
-                    <div style="width: 36px; height: 36px; background-color: rgba(255,255,255,0.2); border-radius: 10px; text-align: center; line-height: 36px; font-size: 18px;">📦</div>
+                    <div style="width: 36px; height: 36px; background-color: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                      <svg width="24" height="24" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22 24 L40 16 L58 24 L58 34 L40 42 L22 34 Z" fill="white" opacity="0.9"/>
+                        <path d="M22 24 L40 32 L58 24" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" fill="none"/>
+                        <path d="M40 32 L40 42" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+                        <path d="M26 40 L44 32 L62 40 L62 50 L44 58 L26 50 Z" fill="rgba(255,255,255,0.55)"/>
+                        <path d="M26 40 L44 48 L62 40" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" fill="none"/>
+                        <path d="M44 48 L44 58" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+                      </svg>
+                    </div>
                   </td>
                   <td style="vertical-align: middle;">
                     <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.01em;">Stock<span style="opacity: 0.85;">Flow</span></h1>

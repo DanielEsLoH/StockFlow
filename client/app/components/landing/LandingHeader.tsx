@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { motion } from "framer-motion";
-import { Package, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
+import { StockFlowLogo } from "~/components/ui/StockFlowLogo";
 
 // ---------------------------------------------------------------------------
 // Scroll helper — exported for use by other landing components
@@ -43,17 +44,8 @@ const navLinks = [
 
 function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2.5" aria-label="StockFlow">
-      <div
-        className="flex h-9 w-9 items-center justify-center rounded-xl
-                    bg-gradient-to-br from-primary-500 to-accent-600
-                    shadow-md shadow-primary-500/20"
-      >
-        <Package className="h-5 w-5 text-white" />
-      </div>
-      <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
-        Stock<span className="text-primary-400">Flow</span>
-      </span>
+    <Link to="/" aria-label="StockFlow">
+      <StockFlowLogo size="md" showText />
     </Link>
   );
 }

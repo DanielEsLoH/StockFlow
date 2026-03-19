@@ -1,7 +1,8 @@
 import { Link } from "react-router";
-import { Package, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { handleScrollToSection } from "./LandingHeader";
+import { StockFlowLogo } from "~/components/ui/StockFlowLogo";
 
 // ---------------------------------------------------------------------------
 // Social icons
@@ -127,24 +128,8 @@ export function LandingFooter() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6 lg:gap-12">
           {/* Brand column */}
           <div className="col-span-2 lg:col-span-2">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2.5"
-              aria-label="StockFlow"
-            >
-              <div
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-xl",
-                  "bg-gradient-to-br from-primary-500 to-accent-600",
-                  "shadow-md shadow-primary-500/20",
-                )}
-              >
-                <Package className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
-                Stock
-                <span className="text-primary-400">Flow</span>
-              </span>
+            <Link to="/" aria-label="StockFlow">
+              <StockFlowLogo size="md" showText />
             </Link>
 
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">

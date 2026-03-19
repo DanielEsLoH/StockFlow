@@ -8,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { cn, formatCurrency } from "~/lib/utils";
+import { StockFlowLogo } from "~/components/ui/StockFlowLogo";
 import { useAuthStore } from "~/stores/auth.store";
 import { usePermissions } from "~/hooks/usePermissions";
 import { useDashboardStats } from "~/hooks/useDashboard";
@@ -65,19 +66,7 @@ export function SidebarContent({
       <div className="px-4 pt-5 pb-4 border-b border-neutral-100 dark:border-neutral-800">
         <div className="flex items-center justify-between mb-3">
           {/* Logo */}
-          <div
-            className={cn(
-              "flex items-center justify-center rounded-xl",
-              "bg-gradient-to-br from-primary-500 to-accent-600",
-              "text-white shadow-lg shadow-primary-500/25",
-              "h-11 w-11 flex-shrink-0",
-            )}
-          >
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM10 4h4v3h-4V4zm10 16H4V9h16v11z" />
-              <path d="M13 12h-2v3H8v2h3v3h2v-3h3v-2h-3z" />
-            </svg>
-          </div>
+          <StockFlowLogo size="lg" />
 
           {/* Controls */}
           <div className="flex items-center gap-1">

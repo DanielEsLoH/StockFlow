@@ -92,8 +92,8 @@ export function useAuth() {
       clearSessionTheme();
       applyTheme(getSystemTheme());
       queryClient.clear();
-      navigate("/");
-      toast.success("Sesion cerrada");
+      // Use full page reload to ensure SSR loader sees cleared cookies
+      window.location.href = "/";
     },
   });
 

@@ -155,7 +155,7 @@ export function DianCompliance({ isMounted }: { isMounted: boolean }) {
                       Resolución
                     </p>
                     <p className="mt-1 text-sm font-bold text-neutral-900 dark:text-white">
-                      18764000001234
+                      18764000XXXXXX
                     </p>
                   </div>
                   <div
@@ -184,7 +184,7 @@ export function DianCompliance({ isMounted }: { isMounted: boolean }) {
                       Rango
                     </p>
                     <p className="mt-1 text-sm font-bold text-neutral-900 dark:text-white">
-                      990000000 - 995000000
+                      1 - 5.000.000
                     </p>
                   </div>
                   <div
@@ -197,7 +197,7 @@ export function DianCompliance({ isMounted }: { isMounted: boolean }) {
                       Vigencia
                     </p>
                     <p className="mt-1 text-sm font-bold text-neutral-900 dark:text-white">
-                      2024 - 2026
+                      2025 - 2027
                     </p>
                   </div>
                 </div>

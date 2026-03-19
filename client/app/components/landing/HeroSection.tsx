@@ -1,7 +1,18 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, ChevronRight, Play, Sparkles } from "lucide-react";
+import {
+  ShieldCheck,
+  ChevronRight,
+  Play,
+  Sparkles,
+  Package,
+  FileText,
+  BarChart3,
+  Users,
+  Calculator,
+  ShoppingCart,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 
 const fadeInUp = {
@@ -21,12 +32,12 @@ const staggerContainer = {
 };
 
 const modules = [
-  "Inventario",
-  "Facturación",
-  "Punto de Venta",
-  "Contabilidad",
-  "Nómina",
-  "Compras",
+  { name: "Inventario", icon: Package },
+  { name: "Facturación", icon: FileText },
+  { name: "Punto de Venta", icon: ShoppingCart },
+  { name: "Contabilidad", icon: Calculator },
+  { name: "Nómina", icon: Users },
+  { name: "Reportes", icon: BarChart3 },
 ];
 
 function RotatingModule({ isMounted }: { isMounted: boolean }) {
@@ -36,27 +47,86 @@ function RotatingModule({ isMounted }: { isMounted: boolean }) {
     if (!isMounted) return;
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % modules.length);
-    }, 2200);
+    }, 2400);
     return () => clearInterval(interval);
   }, [isMounted]);
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.span
-        key={modules[index]}
-        initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        exit={{ opacity: 0, y: -16, filter: "blur(4px)" }}
-        transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="inline-block bg-gradient-to-r from-primary-600 via-accent-500 to-primary-500 bg-clip-text text-transparent
-                   dark:from-primary-400 dark:via-accent-400 dark:to-primary-300"
-      >
-        {modules[index]}
-      </motion.span>
-    </AnimatePresence>
+    <span className="relative inline-flex items-center">
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={modules[index].name}
+          initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="inline-block bg-gradient-to-r from-primary-600 via-accent-500 to-primary-500
+                     bg-clip-text text-transparent
+                     dark:from-primary-400 dark:via-accent-400 dark:to-primary-300"
+        >
+          {modules[index].name}
+        </motion.span>
+      </AnimatePresence>
+    </span>
   );
 }
 
+/* Floating module pills around the hero — visible on lg+ */
+function FloatingModules({ isMounted }: { isMounted: boolean }) {
+  const positions = [
+    "left-[4%] top-[10%]",
+    "right-[5%] top-[14%]",
+    "left-[3%] top-[65%]",
+    "right-[3%] top-[62%]",
+    "left-[14%] top-[2%]",
+    "right-[12%] top-[4%]",
+  ];
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-16 hidden h-[420px] overflow-hidden lg:block">
+      {modules.map((mod, i) => {
+        const Icon = mod.icon;
+        return (
+          <motion.div
+            key={mod.name}
+            initial={isMounted ? { opacity: 0, scale: 0.8 } : false}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.8 + i * 0.12, duration: 0.5, ease: "easeOut" }}
+            className={cn(
+              "absolute flex items-center gap-2 rounded-full px-3.5 py-2",
+              "border border-neutral-200/60 bg-white/80 shadow-lg shadow-neutral-900/5 backdrop-blur-md",
+              "dark:border-neutral-700/50 dark:bg-neutral-800/80 dark:shadow-black/20",
+              positions[i],
+            )}
+            style={{
+              animation: `float-${i % 3} ${6 + i * 0.5}s ease-in-out infinite`,
+            }}
+          >
+            <Icon className="h-4 w-4 text-primary-500 dark:text-primary-400" />
+            <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+              {mod.name}
+            </span>
+          </motion.div>
+        );
+      })}
+
+      <style>{`
+        @keyframes float-0 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-12px); }
+        }
+        @keyframes float-1 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes float-2 {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-15px); }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 export function HeroSection({ isMounted }: { isMounted: boolean }) {
   return (
@@ -80,6 +150,8 @@ export function HeroSection({ isMounted }: { isMounted: boolean }) {
         <div className="absolute -right-40 top-1/4 h-[500px] w-[500px] rounded-full bg-accent-400/12 blur-[140px] dark:bg-accent-600/8" />
         <div className="absolute bottom-0 left-1/3 h-[400px] w-[400px] rounded-full bg-primary-300/10 blur-[120px] dark:bg-primary-500/5" />
       </div>
+
+      <FloatingModules isMounted={isMounted} />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="pb-12 pt-16 sm:pt-24 lg:pt-28">
@@ -180,14 +252,13 @@ export function HeroSection({ isMounted }: { isMounted: boolean }) {
             </motion.div>
           </motion.div>
 
-          {/* Dashboard mockup with perspective */}
+          {/* Dashboard mockup */}
           <motion.div
             initial={isMounted ? { opacity: 0, y: 40 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="relative mx-auto mt-16 max-w-5xl"
           >
-            {/* Dashboard mockup */}
             <div
               className={cn(
                 "overflow-hidden rounded-xl border border-neutral-200/80 bg-white",
@@ -195,9 +266,6 @@ export function HeroSection({ isMounted }: { isMounted: boolean }) {
                 "transition-transform duration-500",
                 "dark:border-neutral-700/60 dark:bg-neutral-900 dark:shadow-black/30",
               )}
-              style={{
-                perspective: "1200px",
-              }}
             >
               {/* Browser chrome */}
               <div className="flex items-center gap-3 border-b border-neutral-200 bg-neutral-100 px-4 py-2.5 dark:border-neutral-700 dark:bg-neutral-800">

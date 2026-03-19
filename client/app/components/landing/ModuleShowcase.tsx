@@ -738,7 +738,7 @@ export function ModuleShowcase({ isMounted }: { isMounted: boolean }) {
             <span className="text-gradient">gestionar tu negocio</span>
           </h2>
           <p className="text-lg text-neutral-500 dark:text-neutral-400">
-            Mas de 30 modulos integrados para cada area de tu empresa
+            Más de 30 módulos integrados para cada área de tu empresa
           </p>
         </motion.div>
 

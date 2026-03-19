@@ -67,17 +67,17 @@ const legalLinks: FooterLink[] = [
 const socialLinks = [
   {
     label: "GitHub",
-    href: "https://github.com",
+    href: "https://github.com/DanielEsLoH/StockFlow",
     icon: GithubIcon,
   },
   {
     label: "X",
-    href: "https://x.com",
+    href: "https://x.com/stockflow_co",
     icon: XIcon,
   },
   {
     label: "LinkedIn",
-    href: "https://linkedin.com",
+    href: "https://linkedin.com/company/stockflow-co",
     icon: LinkedInIcon,
   },
 ];
@@ -155,7 +155,7 @@ export function LandingFooter() {
 
             {/* WhatsApp CTA */}
             <a
-              href="https://wa.me/573001234567"
+              href="https://wa.me/573160000000"
               target="_blank"
               rel="noopener noreferrer"
               className={cn(

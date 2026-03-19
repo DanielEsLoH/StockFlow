@@ -45,7 +45,8 @@ import {
   formatDate,
   formatRelativeTime,
 } from "~/lib/utils";
-import { useDashboard } from "~/hooks/useDashboard";
+import { useDashboard, useOnboardingStatus } from "~/hooks/useDashboard";
+import { OnboardingBanner } from "~/components/dashboard/OnboardingBanner";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/Card";
 import { Button } from "~/components/ui/Button";
 import { StatCard } from "~/components/ui/StatCard";
@@ -346,6 +347,9 @@ export default function DashboardPage() {
     refetch,
   } = useDashboard(days);
 
+  const { data: onboarding } = useOnboardingStatus();
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+
   const userName = user?.firstName || "Usuario";
 
   // Memoized export handlers
@@ -451,6 +455,16 @@ export default function DashboardPage() {
           </Button>
         </div>
       </PageSection>
+
+      {/* Onboarding Banner */}
+      {onboarding && !onboarding.completed && !onboardingDismissed && (
+        <PageSection>
+          <OnboardingBanner
+            data={onboarding}
+            onDismiss={() => setOnboardingDismissed(true)}
+          />
+        </PageSection>
+      )}
 
       {/* Alert Banner */}
       {hasAlerts && (

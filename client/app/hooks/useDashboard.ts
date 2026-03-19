@@ -8,6 +8,7 @@ import type {
   RecentInvoice,
   LowStockAlert,
   RecentActivity,
+  OnboardingStatus,
 } from "~/services/dashboard.service";
 
 export function useDashboardStats(days?: number) {
@@ -57,6 +58,16 @@ export function useRecentActivity() {
     queryKey: queryKeys.dashboard.activity(),
     queryFn: dashboardService.getRecentActivity,
     staleTime: 1000 * 60 * 2, // 2 minutes
+    enabled,
+  });
+}
+
+export function useOnboardingStatus() {
+  const enabled = useIsQueryEnabled();
+  return useQuery<OnboardingStatus>({
+    queryKey: queryKeys.dashboard.onboarding(),
+    queryFn: dashboardService.getOnboardingStatus,
+    staleTime: 1000 * 60 * 10, // 10 minutes
     enabled,
   });
 }

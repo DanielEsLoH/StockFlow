@@ -77,6 +77,18 @@ export interface DashboardCharts {
   topProducts: TopProduct[];
 }
 
+export interface OnboardingStep {
+  key: string;
+  label: string;
+  done: boolean;
+}
+
+export interface OnboardingStatus {
+  completed: boolean;
+  steps: OnboardingStep[];
+  progress: number;
+}
+
 export interface DashboardData {
   stats: DashboardStats;
   charts: DashboardCharts;
@@ -119,6 +131,11 @@ export const dashboardService = {
     const { data } = await api.get<RecentActivity[]>(
       "/dashboard/recent-activity",
     );
+    return data;
+  },
+
+  async getOnboardingStatus(): Promise<OnboardingStatus> {
+    const { data } = await api.get<OnboardingStatus>("/dashboard/onboarding");
     return data;
   },
 

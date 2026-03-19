@@ -124,6 +124,7 @@ export const queryKeys = {
     charts: (days?: number) =>
       [...queryKeys.dashboard.all, "charts", days] as const,
     activity: () => [...queryKeys.dashboard.all, "activity"] as const,
+    onboarding: () => [...queryKeys.dashboard.all, "onboarding"] as const,
   },
 
   // Reports

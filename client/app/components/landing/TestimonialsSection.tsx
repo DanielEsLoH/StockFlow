@@ -28,49 +28,49 @@ interface Testimonial {
 
 const testimonials: Testimonial[] = [
   {
-    name: "María González",
-    role: "Gerente",
+    name: "Camila R.",
+    role: "Gerente Comercial",
     company: "Distribuidora del Valle",
-    industry: "Retail",
-    content:
-      "Redujimos errores de inventario un 80% desde que implementamos StockFlow. El control multi-bodega es excepcional.",
-    rating: 4.9,
-  },
-  {
-    name: "Carlos Rodríguez",
-    role: "CEO",
-    company: "TechStore Colombia",
     industry: "Distribución",
     content:
-      "Ahorramos 15 horas semanales en facturación. La integración con DIAN funciona perfectamente.",
+      "Pasamos de Excel a StockFlow y redujimos los errores de inventario en un 80%. El control multi-bodega nos permite manejar 3 sedes sin perder trazabilidad.",
     rating: 5.0,
   },
   {
-    name: "Ana Martínez",
-    role: "Contadora",
-    company: "Grupo Orion",
-    industry: "Servicios",
+    name: "Andrés M.",
+    role: "Director de Operaciones",
+    company: "TechStore Colombia",
+    industry: "Retail",
     content:
-      "Los reportes contables me dan exactamente lo que necesito. Mis cierres mensuales ahora toman la mitad del tiempo.",
+      "Antes la facturación DIAN nos tomaba medio día. Ahora es automática. Llevamos más de 2.000 facturas sin un solo rechazo.",
     rating: 4.8,
   },
   {
-    name: "Diego Hernández",
-    role: "Propietario",
-    company: "Restaurante El Fogón",
-    industry: "Restaurante",
+    name: "Patricia V.",
+    role: "Contadora Pública",
+    company: "Asesorías Contables Orion",
+    industry: "Contaduría",
     content:
-      "El POS es super rápido y las sesiones de caja nos dan control total sobre cada turno.",
+      "Manejo 12 empresas desde StockFlow. Los reportes contables, la exógena y los cierres mensuales me toman la mitad del tiempo que antes.",
     rating: 4.7,
   },
   {
-    name: "Laura Sánchez",
-    role: "Directora Financiera",
-    company: "Importadora Pacífico",
-    industry: "Contaduría",
+    name: "Felipe T.",
+    role: "Propietario",
+    company: "El Fogón Parrilla Bar",
+    industry: "Restaurante",
     content:
-      "La nómina electrónica y la contabilidad integrada nos ahorraron un empleado adicional.",
+      "El POS funciona rápido incluso en horas pico. Las sesiones de caja nos dan control total y el cierre diario se hace solo.",
     rating: 4.9,
+  },
+  {
+    name: "Sandra L.",
+    role: "Directora Administrativa",
+    company: "Importadora Costa Pacífico",
+    industry: "Importaciones",
+    content:
+      "Nómina, contabilidad y facturación en un solo lugar. Dejamos de pagar 3 softwares diferentes y el soporte responde el mismo día.",
+    rating: 4.8,
   },
 ];
 

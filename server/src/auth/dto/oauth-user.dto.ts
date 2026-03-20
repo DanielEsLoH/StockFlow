@@ -16,10 +16,8 @@ export interface OAuthUserDto {
   googleId?: string;
   /** GitHub's unique user identifier. Present only when authenticating via GitHub OAuth. */
   githubId?: string;
-  /** Facebook's unique user identifier. Present only when authenticating via Facebook OAuth. */
-  facebookId?: string;
   /** The OAuth provider used for authentication. */
-  provider: 'EMAIL' | 'GOOGLE' | 'GITHUB' | 'FACEBOOK';
+  provider: 'EMAIL' | 'GOOGLE' | 'GITHUB';
 }
 
 /**

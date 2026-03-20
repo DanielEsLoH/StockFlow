@@ -158,7 +158,6 @@ enum AuthProvider {
   EMAIL
   GOOGLE
   GITHUB
-  FACEBOOK
 }
 
 // POS Enums

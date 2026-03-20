@@ -104,15 +104,6 @@ export interface GitHubOAuthConfig {
 }
 
 /**
- * Facebook OAuth configuration interface
- */
-export interface FacebookOAuthConfig {
-  appId: string | undefined;
-  appSecret: string | undefined;
-  callbackUrl: string;
-}
-
-/**
  * Complete application configuration interface
  */
 export interface Configuration {
@@ -127,7 +118,6 @@ export interface Configuration {
   redis: RedisConfig;
   google: GoogleOAuthConfig;
   github: GitHubOAuthConfig;
-  facebook: FacebookOAuthConfig;
 }
 
 /**
@@ -277,21 +267,6 @@ export const githubConfig = registerAs(
 );
 
 /**
- * Facebook OAuth configuration factory
- * Provides Facebook OAuth authentication settings
- */
-export const facebookConfig = registerAs(
-  'facebook',
-  (): FacebookOAuthConfig => ({
-    appId: process.env.FACEBOOK_APP_ID,
-    appSecret: process.env.FACEBOOK_APP_SECRET,
-    callbackUrl:
-      process.env.FACEBOOK_CALLBACK_URL ||
-      'http://localhost:3000/auth/facebook/callback',
-  }),
-);
-
-/**
  * Combined configuration factory function
  * Returns the complete configuration object
  */
@@ -360,12 +335,5 @@ export default (): Configuration => ({
     callbackUrl:
       process.env.GITHUB_CALLBACK_URL ||
       'http://localhost:3000/auth/github/callback',
-  },
-  facebook: {
-    appId: process.env.FACEBOOK_APP_ID,
-    appSecret: process.env.FACEBOOK_APP_SECRET,
-    callbackUrl:
-      process.env.FACEBOOK_CALLBACK_URL ||
-      'http://localhost:3000/auth/facebook/callback',
   },
 });

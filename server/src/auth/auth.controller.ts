@@ -764,65 +764,6 @@ export class AuthController {
     }
   }
 
-  // ============================================================================
-  // FACEBOOK OAUTH
-  // ============================================================================
-
-  /**
-   * GET /auth/facebook
-   */
-  @Get('facebook')
-  @UseGuards(AuthGuard('facebook'))
-  @ApiOperation({
-    summary: 'Initiate Facebook OAuth',
-    description: 'Redirects to Facebook consent screen for OAuth authentication.',
-  })
-  @ApiResponse({ status: 302, description: 'Redirects to Facebook OAuth consent screen' })
-  facebookAuth(): void {
-    this.logger.log('Facebook OAuth initiation');
-  }
-
-  /**
-   * GET /auth/facebook/callback
-   */
-  @Get('facebook/callback')
-  @UseGuards(AuthGuard('facebook'))
-  @ApiOperation({
-    summary: 'Facebook OAuth callback',
-    description: 'Handles the OAuth callback from Facebook and redirects to frontend with authentication result.',
-  })
-  @ApiResponse({ status: 302, description: 'Redirects to frontend with tokens or error' })
-  async facebookAuthCallback(
-    @Req() req: Request & { user?: OAuthUserDto },
-    @Res() res: Response,
-  ): Promise<void> {
-    this.logger.log('Facebook OAuth callback received');
-
-    try {
-      if (!req.user) {
-        throw new UnauthorizedException('No user data from Facebook OAuth');
-      }
-
-      const result = await this.authService.handleOAuthLogin(
-        req.user,
-        AuthProvider.FACEBOOK,
-      );
-
-      this.redirectOAuthResult(res, result);
-    } catch (error) {
-      this.logger.error(
-        `Facebook OAuth callback error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error instanceof Error ? error.stack : undefined,
-      );
-
-      const errorMessage =
-        error instanceof Error ? error.message : 'Authentication failed';
-      res.redirect(
-        `${this.frontendUrl}/oauth/callback?error=${encodeURIComponent(errorMessage)}`,
-      );
-    }
-  }
-
   /**
    * Redirects to the frontend based on the OAuth login result.
    *

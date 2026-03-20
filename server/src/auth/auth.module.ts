@@ -9,7 +9,6 @@ import {
   JwtRefreshStrategy,
   GoogleStrategy,
   GitHubStrategy,
-  FacebookStrategy,
 } from './strategies';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { InvitationsModule } from '../invitations/invitations.module';
@@ -42,20 +41,6 @@ const createGitHubStrategyProvider = {
 
     if (clientId && clientSecret) {
       return new GitHubStrategy(configService);
-    }
-    return undefined;
-  },
-  inject: [ConfigService],
-};
-
-const createFacebookStrategyProvider = {
-  provide: FacebookStrategy,
-  useFactory: (configService: ConfigService): FacebookStrategy | undefined => {
-    const appId = configService.get<string>('facebook.appId');
-    const appSecret = configService.get<string>('facebook.appSecret');
-
-    if (appId && appSecret) {
-      return new FacebookStrategy(configService);
     }
     return undefined;
   },
@@ -113,7 +98,6 @@ const createFacebookStrategyProvider = {
     // OAuth strategies are conditionally registered
     createGoogleStrategyProvider,
     createGitHubStrategyProvider,
-    createFacebookStrategyProvider,
   ],
   exports: [AuthService, JwtModule],
 })
@@ -134,18 +118,13 @@ export class AuthModule implements OnModuleInit {
       this.configService.get<string>('github.clientId') &&
       this.configService.get<string>('github.clientSecret')
     );
-    const facebookConfigured = !!(
-      this.configService.get<string>('facebook.appId') &&
-      this.configService.get<string>('facebook.appSecret')
-    );
-
-    if (googleConfigured || githubConfigured || facebookConfigured) {
+    if (googleConfigured || githubConfigured) {
       this.logger.log(
-        `OAuth providers: Google=${googleConfigured ? 'enabled' : 'disabled'}, GitHub=${githubConfigured ? 'enabled' : 'disabled'}, Facebook=${facebookConfigured ? 'enabled' : 'disabled'}`,
+        `OAuth providers: Google=${googleConfigured ? 'enabled' : 'disabled'}, GitHub=${githubConfigured ? 'enabled' : 'disabled'}`,
       );
     } else {
       this.logger.log(
-        'OAuth providers: None configured. Set GOOGLE_CLIENT_ID/SECRET, GITHUB_CLIENT_ID/SECRET, or FACEBOOK_APP_ID/SECRET to enable SSO.',
+        'OAuth providers: None configured. Set GOOGLE_CLIENT_ID/SECRET or GITHUB_CLIENT_ID/SECRET to enable SSO.',
       );
     }
   }

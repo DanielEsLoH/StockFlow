@@ -14,6 +14,8 @@ import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import { requireGuest, getRedirectTo } from "~/lib/auth.server";
 import type { Route } from "./+types/login";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 // Validation schema
 const loginSchema = z.object({
   email: z.email({ message: "Email invalido" }),
@@ -191,7 +193,7 @@ export default function LoginPage() {
           <motion.div variants={itemVariants} className="space-y-3">
             {/* Google OAuth */}
             <a
-              href="/api/auth/google"
+              href={`${API_URL}/auth/google`}
               className="flex items-center justify-center gap-3 w-full px-4 py-2.5 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-200"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
@@ -217,7 +219,7 @@ export default function LoginPage() {
 
             {/* GitHub OAuth */}
             <a
-              href="/api/auth/github"
+              href={`${API_URL}/auth/github`}
               className="flex items-center justify-center gap-3 w-full px-4 py-2.5 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-200"
             >
               <svg

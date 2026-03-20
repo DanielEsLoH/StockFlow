@@ -256,14 +256,16 @@ export function LandingHeader({ isMounted }: { isMounted: boolean }) {
             </Link>
           </div>
 
-          {/* Mobile: always-visible CTA + hamburger */}
+          {/* Mobile CTA — subtle outline to not compete with hero */}
           <Link
             to="/register"
-            className="rounded-lg bg-gradient-to-r from-primary-500 to-accent-600
-                       px-3 py-1.5 text-sm font-semibold text-white shadow-md
-                       shadow-primary-500/20 lg:hidden"
+            className="rounded-lg border border-primary-300 px-3 py-1.5 text-sm
+                       font-medium text-primary-600 transition-colors
+                       hover:bg-primary-50
+                       dark:border-primary-700 dark:text-primary-400
+                       dark:hover:bg-primary-950/40 lg:hidden"
           >
-            Empieza Gratis
+            Registrarse
           </Link>
 
           <button

@@ -56,17 +56,51 @@ export function isAuthInitializing(): boolean {
 }
 
 const REFRESH_TOKEN_KEY = "refreshToken";
+const REMEMBER_ME_KEY = "rememberMe";
+
+/**
+ * Sets whether the user chose "Remember me" at login.
+ * When false, tokens are stored in sessionStorage (cleared on browser close).
+ * When true, tokens persist in localStorage across sessions.
+ */
+export function setRememberMe(value: boolean): void {
+  if (typeof window === "undefined") return;
+  // Always store the preference in localStorage so we know where to look for tokens
+  if (value) {
+    localStorage.setItem(REMEMBER_ME_KEY, "true");
+  } else {
+    localStorage.setItem(REMEMBER_ME_KEY, "false");
+  }
+}
+
+/**
+ * Returns true if user selected "Remember me", defaults to true for backward compat
+ */
+export function getRememberMe(): boolean {
+  if (typeof window === "undefined") return true;
+  const val = localStorage.getItem(REMEMBER_ME_KEY);
+  // Default to true for backward compatibility (existing sessions)
+  return val !== "false";
+}
+
+/** Returns the correct storage backend based on rememberMe preference */
+function getTokenStorage(): Storage {
+  return getRememberMe() ? localStorage : sessionStorage;
+}
 
 // Auto-start auth init on module load if we have a refresh token but no access token
 // This ensures requests are blocked BEFORE any React component mounts
 if (typeof window !== "undefined") {
   try {
-    const hasRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    // Check both storages for existing tokens
+    const hasRefreshToken =
+      localStorage.getItem(REFRESH_TOKEN_KEY) ||
+      sessionStorage.getItem(REFRESH_TOKEN_KEY);
     if (hasRefreshToken && !accessToken) {
       startAuthInit();
     }
   } catch {
-    // localStorage might not be available
+    // Storage might not be available
   }
 }
 const AUTH_STORAGE_KEY = "auth-storage";
@@ -84,19 +118,29 @@ export const setAccessToken = (token: string | null) => {
 export const getAccessToken = () => accessToken;
 
 export const setRefreshToken = (token: string | null) => {
+  const storage = getTokenStorage();
   if (token) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+    storage.setItem(REFRESH_TOKEN_KEY, token);
     // Also set a cookie for SSR auth detection (non-sensitive flag only)
-    // The actual token stays in localStorage for security
+    // The actual token stays in storage for security
     document.cookie = `${REFRESH_TOKEN_KEY}=true; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
   } else {
+    // Clear from both storages to be safe
     localStorage.removeItem(REFRESH_TOKEN_KEY);
+    sessionStorage.removeItem(REFRESH_TOKEN_KEY);
     // Remove the cookie
     document.cookie = `${REFRESH_TOKEN_KEY}=; path=/; max-age=0; SameSite=Lax`;
   }
 };
 
-export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);
+export const getRefreshToken = () => {
+  // Check the preferred storage first, then fall back to the other
+  const storage = getTokenStorage();
+  return storage.getItem(REFRESH_TOKEN_KEY) ||
+    (getRememberMe()
+      ? sessionStorage.getItem(REFRESH_TOKEN_KEY)
+      : localStorage.getItem(REFRESH_TOKEN_KEY));
+};
 
 /**
  * Clears a cookie by name by setting it to expire immediately
@@ -124,8 +168,8 @@ export function clearAllAuthData(): void {
   // 1. Clear in-memory access token
   accessToken = null;
 
-  // 2. Clear localStorage items
-  AUTH_STORAGE_KEYS.forEach((key) => {
+  // 2. Clear localStorage items (including rememberMe preference)
+  [...AUTH_STORAGE_KEYS, REMEMBER_ME_KEY].forEach((key) => {
     try {
       localStorage.removeItem(key);
     } catch {

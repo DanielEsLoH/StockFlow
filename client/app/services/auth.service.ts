@@ -2,6 +2,7 @@ import {
   api,
   setAccessToken,
   setRefreshToken,
+  setRememberMe,
   getRefreshToken,
   clearAllAuthData,
 } from "~/lib/api";
@@ -11,6 +12,7 @@ import type { User, Tenant } from "~/stores/auth.store";
 export interface LoginCredentials {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterData {
@@ -58,7 +60,10 @@ export interface AcceptInvitationData {
 // Service
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const { data } = await api.post<AuthResponse>("/auth/login", credentials);
+    const { rememberMe = true, ...loginData } = credentials;
+    // Set storage preference BEFORE storing tokens
+    setRememberMe(rememberMe);
+    const { data } = await api.post<AuthResponse>("/auth/login", loginData);
     setAccessToken(data.accessToken);
     setRefreshToken(data.refreshToken);
     return data;

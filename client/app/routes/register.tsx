@@ -7,14 +7,17 @@ import { z } from "zod";
 import {
   Eye,
   EyeOff,
-  Mail,
-  Lock,
-  User,
-  Building2,
   ArrowRight,
   ArrowLeft,
   Check,
   Loader2,
+  User,
+  Lock,
+  Building2,
+  Zap,
+  BarChart3,
+  Receipt,
+  Boxes,
 } from "lucide-react";
 import { useAuth } from "~/hooks/useAuth";
 import { Button } from "~/components/ui/Button";
@@ -51,9 +54,32 @@ const registerSchema = z
 type RegisterForm = z.infer<typeof registerSchema>;
 
 const steps = [
-  { id: 1, title: "Datos personales", icon: User },
+  { id: 1, title: "Tus datos", icon: User },
   { id: 2, title: "Seguridad", icon: Lock },
-  { id: 3, title: "Empresa", icon: Building2 },
+  { id: 3, title: "Tu empresa", icon: Building2 },
+];
+
+const benefits = [
+  {
+    icon: Boxes,
+    title: "Inventario inteligente",
+    desc: "Multi-bodega, alertas de stock bajo y trazabilidad completa",
+  },
+  {
+    icon: Receipt,
+    title: "Facturacion DIAN",
+    desc: "Emite facturas electronicas validas en segundos",
+  },
+  {
+    icon: BarChart3,
+    title: "Reportes en tiempo real",
+    desc: "Dashboard con metricas clave de tu negocio",
+  },
+  {
+    icon: Zap,
+    title: "Listo en minutos",
+    desc: "Configura tu empresa y empieza a facturar hoy",
+  },
 ];
 
 export function meta() {
@@ -93,7 +119,7 @@ export default function RegisterPage() {
 
   const password = watch("password", "");
 
-  // Password strength calculation
+  // Password strength
   const getPasswordStrength = (pwd: string) => {
     let strength = 0;
     if (pwd.length >= 8) strength++;
@@ -129,10 +155,8 @@ export default function RegisterPage() {
       ["tenantName", "acceptTerms"],
     ];
 
-    // Validate current step fields
     const isValid = await trigger(fieldsToValidate[currentStep - 1]);
 
-    // For step 2, also validate password matching (cross-field validation)
     if (currentStep === 2 && isValid) {
       const passwordValue = watch("password");
       const confirmValue = watch("confirmPassword");
@@ -141,7 +165,7 @@ export default function RegisterPage() {
           type: "manual",
           message: "Las contrasenas no coinciden",
         });
-        return; // Don't proceed
+        return;
       }
     }
 
@@ -162,12 +186,10 @@ export default function RegisterPage() {
     registerUser(userData);
   };
 
-  // Handle validation errors - navigate to the step with errors
   const onError = (errors: Record<string, unknown>) => {
     const step1Fields = ["firstName", "lastName", "email"];
     const step2Fields = ["password", "confirmPassword"];
 
-    // Check which step has errors
     for (const field of step1Fields) {
       if (field in errors) {
         setCurrentStep(1);
@@ -180,150 +202,258 @@ export default function RegisterPage() {
         return;
       }
     }
-    // Step 3 errors will be shown on current page
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-50 p-8 dark:bg-neutral-950">
-      <motion.div
-        initial={isMounted ? { opacity: 0, y: 20 } : false}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-lg"
-      >
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <Link
-            to="/"
-            className="flex items-center gap-3 text-neutral-900 dark:text-white"
+    <div className="flex min-h-screen">
+      {/* Left Panel — Branding & Benefits */}
+      <div className="relative hidden overflow-hidden lg:flex lg:w-[52%] xl:w-[56%]">
+        {/* Layered background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900" />
+
+        {/* Isometric cube pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 10 L90 27 L90 57 L60 74 L30 57 L30 27 Z' fill='none' stroke='white' stroke-width='1'/%3E%3Cpath d='M60 40 L90 27' fill='none' stroke='white' stroke-width='0.5'/%3E%3Cpath d='M60 40 L30 27' fill='none' stroke='white' stroke-width='0.5'/%3E%3Cpath d='M60 40 L60 74' fill='none' stroke='white' stroke-width='0.5'/%3E%3C/svg%3E")`,
+          }}
+        />
+
+        {/* Radial glow */}
+        <div className="absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full bg-accent-500/20 blur-[120px]" />
+        <div className="absolute -bottom-48 -right-48 h-[600px] w-[600px] rounded-full bg-primary-400/15 blur-[150px]" />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between p-10 xl:p-14 text-white">
+          {/* Logo */}
+          <motion.div
+            initial={isMounted ? { opacity: 0, y: -10 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            <StockFlowLogo size="lg" showText variant="white" />
-          </Link>
+            <Link to="/" className="inline-flex items-center gap-3">
+              <StockFlowLogo size="lg" showText variant="white" />
+            </Link>
+          </motion.div>
+
+          {/* Main content */}
+          <motion.div
+            initial={isMounted ? { opacity: 0, y: 16 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="space-y-8"
+          >
+            <div className="space-y-4">
+              <h1 className="font-display text-3xl font-bold leading-tight xl:text-4xl 2xl:text-[2.75rem] 2xl:leading-tight">
+                Empieza gratis,
+                <br />
+                <span className="text-primary-200">crece sin limites</span>
+              </h1>
+              <p className="max-w-sm text-base text-primary-100/80 leading-relaxed xl:text-lg xl:max-w-md">
+                Crea tu cuenta en menos de 2 minutos y descubre por que cientos
+                de empresas confian en StockFlow.
+              </p>
+            </div>
+
+            {/* Benefits */}
+            <div className="grid gap-4 max-w-md">
+              {benefits.map((benefit, i) => (
+                <motion.div
+                  key={benefit.title}
+                  initial={isMounted ? { opacity: 0, x: -12 } : false}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.35 + i * 0.08 }}
+                  className="flex items-start gap-3.5 group"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm transition-colors group-hover:bg-white/15">
+                    <benefit.icon className="h-[18px] w-[18px] text-primary-200" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-semibold text-white/95">
+                      {benefit.title}
+                    </p>
+                    <p className="text-xs text-primary-200/70 leading-relaxed">
+                      {benefit.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Social proof */}
+          <motion.div
+            initial={isMounted ? { opacity: 0, y: 12 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="flex items-center gap-4"
+          >
+            {/* Avatars stack */}
+            <div className="flex -space-x-2.5">
+              {["AM", "LR", "JP", "SC"].map((initials, i) => (
+                <div
+                  key={initials}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary-700 text-[10px] font-bold text-white"
+                  style={{
+                    backgroundColor: [
+                      "rgba(168,85,247,0.5)",
+                      "rgba(20,184,166,0.5)",
+                      "rgba(249,115,22,0.5)",
+                      "rgba(99,102,241,0.5)",
+                    ][i],
+                    zIndex: 4 - i,
+                  }}
+                >
+                  {initials}
+                </div>
+              ))}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white/90">
+                Unete a cientos de empresas
+              </p>
+              <p className="text-xs text-primary-200/60">
+                que ya gestionan su negocio con StockFlow
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Right Panel — Register Form */}
+      <div className="relative flex flex-1 items-center justify-center bg-white p-6 sm:p-8 dark:bg-neutral-950">
+        {/* Theme toggle */}
+        <div className="absolute right-6 top-6">
           <ThemeToggle />
         </div>
 
-        {/* Card */}
-        <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
-          {/* Title */}
-          <div className="mb-6 text-center">
-            <h1 className="font-display text-2xl font-bold text-neutral-900 dark:text-white">
+        {/* Mobile logo */}
+        <div className="absolute left-6 top-6 lg:hidden">
+          <Link to="/">
+            <StockFlowLogo size="md" showText />
+          </Link>
+        </div>
+
+        <motion.div
+          initial={isMounted ? { opacity: 0, y: 16 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-[420px] space-y-6"
+        >
+          {/* Header */}
+          <div>
+            <h2 className="font-display text-2xl font-bold text-neutral-900 dark:text-white">
               Crear cuenta
-            </h1>
-            <p className="mt-2 text-neutral-600 dark:text-neutral-400">
+            </h2>
+            <p className="mt-1.5 text-sm text-neutral-500 dark:text-neutral-400">
               Registrate para comenzar a usar StockFlow
             </p>
           </div>
 
-          {/* OAuth Social Login Buttons */}
-          <div className="space-y-3 mb-6">
-            {/* Google OAuth */}
-            <a
-              href={`${API_URL}/auth/google`}
-              className="flex items-center justify-center gap-3 w-full px-4 py-2.5 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-200"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              <span>Continuar con Google</span>
-            </a>
-
-            {/* GitHub OAuth */}
-            <a
-              href={`${API_URL}/auth/github`}
-              className="flex items-center justify-center gap-3 w-full px-4 py-2.5 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-200"
-            >
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
+          {/* OAuth Buttons */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <a
+                href={`${API_URL}/auth/google`}
+                className="group flex items-center justify-center gap-2.5 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 shadow-sm transition-all hover:border-neutral-300 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-800"
               >
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-              </svg>
-              <span>Continuar con GitHub</span>
-            </a>
+                <svg
+                  className="h-4.5 w-4.5 shrink-0"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
+                </svg>
+                <span>Google</span>
+              </a>
+
+              <a
+                href={`${API_URL}/auth/github`}
+                className="group flex items-center justify-center gap-2.5 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 shadow-sm transition-all hover:border-neutral-300 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-800"
+              >
+                <svg
+                  className="h-4.5 w-4.5 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                </svg>
+                <span>GitHub</span>
+              </a>
+            </div>
+
+            <p className="text-[11px] text-center text-neutral-400 dark:text-neutral-500">
+              Con OAuth se crea tu cuenta y empresa automaticamente
+            </p>
           </div>
 
-          {/* OAuth note */}
-          <p className="text-xs text-neutral-500 text-center mb-6">
-            Al registrarte con Google o GitHub, se creará una nueva empresa.
-          </p>
-
           {/* Divider */}
-          <div className="relative mb-6">
+          <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-300 dark:border-neutral-600" />
+              <div className="w-full border-t border-neutral-200 dark:border-neutral-800" />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white dark:bg-neutral-900 text-neutral-500">
-                o registrate con email
+            <div className="relative flex justify-center">
+              <span className="bg-white px-3 text-xs font-medium uppercase tracking-wider text-neutral-400 dark:bg-neutral-950 dark:text-neutral-500">
+                o con email
               </span>
             </div>
           </div>
 
-          {/* Step indicator */}
-          <p className="text-center text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-            Paso {currentStep} de 3
-          </p>
-
-          {/* Progress Steps */}
-          <div className="mb-8 flex items-center justify-between">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isCompleted = currentStep > step.id;
-              const isCurrent = currentStep === step.id;
-
-              return (
-                <div key={step.id} className="flex items-center">
-                  <motion.div
-                    initial={false}
-                    animate={{
-                      scale: isCurrent ? 1.1 : 1,
-                      backgroundColor: isCompleted
-                        ? "rgb(16 185 129)"
+          {/* Progress bar */}
+          <div className="space-y-3">
+            {/* Step labels */}
+            <div className="flex items-center justify-between px-1">
+              {steps.map((step) => {
+                const isCompleted = currentStep > step.id;
+                const isCurrent = currentStep === step.id;
+                return (
+                  <div
+                    key={step.id}
+                    className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+                      isCompleted
+                        ? "text-success-600 dark:text-success-400"
                         : isCurrent
-                          ? "rgb(59 130 246)"
-                          : "rgb(229 231 235)",
-                    }}
-                    className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-                      isCompleted || isCurrent
-                        ? "text-white"
-                        : "text-neutral-400 dark:text-neutral-600"
+                          ? "text-primary-600 dark:text-primary-400"
+                          : "text-neutral-400 dark:text-neutral-500"
                     }`}
                   >
                     {isCompleted ? (
-                      <Check className="h-5 w-5" />
+                      <Check className="h-3.5 w-3.5" />
                     ) : (
-                      <Icon className="h-5 w-5" />
+                      <step.icon className="h-3.5 w-3.5" />
                     )}
-                  </motion.div>
+                    <span className="hidden sm:inline">{step.title}</span>
+                    <span className="sm:hidden">{step.id}</span>
+                  </div>
+                );
+              })}
+            </div>
 
-                  {index < steps.length - 1 && (
-                    <div
-                      className={`mx-2 h-1 w-16 rounded-full transition-colors ${
-                        isCompleted
-                          ? "bg-success-500"
-                          : "bg-neutral-200 dark:bg-neutral-700"
-                      }`}
-                    />
-                  )}
-                </div>
-              );
-            })}
+            {/* Progress track */}
+            <div className="h-1 w-full rounded-full bg-neutral-100 dark:bg-neutral-800">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-primary-500 to-accent-500"
+                initial={false}
+                animate={{ width: `${((currentStep - 1) / 2) * 100}%` }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              />
+            </div>
           </div>
 
           {/* Form */}
@@ -333,13 +463,14 @@ export default function RegisterPage() {
               {currentStep === 1 && (
                 <motion.div
                   key="step1"
-                  initial={isMounted ? { opacity: 0, x: 20 } : false}
+                  initial={isMounted ? { opacity: 0, x: 16 } : false}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  exit={{ opacity: 0, x: -16 }}
+                  transition={{ duration: 0.25 }}
                   className="space-y-4"
                 >
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
                       <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                         Nombre
                       </label>
@@ -347,14 +478,15 @@ export default function RegisterPage() {
                         {...register("firstName")}
                         placeholder="Juan"
                         error={!!errors.firstName}
+                        autoComplete="given-name"
                       />
                       {errors.firstName && (
-                        <p className="text-sm text-error-500">
+                        <p className="text-xs text-error-500">
                           {errors.firstName.message}
                         </p>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                         Apellido
                       </label>
@@ -362,31 +494,29 @@ export default function RegisterPage() {
                         {...register("lastName")}
                         placeholder="Perez"
                         error={!!errors.lastName}
+                        autoComplete="family-name"
                       />
                       {errors.lastName && (
-                        <p className="text-sm text-error-500">
+                        <p className="text-xs text-error-500">
                           {errors.lastName.message}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                       Correo electronico
                     </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
-                      <Input
-                        {...register("email")}
-                        type="email"
-                        placeholder="tu@email.com"
-                        className="pl-10"
-                        error={!!errors.email}
-                      />
-                    </div>
+                    <Input
+                      {...register("email")}
+                      type="email"
+                      placeholder="tu@email.com"
+                      error={!!errors.email}
+                      autoComplete="email"
+                    />
                     {errors.email && (
-                      <p className="text-sm text-error-500">
+                      <p className="text-xs text-error-500">
                         {errors.email.message}
                       </p>
                     )}
@@ -398,45 +528,51 @@ export default function RegisterPage() {
               {currentStep === 2 && (
                 <motion.div
                   key="step2"
-                  initial={isMounted ? { opacity: 0, x: 20 } : false}
+                  initial={isMounted ? { opacity: 0, x: 16 } : false}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  exit={{ opacity: 0, x: -16 }}
+                  transition={{ duration: 0.25 }}
                   className="space-y-4"
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                       Contrasena
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
                       <Input
                         {...register("password")}
                         type={showPassword ? "text" : "password"}
-                        placeholder="********"
-                        className="pl-10 pr-10"
+                        placeholder="Minimo 8 caracteres"
+                        className="pr-10"
                         error={!!errors.password}
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                        aria-label={
+                          showPassword
+                            ? "Ocultar contrasena"
+                            : "Mostrar contrasena"
+                        }
                       >
                         {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
+                          <EyeOff className="h-4 w-4" />
                         ) : (
-                          <Eye className="h-5 w-5" />
+                          <Eye className="h-4 w-4" />
                         )}
                       </button>
                     </div>
 
-                    {/* Password strength indicator */}
+                    {/* Password strength */}
                     {password && (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5 pt-1">
                         <div className="flex gap-1">
                           {[...Array(5)].map((_, i) => (
                             <div
                               key={i}
-                              className={`h-1.5 flex-1 rounded-full transition-colors ${
+                              className={`h-1 flex-1 rounded-full transition-all duration-300 ${
                                 i < passwordStrength
                                   ? strengthColors[passwordStrength - 1]
                                   : "bg-neutral-200 dark:bg-neutral-700"
@@ -444,36 +580,32 @@ export default function RegisterPage() {
                             />
                           ))}
                         </div>
-                        <p className="text-xs text-neutral-500">
-                          Fortaleza:{" "}
+                        <p className="text-[11px] text-neutral-500">
                           {strengthLabels[passwordStrength - 1] || "Muy debil"}
                         </p>
                       </div>
                     )}
 
                     {errors.password && (
-                      <p className="text-sm text-error-500">
+                      <p className="text-xs text-error-500">
                         {errors.password.message}
                       </p>
                     )}
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                       Confirmar contrasena
                     </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
-                      <Input
-                        {...register("confirmPassword")}
-                        type="password"
-                        placeholder="********"
-                        className="pl-10"
-                        error={!!errors.confirmPassword}
-                      />
-                    </div>
+                    <Input
+                      {...register("confirmPassword")}
+                      type="password"
+                      placeholder="Repite tu contrasena"
+                      error={!!errors.confirmPassword}
+                      autoComplete="new-password"
+                    />
                     {errors.confirmPassword && (
-                      <p className="text-sm text-error-500">
+                      <p className="text-xs text-error-500">
                         {errors.confirmPassword.message}
                       </p>
                     )}
@@ -485,66 +617,62 @@ export default function RegisterPage() {
               {currentStep === 3 && (
                 <motion.div
                   key="step3"
-                  initial={isMounted ? { opacity: 0, x: 20 } : false}
+                  initial={isMounted ? { opacity: 0, x: 16 } : false}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  exit={{ opacity: 0, x: -16 }}
+                  transition={{ duration: 0.25 }}
                   className="space-y-4"
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                       Nombre de tu empresa
                     </label>
-                    <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
-                      <Input
-                        {...register("tenantName")}
-                        placeholder="Mi Empresa S.A.S"
-                        className="pl-10"
-                        error={!!errors.tenantName}
-                      />
-                    </div>
+                    <Input
+                      {...register("tenantName")}
+                      placeholder="Mi Empresa S.A.S"
+                      error={!!errors.tenantName}
+                    />
                     {errors.tenantName && (
-                      <p className="text-sm text-error-500">
+                      <p className="text-xs text-error-500">
                         {errors.tenantName.message}
                       </p>
                     )}
                   </div>
 
-                  <label className="flex cursor-pointer items-start gap-3">
+                  <label className="flex cursor-pointer items-start gap-2.5 rounded-lg p-2 -mx-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900">
                     <input
                       type="checkbox"
                       {...register("acceptTerms")}
-                      className="mt-1 h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                      className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-neutral-600 dark:bg-neutral-800"
                     />
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
                       Acepto los{" "}
                       <Link
                         to="/terms"
-                        className="text-primary-600 hover:underline"
+                        className="font-medium text-primary-600 hover:underline dark:text-primary-400"
                       >
                         Terminos de servicio
                       </Link>{" "}
                       y la{" "}
                       <Link
                         to="/privacy"
-                        className="text-primary-600 hover:underline"
+                        className="font-medium text-primary-600 hover:underline dark:text-primary-400"
                       >
                         Politica de privacidad
                       </Link>
                     </span>
                   </label>
                   {errors.acceptTerms && (
-                    <p className="text-sm text-error-500">
+                    <p className="text-xs text-error-500">
                       {errors.acceptTerms.message}
                     </p>
                   )}
 
                   {/* Info box */}
-                  <div className="rounded-xl border border-warning-200 bg-warning-50 p-4 dark:border-warning-800 dark:bg-warning-900/20">
-                    <p className="text-sm text-warning-700 dark:text-warning-300">
-                      <strong>Nota:</strong> Al registrarte, tu cuenta quedara
-                      pendiente de aprobacion por un administrador. Te
-                      notificaremos cuando tu cuenta sea activada.
+                  <div className="rounded-xl border border-primary-100 bg-primary-50/50 p-3.5 dark:border-primary-900/30 dark:bg-primary-950/20">
+                    <p className="text-xs text-primary-700 dark:text-primary-300 leading-relaxed">
+                      Tu cuenta quedara pendiente de aprobacion. Te
+                      notificaremos por email cuando sea activada.
                     </p>
                   </div>
                 </motion.div>
@@ -552,28 +680,35 @@ export default function RegisterPage() {
             </AnimatePresence>
 
             {/* Navigation buttons */}
-            <div className="mt-8 flex gap-4">
+            <div className="mt-6 flex gap-3">
               {currentStep > 1 && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={prevStep}
-                  className="flex-1"
+                  size="lg"
+                  className="px-5"
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Anterior
+                  <ArrowLeft className="mr-1.5 h-4 w-4" />
+                  Atras
                 </Button>
               )}
 
               {currentStep < 3 ? (
-                <Button type="button" onClick={nextStep} className="flex-1">
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  size="lg"
+                  className="flex-1"
+                >
                   Siguiente
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               ) : (
                 <Button
                   type="submit"
                   disabled={isRegistering}
+                  size="lg"
                   className="flex-1"
                 >
                   {isRegistering ? (
@@ -584,26 +719,26 @@ export default function RegisterPage() {
                   ) : (
                     <>
                       Crear cuenta
-                      <Check className="ml-2 h-4 w-4" />
+                      <ArrowRight className="ml-1.5 h-4 w-4" />
                     </>
                   )}
                 </Button>
               )}
             </div>
           </form>
-        </div>
 
-        {/* Footer */}
-        <p className="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
-          Ya tienes cuenta?{" "}
-          <Link
-            to="/login"
-            className="font-medium text-primary-600 hover:underline"
-          >
-            Inicia sesion
-          </Link>
-        </p>
-      </motion.div>
+          {/* Login link */}
+          <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+            Ya tienes cuenta?{" "}
+            <Link
+              to="/login"
+              className="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
+            >
+              Inicia sesion
+            </Link>
+          </p>
+        </motion.div>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -37,6 +37,7 @@ import { getNotificationCategory } from "~/types/notification";
 import type { NotificationCategory } from "~/types/notification";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import { Button } from "~/components/ui/Button";
+import { useCrisp } from "~/hooks/useCrisp";
 
 const dropdownVariants = {
   hidden: {
@@ -117,6 +118,7 @@ export function Header() {
   const { toggleMobileSidebar, mobileSidebarOpen } = useUIStore();
   const { user } = useAuthStore();
   const { logout, isLoggingOut } = useAuth();
+  const { openChat } = useCrisp();
 
   useEffect(() => {
     setIsMounted(true);
@@ -315,12 +317,13 @@ export function Header() {
               <Search className="h-5 w-5" />
             </Button>
 
-            {/* Help button */}
+            {/* Help button — opens Crisp chat */}
             <Button
               variant="ghost"
               size="icon"
-              className="hidden sm:flex text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+              className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
               aria-label="Ayuda"
+              onClick={openChat}
             >
               <HelpCircle className="h-5 w-5" />
             </Button>

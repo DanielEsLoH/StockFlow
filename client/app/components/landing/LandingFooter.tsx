@@ -1,8 +1,22 @@
 import { Link } from "react-router";
+import { motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { handleScrollToSection } from "./LandingHeader";
 import { StockFlowLogo } from "~/components/ui/StockFlowLogo";
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 },
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Social icons
@@ -125,9 +139,15 @@ export function LandingFooter() {
     <footer id="empresa" className="border-t border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         {/* Grid */}
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6 lg:gap-12">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6 lg:gap-12"
+        >
           {/* Brand column */}
-          <div className="col-span-2 lg:col-span-2">
+          <motion.div variants={fadeInUp} className="col-span-2 lg:col-span-2">
             <Link to="/" aria-label="StockFlow">
               <StockFlowLogo size="md" showText />
             </Link>
@@ -152,17 +172,31 @@ export function LandingFooter() {
               <MessageCircle className="h-4 w-4" />
               Escríbenos por WhatsApp
             </a>
-          </div>
+          </motion.div>
 
           {/* Link columns */}
-          <FooterColumn title="Producto" links={productoLinks} />
-          <FooterColumn title="Soluciones" links={solucionesLinks} />
-          <FooterColumn title="Recursos" links={recursosLinks} />
-          <FooterColumn title="Legal" links={legalLinks} />
-        </div>
+          <motion.div variants={fadeInUp}>
+            <FooterColumn title="Producto" links={productoLinks} />
+          </motion.div>
+          <motion.div variants={fadeInUp}>
+            <FooterColumn title="Soluciones" links={solucionesLinks} />
+          </motion.div>
+          <motion.div variants={fadeInUp}>
+            <FooterColumn title="Recursos" links={recursosLinks} />
+          </motion.div>
+          <motion.div variants={fadeInUp}>
+            <FooterColumn title="Legal" links={legalLinks} />
+          </motion.div>
+        </motion.div>
 
         {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-neutral-200 pt-8 sm:flex-row dark:border-neutral-800">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-neutral-200 pt-8 sm:flex-row dark:border-neutral-800"
+        >
           <p className="text-sm text-neutral-400 dark:text-neutral-500">
             &copy; 2026 StockFlow. Todos los derechos reservados.
           </p>
@@ -187,7 +221,7 @@ export function LandingFooter() {
               </a>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </footer>
   );

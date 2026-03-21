@@ -5,14 +5,24 @@ import { Badge } from "~/components/ui/Badge";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+};
+
+const slideFromLeft = {
+  hidden: { opacity: 0, x: -40, filter: "blur(4px)" },
+  visible: { opacity: 1, x: 0, filter: "blur(0px)", transition: { duration: 0.6 } },
+};
+
+const slideFromRight = {
+  hidden: { opacity: 0, x: 40, scale: 0.95 },
+  visible: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.6, delay: 0.15 } },
 };
 
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 },
+    transition: { staggerChildren: 0.12 },
   },
 };
 
@@ -121,14 +131,19 @@ export function PWASection({ isMounted }: { isMounted: boolean }) {
 
           {/* Right: Phone mockup */}
           <motion.div
-            variants={fadeInUp}
+            variants={slideFromRight}
             initial={isMounted ? "hidden" : false}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.2 }}
             className="flex justify-center"
           >
-            <div className="relative">
+            <div className="relative" style={{ animation: "phone-float 5s ease-in-out infinite" }}>
+              <style>{`
+                @keyframes phone-float {
+                  0%, 100% { transform: translateY(0px); }
+                  50% { transform: translateY(-10px); }
+                }
+              `}</style>
               {/* Phone frame */}
               <div
                 className={cn(

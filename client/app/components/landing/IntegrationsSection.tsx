@@ -6,14 +6,19 @@ import { Card } from "~/components/ui/Card";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+};
+
+const cardPop = {
+  hidden: { opacity: 0, scale: 0.9, y: 20 },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] } },
 };
 
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 },
+    transition: { staggerChildren: 0.15 },
   },
 };
 
@@ -159,7 +164,7 @@ export function IntegrationsSection({ isMounted }: { isMounted: boolean }) {
           className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
         >
           {platforms.map((platform) => (
-            <motion.div key={platform.name} variants={fadeInUp}>
+            <motion.div key={platform.name} variants={cardPop}>
               <Card
                 variant="default"
                 padding="lg"

@@ -3,16 +3,21 @@ import { UserPlus, Settings, TrendingUp } from "lucide-react";
 import { Badge } from "~/components/ui/Badge";
 
 const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 20, filter: "blur(4px)" },
+  visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.5 } },
 };
 
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 },
+    transition: { staggerChildren: 0.2 },
   },
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.85, y: 30 },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } },
 };
 
 const howItWorksSteps = [
@@ -74,7 +79,7 @@ export function HowItWorks({ isMounted }: { isMounted: boolean }) {
           {howItWorksSteps.map((step, index) => (
             <motion.div
               key={step.step}
-              variants={fadeInUp}
+              variants={scaleIn}
               className="relative text-center"
             >
               {/* Connector line between steps */}

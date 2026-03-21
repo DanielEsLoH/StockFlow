@@ -5,14 +5,24 @@ import { Badge } from "~/components/ui/Badge";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+};
+
+const slideFromLeft = {
+  hidden: { opacity: 0, x: -40, filter: "blur(4px)" },
+  visible: { opacity: 1, x: 0, filter: "blur(0px)", transition: { duration: 0.6 } },
+};
+
+const slideFromRight = {
+  hidden: { opacity: 0, x: 40, filter: "blur(4px)" },
+  visible: { opacity: 1, x: 0, filter: "blur(0px)", transition: { duration: 0.6, delay: 0.2 } },
 };
 
 const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 },
+    transition: { staggerChildren: 0.12 },
   },
 };
 
@@ -47,7 +57,7 @@ export function DianCompliance({ isMounted }: { isMounted: boolean }) {
             viewport={{ once: true, margin: "-100px" }}
           >
             {/* Gradient Badge */}
-            <motion.div variants={fadeInUp} className="mb-6">
+            <motion.div variants={slideFromLeft} className="mb-6">
               <Badge
                 variant="gradient"
                 size="lg"
@@ -105,11 +115,10 @@ export function DianCompliance({ isMounted }: { isMounted: boolean }) {
 
           {/* Right: Resolution mockup visual */}
           <motion.div
-            variants={fadeInUp}
+            variants={slideFromRight}
             initial={isMounted ? "hidden" : false}
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.2 }}
           >
             <div
               className={cn(

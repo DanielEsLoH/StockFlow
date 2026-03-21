@@ -140,7 +140,7 @@ export function LandingFooter() {
 
             {/* WhatsApp CTA */}
             <a
-              href="https://wa.me/573160000000"
+              href="https://wa.me/573108563748?text=Hola%2C%20me%20interesa%20conocer%20más%20sobre%20StockFlow"
               target="_blank"
               rel="noopener noreferrer"
               className={cn(

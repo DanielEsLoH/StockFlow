@@ -14,6 +14,7 @@ import {
   PWASection,
   FinalCTA,
   LandingFooter,
+  WhatsAppFloat,
 } from "~/components/landing";
 
 const SITE_URL = "https://www.stockflow.com.co";
@@ -110,6 +111,7 @@ export default function Home() {
       />
       <FinalCTA isMounted={isMounted} />
       <LandingFooter />
+      <WhatsAppFloat />
     </div>
   );
 }

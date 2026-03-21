@@ -10,3 +10,4 @@ export { IntegrationsSection } from "./IntegrationsSection";
 export { PWASection } from "./PWASection";
 export { FinalCTA } from "./FinalCTA";
 export { LandingFooter } from "./LandingFooter";
+export { WhatsAppFloat } from "./WhatsAppFloat";

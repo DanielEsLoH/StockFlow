@@ -45,6 +45,7 @@ import { RecurringInvoicesModule } from './recurring-invoices';
 import { ExchangeRatesModule } from './exchange-rates/exchange-rates.module';
 import { IntegrationsModule } from './integrations';
 import { PhysicalInventoryCountsModule } from './physical-inventory-counts/physical-inventory-counts.module';
+import { ImportsModule } from './imports/imports.module';
 import { configuration, validateEnv } from './config';
 import { TenantMiddleware } from './common/middleware';
 import { PermissionsModule } from './common/permissions';
@@ -101,6 +102,7 @@ import { PermissionsModule } from './common/permissions';
     ExchangeRatesModule,
     IntegrationsModule,
     PhysicalInventoryCountsModule,
+    ImportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

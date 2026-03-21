@@ -275,6 +275,9 @@ export default [
     route("expenses/:id", "routes/_app.expenses.$id.tsx"),
     route("expenses/:id/edit", "routes/_app.expenses.$id.edit.tsx"),
 
+    // Data Import
+    route("import", "routes/_app.import.tsx"),
+
     // Integrations module
     route("integrations", "routes/_app.integrations.tsx"),
     route("integrations/:id", "routes/_app.integrations.$id.tsx"),

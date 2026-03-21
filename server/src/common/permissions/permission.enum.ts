@@ -140,6 +140,9 @@ export enum Permission {
 
   // === Dashboard Module ===
   DASHBOARD_VIEW = 'dashboard:view',
+
+  // === Data Import Module ===
+  DATA_IMPORT = 'data:import',
 }
 
 /**
@@ -322,6 +325,10 @@ export const PERMISSION_CATEGORIES = {
     label: 'Dashboard',
     permissions: [Permission.DASHBOARD_VIEW],
   },
+  dataImport: {
+    label: 'Importacion de Datos',
+    permissions: [Permission.DATA_IMPORT],
+  },
 } as const;
 
 /**
@@ -462,4 +469,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
 
   // Dashboard
   [Permission.DASHBOARD_VIEW]: 'Ver dashboard',
+
+  // Data Import
+  [Permission.DATA_IMPORT]: 'Importar datos (CSV/Excel)',
 };

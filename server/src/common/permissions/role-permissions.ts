@@ -151,6 +151,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.INTEGRATIONS_VIEW,
     Permission.INTEGRATIONS_MANAGE,
     Permission.INTEGRATIONS_SYNC,
+
+    // Data Import
+    Permission.DATA_IMPORT,
   ],
 
   /**
@@ -268,6 +271,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.INTEGRATIONS_VIEW,
     Permission.INTEGRATIONS_SYNC,
     // Note: Cannot manage integrations (ADMIN only)
+
+    // Data Import
+    Permission.DATA_IMPORT,
   ],
 
   /**

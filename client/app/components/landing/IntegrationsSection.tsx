@@ -122,7 +122,7 @@ export function IntegrationsSection({ isMounted }: { isMounted: boolean }) {
         {/* Section header */}
         <motion.div
           variants={staggerContainer}
-          initial={isMounted ? "hidden" : false}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           className="mx-auto max-w-2xl text-center"
@@ -158,7 +158,7 @@ export function IntegrationsSection({ isMounted }: { isMounted: boolean }) {
         {/* Platform cards grid */}
         <motion.div
           variants={staggerContainer}
-          initial={isMounted ? "hidden" : false}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
           className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
@@ -210,7 +210,7 @@ export function IntegrationsSection({ isMounted }: { isMounted: boolean }) {
         {/* Bottom features row */}
         <motion.div
           variants={staggerContainer}
-          initial={isMounted ? "hidden" : false}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
           className="mt-12 grid gap-6 sm:grid-cols-2"

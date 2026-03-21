@@ -72,7 +72,7 @@ export function PWASection({ isMounted }: { isMounted: boolean }) {
           {/* Left: Content */}
           <motion.div
             variants={staggerContainer}
-            initial={isMounted ? "hidden" : false}
+            initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
           >
@@ -132,7 +132,7 @@ export function PWASection({ isMounted }: { isMounted: boolean }) {
           {/* Right: Phone mockup */}
           <motion.div
             variants={slideFromRight}
-            initial={isMounted ? "hidden" : false}
+            initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             className="flex justify-center"

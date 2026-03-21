@@ -136,7 +136,7 @@ export function PricingSection({
         {/* Header */}
         <motion.div
           variants={staggerContainer}
-          initial={isMounted ? "hidden" : false}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
           className="mx-auto max-w-2xl text-center"
@@ -199,7 +199,7 @@ export function PricingSection({
         {/* Plan cards */}
         <motion.div
           variants={staggerContainer}
-          initial={isMounted ? "hidden" : false}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
           className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"

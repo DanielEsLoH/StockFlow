@@ -52,7 +52,7 @@ export function HowItWorks({ isMounted }: { isMounted: boolean }) {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={isMounted ? "hidden" : false}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
@@ -70,7 +70,7 @@ export function HowItWorks({ isMounted }: { isMounted: boolean }) {
         </motion.div>
 
         <motion.div
-          initial={isMounted ? "hidden" : false}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={staggerContainer}

@@ -52,7 +52,7 @@ export function DianCompliance({ isMounted }: { isMounted: boolean }) {
           {/* Left: Content */}
           <motion.div
             variants={staggerContainer}
-            initial={isMounted ? "hidden" : false}
+            initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
           >
@@ -116,7 +116,7 @@ export function DianCompliance({ isMounted }: { isMounted: boolean }) {
           {/* Right: Resolution mockup visual */}
           <motion.div
             variants={slideFromRight}
-            initial={isMounted ? "hidden" : false}
+            initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
           >

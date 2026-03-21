@@ -152,7 +152,7 @@ export function TestimonialsSection({ isMounted }: { isMounted: boolean }) {
         {/* Section header */}
         <motion.div
           variants={staggerContainer}
-          initial={isMounted ? "hidden" : false}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           className="mx-auto max-w-2xl text-center"
@@ -184,7 +184,7 @@ export function TestimonialsSection({ isMounted }: { isMounted: boolean }) {
         {/* Testimonials grid */}
         <motion.div
           variants={staggerContainer}
-          initial={isMounted ? "hidden" : false}
+          initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
           className={cn(

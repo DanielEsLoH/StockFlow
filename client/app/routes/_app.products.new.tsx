@@ -203,16 +203,13 @@ export default function NewProductPage() {
   const margin =
     salePrice > 0 ? ((salePrice - costPrice) / salePrice) * 100 : 0;
 
-  const handleMarginChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newMargin = parseFloat(e.target.value);
-      if (!isNaN(newMargin) && costPrice > 0 && newMargin < 100) {
-        const newSalePrice = Math.round(costPrice / (1 - newMargin / 100));
-        setValue("salePrice", newSalePrice, { shouldValidate: true });
-      }
-    },
-    [costPrice, setValue],
-  );
+  const handleMarginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newMargin = parseFloat(e.target.value);
+    if (!isNaN(newMargin) && costPrice > 0 && newMargin < 100) {
+      const newSalePrice = Math.round(costPrice / (1 - newMargin / 100));
+      setValue("salePrice", newSalePrice, { shouldValidate: true });
+    }
+  };
 
   if (isLoadingFormData) {
     return (

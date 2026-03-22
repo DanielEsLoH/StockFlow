@@ -38,6 +38,7 @@ import {
   Boxes,
   RefreshCw,
   Truck,
+  Upload,
 } from "lucide-react";
 import { Permission } from "~/types/permissions";
 
@@ -146,6 +147,7 @@ export const navSections: NavSection[] = [
       { name: "DIAN", href: "/dian", icon: Building, permission: Permission.DIAN_VIEW },
       { name: "Facturacion", href: "/billing", icon: Receipt, permission: Permission.SETTINGS_MANAGE },
       { name: "Auditoria", href: "/audit-logs", icon: ShieldCheck, permission: Permission.AUDIT_VIEW },
+      { name: "Importar Datos", href: "/import", icon: Upload, permission: Permission.DATA_IMPORT },
       { name: "Integraciones", href: "/integrations", icon: Plug, permission: Permission.INTEGRATIONS_VIEW },
       { name: "Monedas", href: "/settings/currencies", icon: ArrowLeftRight, permission: Permission.EXCHANGE_RATES_VIEW },
       { name: "Configuracion", href: "/settings", icon: Cog, permission: Permission.SETTINGS_VIEW },

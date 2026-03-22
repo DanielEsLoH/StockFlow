@@ -19,6 +19,7 @@ import XCircle from "lucide-react/dist/esm/icons/x-circle";
 import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
 import UserPlus from "lucide-react/dist/esm/icons/user-plus";
 import MapPin from "lucide-react/dist/esm/icons/map-pin";
+import Upload from "lucide-react/dist/esm/icons/upload";
 import type { Route } from "./+types/_app.customers";
 import { cn, debounce, formatCurrency } from "~/lib/utils";
 import {
@@ -179,16 +180,25 @@ export default function CustomersPage() {
             </p>
           </div>
         </div>
-        {canCreateCustomers && (
-          <Link to="/customers/new">
-            <Button
-              variant="gradient"
-              leftIcon={<UserPlus className="h-4 w-4" />}
-            >
-              Nuevo Cliente
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          {canCreateCustomers && (
+            <Link to="/import?module=customers">
+              <Button variant="outline" leftIcon={<Upload className="h-4 w-4" />}>
+                Importar
+              </Button>
+            </Link>
+          )}
+          {canCreateCustomers && (
+            <Link to="/customers/new">
+              <Button
+                variant="gradient"
+                leftIcon={<UserPlus className="h-4 w-4" />}
+              >
+                Nuevo Cliente
+              </Button>
+            </Link>
+          )}
+        </div>
       </PageSection>
 
       {/* Quick Stats */}

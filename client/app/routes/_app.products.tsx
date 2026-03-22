@@ -16,6 +16,7 @@ import LayoutGrid from "lucide-react/dist/esm/icons/layout-grid";
 import LayoutList from "lucide-react/dist/esm/icons/layout-list";
 import Sparkles from "lucide-react/dist/esm/icons/sparkles";
 import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
+import Upload from "lucide-react/dist/esm/icons/upload";
 import type { Route } from "./+types/_app.products";
 import { cn, formatCurrency, debounce } from "~/lib/utils";
 import { useProducts, useCategories, useWarehouses } from "~/hooks/useProducts";
@@ -174,13 +175,22 @@ export default function ProductsPage() {
             </div>
           </div>
         </div>
-        {canCreateProducts && (
-          <Link to="/products/new">
-            <Button variant="gradient" leftIcon={<Plus className="h-4 w-4" />}>
-              Nuevo Producto
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          {canCreateProducts && (
+            <Link to="/import?module=products">
+              <Button variant="outline" leftIcon={<Upload className="h-4 w-4" />}>
+                Importar
+              </Button>
+            </Link>
+          )}
+          {canCreateProducts && (
+            <Link to="/products/new">
+              <Button variant="gradient" leftIcon={<Plus className="h-4 w-4" />}>
+                Nuevo Producto
+              </Button>
+            </Link>
+          )}
+        </div>
       </PageSection>
 
       {/* Search and Filters */}

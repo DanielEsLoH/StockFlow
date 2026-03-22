@@ -139,6 +139,9 @@ export enum Permission {
   INTEGRATIONS_MANAGE = 'integrations:manage',
   INTEGRATIONS_SYNC = 'integrations:sync',
 
+  // === Data Import Module ===
+  DATA_IMPORT = 'data:import',
+
   // === Dashboard Module ===
   DASHBOARD_VIEW = 'dashboard:view',
 }
@@ -267,6 +270,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.INTEGRATIONS_VIEW,
     Permission.INTEGRATIONS_MANAGE,
     Permission.INTEGRATIONS_SYNC,
+    // Data Import
+    Permission.DATA_IMPORT,
   ],
 
   MANAGER: [
@@ -339,6 +344,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     // Integrations - View and sync only
     Permission.INTEGRATIONS_VIEW,
     Permission.INTEGRATIONS_SYNC,
+    // Data Import
+    Permission.DATA_IMPORT,
     // --- RESTRICTED: No inventory transfer, no categories manage, no DIAN send,
     // no settings, no audit, no quotations delete, no payroll create/edit ---
   ],
@@ -598,6 +605,10 @@ export const PERMISSION_CATEGORIES = {
       Permission.INTEGRATIONS_SYNC,
     ],
   },
+  dataImport: {
+    label: 'Importacion de Datos',
+    permissions: [Permission.DATA_IMPORT],
+  },
   dashboard: {
     label: 'Dashboard',
     permissions: [Permission.DASHBOARD_VIEW],
@@ -739,6 +750,9 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   [Permission.INTEGRATIONS_VIEW]: 'Ver integraciones',
   [Permission.INTEGRATIONS_MANAGE]: 'Gestionar integraciones',
   [Permission.INTEGRATIONS_SYNC]: 'Sincronizar integraciones',
+
+  // Data Import
+  [Permission.DATA_IMPORT]: 'Importar datos (CSV/Excel)',
 
   // Dashboard
   [Permission.DASHBOARD_VIEW]: 'Ver dashboard',

@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { useNavigate } from "react-router";
+import { useState, useCallback, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package,
@@ -77,8 +77,12 @@ const stepVariants = {
 
 export function ImportWizard() {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [selectedModule, setSelectedModule] = useState<ImportModule | null>(null);
+  const [searchParams] = useSearchParams();
+  const moduleParam = searchParams.get("module") as ImportModule | null;
+  const validModule = moduleParam && Object.values(ImportModule).includes(moduleParam) ? moduleParam : null;
+
+  const [currentStep, setCurrentStep] = useState(validModule ? 2 : 1);
+  const [selectedModule, setSelectedModule] = useState<ImportModule | null>(validModule);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [validationResult, setValidationResult] =
     useState<ImportValidationResult | null>(null);

@@ -16,6 +16,7 @@ import CheckCircle from "lucide-react/dist/esm/icons/check-circle";
 import XCircle from "lucide-react/dist/esm/icons/x-circle";
 import MapPin from "lucide-react/dist/esm/icons/map-pin";
 import Clock from "lucide-react/dist/esm/icons/clock";
+import Upload from "lucide-react/dist/esm/icons/upload";
 import type { Route } from "./+types/_app.suppliers";
 import { cn, debounce, formatCurrency } from "~/lib/utils";
 import {
@@ -151,16 +152,25 @@ export default function SuppliersPage() {
             </p>
           </div>
         </div>
-        {hasPermission(Permission.SUPPLIERS_CREATE) && (
-          <Link to="/suppliers/new">
-            <Button
-              variant="gradient"
-              leftIcon={<Plus className="h-4 w-4" />}
-            >
-              Nuevo Proveedor
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          {hasPermission(Permission.SUPPLIERS_CREATE) && (
+            <Link to="/import?module=suppliers">
+              <Button variant="outline" leftIcon={<Upload className="h-4 w-4" />}>
+                Importar
+              </Button>
+            </Link>
+          )}
+          {hasPermission(Permission.SUPPLIERS_CREATE) && (
+            <Link to="/suppliers/new">
+              <Button
+                variant="gradient"
+                leftIcon={<Plus className="h-4 w-4" />}
+              >
+                Nuevo Proveedor
+              </Button>
+            </Link>
+          )}
+        </div>
       </PageSection>
 
       {/* Quick Stats */}

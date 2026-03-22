@@ -4,6 +4,7 @@ import {
   api,
   setAccessToken,
   setRefreshToken,
+  setRememberMe,
   getRefreshToken,
   clearAllAuthData,
 } from "~/lib/api";
@@ -18,6 +19,7 @@ vi.mock("~/lib/api", () => ({
   setAccessToken: vi.fn(),
   getAccessToken: vi.fn(),
   setRefreshToken: vi.fn(),
+  setRememberMe: vi.fn(),
   getRefreshToken: vi.fn(),
   clearAllAuthData: vi.fn(),
 }));
@@ -66,7 +68,13 @@ describe("authService", () => {
 
       await authService.login(credentials);
 
-      expect(api.post).toHaveBeenCalledWith("/auth/login", credentials);
+      // rememberMe is destructured out; only email+password are sent to the API
+      expect(api.post).toHaveBeenCalledWith("/auth/login", {
+        email: "test@example.com",
+        password: "password123",
+      });
+      // rememberMe defaults to true
+      expect(setRememberMe).toHaveBeenCalledWith(true);
     });
 
     it("should set access token on successful login", async () => {

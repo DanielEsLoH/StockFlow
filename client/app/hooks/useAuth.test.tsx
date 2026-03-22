@@ -545,10 +545,18 @@ describe("useAuth", () => {
       });
     });
 
-    it("should navigate to login on logout", async () => {
+    it("should redirect to / on logout via full page reload", async () => {
       vi.mocked(getAccessToken).mockReturnValue("mock-token");
       vi.mocked(authService.getMe).mockResolvedValue(mockAuthResponse);
       vi.mocked(authService.logout).mockResolvedValue();
+
+      // Mock window.location.href setter
+      const locationHrefSpy = vi.fn();
+      const originalLocation = window.location;
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: { ...originalLocation, href: "", set href(v: string) { locationHrefSpy(v); } },
+      });
 
       const { result } = renderHook(() => useAuth(), {
         wrapper: createWrapper(),
@@ -563,7 +571,13 @@ describe("useAuth", () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith("/");
+        expect(locationHrefSpy).toHaveBeenCalledWith("/");
+      });
+
+      // Restore
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: originalLocation,
       });
     });
 

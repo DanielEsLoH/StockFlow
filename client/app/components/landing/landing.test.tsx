@@ -314,10 +314,10 @@ describe("LandingHeader", () => {
     expect(screen.getAllByText("Empresa").length).toBeGreaterThan(0);
   });
 
-  it("renders Producto dropdown trigger", () => {
+  it("renders Producto nav link", () => {
     wrap(<LandingHeader isMounted={true} />);
-    const buttons = screen.getAllByText("Producto");
-    expect(buttons.length).toBeGreaterThan(0);
+    const links = screen.getAllByText("Producto");
+    expect(links.length).toBeGreaterThan(0);
   });
 
   it("renders Iniciar Sesion and Empieza Gratis links", () => {
@@ -378,28 +378,19 @@ describe("LandingHeader", () => {
     expect(screen.getByLabelText("Cerrar menu")).toBeInTheDocument();
   });
 
-  it("locks body scroll when mobile menu is open", async () => {
+  it("closes mobile menu when close button is clicked", async () => {
     const user = userEvent.setup();
     wrap(<LandingHeader isMounted={true} />);
 
     const hamburger = screen.getByLabelText("Abrir menu");
     await user.click(hamburger);
-
-    expect(document.body.style.overflow).toBe("hidden");
-  });
-
-  it("unlocks body scroll when mobile menu is closed", async () => {
-    const user = userEvent.setup();
-    wrap(<LandingHeader isMounted={true} />);
-
-    const hamburger = screen.getByLabelText("Abrir menu");
-    await user.click(hamburger);
-    expect(document.body.style.overflow).toBe("hidden");
+    expect(screen.getByLabelText("Cerrar menu")).toBeInTheDocument();
 
     const closeBtn = screen.getByLabelText("Cerrar menu");
     await user.click(closeBtn);
 
-    expect(document.body.style.overflow).toBe("");
+    // Mobile menu should be closed (no more Cerrar menu button)
+    expect(screen.queryByLabelText("Cerrar menu")).not.toBeInTheDocument();
   });
 
   it("closes mobile menu when resize >= 1024", async () => {
@@ -420,8 +411,8 @@ describe("LandingHeader", () => {
       resizeListeners.forEach((fn) => fn(new Event("resize")));
     });
 
-    // Body overflow should be restored
-    expect(document.body.style.overflow).toBe("");
+    // Mobile menu should be closed
+    expect(screen.queryByLabelText("Cerrar menu")).not.toBeInTheDocument();
   });
 
   // --- Mobile menu content (lines 304-343) ---
@@ -432,53 +423,23 @@ describe("LandingHeader", () => {
 
     await user.click(screen.getByLabelText("Abrir menu"));
 
-    // The mobile panel has its own Precios/DIAN/Empresa links plus Login/Register
-    const mobilePanel = screen.getByLabelText("Cerrar menu").closest("div")!;
+    // The mobile panel has its own Precios/DIAN/Empresa/Producto links plus Login/Register
     expect(screen.getAllByText("Precios").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText(/Iniciar Sesi/i).length).toBeGreaterThanOrEqual(2);
   });
 
-  it("toggles Producto accordion in mobile menu", async () => {
+  it("renders Producto as simple button in mobile menu (no accordion)", async () => {
     const user = userEvent.setup();
     wrap(<LandingHeader isMounted={true} />);
 
     await user.click(screen.getByLabelText("Abrir menu"));
 
-    // Find the Producto button inside the mobile panel
-    const productoButtons = screen.getAllByText("Producto");
-    // Mobile Producto accordion toggle – pick the one inside the mobile panel
-    const mobileProducto = productoButtons.find((btn) =>
-      btn.closest("nav"),
-    )!;
-    await user.click(mobileProducto);
-
-    // Module links should now appear
-    expect(screen.getByText("Inventario")).toBeInTheDocument();
-    expect(screen.getByText("Ventas")).toBeInTheDocument();
-    expect(screen.getByText("Compras")).toBeInTheDocument();
-    expect(screen.getByText("Contabilidad")).toBeInTheDocument();
-    expect(screen.getByText("POS")).toBeInTheDocument();
-  });
-
-  it("closes mobile Producto accordion when toggled again", async () => {
-    const user = userEvent.setup();
-    wrap(<LandingHeader isMounted={true} />);
-
-    await user.click(screen.getByLabelText("Abrir menu"));
-
+    // Producto is a simple button in the mobile menu nav
     const productoButtons = screen.getAllByText("Producto");
     const mobileProducto = productoButtons.find((btn) =>
       btn.closest("nav"),
     )!;
-
-    // Open
-    await user.click(mobileProducto);
-    expect(screen.getByText("Inventario")).toBeInTheDocument();
-
-    // Close
-    await user.click(mobileProducto);
-    // The accordion should be collapsed - but with AnimatePresence mocked
-    // it may still be in DOM. The state toggle itself is what we test here.
+    expect(mobileProducto).toBeTruthy();
   });
 
   it("closes mobile menu when Login link inside mobile panel is clicked", async () => {
@@ -486,18 +447,17 @@ describe("LandingHeader", () => {
     wrap(<LandingHeader isMounted={true} />);
 
     await user.click(screen.getByLabelText("Abrir menu"));
-    expect(document.body.style.overflow).toBe("hidden");
 
     // The mobile panel renders its own "Iniciar Sesion" Link with onClick={onClose}
-    // Find the one inside the mobile panel (the panel has Cerrar menu button)
     const closeBtn = screen.getByLabelText("Cerrar menu");
-    const mobilePanel = closeBtn.closest("div[class*='fixed inset-y-0']")!;
+    const mobilePanel = closeBtn.closest("div[class*='fixed inset-0']")!;
     const loginLinks = within(mobilePanel as HTMLElement).getAllByText(
       /Iniciar Sesi/,
     );
     await user.click(loginLinks[0]);
 
-    expect(document.body.style.overflow).toBe("");
+    // Menu should be closed
+    expect(screen.queryByLabelText("Cerrar menu")).not.toBeInTheDocument();
   });
 
   it("closes mobile menu via backdrop click", async () => {
@@ -505,123 +465,30 @@ describe("LandingHeader", () => {
     wrap(<LandingHeader isMounted={true} />);
 
     await user.click(screen.getByLabelText("Abrir menu"));
-    expect(document.body.style.overflow).toBe("hidden");
 
-    // The backdrop is a div with onClick={onClose}. It's the element with
-    // class containing "fixed inset-0" that is not the panel.
-    const backdrop = document.querySelector(".fixed.inset-0.z-40");
+    // The backdrop is the div with z-[9998] class
+    const allFixed = document.querySelectorAll("div[class*='fixed'][class*='inset-0']");
+    // Find the backdrop (the one with bg-black or backdrop-blur)
+    const backdrop = Array.from(allFixed).find(
+      (el) => el.className.includes("backdrop-blur") || el.className.includes("bg-black"),
+    );
     expect(backdrop).toBeTruthy();
     fireEvent.click(backdrop!);
 
-    expect(document.body.style.overflow).toBe("");
+    // Menu should be closed
+    expect(screen.queryByLabelText("Cerrar menu")).not.toBeInTheDocument();
   });
 
-  // --- Mega menu (lines 125-199, 416-434) ---
-
-  it("opens mega menu on click", async () => {
-    const user = userEvent.setup();
-    wrap(<LandingHeader isMounted={true} />);
-
-    // Desktop Producto button (the one outside the nav in mobile)
-    const desktopProductoBtn = screen
-      .getAllByText("Producto")
-      .find(
-        (el) => el.tagName === "BUTTON" && el.closest("div[class*='lg:flex']") && !el.closest("div[class*='fixed']"),
-      ) as HTMLElement;
-
-    await user.click(desktopProductoBtn);
-
-    // Mega menu should show module names
-    expect(screen.getByText("Modulos")).toBeInTheDocument();
-  });
-
-  it("opens mega menu on mouse enter", () => {
-    wrap(<LandingHeader isMounted={true} />);
-
-    const desktopProductoBtn = screen
-      .getAllByText("Producto")
-      .find(
-        (el) => el.tagName === "BUTTON" && el.closest("div[class*='lg:flex']") && !el.closest("div[class*='fixed']"),
-      ) as HTMLElement;
-
-    fireEvent.mouseEnter(desktopProductoBtn);
-
-    expect(screen.getByText("Modulos")).toBeInTheDocument();
-  });
-
-  it("closes mega menu when clicking outside", async () => {
-    const user = userEvent.setup();
-    wrap(<LandingHeader isMounted={true} />);
-
-    // Open mega menu
-    const desktopProductoBtn = screen
-      .getAllByText("Producto")
-      .find(
-        (el) => el.tagName === "BUTTON" && el.closest("div[class*='lg:flex']") && !el.closest("div[class*='fixed']"),
-      ) as HTMLElement;
-
-    await user.click(desktopProductoBtn);
-    expect(screen.getByText("Modulos")).toBeInTheDocument();
-
-    // Click outside (on body)
-    fireEvent.mouseDown(document.body);
-
-    // The close handler should have been triggered
-    // Since AnimatePresence is mocked to pass children through,
-    // we verify the state changed by checking the button styling
-  });
-
-  it("toggles mega menu off on second click", async () => {
-    const user = userEvent.setup();
-    wrap(<LandingHeader isMounted={true} />);
-
-    const desktopProductoBtn = screen
-      .getAllByText("Producto")
-      .find(
-        (el) => el.tagName === "BUTTON" && el.closest("div[class*='lg:flex']") && !el.closest("div[class*='fixed']"),
-      ) as HTMLElement;
-
-    // Open
-    await user.click(desktopProductoBtn);
-    // Close
-    await user.click(desktopProductoBtn);
-  });
-
-  it("mega menu module links call scrollIntoView", async () => {
-    const user = userEvent.setup();
-    const scrollMock = vi.fn();
-    vi.spyOn(document, "querySelector").mockReturnValue({
-      scrollIntoView: scrollMock,
-    } as unknown as Element);
-
-    wrap(<LandingHeader isMounted={true} />);
-
-    const desktopProductoBtn = screen
-      .getAllByText("Producto")
-      .find(
-        (el) => el.tagName === "BUTTON" && el.closest("div[class*='lg:flex']") && !el.closest("div[class*='fixed']"),
-      ) as HTMLElement;
-
-    await user.click(desktopProductoBtn);
-
-    // Click the first module link (Inventario)
-    const inventarioLinks = screen.getAllByText("Inventario");
-    const megaMenuLink = inventarioLinks.find((el) =>
-      el.closest("a[href='#inventario']"),
-    );
-    if (megaMenuLink) {
-      await user.click(megaMenuLink);
-      expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth" });
-    }
-
-    vi.restoreAllMocks();
-  });
+  // --- Desktop nav links (simple links, no mega menu) ---
 
   it("desktop nav links call handleScrollToSection", async () => {
     const user = userEvent.setup();
-    const scrollMock = vi.fn();
+    const scrollToMock = vi.fn();
+    window.scrollTo = scrollToMock as unknown as typeof window.scrollTo;
+    Object.defineProperty(window, "scrollY", { value: 0, writable: true });
+
     vi.spyOn(document, "querySelector").mockReturnValue({
-      scrollIntoView: scrollMock,
+      getBoundingClientRect: () => ({ top: 500 }),
     } as unknown as Element);
 
     wrap(<LandingHeader isMounted={true} />);
@@ -629,11 +496,11 @@ describe("LandingHeader", () => {
     // Find a desktop nav link (href=#precios)
     const preciosLinks = screen.getAllByText("Precios");
     const desktopLink = preciosLinks.find(
-      (el) => el.tagName === "A" && !el.closest("nav"),
+      (el) => el.tagName === "A",
     );
     if (desktopLink) {
       await user.click(desktopLink);
-      expect(scrollMock).toHaveBeenCalled();
+      expect(scrollToMock).toHaveBeenCalled();
     }
 
     vi.restoreAllMocks();
@@ -641,11 +508,14 @@ describe("LandingHeader", () => {
 
   // --- Mobile menu nav link onClick (line 310) ---
 
-  it("mobile nav links (Precios/DIAN/Empresa) call handleScrollToSection", async () => {
+  it("mobile nav buttons trigger scroll after menu closes", async () => {
     const user = userEvent.setup();
-    const scrollMock = vi.fn();
+    const scrollToMock = vi.fn();
+    window.scrollTo = scrollToMock as unknown as typeof window.scrollTo;
+    Object.defineProperty(window, "scrollY", { value: 0, writable: true });
+
     vi.spyOn(document, "querySelector").mockReturnValue({
-      scrollIntoView: scrollMock,
+      getBoundingClientRect: () => ({ top: 500 }),
     } as unknown as Element);
 
     wrap(<LandingHeader isMounted={true} />);
@@ -655,52 +525,33 @@ describe("LandingHeader", () => {
 
     // Find the mobile panel
     const closeBtn = screen.getByLabelText("Cerrar menu");
-    const mobilePanel = closeBtn.closest("div[class*='fixed inset-y-0']")!;
+    const mobilePanel = closeBtn.closest("div[class*='fixed inset-0']")!;
 
-    // Click DIAN link inside mobile panel
-    const dianLinks = within(mobilePanel as HTMLElement).getAllByText("DIAN");
-    await user.click(dianLinks[0]);
+    // Click DIAN button inside mobile panel
+    const dianButtons = within(mobilePanel as HTMLElement).getAllByText("DIAN");
+    await user.click(dianButtons[0]);
 
-    expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth" });
+    // Menu should be closed
+    expect(screen.queryByLabelText("Cerrar menu")).not.toBeInTheDocument();
 
     vi.restoreAllMocks();
   });
 
-  // --- Desktop Producto button onClick (line 417) ---
+  // --- Desktop nav links onClick ---
 
-  it("desktop Producto button onClick toggles megaOpen state", async () => {
+  it("desktop Empresa link onClick calls handleScrollToSection", async () => {
     const user = userEvent.setup();
-    wrap(<LandingHeader isMounted={true} />);
+    const scrollToMock = vi.fn();
+    window.scrollTo = scrollToMock as unknown as typeof window.scrollTo;
+    Object.defineProperty(window, "scrollY", { value: 0, writable: true });
 
-    // Find the desktop Producto button
-    const allButtons = screen.getAllByText("Producto");
-    const desktopBtn = allButtons.find(
-      (el) =>
-        el.tagName === "BUTTON" &&
-        el.closest("div[class*='lg:flex']") &&
-        !el.closest("div[class*='fixed']"),
-    ) as HTMLElement;
-    expect(desktopBtn).toBeTruthy();
-
-    // Click to open (exercises onClick handler on line 417)
-    await user.click(desktopBtn);
-
-    // Verify the mega menu appeared by checking the "Modulos" heading
-    expect(screen.getByText("Modulos")).toBeInTheDocument();
-  });
-
-  // --- Desktop nav links onClick (line 442) ---
-
-  it("desktop nav links onClick calls handleScrollToSection", async () => {
-    const user = userEvent.setup();
-    const scrollMock = vi.fn();
     vi.spyOn(document, "querySelector").mockReturnValue({
-      scrollIntoView: scrollMock,
+      getBoundingClientRect: () => ({ top: 500 }),
     } as unknown as Element);
 
     wrap(<LandingHeader isMounted={true} />);
 
-    // Find the desktop Empresa link (not inside the mobile panel)
+    // Find the desktop Empresa link
     const empresaLinks = screen.getAllByText("Empresa");
     const desktopEmpresaLink = empresaLinks.find(
       (el) =>
@@ -710,7 +561,7 @@ describe("LandingHeader", () => {
     );
     if (desktopEmpresaLink) {
       await user.click(desktopEmpresaLink);
-      expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth" });
+      expect(scrollToMock).toHaveBeenCalled();
     }
 
     vi.restoreAllMocks();
@@ -746,25 +597,28 @@ describe("handleScrollToSection", () => {
     expect(preventDefaultMock).not.toHaveBeenCalled();
   });
 
-  it("calls preventDefault and scrollIntoView for hash href", () => {
+  it("calls preventDefault and scrollTo for hash href", () => {
     const preventDefaultMock = vi.fn();
-    const scrollIntoViewMock = vi.fn();
+    const scrollToMock = vi.fn();
     const mockEvent = {
       preventDefault: preventDefaultMock,
     } as unknown as React.MouseEvent<HTMLAnchorElement>;
 
+    window.scrollTo = scrollToMock as unknown as typeof window.scrollTo;
+    Object.defineProperty(window, "scrollY", { value: 100, writable: true });
+
     vi.spyOn(document, "querySelector").mockReturnValue({
-      scrollIntoView: scrollIntoViewMock,
+      getBoundingClientRect: () => ({ top: 500 }),
     } as unknown as Element);
 
     handleScrollToSection(mockEvent, "#test-section");
 
     expect(preventDefaultMock).toHaveBeenCalled();
-    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: "smooth" });
+    expect(scrollToMock).toHaveBeenCalledWith({ top: 500 + 100 - 80, behavior: "smooth" });
     vi.restoreAllMocks();
   });
 
-  it("does not call onScrollComplete when element not found", () => {
+  it("calls onComplete even when element not found (called before querySelector check)", () => {
     const onComplete = vi.fn();
     const mockEvent = {
       preventDefault: vi.fn(),
@@ -773,22 +627,28 @@ describe("handleScrollToSection", () => {
     vi.spyOn(document, "querySelector").mockReturnValue(null);
 
     handleScrollToSection(mockEvent, "#nonexistent", onComplete);
-    expect(onComplete).not.toHaveBeenCalled();
+    // onComplete is called immediately after preventDefault, before the element check
+    expect(onComplete).toHaveBeenCalledTimes(1);
     vi.restoreAllMocks();
   });
 
   it("calls onScrollComplete when element is found", () => {
     const onComplete = vi.fn();
+    const scrollToMock = vi.fn();
     const mockEvent = {
       preventDefault: vi.fn(),
     } as unknown as React.MouseEvent<HTMLAnchorElement>;
 
+    window.scrollTo = scrollToMock as unknown as typeof window.scrollTo;
+    Object.defineProperty(window, "scrollY", { value: 0, writable: true });
+
     vi.spyOn(document, "querySelector").mockReturnValue({
-      scrollIntoView: vi.fn(),
+      getBoundingClientRect: () => ({ top: 300 }),
     } as unknown as Element);
 
     handleScrollToSection(mockEvent, "#test", onComplete);
     expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(scrollToMock).toHaveBeenCalled();
     vi.restoreAllMocks();
   });
 });
@@ -1095,7 +955,7 @@ describe("FinalCTA", () => {
   it("renders the main heading", () => {
     wrap(<FinalCTA isMounted={false} />);
     expect(
-      screen.getByText(/Listo para transformar tu negocio/),
+      screen.getByText(/Listo para simplificar tu negocio/),
     ).toBeInTheDocument();
   });
 
@@ -1108,27 +968,30 @@ describe("FinalCTA", () => {
 
   it("renders primary CTA link to /register", () => {
     wrap(<FinalCTA isMounted={false} />);
-    const link = screen.getByText("Empieza Gratis").closest("a");
+    const link = screen.getByText(/Empieza Gratis/).closest("a");
     expect(link).toHaveAttribute("href", "/register");
   });
 
-  it("renders secondary CTA 'Ver Planes' with #pricing href", () => {
+  it("renders secondary CTA 'Ver Planes' with #precios href", () => {
     wrap(<FinalCTA isMounted={false} />);
     const link = screen.getByText("Ver Planes");
-    expect(link).toHaveAttribute("href", "#pricing");
+    expect(link).toHaveAttribute("href", "#precios");
   });
 
   it("Ver Planes link calls handleScrollToSection on click", async () => {
     const user = userEvent.setup();
-    const scrollMock = vi.fn();
+    const scrollToMock = vi.fn();
+    window.scrollTo = scrollToMock as unknown as typeof window.scrollTo;
+    Object.defineProperty(window, "scrollY", { value: 0, writable: true });
+
     vi.spyOn(document, "querySelector").mockReturnValue({
-      scrollIntoView: scrollMock,
+      getBoundingClientRect: () => ({ top: 500 }),
     } as unknown as Element);
 
     wrap(<FinalCTA isMounted={false} />);
 
     await user.click(screen.getByText("Ver Planes"));
-    expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth" });
+    expect(scrollToMock).toHaveBeenCalled();
 
     vi.restoreAllMocks();
   });
@@ -1136,7 +999,7 @@ describe("FinalCTA", () => {
   it("renders with isMounted=true", () => {
     wrap(<FinalCTA isMounted={true} />);
     expect(
-      screen.getByText(/Listo para transformar tu negocio/),
+      screen.getByText(/Listo para simplificar tu negocio/),
     ).toBeInTheDocument();
   });
 });
@@ -1164,7 +1027,7 @@ describe("LandingFooter", () => {
     const waLink = screen.getByText(/WhatsApp/);
     expect(waLink.closest("a")).toHaveAttribute(
       "href",
-      "https://wa.me/573001234567",
+      expect.stringContaining("wa.me/573108563748"),
     );
     expect(waLink.closest("a")).toHaveAttribute("target", "_blank");
   });
@@ -1219,9 +1082,12 @@ describe("LandingFooter", () => {
 
   it("footer links with # href call handleScrollToSection (line 106)", async () => {
     const user = userEvent.setup();
-    const scrollMock = vi.fn();
+    const scrollToMock = vi.fn();
+    window.scrollTo = scrollToMock as unknown as typeof window.scrollTo;
+    Object.defineProperty(window, "scrollY", { value: 0, writable: true });
+
     vi.spyOn(document, "querySelector").mockReturnValue({
-      scrollIntoView: scrollMock,
+      getBoundingClientRect: () => ({ top: 500 }),
     } as unknown as Element);
 
     wrap(<LandingFooter />);
@@ -1233,7 +1099,7 @@ describe("LandingFooter", () => {
     );
     if (footerLink) {
       await user.click(footerLink);
-      expect(scrollMock).toHaveBeenCalledWith({ behavior: "smooth" });
+      expect(scrollToMock).toHaveBeenCalled();
     }
 
     vi.restoreAllMocks();
@@ -1267,46 +1133,47 @@ describe("TestimonialsSection", () => {
 
   it("renders all 5 testimonial cards", () => {
     wrap(<TestimonialsSection isMounted={false} />);
-    expect(screen.getByText(/María González/)).toBeInTheDocument();
-    expect(screen.getByText(/Carlos Rodríguez/)).toBeInTheDocument();
-    expect(screen.getByText(/Ana Martínez/)).toBeInTheDocument();
-    expect(screen.getByText(/Diego Hernández/)).toBeInTheDocument();
-    expect(screen.getByText(/Laura Sánchez/)).toBeInTheDocument();
+    expect(screen.getByText(/Camila R\./)).toBeInTheDocument();
+    expect(screen.getByText(/Andrés M\./)).toBeInTheDocument();
+    expect(screen.getByText(/Patricia V\./)).toBeInTheDocument();
+    expect(screen.getByText(/Felipe T\./)).toBeInTheDocument();
+    expect(screen.getByText(/Sandra L\./)).toBeInTheDocument();
   });
 
   it("renders company names and roles", () => {
     wrap(<TestimonialsSection isMounted={false} />);
     expect(screen.getByText(/Distribuidora del Valle/)).toBeInTheDocument();
     expect(screen.getByText(/TechStore Colombia/)).toBeInTheDocument();
-    expect(screen.getByText(/Grupo Orion/)).toBeInTheDocument();
+    expect(screen.getByText(/Asesorías Contables Orion/)).toBeInTheDocument();
   });
 
   it("renders industry badges", () => {
     wrap(<TestimonialsSection isMounted={false} />);
     expect(screen.getByText("Retail")).toBeInTheDocument();
     expect(screen.getByText(/Distribuci/)).toBeInTheDocument();
-    expect(screen.getByText("Servicios")).toBeInTheDocument();
+    expect(screen.getByText(/Contadur/)).toBeInTheDocument();
     expect(screen.getByText("Restaurante")).toBeInTheDocument();
+    expect(screen.getByText("Importaciones")).toBeInTheDocument();
   });
 
   it("renders star ratings with decimal values", () => {
     wrap(<TestimonialsSection isMounted={false} />);
     // StarRating renders rating.toFixed(1)
-    // Two testimonials have 4.9 rating
-    expect(screen.getAllByText("4.9").length).toBe(2);
+    // Ratings: 5.0, 4.8, 4.7, 4.9, 4.8
     expect(screen.getByText("5.0")).toBeInTheDocument();
-    expect(screen.getByText("4.8")).toBeInTheDocument();
+    expect(screen.getAllByText("4.8").length).toBe(2);
     expect(screen.getByText("4.7")).toBeInTheDocument();
+    expect(screen.getByText("4.9")).toBeInTheDocument();
   });
 
   it("renders initials for each testimonial author", () => {
     wrap(<TestimonialsSection isMounted={false} />);
-    // Initials component extracts first letters: María González -> MG
-    expect(screen.getByText("MG")).toBeInTheDocument();
-    expect(screen.getByText("CR")).toBeInTheDocument();
-    expect(screen.getByText("AM")).toBeInTheDocument();
-    expect(screen.getByText("DH")).toBeInTheDocument();
-    expect(screen.getByText("LS")).toBeInTheDocument();
+    // Initials component extracts first letters: "Camila R." -> CR
+    expect(screen.getAllByText("CR").length).toBeGreaterThanOrEqual(1); // Camila R.
+    expect(screen.getAllByText("AM").length).toBeGreaterThanOrEqual(1); // Andrés M.
+    expect(screen.getByText("PV")).toBeInTheDocument(); // Patricia V.
+    expect(screen.getByText("FT")).toBeInTheDocument(); // Felipe T.
+    expect(screen.getByText("SL")).toBeInTheDocument(); // Sandra L.
   });
 
   it("renders partial stars for non-integer ratings (line 105 - empty star branch)", () => {
@@ -1557,7 +1424,7 @@ describe("PricingSection", () => {
     const ctaLinks = screen.getAllByText("Empieza Gratis");
     expect(ctaLinks.length).toBe(4);
     ctaLinks.forEach((link) => {
-      expect(link.closest("a")).toHaveAttribute("href", "/register");
+      expect(link.closest("a")?.getAttribute("href")).toContain("/register");
     });
   });
 

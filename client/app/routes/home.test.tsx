@@ -155,9 +155,9 @@ describe("Home route", () => {
       expect(result[1].content).toContain("PYMEs colombianas");
     });
 
-    it("returns exactly 2 meta entries", () => {
+    it("returns all meta entries (title, description, OG, Twitter, SEO)", () => {
       const result = meta();
-      expect(result).toHaveLength(2);
+      expect(result.length).toBeGreaterThanOrEqual(19);
     });
   });
 
@@ -252,36 +252,41 @@ describe("Home route", () => {
       expect(preventDefaultMock).not.toHaveBeenCalled();
     });
 
-    it("should call preventDefault and scrollIntoView for hash href", () => {
+    it("should call preventDefault and scrollTo for hash href", () => {
       const preventDefaultMock = vi.fn();
-      const scrollIntoViewMock = vi.fn();
       const mockEvent = {
         preventDefault: preventDefaultMock,
       } as unknown as React.MouseEvent<HTMLAnchorElement>;
 
+      const scrollToMock = vi.fn();
+      window.scrollTo = scrollToMock as unknown as typeof window.scrollTo;
+      Object.defineProperty(window, "scrollY", { value: 100, writable: true });
+
       vi.spyOn(document, "querySelector").mockReturnValue({
-        scrollIntoView: scrollIntoViewMock,
+        getBoundingClientRect: () => ({ top: 500 }),
       } as unknown as Element);
 
       handleScrollToSection(mockEvent, "#features");
 
       expect(preventDefaultMock).toHaveBeenCalled();
-      expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: "smooth" });
+      expect(scrollToMock).toHaveBeenCalledWith({ top: 500 + 100 - 80, behavior: "smooth" });
       vi.restoreAllMocks();
     });
 
-    it("should call onScrollComplete callback when element found", () => {
+    it("should call onScrollComplete callback for hash href", () => {
       const onScrollComplete = vi.fn();
       const mockEvent = {
         preventDefault: vi.fn(),
       } as unknown as React.MouseEvent<HTMLAnchorElement>;
 
+      window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
       vi.spyOn(document, "querySelector").mockReturnValue({
-        scrollIntoView: vi.fn(),
+        getBoundingClientRect: () => ({ top: 200 }),
       } as unknown as Element);
 
       handleScrollToSection(mockEvent, "#features", onScrollComplete);
 
+      // onComplete is called immediately after preventDefault, before scroll
       expect(onScrollComplete).toHaveBeenCalled();
       vi.restoreAllMocks();
     });

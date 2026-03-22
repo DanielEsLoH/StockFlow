@@ -645,9 +645,9 @@ describe('AuthController', () => {
       const error = new Error('Invalid token');
       authService.resetPassword.mockRejectedValue(error);
 
-      await expect(
-        controller.resetPassword(resetPasswordDto),
-      ).rejects.toThrow(error);
+      await expect(controller.resetPassword(resetPasswordDto)).rejects.toThrow(
+        error,
+      );
     });
   });
 

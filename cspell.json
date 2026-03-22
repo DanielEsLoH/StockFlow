@@ -14,7 +14,10 @@
     "grafico",
     "rapida",
     "dias",
-    "vacio"
+    "vacio",
+    "arcjet",
+    "Arcjet",
+    "PYME"
   ],
   "ignorePaths": ["node_modules", "dist", "build", ".react-router"]
 }

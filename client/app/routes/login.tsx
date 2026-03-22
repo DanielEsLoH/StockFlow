@@ -29,7 +29,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const loginSchema = z.object({
   email: z.email({ message: "Email invalido" }),
   password: z.string().min(8, "Minimo 8 caracteres"),
-  rememberMe: z.boolean().optional().default(true),
+  rememberMe: z.boolean(),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;

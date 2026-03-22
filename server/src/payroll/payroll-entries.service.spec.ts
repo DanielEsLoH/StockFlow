@@ -124,6 +124,16 @@ describe('PayrollEntriesService', () => {
     smmlv: 1300000,
     auxilioTransporteVal: 162000,
     uvtValue: 47065,
+    defaultPeriodType: 'MONTHLY' as any,
+    payrollPrefix: 'NOM',
+    payrollCurrentNumber: 1,
+    adjustmentPrefix: 'NA',
+    adjustmentCurrentNumber: 1,
+    payrollSoftwareId: null as any,
+    payrollSoftwarePin: null as any,
+    payrollTestSetId: null as any,
+    createdAt: new Date() as any,
+    updatedAt: new Date() as any,
   };
 
   beforeEach(async () => {

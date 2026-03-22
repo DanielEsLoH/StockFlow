@@ -19,8 +19,10 @@ describe('PhysicalInventoryCountsController', () => {
     warehouseCode: 'B1',
     status: PhysicalCountStatus.DRAFT,
     countDate: new Date(),
-    startedAt: null,
-    completedAt: null,
+    startedAt: null as Date | null,
+    completedAt: null as Date | null,
+    startedBy: null as string | null,
+    completedBy: null as string | null,
     itemsCount: 0,
     notes: 'Test count',
     createdAt: new Date(),
@@ -28,13 +30,19 @@ describe('PhysicalInventoryCountsController', () => {
 
   const mockItemResponse = {
     id: 'item-1',
+    tenantId: 'tenant-1',
     productId: 'prod-1',
+    countId: 'count-1',
     productSku: 'SKU-001',
     productName: 'Test Product',
     systemQuantity: 10,
     physicalQuantity: 8,
     variance: -2,
-    notes: null,
+    countedById: null as string | null,
+    countedAt: null as Date | null,
+    notes: null as string | null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   beforeEach(async () => {
@@ -177,7 +185,11 @@ describe('PhysicalInventoryCountsController', () => {
   describe('updateItem', () => {
     it('should call service.updateItem with countId, itemId, dto, and userId', async () => {
       const dto = { physicalQuantity: 12 };
-      const updatedItem = { id: 'item-1', physicalQuantity: 12, variance: 2 };
+      const updatedItem = {
+        ...mockItemResponse,
+        physicalQuantity: 12,
+        variance: 2,
+      };
       service.updateItem.mockResolvedValue(updatedItem);
 
       const result = await controller.updateItem(
@@ -230,6 +242,14 @@ describe('PhysicalInventoryCountsController', () => {
         ...mockCountResponse,
         status: PhysicalCountStatus.COMPLETED,
         completedAt: new Date(),
+        items: [],
+        summary: {
+          totalItems: 0,
+          itemsWithVariance: 0,
+          totalPositiveVariance: 0,
+          totalNegativeVariance: 0,
+        },
+        updatedAt: new Date(),
       };
       service.completeCount.mockResolvedValue(completed);
 

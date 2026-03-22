@@ -469,9 +469,10 @@ describe('DianController', () => {
     it('should call processCreditNote with dto', async () => {
       const dto = {
         invoiceId: 'invoice-123',
-        reason: 'DEVOLUCION_TOTAL' as any,
+        reasonCode: 'DEVOLUCION_TOTAL' as any,
+        reason: 'Devolucion total',
       };
-      const mockResult = { success: true, documentId: 'cn-1' };
+      const mockResult = { success: true, documentId: 'cn-1', status: DianDocumentStatus.ACCEPTED, message: 'OK', errors: undefined } as any;
       service.processCreditNote.mockResolvedValue(mockResult);
 
       const result = await controller.createCreditNote(dto);
@@ -481,7 +482,7 @@ describe('DianController', () => {
     });
 
     it('should propagate errors from service', async () => {
-      const dto = { invoiceId: 'inv-bad', reason: 'ANULACION' as any };
+      const dto = { invoiceId: 'inv-bad', reasonCode: 'ANULACION' as any, reason: 'Anulacion' };
       service.processCreditNote.mockRejectedValue(
         new BadRequestException('Invalid'),
       );
@@ -496,10 +497,11 @@ describe('DianController', () => {
     it('should call processDebitNote with dto', async () => {
       const dto = {
         invoiceId: 'invoice-123',
-        reason: 'INTERESES' as any,
+        reasonCode: 'INTERESES' as any,
+        reason: 'Intereses',
         items: [],
       };
-      const mockResult = { success: true, documentId: 'dn-1' };
+      const mockResult = { success: true, documentId: 'dn-1', status: DianDocumentStatus.ACCEPTED, message: 'OK', errors: undefined } as any;
       service.processDebitNote.mockResolvedValue(mockResult);
 
       const result = await controller.createDebitNote(dto);
@@ -529,7 +531,7 @@ describe('DianController', () => {
   describe('processPOSSale', () => {
     it('should call processPOSSale on service', async () => {
       const dto = { invoiceId: 'inv-pos-1', force: false };
-      const mockResult = { success: true, documentId: 'pos-doc-1' };
+      const mockResult = { success: true, documentId: 'pos-doc-1', status: DianDocumentStatus.ACCEPTED, message: 'OK', errors: undefined } as any;
       service.processPOSSale.mockResolvedValue(mockResult);
 
       const result = await controller.processPOSSale(dto);
@@ -552,9 +554,10 @@ describe('DianController', () => {
     it('should call processNotaAjuste on service', async () => {
       const dto = {
         documentoEquivalenteId: 'de-1',
-        reason: 'DEVOLUCION_TOTAL' as any,
+        reasonCode: '1',
+        reason: 'DEVOLUCION_TOTAL',
       };
-      const mockResult = { success: true, documentId: 'na-1' };
+      const mockResult = { success: true, documentId: 'na-1', status: DianDocumentStatus.ACCEPTED, message: 'OK', errors: undefined } as any;
       service.processNotaAjuste.mockResolvedValue(mockResult);
 
       const result = await controller.processNotaAjuste(dto);
@@ -575,6 +578,14 @@ describe('DianController', () => {
       service.setPosResolution.mockResolvedValue({
         success: true,
         message: 'OK',
+        config: {
+          posResolutionNumber: 'RES-POS-001',
+          posResolutionPrefix: 'POS',
+          posResolutionRangeFrom: 1,
+          posResolutionRangeTo: 100000,
+          posCurrentNumber: 1,
+          posNotePrefix: null,
+        },
       });
 
       const result = await controller.setPosResolution(dto);
@@ -591,6 +602,10 @@ describe('DianController', () => {
         success: true,
         eventDocumentId: 'evt-1',
         cude: 'cude-123',
+        trackId: undefined,
+        status: 'ACCEPTED' as const,
+        message: 'Evento enviado',
+        errors: undefined,
       };
       service.sendEvent.mockResolvedValue(mockResult);
 
@@ -609,7 +624,15 @@ describe('DianController', () => {
         eventCode: '031' as any,
         rejectionReason: 'Factura erronea',
       };
-      service.sendEvent.mockResolvedValue({ success: true });
+      service.sendEvent.mockResolvedValue({
+        success: true,
+        eventDocumentId: 'evt-1',
+        cude: 'cude-123',
+        trackId: undefined,
+        status: 'ACCEPTED' as const,
+        message: 'Evento enviado',
+        errors: undefined,
+      });
 
       await controller.sendEvent('doc-123', dto);
 
@@ -624,7 +647,15 @@ describe('DianController', () => {
   describe('sendEventByInvoice', () => {
     it('should call sendEventByInvoice with invoiceId and dto fields', async () => {
       const dto = { eventCode: '033' as any };
-      const mockResult = { success: true, eventDocumentId: 'evt-2' };
+      const mockResult = {
+        success: true,
+        eventDocumentId: 'evt-2',
+        cude: 'cude-456',
+        trackId: undefined,
+        status: 'ACCEPTED' as const,
+        message: 'Evento enviado',
+        errors: undefined,
+      };
       service.sendEventByInvoice.mockResolvedValue(mockResult);
 
       const result = await controller.sendEventByInvoice('inv-123', dto);
@@ -642,7 +673,15 @@ describe('DianController', () => {
         eventCode: '031' as any,
         rejectionReason: 'Reclamo valido',
       };
-      service.sendEventByInvoice.mockResolvedValue({ success: true });
+      service.sendEventByInvoice.mockResolvedValue({
+        success: true,
+        eventDocumentId: 'evt-3',
+        cude: 'cude-789',
+        trackId: undefined,
+        status: 'ACCEPTED' as const,
+        message: 'Evento enviado',
+        errors: undefined,
+      });
 
       await controller.sendEventByInvoice('inv-123', dto);
 

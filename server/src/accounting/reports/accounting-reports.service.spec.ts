@@ -103,13 +103,13 @@ describe('AccountingReportsService', () => {
   ];
 
   const mockPrismaService = {
-    account: { findMany: jest.fn() },
+    account: { findMany: jest.fn(), count: jest.fn() },
     journalEntryLine: {
       groupBy: jest.fn(),
       findMany: jest.fn(),
       aggregate: jest.fn(),
     },
-    journalEntry: { findMany: jest.fn() },
+    journalEntry: { findMany: jest.fn(), count: jest.fn() },
     invoice: { findMany: jest.fn() },
     purchaseOrder: { findMany: jest.fn() },
     withholdingCertificate: { findMany: jest.fn() },
@@ -1704,15 +1704,8 @@ describe('AccountingReportsService', () => {
   describe('getDashboard', () => {
     beforeEach(() => {
       // Default stubs for getDashboard prisma calls
-      if (!mockPrismaService.journalEntry.count) {
-        (mockPrismaService.journalEntry as any).count = jest.fn();
-      }
-      if (!mockPrismaService.account.count) {
-        (mockPrismaService.account as any).count = jest.fn();
-      }
-
-      (mockPrismaService.journalEntry as any).count.mockResolvedValue(50);
-      (mockPrismaService.account as any).count.mockResolvedValue(25);
+      mockPrismaService.journalEntry.count.mockResolvedValue(50);
+      mockPrismaService.account.count.mockResolvedValue(25);
       mockPrismaService.journalEntryLine.findMany.mockResolvedValue([]);
       mockPrismaService.journalEntryLine.groupBy.mockResolvedValue([]);
       mockPrismaService.account.findMany.mockResolvedValue([]);

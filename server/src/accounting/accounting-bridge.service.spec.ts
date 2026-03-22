@@ -676,9 +676,10 @@ describe('AccountingBridgeService', () => {
   describe('onPayrollApproved', () => {
     const payrollParams = {
       tenantId: 'tenant-bridge',
-      payrollId: 'payroll-1',
+      periodId: 'payroll-1',
       periodName: 'Enero 2025 Q1',
       totalDevengados: 5_000_000,
+      totalDeducciones: 1_200_000,
       totalNeto: 3_800_000,
       totalSaludEmpleado: 200_000,
       totalPensionEmpleado: 200_000,

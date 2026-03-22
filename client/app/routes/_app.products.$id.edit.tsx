@@ -130,6 +130,7 @@ export default function EditProductPage() {
     control,
     watch,
     reset,
+    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -177,11 +178,22 @@ export default function EditProductPage() {
     label: c.name,
   }));
 
-  // Calculate margin for preview
+  // Bidirectional margin <-> salePrice calculation
   const salePrice = watch("salePrice") || 0;
   const costPrice = watch("costPrice") || 0;
   const margin =
     salePrice > 0 ? ((salePrice - costPrice) / salePrice) * 100 : 0;
+
+  const handleMarginChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newMargin = parseFloat(e.target.value);
+      if (!isNaN(newMargin) && costPrice > 0 && newMargin < 100) {
+        const newSalePrice = Math.round(costPrice / (1 - newMargin / 100));
+        setValue("salePrice", newSalePrice, { shouldValidate: true, shouldDirty: true });
+      }
+    },
+    [costPrice, setValue],
+  );
 
   const isLoading = isLoadingProduct || isLoadingFormData;
 
@@ -421,23 +433,34 @@ export default function EditProductPage() {
                     )}
                   </div>
 
-                  {/* Margin preview */}
+                  {/* Margin — editable, bidirectional */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Margen
+                      Margen %
                     </label>
-                    <div
-                      className={cn(
-                        "flex h-11 items-center justify-center rounded-xl px-4 font-semibold",
-                        margin >= 30
-                          ? "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300"
-                          : margin >= 15
-                            ? "bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300"
-                            : "bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-300",
-                      )}
-                    >
-                      {margin.toFixed(1)}%
-                    </div>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="99.9"
+                      value={margin > 0 ? margin.toFixed(1) : ""}
+                      onChange={handleMarginChange}
+                      placeholder="0"
+                      rightElement={
+                        <span
+                          className={cn(
+                            "text-xs font-semibold px-1.5 py-0.5 rounded-md",
+                            margin >= 30
+                              ? "bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-300"
+                              : margin >= 15
+                                ? "bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-300"
+                                : "bg-error-100 text-error-700 dark:bg-error-900/30 dark:text-error-300",
+                          )}
+                        >
+                          %
+                        </span>
+                      }
+                    />
                   </div>
                 </div>
 

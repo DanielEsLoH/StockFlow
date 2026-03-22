@@ -472,7 +472,7 @@ export function POSCartPro({
                   <th className="py-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 text-right">
                     Total
                   </th>
-                  <th className="py-2 w-6"></th>
+                  <th className="py-2 w-6"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>

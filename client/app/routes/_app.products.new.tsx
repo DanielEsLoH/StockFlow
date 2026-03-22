@@ -214,11 +214,6 @@ export default function NewProductPage() {
     [costPrice, setValue],
   );
 
-  const handleCostPriceBlur = useCallback(() => {
-    // If salePrice is 0 but margin input has a value, recalculate salePrice
-    if (costPrice > 0 && salePrice === 0) return;
-  }, [costPrice, salePrice]);
-
   if (isLoadingFormData) {
     return (
       <div className="space-y-6">

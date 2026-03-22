@@ -456,6 +456,189 @@ describe('EmployeesService', () => {
     });
   });
 
+  describe('update - additional fields', () => {
+    it('should update all optional fields when provided', async () => {
+      prisma.employee.findFirst.mockResolvedValue(mockEmployee);
+      prisma.employee.update.mockResolvedValue({
+        ...mockEmployee,
+        email: 'new@test.com',
+        phone: '3009999999',
+        address: 'New Address',
+        city: 'Cali',
+        cityCode: '76001',
+        department: 'Valle',
+        departmentCode: '76',
+        contractType: 'TERMINO_FIJO' as any,
+        salaryType: SalaryType.ORDINARIO,
+        baseSalary: 2_000_000n,
+        arlRiskLevel: 'LEVEL_II' as any,
+        epsName: 'Nueva EPS',
+        epsCode: 'EPS002',
+        afpName: 'Protección',
+        afpCode: 'AFP002',
+        cajaName: 'Comfama',
+        cajaCode: 'CCF002',
+        bankName: 'Davivienda',
+        bankAccountType: 'CHECKING',
+        bankAccountNumber: '99999999',
+        costCenter: 'CC-01',
+        startDate: new Date('2026-03-01'),
+        endDate: new Date('2027-03-01'),
+      });
+
+      const result = await service.update('emp-1', {
+        email: 'new@test.com',
+        phone: '3009999999',
+        address: 'New Address',
+        city: 'Cali',
+        cityCode: '76001',
+        department: 'Valle',
+        departmentCode: '76',
+        contractType: 'TERMINO_FIJO' as any,
+        salaryType: SalaryType.ORDINARIO,
+        baseSalary: 2_000_000,
+        arlRiskLevel: 'LEVEL_II' as any,
+        epsName: 'Nueva EPS',
+        epsCode: 'EPS002',
+        afpName: 'Protección',
+        afpCode: 'AFP002',
+        cajaName: 'Comfama',
+        cajaCode: 'CCF002',
+        bankName: 'Davivienda',
+        bankAccountType: 'CHECKING',
+        bankAccountNumber: '99999999',
+        costCenter: 'CC-01',
+        startDate: '2026-03-01',
+        endDate: '2027-03-01',
+      });
+
+      expect(prisma.employee.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            email: 'new@test.com',
+            phone: '3009999999',
+            address: 'New Address',
+            city: 'Cali',
+            cityCode: '76001',
+            department: 'Valle',
+            departmentCode: '76',
+            epsName: 'Nueva EPS',
+            epsCode: 'EPS002',
+            afpName: 'Protección',
+            afpCode: 'AFP002',
+            cajaName: 'Comfama',
+            cajaCode: 'CCF002',
+            bankName: 'Davivienda',
+            bankAccountType: 'CHECKING',
+            bankAccountNumber: '99999999',
+            costCenter: 'CC-01',
+          }),
+        }),
+      );
+    });
+
+    it('should set endDate to null when empty string provided', async () => {
+      prisma.employee.findFirst.mockResolvedValue({
+        ...mockEmployee,
+        endDate: new Date('2027-01-01'),
+      });
+      prisma.employee.update.mockResolvedValue({
+        ...mockEmployee,
+        endDate: null,
+      });
+
+      await service.update('emp-1', { endDate: '' });
+
+      expect(prisma.employee.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ endDate: null }),
+        }),
+      );
+    });
+
+    it('should allow duplicate check to pass when no duplicate found', async () => {
+      prisma.employee.findFirst
+        .mockResolvedValueOnce(mockEmployee) // existing employee
+        .mockResolvedValueOnce(null); // no duplicate
+      prisma.employee.update.mockResolvedValue({
+        ...mockEmployee,
+        documentNumber: '9876543210',
+      });
+
+      const result = await service.update('emp-1', {
+        documentNumber: '9876543210',
+      });
+
+      expect(result.documentNumber).toBe('9876543210');
+    });
+
+    it('should recalculate auxilioTransporte when salaryType changes to INTEGRAL', async () => {
+      prisma.employee.findFirst.mockResolvedValue(mockEmployee);
+      prisma.employee.update.mockResolvedValue({
+        ...mockEmployee,
+        salaryType: SalaryType.INTEGRAL,
+        auxilioTransporte: false,
+      });
+
+      await service.update('emp-1', { salaryType: SalaryType.INTEGRAL });
+
+      expect(prisma.employee.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ auxilioTransporte: false }),
+        }),
+      );
+    });
+  });
+
+  describe('create - additional cases', () => {
+    it('should set salaryType to ORDINARIO when not provided', async () => {
+      prisma.employee.findFirst.mockResolvedValue(null);
+      prisma.employee.create.mockResolvedValue(mockEmployee);
+
+      await service.create({
+        documentType: DocumentType.CC,
+        documentNumber: '5555555555',
+        firstName: 'Ana',
+        lastName: 'García',
+        contractType: ContractType.TERMINO_INDEFINIDO,
+        baseSalary: 1_423_500,
+        startDate: '2026-01-15',
+      });
+
+      expect(prisma.employee.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            salaryType: SalaryType.ORDINARIO,
+          }),
+        }),
+      );
+    });
+
+    it('should set endDate when provided', async () => {
+      prisma.employee.findFirst.mockResolvedValue(null);
+      prisma.employee.create.mockResolvedValue(mockEmployee);
+
+      await service.create({
+        documentType: DocumentType.CC,
+        documentNumber: '5555555555',
+        firstName: 'Ana',
+        lastName: 'García',
+        contractType: ContractType.TERMINO_INDEFINIDO,
+        baseSalary: 1_423_500,
+        startDate: '2026-01-15',
+        endDate: '2027-01-15',
+      });
+
+      expect(prisma.employee.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            endDate: expect.any(Date),
+          }),
+        }),
+      );
+    });
+  });
+
   describe('getActiveCount', () => {
     it('should return count of active employees', async () => {
       prisma.employee.count.mockResolvedValue(5);

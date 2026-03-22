@@ -1,14 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { PayrollEntriesController } from './payroll-entries.controller';
 import { PayrollEntriesService } from './payroll-entries.service';
 import { PayrollDianService } from './services/payroll-dian.service';
 import { JwtAuthGuard } from '../auth';
 import { PermissionsGuard } from '../common';
+import { AdjustmentNoteType } from './dto/create-payroll-adjustment.dto';
 
 describe('PayrollEntriesController', () => {
   let controller: PayrollEntriesController;
   let service: jest.Mocked<PayrollEntriesService>;
+  let dianService: jest.Mocked<PayrollDianService>;
 
   const mockEntryResponse = {
     id: 'entry-1',
@@ -24,6 +26,7 @@ describe('PayrollEntriesController', () => {
     const mockService = {
       findOne: jest.fn(),
       update: jest.fn(),
+      createAdjustment: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -44,6 +47,7 @@ describe('PayrollEntriesController', () => {
 
     controller = module.get<PayrollEntriesController>(PayrollEntriesController);
     service = module.get(PayrollEntriesService);
+    dianService = module.get(PayrollDianService);
   });
 
   afterEach(() => {
@@ -78,6 +82,67 @@ describe('PayrollEntriesController', () => {
 
       expect(result).toEqual(mockEntryResponse);
       expect(service.update).toHaveBeenCalledWith('entry-1', dto);
+    });
+  });
+
+  describe('createAdjustment', () => {
+    it('should create adjustment and return result', async () => {
+      const dto = {
+        tipoNota: AdjustmentNoteType.DELETE,
+        reason: 'Error in payroll',
+      };
+      const adjustmentResponse = {
+        ...mockEntryResponse,
+        id: 'adj-1',
+        entryNumber: 'NA-000001',
+      };
+      service.createAdjustment.mockResolvedValue(adjustmentResponse as any);
+
+      const result = await controller.createAdjustment('entry-1', dto);
+
+      expect(result).toEqual(adjustmentResponse);
+      expect(service.createAdjustment).toHaveBeenCalledWith('entry-1', dto);
+    });
+
+    it('should propagate BadRequestException', async () => {
+      const dto = { tipoNota: AdjustmentNoteType.DELETE };
+      service.createAdjustment.mockRejectedValue(
+        new BadRequestException('No CUNE'),
+      );
+
+      await expect(
+        controller.createAdjustment('entry-1', dto),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('submitToDian', () => {
+    it('should submit entry to DIAN and return result', async () => {
+      const dianResponse = {
+        success: true,
+        entryId: 'entry-1',
+        entryNumber: 'NOM-001-001',
+        cune: 'cune-hash',
+        trackId: 'track-123',
+        status: 'ACCEPTED',
+        message: 'Nomina enviada y aceptada',
+      };
+      dianService.signAndSubmitEntry.mockResolvedValue(dianResponse as any);
+
+      const result = await controller.submitToDian('entry-1');
+
+      expect(result).toEqual(dianResponse);
+      expect(dianService.signAndSubmitEntry).toHaveBeenCalledWith('entry-1');
+    });
+
+    it('should propagate NotFoundException', async () => {
+      dianService.signAndSubmitEntry.mockRejectedValue(
+        new NotFoundException(),
+      );
+
+      await expect(controller.submitToDian('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

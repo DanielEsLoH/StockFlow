@@ -841,6 +841,201 @@ describe('ReportsController', () => {
     });
   });
 
+  describe('downloadIvaDeclaration', () => {
+    const mockIvaQuery = {
+      format: ReportFormat.PDF,
+      year: 2026,
+      period: 1,
+    };
+
+    it('should generate IVA declaration report as PDF', async () => {
+      const mockAccountingReportsService = (controller as any)
+        .accountingReportsService;
+      const mockData = { year: 2026, period: 1, rows: [] };
+      mockAccountingReportsService.getIvaDeclaration.mockResolvedValue(
+        mockData,
+      );
+      reportsService.generateIvaDeclarationReport = jest
+        .fn()
+        .mockResolvedValue(mockPdfBuffer);
+      const res = mockResponse();
+
+      await controller.downloadIvaDeclaration(mockIvaQuery as any, res);
+
+      expect(
+        mockAccountingReportsService.getIvaDeclaration,
+      ).toHaveBeenCalledWith(2026, 1);
+      expect(reportsService.generateIvaDeclarationReport).toHaveBeenCalledWith(
+        mockData,
+        ReportFormat.PDF,
+      );
+      expect(res.send).toHaveBeenCalledWith(mockPdfBuffer);
+      expect(res.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'Content-Type': 'application/pdf',
+        }),
+      );
+    });
+
+    it('should generate IVA declaration report as Excel', async () => {
+      const mockAccountingReportsService = (controller as any)
+        .accountingReportsService;
+      mockAccountingReportsService.getIvaDeclaration.mockResolvedValue({});
+      reportsService.generateIvaDeclarationReport = jest
+        .fn()
+        .mockResolvedValue(mockExcelBuffer);
+      const res = mockResponse();
+
+      await controller.downloadIvaDeclaration(
+        { ...mockIvaQuery, format: ReportFormat.EXCEL } as any,
+        res,
+      );
+
+      expect(res.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'Content-Type':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }),
+      );
+    });
+
+    it('should use correct filename with year and period', async () => {
+      const mockAccountingReportsService = (controller as any)
+        .accountingReportsService;
+      mockAccountingReportsService.getIvaDeclaration.mockResolvedValue({});
+      reportsService.generateIvaDeclarationReport = jest
+        .fn()
+        .mockResolvedValue(mockPdfBuffer);
+      const res = mockResponse();
+
+      await controller.downloadIvaDeclaration(mockIvaQuery as any, res);
+
+      expect(res.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'Content-Disposition': expect.stringContaining(
+            'declaracion-iva-2026-1',
+          ),
+        }),
+      );
+    });
+  });
+
+  describe('downloadReteFuenteSummary', () => {
+    const mockReteQuery = {
+      format: ReportFormat.PDF,
+      year: 2026,
+      month: 3,
+    };
+
+    it('should generate ReteFuente summary report as PDF', async () => {
+      const mockAccountingReportsService = (controller as any)
+        .accountingReportsService;
+      const mockData = { year: 2026, month: 3, entries: [] };
+      mockAccountingReportsService.getReteFuenteSummary.mockResolvedValue(
+        mockData,
+      );
+      reportsService.generateReteFuenteSummaryReport = jest
+        .fn()
+        .mockResolvedValue(mockPdfBuffer);
+      const res = mockResponse();
+
+      await controller.downloadReteFuenteSummary(mockReteQuery as any, res);
+
+      expect(
+        mockAccountingReportsService.getReteFuenteSummary,
+      ).toHaveBeenCalledWith(2026, 3);
+      expect(
+        reportsService.generateReteFuenteSummaryReport,
+      ).toHaveBeenCalledWith(mockData, ReportFormat.PDF);
+      expect(res.send).toHaveBeenCalledWith(mockPdfBuffer);
+    });
+
+    it('should use correct filename with year and month', async () => {
+      const mockAccountingReportsService = (controller as any)
+        .accountingReportsService;
+      mockAccountingReportsService.getReteFuenteSummary.mockResolvedValue({});
+      reportsService.generateReteFuenteSummaryReport = jest
+        .fn()
+        .mockResolvedValue(mockPdfBuffer);
+      const res = mockResponse();
+
+      await controller.downloadReteFuenteSummary(mockReteQuery as any, res);
+
+      expect(res.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'Content-Disposition': expect.stringContaining(
+            'retefuente-2026-3',
+          ),
+        }),
+      );
+    });
+  });
+
+  describe('downloadExogena', () => {
+    const mockExogenaQuery = { year: 2026 };
+
+    it('should generate Exogena Excel report', async () => {
+      const mockExogenaServiceInstance = (controller as any).exogenaService;
+      const mockData = { year: 2026, formatos: [] };
+      mockExogenaServiceInstance.generateExogena.mockResolvedValue(mockData);
+      reportsService.generateExogenaExcel = jest
+        .fn()
+        .mockReturnValue(mockExcelBuffer);
+      const res = mockResponse();
+
+      await controller.downloadExogena(mockExogenaQuery as any, res);
+
+      expect(mockExogenaServiceInstance.generateExogena).toHaveBeenCalledWith(
+        2026,
+      );
+      expect(reportsService.generateExogenaExcel).toHaveBeenCalledWith(
+        mockData,
+      );
+      expect(res.send).toHaveBeenCalledWith(mockExcelBuffer);
+    });
+
+    it('should always use Excel format for Exogena', async () => {
+      const mockExogenaServiceInstance = (controller as any).exogenaService;
+      mockExogenaServiceInstance.generateExogena.mockResolvedValue({
+        year: 2026,
+        formatos: [],
+      });
+      reportsService.generateExogenaExcel = jest
+        .fn()
+        .mockReturnValue(mockExcelBuffer);
+      const res = mockResponse();
+
+      await controller.downloadExogena(mockExogenaQuery as any, res);
+
+      expect(res.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'Content-Type':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }),
+      );
+    });
+
+    it('should use correct filename with year', async () => {
+      const mockExogenaServiceInstance = (controller as any).exogenaService;
+      mockExogenaServiceInstance.generateExogena.mockResolvedValue({
+        year: 2026,
+        formatos: [],
+      });
+      reportsService.generateExogenaExcel = jest
+        .fn()
+        .mockReturnValue(mockExcelBuffer);
+      const res = mockResponse();
+
+      await controller.downloadExogena(mockExogenaQuery as any, res);
+
+      expect(res.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'Content-Disposition': expect.stringContaining('exogena-2026'),
+        }),
+      );
+    });
+  });
+
   describe('getCostCenterBalanceReport', () => {
     const mockCCBalanceQueryPdf: CostCenterBalanceQueryDto = {
       format: ReportFormat.PDF,

@@ -99,6 +99,14 @@ describe('DianController', () => {
       getDocument: jest.fn(),
       downloadXml: jest.fn(),
       getStats: jest.fn(),
+      processCreditNote: jest.fn(),
+      processDebitNote: jest.fn(),
+      setNoteConfig: jest.fn(),
+      processPOSSale: jest.fn(),
+      processNotaAjuste: jest.fn(),
+      setPosResolution: jest.fn(),
+      sendEvent: jest.fn(),
+      sendEventByInvoice: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -454,6 +462,280 @@ describe('DianController', () => {
 
       expect(result).toEqual(mockStats);
       expect(service.getStats).toHaveBeenCalled();
+    });
+  });
+
+  describe('createCreditNote', () => {
+    it('should call processCreditNote with dto', async () => {
+      const dto = {
+        invoiceId: 'invoice-123',
+        reason: 'DEVOLUCION_TOTAL' as any,
+      };
+      const mockResult = { success: true, documentId: 'cn-1' };
+      service.processCreditNote.mockResolvedValue(mockResult);
+
+      const result = await controller.createCreditNote(dto);
+
+      expect(result).toEqual(mockResult);
+      expect(service.processCreditNote).toHaveBeenCalledWith(dto);
+    });
+
+    it('should propagate errors from service', async () => {
+      const dto = { invoiceId: 'inv-bad', reason: 'ANULACION' as any };
+      service.processCreditNote.mockRejectedValue(
+        new BadRequestException('Invalid'),
+      );
+
+      await expect(controller.createCreditNote(dto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('createDebitNote', () => {
+    it('should call processDebitNote with dto', async () => {
+      const dto = {
+        invoiceId: 'invoice-123',
+        reason: 'INTERESES' as any,
+        items: [],
+      };
+      const mockResult = { success: true, documentId: 'dn-1' };
+      service.processDebitNote.mockResolvedValue(mockResult);
+
+      const result = await controller.createDebitNote(dto);
+
+      expect(result).toEqual(mockResult);
+      expect(service.processDebitNote).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  describe('setNoteConfig', () => {
+    it('should call setNoteConfig on service', async () => {
+      const dto = {
+        creditNotePrefix: 'NC',
+        creditNoteStartNumber: 1,
+        debitNotePrefix: 'ND',
+        debitNoteStartNumber: 1,
+      };
+      service.setNoteConfig.mockResolvedValue({ success: true, message: 'OK' });
+
+      const result = await controller.setNoteConfig(dto);
+
+      expect(result.success).toBe(true);
+      expect(service.setNoteConfig).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  describe('processPOSSale', () => {
+    it('should call processPOSSale on service', async () => {
+      const dto = { invoiceId: 'inv-pos-1', force: false };
+      const mockResult = { success: true, documentId: 'pos-doc-1' };
+      service.processPOSSale.mockResolvedValue(mockResult);
+
+      const result = await controller.processPOSSale(dto);
+
+      expect(result).toEqual(mockResult);
+      expect(service.processPOSSale).toHaveBeenCalledWith(dto);
+    });
+
+    it('should propagate NotFoundException', async () => {
+      const dto = { invoiceId: 'inv-missing' };
+      service.processPOSSale.mockRejectedValue(new NotFoundException());
+
+      await expect(controller.processPOSSale(dto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('processNotaAjuste', () => {
+    it('should call processNotaAjuste on service', async () => {
+      const dto = {
+        documentoEquivalenteId: 'de-1',
+        reason: 'DEVOLUCION_TOTAL' as any,
+      };
+      const mockResult = { success: true, documentId: 'na-1' };
+      service.processNotaAjuste.mockResolvedValue(mockResult);
+
+      const result = await controller.processNotaAjuste(dto);
+
+      expect(result).toEqual(mockResult);
+      expect(service.processNotaAjuste).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  describe('setPosResolution', () => {
+    it('should call setPosResolution on service', async () => {
+      const dto = {
+        posResolutionNumber: 'RES-POS-001',
+        posResolutionPrefix: 'POS',
+        posResolutionRangeFrom: 1,
+        posResolutionRangeTo: 100000,
+      };
+      service.setPosResolution.mockResolvedValue({
+        success: true,
+        message: 'OK',
+      });
+
+      const result = await controller.setPosResolution(dto);
+
+      expect(result.success).toBe(true);
+      expect(service.setPosResolution).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  describe('sendEvent', () => {
+    it('should call sendEvent with documentId and dto fields', async () => {
+      const dto = { eventCode: '030' as any };
+      const mockResult = {
+        success: true,
+        eventDocumentId: 'evt-1',
+        cude: 'cude-123',
+      };
+      service.sendEvent.mockResolvedValue(mockResult);
+
+      const result = await controller.sendEvent('doc-123', dto);
+
+      expect(result).toEqual(mockResult);
+      expect(service.sendEvent).toHaveBeenCalledWith(
+        'doc-123',
+        '030',
+        undefined,
+      );
+    });
+
+    it('should pass rejectionReason for event 031', async () => {
+      const dto = {
+        eventCode: '031' as any,
+        rejectionReason: 'Factura erronea',
+      };
+      service.sendEvent.mockResolvedValue({ success: true });
+
+      await controller.sendEvent('doc-123', dto);
+
+      expect(service.sendEvent).toHaveBeenCalledWith(
+        'doc-123',
+        '031',
+        'Factura erronea',
+      );
+    });
+  });
+
+  describe('sendEventByInvoice', () => {
+    it('should call sendEventByInvoice with invoiceId and dto fields', async () => {
+      const dto = { eventCode: '033' as any };
+      const mockResult = { success: true, eventDocumentId: 'evt-2' };
+      service.sendEventByInvoice.mockResolvedValue(mockResult);
+
+      const result = await controller.sendEventByInvoice('inv-123', dto);
+
+      expect(result).toEqual(mockResult);
+      expect(service.sendEventByInvoice).toHaveBeenCalledWith(
+        'inv-123',
+        '033',
+        undefined,
+      );
+    });
+
+    it('should pass rejectionReason for event 031', async () => {
+      const dto = {
+        eventCode: '031' as any,
+        rejectionReason: 'Reclamo valido',
+      };
+      service.sendEventByInvoice.mockResolvedValue({ success: true });
+
+      await controller.sendEventByInvoice('inv-123', dto);
+
+      expect(service.sendEventByInvoice).toHaveBeenCalledWith(
+        'inv-123',
+        '031',
+        'Reclamo valido',
+      );
+    });
+  });
+
+  describe('listDocuments - edge cases', () => {
+    it('should clamp page to minimum 1 for negative values', async () => {
+      service.listDocuments.mockResolvedValue(mockPaginatedDocuments as any);
+
+      await controller.listDocuments('-5', '10');
+
+      expect(service.listDocuments).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+
+    it('should clamp limit to maximum 100', async () => {
+      service.listDocuments.mockResolvedValue(mockPaginatedDocuments as any);
+
+      await controller.listDocuments('1', '500');
+
+      expect(service.listDocuments).toHaveBeenCalledWith(
+        1,
+        100,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+
+    it('should treat limit 0 as default 10 (falsy parseInt fallback)', async () => {
+      service.listDocuments.mockResolvedValue(mockPaginatedDocuments as any);
+
+      await controller.listDocuments('1', '0');
+
+      // parseInt('0') || 10 === 10 because 0 is falsy
+      expect(service.listDocuments).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+
+    it('should pass documentType filter', async () => {
+      service.listDocuments.mockResolvedValue(mockPaginatedDocuments as any);
+
+      await controller.listDocuments(
+        '1',
+        '10',
+        undefined,
+        undefined,
+        undefined,
+        DianDocumentType.NOTA_CREDITO,
+      );
+
+      expect(service.listDocuments).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        DianDocumentType.NOTA_CREDITO,
+      );
+    });
+
+    it('should default page and limit when undefined', async () => {
+      service.listDocuments.mockResolvedValue(mockPaginatedDocuments as any);
+
+      await controller.listDocuments(undefined, undefined);
+
+      expect(service.listDocuments).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
     });
   });
 });

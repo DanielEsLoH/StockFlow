@@ -1941,4 +1941,209 @@ describe('DianService', () => {
       ).rejects.toThrow(BadRequestException);
     });
   });
+
+  // ===========================================================================
+  // sendEvent
+  // ===========================================================================
+  describe('sendEvent', () => {
+    const mockDianDocWithInvoice = {
+      id: 'dian-doc-1',
+      tenantId: mockTenantId,
+      invoiceId: 'invoice-123',
+      documentNumber: 'SETT00000001',
+      cufe: 'cufe-original',
+      createdAt: new Date('2025-01-15'),
+      invoice: {
+        id: 'invoice-123',
+        customer: {
+          documentNumber: '800111222',
+          dv: '5',
+          name: 'Client Corp',
+        },
+      },
+    };
+
+    const mockTenant = {
+      id: mockTenantId,
+      name: 'Test Tenant',
+    };
+
+    beforeEach(() => {
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(
+        mockDianDocWithInvoice,
+      );
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
+      (prisma.tenant?.findUnique as jest.Mock)?.mockResolvedValue?.(mockTenant);
+      // Add tenant mock if not present
+      if (!prisma.tenant) {
+        (prisma as any).tenant = { findUnique: jest.fn().mockResolvedValue(mockTenant) };
+      } else {
+        (prisma.tenant.findUnique as jest.Mock).mockResolvedValue(mockTenant);
+      }
+      (prisma.dianDocument.create as jest.Mock).mockResolvedValue({
+        id: 'event-doc-1',
+        tenantId: mockTenantId,
+      });
+      (prisma.dianDocument.update as jest.Mock).mockResolvedValue({});
+    });
+
+    it('should send event and return success result', async () => {
+      const result = await service.sendEvent('dian-doc-1', '030');
+
+      expect(result.success).toBe(true);
+      expect(result.eventDocumentId).toBe('event-doc-1');
+      expect(result.cude).toBe('cude-hash');
+      expect(result.status).toBe(DianDocumentStatus.ACCEPTED);
+    });
+
+    it('should throw NotFoundException when document not found', async () => {
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.sendEvent('missing', '030')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw BadRequestException when document has no CUFE', async () => {
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue({
+        ...mockDianDocWithInvoice,
+        cufe: null,
+      });
+
+      await expect(service.sendEvent('dian-doc-1', '030')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException for event 031 without rejection reason', async () => {
+      await expect(service.sendEvent('dian-doc-1', '031')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should accept event 031 with rejection reason', async () => {
+      const result = await service.sendEvent(
+        'dian-doc-1',
+        '031',
+        'Factura incorrecta',
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should throw BadRequestException when DIAN config not found', async () => {
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.sendEvent('dian-doc-1', '030')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw NotFoundException when tenant not found', async () => {
+      (prisma as any).tenant.findUnique.mockResolvedValue(null);
+
+      await expect(service.sendEvent('dian-doc-1', '030')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should return REJECTED status when DIAN rejects event', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: false,
+        isValid: false,
+        trackId: 'track-evt',
+        statusDescription: 'Event rejected',
+        errors: ['Invalid format'],
+      });
+
+      const result = await service.sendEvent('dian-doc-1', '030');
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(DianDocumentStatus.REJECTED);
+      expect(result.errors).toEqual(['Invalid format']);
+    });
+
+    it('should return SENT status when DIAN response is indeterminate', async () => {
+      (dianClient.sendDocument as jest.Mock).mockResolvedValue({
+        success: false,
+        isValid: undefined,
+        trackId: 'track-evt-2',
+      });
+
+      const result = await service.sendEvent('dian-doc-1', '030');
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(DianDocumentStatus.SENT);
+    });
+
+    it('should create event document with EVENTO type', async () => {
+      await service.sendEvent('dian-doc-1', '033');
+
+      expect(prisma.dianDocument.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          tenantId: mockTenantId,
+          documentType: DianDocumentType.EVENTO,
+          status: DianDocumentStatus.GENERATED,
+          cude: 'cude-hash',
+          documentNumber: 'EVT-001',
+        }),
+      });
+    });
+  });
+
+  // ===========================================================================
+  // sendEventByInvoice
+  // ===========================================================================
+  describe('sendEventByInvoice', () => {
+    it('should find accepted DIAN document and delegate to sendEvent', async () => {
+      const mockAcceptedDoc = {
+        id: 'dian-doc-accepted',
+        tenantId: mockTenantId,
+        invoiceId: 'inv-789',
+        documentNumber: 'SETT00000099',
+        cufe: 'cufe-test',
+        createdAt: new Date(),
+        invoice: {
+          id: 'inv-789',
+          customer: { documentNumber: '900333444', dv: '1', name: 'Cust' },
+        },
+      };
+
+      // First call for sendEventByInvoice lookup, second for sendEvent internal lookup
+      (prisma.dianDocument.findFirst as jest.Mock)
+        .mockResolvedValueOnce(mockAcceptedDoc) // sendEventByInvoice finds document
+        .mockResolvedValueOnce(mockAcceptedDoc); // sendEvent finds same document
+
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
+        mockDianConfig,
+      );
+      if (!prisma.tenant) {
+        (prisma as any).tenant = { findUnique: jest.fn() };
+      }
+      (prisma as any).tenant.findUnique.mockResolvedValue({
+        id: mockTenantId,
+        name: 'Test',
+      });
+      (prisma.dianDocument.create as jest.Mock).mockResolvedValue({
+        id: 'evt-new',
+        tenantId: mockTenantId,
+      });
+      (prisma.dianDocument.update as jest.Mock).mockResolvedValue({});
+
+      const result = await service.sendEventByInvoice('inv-789', '032');
+
+      expect(result.success).toBe(true);
+      expect(result.eventDocumentId).toBe('evt-new');
+    });
+
+    it('should throw NotFoundException when no accepted DIAN document exists for invoice', async () => {
+      (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.sendEventByInvoice('inv-missing', '030'),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
 });

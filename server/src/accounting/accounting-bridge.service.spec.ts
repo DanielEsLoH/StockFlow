@@ -588,6 +588,510 @@ describe('AccountingBridgeService', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // onPurchasePaymentCreated
+  // ---------------------------------------------------------------------------
+  describe('onPurchasePaymentCreated', () => {
+    const purchasePaymentParams = {
+      tenantId: 'tenant-bridge',
+      purchasePaymentId: 'pp-1',
+      purchaseOrderId: 'po-1',
+      purchaseOrderNumber: 'OC-001',
+      amount: 500_000,
+      method: PaymentMethod.CASH,
+    };
+
+    it('should DR Proveedores and CR Caja for CASH payments', async () => {
+      await service.onPurchasePaymentCreated(purchasePaymentParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      expect(call.source).toBe(JournalEntrySource.PURCHASE_PAYMENT);
+
+      const apLine = call.lines[0];
+      expect(apLine.accountId).toBe('acc-ap');
+      expect(apLine.debit).toBe(500_000);
+
+      const cashLine = call.lines[1];
+      expect(cashLine.accountId).toBe('acc-cash');
+      expect(cashLine.credit).toBe(500_000);
+    });
+
+    it('should DR Proveedores and CR Bancos for BANK_TRANSFER', async () => {
+      await service.onPurchasePaymentCreated({
+        ...purchasePaymentParams,
+        method: PaymentMethod.BANK_TRANSFER,
+      });
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      expect(call.lines[1].accountId).toBe('acc-bank');
+    });
+
+    it('should skip when autoGenerateEntries is false', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        autoGenerateEntries: false,
+      });
+
+      await service.onPurchasePaymentCreated(purchasePaymentParams);
+
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+    });
+
+    it('should skip when accountsPayableId is null', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        accountsPayableId: null,
+      });
+
+      await service.onPurchasePaymentCreated(purchasePaymentParams);
+
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+    });
+
+    it('should skip when no account is mapped for payment method', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        cashAccountId: null,
+      });
+
+      await service.onPurchasePaymentCreated(purchasePaymentParams);
+
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+    });
+
+    it('should not throw when createAutoEntry fails', async () => {
+      mockJournalEntriesService.createAutoEntry.mockRejectedValue(
+        new Error('DB error'),
+      );
+
+      await expect(
+        service.onPurchasePaymentCreated(purchasePaymentParams),
+      ).resolves.toBeUndefined();
+      expect(Logger.prototype.error).toHaveBeenCalled();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // onPayrollApproved
+  // ---------------------------------------------------------------------------
+  describe('onPayrollApproved', () => {
+    const payrollParams = {
+      tenantId: 'tenant-bridge',
+      payrollId: 'payroll-1',
+      periodName: 'Enero 2025 Q1',
+      totalDevengados: 5_000_000,
+      totalNeto: 3_800_000,
+      totalSaludEmpleado: 200_000,
+      totalPensionEmpleado: 200_000,
+      totalFondoSolidaridad: 50_000,
+      totalRetencionFuente: 150_000,
+      totalSaludEmpleador: 425_000,
+      totalPensionEmpleador: 600_000,
+      totalArlEmpleador: 26_100,
+      totalCajaEmpleador: 200_000,
+      totalSenaEmpleador: 100_000,
+      totalIcbfEmpleador: 150_000,
+      totalProvisionPrima: 416_666,
+      totalProvisionCesantias: 416_666,
+      totalProvisionIntereses: 50_000,
+      totalProvisionVacaciones: 208_333,
+    };
+
+    it('should create payroll journal entry with correct source', async () => {
+      await service.onPayrollApproved(payrollParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      expect(call.source).toBe(JournalEntrySource.PAYROLL_APPROVED);
+      expect(call.description).toContain('Enero 2025 Q1');
+    });
+
+    it('should DR Gastos de personal for totalDevengados', async () => {
+      await service.onPayrollApproved(payrollParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const devLine = call.lines.find(
+        (l: any) => l.description?.includes('Gastos personal'),
+      );
+      expect(devLine).toBeDefined();
+      expect(devLine.debit).toBe(5_000_000);
+    });
+
+    it('should DR Aportes patronales', async () => {
+      await service.onPayrollApproved(payrollParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const aportesLine = call.lines.find(
+        (l: any) => l.description?.includes('Aportes patronales') && l.debit > 0,
+      );
+      expect(aportesLine).toBeDefined();
+      // 425000 + 600000 + 26100 + 200000 + 100000 + 150000 = 1501100
+      expect(aportesLine.debit).toBe(1_501_100);
+    });
+
+    it('should DR Provisiones', async () => {
+      await service.onPayrollApproved(payrollParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const provLine = call.lines.find(
+        (l: any) => l.description?.includes('Provisiones') && l.debit > 0,
+      );
+      expect(provLine).toBeDefined();
+      // 416666 + 416666 + 50000 + 208333 = 1091665
+      expect(provLine.debit).toBe(1_091_665);
+    });
+
+    it('should CR Salarios por pagar for totalNeto', async () => {
+      await service.onPayrollApproved(payrollParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const netoLine = call.lines.find(
+        (l: any) => l.accountId === 'acc-pay-pay',
+      );
+      expect(netoLine).toBeDefined();
+      expect(netoLine.credit).toBe(3_800_000);
+    });
+
+    it('should CR ReteFuente nomina', async () => {
+      await service.onPayrollApproved(payrollParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const rfLine = call.lines.find(
+        (l: any) => l.accountId === 'acc-pay-ret',
+      );
+      expect(rfLine).toBeDefined();
+      expect(rfLine.credit).toBe(150_000);
+    });
+
+    it('should CR Aportes empleado (salud + pension + fondo solidaridad)', async () => {
+      await service.onPayrollApproved(payrollParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const empContribLine = call.lines.find(
+        (l: any) =>
+          l.accountId === 'acc-pay-cont' &&
+          l.description?.includes('Aportes empleado'),
+      );
+      expect(empContribLine).toBeDefined();
+      // 200000 + 200000 + 50000 = 450000
+      expect(empContribLine.credit).toBe(450_000);
+    });
+
+    it('should CR Aportes patronales por pagar', async () => {
+      await service.onPayrollApproved(payrollParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const patronalLine = call.lines.find(
+        (l: any) =>
+          l.accountId === 'acc-pay-cont' &&
+          l.description?.includes('Aportes patronales por pagar'),
+      );
+      expect(patronalLine).toBeDefined();
+      expect(patronalLine.credit).toBe(1_501_100);
+    });
+
+    it('should CR Obligaciones laborales (provisiones)', async () => {
+      await service.onPayrollApproved(payrollParams);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const provPayableLine = call.lines.find(
+        (l: any) => l.accountId === 'acc-pay-prov',
+      );
+      expect(provPayableLine).toBeDefined();
+      expect(provPayableLine.credit).toBe(1_091_665);
+    });
+
+    it('should skip when autoGenerateEntries is false', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        autoGenerateEntries: false,
+      });
+
+      await service.onPayrollApproved(payrollParams);
+
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+    });
+
+    it('should skip when payrollExpenseId is missing', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        payrollExpenseId: null,
+      });
+
+      await service.onPayrollApproved(payrollParams);
+
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+    });
+
+    it('should skip when payrollPayableId is missing', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        payrollPayableId: null,
+      });
+
+      await service.onPayrollApproved(payrollParams);
+
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+    });
+
+    it('should skip ReteFuente line when totalRetencionFuente is 0', async () => {
+      await service.onPayrollApproved({
+        ...payrollParams,
+        totalRetencionFuente: 0,
+      });
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const rfLine = call.lines.find(
+        (l: any) => l.accountId === 'acc-pay-ret',
+      );
+      expect(rfLine).toBeUndefined();
+    });
+
+    it('should skip aportes empleado line when all are 0', async () => {
+      await service.onPayrollApproved({
+        ...payrollParams,
+        totalSaludEmpleado: 0,
+        totalPensionEmpleado: 0,
+        totalFondoSolidaridad: 0,
+      });
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const empLine = call.lines.find(
+        (l: any) =>
+          l.accountId === 'acc-pay-cont' &&
+          l.description?.includes('Aportes empleado'),
+      );
+      expect(empLine).toBeUndefined();
+    });
+
+    it('should skip provisiones line when all provisions are 0', async () => {
+      await service.onPayrollApproved({
+        ...payrollParams,
+        totalProvisionPrima: 0,
+        totalProvisionCesantias: 0,
+        totalProvisionIntereses: 0,
+        totalProvisionVacaciones: 0,
+      });
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const provDebitLine = call.lines.find(
+        (l: any) => l.description?.includes('Provisiones') && l.debit > 0,
+      );
+      expect(provDebitLine).toBeUndefined();
+      const provPayableLine = call.lines.find(
+        (l: any) => l.accountId === 'acc-pay-prov',
+      );
+      expect(provPayableLine).toBeUndefined();
+    });
+
+    it('should not throw when createAutoEntry fails', async () => {
+      mockJournalEntriesService.createAutoEntry.mockRejectedValue(
+        new Error('Payroll DB error'),
+      );
+
+      await expect(
+        service.onPayrollApproved(payrollParams),
+      ).resolves.toBeUndefined();
+      expect(Logger.prototype.error).toHaveBeenCalled();
+    });
+
+    it('should skip entry entirely when all amounts are 0', async () => {
+      await service.onPayrollApproved({
+        ...payrollParams,
+        totalDevengados: 0,
+        totalNeto: 0,
+        totalSaludEmpleado: 0,
+        totalPensionEmpleado: 0,
+        totalFondoSolidaridad: 0,
+        totalRetencionFuente: 0,
+        totalSaludEmpleador: 0,
+        totalPensionEmpleador: 0,
+        totalArlEmpleador: 0,
+        totalCajaEmpleador: 0,
+        totalSenaEmpleador: 0,
+        totalIcbfEmpleador: 0,
+        totalProvisionPrima: 0,
+        totalProvisionCesantias: 0,
+        totalProvisionIntereses: 0,
+        totalProvisionVacaciones: 0,
+      });
+
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // onInvoiceCreated - POS edge cases
+  // ---------------------------------------------------------------------------
+  describe('onInvoiceCreated - POS edge cases', () => {
+    const baseParams = {
+      tenantId: 'tenant-bridge',
+      invoiceId: 'inv-1',
+      invoiceNumber: 'FAC-001',
+      subtotal: 100_000,
+      tax: 19_000,
+      total: 119_000,
+      items: [
+        { productId: 'prod-1', quantity: 2, product: { costPrice: 30_000 } },
+      ],
+    };
+
+    it('should fallback to AR when isPosImmediate but cashAccountId is null', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        cashAccountId: null,
+      });
+
+      await service.onInvoiceCreated({ ...baseParams, isPosImmediate: true });
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      expect(call.lines[0].accountId).toBe('acc-ar');
+      expect(Logger.prototype.warn).toHaveBeenCalled();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // onExpensePaid - additional paths
+  // ---------------------------------------------------------------------------
+  describe('onExpensePaid - additional paths', () => {
+    const makeDecimal = (n: number) =>
+      ({ valueOf: () => n, toString: () => String(n) }) as any;
+
+    it('should use default 5XXX account when expense.accountId is null', async () => {
+      mockPrismaService.account.findFirst.mockResolvedValue({
+        id: 'acc-default-exp',
+        code: '5105',
+      });
+
+      const expense = {
+        id: 'exp-2',
+        tenantId: 'tenant-bridge',
+        expenseNumber: 'GTO-002',
+        description: 'Office supplies',
+        subtotal: makeDecimal(100_000),
+        tax: makeDecimal(19_000),
+        reteFuente: makeDecimal(0),
+        total: makeDecimal(119_000),
+        accountId: null,
+        paymentMethod: 'CASH',
+        paymentDate: new Date(),
+        issueDate: new Date(),
+      };
+
+      await service.onExpensePaid(expense);
+
+      expect(mockPrismaService.account.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            code: { startsWith: '5' },
+          }),
+        }),
+      );
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      expect(call.lines[0].accountId).toBe('acc-default-exp');
+    });
+
+    it('should skip when no expense account found (accountId null, no default)', async () => {
+      mockPrismaService.account.findFirst.mockResolvedValue(null);
+
+      const expense = {
+        id: 'exp-3',
+        tenantId: 'tenant-bridge',
+        expenseNumber: 'GTO-003',
+        description: 'Unknown expense',
+        subtotal: makeDecimal(100_000),
+        tax: makeDecimal(0),
+        reteFuente: makeDecimal(0),
+        total: makeDecimal(100_000),
+        accountId: null,
+        paymentMethod: 'CASH',
+        paymentDate: new Date(),
+        issueDate: new Date(),
+      };
+
+      await service.onExpensePaid(expense);
+
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+      expect(Logger.prototype.warn).toHaveBeenCalled();
+    });
+
+    it('should skip when no cash/bank account mapped for payment method', async () => {
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        cashAccountId: null,
+        bankAccountId: null,
+      });
+
+      const expense = {
+        id: 'exp-4',
+        tenantId: 'tenant-bridge',
+        expenseNumber: 'GTO-004',
+        description: 'Some expense',
+        subtotal: makeDecimal(100_000),
+        tax: makeDecimal(0),
+        reteFuente: makeDecimal(0),
+        total: makeDecimal(100_000),
+        accountId: 'acc-exp-custom',
+        paymentMethod: 'CASH',
+        paymentDate: new Date(),
+        issueDate: new Date(),
+      };
+
+      await service.onExpensePaid(expense);
+
+      expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
+      expect(Logger.prototype.warn).toHaveBeenCalled();
+    });
+
+    it('should use BANK_TRANSFER account for non-CASH expense', async () => {
+      const expense = {
+        id: 'exp-5',
+        tenantId: 'tenant-bridge',
+        expenseNumber: 'GTO-005',
+        description: 'Transfer expense',
+        subtotal: makeDecimal(200_000),
+        tax: makeDecimal(38_000),
+        reteFuente: makeDecimal(5_000),
+        total: makeDecimal(238_000),
+        accountId: 'acc-exp-custom',
+        paymentMethod: 'BANK_TRANSFER',
+        paymentDate: null,
+        issueDate: new Date(),
+      };
+
+      await service.onExpensePaid(expense);
+
+      const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
+      const bankLine = call.lines.find(
+        (l: any) => l.accountId === 'acc-bank' && l.credit > 0,
+      );
+      expect(bankLine).toBeDefined();
+    });
+
+    it('should not throw when createAutoEntry fails', async () => {
+      mockJournalEntriesService.createAutoEntry.mockRejectedValue(
+        new Error('expense DB error'),
+      );
+
+      const expense = {
+        id: 'exp-6',
+        tenantId: 'tenant-bridge',
+        expenseNumber: 'GTO-006',
+        description: 'Failing expense',
+        subtotal: makeDecimal(100_000),
+        tax: makeDecimal(0),
+        reteFuente: makeDecimal(0),
+        total: makeDecimal(100_000),
+        accountId: 'acc-exp-custom',
+        paymentMethod: 'CASH',
+        paymentDate: new Date(),
+        issueDate: new Date(),
+      };
+
+      await expect(service.onExpensePaid(expense)).resolves.toBeUndefined();
+      expect(Logger.prototype.error).toHaveBeenCalled();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Error resilience (cross-cutting)
   // ---------------------------------------------------------------------------
   // onCreditNoteCreated

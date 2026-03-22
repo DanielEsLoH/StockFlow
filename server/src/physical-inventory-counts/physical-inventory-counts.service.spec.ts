@@ -309,6 +309,351 @@ describe('PhysicalInventoryCountsService', () => {
     });
   });
 
+  describe('findAll', () => {
+    it('should return paginated counts with default params', async () => {
+      const mockCounts = [
+        {
+          id: 'count-1',
+          warehouseId: 'wh-1',
+          status: PhysicalCountStatus.DRAFT,
+          countDate: new Date(),
+          startedAt: null,
+          completedAt: null,
+          notes: null,
+          createdAt: new Date(),
+          warehouse: { name: 'Bodega 1', code: 'B1' },
+          startedBy: { firstName: 'Admin', lastName: 'User' },
+          completedBy: null,
+          _count: { items: 3 },
+        },
+      ];
+      prisma.physicalInventoryCount.findMany.mockResolvedValue(mockCounts);
+      prisma.physicalInventoryCount.count.mockResolvedValue(1);
+
+      const result = await service.findAll({});
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].warehouseName).toBe('Bodega 1');
+      expect(result.data[0].startedBy).toBe('Admin User');
+      expect(result.data[0].completedBy).toBeNull();
+      expect(result.data[0].itemsCount).toBe(3);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(20);
+    });
+
+    it('should filter by status and warehouseId', async () => {
+      prisma.physicalInventoryCount.findMany.mockResolvedValue([]);
+      prisma.physicalInventoryCount.count.mockResolvedValue(0);
+
+      await service.findAll({
+        page: 2,
+        limit: 5,
+        status: PhysicalCountStatus.IN_PROGRESS,
+        warehouseId: 'wh-1',
+      });
+
+      expect(prisma.physicalInventoryCount.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            tenantId,
+            status: PhysicalCountStatus.IN_PROGRESS,
+            warehouseId: 'wh-1',
+          },
+          skip: 5,
+          take: 5,
+        }),
+      );
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return detailed count with items and summary', async () => {
+      const mockCount = {
+        id: 'count-1',
+        warehouseId: 'wh-1',
+        status: PhysicalCountStatus.IN_PROGRESS,
+        countDate: new Date(),
+        startedAt: new Date(),
+        completedAt: null,
+        notes: 'Test',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        warehouse: { name: 'Bodega 1', code: 'B1' },
+        startedBy: { firstName: 'Admin', lastName: 'User' },
+        completedBy: null,
+        items: [
+          {
+            id: 'item-1',
+            productId: 'prod-1',
+            systemQuantity: 10,
+            physicalQuantity: 8,
+            variance: -2,
+            countedAt: new Date(),
+            notes: null,
+            product: { sku: 'SKU-001', name: 'Product A', stock: 10 },
+            countedBy: { firstName: 'John', lastName: 'Doe' },
+          },
+          {
+            id: 'item-2',
+            productId: 'prod-2',
+            systemQuantity: 5,
+            physicalQuantity: 7,
+            variance: 2,
+            countedAt: null,
+            notes: 'Extra found',
+            product: { sku: 'SKU-002', name: 'Product B', stock: 5 },
+            countedBy: null,
+          },
+        ],
+      };
+
+      prisma.physicalInventoryCount.findFirst.mockResolvedValue(mockCount);
+
+      const result = await service.findOne('count-1');
+
+      expect(result.id).toBe('count-1');
+      expect(result.warehouseName).toBe('Bodega 1');
+      expect(result.startedBy).toBe('Admin User');
+      expect(result.completedBy).toBeNull();
+      expect(result.items).toHaveLength(2);
+      expect(result.items[0].countedBy).toBe('John Doe');
+      expect(result.items[1].countedBy).toBeNull();
+      expect(result.summary.totalItems).toBe(2);
+      expect(result.summary.itemsWithVariance).toBe(2);
+      expect(result.summary.totalPositiveVariance).toBe(2);
+      expect(result.summary.totalNegativeVariance).toBe(-2);
+    });
+
+    it('should throw NotFoundException when count not found', async () => {
+      prisma.physicalInventoryCount.findFirst.mockResolvedValue(null);
+
+      await expect(service.findOne('count-x')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('updateItem', () => {
+    it('should update item physical quantity and recalculate variance', async () => {
+      prisma.physicalCountItem.findFirst.mockResolvedValue({
+        id: 'item-1',
+        countId: 'count-1',
+        systemQuantity: 10,
+        notes: 'Old notes',
+        count: { status: PhysicalCountStatus.IN_PROGRESS },
+      });
+      prisma.physicalCountItem.update.mockResolvedValue({
+        id: 'item-1',
+        physicalQuantity: 15,
+        variance: 5,
+      });
+
+      const result = await service.updateItem(
+        'count-1',
+        'item-1',
+        { physicalQuantity: 15 },
+        userId,
+      );
+
+      expect(prisma.physicalCountItem.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            physicalQuantity: 15,
+            variance: 5,
+            countedById: userId,
+          }),
+        }),
+      );
+      expect(result.variance).toBe(5);
+    });
+
+    it('should throw NotFoundException when item not found', async () => {
+      prisma.physicalCountItem.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateItem(
+          'count-1',
+          'item-x',
+          { physicalQuantity: 5 },
+          userId,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when count is COMPLETED', async () => {
+      prisma.physicalCountItem.findFirst.mockResolvedValue({
+        id: 'item-1',
+        countId: 'count-1',
+        count: { status: PhysicalCountStatus.COMPLETED },
+      });
+
+      await expect(
+        service.updateItem(
+          'count-1',
+          'item-1',
+          { physicalQuantity: 5 },
+          userId,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should preserve notes if dto.notes is undefined', async () => {
+      prisma.physicalCountItem.findFirst.mockResolvedValue({
+        id: 'item-1',
+        countId: 'count-1',
+        systemQuantity: 10,
+        notes: 'Keep this',
+        count: { status: PhysicalCountStatus.DRAFT },
+      });
+      prisma.physicalCountItem.update.mockResolvedValue({
+        id: 'item-1',
+        physicalQuantity: 5,
+        variance: -5,
+      });
+
+      await service.updateItem(
+        'count-1',
+        'item-1',
+        { physicalQuantity: 5 },
+        userId,
+      );
+
+      expect(prisma.physicalCountItem.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ notes: 'Keep this' }),
+        }),
+      );
+    });
+  });
+
+  describe('removeItem', () => {
+    it('should delete item from count', async () => {
+      prisma.physicalCountItem.findFirst.mockResolvedValue({
+        id: 'item-1',
+        countId: 'count-1',
+        count: { status: PhysicalCountStatus.DRAFT },
+      });
+      prisma.physicalCountItem.delete.mockResolvedValue({ id: 'item-1' });
+
+      const result = await service.removeItem('count-1', 'item-1');
+
+      expect(result).toEqual({ deleted: true });
+      expect(prisma.physicalCountItem.delete).toHaveBeenCalledWith({
+        where: { id: 'item-1' },
+      });
+    });
+
+    it('should throw NotFoundException when item not found', async () => {
+      prisma.physicalCountItem.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.removeItem('count-1', 'item-x'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException for COMPLETED count', async () => {
+      prisma.physicalCountItem.findFirst.mockResolvedValue({
+        id: 'item-1',
+        countId: 'count-1',
+        count: { status: PhysicalCountStatus.COMPLETED },
+      });
+
+      await expect(
+        service.removeItem('count-1', 'item-1'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for CANCELLED count', async () => {
+      prisma.physicalCountItem.findFirst.mockResolvedValue({
+        id: 'item-1',
+        countId: 'count-1',
+        count: { status: PhysicalCountStatus.CANCELLED },
+      });
+
+      await expect(
+        service.removeItem('count-1', 'item-1'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('addItem - edge cases', () => {
+    it('should default systemQuantity to 0 when no warehouse stock', async () => {
+      prisma.physicalInventoryCount.findFirst.mockResolvedValue({
+        id: 'count-1',
+        warehouseId: 'wh-1',
+        status: PhysicalCountStatus.DRAFT,
+      });
+      prisma.warehouseStock.findUnique.mockResolvedValue(null);
+      prisma.physicalCountItem.upsert.mockResolvedValue({
+        id: 'item-1',
+        productId: 'prod-1',
+        systemQuantity: 0,
+        physicalQuantity: 5,
+        variance: 5,
+        notes: null,
+        product: { sku: 'SKU-001', name: 'New Product' },
+      });
+
+      const result = await service.addItem(
+        'count-1',
+        { productId: 'prod-1', physicalQuantity: 5 },
+        userId,
+      );
+
+      expect(result.systemQuantity).toBe(0);
+      expect(result.variance).toBe(5);
+    });
+
+    it('should throw BadRequestException when count is CANCELLED', async () => {
+      prisma.physicalInventoryCount.findFirst.mockResolvedValue({
+        id: 'count-1',
+        status: PhysicalCountStatus.CANCELLED,
+      });
+
+      await expect(
+        service.addItem(
+          'count-1',
+          { productId: 'prod-1', physicalQuantity: 5 },
+          userId,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('startCount - edge cases', () => {
+    it('should throw NotFoundException when count not found', async () => {
+      prisma.physicalInventoryCount.findFirst.mockResolvedValue(null);
+
+      await expect(service.startCount('count-x', userId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('completeCount - edge cases', () => {
+    it('should throw NotFoundException when count not found', async () => {
+      prisma.physicalInventoryCount.findFirst.mockResolvedValue(null);
+
+      await expect(service.completeCount('count-x', userId)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('cancelCount - already cancelled', () => {
+    it('should throw BadRequestException when count is already CANCELLED', async () => {
+      prisma.physicalInventoryCount.findFirst.mockResolvedValue({
+        id: 'count-1',
+        status: PhysicalCountStatus.CANCELLED,
+      });
+
+      await expect(service.cancelCount('count-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
   describe('cancelCount', () => {
     it('should cancel a DRAFT count', async () => {
       prisma.physicalInventoryCount.findFirst.mockResolvedValue({

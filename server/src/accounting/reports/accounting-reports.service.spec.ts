@@ -1353,6 +1353,27 @@ describe('AccountingReportsService', () => {
       expect(result.totals.totalBalance).toBe(8000);
     });
 
+    it('should classify into 61-90 days band', async () => {
+      // Due = 2024-10-01 + 0 (IMMEDIATE) = 2024-10-01, 91 days from as-of but we want 61-90:
+      // We need ~75 days overdue: issueDate 2024-10-17, IMMEDIATE → due 2024-10-17, 75 days overdue
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makePO(
+          'po-61-90',
+          'sup-1',
+          'Proveedor A',
+          4000,
+          new Date('2024-10-17'),
+          PaymentTerms.IMMEDIATE,
+        ),
+      ]);
+
+      const result = await service.getAPAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0].days61to90).toBe(4000);
+      expect(result.rows[0].totalOverdue).toBe(4000);
+    });
+
     it('should use correct payment terms days', async () => {
       // NET_60: issueDate 2024-10-15 + 60 = due 2024-12-14, 17 days overdue → 1-30
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
@@ -1369,6 +1390,26 @@ describe('AccountingReportsService', () => {
       const result = await service.getAPAgingReport(asOfDate);
 
       expect(result.rows[0].days1to30).toBe(1000);
+    });
+
+    it('should default to 30 days for unknown payment terms', async () => {
+      // Use an unknown payment term that falls to default case
+      // issueDate 2024-11-20 + 30 (default) = due 2024-12-20, 11 days overdue → current (<=0? no, 11>0 → 1-30)
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makePO(
+          'po-unknown',
+          'sup-1',
+          'Proveedor A',
+          1500,
+          new Date('2024-11-20'),
+          'UNKNOWN_TERM' as PaymentTerms,
+        ),
+      ]);
+
+      const result = await service.getAPAgingReport(asOfDate);
+
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0].days1to30).toBe(1500);
     });
 
     it('should skip POs with zero balance', async () => {
@@ -1567,6 +1608,215 @@ describe('AccountingReportsService', () => {
       expect(result.periodLabel).toBe('Mayo - Junio 2026');
       expect(result.fromDate).toBe('2026-05-01');
       expect(result.toDate).toBe('2026-06-30');
+    });
+
+    it('should aggregate purchases EXENTO and EXCLUIDO items', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([]);
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
+        makePOWithItems('po-1', new Date('2026-01-10'), [
+          { taxRate: 0, taxCategory: 'EXENTO', subtotal: 8000, tax: 0 },
+          { taxRate: 0, taxCategory: 'EXCLUIDO', subtotal: 4000, tax: 0 },
+        ]),
+        makePOWithItems('po-2', new Date('2026-02-05'), [
+          { taxRate: 0, taxCategory: 'EXENTO', subtotal: 2000, tax: 0 },
+        ]),
+      ]);
+
+      const result = await service.getIvaDeclaration(2026, 1);
+
+      expect(result.purchasesExempt).toHaveLength(2);
+      const exento = result.purchasesExempt.find(
+        (e: any) => e.category === 'EXENTO',
+      );
+      expect(exento!.taxableBase).toBe(10000);
+      expect(exento!.invoiceCount).toBe(2); // po-1 and po-2
+
+      const excluido = result.purchasesExempt.find(
+        (e: any) => e.category === 'EXCLUIDO',
+      );
+      expect(excluido!.taxableBase).toBe(4000);
+      expect(excluido!.invoiceCount).toBe(1); // only po-1
+
+      expect(result.totalPurchasesBase).toBe(14000);
+    });
+
+    it('should include credit and debit note adjustments in IVA totals', async () => {
+      mockPrismaService.invoice.findMany.mockResolvedValue([
+        makeInvoiceWithItems('inv-1', new Date('2026-01-15'), [
+          {
+            taxRate: 19,
+            taxCategory: 'GRAVADO_19',
+            subtotal: 10000,
+            tax: 1900,
+          },
+        ]),
+      ]);
+      mockPrismaService.purchaseOrder.findMany.mockResolvedValue([]);
+
+      // Mock credit/debit note journal entries
+      mockPrismaService.journalEntry.findMany.mockResolvedValue([
+        {
+          id: 'je-cn-1',
+          source: JournalEntrySource.CREDIT_NOTE,
+          lines: [
+            {
+              debit: 380,
+              credit: 0,
+              account: { code: '240801' },
+            },
+            {
+              debit: 2000,
+              credit: 0,
+              account: { code: '4135' },
+            },
+          ],
+        },
+        {
+          id: 'je-dn-1',
+          source: JournalEntrySource.DEBIT_NOTE,
+          lines: [
+            {
+              debit: 0,
+              credit: 190,
+              account: { code: '240801' },
+            },
+            {
+              debit: 0,
+              credit: 1000,
+              account: { code: '4135' },
+            },
+          ],
+        },
+      ]);
+
+      const result = await service.getIvaDeclaration(2026, 1);
+
+      // totalIvaGenerado = 1900 - creditNoteIvaAdj(380) + debitNoteIvaAdj(190) = 1710
+      expect(result.totalIvaGenerado).toBe(1710);
+      // totalSalesBase = 10000 - creditNoteBaseAdj(2000) + debitNoteBaseAdj(1000) = 9000
+      expect(result.totalSalesBase).toBe(9000);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getDashboard
+  // ---------------------------------------------------------------------------
+  describe('getDashboard', () => {
+    beforeEach(() => {
+      // Default stubs for getDashboard prisma calls
+      if (!mockPrismaService.journalEntry.count) {
+        (mockPrismaService.journalEntry as any).count = jest.fn();
+      }
+      if (!mockPrismaService.account.count) {
+        (mockPrismaService.account as any).count = jest.fn();
+      }
+
+      (mockPrismaService.journalEntry as any).count.mockResolvedValue(50);
+      (mockPrismaService.account as any).count.mockResolvedValue(25);
+      mockPrismaService.journalEntryLine.findMany.mockResolvedValue([]);
+      mockPrismaService.journalEntryLine.groupBy.mockResolvedValue([]);
+      mockPrismaService.account.findMany.mockResolvedValue([]);
+    });
+
+    it('should return dashboard with correct year and aggregate counts', async () => {
+      const result = await service.getDashboard(2025);
+
+      expect(result.year).toBe(2025);
+      expect(result.entriesCount).toBe(50);
+      expect(result.accountsCount).toBe(25);
+    });
+
+    it('should compute totals from journal lines', async () => {
+      // First call: yearly totals lines; subsequent calls: monthly (12 months)
+      mockPrismaService.journalEntryLine.findMany
+        .mockResolvedValueOnce([
+          { debit: 100000, credit: 50000 },
+          { debit: 50000, credit: 100000 },
+        ]) // yearly
+        .mockResolvedValue([]); // monthly (all empty)
+
+      const result = await service.getDashboard(2025);
+
+      expect(result.totals.debits).toBe(150000);
+      expect(result.totals.credits).toBe(150000);
+      expect(result.totals.balanced).toBe(true);
+    });
+
+    it('should report unbalanced when debits != credits', async () => {
+      mockPrismaService.journalEntryLine.findMany
+        .mockResolvedValueOnce([
+          { debit: 10000, credit: 5000 },
+        ])
+        .mockResolvedValue([]);
+
+      const result = await service.getDashboard(2025);
+
+      expect(result.totals.debits).toBe(10000);
+      expect(result.totals.credits).toBe(5000);
+      expect(result.totals.balanced).toBe(false);
+    });
+
+    it('should return 12 monthly entries', async () => {
+      const result = await service.getDashboard(2025);
+
+      expect(result.monthlyEntries).toHaveLength(12);
+      expect(result.monthlyEntries[0].month).toBe(0);
+      expect(result.monthlyEntries[11].month).toBe(11);
+    });
+
+    it('should aggregate monthly line data', async () => {
+      // First call is yearly totals, then 12 monthly calls
+      mockPrismaService.journalEntryLine.findMany
+        .mockResolvedValueOnce([]) // yearly
+        .mockResolvedValueOnce([ // January
+          { debit: 5000, credit: 3000 },
+          { debit: 2000, credit: 4000 },
+        ])
+        .mockResolvedValue([]); // rest of months
+
+      const result = await service.getDashboard(2025);
+
+      expect(result.monthlyEntries[0].count).toBe(2);
+      expect(result.monthlyEntries[0].debits).toBe(7000);
+      expect(result.monthlyEntries[0].credits).toBe(7000);
+    });
+
+    it('should return top accounts with names', async () => {
+      mockPrismaService.journalEntryLine.groupBy.mockResolvedValue([
+        {
+          accountId: 'acc-caja',
+          _sum: { debit: 50000, credit: 20000 },
+          _count: { accountId: 10 },
+        },
+      ]);
+      mockPrismaService.account.findMany.mockResolvedValue([
+        { id: 'acc-caja', code: '1105', name: 'Caja', type: 'ASSET' },
+      ]);
+
+      const result = await service.getDashboard(2025);
+
+      expect(result.topAccounts).toHaveLength(1);
+      expect(result.topAccounts[0].code).toBe('1105');
+      expect(result.topAccounts[0].name).toBe('Caja');
+      expect(result.topAccounts[0].totalDebits).toBe(50000);
+      expect(result.topAccounts[0].totalCredits).toBe(20000);
+      expect(result.topAccounts[0].transactionCount).toBe(10);
+    });
+
+    it('should handle missing account names gracefully', async () => {
+      mockPrismaService.journalEntryLine.groupBy.mockResolvedValue([
+        {
+          accountId: 'acc-deleted',
+          _sum: { debit: 1000, credit: 500 },
+          _count: { accountId: 2 },
+        },
+      ]);
+      mockPrismaService.account.findMany.mockResolvedValue([]); // account not found
+
+      const result = await service.getDashboard(2025);
+
+      expect(result.topAccounts[0].code).toBe('');
+      expect(result.topAccounts[0].name).toBe('');
     });
   });
 

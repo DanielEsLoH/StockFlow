@@ -1,11 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PayrollEntryStatus, SalaryType, ARLRiskLevel } from '@prisma/client';
+import {
+  PayrollEntryStatus,
+  PayrollDocumentType,
+  SalaryType,
+  ARLRiskLevel,
+} from '@prisma/client';
 import { PayrollEntriesService } from './payroll-entries.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TenantContextService } from '../common/services/tenant-context.service';
 import { PayrollCalculationService } from './services/payroll-calculation.service';
 import { PayrollConfigService } from './payroll-config.service';
+import { AdjustmentNoteType } from './dto/create-payroll-adjustment.dto';
 
 describe('PayrollEntriesService', () => {
   let service: PayrollEntriesService;
@@ -126,6 +132,11 @@ describe('PayrollEntriesService', () => {
     const mockPrismaService = {
       payrollEntry: {
         findFirst: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        create: jest.fn(),
+      },
+      payrollConfig: {
         update: jest.fn(),
       },
     };
@@ -253,6 +264,227 @@ describe('PayrollEntriesService', () => {
       await expect(
         service.update('entry-1', { daysWorked: 25 }),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('createAdjustment', () => {
+    const sentEntry = {
+      ...mockEntry,
+      status: PayrollEntryStatus.SENT,
+      cune: 'cune-hash-123',
+      employee: mockEmployee,
+      period: mockEntry.period,
+    };
+
+    const mockConfigWithAdjustment = {
+      ...mockConfigResponse,
+      adjustmentPrefix: 'NA',
+      adjustmentCurrentNumber: 5,
+      smmlv: 1300000,
+      auxilioTransporteVal: 162000,
+      uvtValue: 47065,
+    };
+
+    it('should create a DELETE adjustment that zeros all values', async () => {
+      (prisma.payrollEntry.findFirst as jest.Mock).mockResolvedValue(sentEntry);
+      configService.getOrFail.mockResolvedValue(mockConfigWithAdjustment);
+      (prisma.payrollEntry.create as jest.Mock).mockResolvedValue({
+        ...sentEntry,
+        id: 'adj-1',
+        entryNumber: 'NA-000005',
+        status: PayrollEntryStatus.CALCULATED,
+        dianDocumentType: PayrollDocumentType.NOMINA_AJUSTE,
+        totalNeto: 0,
+      });
+      (prisma.payrollConfig.update as jest.Mock).mockResolvedValue({});
+
+      const result = await service.createAdjustment('entry-1', {
+        tipoNota: AdjustmentNoteType.DELETE,
+        reason: 'Error en nomina',
+      });
+
+      expect(prisma.payrollEntry.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tenantId: mockTenantId,
+            entryNumber: 'NA-000005',
+            status: PayrollEntryStatus.CALCULATED,
+            dianDocumentType: PayrollDocumentType.NOMINA_AJUSTE,
+            originalEntryId: sentEntry.id,
+            daysWorked: 0,
+            sueldo: 0,
+            totalDevengados: 0,
+            totalDeducciones: 0,
+            totalNeto: 0,
+            notes: 'Error en nomina',
+          }),
+        }),
+      );
+
+      // Should increment adjustment number
+      expect(prisma.payrollConfig.update).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        data: { adjustmentCurrentNumber: 6 },
+      });
+
+      expect(result).toBeDefined();
+    });
+
+    it('should create a REPLACE adjustment with recalculated values', async () => {
+      (prisma.payrollEntry.findFirst as jest.Mock).mockResolvedValue(sentEntry);
+      configService.getOrFail.mockResolvedValue(mockConfigWithAdjustment);
+      (prisma.payrollEntry.create as jest.Mock).mockResolvedValue({
+        ...sentEntry,
+        id: 'adj-2',
+        entryNumber: 'NA-000005',
+        status: PayrollEntryStatus.CALCULATED,
+        dianDocumentType: PayrollDocumentType.NOMINA_AJUSTE,
+      });
+      (prisma.payrollConfig.update as jest.Mock).mockResolvedValue({});
+
+      const result = await service.createAdjustment('entry-1', {
+        tipoNota: AdjustmentNoteType.REPLACE,
+        daysWorked: 25,
+        bonificaciones: 100000,
+      });
+
+      expect(calculationService.calculatePayrollEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseSalary: 2000000,
+          daysWorked: 25,
+          bonificaciones: 100000,
+        }),
+      );
+
+      expect(prisma.payrollEntry.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            daysWorked: 25,
+            sueldo: mockCalculationResult.sueldo,
+            totalNeto: mockCalculationResult.totalNeto,
+          }),
+        }),
+      );
+
+      expect(result).toBeDefined();
+    });
+
+    it('should throw NotFoundException when original entry not found', async () => {
+      (prisma.payrollEntry.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.createAdjustment('nonexistent', {
+          tipoNota: AdjustmentNoteType.DELETE,
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when original entry has no CUNE', async () => {
+      (prisma.payrollEntry.findFirst as jest.Mock).mockResolvedValue({
+        ...sentEntry,
+        cune: null,
+      });
+
+      await expect(
+        service.createAdjustment('entry-1', {
+          tipoNota: AdjustmentNoteType.DELETE,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when original entry is DRAFT', async () => {
+      (prisma.payrollEntry.findFirst as jest.Mock).mockResolvedValue({
+        ...sentEntry,
+        status: PayrollEntryStatus.DRAFT,
+        cune: 'some-cune',
+      });
+
+      await expect(
+        service.createAdjustment('entry-1', {
+          tipoNota: AdjustmentNoteType.DELETE,
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should allow adjustment for ACCEPTED entry', async () => {
+      const acceptedEntry = {
+        ...sentEntry,
+        status: PayrollEntryStatus.ACCEPTED,
+      };
+      (prisma.payrollEntry.findFirst as jest.Mock).mockResolvedValue(
+        acceptedEntry,
+      );
+      configService.getOrFail.mockResolvedValue(mockConfigWithAdjustment);
+      (prisma.payrollEntry.create as jest.Mock).mockResolvedValue({
+        ...acceptedEntry,
+        id: 'adj-3',
+        entryNumber: 'NA-000005',
+        status: PayrollEntryStatus.CALCULATED,
+      });
+      (prisma.payrollConfig.update as jest.Mock).mockResolvedValue({});
+
+      const result = await service.createAdjustment('entry-1', {
+        tipoNota: AdjustmentNoteType.DELETE,
+      });
+
+      expect(result).toBeDefined();
+    });
+
+    it('should use default prefix and number when config has no adjustment settings', async () => {
+      (prisma.payrollEntry.findFirst as jest.Mock).mockResolvedValue(sentEntry);
+      configService.getOrFail.mockResolvedValue({
+        ...mockConfigResponse,
+        adjustmentPrefix: undefined,
+        adjustmentCurrentNumber: undefined,
+      });
+      (prisma.payrollEntry.create as jest.Mock).mockResolvedValue({
+        ...sentEntry,
+        id: 'adj-4',
+        entryNumber: 'NA-000001',
+        status: PayrollEntryStatus.CALCULATED,
+      });
+      (prisma.payrollConfig.update as jest.Mock).mockResolvedValue({});
+
+      await service.createAdjustment('entry-1', {
+        tipoNota: AdjustmentNoteType.DELETE,
+      });
+
+      expect(prisma.payrollEntry.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            entryNumber: 'NA-000001',
+          }),
+        }),
+      );
+
+      expect(prisma.payrollConfig.update).toHaveBeenCalledWith({
+        where: { tenantId: mockTenantId },
+        data: { adjustmentCurrentNumber: 2 },
+      });
+    });
+
+    it('should use original values when REPLACE dto has no overrides', async () => {
+      (prisma.payrollEntry.findFirst as jest.Mock).mockResolvedValue(sentEntry);
+      configService.getOrFail.mockResolvedValue(mockConfigWithAdjustment);
+      (prisma.payrollEntry.create as jest.Mock).mockResolvedValue({
+        ...sentEntry,
+        id: 'adj-5',
+        entryNumber: 'NA-000005',
+        status: PayrollEntryStatus.CALCULATED,
+      });
+      (prisma.payrollConfig.update as jest.Mock).mockResolvedValue({});
+
+      await service.createAdjustment('entry-1', {
+        tipoNota: AdjustmentNoteType.REPLACE,
+      });
+
+      expect(calculationService.calculatePayrollEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          daysWorked: Number(sentEntry.daysWorked),
+          bonificaciones: Number(sentEntry.bonificaciones),
+          comisiones: Number(sentEntry.comisiones),
+        }),
+      );
     });
   });
 });

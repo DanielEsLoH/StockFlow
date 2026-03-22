@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PayrollBenefitsService } from './payroll-benefits.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TenantContextService } from '../../common/services/tenant-context.service';
@@ -548,6 +552,261 @@ describe('PayrollBenefitsService', () => {
         expect(benefit.formula).toBeTruthy();
         expect(benefit.formula.length).toBeGreaterThan(0);
       }
+    });
+
+    it('should handle second semester termination for prima', async () => {
+      prisma.employee.findFirst.mockResolvedValue({
+        ...mockEmployee,
+        startDate: new Date(2025, 0, 1), // Jan 1 2025
+      });
+
+      // Terminate in September (second semester)
+      const terminationDate = new Date(2026, 8, 15); // Sep 15 2026
+      const result = await service.getLiquidationPreview(
+        'emp-1',
+        terminationDate,
+      );
+
+      const prima = result.benefits.find(
+        (b) => b.concept === 'Prima de servicios',
+      );
+      expect(prima).toBeDefined();
+      // Second semester: Jul 1 to Sep 15 = (8-6)*30 + (15-1) = 74 days
+      expect(prima!.days).toBe(74);
+    });
+  });
+
+  // ===================================================================
+  // executeLiquidation
+  // ===================================================================
+  describe('executeLiquidation', () => {
+    const mockConfig = {
+      smmlv: SMMLV,
+      auxilioTransporteVal: AUXILIO_TRANSPORTE,
+      uvtValue: 49_799,
+      payrollPrefix: 'NOM',
+      payrollCurrentNumber: 10,
+    };
+
+    beforeEach(() => {
+      jest.spyOn(Logger.prototype, 'log').mockImplementation();
+      jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+      jest.spyOn(Logger.prototype, 'error').mockImplementation();
+
+      // Add transaction mock
+      prisma.$transaction = jest.fn().mockImplementation(async (fn: any) => {
+        const tx = {
+          employee: { update: jest.fn().mockResolvedValue({}) },
+          payrollPeriod: {
+            findFirst: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue({
+              id: 'liq-period-1',
+              name: 'Liquidacion marzo 2026',
+            }),
+          },
+          payrollEntry: { create: jest.fn().mockResolvedValue({}) },
+          payrollConfig: { update: jest.fn().mockResolvedValue({}) },
+        };
+        return fn(tx);
+      });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should execute liquidation and terminate employee', async () => {
+      prisma.employee.findFirst
+        .mockResolvedValueOnce({
+          ...mockEmployee,
+          startDate: new Date(2025, 0, 1),
+        }) // getLiquidationPreview call
+        .mockResolvedValueOnce({
+          ...mockEmployee,
+          startDate: new Date(2025, 0, 1),
+        }); // executeLiquidation call
+      configService.getOrFail.mockResolvedValue(mockConfig);
+
+      const result = await service.executeLiquidation(
+        'emp-1',
+        'user-1',
+        new Date(2026, 2, 15),
+      );
+
+      expect(result.executed).toBe(true);
+      expect(result.employeeStatus).toBe(EmployeeStatus.TERMINATED);
+      expect(result.employeeId).toBe('emp-1');
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when employee not found for execution', async () => {
+      // getLiquidationPreview finds the employee
+      prisma.employee.findFirst
+        .mockResolvedValueOnce({
+          ...mockEmployee,
+          startDate: new Date(2025, 0, 1),
+        })
+        .mockResolvedValueOnce(null); // executeLiquidation second check
+      configService.getOrFail.mockResolvedValue(mockConfig);
+
+      await expect(
+        service.executeLiquidation('emp-1', 'user-1'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when employee already terminated', async () => {
+      prisma.employee.findFirst
+        .mockResolvedValueOnce({
+          ...mockEmployee,
+          startDate: new Date(2025, 0, 1),
+        })
+        .mockResolvedValueOnce({
+          ...mockEmployee,
+          status: EmployeeStatus.TERMINATED,
+        });
+      configService.getOrFail.mockResolvedValue(mockConfig);
+
+      await expect(
+        service.executeLiquidation('emp-1', 'user-1'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should use existing liquidation period if one exists', async () => {
+      prisma.employee.findFirst
+        .mockResolvedValueOnce({
+          ...mockEmployee,
+          startDate: new Date(2025, 0, 1),
+        })
+        .mockResolvedValueOnce({
+          ...mockEmployee,
+          startDate: new Date(2025, 0, 1),
+        });
+      configService.getOrFail.mockResolvedValue(mockConfig);
+
+      const existingPeriod = {
+        id: 'existing-liq-period',
+        name: 'Liquidacion marzo 2026',
+      };
+
+      prisma.$transaction = jest.fn().mockImplementation(async (fn: any) => {
+        const tx = {
+          employee: { update: jest.fn().mockResolvedValue({}) },
+          payrollPeriod: {
+            findFirst: jest.fn().mockResolvedValue(existingPeriod),
+            create: jest.fn(),
+          },
+          payrollEntry: { create: jest.fn().mockResolvedValue({}) },
+          payrollConfig: { update: jest.fn().mockResolvedValue({}) },
+        };
+        const result = await fn(tx);
+        // Verify create was NOT called since period exists
+        expect(tx.payrollPeriod.create).not.toHaveBeenCalled();
+        return result;
+      });
+
+      const result = await service.executeLiquidation(
+        'emp-1',
+        'user-1',
+        new Date(2026, 2, 15),
+      );
+
+      expect(result.executed).toBe(true);
+    });
+
+    it('should use current date when no termination date provided', async () => {
+      prisma.employee.findFirst.mockResolvedValue({
+        ...mockEmployee,
+        startDate: new Date(2025, 0, 1),
+      });
+      configService.getOrFail.mockResolvedValue(mockConfig);
+
+      const result = await service.executeLiquidation('emp-1', 'user-1');
+
+      expect(result.executed).toBe(true);
+      expect(result.endDate).toBeDefined();
+    });
+
+    it('should calculate correct liquidation for integral salary employee', async () => {
+      prisma.employee.findFirst.mockResolvedValue({
+        ...mockIntegralEmployee,
+        startDate: new Date(2025, 0, 1),
+      });
+      configService.getOrFail.mockResolvedValue(mockConfig);
+
+      // Integral employees should not have benefits calculated
+      // but executeLiquidation should still throw for ACTIVE integral employee? No - it should work.
+      // Actually it should still work, just with 0 benefits
+      const result = await service.executeLiquidation(
+        'emp-2',
+        'user-1',
+        new Date(2026, 2, 15),
+      );
+
+      expect(result.executed).toBe(true);
+      expect(result.benefits).toHaveLength(0);
+      expect(result.totalBenefits).toBe(0);
+    });
+  });
+
+  // ===================================================================
+  // calculateBenefitPayment - second semester prima
+  // ===================================================================
+  describe('calculateBenefitPayment - additional coverage', () => {
+    it('should calculate prima for second semester', async () => {
+      prisma.employee.findFirst.mockResolvedValue({
+        ...mockEmployee,
+        startDate: new Date(2025, 0, 1),
+      });
+
+      const paymentDate = new Date(2026, 11, 20); // Dec 20 2026 (second semester)
+      const result = await service.calculateBenefitPayment(
+        'emp-1',
+        'PRIMA',
+        paymentDate,
+      );
+
+      expect(result.benefitType).toBe('PRIMA');
+      // Second semester: Jul 1 to Dec 20
+      // (11-6)*30 + (20-1) = 150 + 19 = 169 days
+      expect(result.daysWorked).toBe(169);
+    });
+
+    it('should calculate cesantias for non-February payment (current year)', async () => {
+      prisma.employee.findFirst.mockResolvedValue({
+        ...mockEmployee,
+        startDate: new Date(2025, 0, 1),
+      });
+
+      // Payment in June (not Jan/Feb) - uses current year
+      const paymentDate = new Date(2026, 5, 15); // Jun 15 2026
+      const result = await service.calculateBenefitPayment(
+        'emp-1',
+        'CESANTIAS',
+        paymentDate,
+      );
+
+      expect(result.benefitType).toBe('CESANTIAS');
+      // Current year 2026: Jan 1 to Dec 31 = 359 days
+      expect(result.daysWorked).toBe(359);
+    });
+
+    it('should calculate intereses for non-January payment', async () => {
+      prisma.employee.findFirst.mockResolvedValue({
+        ...mockEmployee,
+        startDate: new Date(2025, 0, 1),
+      });
+
+      // Payment in March (not January) - uses current year
+      const paymentDate = new Date(2026, 2, 15); // Mar 15 2026
+      const result = await service.calculateBenefitPayment(
+        'emp-1',
+        'INTERESES_CESANTIAS',
+        paymentDate,
+      );
+
+      expect(result.benefitType).toBe('INTERESES_CESANTIAS');
+      // Current year 2026 (month > 0): full year 359 days
+      expect(result.daysWorked).toBe(359);
     });
   });
 });

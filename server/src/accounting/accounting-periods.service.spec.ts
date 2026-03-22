@@ -5,7 +5,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { AccountingPeriodStatus } from '@prisma/client';
+import { AccountingPeriodStatus, AccountType, AccountNature } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingPeriodsService } from './accounting-periods.service';
@@ -364,6 +364,303 @@ describe('AccountingPeriodsService', () => {
           status: 'DRAFT',
         },
       });
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // generateClosingEntry (via closePeriod)
+  // ---------------------------------------------------------------------------
+  describe('closePeriod - generateClosingEntry', () => {
+    const userId = 'user-close';
+    let mockJournalEntries: { createAutoEntry: jest.Mock };
+
+    beforeEach(() => {
+      mockJournalEntries = {
+        createAutoEntry: jest.fn().mockResolvedValue({ id: 'closing-entry' }),
+      };
+      // Re-wire the mock reference for assertion
+      (service as any).journalEntries = mockJournalEntries;
+    });
+
+    function setupClosePeriodMocks(plLines: any[], retainedEarningsAccount: any) {
+      prisma.accountingPeriod.findFirst.mockResolvedValue(mockPeriod);
+      prisma.journalEntry.count.mockResolvedValue(0);
+      prisma.journalEntryLine.findMany.mockResolvedValue(plLines);
+      prisma.account.findFirst.mockResolvedValue(retainedEarningsAccount);
+      prisma.accountingPeriod.update.mockResolvedValue({
+        ...mockPeriod,
+        status: AccountingPeriodStatus.CLOSED,
+        closedAt: new Date(),
+        closedById: userId,
+      });
+    }
+
+    it('should skip closing entry when no P&L lines exist', async () => {
+      setupClosePeriodMocks([], null);
+
+      await service.closePeriod('period-1', userId);
+
+      expect(mockJournalEntries.createAutoEntry).not.toHaveBeenCalled();
+    });
+
+    it('should skip closing entry when no retained earnings account exists', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 50000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+      ];
+      setupClosePeriodMocks(plLines, null);
+
+      await service.closePeriod('period-1', userId);
+
+      expect(mockJournalEntries.createAutoEntry).not.toHaveBeenCalled();
+      expect(Logger.prototype.log).toHaveBeenCalled();
+    });
+
+    it('should generate closing entry with revenue account (profit scenario)', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 100000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+        {
+          accountId: 'acc-exp',
+          debit: 60000,
+          credit: 0,
+          account: { id: 'acc-exp', code: '5105', type: AccountType.EXPENSE, nature: AccountNature.DEBIT },
+        },
+      ];
+      const retainedEarningsAccount = { id: 'acc-re' };
+      setupClosePeriodMocks(plLines, retainedEarningsAccount);
+
+      await service.closePeriod('period-1', userId);
+
+      expect(mockJournalEntries.createAutoEntry).toHaveBeenCalledTimes(1);
+      const callArgs = mockJournalEntries.createAutoEntry.mock.calls[0][0];
+      expect(callArgs.source).toBe('PERIOD_CLOSE');
+      expect(callArgs.description).toContain('cierre');
+
+      // Revenue line: debit 100000 to close credit balance
+      const revLine = callArgs.lines.find((l: any) => l.accountId === 'acc-rev');
+      expect(revLine.debit).toBe(100000);
+      expect(revLine.credit).toBe(0);
+
+      // Expense line: credit 60000 to close debit balance
+      const expLine = callArgs.lines.find((l: any) => l.accountId === 'acc-exp');
+      expect(expLine.credit).toBe(60000);
+      expect(expLine.debit).toBe(0);
+
+      // Retained earnings: credit 40000 (profit)
+      const reLine = callArgs.lines.find((l: any) => l.accountId === 'acc-re');
+      expect(reLine.credit).toBe(40000);
+      expect(reLine.debit).toBe(0);
+    });
+
+    it('should generate closing entry with loss scenario (debit retained earnings)', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 30000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+        {
+          accountId: 'acc-exp',
+          debit: 80000,
+          credit: 0,
+          account: { id: 'acc-exp', code: '5105', type: AccountType.EXPENSE, nature: AccountNature.DEBIT },
+        },
+      ];
+      const retainedEarningsAccount = { id: 'acc-re' };
+      setupClosePeriodMocks(plLines, retainedEarningsAccount);
+
+      await service.closePeriod('period-1', userId);
+
+      expect(mockJournalEntries.createAutoEntry).toHaveBeenCalledTimes(1);
+      const callArgs = mockJournalEntries.createAutoEntry.mock.calls[0][0];
+
+      // Retained earnings: debit 50000 (loss = 30000 - 80000)
+      const reLine = callArgs.lines.find((l: any) => l.accountId === 'acc-re');
+      expect(reLine.debit).toBe(50000);
+      expect(reLine.credit).toBe(0);
+    });
+
+    it('should aggregate multiple lines for the same account', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 50000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 30000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+      ];
+      const retainedEarningsAccount = { id: 'acc-re' };
+      setupClosePeriodMocks(plLines, retainedEarningsAccount);
+
+      await service.closePeriod('period-1', userId);
+
+      const callArgs = mockJournalEntries.createAutoEntry.mock.calls[0][0];
+      const revLine = callArgs.lines.find((l: any) => l.accountId === 'acc-rev');
+      expect(revLine.debit).toBe(80000); // 50000 + 30000
+    });
+
+    it('should include COGS accounts as expenses', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-cogs',
+          debit: 45000,
+          credit: 0,
+          account: { id: 'acc-cogs', code: '6135', type: AccountType.COGS, nature: AccountNature.DEBIT },
+        },
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 100000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+      ];
+      const retainedEarningsAccount = { id: 'acc-re' };
+      setupClosePeriodMocks(plLines, retainedEarningsAccount);
+
+      await service.closePeriod('period-1', userId);
+
+      const callArgs = mockJournalEntries.createAutoEntry.mock.calls[0][0];
+      const cogsLine = callArgs.lines.find((l: any) => l.accountId === 'acc-cogs');
+      expect(cogsLine.credit).toBe(45000);
+
+      // Net income = 100000 - 45000 = 55000
+      const reLine = callArgs.lines.find((l: any) => l.accountId === 'acc-re');
+      expect(reLine.credit).toBe(55000);
+    });
+
+    it('should skip closing lines where net balance is zero', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-rev',
+          debit: 50000,
+          credit: 50000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+      ];
+      const retainedEarningsAccount = { id: 'acc-re' };
+      setupClosePeriodMocks(plLines, retainedEarningsAccount);
+
+      await service.closePeriod('period-1', userId);
+
+      // Zero balance — all closingLines are empty, so no closing entry
+      expect(mockJournalEntries.createAutoEntry).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when createAutoEntry fails', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 100000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+      ];
+      const retainedEarningsAccount = { id: 'acc-re' };
+      setupClosePeriodMocks(plLines, retainedEarningsAccount);
+      mockJournalEntries.createAutoEntry.mockRejectedValue(
+        new Error('Constraint violation'),
+      );
+
+      await expect(service.closePeriod('period-1', userId)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should include error message in BadRequestException when createAutoEntry fails', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 100000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+      ];
+      const retainedEarningsAccount = { id: 'acc-re' };
+      setupClosePeriodMocks(plLines, retainedEarningsAccount);
+      mockJournalEntries.createAutoEntry.mockRejectedValue(
+        new Error('Some specific error'),
+      );
+
+      await expect(service.closePeriod('period-1', userId)).rejects.toThrow(
+        'Some specific error',
+      );
+    });
+
+    it('should handle non-Error throw in createAutoEntry', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 100000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+      ];
+      const retainedEarningsAccount = { id: 'acc-re' };
+      setupClosePeriodMocks(plLines, retainedEarningsAccount);
+      mockJournalEntries.createAutoEntry.mockRejectedValue('string error');
+
+      await expect(service.closePeriod('period-1', userId)).rejects.toThrow(
+        'Error desconocido',
+      );
+    });
+
+    it('should not include retained earnings line when net income is zero', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 50000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+        {
+          accountId: 'acc-exp',
+          debit: 50000,
+          credit: 0,
+          account: { id: 'acc-exp', code: '5105', type: AccountType.EXPENSE, nature: AccountNature.DEBIT },
+        },
+      ];
+      const retainedEarningsAccount = { id: 'acc-re' };
+      setupClosePeriodMocks(plLines, retainedEarningsAccount);
+
+      await service.closePeriod('period-1', userId);
+
+      const callArgs = mockJournalEntries.createAutoEntry.mock.calls[0][0];
+      const reLine = callArgs.lines.find((l: any) => l.accountId === 'acc-re');
+      expect(reLine).toBeUndefined();
+    });
+
+    it('should use period endDate for the closing entry date', async () => {
+      const plLines = [
+        {
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 100000,
+          account: { id: 'acc-rev', code: '4135', type: AccountType.REVENUE, nature: AccountNature.CREDIT },
+        },
+      ];
+      const retainedEarningsAccount = { id: 'acc-re' };
+      setupClosePeriodMocks(plLines, retainedEarningsAccount);
+
+      await service.closePeriod('period-1', userId);
+
+      const callArgs = mockJournalEntries.createAutoEntry.mock.calls[0][0];
+      expect(callArgs.date).toEqual(mockPeriod.endDate);
     });
   });
 });

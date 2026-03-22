@@ -99,10 +99,10 @@ describe('PayrollReportsService', () => {
     jest.clearAllMocks();
 
     prisma = {
-      employee: { findFirst: jest.fn() },
+      employee: { findFirst: jest.fn(), count: jest.fn() },
       tenant: { findUnique: jest.fn() },
       payrollEntry: { findMany: jest.fn() },
-      payrollPeriod: { findFirst: jest.fn() },
+      payrollPeriod: { findFirst: jest.fn(), findMany: jest.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -205,9 +205,174 @@ describe('PayrollReportsService', () => {
     it('should throw NotFoundException when employee not found', async () => {
       prisma.employee.findFirst.mockResolvedValue(null);
 
-      await expect(service.getEmployeeYtdReport('emp-x', 2026)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.getEmployeeYtdReport('emp-x', 2026),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return empty months when no entries exist', async () => {
+      prisma.employee.findFirst.mockResolvedValue(mockEmployee);
+      prisma.payrollEntry.findMany.mockResolvedValue([]);
+
+      const result = await service.getEmployeeYtdReport('emp-1', 2026);
+
+      expect(result.months).toHaveLength(0);
+      expect(result.yearTotal.devengados).toBe(0);
+      expect(result.yearTotal.deducciones).toBe(0);
+      expect(result.yearTotal.neto).toBe(0);
+    });
+  });
+
+  describe('getIncomeCertificate - additional coverage', () => {
+    it('should throw NotFoundException when tenant not found', async () => {
+      prisma.employee.findFirst.mockResolvedValue(mockEmployee);
+      prisma.tenant.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.getIncomeCertificate('emp-1', 2026),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should use tenant name when no dianConfig businessName', async () => {
+      prisma.employee.findFirst.mockResolvedValue(mockEmployee);
+      prisma.tenant.findUnique.mockResolvedValue({
+        id: tenantId,
+        name: 'Fallback Company',
+        dianConfig: null,
+      });
+      prisma.payrollEntry.findMany.mockResolvedValue([]);
+
+      const result = await service.getIncomeCertificate('emp-1', 2026);
+
+      expect(result.employer.name).toBe('Fallback Company');
+      expect(result.employer.nit).toBe('');
+    });
+  });
+
+  describe('getDashboard', () => {
+    const mockPeriods = [
+      {
+        id: 'period-feb',
+        name: 'Febrero 2026',
+        startDate: new Date(2026, 1, 1),
+        endDate: new Date(2026, 1, 28),
+        status: 'APPROVED',
+        totalDevengados: 5000000,
+        totalDeducciones: 400000,
+        totalNeto: 4600000,
+        employeeCount: 5,
+      },
+      {
+        id: 'period-jan',
+        name: 'Enero 2026',
+        startDate: new Date(2026, 0, 1),
+        endDate: new Date(2026, 0, 31),
+        status: 'APPROVED',
+        totalDevengados: 4800000,
+        totalDeducciones: 380000,
+        totalNeto: 4420000,
+        employeeCount: 5,
+      },
+      {
+        id: 'period-mar',
+        name: 'Marzo 2026',
+        startDate: new Date(2026, 2, 1),
+        endDate: new Date(2026, 2, 31),
+        status: 'OPEN',
+        totalDevengados: 0,
+        totalDeducciones: 0,
+        totalNeto: 0,
+        employeeCount: 0,
+      },
+    ];
+
+    it('should return dashboard with aggregated metrics', async () => {
+      prisma.payrollPeriod.findMany.mockResolvedValue(mockPeriods);
+      prisma.employee.count
+        .mockResolvedValueOnce(10) // active
+        .mockResolvedValueOnce(12); // total
+
+      const result = await service.getDashboard(2026);
+
+      expect(result.year).toBe(2026);
+      expect(result.activeEmployees).toBe(10);
+      expect(result.totalEmployees).toBe(12);
+      expect(result.periodsCount).toBe(3);
+      expect(result.approvedPeriods).toBe(2);
+      // Only APPROVED/CLOSED periods contribute to totals
+      expect(result.totals.earnings).toBe(9800000);
+      expect(result.totals.deductions).toBe(780000);
+      expect(result.totals.netPay).toBe(9020000);
+      expect(result.averagePayroll).toBe(4510000);
+      expect(result.monthlyTotals).toHaveLength(3);
+      expect(result.recentPeriods).toHaveLength(3);
+    });
+
+    it('should return zero averagePayroll when no approved periods', async () => {
+      prisma.payrollPeriod.findMany.mockResolvedValue([
+        { ...mockPeriods[2] }, // only OPEN
+      ]);
+      prisma.employee.count
+        .mockResolvedValueOnce(5)
+        .mockResolvedValueOnce(5);
+
+      const result = await service.getDashboard(2026);
+
+      expect(result.approvedPeriods).toBe(0);
+      expect(result.averagePayroll).toBe(0);
+      expect(result.totals.earnings).toBe(0);
+    });
+
+    it('should limit recent periods to 6', async () => {
+      const manyPeriods = Array.from({ length: 10 }, (_, i) => ({
+        id: `period-${i}`,
+        name: `Period ${i}`,
+        startDate: new Date(2026, i, 1),
+        endDate: new Date(2026, i + 1, 0),
+        status: 'APPROVED',
+        totalDevengados: 1000000,
+        totalDeducciones: 100000,
+        totalNeto: 900000,
+        employeeCount: 5,
+      }));
+      prisma.payrollPeriod.findMany.mockResolvedValue(manyPeriods);
+      prisma.employee.count
+        .mockResolvedValueOnce(5)
+        .mockResolvedValueOnce(5);
+
+      const result = await service.getDashboard(2026);
+
+      expect(result.recentPeriods).toHaveLength(6);
+    });
+
+    it('should handle CLOSED period status in aggregation', async () => {
+      prisma.payrollPeriod.findMany.mockResolvedValue([
+        {
+          ...mockPeriods[0],
+          status: 'CLOSED',
+        },
+      ]);
+      prisma.employee.count
+        .mockResolvedValueOnce(5)
+        .mockResolvedValueOnce(5);
+
+      const result = await service.getDashboard(2026);
+
+      expect(result.approvedPeriods).toBe(1);
+      expect(result.totals.earnings).toBe(5000000);
+    });
+
+    it('should return empty arrays when no periods exist', async () => {
+      prisma.payrollPeriod.findMany.mockResolvedValue([]);
+      prisma.employee.count
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
+
+      const result = await service.getDashboard(2026);
+
+      expect(result.periodsCount).toBe(0);
+      expect(result.monthlyTotals).toHaveLength(0);
+      expect(result.recentPeriods).toHaveLength(0);
     });
   });
 });

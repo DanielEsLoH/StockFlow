@@ -689,6 +689,375 @@ describe('ExpensesService', () => {
     });
   });
 
+  describe('update - additional branches', () => {
+    it('should disconnect supplier when supplierId is empty string', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.expense.update as jest.Mock).mockResolvedValue({
+        ...mockExpense,
+        supplierId: null,
+        supplier: null,
+      });
+
+      await service.update('expense-1', { supplierId: '' });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            supplier: { disconnect: true },
+          }),
+        }),
+      );
+    });
+
+    it('should disconnect account when accountId is empty string', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.expense.update as jest.Mock).mockResolvedValue({
+        ...mockExpense,
+        accountId: null,
+        account: null,
+      });
+
+      await service.update('expense-1', { accountId: '' });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            account: { disconnect: true },
+          }),
+        }),
+      );
+    });
+
+    it('should disconnect cost center when costCenterId is empty string', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.expense.update as jest.Mock).mockResolvedValue({
+        ...mockExpense,
+        costCenterId: null,
+        costCenter: null,
+      });
+
+      await service.update('expense-1', { costCenterId: '' });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            costCenter: { disconnect: true },
+          }),
+        }),
+      );
+    });
+
+    it('should validate account when updating accountId', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.account.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.update('expense-1', { accountId: 'bad-account' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should validate cost center when updating costCenterId', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.costCenter.findFirst as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.update('expense-1', { costCenterId: 'bad-cc' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should connect valid account when updating accountId', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.account.findFirst as jest.Mock).mockResolvedValue({
+        id: 'acc-2',
+      });
+      (prisma.expense.update as jest.Mock).mockResolvedValue({
+        ...mockExpense,
+        accountId: 'acc-2',
+      });
+
+      await service.update('expense-1', { accountId: 'acc-2' });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            account: { connect: { id: 'acc-2' } },
+          }),
+        }),
+      );
+    });
+
+    it('should connect valid cost center when updating costCenterId', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.costCenter.findFirst as jest.Mock).mockResolvedValue({
+        id: 'cc-2',
+      });
+      (prisma.expense.update as jest.Mock).mockResolvedValue({
+        ...mockExpense,
+        costCenterId: 'cc-2',
+      });
+
+      await service.update('expense-1', { costCenterId: 'cc-2' });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            costCenter: { connect: { id: 'cc-2' } },
+          }),
+        }),
+      );
+    });
+
+    it('should connect valid supplier when updating supplierId', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.supplier.findFirst as jest.Mock).mockResolvedValue({
+        id: 'sup-2',
+      });
+      (prisma.expense.update as jest.Mock).mockResolvedValue({
+        ...mockExpense,
+        supplierId: 'sup-2',
+      });
+
+      await service.update('expense-1', { supplierId: 'sup-2' });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            supplier: { connect: { id: 'sup-2' } },
+          }),
+        }),
+      );
+    });
+
+    it('should update issueDate, dueDate, invoiceNumber, notes', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.expense.update as jest.Mock).mockResolvedValue({
+        ...mockExpense,
+        issueDate: new Date('2024-07-01'),
+        dueDate: new Date('2024-08-01'),
+        invoiceNumber: 'INV-999',
+        notes: 'Updated notes',
+      });
+
+      await service.update('expense-1', {
+        issueDate: new Date('2024-07-01'),
+        dueDate: new Date('2024-08-01'),
+        invoiceNumber: 'INV-999',
+        notes: 'Updated notes',
+      });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            issueDate: new Date('2024-07-01'),
+            dueDate: new Date('2024-08-01'),
+            invoiceNumber: 'INV-999',
+            notes: 'Updated notes',
+          }),
+        }),
+      );
+    });
+
+    it('should update paymentMethod, paymentReference, paymentDate', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.expense.update as jest.Mock).mockResolvedValue(mockExpense);
+
+      await service.update('expense-1', {
+        paymentMethod: PaymentMethod.CASH,
+        paymentReference: 'REF-123',
+        paymentDate: new Date('2024-06-15'),
+      });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            paymentMethod: PaymentMethod.CASH,
+            paymentReference: 'REF-123',
+            paymentDate: new Date('2024-06-15'),
+          }),
+        }),
+      );
+    });
+
+    it('should recalculate ReteFuente when category changes to HONORARIOS', async () => {
+      const highSubtotalExpense = {
+        ...mockExpense,
+        subtotal: 600000,
+        taxRate: 0,
+      };
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(
+        highSubtotalExpense,
+      );
+      (prisma.expense.update as jest.Mock).mockResolvedValue({
+        ...highSubtotalExpense,
+        category: ExpenseCategory.HONORARIOS,
+        reteFuente: 15000,
+      });
+
+      await service.update('expense-1', {
+        category: ExpenseCategory.HONORARIOS,
+      });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            reteFuente: 15000,
+          }),
+        }),
+      );
+    });
+
+    it('should recalculate when taxRate changes', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(mockExpense);
+      (prisma.expense.update as jest.Mock).mockResolvedValue({
+        ...mockExpense,
+        taxRate: 5,
+        tax: 5000,
+        total: 105000,
+      });
+
+      await service.update('expense-1', { taxRate: 5 });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            taxRate: 5,
+            tax: 100000 * 0.05,
+            total: 100000 + 100000 * 0.05,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('findAll - additional filters', () => {
+    it('should filter by supplierId', async () => {
+      (prisma.expense.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.expense.count as jest.Mock).mockResolvedValue(0);
+
+      await service.findAll({ supplierId: 'supplier-1' });
+
+      expect(prisma.expense.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ supplierId: 'supplier-1' }),
+        }),
+      );
+    });
+
+    it('should filter by fromDate only', async () => {
+      (prisma.expense.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.expense.count as jest.Mock).mockResolvedValue(0);
+
+      await service.findAll({ fromDate: '2024-01-01' });
+
+      expect(prisma.expense.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            issueDate: { gte: new Date('2024-01-01') },
+          }),
+        }),
+      );
+    });
+
+    it('should filter by toDate only', async () => {
+      (prisma.expense.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.expense.count as jest.Mock).mockResolvedValue(0);
+
+      await service.findAll({ toDate: '2024-12-31' });
+
+      expect(prisma.expense.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            issueDate: { lte: new Date('2024-12-31') },
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('create - no optional IDs', () => {
+    it('should create expense without supplier, account, or costCenter', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.expense.create as jest.Mock).mockResolvedValue({
+        ...mockExpense,
+        supplierId: null,
+        accountId: null,
+        costCenterId: null,
+        supplier: null,
+        account: null,
+        costCenter: null,
+      });
+
+      const result = await service.create(
+        {
+          category: ExpenseCategory.SERVICIOS_PUBLICOS,
+          description: 'Simple expense',
+          subtotal: 50000,
+        },
+        mockUserId,
+      );
+
+      expect(result.supplierId).toBeNull();
+    });
+
+    it('should create expense with default taxRate of 0', async () => {
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.expense.create as jest.Mock).mockResolvedValue({
+        ...mockExpense,
+        taxRate: 0,
+        tax: 0,
+        total: 50000,
+      });
+
+      await service.create(
+        {
+          category: ExpenseCategory.SERVICIOS_PUBLICOS,
+          description: 'No tax expense',
+          subtotal: 50000,
+        },
+        mockUserId,
+      );
+
+      expect(prisma.expense.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            taxRate: 0,
+            tax: 0,
+            total: 50000,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('pay - additional cases', () => {
+    it('should use current date when paymentDate not provided', async () => {
+      const approvedExpense = {
+        ...mockExpense,
+        status: ExpenseStatus.APPROVED,
+      };
+      (prisma.expense.findFirst as jest.Mock).mockResolvedValue(
+        approvedExpense,
+      );
+      (prisma.expense.update as jest.Mock).mockResolvedValue({
+        ...approvedExpense,
+        status: ExpenseStatus.PAID,
+      });
+
+      await service.pay('expense-1', {
+        paymentMethod: PaymentMethod.CASH,
+      });
+
+      expect(prisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            paymentDate: expect.any(Date),
+            paymentReference: null,
+          }),
+        }),
+      );
+    });
+  });
+
   describe('getStats', () => {
     it('should return expense statistics', async () => {
       (prisma.expense.groupBy as jest.Mock)

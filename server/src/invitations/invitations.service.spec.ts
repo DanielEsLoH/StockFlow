@@ -203,7 +203,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       const result = await service.create(createDto, mockAdminUser as any);
 
@@ -229,7 +231,9 @@ describe('InvitationsService', () => {
         ...mockInvitation,
         email: 'invitee@example.com',
       });
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await service.create(dtoWithUppercase, mockAdminUser as any);
 
@@ -241,7 +245,10 @@ describe('InvitationsService', () => {
     });
 
     it('should use EMPLOYEE as default role when not specified', async () => {
-      const dtoWithoutRole = { email: 'invitee@example.com', warehouseId: 'warehouse-123' };
+      const dtoWithoutRole = {
+        email: 'invitee@example.com',
+        warehouseId: 'warehouse-123',
+      };
 
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
       (prismaService.invitation.findUnique as jest.Mock).mockResolvedValue(
@@ -250,7 +257,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await service.create(dtoWithoutRole as any, mockAdminUser as any);
 
@@ -330,7 +339,9 @@ describe('InvitationsService', () => {
       ).rejects.toThrow(BadRequestException);
       await expect(
         service.create(dtoAdminWithWarehouse, mockAdminUser as any),
-      ).rejects.toThrow('Los administradores no deben tener una bodega asignada');
+      ).rejects.toThrow(
+        'Los administradores no deben tener una bodega asignada',
+      );
     });
 
     it('should throw ConflictException if user already exists in platform', async () => {
@@ -338,7 +349,9 @@ describe('InvitationsService', () => {
         id: 'existing-user',
         email: 'invitee@example.com',
       });
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await expect(
         service.create(createDto, mockAdminUser as any),
@@ -351,7 +364,9 @@ describe('InvitationsService', () => {
         ...mockInvitation,
         status: InvitationStatus.PENDING,
       });
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await expect(
         service.create(createDto, mockAdminUser as any),
@@ -369,7 +384,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       const result = await service.create(createDto, mockAdminUser as any);
 
@@ -390,7 +407,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       const result = await service.create(createDto, mockAdminUser as any);
 
@@ -408,7 +427,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await service.create(createDto, mockAdminUser as any);
 
@@ -434,7 +455,9 @@ describe('InvitationsService', () => {
       (brevoService.sendEmail as jest.Mock).mockRejectedValue(
         new Error('Email failed'),
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       const loggerSpy = jest.spyOn(Logger.prototype, 'error');
 
@@ -454,7 +477,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await service.create(createDto, mockAdminUser as any);
 
@@ -469,7 +494,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       const now = new Date();
       await service.create(createDto, mockAdminUser as any);
@@ -883,7 +910,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await service.create(
         { email: 'test@example.com', warehouseId: 'warehouse-123' } as any,
@@ -909,7 +938,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await service.create(
         { email: 'test@example.com', warehouseId: 'warehouse-123' } as any,
@@ -934,7 +965,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await service.create(
         { email: 'test@example.com', warehouseId: 'warehouse-123' } as any,
@@ -960,7 +993,9 @@ describe('InvitationsService', () => {
       (prismaService.invitation.create as jest.Mock).mockResolvedValue(
         mockInvitation,
       );
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await service.create(
         { email: 'test@example.com', warehouseId: 'warehouse-123' } as any,
@@ -990,7 +1025,9 @@ describe('InvitationsService', () => {
         success: false,
         error: 'Invalid email address',
       });
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       const loggerSpy = jest.spyOn(Logger.prototype, 'warn');
 

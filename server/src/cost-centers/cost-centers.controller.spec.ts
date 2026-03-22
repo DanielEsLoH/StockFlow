@@ -33,9 +33,7 @@ describe('CostCentersController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CostCentersController],
-      providers: [
-        { provide: CostCentersService, useValue: mockService },
-      ],
+      providers: [{ provide: CostCentersService, useValue: mockService }],
     }).compile();
 
     controller = module.get<CostCentersController>(CostCentersController);

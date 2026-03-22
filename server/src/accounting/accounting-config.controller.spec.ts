@@ -48,7 +48,9 @@ describe('AccountingConfigController', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<AccountingConfigController>(AccountingConfigController);
+    controller = module.get<AccountingConfigController>(
+      AccountingConfigController,
+    );
     configService = module.get(AccountingConfigService);
     setupService = module.get(AccountingSetupService);
 

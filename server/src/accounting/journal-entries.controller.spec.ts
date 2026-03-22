@@ -31,15 +31,23 @@ describe('JournalEntriesController', () => {
       findAll: jest.fn().mockResolvedValue(mockPaginatedResponse),
       findOne: jest.fn().mockResolvedValue(mockJournalEntry),
       create: jest.fn().mockResolvedValue(mockJournalEntry),
-      postEntry: jest.fn().mockResolvedValue({ ...mockJournalEntry, status: JournalEntryStatus.POSTED }),
-      voidEntry: jest.fn().mockResolvedValue({ ...mockJournalEntry, status: JournalEntryStatus.VOIDED }),
+      postEntry: jest
+        .fn()
+        .mockResolvedValue({
+          ...mockJournalEntry,
+          status: JournalEntryStatus.POSTED,
+        }),
+      voidEntry: jest
+        .fn()
+        .mockResolvedValue({
+          ...mockJournalEntry,
+          status: JournalEntryStatus.VOIDED,
+        }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [JournalEntriesController],
-      providers: [
-        { provide: JournalEntriesService, useValue: mockService },
-      ],
+      providers: [{ provide: JournalEntriesService, useValue: mockService }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -72,7 +80,12 @@ describe('JournalEntriesController', () => {
       await controller.findAll();
 
       expect(service.findAll).toHaveBeenCalledWith(
-        1, 20, undefined, undefined, undefined, undefined,
+        1,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
 
@@ -80,7 +93,12 @@ describe('JournalEntriesController', () => {
       await controller.findAll('3', '50');
 
       expect(service.findAll).toHaveBeenCalledWith(
-        3, 50, undefined, undefined, undefined, undefined,
+        3,
+        50,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
 
@@ -88,7 +106,12 @@ describe('JournalEntriesController', () => {
       await controller.findAll('-5', '20');
 
       expect(service.findAll).toHaveBeenCalledWith(
-        1, 20, undefined, undefined, undefined, undefined,
+        1,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
 
@@ -96,7 +119,12 @@ describe('JournalEntriesController', () => {
       await controller.findAll('1', '500');
 
       expect(service.findAll).toHaveBeenCalledWith(
-        1, 100, undefined, undefined, undefined, undefined,
+        1,
+        100,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
 
@@ -105,27 +133,50 @@ describe('JournalEntriesController', () => {
 
       // parseInt('0') = 0, which is falsy, so || 20 gives 20
       expect(service.findAll).toHaveBeenCalledWith(
-        1, 20, undefined, undefined, undefined, undefined,
+        1,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
 
     it('should pass source and status filters', async () => {
       await controller.findAll(
-        '1', '20',
+        '1',
+        '20',
         JournalEntrySource.MANUAL,
         JournalEntryStatus.POSTED,
       );
 
       expect(service.findAll).toHaveBeenCalledWith(
-        1, 20, JournalEntrySource.MANUAL, JournalEntryStatus.POSTED, undefined, undefined,
+        1,
+        20,
+        JournalEntrySource.MANUAL,
+        JournalEntryStatus.POSTED,
+        undefined,
+        undefined,
       );
     });
 
     it('should pass date filters', async () => {
-      await controller.findAll('1', '20', undefined, undefined, '2025-01-01', '2025-12-31');
+      await controller.findAll(
+        '1',
+        '20',
+        undefined,
+        undefined,
+        '2025-01-01',
+        '2025-12-31',
+      );
 
       expect(service.findAll).toHaveBeenCalledWith(
-        1, 20, undefined, undefined, '2025-01-01', '2025-12-31',
+        1,
+        20,
+        undefined,
+        undefined,
+        '2025-01-01',
+        '2025-12-31',
       );
     });
 
@@ -134,7 +185,12 @@ describe('JournalEntriesController', () => {
 
       // parseInt('abc') = NaN, || 1 gives 1
       expect(service.findAll).toHaveBeenCalledWith(
-        1, 20, undefined, undefined, undefined, undefined,
+        1,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     });
   });
@@ -151,7 +207,9 @@ describe('JournalEntriesController', () => {
     it('should propagate NotFoundException', async () => {
       service.findOne.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findOne('invalid')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -184,7 +242,9 @@ describe('JournalEntriesController', () => {
       service.create.mockRejectedValue(new BadRequestException());
 
       const req = { user: { id: 'user-1' } };
-      await expect(controller.create(dto, req)).rejects.toThrow(BadRequestException);
+      await expect(controller.create(dto, req)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -193,14 +253,19 @@ describe('JournalEntriesController', () => {
     it('should delegate to service', async () => {
       const result = await controller.postEntry('je-123');
 
-      expect(result).toEqual({ ...mockJournalEntry, status: JournalEntryStatus.POSTED });
+      expect(result).toEqual({
+        ...mockJournalEntry,
+        status: JournalEntryStatus.POSTED,
+      });
       expect(service.postEntry).toHaveBeenCalledWith('je-123');
     });
 
     it('should propagate BadRequestException for non-DRAFT entry', async () => {
       service.postEntry.mockRejectedValue(new BadRequestException());
 
-      await expect(controller.postEntry('je-123')).rejects.toThrow(BadRequestException);
+      await expect(controller.postEntry('je-123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -209,14 +274,22 @@ describe('JournalEntriesController', () => {
     it('should delegate to service with id and reason', async () => {
       const result = await controller.voidEntry('je-123', 'Error en registro');
 
-      expect(result).toEqual({ ...mockJournalEntry, status: JournalEntryStatus.VOIDED });
-      expect(service.voidEntry).toHaveBeenCalledWith('je-123', 'Error en registro');
+      expect(result).toEqual({
+        ...mockJournalEntry,
+        status: JournalEntryStatus.VOIDED,
+      });
+      expect(service.voidEntry).toHaveBeenCalledWith(
+        'je-123',
+        'Error en registro',
+      );
     });
 
     it('should propagate BadRequestException for already voided', async () => {
       service.voidEntry.mockRejectedValue(new BadRequestException());
 
-      await expect(controller.voidEntry('je-123', 'reason')).rejects.toThrow(BadRequestException);
+      await expect(controller.voidEntry('je-123', 'reason')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

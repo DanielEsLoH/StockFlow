@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Permission } from './permission.enum';
-import { DEFAULT_ROLE_PERMISSIONS, roleHasPermission } from './role-permissions';
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  roleHasPermission,
+} from './role-permissions';
 
 export interface UserPermissions {
   role: UserRole;
@@ -25,7 +28,10 @@ export class PermissionsService {
 
   // In-memory cache for permission overrides (keyed by tenantId:userId)
   // Cache entries expire after 5 minutes
-  private overrideCache = new Map<string, { data: Map<string, boolean>; expiry: number }>();
+  private overrideCache = new Map<
+    string,
+    { data: Map<string, boolean>; expiry: number }
+  >();
   private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
   constructor(private readonly prisma: PrismaService) {}
@@ -277,7 +283,9 @@ export class PermissionsService {
     await this.prisma.$transaction(async (tx) => {
       for (const override of overrides) {
         await tx.userPermissionOverride.upsert({
-          where: { userId_permission: { userId, permission: override.permission } },
+          where: {
+            userId_permission: { userId, permission: override.permission },
+          },
           create: {
             userId,
             tenantId,

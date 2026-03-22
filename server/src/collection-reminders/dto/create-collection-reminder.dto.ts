@@ -1,10 +1,4 @@
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-  IsDate,
-  Matches,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsDate, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { ReminderChannel } from '@prisma/client';
@@ -96,8 +90,7 @@ export class CreateCollectionReminderDto {
    */
   @ApiPropertyOptional({
     description: 'Internal notes about the reminder',
-    example:
-      'Cliente contactado por telefono, solicita recordatorio por email',
+    example: 'Cliente contactado por telefono, solicita recordatorio por email',
   })
   @IsString({ message: 'Las notas deben ser texto' })
   @IsOptional()

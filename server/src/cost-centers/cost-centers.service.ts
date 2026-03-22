@@ -302,9 +302,7 @@ export class CostCentersService {
   async getOptions(): Promise<CostCenterOptionResponse[]> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.debug(
-      `Getting cost center options for tenant ${tenantId}`,
-    );
+    this.logger.debug(`Getting cost center options for tenant ${tenantId}`);
 
     const costCenters = await this.prisma.costCenter.findMany({
       where: { tenantId, isActive: true },

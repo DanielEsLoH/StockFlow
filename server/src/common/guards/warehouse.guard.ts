@@ -88,9 +88,7 @@ export class WarehouseGuard implements CanActivate {
       this.logger.warn(
         `WarehouseGuard: User ${user.userId} tried to access warehouse ${requestWarehouseId} but is assigned to ${dbUser.warehouseId}`,
       );
-      throw new ForbiddenException(
-        'Solo puede operar en su bodega asignada',
-      );
+      throw new ForbiddenException('Solo puede operar en su bodega asignada');
     }
 
     return true;

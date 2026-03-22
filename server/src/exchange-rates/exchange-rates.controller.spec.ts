@@ -192,9 +192,7 @@ describe('ExchangeRatesController', () => {
 
     it('should propagate NotFoundException when no rate exists', async () => {
       service.getLatestRate.mockRejectedValue(
-        new NotFoundException(
-          'No se encontró tasa de cambio para USD/COP',
-        ),
+        new NotFoundException('No se encontró tasa de cambio para USD/COP'),
       );
 
       await expect(controller.getLatestRate('USD', 'COP')).rejects.toThrow(
@@ -275,9 +273,7 @@ describe('ExchangeRatesController', () => {
 
     it('should propagate NotFoundException when no rate exists for conversion', async () => {
       service.convertAmount.mockRejectedValue(
-        new NotFoundException(
-          'No se encontró tasa de cambio para USD/COP',
-        ),
+        new NotFoundException('No se encontró tasa de cambio para USD/COP'),
       );
 
       await expect(controller.convert(convertDto)).rejects.toThrow(

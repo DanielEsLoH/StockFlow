@@ -80,7 +80,9 @@ describe('PayrollXmlGeneratorService', () => {
       providers: [PayrollXmlGeneratorService],
     }).compile();
 
-    service = module.get<PayrollXmlGeneratorService>(PayrollXmlGeneratorService);
+    service = module.get<PayrollXmlGeneratorService>(
+      PayrollXmlGeneratorService,
+    );
   });
 
   describe('generateNominaIndividualXml', () => {
@@ -123,7 +125,9 @@ describe('PayrollXmlGeneratorService', () => {
       const xml = service.generateNominaIndividualXml(sampleParams);
 
       expect(xml).toContain('NumeroDocumento="1234567890"');
-      expect(xml).toContain('PrimerApellido="P&eacute;rez"'.replace('&eacute;', 'é'));
+      expect(xml).toContain(
+        'PrimerApellido="P&eacute;rez"'.replace('&eacute;', 'é'),
+      );
       expect(xml).toContain('PrimerNombre="Juan"');
       expect(xml).toContain('Sueldo="1423500.00"');
     });

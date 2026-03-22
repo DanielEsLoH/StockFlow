@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { JournalEntriesService } from './journal-entries.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
@@ -162,7 +158,9 @@ describe('JournalEntriesService', () => {
   // ---------------------------------------------------------------------------
   describe('findAll', () => {
     it('should return paginated journal entries with default params', async () => {
-      (prismaService.journalEntry.findMany as jest.Mock).mockResolvedValue([mockEntry]);
+      (prismaService.journalEntry.findMany as jest.Mock).mockResolvedValue([
+        mockEntry,
+      ]);
       (prismaService.journalEntry.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAll();
@@ -251,7 +249,14 @@ describe('JournalEntriesService', () => {
       (prismaService.journalEntry.findMany as jest.Mock).mockResolvedValue([]);
       (prismaService.journalEntry.count as jest.Mock).mockResolvedValue(0);
 
-      await service.findAll(1, 20, undefined, undefined, undefined, '2025-01-31');
+      await service.findAll(
+        1,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        '2025-01-31',
+      );
 
       expect(prismaService.journalEntry.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -266,7 +271,14 @@ describe('JournalEntriesService', () => {
       (prismaService.journalEntry.findMany as jest.Mock).mockResolvedValue([]);
       (prismaService.journalEntry.count as jest.Mock).mockResolvedValue(0);
 
-      await service.findAll(1, 20, undefined, undefined, '2025-01-01', '2025-01-31');
+      await service.findAll(
+        1,
+        20,
+        undefined,
+        undefined,
+        '2025-01-01',
+        '2025-01-31',
+      );
 
       expect(prismaService.journalEntry.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -301,7 +313,9 @@ describe('JournalEntriesService', () => {
     });
 
     it('should map entries through mapToResponse with correct numeric conversions', async () => {
-      (prismaService.journalEntry.findMany as jest.Mock).mockResolvedValue([mockEntry]);
+      (prismaService.journalEntry.findMany as jest.Mock).mockResolvedValue([
+        mockEntry,
+      ]);
       (prismaService.journalEntry.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAll();
@@ -321,7 +335,9 @@ describe('JournalEntriesService', () => {
   // ---------------------------------------------------------------------------
   describe('findOne', () => {
     it('should return a journal entry by id with lines', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockEntry,
+      );
 
       const result = await service.findOne('entry-1');
 
@@ -342,13 +358,19 @@ describe('JournalEntriesService', () => {
     });
 
     it('should throw NotFoundException when entry not found', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
-      await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException with correct message', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       await expect(service.findOne('nonexistent')).rejects.toThrow(
         'Asiento contable con ID nonexistent no encontrado',
@@ -356,7 +378,9 @@ describe('JournalEntriesService', () => {
     });
 
     it('should require tenant context', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockEntry,
+      );
 
       await service.findOne('entry-1');
 
@@ -364,7 +388,9 @@ describe('JournalEntriesService', () => {
     });
 
     it('should include all expected response fields', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockEntry,
+      );
 
       const result = await service.findOne('entry-1');
 
@@ -408,14 +434,20 @@ describe('JournalEntriesService', () => {
 
     beforeEach(() => {
       // Default happy-path mocks
-      (prismaService.accountingPeriod.findFirst as jest.Mock).mockResolvedValue(mockPeriod);
+      (prismaService.accountingPeriod.findFirst as jest.Mock).mockResolvedValue(
+        mockPeriod,
+      );
       (prismaService.account.findMany as jest.Mock).mockResolvedValue([
         { id: 'acc-1', tenantId: mockTenantId, isActive: true },
         { id: 'acc-2', tenantId: mockTenantId, isActive: true },
       ]);
       // generateEntryNumber: no existing entries
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(null);
-      (prismaService.journalEntry.create as jest.Mock).mockResolvedValue(mockEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
+      (prismaService.journalEntry.create as jest.Mock).mockResolvedValue(
+        mockEntry,
+      );
     });
 
     it('should create a manual journal entry as DRAFT', async () => {
@@ -484,7 +516,9 @@ describe('JournalEntriesService', () => {
         ],
       };
 
-      await expect(service.create(unbalancedDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(unbalancedDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException with unbalanced message including amounts', async () => {
@@ -543,7 +577,9 @@ describe('JournalEntriesService', () => {
     });
 
     it('should throw NotFoundException when period does not exist', async () => {
-      (prismaService.accountingPeriod.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.accountingPeriod.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       await expect(service.create(validDto)).rejects.toThrow(NotFoundException);
       await expect(service.create(validDto)).rejects.toThrow(
@@ -552,12 +588,16 @@ describe('JournalEntriesService', () => {
     });
 
     it('should throw BadRequestException when period is CLOSED', async () => {
-      (prismaService.accountingPeriod.findFirst as jest.Mock).mockResolvedValue({
-        ...mockPeriod,
-        status: AccountingPeriodStatus.CLOSED,
-      });
+      (prismaService.accountingPeriod.findFirst as jest.Mock).mockResolvedValue(
+        {
+          ...mockPeriod,
+          status: AccountingPeriodStatus.CLOSED,
+        },
+      );
 
-      await expect(service.create(validDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(validDto)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.create(validDto)).rejects.toThrow(
         'No se pueden crear asientos en un periodo cerrado',
       );
@@ -584,7 +624,9 @@ describe('JournalEntriesService', () => {
         // acc-2 is missing
       ]);
 
-      await expect(service.create(validDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(validDto)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.create(validDto)).rejects.toThrow(
         'Una o mas cuentas no existen o estan inactivas',
       );
@@ -623,8 +665,18 @@ describe('JournalEntriesService', () => {
           data: expect.objectContaining({
             lines: {
               create: [
-                { accountId: 'acc-1', description: 'Debit', debit: 100000, credit: 0 },
-                { accountId: 'acc-2', description: 'Credit', debit: 0, credit: 100000 },
+                {
+                  accountId: 'acc-1',
+                  description: 'Debit',
+                  debit: 100000,
+                  credit: 0,
+                },
+                {
+                  accountId: 'acc-2',
+                  description: 'Credit',
+                  debit: 0,
+                  credit: 100000,
+                },
               ],
             },
           }),
@@ -678,9 +730,15 @@ describe('JournalEntriesService', () => {
     };
 
     beforeEach(() => {
-      (prismaService.accountingPeriod.findFirst as jest.Mock).mockResolvedValue(mockPeriod);
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(null);
-      (prismaService.journalEntry.create as jest.Mock).mockResolvedValue(mockAutoEntry);
+      (prismaService.accountingPeriod.findFirst as jest.Mock).mockResolvedValue(
+        mockPeriod,
+      );
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
+      (prismaService.journalEntry.create as jest.Mock).mockResolvedValue(
+        mockAutoEntry,
+      );
     });
 
     it('should create an auto entry with POSTED status', async () => {
@@ -712,7 +770,9 @@ describe('JournalEntriesService', () => {
     });
 
     it('should create entry without period when no open period found', async () => {
-      (prismaService.accountingPeriod.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.accountingPeriod.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       await service.createAutoEntry(autoParams);
 
@@ -746,7 +806,9 @@ describe('JournalEntriesService', () => {
         ],
       };
 
-      await expect(service.createAutoEntry(unbalanced)).rejects.toThrow(BadRequestException);
+      await expect(service.createAutoEntry(unbalanced)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.createAutoEntry(unbalanced)).rejects.toThrow(
         'Asiento automatico desbalanceado',
       );
@@ -807,7 +869,9 @@ describe('JournalEntriesService', () => {
   // ---------------------------------------------------------------------------
   describe('postEntry', () => {
     beforeEach(() => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockEntry,
+      );
       (prismaService.journalEntry.update as jest.Mock).mockResolvedValue({
         ...mockEntry,
         status: JournalEntryStatus.POSTED,
@@ -837,27 +901,39 @@ describe('JournalEntriesService', () => {
     });
 
     it('should throw NotFoundException when entry not found', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
-      await expect(service.postEntry('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.postEntry('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(service.postEntry('nonexistent')).rejects.toThrow(
         'Asiento contable con ID nonexistent no encontrado',
       );
     });
 
     it('should throw BadRequestException when entry is already POSTED', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockPostedEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockPostedEntry,
+      );
 
-      await expect(service.postEntry('entry-2')).rejects.toThrow(BadRequestException);
+      await expect(service.postEntry('entry-2')).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.postEntry('entry-2')).rejects.toThrow(
         'Solo se pueden publicar asientos en estado borrador',
       );
     });
 
     it('should throw BadRequestException when entry is VOIDED', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockVoidedEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockVoidedEntry,
+      );
 
-      await expect(service.postEntry('entry-3')).rejects.toThrow(BadRequestException);
+      await expect(service.postEntry('entry-3')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should require tenant context', async () => {
@@ -884,7 +960,9 @@ describe('JournalEntriesService', () => {
     const voidReason = 'Registrado por error';
 
     beforeEach(() => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockPostedEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockPostedEntry,
+      );
       (prismaService.journalEntry.update as jest.Mock).mockResolvedValue({
         ...mockPostedEntry,
         status: JournalEntryStatus.VOIDED,
@@ -917,7 +995,9 @@ describe('JournalEntriesService', () => {
     });
 
     it('should void a DRAFT entry successfully', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockEntry,
+      );
       (prismaService.journalEntry.update as jest.Mock).mockResolvedValue({
         ...mockEntry,
         status: JournalEntryStatus.VOIDED,
@@ -931,18 +1011,22 @@ describe('JournalEntriesService', () => {
     });
 
     it('should throw NotFoundException when entry not found', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
-      await expect(service.voidEntry('nonexistent', voidReason)).rejects.toThrow(
-        NotFoundException,
-      );
-      await expect(service.voidEntry('nonexistent', voidReason)).rejects.toThrow(
-        'Asiento contable con ID nonexistent no encontrado',
-      );
+      await expect(
+        service.voidEntry('nonexistent', voidReason),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.voidEntry('nonexistent', voidReason),
+      ).rejects.toThrow('Asiento contable con ID nonexistent no encontrado');
     });
 
     it('should throw BadRequestException when entry is already VOIDED', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockVoidedEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockVoidedEntry,
+      );
 
       await expect(service.voidEntry('entry-3', voidReason)).rejects.toThrow(
         BadRequestException,
@@ -979,7 +1063,9 @@ describe('JournalEntriesService', () => {
         totalDebit: { toNumber: () => 100000 } as any,
         totalCredit: { toNumber: () => 100000 } as any,
       };
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(entryWithDecimals);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        entryWithDecimals,
+      );
 
       const result = await service.findOne('entry-1');
 
@@ -989,7 +1075,9 @@ describe('JournalEntriesService', () => {
 
     it('should handle entry with no lines gracefully', async () => {
       const entryNoLines = { ...mockEntry, lines: undefined };
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(entryNoLines);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        entryNoLines,
+      );
 
       const result = await service.findOne('entry-1');
 
@@ -1009,7 +1097,9 @@ describe('JournalEntriesService', () => {
         ...mockEntry,
         lines: [lineNoAccount, mockLine2],
       };
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(entryMissingAccount);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        entryMissingAccount,
+      );
 
       const result = await service.findOne('entry-1');
 
@@ -1039,7 +1129,9 @@ describe('JournalEntriesService', () => {
     });
 
     it('should scope findOne to tenant', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockEntry,
+      );
 
       await service.findOne('entry-1');
 
@@ -1051,7 +1143,9 @@ describe('JournalEntriesService', () => {
     });
 
     it('should scope postEntry lookup to tenant', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockEntry,
+      );
       (prismaService.journalEntry.update as jest.Mock).mockResolvedValue({
         ...mockEntry,
         status: JournalEntryStatus.POSTED,
@@ -1065,7 +1159,9 @@ describe('JournalEntriesService', () => {
     });
 
     it('should scope voidEntry lookup to tenant', async () => {
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(mockPostedEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        mockPostedEntry,
+      );
       (prismaService.journalEntry.update as jest.Mock).mockResolvedValue({
         ...mockPostedEntry,
         status: JournalEntryStatus.VOIDED,
@@ -1091,8 +1187,12 @@ describe('JournalEntriesService', () => {
         { id: 'acc-1' },
         { id: 'acc-2' },
       ]);
-      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(null);
-      (prismaService.journalEntry.create as jest.Mock).mockResolvedValue(mockEntry);
+      (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
+      (prismaService.journalEntry.create as jest.Mock).mockResolvedValue(
+        mockEntry,
+      );
 
       await service.create(dto);
 

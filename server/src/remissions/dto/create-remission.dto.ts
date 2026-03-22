@@ -25,7 +25,8 @@ export class CreateRemissionItemDto {
    * @example "cmkcykam80004reya0hsdx337"
    */
   @ApiPropertyOptional({
-    description: 'Product ID for the remission item (optional for custom items)',
+    description:
+      'Product ID for the remission item (optional for custom items)',
     example: 'cmkcykam80004reya0hsdx337',
   })
   @IsString({ message: 'El ID del producto debe ser una cadena de texto' })

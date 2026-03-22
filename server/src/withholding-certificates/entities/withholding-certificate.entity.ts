@@ -30,5 +30,8 @@ export class WithholdingCertificateStatsEntity {
   @ApiProperty() totalCertificates: number;
   @ApiProperty() totalBase: number;
   @ApiProperty() totalWithheld: number;
-  @ApiProperty() byType: Record<string, { count: number; base: number; withheld: number }>;
+  @ApiProperty() byType: Record<
+    string,
+    { count: number; base: number; withheld: number }
+  >;
 }

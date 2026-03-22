@@ -127,7 +127,12 @@ export class SuppliersController {
       `Listing suppliers - page: ${pageNum}, limit: ${limitNum}, search: "${searchQuery ?? ''}", status: ${status ?? 'all'}`,
     );
 
-    return this.suppliersService.findAll(pageNum, limitNum, searchQuery, status);
+    return this.suppliersService.findAll(
+      pageNum,
+      limitNum,
+      searchQuery,
+      status,
+    );
   }
 
   /**
@@ -369,8 +374,7 @@ export class SuppliersController {
   @ApiResponse({ status: 204, description: 'Supplier deleted successfully' })
   @ApiResponse({
     status: 400,
-    description:
-      'Bad Request - Supplier has associated purchase orders',
+    description: 'Bad Request - Supplier has associated purchase orders',
   })
   @ApiResponse({
     status: 401,

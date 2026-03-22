@@ -209,9 +209,7 @@ export class CollectionRemindersService {
     });
 
     if (!invoice) {
-      throw new NotFoundException(
-        `Factura no encontrada: ${dto.invoiceId}`,
-      );
+      throw new NotFoundException(`Factura no encontrada: ${dto.invoiceId}`);
     }
 
     // Infer customerId from invoice if not explicitly provided
@@ -442,9 +440,7 @@ export class CollectionRemindersService {
   ): Promise<CollectionReminderResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.debug(
-      `Marking reminder ${id} as failed in tenant ${tenantId}`,
-    );
+    this.logger.debug(`Marking reminder ${id} as failed in tenant ${tenantId}`);
 
     const reminder = await this.prisma.collectionReminder.findFirst({
       where: { id, tenantId },
@@ -571,9 +567,7 @@ export class CollectionRemindersService {
     const tenantId = this.tenantContext.requireTenantId();
     const now = new Date();
 
-    this.logger.log(
-      `Generating auto reminders for tenant ${tenantId}`,
-    );
+    this.logger.log(`Generating auto reminders for tenant ${tenantId}`);
 
     // Find eligible invoices (with due date, active, unpaid)
     const invoices = await this.prisma.invoice.findMany({

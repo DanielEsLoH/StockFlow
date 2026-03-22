@@ -15,7 +15,8 @@ export class CalculateBenefitPaymentDto {
     example: BenefitTypeEnum.PRIMA,
   })
   @IsEnum(BenefitTypeEnum, {
-    message: 'benefitType debe ser: PRIMA, CESANTIAS, INTERESES_CESANTIAS o VACACIONES',
+    message:
+      'benefitType debe ser: PRIMA, CESANTIAS, INTERESES_CESANTIAS o VACACIONES',
   })
   benefitType: BenefitTypeEnum;
 
@@ -24,7 +25,10 @@ export class CalculateBenefitPaymentDto {
     example: '2026-06-30',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'paymentDate debe ser una fecha valida ISO 8601' })
+  @IsDateString(
+    {},
+    { message: 'paymentDate debe ser una fecha valida ISO 8601' },
+  )
   paymentDate?: string;
 }
 
@@ -34,6 +38,9 @@ export class CalculateLiquidationDto {
     example: '2026-02-24',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'terminationDate debe ser una fecha valida ISO 8601' })
+  @IsDateString(
+    {},
+    { message: 'terminationDate debe ser una fecha valida ISO 8601' },
+  )
   terminationDate?: string;
 }

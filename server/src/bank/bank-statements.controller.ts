@@ -37,10 +37,17 @@ const xlsxMulterOptions = {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-excel',
     ];
-    if (allowed.includes(file.mimetype) || file.originalname.endsWith('.xlsx') || file.originalname.endsWith('.xls')) {
+    if (
+      allowed.includes(file.mimetype) ||
+      file.originalname.endsWith('.xlsx') ||
+      file.originalname.endsWith('.xls')
+    ) {
       cb(null, true);
     } else {
-      cb(new BadRequestException('Solo se permiten archivos .xlsx o .xls'), false);
+      cb(
+        new BadRequestException('Solo se permiten archivos .xlsx o .xls'),
+        false,
+      );
     }
   },
 };
@@ -71,7 +78,10 @@ export class BankStatementsController {
     }
 
     // Parse xlsx
-    const workbook = XLSX.read(file.buffer, { type: 'buffer', cellDates: true });
+    const workbook = XLSX.read(file.buffer, {
+      type: 'buffer',
+      cellDates: true,
+    });
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) {
       throw new BadRequestException('El archivo no contiene hojas de calculo');
@@ -94,9 +104,15 @@ export class BankStatementsController {
 
     // Column mapping with defaults
     const dateCol = this.findColumnKey(headerMap, dto.dateColumn ?? 'Fecha');
-    const descCol = this.findColumnKey(headerMap, dto.descriptionColumn ?? 'Descripcion');
+    const descCol = this.findColumnKey(
+      headerMap,
+      dto.descriptionColumn ?? 'Descripcion',
+    );
     const debitCol = this.findColumnKey(headerMap, dto.debitColumn ?? 'Debito');
-    const creditCol = this.findColumnKey(headerMap, dto.creditColumn ?? 'Credito');
+    const creditCol = this.findColumnKey(
+      headerMap,
+      dto.creditColumn ?? 'Credito',
+    );
     const refCol = dto.referenceColumn
       ? this.findColumnKey(headerMap, dto.referenceColumn)
       : null;
@@ -127,7 +143,9 @@ export class BankStatementsController {
           return {
             lineDate,
             description,
-            reference: refCol ? String(row[refCol] ?? '').trim() || undefined : undefined,
+            reference: refCol
+              ? String(row[refCol] ?? '').trim() || undefined
+              : undefined,
             debit,
             credit,
             balance: balanceCol ? this.parseNumber(row[balanceCol]) : undefined,
@@ -138,13 +156,13 @@ export class BankStatementsController {
         }
       })
       .filter(Boolean) as {
-        lineDate: Date;
-        description: string;
-        reference?: string;
-        debit: number;
-        credit: number;
-        balance?: number;
-      }[];
+      lineDate: Date;
+      description: string;
+      reference?: string;
+      debit: number;
+      credit: number;
+      balance?: number;
+    }[];
 
     if (lines.length === 0) {
       throw new BadRequestException(
@@ -152,9 +170,7 @@ export class BankStatementsController {
       );
     }
 
-    this.logger.log(
-      `Parsed ${lines.length} lines from ${file.originalname}`,
-    );
+    this.logger.log(`Parsed ${lines.length} lines from ${file.originalname}`);
 
     return this.statementsService.importLines(
       dto.bankAccountId,
@@ -187,9 +203,15 @@ export class BankStatementsController {
 
   @Delete(':id')
   @RequirePermissions(Permission.BANK_IMPORT)
-  @ApiOperation({ summary: 'Delete a statement', description: 'Cannot delete reconciled statements' })
+  @ApiOperation({
+    summary: 'Delete a statement',
+    description: 'Cannot delete reconciled statements',
+  })
   @ApiResponse({ status: 200, description: 'Statement deleted' })
-  @ApiResponse({ status: 400, description: 'Cannot delete reconciled statement' })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot delete reconciled statement',
+  })
   async delete(@Param('id') id: string): Promise<{ message: string }> {
     await this.statementsService.delete(id);
     return { message: 'Extracto eliminado exitosamente' };

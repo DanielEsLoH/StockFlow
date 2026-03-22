@@ -102,9 +102,7 @@ describe('MercadoLibreConnector', () => {
 
   describe('verifyConnection', () => {
     it('should return true when /users/me responds ok', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ id: SELLER_ID }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ id: SELLER_ID }));
 
       const result = await connector.verifyConnection(ACCESS_TOKEN);
 
@@ -140,17 +138,13 @@ describe('MercadoLibreConnector', () => {
   describe('fetchProducts', () => {
     it('should fetch seller ID, item IDs, then item details', async () => {
       // 1. /users/me
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ id: SELLER_ID }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ id: SELLER_ID }));
       // 2. /users/{id}/items/search
       fetchSpy.mockResolvedValueOnce(
         mockFetchResponse({ results: ['MCO-12345'] }),
       );
       // 3. /items?ids=MCO-12345
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse([meliItem]),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse([meliItem]));
 
       const products = await connector.fetchProducts(ACCESS_TOKEN);
 
@@ -168,9 +162,7 @@ describe('MercadoLibreConnector', () => {
     });
 
     it('should skip items with non-200 response codes in batch', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ id: SELLER_ID }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ id: SELLER_ID }));
       fetchSpy.mockResolvedValueOnce(
         mockFetchResponse({ results: ['MCO-12345', 'MCO-99999'] }),
       );
@@ -195,9 +187,7 @@ describe('MercadoLibreConnector', () => {
     });
 
     it('should return empty array when items search fails', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ id: SELLER_ID }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ id: SELLER_ID }));
       fetchSpy.mockResolvedValueOnce(
         mockFetchResponse({}, { ok: false, status: 500 }),
       );
@@ -208,12 +198,8 @@ describe('MercadoLibreConnector', () => {
     });
 
     it('should return empty array when no items are listed', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ id: SELLER_ID }),
-      );
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ results: [] }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ id: SELLER_ID }));
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ results: [] }));
 
       const products = await connector.fetchProducts(ACCESS_TOKEN);
 
@@ -224,20 +210,14 @@ describe('MercadoLibreConnector', () => {
       // Generate 25 item IDs to trigger 2 batches (20 + 5)
       const itemIds = Array.from({ length: 25 }, (_, i) => `MCO-${i}`);
 
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ id: SELLER_ID }),
-      );
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ results: itemIds }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ id: SELLER_ID }));
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ results: itemIds }));
       // First batch (20 items) fails
       fetchSpy.mockResolvedValueOnce(
         mockFetchResponse({}, { ok: false, status: 500 }),
       );
       // Second batch (5 items) succeeds
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse([meliItem]),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse([meliItem]));
 
       const products = await connector.fetchProducts(ACCESS_TOKEN);
 
@@ -260,9 +240,7 @@ describe('MercadoLibreConnector', () => {
 
   describe('fetchOrders', () => {
     it('should fetch seller ID then orders and transform correctly', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ id: SELLER_ID }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ id: SELLER_ID }));
       fetchSpy.mockResolvedValueOnce(
         mockFetchResponse({ results: [meliOrder] }),
       );
@@ -291,12 +269,8 @@ describe('MercadoLibreConnector', () => {
     });
 
     it('should include date_created.from param when since is provided', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ id: SELLER_ID }),
-      );
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ results: [] }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ id: SELLER_ID }));
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ results: [] }));
 
       const since = new Date('2026-01-01T00:00:00.000Z');
       await connector.fetchOrders(ACCESS_TOKEN, undefined, since);
@@ -318,9 +292,7 @@ describe('MercadoLibreConnector', () => {
     });
 
     it('should return empty array when orders endpoint fails', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ id: SELLER_ID }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ id: SELLER_ID }));
       fetchSpy.mockResolvedValueOnce(
         mockFetchResponse({}, { ok: false, status: 500 }),
       );
@@ -402,11 +374,7 @@ describe('MercadoLibreConnector', () => {
         .update(payload)
         .digest('hex');
 
-      const result = connector.verifyWebhook(
-        payload,
-        wrongHmac,
-        webhookSecret,
-      );
+      const result = connector.verifyWebhook(payload, wrongHmac, webhookSecret);
 
       expect(result).toBe(false);
     });

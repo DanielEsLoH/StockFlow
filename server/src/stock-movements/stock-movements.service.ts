@@ -16,7 +16,11 @@ import {
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting';
-import { CreateMovementDto, CreateTransferDto, FilterMovementsDto } from './dto';
+import {
+  CreateMovementDto,
+  CreateTransferDto,
+  FilterMovementsDto,
+} from './dto';
 
 /**
  * Stock movement data returned in responses
@@ -462,13 +466,15 @@ export class StockMovementsService {
     );
 
     // Non-blocking: generate accounting entry for inventory adjustment
-    this.accountingBridge.onStockAdjustment({
-      tenantId,
-      movementId: movement.id,
-      productSku: product.sku,
-      quantity: dto.quantity,
-      costPrice: Number(product.costPrice),
-    }).catch(() => {});
+    this.accountingBridge
+      .onStockAdjustment({
+        tenantId,
+        movementId: movement.id,
+        productSku: product.sku,
+        quantity: dto.quantity,
+        costPrice: Number(product.costPrice),
+      })
+      .catch(() => {});
 
     return this.mapToMovementResponse(movement);
   }
@@ -586,7 +592,8 @@ export class StockMovementsService {
 
       // Create movement records
       const reason =
-        dto.reason ?? `Transferencia de ${sourceWarehouse.name} a ${destinationWarehouse.name}`;
+        dto.reason ??
+        `Transferencia de ${sourceWarehouse.name} a ${destinationWarehouse.name}`;
 
       const [outMovement, inMovement] = await Promise.all([
         tx.stockMovement.create({

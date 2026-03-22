@@ -386,8 +386,7 @@ export class AuthController {
   @ApiBody({ type: ForgotPasswordDto })
   @ApiResponse({
     status: 200,
-    description:
-      'Password reset email sent (if account exists)',
+    description: 'Password reset email sent (if account exists)',
   })
   @ApiResponse({
     status: 429,

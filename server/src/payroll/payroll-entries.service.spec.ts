@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PayrollEntryStatus, SalaryType, ARLRiskLevel } from '@prisma/client';
 import { PayrollEntriesService } from './payroll-entries.service';
 import { PrismaService } from '../prisma/prisma.service';

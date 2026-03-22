@@ -1041,10 +1041,7 @@ describe('IntegrationsService', () => {
       expect(prismaService.productMapping.findFirst).toHaveBeenCalledWith({
         where: {
           integrationId: 'integration-1',
-          OR: [
-            { externalId: 'ext-prod-001' },
-            { productId: 'product-1' },
-          ],
+          OR: [{ externalId: 'ext-prod-001' }, { productId: 'product-1' }],
         },
       });
     });

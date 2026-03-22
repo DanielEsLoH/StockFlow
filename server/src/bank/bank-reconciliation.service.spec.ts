@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import {
   ReconciliationStatus,
   BankStatementStatus,
@@ -199,9 +195,9 @@ describe('BankReconciliationService', () => {
         mockReconciledStatement,
       );
 
-      await expect(
-        service.autoMatch('statement-reconciled'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.autoMatch('statement-reconciled')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException with correct message for reconciled statement', async () => {
@@ -209,9 +205,9 @@ describe('BankReconciliationService', () => {
         mockReconciledStatement,
       );
 
-      await expect(
-        service.autoMatch('statement-reconciled'),
-      ).rejects.toThrow('Este extracto ya esta conciliado');
+      await expect(service.autoMatch('statement-reconciled')).rejects.toThrow(
+        'Este extracto ya esta conciliado',
+      );
     });
 
     it('should only fetch UNMATCHED lines from statement', async () => {
@@ -366,9 +362,9 @@ describe('BankReconciliationService', () => {
 
   describe('manualMatch', () => {
     beforeEach(() => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        mockUnmatchedLine,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(mockUnmatchedLine);
       (prismaService.journalEntry.findFirst as jest.Mock).mockResolvedValue(
         mockJournalEntry,
       );
@@ -400,9 +396,9 @@ describe('BankReconciliationService', () => {
     });
 
     it('should throw NotFoundException when line not found', async () => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(null);
 
       await expect(
         service.manualMatch('nonexistent', 'je-1', 'user-1'),
@@ -410,9 +406,9 @@ describe('BankReconciliationService', () => {
     });
 
     it('should throw NotFoundException with correct message for missing line', async () => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(null);
 
       await expect(
         service.manualMatch('nonexistent', 'je-1', 'user-1'),
@@ -422,11 +418,15 @@ describe('BankReconciliationService', () => {
     it('should throw NotFoundException when line belongs to different tenant', async () => {
       const otherTenantLine = {
         ...mockUnmatchedLine,
-        statement: { tenantId: 'other-tenant', id: 'statement-1', totalLines: 5 },
+        statement: {
+          tenantId: 'other-tenant',
+          id: 'statement-1',
+          totalLines: 5,
+        },
       };
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        otherTenantLine,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(otherTenantLine);
 
       await expect(
         service.manualMatch('line-1', 'je-1', 'user-1'),
@@ -434,9 +434,9 @@ describe('BankReconciliationService', () => {
     });
 
     it('should throw BadRequestException when line is not UNMATCHED', async () => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        mockMatchedLine,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(mockMatchedLine);
 
       await expect(
         service.manualMatch('line-matched', 'je-1', 'user-1'),
@@ -444,9 +444,9 @@ describe('BankReconciliationService', () => {
     });
 
     it('should throw BadRequestException with correct message for already matched line', async () => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        mockMatchedLine,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(mockMatchedLine);
 
       await expect(
         service.manualMatch('line-matched', 'je-1', 'user-1'),
@@ -494,9 +494,9 @@ describe('BankReconciliationService', () => {
 
   describe('unmatch', () => {
     beforeEach(() => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        mockMatchedLine,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(mockMatchedLine);
       (prismaService.bankStatementLine.update as jest.Mock).mockResolvedValue(
         {},
       );
@@ -526,9 +526,9 @@ describe('BankReconciliationService', () => {
     });
 
     it('should unmatch a MANUALLY_MATCHED line', async () => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        mockManuallyMatchedLine,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(mockManuallyMatchedLine);
 
       await service.unmatch('line-manual');
 
@@ -541,9 +541,9 @@ describe('BankReconciliationService', () => {
     });
 
     it('should throw NotFoundException when line not found', async () => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(null);
 
       await expect(service.unmatch('nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -551,9 +551,9 @@ describe('BankReconciliationService', () => {
     });
 
     it('should throw NotFoundException with correct message', async () => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(null);
 
       await expect(service.unmatch('nonexistent')).rejects.toThrow(
         'Linea de extracto no encontrada',
@@ -565,9 +565,9 @@ describe('BankReconciliationService', () => {
         ...mockMatchedLine,
         statement: { tenantId: 'other-tenant', id: 'statement-1' },
       };
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        otherTenantLine,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(otherTenantLine);
 
       await expect(service.unmatch('line-matched')).rejects.toThrow(
         NotFoundException,
@@ -575,9 +575,9 @@ describe('BankReconciliationService', () => {
     });
 
     it('should throw BadRequestException when line is already UNMATCHED', async () => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        mockUnmatchedLine,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(mockUnmatchedLine);
 
       await expect(service.unmatch('line-1')).rejects.toThrow(
         BadRequestException,
@@ -585,9 +585,9 @@ describe('BankReconciliationService', () => {
     });
 
     it('should throw BadRequestException with correct message for unmatched line', async () => {
-      (prismaService.bankStatementLine.findFirst as jest.Mock).mockResolvedValue(
-        mockUnmatchedLine,
-      );
+      (
+        prismaService.bankStatementLine.findFirst as jest.Mock
+      ).mockResolvedValue(mockUnmatchedLine);
 
       await expect(service.unmatch('line-1')).rejects.toThrow(
         'Esta linea no esta conciliada',
@@ -649,9 +649,9 @@ describe('BankReconciliationService', () => {
         mockReconciledStatement,
       );
 
-      await expect(
-        service.finalize('statement-reconciled'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.finalize('statement-reconciled')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException with correct message for reconciled statement', async () => {
@@ -659,9 +659,9 @@ describe('BankReconciliationService', () => {
         mockReconciledStatement,
       );
 
-      await expect(
-        service.finalize('statement-reconciled'),
-      ).rejects.toThrow('Este extracto ya esta conciliado');
+      await expect(service.finalize('statement-reconciled')).rejects.toThrow(
+        'Este extracto ya esta conciliado',
+      );
     });
 
     it('should scope lookup to tenant', async () => {

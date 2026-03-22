@@ -40,7 +40,9 @@ describe('PermissionsGuard', () => {
     role: UserRole;
   }
 
-  const createMockExecutionContext = (user: MockUser | null): ExecutionContext => {
+  const createMockExecutionContext = (
+    user: MockUser | null,
+  ): ExecutionContext => {
     return {
       switchToHttp: () => ({
         getRequest: () => ({
@@ -115,7 +117,9 @@ describe('PermissionsGuard', () => {
       });
       const context = createMockExecutionContext(null);
 
-      await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should return true when user has the required permission (any mode)', async () => {
@@ -145,7 +149,9 @@ describe('PermissionsGuard', () => {
       permissionsService.hasAnyPermission = jest.fn().mockResolvedValue(false);
       const context = createMockExecutionContext(mockEmployee);
 
-      await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should return true when user has all required permissions (all mode)', async () => {
@@ -175,7 +181,9 @@ describe('PermissionsGuard', () => {
       permissionsService.hasAllPermissions = jest.fn().mockResolvedValue(false);
       const context = createMockExecutionContext(mockEmployee);
 
-      await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+      await expect(guard.canActivate(context)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should use userId from user object', async () => {

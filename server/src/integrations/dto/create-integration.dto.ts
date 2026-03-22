@@ -22,8 +22,7 @@ export class CreateIntegrationDto {
     example: 'SHOPIFY',
   })
   @IsEnum(IntegrationPlatform, {
-    message:
-      'La plataforma debe ser SHOPIFY, MERCADOLIBRE, o WOOCOMMERCE',
+    message: 'La plataforma debe ser SHOPIFY, MERCADOLIBRE, o WOOCOMMERCE',
   })
   platform: IntegrationPlatform;
 

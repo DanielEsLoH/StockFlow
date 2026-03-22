@@ -1,8 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { PayrollPeriodsService } from './payroll-periods.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TenantContextService } from '../common/services/tenant-context.service';
@@ -229,7 +226,11 @@ describe('PayrollPeriodsService', () => {
     it('should calculate all active employees', async () => {
       prisma.payrollPeriod.findFirst
         .mockResolvedValueOnce(mockPeriod) // first call in calculatePeriod
-        .mockResolvedValueOnce({ ...mockPeriod, entries: [], _count: { entries: 1 } }); // findOne after
+        .mockResolvedValueOnce({
+          ...mockPeriod,
+          entries: [],
+          _count: { entries: 1 },
+        }); // findOne after
 
       prisma.employee.findMany.mockResolvedValue([mockEmployee]);
       prisma.payrollEntry.findFirst.mockResolvedValue(null);
@@ -289,7 +290,11 @@ describe('PayrollPeriodsService', () => {
 
       prisma.payrollPeriod.findFirst
         .mockResolvedValueOnce(calculatedPeriod) // approvePeriod
-        .mockResolvedValueOnce({ ...calculatedPeriod, status: PayrollPeriodStatus.APPROVED, entries: [] }); // findOne
+        .mockResolvedValueOnce({
+          ...calculatedPeriod,
+          status: PayrollPeriodStatus.APPROVED,
+          entries: [],
+        }); // findOne
 
       prisma.payrollEntry.updateMany.mockResolvedValue({ count: 1 });
       prisma.payrollPeriod.update.mockResolvedValue({
@@ -313,9 +318,9 @@ describe('PayrollPeriodsService', () => {
         entries: [],
       });
 
-      await expect(
-        service.approvePeriod('period-1', 'user-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.approvePeriod('period-1', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw if entries are not all CALCULATED', async () => {
@@ -328,17 +333,24 @@ describe('PayrollPeriodsService', () => {
         ],
       });
 
-      await expect(
-        service.approvePeriod('period-1', 'user-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.approvePeriod('period-1', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
   describe('closePeriod', () => {
     it('should close an approved period', async () => {
       prisma.payrollPeriod.findFirst
-        .mockResolvedValueOnce({ ...mockPeriod, status: PayrollPeriodStatus.APPROVED })
-        .mockResolvedValueOnce({ ...mockPeriod, status: PayrollPeriodStatus.CLOSED, entries: [] });
+        .mockResolvedValueOnce({
+          ...mockPeriod,
+          status: PayrollPeriodStatus.APPROVED,
+        })
+        .mockResolvedValueOnce({
+          ...mockPeriod,
+          status: PayrollPeriodStatus.CLOSED,
+          entries: [],
+        });
 
       prisma.payrollPeriod.update.mockResolvedValue({
         ...mockPeriod,

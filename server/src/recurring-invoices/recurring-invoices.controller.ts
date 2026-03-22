@@ -54,7 +54,10 @@ export class RecurringInvoicesController {
   @ApiOperation({ summary: 'List recurring invoices' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'Paginated list of recurring invoices' })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of recurring invoices',
+  })
   async findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,

@@ -19,8 +19,7 @@ export class FilterSupportDocumentsDto extends PaginationDto {
     example: 'DRAFT',
   })
   @IsEnum(SupportDocumentStatus, {
-    message:
-      'El estado debe ser DRAFT, GENERATED, SENT, ACCEPTED o REJECTED',
+    message: 'El estado debe ser DRAFT, GENERATED, SENT, ACCEPTED o REJECTED',
   })
   @IsOptional()
   status?: SupportDocumentStatus;

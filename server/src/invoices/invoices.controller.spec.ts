@@ -695,27 +695,27 @@ describe('InvoicesController', () => {
       const error = new BadRequestException('Invalid checkout data');
       invoicesService.checkout.mockRejectedValue(error);
 
-      await expect(
-        controller.checkout(checkoutDto, mockUser),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.checkout(checkoutDto, mockUser)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should propagate insufficient stock errors', async () => {
       const error = new BadRequestException('Insufficient stock');
       invoicesService.checkout.mockRejectedValue(error);
 
-      await expect(
-        controller.checkout(checkoutDto, mockUser),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.checkout(checkoutDto, mockUser)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should propagate service errors', async () => {
       const error = new Error('Database error');
       invoicesService.checkout.mockRejectedValue(error);
 
-      await expect(
-        controller.checkout(checkoutDto, mockUser),
-      ).rejects.toThrow(error);
+      await expect(controller.checkout(checkoutDto, mockUser)).rejects.toThrow(
+        error,
+      );
     });
   });
 
@@ -768,7 +768,9 @@ describe('InvoicesController', () => {
 
       await controller.markAsPaid('invoice-123', { paymentMethod: 'CASH' });
 
-      expect(logSpy).toHaveBeenCalledWith('Marking invoice invoice-123 as paid');
+      expect(logSpy).toHaveBeenCalledWith(
+        'Marking invoice invoice-123 as paid',
+      );
     });
 
     it('should propagate not found errors', async () => {
@@ -793,9 +795,9 @@ describe('InvoicesController', () => {
       const error = new Error('Database error');
       invoicesService.markAsPaid.mockRejectedValue(error);
 
-      await expect(
-        controller.markAsPaid('invoice-123', {}),
-      ).rejects.toThrow(error);
+      await expect(controller.markAsPaid('invoice-123', {})).rejects.toThrow(
+        error,
+      );
     });
   });
 
@@ -831,7 +833,9 @@ describe('InvoicesController', () => {
 
       await controller.sendToDian('invoice-123');
 
-      expect(logSpy).toHaveBeenCalledWith('Sending invoice invoice-123 to DIAN');
+      expect(logSpy).toHaveBeenCalledWith(
+        'Sending invoice invoice-123 to DIAN',
+      );
     });
 
     it('should propagate not found errors', async () => {
@@ -856,9 +860,7 @@ describe('InvoicesController', () => {
       const error = new Error('DIAN service unavailable');
       dianService.processInvoice.mockRejectedValue(error);
 
-      await expect(controller.sendToDian('invoice-123')).rejects.toThrow(
-        error,
-      );
+      await expect(controller.sendToDian('invoice-123')).rejects.toThrow(error);
     });
   });
 

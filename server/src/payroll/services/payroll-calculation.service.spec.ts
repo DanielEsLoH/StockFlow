@@ -59,19 +59,21 @@ describe('PayrollCalculationService', () => {
   // ===== AUXILIO DE TRANSPORTE =====
   describe('calculateAuxilioTransporte', () => {
     it('should return full auxilio for 30 days when eligible', () => {
-      expect(service.calculateAuxilioTransporte(true, AUXILIO_TRANSPORTE, 30)).toBe(
-        AUXILIO_TRANSPORTE,
-      );
+      expect(
+        service.calculateAuxilioTransporte(true, AUXILIO_TRANSPORTE, 30),
+      ).toBe(AUXILIO_TRANSPORTE);
     });
 
     it('should prorate for partial month', () => {
-      expect(service.calculateAuxilioTransporte(true, AUXILIO_TRANSPORTE, 15)).toBe(
-        Math.round(AUXILIO_TRANSPORTE / 2),
-      );
+      expect(
+        service.calculateAuxilioTransporte(true, AUXILIO_TRANSPORTE, 15),
+      ).toBe(Math.round(AUXILIO_TRANSPORTE / 2));
     });
 
     it('should return 0 when not eligible', () => {
-      expect(service.calculateAuxilioTransporte(false, AUXILIO_TRANSPORTE, 30)).toBe(0);
+      expect(
+        service.calculateAuxilioTransporte(false, AUXILIO_TRANSPORTE, 30),
+      ).toBe(0);
     });
   });
 
@@ -80,32 +82,44 @@ describe('PayrollCalculationService', () => {
     const hourlyRate = SMMLV / 240;
 
     it('should calculate HED (hora extra diurna) at 1.25x', () => {
-      const result = service.calculateOvertime(SMMLV, [{ type: 'HED', hours: 1 }]);
+      const result = service.calculateOvertime(SMMLV, [
+        { type: 'HED', hours: 1 },
+      ]);
       expect(result).toBe(Math.round(hourlyRate * 1.25));
     });
 
     it('should calculate HEN (hora extra nocturna) at 1.75x', () => {
-      const result = service.calculateOvertime(SMMLV, [{ type: 'HEN', hours: 1 }]);
+      const result = service.calculateOvertime(SMMLV, [
+        { type: 'HEN', hours: 1 },
+      ]);
       expect(result).toBe(Math.round(hourlyRate * 1.75));
     });
 
     it('should calculate HDD (hora dominical diurna) at 2.0x', () => {
-      const result = service.calculateOvertime(SMMLV, [{ type: 'HDD', hours: 1 }]);
+      const result = service.calculateOvertime(SMMLV, [
+        { type: 'HDD', hours: 1 },
+      ]);
       expect(result).toBe(Math.round(hourlyRate * 2.0));
     });
 
     it('should calculate HDN (hora dominical nocturna) at 2.5x', () => {
-      const result = service.calculateOvertime(SMMLV, [{ type: 'HDN', hours: 1 }]);
+      const result = service.calculateOvertime(SMMLV, [
+        { type: 'HDN', hours: 1 },
+      ]);
       expect(result).toBe(Math.round(hourlyRate * 2.5));
     });
 
     it('should calculate HEDDF at 2.5x', () => {
-      const result = service.calculateOvertime(SMMLV, [{ type: 'HEDDF', hours: 1 }]);
+      const result = service.calculateOvertime(SMMLV, [
+        { type: 'HEDDF', hours: 1 },
+      ]);
       expect(result).toBe(Math.round(hourlyRate * 2.5));
     });
 
     it('should calculate HENDF at 2.75x', () => {
-      const result = service.calculateOvertime(SMMLV, [{ type: 'HENDF', hours: 1 }]);
+      const result = service.calculateOvertime(SMMLV, [
+        { type: 'HENDF', hours: 1 },
+      ]);
       expect(result).toBe(Math.round(hourlyRate * 2.75));
     });
 
@@ -114,7 +128,9 @@ describe('PayrollCalculationService', () => {
         { type: 'HED', hours: 2 },
         { type: 'HEN', hours: 3 },
       ]);
-      const expected = Math.round(hourlyRate * 1.25 * 2 + hourlyRate * 1.75 * 3);
+      const expected = Math.round(
+        hourlyRate * 1.25 * 2 + hourlyRate * 1.75 * 3,
+      );
       expect(result).toBe(expected);
     });
 
@@ -132,7 +148,9 @@ describe('PayrollCalculationService', () => {
 
     it('should include overtime in IBC', () => {
       const totalDev = SMMLV + AUXILIO_TRANSPORTE + 100_000;
-      expect(service.calculateIBC(totalDev, AUXILIO_TRANSPORTE)).toBe(SMMLV + 100_000);
+      expect(service.calculateIBC(totalDev, AUXILIO_TRANSPORTE)).toBe(
+        SMMLV + 100_000,
+      );
     });
   });
 
@@ -147,7 +165,7 @@ describe('PayrollCalculationService', () => {
     it('should prorate IBC integral for partial month', () => {
       const integralSalary = 18_505_500;
       expect(service.calculateIBCIntegral(integralSalary, 15)).toBe(
-        Math.round((integralSalary * 0.7 / 30) * 15),
+        Math.round(((integralSalary * 0.7) / 30) * 15),
       );
     });
   });
@@ -265,7 +283,9 @@ describe('PayrollCalculationService', () => {
       expect(result.provisionVacaciones).toBe(Math.round(SMMLV / 24));
 
       // Neto
-      expect(result.totalNeto).toBe(result.totalDevengados - result.totalDeducciones);
+      expect(result.totalNeto).toBe(
+        result.totalDevengados - result.totalDeducciones,
+      );
     });
   });
 
@@ -350,7 +370,9 @@ describe('PayrollCalculationService', () => {
       );
 
       expect(result.horasExtras).toBe(expectedOvertime);
-      expect(result.totalDevengados).toBe(SMMLV + AUXILIO_TRANSPORTE + expectedOvertime);
+      expect(result.totalDevengados).toBe(
+        SMMLV + AUXILIO_TRANSPORTE + expectedOvertime,
+      );
       expect(result.ibc).toBe(SMMLV + expectedOvertime);
     });
   });
@@ -398,7 +420,9 @@ describe('PayrollCalculationService', () => {
 
     it('should pay 100% for only 1 day incapacidad', () => {
       const dailyRate = SMMLV / 30;
-      expect(service.calculateIncapacidad(SMMLV, 1)).toBe(Math.round(dailyRate));
+      expect(service.calculateIncapacidad(SMMLV, 1)).toBe(
+        Math.round(dailyRate),
+      );
     });
 
     it('should return 0 for 0 days', () => {
@@ -410,7 +434,9 @@ describe('PayrollCalculationService', () => {
   describe('calculateVacaciones', () => {
     it('should pay daily rate × days', () => {
       const dailyRate = SMMLV / 30;
-      expect(service.calculateVacaciones(SMMLV, 15)).toBe(Math.round(dailyRate * 15));
+      expect(service.calculateVacaciones(SMMLV, 15)).toBe(
+        Math.round(dailyRate * 15),
+      );
     });
   });
 
@@ -418,7 +444,9 @@ describe('PayrollCalculationService', () => {
   describe('calculateLicencia', () => {
     it('should pay daily rate × days', () => {
       const dailyRate = SMMLV / 30;
-      expect(service.calculateLicencia(SMMLV, 3)).toBe(Math.round(dailyRate * 3));
+      expect(service.calculateLicencia(SMMLV, 3)).toBe(
+        Math.round(dailyRate * 3),
+      );
     });
   });
 
@@ -445,7 +473,9 @@ describe('PayrollCalculationService', () => {
         comisiones: 300_000,
       });
 
-      expect(result.totalNeto).toBe(result.totalDevengados - result.totalDeducciones);
+      expect(result.totalNeto).toBe(
+        result.totalDevengados - result.totalDeducciones,
+      );
     });
   });
 

@@ -109,7 +109,12 @@ describe('CashRegistersController', () => {
 
       await controller.findAll('1', '10', 'warehouse-123');
 
-      expect(service.findAll).toHaveBeenCalledWith(1, 10, 'warehouse-123', undefined);
+      expect(service.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        'warehouse-123',
+        undefined,
+      );
     });
 
     it('should pass status filter', async () => {
@@ -125,7 +130,12 @@ describe('CashRegistersController', () => {
 
       await controller.findAll('1', '10', 'warehouse-123', 'CLOSED');
 
-      expect(service.findAll).toHaveBeenCalledWith(1, 10, 'warehouse-123', 'CLOSED');
+      expect(service.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        'warehouse-123',
+        'CLOSED',
+      );
     });
 
     it('should handle invalid page number by defaulting to 1', async () => {

@@ -39,14 +39,20 @@ export class JournalEntriesController {
 
   @Get()
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
-  @ApiOperation({ summary: 'List journal entries', description: 'Returns paginated journal entries with filters' })
+  @ApiOperation({
+    summary: 'List journal entries',
+    description: 'Returns paginated journal entries with filters',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'source', required: false, enum: JournalEntrySource })
   @ApiQuery({ name: 'status', required: false, enum: JournalEntryStatus })
   @ApiQuery({ name: 'fromDate', required: false, type: String })
   @ApiQuery({ name: 'toDate', required: false, type: String })
-  @ApiResponse({ status: 200, description: 'Journal entries listed successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Journal entries listed successfully',
+  })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -56,7 +62,10 @@ export class JournalEntriesController {
     @Query('toDate') toDate?: string,
   ): Promise<PaginatedJournalEntriesResponse> {
     const parsedPage = Math.max(1, parseInt(page || '1', 10) || 1);
-    const parsedLimit = Math.min(100, Math.max(1, parseInt(limit || '20', 10) || 20));
+    const parsedLimit = Math.min(
+      100,
+      Math.max(1, parseInt(limit || '20', 10) || 20),
+    );
 
     return this.journalEntriesService.findAll(
       parsedPage,
@@ -70,7 +79,10 @@ export class JournalEntriesController {
 
   @Get(':id')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
-  @ApiOperation({ summary: 'Get journal entry by ID', description: 'Returns entry with all lines' })
+  @ApiOperation({
+    summary: 'Get journal entry by ID',
+    description: 'Returns entry with all lines',
+  })
   @ApiResponse({ status: 200, description: 'Journal entry found' })
   @ApiResponse({ status: 404, description: 'Journal entry not found' })
   async findOne(@Param('id') id: string): Promise<JournalEntryResponse> {
@@ -79,9 +91,15 @@ export class JournalEntriesController {
 
   @Post()
   @RequirePermissions(Permission.ACCOUNTING_CREATE)
-  @ApiOperation({ summary: 'Create manual journal entry', description: 'Creates a DRAFT journal entry' })
+  @ApiOperation({
+    summary: 'Create manual journal entry',
+    description: 'Creates a DRAFT journal entry',
+  })
   @ApiResponse({ status: 201, description: 'Journal entry created' })
-  @ApiResponse({ status: 400, description: 'Validation error (unbalanced, invalid accounts)' })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error (unbalanced, invalid accounts)',
+  })
   async create(
     @Body() dto: CreateJournalEntryDto,
     @Request() req: any,
@@ -91,7 +109,10 @@ export class JournalEntriesController {
 
   @Patch(':id/post')
   @RequirePermissions(Permission.ACCOUNTING_EDIT)
-  @ApiOperation({ summary: 'Post a draft journal entry', description: 'Changes status from DRAFT to POSTED' })
+  @ApiOperation({
+    summary: 'Post a draft journal entry',
+    description: 'Changes status from DRAFT to POSTED',
+  })
   @ApiResponse({ status: 200, description: 'Journal entry posted' })
   @ApiResponse({ status: 400, description: 'Entry is not in DRAFT status' })
   async postEntry(@Param('id') id: string): Promise<JournalEntryResponse> {
@@ -100,7 +121,10 @@ export class JournalEntriesController {
 
   @Patch(':id/void')
   @RequirePermissions(Permission.ACCOUNTING_EDIT)
-  @ApiOperation({ summary: 'Void a journal entry', description: 'Marks entry as VOIDED with reason' })
+  @ApiOperation({
+    summary: 'Void a journal entry',
+    description: 'Marks entry as VOIDED with reason',
+  })
   @ApiResponse({ status: 200, description: 'Journal entry voided' })
   @ApiResponse({ status: 400, description: 'Entry already voided' })
   async voidEntry(

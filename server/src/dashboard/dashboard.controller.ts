@@ -294,7 +294,8 @@ export class DashboardController {
   @Get('onboarding')
   @ApiOperation({
     summary: 'Get onboarding status',
-    description: 'Returns setup completion status for the tenant with a checklist of required steps',
+    description:
+      'Returns setup completion status for the tenant with a checklist of required steps',
   })
   @ApiResponse({ status: 200, description: 'Onboarding status' })
   async getOnboardingStatus() {

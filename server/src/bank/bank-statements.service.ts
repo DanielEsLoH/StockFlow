@@ -50,7 +50,9 @@ export class BankStatementsService {
     private readonly tenantContext: TenantContextService,
   ) {}
 
-  async findByBankAccount(bankAccountId: string): Promise<BankStatementResponse[]> {
+  async findByBankAccount(
+    bankAccountId: string,
+  ): Promise<BankStatementResponse[]> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const statements = await this.prisma.bankStatement.findMany({
@@ -78,7 +80,9 @@ export class BankStatementsService {
     });
 
     if (!statement) {
-      throw new NotFoundException(`Extracto bancario con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Extracto bancario con ID ${id} no encontrado`,
+      );
     }
 
     return this.mapToResponse(statement);
@@ -93,7 +97,14 @@ export class BankStatementsService {
     fileName: string,
     periodStart: Date,
     periodEnd: Date,
-    lines: { lineDate: Date; description: string; reference?: string; debit: number; credit: number; balance?: number }[],
+    lines: {
+      lineDate: Date;
+      description: string;
+      reference?: string;
+      debit: number;
+      credit: number;
+      balance?: number;
+    }[],
     userId?: string,
   ): Promise<BankStatementResponse> {
     const tenantId = this.tenantContext.requireTenantId();
@@ -104,11 +115,15 @@ export class BankStatementsService {
     });
 
     if (!bankAccount) {
-      throw new NotFoundException(`Cuenta bancaria con ID ${bankAccountId} no encontrada`);
+      throw new NotFoundException(
+        `Cuenta bancaria con ID ${bankAccountId} no encontrada`,
+      );
     }
 
     if (lines.length === 0) {
-      throw new BadRequestException('El archivo no contiene lineas para importar');
+      throw new BadRequestException(
+        'El archivo no contiene lineas para importar',
+      );
     }
 
     const statement = await this.prisma.bankStatement.create({
@@ -139,7 +154,9 @@ export class BankStatementsService {
       },
     });
 
-    this.logger.log(`Bank statement imported: ${fileName} (${lines.length} lines)`);
+    this.logger.log(
+      `Bank statement imported: ${fileName} (${lines.length} lines)`,
+    );
     return this.mapToResponse(statement);
   }
 
@@ -151,11 +168,15 @@ export class BankStatementsService {
     });
 
     if (!statement) {
-      throw new NotFoundException(`Extracto bancario con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Extracto bancario con ID ${id} no encontrado`,
+      );
     }
 
     if (statement.status === BankStatementStatus.RECONCILED) {
-      throw new BadRequestException('No se puede eliminar un extracto ya conciliado');
+      throw new BadRequestException(
+        'No se puede eliminar un extracto ya conciliado',
+      );
     }
 
     await this.prisma.bankStatement.delete({ where: { id } });

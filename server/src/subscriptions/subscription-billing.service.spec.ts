@@ -82,9 +82,7 @@ describe('SubscriptionBillingService', () => {
       tenant: {
         name: 'Test Company',
         wompiPaymentSourceId: 'ps-123',
-        users: [
-          { email: 'admin@test.com', firstName: 'Carlos' },
-        ],
+        users: [{ email: 'admin@test.com', firstName: 'Carlos' }],
       },
       ...overrides,
     });
@@ -176,9 +174,18 @@ describe('SubscriptionBillingService', () => {
     });
 
     it('should process multiple subscriptions', async () => {
-      const sub1 = createMockSubscription({ id: 'sub-1', tenantId: 'tenant-1' });
-      const sub2 = createMockSubscription({ id: 'sub-2', tenantId: 'tenant-2' });
-      const sub3 = createMockSubscription({ id: 'sub-3', tenantId: 'tenant-3' });
+      const sub1 = createMockSubscription({
+        id: 'sub-1',
+        tenantId: 'tenant-1',
+      });
+      const sub2 = createMockSubscription({
+        id: 'sub-2',
+        tenantId: 'tenant-2',
+      });
+      const sub3 = createMockSubscription({
+        id: 'sub-3',
+        tenantId: 'tenant-3',
+      });
 
       prisma.subscription.findMany.mockResolvedValue([sub1, sub2, sub3]);
       prisma.billingTransaction.findFirst
@@ -249,9 +256,7 @@ describe('SubscriptionBillingService', () => {
       expect(brevoService.sendSubscriptionExpiringEmail).toHaveBeenCalledTimes(
         2,
       );
-      expect(
-        brevoService.sendSubscriptionExpiringEmail,
-      ).toHaveBeenCalledWith(
+      expect(brevoService.sendSubscriptionExpiringEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'admin1@test.com',
           firstName: 'Admin1',
@@ -335,9 +340,7 @@ describe('SubscriptionBillingService', () => {
 
       await service.processRecurringCharges();
 
-      expect(
-        brevoService.sendSubscriptionExpiringEmail,
-      ).toHaveBeenCalledWith(
+      expect(brevoService.sendSubscriptionExpiringEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           planName: 'UNKNOWN_PLAN',
         }),
@@ -356,9 +359,7 @@ describe('SubscriptionBillingService', () => {
       const result = await service.processRecurringCharges();
 
       expect(result.failed).toBe(1);
-      expect(
-        brevoService.sendSubscriptionExpiringEmail,
-      ).not.toHaveBeenCalled();
+      expect(brevoService.sendSubscriptionExpiringEmail).not.toHaveBeenCalled();
     });
   });
 });

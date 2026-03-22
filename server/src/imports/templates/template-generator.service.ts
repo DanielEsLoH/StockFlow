@@ -93,9 +93,7 @@ export class TemplateGeneratorService {
       bookType: 'xlsx',
     }) as Buffer;
 
-    this.logger.log(
-      `Template generated for ${module}: ${buffer.length} bytes`,
-    );
+    this.logger.log(`Template generated for ${module}: ${buffer.length} bytes`);
 
     return buffer;
   }
@@ -325,8 +323,7 @@ export class TemplateGeneratorService {
       },
       {
         header: 'terminos_pago',
-        description:
-          'Terminos de pago del proveedor. Por defecto: NET_30',
+        description: 'Terminos de pago del proveedor. Por defecto: NET_30',
         required: false,
         validValues: 'IMMEDIATE, NET_15, NET_30, NET_60',
         example1: 'NET_30',
@@ -334,16 +331,14 @@ export class TemplateGeneratorService {
       },
       {
         header: 'nombre_contacto',
-        description:
-          'Nombre de la persona de contacto (max 100 caracteres)',
+        description: 'Nombre de la persona de contacto (max 100 caracteres)',
         required: false,
         example1: 'Carlos Rodriguez',
         example2: 'Maria Fernanda Lopez',
       },
       {
         header: 'telefono_contacto',
-        description:
-          'Telefono de la persona de contacto (max 20 caracteres)',
+        description: 'Telefono de la persona de contacto (max 20 caracteres)',
         required: false,
         example1: '+57 310 987 6543',
         example2: '+57 315 654 3210',

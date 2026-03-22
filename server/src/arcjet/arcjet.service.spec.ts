@@ -446,7 +446,11 @@ describe('ArcjetService', () => {
       expect(result.allowed).toBe(true);
       expect(arcjet).toHaveBeenCalledWith(
         expect.objectContaining({
-          characteristics: expect.arrayContaining(['ip.src', 'userId', 'tenantId']),
+          characteristics: expect.arrayContaining([
+            'ip.src',
+            'userId',
+            'tenantId',
+          ]),
         }),
       );
     });

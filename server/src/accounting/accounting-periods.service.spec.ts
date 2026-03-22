@@ -104,7 +104,10 @@ describe('AccountingPeriodsService', () => {
   // ---------------------------------------------------------------------------
   describe('findAll', () => {
     it('should return all periods for the tenant ordered by startDate desc', async () => {
-      prisma.accountingPeriod.findMany.mockResolvedValue([mockPeriod, mockClosedPeriod]);
+      prisma.accountingPeriod.findMany.mockResolvedValue([
+        mockPeriod,
+        mockClosedPeriod,
+      ]);
 
       const result = await service.findAll();
 
@@ -153,7 +156,9 @@ describe('AccountingPeriodsService', () => {
     it('should throw NotFoundException when period does not exist', async () => {
       prisma.accountingPeriod.findFirst.mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should include the period ID in the error message', async () => {
@@ -205,7 +210,9 @@ describe('AccountingPeriodsService', () => {
         endDate: '2025-03-01',
       };
 
-      await expect(service.create(invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when endDate equals startDate', async () => {
@@ -215,7 +222,9 @@ describe('AccountingPeriodsService', () => {
         endDate: '2025-03-15',
       };
 
-      await expect(service.create(sameDate)).rejects.toThrow(BadRequestException);
+      await expect(service.create(sameDate)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw ConflictException when period overlaps an existing one', async () => {
@@ -232,7 +241,9 @@ describe('AccountingPeriodsService', () => {
         endDate: '2025-02-15',
       };
 
-      await expect(service.create(overlappingDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(overlappingDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should include the overlapping period name in the ConflictException message', async () => {
@@ -249,7 +260,9 @@ describe('AccountingPeriodsService', () => {
         endDate: '2025-02-15',
       };
 
-      await expect(service.create(overlappingDto)).rejects.toThrow('Enero 2025');
+      await expect(service.create(overlappingDto)).rejects.toThrow(
+        'Enero 2025',
+      );
     });
 
     it('should pass notes to create when provided', async () => {
@@ -303,7 +316,9 @@ describe('AccountingPeriodsService', () => {
     it('should throw NotFoundException when period does not exist', async () => {
       prisma.accountingPeriod.findFirst.mockResolvedValue(null);
 
-      await expect(service.closePeriod('missing', userId)).rejects.toThrow(NotFoundException);
+      await expect(service.closePeriod('missing', userId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when period is already closed', async () => {
@@ -327,7 +342,9 @@ describe('AccountingPeriodsService', () => {
       prisma.accountingPeriod.findFirst.mockResolvedValue(mockPeriod);
       prisma.journalEntry.count.mockResolvedValue(3);
 
-      await expect(service.closePeriod('period-1', userId)).rejects.toThrow('3');
+      await expect(service.closePeriod('period-1', userId)).rejects.toThrow(
+        '3',
+      );
     });
 
     it('should query draft entries scoped to tenant and period', async () => {

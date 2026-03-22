@@ -1,11 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
-import {
-  IntegrationStatus,
-  SyncDirection,
-  SyncStatus,
-} from '@prisma/client';
+import { IntegrationStatus, SyncDirection, SyncStatus } from '@prisma/client';
 import type { Integration, SyncLog } from '@prisma/client';
 import { IntegrationsService } from './integrations.service';
 import type {
@@ -134,10 +130,7 @@ export class IntegrationsSyncService {
    * Sync orders from external platform → StockFlow.
    * Imports orders as lightweight records (doesn't create invoices automatically).
    */
-  async syncOrders(
-    integrationId: string,
-    since?: Date,
-  ): Promise<SyncLog> {
+  async syncOrders(integrationId: string, since?: Date): Promise<SyncLog> {
     const tenantId = this.tenantContext.requireTenantId();
     const integration = await this.getActiveIntegration(integrationId);
     const connector = this.integrationsService.getConnector(
@@ -312,9 +305,7 @@ export class IntegrationsSyncService {
   }
 
   /** Fetch unmapped external products (for manual mapping UI). */
-  async getUnmappedProducts(
-    integrationId: string,
-  ): Promise<ExternalProduct[]> {
+  async getUnmappedProducts(integrationId: string): Promise<ExternalProduct[]> {
     const integration = await this.getActiveIntegration(integrationId);
     const connector = this.integrationsService.getConnector(
       integration.platform,

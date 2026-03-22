@@ -105,8 +105,7 @@ export class UpdateProductDto {
     example: 'GRAVADO_19',
   })
   @IsEnum(TaxCategory, {
-    message:
-      'Tax category must be GRAVADO_19, GRAVADO_5, EXENTO, or EXCLUIDO',
+    message: 'Tax category must be GRAVADO_19, GRAVADO_5, EXENTO, or EXCLUIDO',
   })
   @IsOptional()
   taxCategory?: TaxCategory;

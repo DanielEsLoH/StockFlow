@@ -47,7 +47,9 @@ export class BankReconciliationService {
     });
 
     if (!statement) {
-      throw new NotFoundException(`Extracto con ID ${statementId} no encontrado`);
+      throw new NotFoundException(
+        `Extracto con ID ${statementId} no encontrado`,
+      );
     }
 
     if (statement.status === BankStatementStatus.RECONCILED) {
@@ -58,7 +60,8 @@ export class BankReconciliationService {
     let newMatches = 0;
 
     for (const line of statement.lines) {
-      const amount = Number(line.debit) > 0 ? Number(line.debit) : Number(line.credit);
+      const amount =
+        Number(line.debit) > 0 ? Number(line.debit) : Number(line.credit);
       const isDebit = Number(line.debit) > 0;
 
       // Search for matching journal entry lines
@@ -100,7 +103,12 @@ export class BankReconciliationService {
     const matchedTotal = await this.prisma.bankStatementLine.count({
       where: {
         statementId,
-        status: { in: [ReconciliationStatus.MATCHED, ReconciliationStatus.MANUALLY_MATCHED] },
+        status: {
+          in: [
+            ReconciliationStatus.MATCHED,
+            ReconciliationStatus.MANUALLY_MATCHED,
+          ],
+        },
       },
     });
 
@@ -160,11 +168,17 @@ export class BankReconciliationService {
 
     // Verify journal entry exists
     const entry = await this.prisma.journalEntry.findFirst({
-      where: { id: journalEntryId, tenantId, status: JournalEntryStatus.POSTED },
+      where: {
+        id: journalEntryId,
+        tenantId,
+        status: JournalEntryStatus.POSTED,
+      },
     });
 
     if (!entry) {
-      throw new NotFoundException('Asiento contable no encontrado o no esta publicado');
+      throw new NotFoundException(
+        'Asiento contable no encontrado o no esta publicado',
+      );
     }
 
     await this.prisma.bankStatementLine.update({
@@ -230,7 +244,9 @@ export class BankReconciliationService {
     });
 
     if (!statement) {
-      throw new NotFoundException(`Extracto con ID ${statementId} no encontrado`);
+      throw new NotFoundException(
+        `Extracto con ID ${statementId} no encontrado`,
+      );
     }
 
     if (statement.status === BankStatementStatus.RECONCILED) {
@@ -245,14 +261,21 @@ export class BankReconciliationService {
       },
     });
 
-    this.logger.log(`Reconciliation finalized for statement ${statement.fileName}`);
+    this.logger.log(
+      `Reconciliation finalized for statement ${statement.fileName}`,
+    );
   }
 
   private async updateStatementCounters(statementId: string): Promise<void> {
     const matchedTotal = await this.prisma.bankStatementLine.count({
       where: {
         statementId,
-        status: { in: [ReconciliationStatus.MATCHED, ReconciliationStatus.MANUALLY_MATCHED] },
+        status: {
+          in: [
+            ReconciliationStatus.MATCHED,
+            ReconciliationStatus.MANUALLY_MATCHED,
+          ],
+        },
       },
     });
 

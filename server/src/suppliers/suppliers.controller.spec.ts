@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Logger,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CustomerStatus } from '@prisma/client';
 import { SuppliersController } from './suppliers.controller';
 import { SuppliersService } from './suppliers.service';
@@ -91,58 +96,101 @@ describe('SuppliersController', () => {
     it('should parse page and limit from strings', async () => {
       await controller.findAll('2', '20');
 
-      expect(suppliersService.findAll).toHaveBeenCalledWith(2, 20, undefined, undefined);
+      expect(suppliersService.findAll).toHaveBeenCalledWith(
+        2,
+        20,
+        undefined,
+        undefined,
+      );
     });
 
     it('should default page to 1 and limit to 10', async () => {
       await controller.findAll();
 
-      expect(suppliersService.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined);
+      expect(suppliersService.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+      );
     });
 
     it('should clamp page to minimum 1', async () => {
       await controller.findAll('-5', '10');
 
-      expect(suppliersService.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined);
+      expect(suppliersService.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+      );
     });
 
     it('should clamp limit to maximum 100', async () => {
       await controller.findAll('1', '500');
 
-      expect(suppliersService.findAll).toHaveBeenCalledWith(1, 100, undefined, undefined);
+      expect(suppliersService.findAll).toHaveBeenCalledWith(
+        1,
+        100,
+        undefined,
+        undefined,
+      );
     });
 
     it('should default limit to 10 when value is 0 (falsy)', async () => {
       await controller.findAll('1', '0');
 
       // parseInt('0') = 0, which is falsy, so || 10 gives 10
-      expect(suppliersService.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined);
+      expect(suppliersService.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+      );
     });
 
     it('should pass trimmed search query', async () => {
       await controller.findAll('1', '10', '  ABC  ');
 
-      expect(suppliersService.findAll).toHaveBeenCalledWith(1, 10, 'ABC', undefined);
+      expect(suppliersService.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        'ABC',
+        undefined,
+      );
     });
 
     it('should pass undefined for empty search', async () => {
       await controller.findAll('1', '10', '   ');
 
-      expect(suppliersService.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined);
+      expect(suppliersService.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+      );
     });
 
     it('should pass status filter', async () => {
       await controller.findAll('1', '10', undefined, CustomerStatus.ACTIVE);
 
       expect(suppliersService.findAll).toHaveBeenCalledWith(
-        1, 10, undefined, CustomerStatus.ACTIVE,
+        1,
+        10,
+        undefined,
+        CustomerStatus.ACTIVE,
       );
     });
 
     it('should handle invalid page string gracefully', async () => {
       await controller.findAll('abc', '10');
 
-      expect(suppliersService.findAll).toHaveBeenCalledWith(1, 10, undefined, undefined);
+      expect(suppliersService.findAll).toHaveBeenCalledWith(
+        1,
+        10,
+        undefined,
+        undefined,
+      );
     });
   });
 
@@ -212,7 +260,9 @@ describe('SuppliersController', () => {
         new ConflictException(),
       );
 
-      await expect(controller.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(controller.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 

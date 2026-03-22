@@ -53,15 +53,23 @@ export class AccountingPeriodsController {
   @ApiOperation({ summary: 'Create accounting period' })
   @ApiResponse({ status: 201, description: 'Period created' })
   @ApiResponse({ status: 409, description: 'Period overlaps with existing' })
-  async create(@Body() dto: CreateAccountingPeriodDto): Promise<AccountingPeriodResponse> {
+  async create(
+    @Body() dto: CreateAccountingPeriodDto,
+  ): Promise<AccountingPeriodResponse> {
     return this.periodsService.create(dto);
   }
 
   @Patch(':id/close')
   @RequirePermissions(Permission.ACCOUNTING_CLOSE_PERIOD)
-  @ApiOperation({ summary: 'Close an accounting period', description: 'Prevents new entries in this period' })
+  @ApiOperation({
+    summary: 'Close an accounting period',
+    description: 'Prevents new entries in this period',
+  })
   @ApiResponse({ status: 200, description: 'Period closed' })
-  @ApiResponse({ status: 400, description: 'Cannot close: draft entries exist' })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot close: draft entries exist',
+  })
   async closePeriod(
     @Param('id') id: string,
     @Request() req: any,

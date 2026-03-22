@@ -90,7 +90,8 @@ export class SubscriptionStatusEntity {
   limits: PlanLimitsEntity;
 
   @ApiProperty({
-    description: 'Whether the tenant has a stored payment source for recurring billing',
+    description:
+      'Whether the tenant has a stored payment source for recurring billing',
     example: false,
   })
   hasPaymentSource: boolean;
@@ -197,7 +198,10 @@ export class PaymentSourceResponseEntity {
  * Billing transaction entity for Swagger documentation
  */
 export class BillingTransactionEntity {
-  @ApiProperty({ description: 'Transaction ID', example: 'cmkcykam80001reya0hsdx334' })
+  @ApiProperty({
+    description: 'Transaction ID',
+    example: 'cmkcykam80001reya0hsdx334',
+  })
   id: string;
 
   @ApiProperty({ description: 'Tenant ID' })
@@ -233,7 +237,10 @@ export class BillingTransactionEntity {
   @ApiPropertyOptional({ description: 'Failure reason', nullable: true })
   failureReason: string | null;
 
-  @ApiProperty({ description: 'Whether this is a recurring charge', example: false })
+  @ApiProperty({
+    description: 'Whether this is a recurring charge',
+    example: false,
+  })
   isRecurring: boolean;
 
   @ApiProperty({ description: 'Transaction creation date' })

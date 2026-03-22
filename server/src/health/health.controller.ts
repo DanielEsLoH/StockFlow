@@ -8,7 +8,11 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { PrismaHealthIndicator } from './indicators';
-import { HEALTH_KEYS, MEMORY_THRESHOLDS, DISK_THRESHOLDS } from './health.constants';
+import {
+  HEALTH_KEYS,
+  MEMORY_THRESHOLDS,
+  DISK_THRESHOLDS,
+} from './health.constants';
 
 /**
  * Health check response structure.

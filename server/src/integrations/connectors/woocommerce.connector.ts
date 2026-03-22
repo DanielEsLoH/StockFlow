@@ -176,10 +176,7 @@ export class WooCommerceConnector implements PlatformConnector {
       .digest('base64');
 
     try {
-      return crypto.timingSafeEqual(
-        Buffer.from(hmac),
-        Buffer.from(signature),
-      );
+      return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(signature));
     } catch {
       return false;
     }

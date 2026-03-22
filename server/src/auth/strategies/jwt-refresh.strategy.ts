@@ -107,7 +107,10 @@ export class JwtRefreshStrategy extends PassportStrategy(
     }
 
     // Verify the refresh token hash matches what's stored in the database
-    const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
     if (user.refreshToken !== hashedToken) {
       this.logger.warn(`Refresh token mismatch for user: ${user.email}`);
       throw new UnauthorizedException('Invalid refresh token');

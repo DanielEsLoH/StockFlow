@@ -49,9 +49,7 @@ describe('PayrollPeriodsController', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<PayrollPeriodsController>(
-      PayrollPeriodsController,
-    );
+    controller = module.get<PayrollPeriodsController>(PayrollPeriodsController);
     service = module.get(PayrollPeriodsService);
   });
 

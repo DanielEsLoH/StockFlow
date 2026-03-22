@@ -25,7 +25,8 @@ export class ReturnItemDto {
   invoiceItemId: string;
 
   @ApiProperty({
-    description: 'Quantity to return (must not exceed original quantity minus already returned)',
+    description:
+      'Quantity to return (must not exceed original quantity minus already returned)',
     example: 1,
     minimum: 1,
   })

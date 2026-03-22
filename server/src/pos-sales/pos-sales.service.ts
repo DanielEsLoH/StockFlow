@@ -21,7 +21,12 @@ import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
 import { DianService } from '../dian/dian.service';
-import { CreateSaleDto, SaleItemDto, SalePaymentDto, CreatePartialReturnDto } from './dto';
+import {
+  CreateSaleDto,
+  SaleItemDto,
+  SalePaymentDto,
+  CreatePartialReturnDto,
+} from './dto';
 
 /**
  * Sale payment response
@@ -196,11 +201,12 @@ export class POSSalesService {
     for (const item of dto.items) {
       const product = productMap.get(item.productId)!;
       if (warehouseId) {
-        const warehouseStockRecord = await this.prisma.warehouseStock.findUnique({
-          where: {
-            warehouseId_productId: { warehouseId, productId: item.productId },
-          },
-        });
+        const warehouseStockRecord =
+          await this.prisma.warehouseStock.findUnique({
+            where: {
+              warehouseId_productId: { warehouseId, productId: item.productId },
+            },
+          });
         const available = warehouseStockRecord?.quantity ?? 0;
         if (available < item.quantity) {
           throw new BadRequestException(
@@ -220,223 +226,227 @@ export class POSSalesService {
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
-    const sale = await this.prisma.$transaction(async (tx) => {
-      // Generate sale number
-      const saleNumber = await this.generateSaleNumber(tx, tenantId);
+        const sale = await this.prisma.$transaction(async (tx) => {
+          // Generate sale number
+          const saleNumber = await this.generateSaleNumber(tx, tenantId);
 
-      // Generate invoice number
-      const invoiceNumber = await this.generateInvoiceNumber(tx, tenantId);
+          // Generate invoice number
+          const invoiceNumber = await this.generateInvoiceNumber(tx, tenantId);
 
-      // Create invoice
-      const invoice = await tx.invoice.create({
-        data: {
-          tenantId,
-          customerId: dto.customerId || null,
-          userId,
-          invoiceNumber,
-          source: InvoiceSource.POS, // Mark as POS sale
-          subtotal,
-          tax,
-          discount,
-          total,
-          status: InvoiceStatus.SENT, // POS sales are immediately sent
-          paymentStatus: PaymentStatus.PAID, // POS sales are paid immediately
-          notes: dto.notes,
-          issueDate: new Date(),
-          items: {
-            create: calculatedItems.map((item) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              taxRate: item.taxRate,
-              taxCategory: item.taxCategory,
-              discount: item.discount,
-              subtotal: item.subtotal,
-              tax: item.tax,
-              total: item.total,
-            })),
-          },
-        },
-        include: {
-          customer: {
-            select: { id: true, name: true, documentNumber: true },
-          },
-          items: {
-            include: {
-              product: {
-                select: { id: true, name: true, sku: true },
-              },
-            },
-          },
-        },
-      });
-
-      // Create POS sale
-      const posSale = await tx.pOSSale.create({
-        data: {
-          tenantId,
-          sessionId: session.id,
-          invoiceId: invoice.id,
-          saleNumber,
-          subtotal,
-          tax,
-          discount,
-          total,
-        },
-      });
-
-      // Create sale payments
-      const salePayments = await Promise.all(
-        dto.payments.map((payment) =>
-          tx.salePayment.create({
-            data: {
-              saleId: posSale.id,
-              method: payment.method,
-              amount: payment.amount,
-              reference: payment.reference,
-              cardLastFour: payment.cardLastFour,
-            },
-          }),
-        ),
-      );
-
-      // Execute all payment and stock operations in parallel for better performance
-      const warehouseId = session.cashRegister.warehouseId;
-
-      await Promise.all([
-        // Create invoice payments (for compatibility with existing payment tracking)
-        ...dto.payments.map((payment) =>
-          tx.payment.create({
+          // Create invoice
+          const invoice = await tx.invoice.create({
             data: {
               tenantId,
-              invoiceId: invoice.id,
-              amount: payment.amount,
-              method: payment.method,
-              reference: payment.reference,
-              paymentDate: new Date(),
-            },
-          }),
-        ),
-
-        // Create cash register movements only for CASH payments (card payments don't affect cash drawer)
-        ...dto.payments
-          .filter((payment) => payment.method === 'CASH')
-          .map((payment) =>
-            tx.cashRegisterMovement.create({
-              data: {
-                tenantId,
-                sessionId: session.id,
-                saleId: posSale.id,
-                type: CashMovementType.SALE,
-                amount: payment.amount,
-                method: payment.method,
-                reference: payment.reference,
+              customerId: dto.customerId || null,
+              userId,
+              invoiceNumber,
+              source: InvoiceSource.POS, // Mark as POS sale
+              subtotal,
+              tax,
+              discount,
+              total,
+              status: InvoiceStatus.SENT, // POS sales are immediately sent
+              paymentStatus: PaymentStatus.PAID, // POS sales are paid immediately
+              notes: dto.notes,
+              issueDate: new Date(),
+              items: {
+                create: calculatedItems.map((item) => ({
+                  productId: item.productId,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  taxRate: item.taxRate,
+                  taxCategory: item.taxCategory,
+                  discount: item.discount,
+                  subtotal: item.subtotal,
+                  tax: item.tax,
+                  total: item.total,
+                })),
               },
-            }),
-          ),
-
-        // Decrement product stock for all items
-        ...dto.items.map((item) =>
-          tx.product.update({
-            where: { id: item.productId },
-            data: { stock: { decrement: item.quantity } },
-          }),
-        ),
-
-        // Update warehouse stock for all items (if applicable)
-        ...(warehouseId
-          ? dto.items.map((item) =>
-              tx.warehouseStock.upsert({
-                where: {
-                  warehouseId_productId: {
-                    warehouseId,
-                    productId: item.productId,
+            },
+            include: {
+              customer: {
+                select: { id: true, name: true, documentNumber: true },
+              },
+              items: {
+                include: {
+                  product: {
+                    select: { id: true, name: true, sku: true },
                   },
                 },
-                update: { quantity: { decrement: item.quantity } },
-                create: {
-                  tenantId,
-                  warehouseId,
-                  productId: item.productId,
-                  quantity: -item.quantity,
-                },
-              }),
-            )
-          : []),
+              },
+            },
+          });
 
-        // Create stock movements for all items
-        ...dto.items.map((item) =>
-          tx.stockMovement.create({
+          // Create POS sale
+          const posSale = await tx.pOSSale.create({
             data: {
               tenantId,
-              productId: item.productId,
-              warehouseId,
-              userId,
-              type: MovementType.SALE,
-              quantity: -item.quantity,
-              reason: `POS Sale ${saleNumber}`,
+              sessionId: session.id,
               invoiceId: invoice.id,
+              saleNumber,
+              subtotal,
+              tax,
+              discount,
+              total,
             },
-          }),
-        ),
-      ]);
+          });
 
-      return {
-        ...posSale,
-        invoice,
-        payments: salePayments,
-        session: {
-          id: session.id,
-          cashRegister: session.cashRegister,
-        },
-      };
-    });
-
-    this.logger.log(`POS sale created: ${sale.saleNumber} - Total: ${total}`);
-
-    // Generate accounting journal entries for the POS sale (fire-and-forget)
-    try {
-      await this.accountingBridge.onInvoiceCreated({
-        tenantId,
-        invoiceId: sale.invoice.id,
-        invoiceNumber: sale.invoice.invoiceNumber,
-        subtotal,
-        tax,
-        total,
-        items: dto.items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          product: { costPrice: productMap.get(item.productId)?.costPrice ?? 0 },
-        })),
-        isPosImmediate: true,
-      });
-    } catch (error) {
-      this.logger.error(
-        `Failed to create accounting entries for POS sale ${sale.saleNumber}: ${error}`,
-      );
-    }
-
-    // Transmit documento equivalente to DIAN (fire-and-forget)
-    this.dianService
-      .processPOSSale({ invoiceId: sale.invoice.id })
-      .then((result) => {
-        if (result.success) {
-          this.logger.log(
-            `DIAN: POS sale ${sale.saleNumber} transmitted successfully (trackId: ${result.trackId})`,
+          // Create sale payments
+          const salePayments = await Promise.all(
+            dto.payments.map((payment) =>
+              tx.salePayment.create({
+                data: {
+                  saleId: posSale.id,
+                  method: payment.method,
+                  amount: payment.amount,
+                  reference: payment.reference,
+                  cardLastFour: payment.cardLastFour,
+                },
+              }),
+            ),
           );
-        } else {
-          this.logger.warn(
-            `DIAN: POS sale ${sale.saleNumber} transmission failed: ${result.message}`,
+
+          // Execute all payment and stock operations in parallel for better performance
+          const warehouseId = session.cashRegister.warehouseId;
+
+          await Promise.all([
+            // Create invoice payments (for compatibility with existing payment tracking)
+            ...dto.payments.map((payment) =>
+              tx.payment.create({
+                data: {
+                  tenantId,
+                  invoiceId: invoice.id,
+                  amount: payment.amount,
+                  method: payment.method,
+                  reference: payment.reference,
+                  paymentDate: new Date(),
+                },
+              }),
+            ),
+
+            // Create cash register movements only for CASH payments (card payments don't affect cash drawer)
+            ...dto.payments
+              .filter((payment) => payment.method === 'CASH')
+              .map((payment) =>
+                tx.cashRegisterMovement.create({
+                  data: {
+                    tenantId,
+                    sessionId: session.id,
+                    saleId: posSale.id,
+                    type: CashMovementType.SALE,
+                    amount: payment.amount,
+                    method: payment.method,
+                    reference: payment.reference,
+                  },
+                }),
+              ),
+
+            // Decrement product stock for all items
+            ...dto.items.map((item) =>
+              tx.product.update({
+                where: { id: item.productId },
+                data: { stock: { decrement: item.quantity } },
+              }),
+            ),
+
+            // Update warehouse stock for all items (if applicable)
+            ...(warehouseId
+              ? dto.items.map((item) =>
+                  tx.warehouseStock.upsert({
+                    where: {
+                      warehouseId_productId: {
+                        warehouseId,
+                        productId: item.productId,
+                      },
+                    },
+                    update: { quantity: { decrement: item.quantity } },
+                    create: {
+                      tenantId,
+                      warehouseId,
+                      productId: item.productId,
+                      quantity: -item.quantity,
+                    },
+                  }),
+                )
+              : []),
+
+            // Create stock movements for all items
+            ...dto.items.map((item) =>
+              tx.stockMovement.create({
+                data: {
+                  tenantId,
+                  productId: item.productId,
+                  warehouseId,
+                  userId,
+                  type: MovementType.SALE,
+                  quantity: -item.quantity,
+                  reason: `POS Sale ${saleNumber}`,
+                  invoiceId: invoice.id,
+                },
+              }),
+            ),
+          ]);
+
+          return {
+            ...posSale,
+            invoice,
+            payments: salePayments,
+            session: {
+              id: session.id,
+              cashRegister: session.cashRegister,
+            },
+          };
+        });
+
+        this.logger.log(
+          `POS sale created: ${sale.saleNumber} - Total: ${total}`,
+        );
+
+        // Generate accounting journal entries for the POS sale (fire-and-forget)
+        try {
+          await this.accountingBridge.onInvoiceCreated({
+            tenantId,
+            invoiceId: sale.invoice.id,
+            invoiceNumber: sale.invoice.invoiceNumber,
+            subtotal,
+            tax,
+            total,
+            items: dto.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              product: {
+                costPrice: productMap.get(item.productId)?.costPrice ?? 0,
+              },
+            })),
+            isPosImmediate: true,
+          });
+        } catch (error) {
+          this.logger.error(
+            `Failed to create accounting entries for POS sale ${sale.saleNumber}: ${error}`,
           );
         }
-      })
-      .catch((error) => {
-        this.logger.error(
-          `DIAN: Failed to transmit POS sale ${sale.saleNumber}: ${error}`,
-        );
-      });
 
-    return this.buildSaleWithDetails(sale);
+        // Transmit documento equivalente to DIAN (fire-and-forget)
+        this.dianService
+          .processPOSSale({ invoiceId: sale.invoice.id })
+          .then((result) => {
+            if (result.success) {
+              this.logger.log(
+                `DIAN: POS sale ${sale.saleNumber} transmitted successfully (trackId: ${result.trackId})`,
+              );
+            } else {
+              this.logger.warn(
+                `DIAN: POS sale ${sale.saleNumber} transmission failed: ${result.message}`,
+              );
+            }
+          })
+          .catch((error) => {
+            this.logger.error(
+              `DIAN: Failed to transmit POS sale ${sale.saleNumber}: ${error}`,
+            );
+          });
+
+        return this.buildSaleWithDetails(sale);
       } catch (error) {
         lastError = error;
         if (
@@ -683,7 +693,9 @@ export class POSSalesService {
       sale.invoice.status === InvoiceStatus.VOID ||
       sale.invoice.status === InvoiceStatus.CANCELLED
     ) {
-      throw new BadRequestException('Cannot return items from a voided or cancelled sale');
+      throw new BadRequestException(
+        'Cannot return items from a voided or cancelled sale',
+      );
     }
 
     // Build a map of invoice items for quick lookup
@@ -745,7 +757,7 @@ export class POSSalesService {
         const productName = invoiceItem.product?.name ?? 'Unknown';
         throw new BadRequestException(
           `Cannot return ${returnItem.quantity} units of "${productName}". ` +
-          `Original: ${invoiceItem.quantity}, already returned: ${alreadyReturned}, available: ${availableToReturn}`,
+            `Original: ${invoiceItem.quantity}, already returned: ${alreadyReturned}, available: ${availableToReturn}`,
         );
       }
 
@@ -754,9 +766,12 @@ export class POSSalesService {
       const taxPerUnit = Number(invoiceItem.tax) / invoiceItem.quantity;
       const totalPerUnit = Number(invoiceItem.total) / invoiceItem.quantity;
 
-      const itemRefundSubtotal = Math.round(pricePerUnit * returnItem.quantity * 100) / 100;
-      const itemRefundTax = Math.round(taxPerUnit * returnItem.quantity * 100) / 100;
-      const itemRefundTotal = Math.round(totalPerUnit * returnItem.quantity * 100) / 100;
+      const itemRefundSubtotal =
+        Math.round(pricePerUnit * returnItem.quantity * 100) / 100;
+      const itemRefundTax =
+        Math.round(taxPerUnit * returnItem.quantity * 100) / 100;
+      const itemRefundTotal =
+        Math.round(totalPerUnit * returnItem.quantity * 100) / 100;
 
       refundSubtotal += itemRefundSubtotal;
       refundTax += itemRefundTax;

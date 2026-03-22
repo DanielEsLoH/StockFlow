@@ -36,7 +36,10 @@ import { DebitNoteItem } from './services/xml-generator.service';
 import { AccountingBridgeService } from '../accounting/accounting-bridge.service';
 import { ConfigService } from '@nestjs/config';
 import { encrypt, decrypt } from '../common/crypto.util';
-import { EventXmlGeneratorService, type DianEventCode } from './services/event-xml-generator.service';
+import {
+  EventXmlGeneratorService,
+  type DianEventCode,
+} from './services/event-xml-generator.service';
 
 export interface ProcessInvoiceResult {
   success: boolean;
@@ -65,7 +68,9 @@ export class DianService {
   ) {}
 
   private getEncryptionSecret(): string {
-    return this.configService.get<string>('jwt.secret') || 'stockflow-default-key';
+    return (
+      this.configService.get<string>('jwt.secret') || 'stockflow-default-key'
+    );
   }
 
   // ============================================================================
@@ -232,9 +237,7 @@ export class DianService {
     const validation = this.xmlSigner.validateCertificate(file, password);
 
     if (!validation.isValid) {
-      throw new BadRequestException(
-        validation.errors.join('. '),
-      );
+      throw new BadRequestException(validation.errors.join('. '));
     }
 
     const encryptedPassword = encrypt(password, this.getEncryptionSecret());
@@ -463,9 +466,7 @@ export class DianService {
   ): Promise<ProcessInvoiceResult> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.log(
-      `Processing credit note for invoice ${dto.invoiceId}`,
-    );
+    this.logger.log(`Processing credit note for invoice ${dto.invoiceId}`);
 
     // Fetch config, invoice, and original doc in parallel (all independent)
     const [config, invoice, originalDoc] = await Promise.all([
@@ -544,8 +545,7 @@ export class DianService {
     const noteNumber = `${config.creditNotePrefix}${String(config.creditNoteCurrentNumber).padStart(8, '0')}`;
 
     // Generate CUDE
-    const customerDocument =
-      invoice.customer?.documentNumber || '222222222222';
+    const customerDocument = invoice.customer?.documentNumber || '222222222222';
     const issueDate = new Date();
     const cude = this.cufeGenerator.generateCude({
       documentNumber: noteNumber,
@@ -646,23 +646,32 @@ export class DianService {
 
     // Fire-and-forget: accounting entry + stock reversal
     if (result.success) {
-      this.accountingBridge.onCreditNoteCreated({
-        tenantId,
-        dianDocumentId: document.id,
-        noteNumber,
-        invoiceNumber: invoice.invoiceNumber,
-        subtotal: Number(noteInvoice.subtotal),
-        tax: Number(noteInvoice.tax),
-        total: Number(noteInvoice.total),
-        reasonCode: dto.reasonCode,
-        items: noteInvoice.items.map((i) => ({
-          productId: i.product?.id ?? null,
-          quantity: Number(i.quantity),
-          product: i.product ? { costPrice: (i as any).product?.costPrice ?? 0 } : null,
-        })),
-      }).catch(() => {});
+      this.accountingBridge
+        .onCreditNoteCreated({
+          tenantId,
+          dianDocumentId: document.id,
+          noteNumber,
+          invoiceNumber: invoice.invoiceNumber,
+          subtotal: Number(noteInvoice.subtotal),
+          tax: Number(noteInvoice.tax),
+          total: Number(noteInvoice.total),
+          reasonCode: dto.reasonCode,
+          items: noteInvoice.items.map((i) => ({
+            productId: i.product?.id ?? null,
+            quantity: Number(i.quantity),
+            product: i.product
+              ? { costPrice: (i as any).product?.costPrice ?? 0 }
+              : null,
+          })),
+        })
+        .catch(() => {});
 
-      this.restoreStockForCreditNote(tenantId, invoice, noteInvoice, dto.reasonCode).catch(() => {});
+      this.restoreStockForCreditNote(
+        tenantId,
+        invoice,
+        noteInvoice,
+        dto.reasonCode,
+      ).catch(() => {});
     }
 
     return {
@@ -686,9 +695,7 @@ export class DianService {
   ): Promise<ProcessInvoiceResult> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.log(
-      `Processing debit note for invoice ${dto.invoiceId}`,
-    );
+    this.logger.log(`Processing debit note for invoice ${dto.invoiceId}`);
 
     // Fetch config, invoice, and original doc in parallel (all independent)
     const [config, invoice, originalDoc] = await Promise.all([
@@ -737,8 +744,7 @@ export class DianService {
     const total = subtotal + totalTax;
 
     // Generate CUDE
-    const customerDocument =
-      invoice.customer?.documentNumber || '222222222222';
+    const customerDocument = invoice.customer?.documentNumber || '222222222222';
     const issueDate = new Date();
     const cude = this.cufeGenerator.generateCude({
       documentNumber: noteNumber,
@@ -837,15 +843,17 @@ export class DianService {
 
     // Fire-and-forget: accounting entry
     if (result.success) {
-      this.accountingBridge.onDebitNoteCreated({
-        tenantId,
-        dianDocumentId: document.id,
-        noteNumber,
-        invoiceNumber: invoice.invoiceNumber,
-        subtotal,
-        tax: totalTax,
-        total,
-      }).catch(() => {});
+      this.accountingBridge
+        .onDebitNoteCreated({
+          tenantId,
+          dianDocumentId: document.id,
+          noteNumber,
+          invoiceNumber: invoice.invoiceNumber,
+          subtotal,
+          tax: totalTax,
+          total,
+        })
+        .catch(() => {});
     }
 
     return {
@@ -898,7 +906,9 @@ export class DianService {
   async processPOSSale(dto: ProcessPOSSaleDto): Promise<ProcessInvoiceResult> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.log(`Processing POS sale ${dto.invoiceId} as documento equivalente`);
+    this.logger.log(
+      `Processing POS sale ${dto.invoiceId} as documento equivalente`,
+    );
 
     // Get DIAN config
     const config = await this.prisma.tenantDianConfig.findUnique({
@@ -941,7 +951,11 @@ export class DianService {
 
     // Check if already sent
     const existingDoc = await this.prisma.dianDocument.findFirst({
-      where: { invoiceId: dto.invoiceId, tenantId, documentType: DianDocumentType.DOCUMENTO_EQUIVALENTE },
+      where: {
+        invoiceId: dto.invoiceId,
+        tenantId,
+        documentType: DianDocumentType.DOCUMENTO_EQUIVALENTE,
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -1020,7 +1034,11 @@ export class DianService {
 
     // Send to DIAN
     const fileName = `de${config.posResolutionPrefix}${documentNumber}.xml`;
-    const result = await this.dianClient.sendDocument(config, signedXml, fileName);
+    const result = await this.dianClient.sendDocument(
+      config,
+      signedXml,
+      fileName,
+    );
 
     // Update document status
     const finalStatus = result.success
@@ -1063,7 +1081,8 @@ export class DianService {
       status: finalStatus,
       message: result.success
         ? 'Documento equivalente enviado y aceptado por la DIAN'
-        : result.statusDescription || 'Error al enviar el documento equivalente',
+        : result.statusDescription ||
+          'Error al enviar el documento equivalente',
       errors: result.errors,
     };
   }
@@ -1071,10 +1090,14 @@ export class DianService {
   /**
    * Process a Nota de Ajuste for a Documento Equivalente
    */
-  async processNotaAjuste(dto: GenerateNotaAjusteDto): Promise<ProcessInvoiceResult> {
+  async processNotaAjuste(
+    dto: GenerateNotaAjusteDto,
+  ): Promise<ProcessInvoiceResult> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.log(`Processing nota de ajuste for documento equivalente ${dto.documentoEquivalenteId}`);
+    this.logger.log(
+      `Processing nota de ajuste for documento equivalente ${dto.documentoEquivalenteId}`,
+    );
 
     // Get config and validate
     const config = await this.getAndValidateConfig(tenantId);
@@ -1108,7 +1131,10 @@ export class DianService {
     }
 
     // Get original invoice with details
-    const invoice = await this.getInvoiceWithDetails(originalDoc.invoiceId, tenantId);
+    const invoice = await this.getInvoiceWithDetails(
+      originalDoc.invoiceId,
+      tenantId,
+    );
 
     // Build note invoice data (clone items or filter partial)
     let noteInvoice: InvoiceWithDetails;
@@ -1238,7 +1264,11 @@ export class DianService {
 
     // Send to DIAN
     const fileName = `na${noteNumber}.xml`;
-    const result = await this.dianClient.sendDocument(config, signedXml, fileName);
+    const result = await this.dianClient.sendDocument(
+      config,
+      signedXml,
+      fileName,
+    );
 
     // Update document status
     const finalStatus = result.success
@@ -1295,7 +1325,9 @@ export class DianService {
       where: { tenantId },
       data: {
         posResolutionNumber: dto.posResolutionNumber,
-        posResolutionDate: dto.posResolutionDate ? new Date(dto.posResolutionDate) : undefined,
+        posResolutionDate: dto.posResolutionDate
+          ? new Date(dto.posResolutionDate)
+          : undefined,
         posResolutionPrefix: dto.posResolutionPrefix,
         posResolutionRangeFrom: dto.posResolutionRangeFrom,
         posResolutionRangeTo: dto.posResolutionRangeTo,
@@ -1331,11 +1363,17 @@ export class DianService {
     reasonCode: string,
   ): Promise<void> {
     try {
-      if (reasonCode !== 'DEVOLUCION_PARCIAL' && reasonCode !== 'DEVOLUCION_TOTAL') return;
+      if (
+        reasonCode !== 'DEVOLUCION_PARCIAL' &&
+        reasonCode !== 'DEVOLUCION_TOTAL'
+      )
+        return;
       if (!originalInvoice.warehouseId) return;
 
       const warehouseId = originalInvoice.warehouseId;
-      const itemsToRestore = noteInvoice.items.filter((i) => i.product?.id && Number(i.quantity) > 0);
+      const itemsToRestore = noteInvoice.items.filter(
+        (i) => i.product?.id && Number(i.quantity) > 0,
+      );
       if (itemsToRestore.length === 0) return;
 
       await this.prisma.$transaction(async (tx) => {
@@ -1370,7 +1408,9 @@ export class DianService {
         }
       });
 
-      this.logger.debug(`Stock restored for ${itemsToRestore.length} items from credit note`);
+      this.logger.debug(
+        `Stock restored for ${itemsToRestore.length} items from credit note`,
+      );
     } catch (error) {
       this.logger.error(
         'Failed to restore stock for credit note',
@@ -1439,10 +1479,13 @@ export class DianService {
     });
 
     if (!dianDoc) throw new NotFoundException('Documento DIAN no encontrado');
-    if (!dianDoc.cufe) throw new BadRequestException('El documento no tiene CUFE');
+    if (!dianDoc.cufe)
+      throw new BadRequestException('El documento no tiene CUFE');
 
     if (eventCode === '031' && !rejectionReason) {
-      throw new BadRequestException('Se requiere motivo del reclamo para evento 031');
+      throw new BadRequestException(
+        'Se requiere motivo del reclamo para evento 031',
+      );
     }
 
     // Fetch config and tenant in parallel (both independent, only need tenantId)
@@ -1450,7 +1493,8 @@ export class DianService {
       this.prisma.tenantDianConfig.findUnique({ where: { tenantId } }),
       this.prisma.tenant.findUnique({ where: { id: tenantId } }),
     ]);
-    if (!config) throw new BadRequestException('Configuración DIAN no encontrada');
+    if (!config)
+      throw new BadRequestException('Configuración DIAN no encontrada');
     if (!tenant) throw new NotFoundException('Tenant no encontrado');
 
     // Determine sender/receiver based on event type
@@ -1508,7 +1552,11 @@ export class DianService {
 
     // Send to DIAN
     const fileName = `ar${documentNumber}.xml`;
-    const result = await this.dianClient.sendDocument(config, signedXml, fileName);
+    const result = await this.dianClient.sendDocument(
+      config,
+      signedXml,
+      fileName,
+    );
 
     const finalStatus = result.success
       ? DianDocumentStatus.ACCEPTED
@@ -1558,7 +1606,10 @@ export class DianService {
         invoiceId,
         tenantId,
         documentType: {
-          in: [DianDocumentType.FACTURA_ELECTRONICA, DianDocumentType.DOCUMENTO_EQUIVALENTE],
+          in: [
+            DianDocumentType.FACTURA_ELECTRONICA,
+            DianDocumentType.DOCUMENTO_EQUIVALENTE,
+          ],
         },
         status: DianDocumentStatus.ACCEPTED,
       },
@@ -1566,7 +1617,9 @@ export class DianService {
     });
 
     if (!dianDoc) {
-      throw new NotFoundException('No se encontró documento DIAN aceptado para esta factura');
+      throw new NotFoundException(
+        'No se encontró documento DIAN aceptado para esta factura',
+      );
     }
 
     return this.sendEvent(dianDoc.id, eventCode, rejectionReason);
@@ -1574,15 +1627,23 @@ export class DianService {
 
   private signXmlIfCertificateAvailable(
     xml: string,
-    config: { certificateFile: Uint8Array | null; certificatePassword: string | null },
+    config: {
+      certificateFile: Uint8Array | null;
+      certificatePassword: string | null;
+    },
   ): string {
     if (config.certificateFile && config.certificatePassword) {
       let password = config.certificatePassword;
       try {
-        password = decrypt(config.certificatePassword, this.getEncryptionSecret());
+        password = decrypt(
+          config.certificatePassword,
+          this.getEncryptionSecret(),
+        );
       } catch {
         // Password might not be encrypted yet (legacy data), use as-is
-        this.logger.debug('Certificate password not encrypted, using raw value');
+        this.logger.debug(
+          'Certificate password not encrypted, using raw value',
+        );
       }
       const certContents = this.xmlSigner.loadCertificate(
         Buffer.from(config.certificateFile),

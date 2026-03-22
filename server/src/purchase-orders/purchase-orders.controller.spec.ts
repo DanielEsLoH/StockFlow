@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Logger,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PurchaseOrdersController } from './purchase-orders.controller';
 import { PurchaseOrdersService } from './purchase-orders.service';
 import { PurchasePaymentsService } from './purchase-payments.service';
@@ -47,10 +52,18 @@ describe('PurchaseOrdersController', () => {
       create: jest.fn().mockResolvedValue(mockPurchaseOrder),
       update: jest.fn().mockResolvedValue(mockPurchaseOrder),
       remove: jest.fn().mockResolvedValue(undefined),
-      send: jest.fn().mockResolvedValue({ ...mockPurchaseOrder, status: 'SENT' }),
-      confirm: jest.fn().mockResolvedValue({ ...mockPurchaseOrder, status: 'CONFIRMED' }),
-      receive: jest.fn().mockResolvedValue({ ...mockPurchaseOrder, status: 'RECEIVED' }),
-      cancel: jest.fn().mockResolvedValue({ ...mockPurchaseOrder, status: 'CANCELLED' }),
+      send: jest
+        .fn()
+        .mockResolvedValue({ ...mockPurchaseOrder, status: 'SENT' }),
+      confirm: jest
+        .fn()
+        .mockResolvedValue({ ...mockPurchaseOrder, status: 'CONFIRMED' }),
+      receive: jest
+        .fn()
+        .mockResolvedValue({ ...mockPurchaseOrder, status: 'RECEIVED' }),
+      cancel: jest
+        .fn()
+        .mockResolvedValue({ ...mockPurchaseOrder, status: 'CANCELLED' }),
     };
 
     const mockPaymentsService = {
@@ -102,7 +115,12 @@ describe('PurchaseOrdersController', () => {
     });
 
     it('should pass filters through to service', async () => {
-      const query = { page: 2, limit: 20, status: 'DRAFT', supplierId: 'sup-1' } as any;
+      const query = {
+        page: 2,
+        limit: 20,
+        status: 'DRAFT',
+        supplierId: 'sup-1',
+      } as any;
       await controller.findAll(query);
 
       expect(service.findAll).toHaveBeenCalledWith(query);
@@ -131,7 +149,9 @@ describe('PurchaseOrdersController', () => {
     it('should propagate NotFoundException', async () => {
       service.findOne.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findOne('invalid')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -140,7 +160,9 @@ describe('PurchaseOrdersController', () => {
     const createDto = {
       supplierId: 'supplier-1',
       warehouseId: 'warehouse-1',
-      items: [{ productId: 'prod-1', quantity: 10, unitPrice: 100, taxRate: 19 }],
+      items: [
+        { productId: 'prod-1', quantity: 10, unitPrice: 100, taxRate: 19 },
+      ],
     } as any;
 
     it('should delegate to service with dto and userId', async () => {
@@ -151,9 +173,13 @@ describe('PurchaseOrdersController', () => {
     });
 
     it('should propagate NotFoundException for invalid supplier', async () => {
-      service.create.mockRejectedValue(new NotFoundException('Supplier not found'));
+      service.create.mockRejectedValue(
+        new NotFoundException('Supplier not found'),
+      );
 
-      await expect(controller.create(createDto, mockUser as any)).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.create(createDto, mockUser as any),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -170,7 +196,9 @@ describe('PurchaseOrdersController', () => {
     it('should propagate ConflictException for non-DRAFT order', async () => {
       service.update.mockRejectedValue(new ConflictException());
 
-      await expect(controller.update('po-123', {} as any)).rejects.toThrow(ConflictException);
+      await expect(controller.update('po-123', {} as any)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -185,7 +213,9 @@ describe('PurchaseOrdersController', () => {
     it('should propagate NotFoundException', async () => {
       service.remove.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.remove('invalid')).rejects.toThrow(NotFoundException);
+      await expect(controller.remove('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -201,7 +231,9 @@ describe('PurchaseOrdersController', () => {
     it('should propagate ConflictException for invalid status transition', async () => {
       service.send.mockRejectedValue(new ConflictException());
 
-      await expect(controller.send('po-123')).rejects.toThrow(ConflictException);
+      await expect(controller.send('po-123')).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -217,7 +249,9 @@ describe('PurchaseOrdersController', () => {
     it('should propagate ConflictException', async () => {
       service.confirm.mockRejectedValue(new ConflictException());
 
-      await expect(controller.confirm('po-123')).rejects.toThrow(ConflictException);
+      await expect(controller.confirm('po-123')).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -233,7 +267,9 @@ describe('PurchaseOrdersController', () => {
     it('should propagate ConflictException for non-CONFIRMED order', async () => {
       service.receive.mockRejectedValue(new ConflictException());
 
-      await expect(controller.receive('po-123', mockUser as any)).rejects.toThrow(ConflictException);
+      await expect(
+        controller.receive('po-123', mockUser as any),
+      ).rejects.toThrow(ConflictException);
     });
   });
 
@@ -249,7 +285,9 @@ describe('PurchaseOrdersController', () => {
     it('should propagate ConflictException for RECEIVED order', async () => {
       service.cancel.mockRejectedValue(new ConflictException());
 
-      await expect(controller.cancel('po-123')).rejects.toThrow(ConflictException);
+      await expect(controller.cancel('po-123')).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 });

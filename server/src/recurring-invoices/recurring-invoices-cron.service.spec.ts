@@ -199,9 +199,7 @@ describe('RecurringInvoicesCronService', () => {
       mockPrisma.invoice.update.mockResolvedValue({});
       mockPrisma.recurringInvoice.update.mockResolvedValue({});
 
-      await expect(
-        service.processRecurringInvoices(),
-      ).resolves.not.toThrow();
+      await expect(service.processRecurringInvoices()).resolves.not.toThrow();
 
       expect(mockPrisma.invoice.create).toHaveBeenCalledTimes(1);
     });

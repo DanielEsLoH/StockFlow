@@ -19,11 +19,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth';
-import {
-  RequirePermissions,
-  PermissionsGuard,
-  Permission,
-} from '../common';
+import { RequirePermissions, PermissionsGuard, Permission } from '../common';
 import { CurrentUser } from '../common/decorators';
 
 interface JwtUser {
@@ -41,9 +37,7 @@ import { PhysicalCountStatus } from '@prisma/client';
 @Controller('physical-inventory-counts')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PhysicalInventoryCountsController {
-  constructor(
-    private readonly service: PhysicalInventoryCountsService,
-  ) {}
+  constructor(private readonly service: PhysicalInventoryCountsService) {}
 
   @Post()
   @RequirePermissions(Permission.INVENTORY_ADJUST)
@@ -128,10 +122,7 @@ export class PhysicalInventoryCountsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Iniciar conteo (DRAFT → IN_PROGRESS)' })
   @ApiParam({ name: 'id', description: 'ID del conteo' })
-  async startCount(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtUser,
-  ) {
+  async startCount(@Param('id') id: string, @CurrentUser() user: JwtUser) {
     return this.service.startCount(id, user.userId);
   }
 
@@ -140,10 +131,7 @@ export class PhysicalInventoryCountsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Completar conteo y generar ajustes de inventario' })
   @ApiParam({ name: 'id', description: 'ID del conteo' })
-  async completeCount(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtUser,
-  ) {
+  async completeCount(@Param('id') id: string, @CurrentUser() user: JwtUser) {
     return this.service.completeCount(id, user.userId);
   }
 

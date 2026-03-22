@@ -521,7 +521,10 @@ export class InvitationsService {
           }),
         ]);
 
-      if (existingContadores + pendingContadorInvitations >= planLimits.maxContadores) {
+      if (
+        existingContadores + pendingContadorInvitations >=
+        planLimits.maxContadores
+      ) {
         throw new ForbiddenException(
           `Limite de contadores alcanzado (${planLimits.maxContadores}). Ya tienes un contador asignado.`,
         );

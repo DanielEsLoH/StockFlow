@@ -25,7 +25,11 @@ const VACACIONES_DIVISOR = 720;
 
 // ===== Types =====
 
-export type BenefitType = 'PRIMA' | 'CESANTIAS' | 'INTERESES_CESANTIAS' | 'VACACIONES';
+export type BenefitType =
+  | 'PRIMA'
+  | 'CESANTIAS'
+  | 'INTERESES_CESANTIAS'
+  | 'VACACIONES';
 
 export interface MonthlyProvisions {
   provisionPrima: number;
@@ -252,14 +256,17 @@ export class PayrollBenefitsService {
 
     // Calculate current-year days for annual benefits
     const currentYearStart = new Date(endDate.getFullYear(), 0, 1);
-    const effectiveYearStart = startDate > currentYearStart ? startDate : currentYearStart;
+    const effectiveYearStart =
+      startDate > currentYearStart ? startDate : currentYearStart;
     const daysCurrentYear = this.calculateDays360(effectiveYearStart, endDate);
 
     // Calculate current semester days for prima
-    const semesterStart = endDate.getMonth() < 6
-      ? new Date(endDate.getFullYear(), 0, 1)
-      : new Date(endDate.getFullYear(), 6, 1);
-    const effectiveSemesterStart = startDate > semesterStart ? startDate : semesterStart;
+    const semesterStart =
+      endDate.getMonth() < 6
+        ? new Date(endDate.getFullYear(), 0, 1)
+        : new Date(endDate.getFullYear(), 6, 1);
+    const effectiveSemesterStart =
+      startDate > semesterStart ? startDate : semesterStart;
     const daysSemester = this.calculateDays360(effectiveSemesterStart, endDate);
 
     const benefits: LiquidationBenefitItem[] = [];
@@ -293,7 +300,8 @@ export class PayrollBenefitsService {
 
       // Intereses sobre cesantias
       const interesesAmount = Math.round(
-        (cesantiasAmount * INTERESES_CESANTIAS_RATE * daysCurrentYear) / DAYS_PER_YEAR,
+        (cesantiasAmount * INTERESES_CESANTIAS_RATE * daysCurrentYear) /
+          DAYS_PER_YEAR,
       );
       benefits.push({
         concept: 'Intereses sobre cesantias',
@@ -355,7 +363,10 @@ export class PayrollBenefitsService {
     const tenantId = this.tenantContext.requireTenantId();
 
     // First get the preview (all calculations)
-    const preview = await this.getLiquidationPreview(employeeId, terminationDate);
+    const preview = await this.getLiquidationPreview(
+      employeeId,
+      terminationDate,
+    );
 
     const employee = await this.prisma.employee.findFirst({
       where: { id: employeeId, tenantId },
@@ -422,10 +433,16 @@ export class PayrollBenefitsService {
       }
 
       // Sum benefit amounts by type for the entry
-      const primaAmount = preview.benefits.find((b) => b.concept === 'Prima de servicios')?.amount ?? 0;
-      const cesantiasAmount = preview.benefits.find((b) => b.concept === 'Cesantias')?.amount ?? 0;
-      const interesesAmount = preview.benefits.find((b) => b.concept === 'Intereses sobre cesantias')?.amount ?? 0;
-      const vacacionesAmount = preview.benefits.find((b) => b.concept === 'Vacaciones')?.amount ?? 0;
+      const primaAmount =
+        preview.benefits.find((b) => b.concept === 'Prima de servicios')
+          ?.amount ?? 0;
+      const cesantiasAmount =
+        preview.benefits.find((b) => b.concept === 'Cesantias')?.amount ?? 0;
+      const interesesAmount =
+        preview.benefits.find((b) => b.concept === 'Intereses sobre cesantias')
+          ?.amount ?? 0;
+      const vacacionesAmount =
+        preview.benefits.find((b) => b.concept === 'Vacaciones')?.amount ?? 0;
 
       await tx.payrollEntry.create({
         data: {
@@ -556,7 +573,8 @@ export class PayrollBenefitsService {
           ? new Date(year, 5, 30)
           : new Date(year, 11, 31);
 
-        const effectiveStart = startDate > periodStart ? startDate : periodStart;
+        const effectiveStart =
+          startDate > periodStart ? startDate : periodStart;
         const effectiveEnd = paymentDate < periodEnd ? paymentDate : periodEnd;
         const daysWorked = this.calculateDays360(effectiveStart, effectiveEnd);
         const periodLabel = isFirstHalf ? 'Ene-Jun' : 'Jul-Dic';
@@ -573,7 +591,8 @@ export class PayrollBenefitsService {
         const periodStart = new Date(cesantiasYear, 0, 1);
         const periodEnd = new Date(cesantiasYear, 11, 31);
 
-        const effectiveStart = startDate > periodStart ? startDate : periodStart;
+        const effectiveStart =
+          startDate > periodStart ? startDate : periodStart;
         const daysWorked = this.calculateDays360(effectiveStart, periodEnd);
 
         return {
@@ -588,7 +607,8 @@ export class PayrollBenefitsService {
         const periodStart = new Date(intYear, 0, 1);
         const periodEnd = new Date(intYear, 11, 31);
 
-        const effectiveStart = startDate > periodStart ? startDate : periodStart;
+        const effectiveStart =
+          startDate > periodStart ? startDate : periodStart;
         const daysWorked = this.calculateDays360(effectiveStart, periodEnd);
 
         return {

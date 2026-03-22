@@ -68,7 +68,9 @@ export class ExogenaService {
     const from = new Date(year, 0, 1);
     const to = new Date(year, 11, 31, 23, 59, 59, 999);
 
-    this.logger.log(`Generating Exogena report for year=${year}, tenant=${tenantId}`);
+    this.logger.log(
+      `Generating Exogena report for year=${year}, tenant=${tenantId}`,
+    );
 
     const [f1001, f1005, f1006, f1007, f1008, f1009] = await Promise.all([
       this.getFormato1001(tenantId, from, to),
@@ -119,7 +121,11 @@ export class ExogenaService {
 
     const supplierMap = new Map<
       string,
-      { supplier: (typeof orders)[0]['supplier']; subtotal: number; tax: number }
+      {
+        supplier: (typeof orders)[0]['supplier'];
+        subtotal: number;
+        tax: number;
+      }
     >();
 
     for (const order of orders) {
@@ -172,7 +178,12 @@ export class ExogenaService {
 
     const expenseSupplierMap = new Map<
       string,
-      { supplier: (typeof expenses)[0]['supplier']; subtotal: number; tax: number; conceptCode: string }
+      {
+        supplier: (typeof expenses)[0]['supplier'];
+        subtotal: number;
+        tax: number;
+        conceptCode: string;
+      }
     >();
 
     for (const expense of expenses) {
@@ -192,7 +203,12 @@ export class ExogenaService {
       entry.tax += Number(expense.tax);
     }
 
-    for (const { supplier, subtotal, tax, conceptCode } of expenseSupplierMap.values()) {
+    for (const {
+      supplier,
+      subtotal,
+      tax,
+      conceptCode,
+    } of expenseSupplierMap.values()) {
       if (!supplier) continue;
       rows.push({
         conceptCode,
@@ -251,7 +267,11 @@ export class ExogenaService {
 
     const supplierMap = new Map<
       string,
-      { supplier: (typeof orders)[0]['supplier']; taxableBase: number; tax: number }
+      {
+        supplier: (typeof orders)[0]['supplier'];
+        taxableBase: number;
+        tax: number;
+      }
     >();
 
     for (const order of orders) {
@@ -261,7 +281,11 @@ export class ExogenaService {
 
         const key = order.supplier.id;
         if (!supplierMap.has(key)) {
-          supplierMap.set(key, { supplier: order.supplier, taxableBase: 0, tax: 0 });
+          supplierMap.set(key, {
+            supplier: order.supplier,
+            taxableBase: 0,
+            tax: 0,
+          });
         }
         const entry = supplierMap.get(key)!;
         entry.taxableBase += Number(item.subtotal);
@@ -306,7 +330,11 @@ export class ExogenaService {
       where: {
         tenantId,
         status: {
-          notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.VOID, InvoiceStatus.DRAFT],
+          notIn: [
+            InvoiceStatus.CANCELLED,
+            InvoiceStatus.VOID,
+            InvoiceStatus.DRAFT,
+          ],
         },
         issueDate: { gte: from, lte: to },
       },
@@ -392,7 +420,11 @@ export class ExogenaService {
       where: {
         tenantId,
         status: {
-          notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.VOID, InvoiceStatus.DRAFT],
+          notIn: [
+            InvoiceStatus.CANCELLED,
+            InvoiceStatus.VOID,
+            InvoiceStatus.DRAFT,
+          ],
         },
         issueDate: { gte: from, lte: to },
       },

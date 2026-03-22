@@ -10,7 +10,8 @@ describe('UploadService', () => {
   // Test data
   const mockTenantId = 'tenant-123';
   const mockUserId = 'user-456';
-  const mockPublicUrl = 'https://stockflow-images.daniel-esloh.workers.dev/api/images';
+  const mockPublicUrl =
+    'https://stockflow-images.daniel-esloh.workers.dev/api/images';
 
   const createMockFile = (
     overrides: Partial<Express.Multer.File> = {},
@@ -38,15 +39,11 @@ describe('UploadService', () => {
       delete: jest.fn().mockResolvedValue(undefined),
       getPublicUrl: jest
         .fn()
-        .mockImplementation(
-          (key: string) => `${mockPublicUrl}/${key}`,
-        ),
-      extractKeyFromUrl: jest
-        .fn()
-        .mockImplementation((url: string) => {
-          const prefix = `${mockPublicUrl}/`;
-          return url.startsWith(prefix) ? url.slice(prefix.length) : null;
-        }),
+        .mockImplementation((key: string) => `${mockPublicUrl}/${key}`),
+      extractKeyFromUrl: jest.fn().mockImplementation((url: string) => {
+        const prefix = `${mockPublicUrl}/`;
+        return url.startsWith(prefix) ? url.slice(prefix.length) : null;
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -261,8 +258,12 @@ describe('UploadService', () => {
 
       // Should have attempted to delete the two already-uploaded keys
       expect(storageService.delete).toHaveBeenCalledTimes(2);
-      expect(storageService.delete).toHaveBeenCalledWith('products/product-1.jpg');
-      expect(storageService.delete).toHaveBeenCalledWith('products/product-2.jpg');
+      expect(storageService.delete).toHaveBeenCalledWith(
+        'products/product-1.jpg',
+      );
+      expect(storageService.delete).toHaveBeenCalledWith(
+        'products/product-2.jpg',
+      );
     });
 
     it('should still throw original error even if cleanup delete fails', async () => {
@@ -296,7 +297,9 @@ describe('UploadService', () => {
 
       expect(storageService.upload).toHaveBeenCalledWith(
         expect.stringMatching(
-          new RegExp(`^avatars/${mockTenantId}/${mockUserId}/avatar-\\d+-\\d+\\.jpg$`),
+          new RegExp(
+            `^avatars/${mockTenantId}/${mockUserId}/avatar-\\d+-\\d+\\.jpg$`,
+          ),
         ),
         file.buffer,
         file.mimetype,

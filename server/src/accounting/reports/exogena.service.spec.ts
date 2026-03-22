@@ -127,9 +127,7 @@ describe('ExogenaService', () => {
       issueDate: overrides.issueDate ?? new Date('2024-06-15'),
       status: overrides.status ?? PurchaseOrderStatus.RECEIVED,
       paymentStatus: overrides.paymentStatus ?? PaymentStatus.UNPAID,
-      items: overrides.items ?? [
-        { taxRate: 19, subtotal: 1000, tax: 190 },
-      ],
+      items: overrides.items ?? [{ taxRate: 19, subtotal: 1000, tax: 190 }],
       purchasePayments: overrides.purchasePayments ?? [],
     };
   }
@@ -151,7 +149,8 @@ describe('ExogenaService', () => {
   ) {
     return {
       tenantId: mockTenantId,
-      customerId: 'customerId' in overrides ? overrides.customerId : 'customer-a',
+      customerId:
+        'customerId' in overrides ? overrides.customerId : 'customer-a',
       customer: 'customer' in overrides ? overrides.customer : mockCustomerA,
       subtotal: overrides.subtotal ?? 500,
       tax: overrides.tax ?? 95,
@@ -159,9 +158,7 @@ describe('ExogenaService', () => {
       issueDate: overrides.issueDate ?? new Date('2024-06-15'),
       status: overrides.status ?? InvoiceStatus.SENT,
       paymentStatus: overrides.paymentStatus ?? PaymentStatus.PAID,
-      items: overrides.items ?? [
-        { taxRate: 19, subtotal: 500, tax: 95 },
-      ],
+      items: overrides.items ?? [{ taxRate: 19, subtotal: 500, tax: 95 }],
       payments: overrides.payments ?? [],
     };
   }
@@ -346,8 +343,16 @@ describe('ExogenaService', () => {
 
     it('should aggregate subtotals and taxes per supplier', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makePurchaseOrder({ supplier: mockSupplierA, subtotal: 1000, tax: 190 }),
-        makePurchaseOrder({ supplier: mockSupplierA, subtotal: 2000, tax: 380 }),
+        makePurchaseOrder({
+          supplier: mockSupplierA,
+          subtotal: 1000,
+          tax: 190,
+        }),
+        makePurchaseOrder({
+          supplier: mockSupplierA,
+          subtotal: 2000,
+          tax: 380,
+        }),
         makePurchaseOrder({ supplier: mockSupplierB, subtotal: 500, tax: 95 }),
       ]);
 
@@ -384,7 +389,11 @@ describe('ExogenaService', () => {
 
     it('should compute correct totals across all rows', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makePurchaseOrder({ supplier: mockSupplierA, subtotal: 1000, tax: 190 }),
+        makePurchaseOrder({
+          supplier: mockSupplierA,
+          subtotal: 1000,
+          tax: 190,
+        }),
         makePurchaseOrder({ supplier: mockSupplierB, subtotal: 500, tax: 95 }),
       ]);
 
@@ -648,9 +657,21 @@ describe('ExogenaService', () => {
 
     it('should aggregate invoice totals per customer', async () => {
       mockPrismaService.invoice.findMany.mockResolvedValue([
-        makeInvoice({ customer: mockCustomerA, customerId: 'customer-a', total: 1000 }),
-        makeInvoice({ customer: mockCustomerA, customerId: 'customer-a', total: 2000 }),
-        makeInvoice({ customer: mockCustomerB, customerId: 'customer-b', total: 500 }),
+        makeInvoice({
+          customer: mockCustomerA,
+          customerId: 'customer-a',
+          total: 1000,
+        }),
+        makeInvoice({
+          customer: mockCustomerA,
+          customerId: 'customer-a',
+          total: 2000,
+        }),
+        makeInvoice({
+          customer: mockCustomerB,
+          customerId: 'customer-b',
+          total: 500,
+        }),
       ]);
 
       const result = await service.generateExogena(2024);
@@ -669,7 +690,11 @@ describe('ExogenaService', () => {
 
     it('should always set taxAmount to 0 for all rows', async () => {
       mockPrismaService.invoice.findMany.mockResolvedValue([
-        makeInvoice({ customer: mockCustomerA, customerId: 'customer-a', total: 1190 }),
+        makeInvoice({
+          customer: mockCustomerA,
+          customerId: 'customer-a',
+          total: 1190,
+        }),
       ]);
 
       const result = await service.generateExogena(2024);
@@ -696,7 +721,11 @@ describe('ExogenaService', () => {
 
     it('should use customer.name when businessName is null', async () => {
       mockPrismaService.invoice.findMany.mockResolvedValue([
-        makeInvoice({ customer: mockCustomerB, customerId: 'customer-b', total: 500 }),
+        makeInvoice({
+          customer: mockCustomerB,
+          customerId: 'customer-b',
+          total: 500,
+        }),
       ]);
 
       const result = await service.generateExogena(2024);
@@ -872,7 +901,9 @@ describe('ExogenaService', () => {
       await service.generateExogena(2024);
 
       const call1008 = mockPrismaService.invoice.findMany.mock.calls[2];
-      expect(call1008[0].where.paymentStatus).toEqual({ not: PaymentStatus.PAID });
+      expect(call1008[0].where.paymentStatus).toEqual({
+        not: PaymentStatus.PAID,
+      });
     });
   });
 
@@ -1040,7 +1071,9 @@ describe('ExogenaService', () => {
       // Formato 1009 is the 3rd purchaseOrder.findMany call (after 1001 and 1005)
       const call1009 = mockPrismaService.purchaseOrder.findMany.mock.calls[2];
       expect(call1009[0].where.status).toBe(PurchaseOrderStatus.RECEIVED);
-      expect(call1009[0].where.paymentStatus).toEqual({ not: PaymentStatus.PAID });
+      expect(call1009[0].where.paymentStatus).toEqual({
+        not: PaymentStatus.PAID,
+      });
     });
   });
 

@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateAccountingConfigDto {
@@ -47,17 +54,23 @@ export class UpdateAccountingConfigDto {
   @IsOptional()
   cogsAccountId?: string;
 
-  @ApiPropertyOptional({ description: 'Inventory adjustment account ID (PUC 5195)' })
+  @ApiPropertyOptional({
+    description: 'Inventory adjustment account ID (PUC 5195)',
+  })
   @IsString()
   @IsOptional()
   inventoryAdjustmentId?: string;
 
-  @ApiPropertyOptional({ description: 'ReteFuente received account ID (PUC 1355)' })
+  @ApiPropertyOptional({
+    description: 'ReteFuente received account ID (PUC 1355)',
+  })
   @IsString()
   @IsOptional()
   reteFuenteReceivedId?: string;
 
-  @ApiPropertyOptional({ description: 'ReteFuente payable account ID (PUC 2365)' })
+  @ApiPropertyOptional({
+    description: 'ReteFuente payable account ID (PUC 2365)',
+  })
   @IsString()
   @IsOptional()
   reteFuentePayableId?: string;
@@ -72,17 +85,23 @@ export class UpdateAccountingConfigDto {
   @IsOptional()
   payrollPayableId?: string;
 
-  @ApiPropertyOptional({ description: 'Payroll retentions account ID (PUC 2380)' })
+  @ApiPropertyOptional({
+    description: 'Payroll retentions account ID (PUC 2380)',
+  })
   @IsString()
   @IsOptional()
   payrollRetentionsId?: string;
 
-  @ApiPropertyOptional({ description: 'Payroll contributions account ID (PUC 2380)' })
+  @ApiPropertyOptional({
+    description: 'Payroll contributions account ID (PUC 2380)',
+  })
   @IsString()
   @IsOptional()
   payrollContributionsId?: string;
 
-  @ApiPropertyOptional({ description: 'Payroll provisions account ID (PUC 2610)' })
+  @ApiPropertyOptional({
+    description: 'Payroll provisions account ID (PUC 2610)',
+  })
   @IsString()
   @IsOptional()
   payrollProvisionsId?: string;

@@ -83,9 +83,7 @@ export class XmlSignerService {
         })[forge.pki.oids.certBag] ?? [];
 
       if (!certBags.length || !certBags[0].cert) {
-        throw new Error(
-          'No se encontro certificado X.509 en el archivo .p12',
-        );
+        throw new Error('No se encontro certificado X.509 en el archivo .p12');
       }
 
       const cert = certBags[0].cert;
@@ -278,9 +276,7 @@ ${signedPropsXml}
 
   // ─── Private helpers ────────────────────────────────────────────────────
 
-  private buildDnString(
-    attributes: forge.pki.CertificateField[],
-  ): string {
+  private buildDnString(attributes: forge.pki.CertificateField[]): string {
     const shortNames: Record<string, string> = {
       commonName: 'CN',
       organizationName: 'O',
@@ -292,8 +288,7 @@ ${signedPropsXml}
     };
     return attributes
       .map(
-        (a: any) =>
-          `${shortNames[a.name] ?? a.shortName ?? a.name}=${a.value}`,
+        (a: any) => `${shortNames[a.name] ?? a.shortName ?? a.name}=${a.value}`,
       )
       .reverse()
       .join(',');
@@ -313,9 +308,7 @@ ${signedPropsXml}
     issuerName: string,
     serialNumber: string,
   ): string {
-    const signingTime = new Date()
-      .toISOString()
-      .replace('Z', '-05:00');
+    const signingTime = new Date().toISOString().replace('Z', '-05:00');
 
     return `<xades:SignedProperties xmlns:xades="${ALGORITHMS.XADES_NS}" xmlns:ds="${ALGORITHMS.XMLDSIG_NS}" Id="${signedPropsId}">
 <xades:SignedSignatureProperties>

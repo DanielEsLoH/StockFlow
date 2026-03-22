@@ -23,14 +23,18 @@ export class CreateTransferDto {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @IsString({ message: 'El ID del producto debe ser una cadena de texto' })
-  @Matches(CUID_PATTERN, { message: 'El ID del producto debe ser un CUID valido' })
+  @Matches(CUID_PATTERN, {
+    message: 'El ID del producto debe ser un CUID valido',
+  })
   productId: string;
 
   @ApiProperty({
     description: 'ID of the source warehouse (where stock is taken from)',
     example: 'cmkcykam80004reya0hsdx338',
   })
-  @IsString({ message: 'El ID del almacen origen debe ser una cadena de texto' })
+  @IsString({
+    message: 'El ID del almacen origen debe ser una cadena de texto',
+  })
   @Matches(CUID_PATTERN, {
     message: 'El ID del almacen origen debe ser un CUID valido',
   })
@@ -40,7 +44,9 @@ export class CreateTransferDto {
     description: 'ID of the destination warehouse (where stock is added)',
     example: 'cmkcykam80004reya0hsdx339',
   })
-  @IsString({ message: 'El ID del almacen destino debe ser una cadena de texto' })
+  @IsString({
+    message: 'El ID del almacen destino debe ser una cadena de texto',
+  })
   @Matches(CUID_PATTERN, {
     message: 'El ID del almacen destino debe ser un CUID valido',
   })

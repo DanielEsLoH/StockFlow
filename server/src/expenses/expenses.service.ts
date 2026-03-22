@@ -381,10 +381,7 @@ export class ExpensesService {
    * @throws NotFoundException if expense not found
    * @throws ConflictException if expense is not in DRAFT status
    */
-  async update(
-    id: string,
-    dto: UpdateExpenseDto,
-  ): Promise<ExpenseResponse> {
+  async update(id: string, dto: UpdateExpenseDto): Promise<ExpenseResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
     this.logger.debug(`Updating expense ${id} in tenant ${tenantId}`);
@@ -682,9 +679,7 @@ export class ExpensesService {
     }
 
     if (expense.status === ExpenseStatus.PAID) {
-      throw new ConflictException(
-        'No se puede cancelar un gasto ya pagado',
-      );
+      throw new ConflictException('No se puede cancelar un gasto ya pagado');
     }
 
     if (expense.status === ExpenseStatus.CANCELLED) {
@@ -758,7 +753,15 @@ export class ExpensesService {
     // Current month boundaries
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const endOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
 
     // Aggregate counts and totals by status (all-time, not month-filtered)
     const statusAggregates = await this.prisma.expense.groupBy({

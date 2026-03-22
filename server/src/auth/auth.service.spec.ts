@@ -281,7 +281,10 @@ describe('AuthService', () => {
       expect(result).toEqual(mockUserWithTenant);
       expect(prismaService.user.findFirst).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
-        include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
+        include: {
+          tenant: true,
+          warehouse: { select: { id: true, name: true, code: true } },
+        },
       });
       expect(bcrypt.compare).toHaveBeenCalledWith(
         'password123',
@@ -322,7 +325,10 @@ describe('AuthService', () => {
 
       expect(prismaService.user.findFirst).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
-        include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
+        include: {
+          tenant: true,
+          warehouse: { select: { id: true, name: true, code: true } },
+        },
       });
     });
   });
@@ -346,7 +352,10 @@ describe('AuthService', () => {
     it('should update user with hashed refresh token and last login time', async () => {
       await service.login('test@example.com', 'password123');
 
-      const expectedHash = crypto.createHash('sha256').update(mockTokens.refreshToken).digest('hex');
+      const expectedHash = crypto
+        .createHash('sha256')
+        .update(mockTokens.refreshToken)
+        .digest('hex');
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
         data: {
@@ -683,7 +692,8 @@ describe('AuthService', () => {
 
   describe('refreshTokens', () => {
     const validRefreshToken = 'valid-refresh-token';
-    const hashToken = (t: string) => crypto.createHash('sha256').update(t).digest('hex');
+    const hashToken = (t: string) =>
+      crypto.createHash('sha256').update(t).digest('hex');
     const validPayload = {
       sub: 'user-123',
       email: 'test@example.com',
@@ -1264,7 +1274,10 @@ describe('AuthService', () => {
       };
       const userWithToken = {
         ...mockUser,
-        refreshToken: crypto.createHash('sha256').update('valid-refresh-token').digest('hex'),
+        refreshToken: crypto
+          .createHash('sha256')
+          .update('valid-refresh-token')
+          .digest('hex'),
         tenant: mockTenant,
       };
 
@@ -1369,7 +1382,10 @@ describe('AuthService', () => {
 
       await service.getMe(mockUser.id);
 
-      const expectedHash = crypto.createHash('sha256').update(mockTokens.refreshToken).digest('hex');
+      const expectedHash = crypto
+        .createHash('sha256')
+        .update(mockTokens.refreshToken)
+        .digest('hex');
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
         data: { refreshToken: expectedHash },
@@ -1389,7 +1405,10 @@ describe('AuthService', () => {
 
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { id: mockUser.id },
-        include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
+        include: {
+          tenant: true,
+          warehouse: { select: { id: true, name: true, code: true } },
+        },
       });
     });
 
@@ -1681,10 +1700,16 @@ describe('AuthService', () => {
 
       await service.verifyEmail(validToken);
 
-      const hashedToken = crypto.createHash('sha256').update(validToken).digest('hex');
+      const hashedToken = crypto
+        .createHash('sha256')
+        .update(validToken)
+        .digest('hex');
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { verificationToken: hashedToken },
-        include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
+        include: {
+          tenant: true,
+          warehouse: { select: { id: true, name: true, code: true } },
+        },
       });
     });
   });
@@ -2095,7 +2120,10 @@ describe('AuthService', () => {
           status: UserStatus.ACTIVE,
           emailVerified: true,
         }),
-        include: { tenant: true, warehouse: { select: { id: true, name: true, code: true } } },
+        include: {
+          tenant: true,
+          warehouse: { select: { id: true, name: true, code: true } },
+        },
       });
     });
 
@@ -2128,7 +2156,10 @@ describe('AuthService', () => {
 
       await service.acceptInvitation(acceptDto);
 
-      const expectedHash = crypto.createHash('sha256').update(mockTokens.refreshToken).digest('hex');
+      const expectedHash = crypto
+        .createHash('sha256')
+        .update(mockTokens.refreshToken)
+        .digest('hex');
       expect(prismaService.user.update).toHaveBeenCalledWith({
         where: { id: createdUser.id },
         data: {
@@ -2629,7 +2660,10 @@ describe('AuthService', () => {
         const updateCalls = (prismaService.user.update as jest.Mock).mock
           .calls as Array<[{ data: Record<string, unknown> }]>;
         const lastCall = updateCalls[updateCalls.length - 1];
-        const expectedHash = crypto.createHash('sha256').update(mockTokens.refreshToken).digest('hex');
+        const expectedHash = crypto
+          .createHash('sha256')
+          .update(mockTokens.refreshToken)
+          .digest('hex');
         expect(lastCall[0].data.refreshToken).toBe(expectedHash);
         expect(lastCall[0].data.lastLoginAt).toBeInstanceOf(Date);
       });
@@ -3291,9 +3325,7 @@ describe('AuthService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'Admin notification error for verified user',
-        ),
+        expect.stringContaining('Admin notification error for verified user'),
         expect.any(String),
       );
     });
@@ -3308,9 +3340,7 @@ describe('AuthService', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'Admin notification error for verified user',
-        ),
+        expect.stringContaining('Admin notification error for verified user'),
         undefined,
       );
     });

@@ -217,9 +217,9 @@ describe('CostCentersService', () => {
         id: 'cc-other',
       });
 
-      await expect(
-        service.update('cc-1', { code: 'VEN' }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.update('cc-1', { code: 'VEN' })).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should skip uniqueness check when code unchanged', async () => {
@@ -288,9 +288,7 @@ describe('CostCentersService', () => {
       );
       (prisma.journalEntryLine.count as jest.Mock).mockResolvedValue(3);
 
-      await expect(service.remove('cc-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.remove('cc-1')).rejects.toThrow(BadRequestException);
     });
   });
 

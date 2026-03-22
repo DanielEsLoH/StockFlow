@@ -699,7 +699,10 @@ export class DashboardService {
    * Gets sales aggregated by category.
    * Optimized to use a single SQL query with JOINs instead of loading all items in memory.
    */
-  async getSalesByCategory(tenantId: string, days?: number): Promise<SalesByCategory[]> {
+  async getSalesByCategory(
+    tenantId: string,
+    days?: number,
+  ): Promise<SalesByCategory[]> {
     // Calculate start date if days is provided
     const startDate = days
       ? new Date(new Date().setDate(new Date().getDate() - days))
@@ -761,7 +764,11 @@ export class DashboardService {
     const tenantId = this.tenantContext.requireTenantId();
 
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
 
     // Dynamic period based on days parameter
     const startOfPeriod = new Date(now);
@@ -772,7 +779,9 @@ export class DashboardService {
     const startOfPreviousPeriod = new Date(startOfPeriod);
     startOfPreviousPeriod.setDate(startOfPreviousPeriod.getDate() - days);
     const endOfPreviousPeriod = new Date(startOfPeriod);
-    endOfPreviousPeriod.setMilliseconds(endOfPreviousPeriod.getMilliseconds() - 1);
+    endOfPreviousPeriod.setMilliseconds(
+      endOfPreviousPeriod.getMilliseconds() - 1,
+    );
 
     // Base where clause excluding cancelled invoices
     const baseInvoiceWhere = {
@@ -1422,16 +1431,38 @@ export class DashboardService {
     ]);
 
     const steps = [
-      { key: 'warehouse', label: 'Crear al menos una bodega', done: warehouseCount > 0 },
-      { key: 'products', label: 'Agregar productos al inventario', done: productCount > 0 },
-      { key: 'customers', label: 'Registrar al menos un cliente', done: customerCount > 0 },
-      { key: 'accounting', label: 'Configurar plan de cuentas (PUC)', done: accountCount > 0 },
+      {
+        key: 'warehouse',
+        label: 'Crear al menos una bodega',
+        done: warehouseCount > 0,
+      },
+      {
+        key: 'products',
+        label: 'Agregar productos al inventario',
+        done: productCount > 0,
+      },
+      {
+        key: 'customers',
+        label: 'Registrar al menos un cliente',
+        done: customerCount > 0,
+      },
+      {
+        key: 'accounting',
+        label: 'Configurar plan de cuentas (PUC)',
+        done: accountCount > 0,
+      },
       {
         key: 'accountingConfig',
         label: 'Vincular cuentas contables principales',
-        done: !!(accountingConfig?.cashAccountId && accountingConfig?.revenueAccountId),
+        done: !!(
+          accountingConfig?.cashAccountId && accountingConfig?.revenueAccountId
+        ),
       },
-      { key: 'dian', label: 'Configurar facturación electrónica DIAN', done: !!dianConfig?.nit },
+      {
+        key: 'dian',
+        label: 'Configurar facturación electrónica DIAN',
+        done: !!dianConfig?.nit,
+      },
     ];
 
     const doneCount = steps.filter((s) => s.done).length;

@@ -1123,7 +1123,9 @@ describe('UsersController', () => {
 
         await controller.getUserPermissions('user-123', adminCurrentUser);
 
-        expect(permissionsService.getUserPermissionsDetail).toHaveBeenCalledWith(
+        expect(
+          permissionsService.getUserPermissionsDetail,
+        ).toHaveBeenCalledWith(
           'user-123',
           mockUser.role,
           adminCurrentUser.tenantId,
@@ -1158,7 +1160,10 @@ describe('UsersController', () => {
 
         await controller.grantPermission(
           'user-123',
-          { permission: Permission.POS_REFUND, reason: 'Promoted to cashier lead' },
+          {
+            permission: Permission.POS_REFUND,
+            reason: 'Promoted to cashier lead',
+          },
           adminCurrentUser,
         );
 

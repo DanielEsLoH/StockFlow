@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { BankStatementStatus, ReconciliationStatus } from '@prisma/client';
 import { BankStatementsService } from './bank-statements.service';
 import { PrismaService } from '../prisma';

@@ -280,8 +280,7 @@ export class DianClientService {
           throw lastError;
         }
 
-        const delay =
-          this.retryBaseDelayMs * Math.pow(2, attempt);
+        const delay = this.retryBaseDelayMs * Math.pow(2, attempt);
         this.logger.warn(
           `DIAN request failed (attempt ${attempt + 1}/${this.maxRetries + 1}), retrying in ${delay}ms: ${lastError.message}`,
         );

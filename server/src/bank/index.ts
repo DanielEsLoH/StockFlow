@@ -8,4 +8,8 @@ export type {
   BankStatementLineResponse,
 } from './bank-statements.service';
 export type { ReconciliationResult } from './bank-reconciliation.service';
-export { CreateBankAccountDto, UpdateBankAccountDto, ImportStatementDto } from './dto';
+export {
+  CreateBankAccountDto,
+  UpdateBankAccountDto,
+  ImportStatementDto,
+} from './dto';

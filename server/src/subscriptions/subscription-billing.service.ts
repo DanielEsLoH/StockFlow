@@ -169,17 +169,15 @@ export class SubscriptionBillingService {
    * remaining to communicate urgency. The SubscriptionExpiryService will
    * handle the actual expiration if no manual payment is made.
    */
-  private async notifyChargeFailed(
-    subscription: {
-      tenantId: string;
-      plan: string;
-      endDate: Date;
-      tenant: {
-        name: string;
-        users: { email: string; firstName: string }[];
-      };
-    },
-  ): Promise<void> {
+  private async notifyChargeFailed(subscription: {
+    tenantId: string;
+    plan: string;
+    endDate: Date;
+    tenant: {
+      name: string;
+      users: { email: string; firstName: string }[];
+    };
+  }): Promise<void> {
     const planKey = subscription.plan as keyof typeof PLAN_LIMITS;
     const planLimits = PLAN_LIMITS[planKey];
     const daysRemaining = Math.max(

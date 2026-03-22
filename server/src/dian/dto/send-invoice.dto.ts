@@ -162,7 +162,9 @@ export class SetNoteConfigDto {
 // ─── POS Documento Equivalente ─────────────────────────────────────────────
 
 export class ProcessPOSSaleDto {
-  @ApiProperty({ description: 'ID de la factura POS a enviar como documento equivalente' })
+  @ApiProperty({
+    description: 'ID de la factura POS a enviar como documento equivalente',
+  })
   @IsString()
   invoiceId: string;
 
@@ -173,7 +175,9 @@ export class ProcessPOSSaleDto {
 }
 
 export class GenerateNotaAjusteDto {
-  @ApiProperty({ description: 'ID del documento equivalente original (DianDocument ID)' })
+  @ApiProperty({
+    description: 'ID del documento equivalente original (DianDocument ID)',
+  })
   @IsString()
   documentoEquivalenteId: string;
 
@@ -185,7 +189,9 @@ export class GenerateNotaAjusteDto {
   @IsString()
   reason: string;
 
-  @ApiPropertyOptional({ description: 'Items parciales (si no se envian, se ajusta todo)' })
+  @ApiPropertyOptional({
+    description: 'Items parciales (si no se envian, se ajusta todo)',
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

@@ -32,9 +32,7 @@ describe('BankAccountsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BankAccountsController],
-      providers: [
-        { provide: BankAccountsService, useValue: mockService },
-      ],
+      providers: [{ provide: BankAccountsService, useValue: mockService }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -101,7 +99,9 @@ describe('BankAccountsController', () => {
     it('should propagate NotFoundException', async () => {
       service.findOne.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findOne('invalid')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -123,7 +123,9 @@ describe('BankAccountsController', () => {
     it('should propagate ConflictException for duplicate account number', async () => {
       service.create.mockRejectedValue(new ConflictException());
 
-      await expect(controller.create(createDto as any)).rejects.toThrow(ConflictException);
+      await expect(controller.create(createDto as any)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -140,7 +142,9 @@ describe('BankAccountsController', () => {
     it('should propagate NotFoundException', async () => {
       service.update.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.update('invalid', {} as any)).rejects.toThrow(NotFoundException);
+      await expect(controller.update('invalid', {} as any)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

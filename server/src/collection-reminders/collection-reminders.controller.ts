@@ -196,9 +196,7 @@ export class CollectionRemindersController {
     description: 'No autorizado - Token JWT invalido o faltante',
   })
   @ApiResponse({ status: 404, description: 'Recordatorio no encontrado' })
-  async findOne(
-    @Param('id') id: string,
-  ): Promise<CollectionReminderResponse> {
+  async findOne(@Param('id') id: string): Promise<CollectionReminderResponse> {
     this.logger.log(`Getting reminder: ${id}`);
     return this.collectionRemindersService.findOne(id);
   }
@@ -299,9 +297,7 @@ export class CollectionRemindersController {
     description: 'No autorizado - Token JWT invalido o faltante',
   })
   @ApiResponse({ status: 404, description: 'Recordatorio no encontrado' })
-  async cancel(
-    @Param('id') id: string,
-  ): Promise<CollectionReminderResponse> {
+  async cancel(@Param('id') id: string): Promise<CollectionReminderResponse> {
     this.logger.log(`Cancelling reminder: ${id}`);
     return this.collectionRemindersService.cancel(id);
   }
@@ -336,9 +332,7 @@ export class CollectionRemindersController {
     description: 'No autorizado - Token JWT invalido o faltante',
   })
   @ApiResponse({ status: 404, description: 'Recordatorio no encontrado' })
-  async markSent(
-    @Param('id') id: string,
-  ): Promise<CollectionReminderResponse> {
+  async markSent(@Param('id') id: string): Promise<CollectionReminderResponse> {
     this.logger.log(`Marking reminder as sent: ${id}`);
     return this.collectionRemindersService.markSent(id);
   }

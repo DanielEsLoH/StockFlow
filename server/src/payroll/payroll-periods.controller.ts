@@ -89,7 +89,9 @@ export class PayrollPeriodsController {
 
   @Post(':id/submit-dian')
   @RequirePermissions(Permission.PAYROLL_APPROVE)
-  @ApiOperation({ summary: 'Firmar y enviar todas las entradas del periodo a DIAN' })
+  @ApiOperation({
+    summary: 'Firmar y enviar todas las entradas del periodo a DIAN',
+  })
   @ApiParam({ name: 'id', type: String })
   async submitToDian(@Param('id') id: string) {
     return this.payrollDianService.submitPeriod(id);

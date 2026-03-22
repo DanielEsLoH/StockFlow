@@ -18,7 +18,9 @@ export class FilterMovementsDto extends PaginationDto {
     example: 'clxxxxxxxxxxxxxxxxxxxxxxxxx',
   })
   @IsString({ message: 'El ID del producto debe ser una cadena de texto' })
-  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID del producto debe ser un CUID valido' })
+  @Matches(/^c[a-z0-9]{24,}$/, {
+    message: 'El ID del producto debe ser un CUID valido',
+  })
   @IsOptional()
   productId?: string;
 
@@ -31,7 +33,9 @@ export class FilterMovementsDto extends PaginationDto {
     example: 'clxxxxxxxxxxxxxxxxxxxxxxxxx',
   })
   @IsString({ message: 'El ID del almacen debe ser una cadena de texto' })
-  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID del almacen debe ser un CUID valido' })
+  @Matches(/^c[a-z0-9]{24,}$/, {
+    message: 'El ID del almacen debe ser un CUID valido',
+  })
   @IsOptional()
   warehouseId?: string;
 

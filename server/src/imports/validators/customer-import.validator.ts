@@ -71,9 +71,7 @@ export class CustomerImportValidator implements ImportValidator {
     // --- Required: tipo_documento -> documentType ---
     const tipoDoc = row['tipo_documento']?.trim().toUpperCase();
     if (!tipoDoc) {
-      errors.push(
-        `Fila ${rowIndex}: El tipo de documento es obligatorio`,
-      );
+      errors.push(`Fila ${rowIndex}: El tipo de documento es obligatorio`);
     } else if (!VALID_DOCUMENT_TYPES.includes(tipoDoc)) {
       errors.push(
         `Fila ${rowIndex}: El tipo de documento debe ser CC, NIT, RUT, PASSPORT, CE, DNI u OTHER`,
@@ -100,9 +98,7 @@ export class CustomerImportValidator implements ImportValidator {
     const correo = row['correo']?.trim();
     if (correo) {
       if (!this.isValidEmail(correo)) {
-        errors.push(
-          `Fila ${rowIndex}: El correo electronico no es valido`,
-        );
+        errors.push(`Fila ${rowIndex}: El correo electronico no es valido`);
       } else {
         data.email = correo;
       }

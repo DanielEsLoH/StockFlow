@@ -266,7 +266,9 @@ describe('UsersService', () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
       (prismaService.user.create as jest.Mock).mockResolvedValue(newUser);
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
     });
 
     it('should create a new user', async () => {
@@ -1026,7 +1028,9 @@ describe('UsersService', () => {
         ...mockUser,
         id: 'new-id',
       });
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
 
       await service.create({
         email: 'new@example.com',
@@ -1096,9 +1100,7 @@ describe('UsersService', () => {
 
       await expect(
         service.update('user-123', warehouseUpdate, currentEmployee),
-      ).rejects.toThrow(
-        'Only administrators can change warehouse assignments',
-      );
+      ).rejects.toThrow('Only administrators can change warehouse assignments');
     });
 
     it('should allow admin to change warehouse assignment', async () => {
@@ -1239,19 +1241,13 @@ describe('UsersService', () => {
     });
 
     it('should require tenant context', async () => {
-      await service.updateAvatar(
-        'user-123',
-        'https://example.com/avatar.png',
-      );
+      await service.updateAvatar('user-123', 'https://example.com/avatar.png');
 
       expect(tenantContextService.requireTenantId).toHaveBeenCalled();
     });
 
     it('should find user scoped to tenant', async () => {
-      await service.updateAvatar(
-        'user-123',
-        'https://example.com/avatar.png',
-      );
+      await service.updateAvatar('user-123', 'https://example.com/avatar.png');
 
       expect(prismaService.user.findFirst).toHaveBeenCalledWith({
         where: { id: 'user-123', tenantId: mockTenantId },

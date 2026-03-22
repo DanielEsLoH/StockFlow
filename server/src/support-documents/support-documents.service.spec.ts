@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { SupportDocumentStatus } from '@prisma/client';
 import { SupportDocumentsService } from './support-documents.service';
 import { SupportDocumentXmlService } from './support-document-xml.service';
@@ -100,9 +96,7 @@ describe('SupportDocumentsService', () => {
       tenantDianConfig: {
         findUnique: jest.fn().mockResolvedValue(null),
       },
-      $transaction: jest
-        .fn()
-        .mockImplementation((fn) => fn(mockPrismaService)),
+      $transaction: jest.fn().mockImplementation((fn) => fn(mockPrismaService)),
     };
 
     const mockTenantContextService = {
@@ -112,7 +106,9 @@ describe('SupportDocumentsService', () => {
     const mockXmlService = {
       generateCuds: jest.fn().mockReturnValue('mock-cuds-hash'),
       generateQrCodeData: jest.fn().mockReturnValue('mock-qr-data'),
-      generateSupportDocumentXml: jest.fn().mockReturnValue('<Invoice>mock</Invoice>'),
+      generateSupportDocumentXml: jest
+        .fn()
+        .mockReturnValue('<Invoice>mock</Invoice>'),
     };
 
     const mockCacheService = {
@@ -170,9 +166,9 @@ describe('SupportDocumentsService', () => {
       (
         mockPrismaService.supportDocument.findFirst as jest.Mock
       ).mockResolvedValue(null);
-      (
-        mockPrismaService.supportDocument.create as jest.Mock
-      ).mockResolvedValue(mockDocument);
+      (mockPrismaService.supportDocument.create as jest.Mock).mockResolvedValue(
+        mockDocument,
+      );
       (
         mockPrismaService.supportDocumentItem.createMany as jest.Mock
       ).mockResolvedValue({ count: 1 });
@@ -219,9 +215,9 @@ describe('SupportDocumentsService', () => {
       (
         mockPrismaService.supportDocument.findFirst as jest.Mock
       ).mockResolvedValue(null);
-      (
-        mockPrismaService.supportDocument.create as jest.Mock
-      ).mockResolvedValue(mockDocument);
+      (mockPrismaService.supportDocument.create as jest.Mock).mockResolvedValue(
+        mockDocument,
+      );
       (
         mockPrismaService.supportDocumentItem.createMany as jest.Mock
       ).mockResolvedValue({ count: 1 });
@@ -300,9 +296,9 @@ describe('SupportDocumentsService', () => {
       (
         mockPrismaService.supportDocument.findFirst as jest.Mock
       ).mockResolvedValue(null);
-      (
-        mockPrismaService.supportDocument.create as jest.Mock
-      ).mockResolvedValue(mockDocument);
+      (mockPrismaService.supportDocument.create as jest.Mock).mockResolvedValue(
+        mockDocument,
+      );
       (
         mockPrismaService.supportDocumentItem.createMany as jest.Mock
       ).mockResolvedValue({ count: 1 });
@@ -324,9 +320,9 @@ describe('SupportDocumentsService', () => {
       (
         mockPrismaService.supportDocument.findFirst as jest.Mock
       ).mockResolvedValue(null);
-      (
-        mockPrismaService.supportDocument.create as jest.Mock
-      ).mockResolvedValue(mockDocument);
+      (mockPrismaService.supportDocument.create as jest.Mock).mockResolvedValue(
+        mockDocument,
+      );
       (
         mockPrismaService.supportDocumentItem.createMany as jest.Mock
       ).mockResolvedValue({ count: 1 });
@@ -505,9 +501,9 @@ describe('SupportDocumentsService', () => {
         supplierName: 'Pedro Lopez',
         notes: 'Updated notes',
       };
-      (
-        mockPrismaService.supportDocument.update as jest.Mock
-      ).mockResolvedValue(updatedDoc);
+      (mockPrismaService.supportDocument.update as jest.Mock).mockResolvedValue(
+        updatedDoc,
+      );
 
       const result = await service.update('sd-1', {
         supplierName: 'Pedro Lopez',
@@ -546,9 +542,9 @@ describe('SupportDocumentsService', () => {
           },
         ],
       };
-      (
-        mockPrismaService.supportDocument.update as jest.Mock
-      ).mockResolvedValue(updatedDoc);
+      (mockPrismaService.supportDocument.update as jest.Mock).mockResolvedValue(
+        updatedDoc,
+      );
 
       const result = await service.update('sd-1', {
         items: [
@@ -585,9 +581,9 @@ describe('SupportDocumentsService', () => {
         status: SupportDocumentStatus.GENERATED,
       });
 
-      await expect(
-        service.update('sd-1', { notes: 'test' }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.update('sd-1', { notes: 'test' })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException when supplierId is invalid', async () => {
@@ -632,9 +628,7 @@ describe('SupportDocumentsService', () => {
         status: SupportDocumentStatus.GENERATED,
       });
 
-      await expect(service.remove('sd-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.remove('sd-1')).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException when document is SENT', async () => {
@@ -643,9 +637,7 @@ describe('SupportDocumentsService', () => {
         status: SupportDocumentStatus.SENT,
       });
 
-      await expect(service.remove('sd-1')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.remove('sd-1')).rejects.toThrow(BadRequestException);
     });
   });
 

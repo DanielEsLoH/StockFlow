@@ -73,11 +73,7 @@ export class SupplierImportValidator implements ImportValidator {
         'persona_contacto',
         'contact',
       ],
-      telefono_contacto: [
-        'contact_phone',
-        'tel_contacto',
-        'celular_contacto',
-      ],
+      telefono_contacto: ['contact_phone', 'tel_contacto', 'celular_contacto'],
     };
   }
 
@@ -105,9 +101,7 @@ export class SupplierImportValidator implements ImportValidator {
     // --- Required: tipo_documento -> documentType ---
     const tipoDoc = row['tipo_documento']?.trim().toUpperCase();
     if (!tipoDoc) {
-      errors.push(
-        `Fila ${rowIndex}: El tipo de documento es obligatorio`,
-      );
+      errors.push(`Fila ${rowIndex}: El tipo de documento es obligatorio`);
     } else if (!VALID_DOCUMENT_TYPES.includes(tipoDoc)) {
       errors.push(
         `Fila ${rowIndex}: El tipo de documento debe ser CC, NIT, RUT, PASSPORT, CE, DNI u OTHER`,
@@ -134,9 +128,7 @@ export class SupplierImportValidator implements ImportValidator {
     const correo = row['correo']?.trim();
     if (correo) {
       if (!this.isValidEmail(correo)) {
-        errors.push(
-          `Fila ${rowIndex}: El correo electronico no es valido`,
-        );
+        errors.push(`Fila ${rowIndex}: El correo electronico no es valido`);
       } else {
         data.email = correo;
       }

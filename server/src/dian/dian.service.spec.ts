@@ -155,10 +155,16 @@ describe('DianService', () => {
 
     const mockXmlGeneratorService = {
       generateInvoiceXml: jest.fn().mockReturnValue('<xml>generated</xml>'),
-      generateCreditNoteXml: jest.fn().mockReturnValue('<xml>credit-note</xml>'),
+      generateCreditNoteXml: jest
+        .fn()
+        .mockReturnValue('<xml>credit-note</xml>'),
       generateDebitNoteXml: jest.fn().mockReturnValue('<xml>debit-note</xml>'),
-      generateDocumentoEquivalenteXml: jest.fn().mockReturnValue('<xml>documento-equivalente</xml>'),
-      generateNotaAjusteXml: jest.fn().mockReturnValue('<xml>nota-ajuste</xml>'),
+      generateDocumentoEquivalenteXml: jest
+        .fn()
+        .mockReturnValue('<xml>documento-equivalente</xml>'),
+      generateNotaAjusteXml: jest
+        .fn()
+        .mockReturnValue('<xml>nota-ajuste</xml>'),
     };
 
     const mockCufeGeneratorService = {
@@ -216,7 +222,10 @@ describe('DianService', () => {
         { provide: CufeGeneratorService, useValue: mockCufeGeneratorService },
         { provide: DianClientService, useValue: mockDianClientService },
         { provide: XmlSignerService, useValue: mockXmlSignerService },
-        { provide: AccountingBridgeService, useValue: mockAccountingBridgeService },
+        {
+          provide: AccountingBridgeService,
+          useValue: mockAccountingBridgeService,
+        },
         {
           provide: EventXmlGeneratorService,
           useValue: {
@@ -1137,35 +1146,33 @@ describe('DianService', () => {
         creditNotePrefix: null,
       });
 
-      await expect(
-        service.processCreditNote(creditNoteDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processCreditNote(creditNoteDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when no DIAN config exists', async () => {
-      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.processCreditNote(creditNoteDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processCreditNote(creditNoteDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException when invoice not found', async () => {
       (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.processCreditNote(creditNoteDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.processCreditNote(creditNoteDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when original document not accepted by DIAN', async () => {
       (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.processCreditNote(creditNoteDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processCreditNote(creditNoteDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when item not found in original invoice', async () => {
@@ -1174,9 +1181,9 @@ describe('DianService', () => {
         items: [{ invoiceItemId: 'nonexistent-item', quantity: 1 }],
       };
 
-      await expect(
-        service.processCreditNote(dtoWithBadItem),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processCreditNote(dtoWithBadItem)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when quantity exceeds original', async () => {
@@ -1185,9 +1192,9 @@ describe('DianService', () => {
         items: [{ invoiceItemId: 'item-123', quantity: 999 }],
       };
 
-      await expect(
-        service.processCreditNote(dtoWithExcessQty),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processCreditNote(dtoWithExcessQty)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should set REJECTED status when DIAN rejects credit note', async () => {
@@ -1362,9 +1369,7 @@ describe('DianService', () => {
       expect(result.success).toBe(true);
       expect(result.status).toBe(DianDocumentStatus.ACCEPTED);
       expect(result.cufe).toBe('cude-generated');
-      expect(result.message).toBe(
-        'Nota debito enviada y aceptada por la DIAN',
-      );
+      expect(result.message).toBe('Nota debito enviada y aceptada por la DIAN');
       expect(cufeGenerator.generateCude).toHaveBeenCalled();
       expect(xmlGenerator.generateDebitNoteXml).toHaveBeenCalled();
     });
@@ -1379,7 +1384,12 @@ describe('DianService', () => {
       const dtoWithMultipleItems = {
         ...debitNoteDto,
         items: [
-          { description: 'Item 1', quantity: 2, unitPrice: 100000, taxRate: 19 },
+          {
+            description: 'Item 1',
+            quantity: 2,
+            unitPrice: 100000,
+            taxRate: 19,
+          },
           { description: 'Item 2', quantity: 1, unitPrice: 50000, taxRate: 19 },
         ],
       };
@@ -1440,25 +1450,25 @@ describe('DianService', () => {
         debitNotePrefix: null,
       });
 
-      await expect(
-        service.processDebitNote(debitNoteDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processDebitNote(debitNoteDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when original document not accepted', async () => {
       (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.processDebitNote(debitNoteDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processDebitNote(debitNoteDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException when invoice not found', async () => {
       (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.processDebitNote(debitNoteDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.processDebitNote(debitNoteDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should set REJECTED status when DIAN rejects debit note', async () => {
@@ -1671,9 +1681,9 @@ describe('DianService', () => {
         posResolutionPrefix: null,
       });
 
-      await expect(
-        service.processPOSSale(posSaleDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processPOSSale(posSaleDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should process a POS sale and create a DOCUMENTO_EQUIVALENTE DianDocument', async () => {
@@ -1803,9 +1813,9 @@ describe('DianService', () => {
     it('should throw BadRequestException if documentoEquivalenteId does not exist', async () => {
       (prisma.dianDocument.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.processNotaAjuste(notaAjusteDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processNotaAjuste(notaAjusteDto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should create a NOTA_AJUSTE DianDocument referencing the original documento equivalente', async () => {
@@ -1924,9 +1934,7 @@ describe('DianService', () => {
     });
 
     it('should throw if no config exists', async () => {
-      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (prisma.tenantDianConfig.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(
         service.setPosResolution(setPosResolutionDto),

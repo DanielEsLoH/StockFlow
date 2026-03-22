@@ -127,9 +127,7 @@ export function createInvoiceTemplate(
   const companyName = data.tenant.businessName || data.tenant.name;
 
   // Header with company info and invoice details
-  const companyStack: Content[] = [
-    { text: companyName, style: 'companyName' },
-  ];
+  const companyStack: Content[] = [{ text: companyName, style: 'companyName' }];
   if (data.tenant.nit) {
     companyStack.push({
       text: `NIT: ${data.tenant.nit}-${data.tenant.dv || ''}`,
@@ -152,9 +150,7 @@ export function createInvoiceTemplate(
 
   const invoiceStack: Content[] = [
     {
-      text: hasDianConfig
-        ? 'FACTURA ELECTRÓNICA DE VENTA'
-        : 'FACTURA',
+      text: hasDianConfig ? 'FACTURA ELECTRÓNICA DE VENTA' : 'FACTURA',
       style: 'invoiceTitle',
     },
     { text: data.invoice.invoiceNumber, style: 'invoiceNumber' },

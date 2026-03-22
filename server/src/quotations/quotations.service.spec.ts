@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/require-await, @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { QuotationStatus, TaxCategory } from '@prisma/client';
 import { QuotationsService } from './quotations.service';
 import { PrismaService } from '../prisma';
@@ -190,7 +186,10 @@ describe('QuotationsService', () => {
           useValue: {
             getLatestRate: jest
               .fn()
-              .mockResolvedValue({ rate: { toNumber: () => 1 }, source: 'manual' }),
+              .mockResolvedValue({
+                rate: { toNumber: () => 1 },
+                source: 'manual',
+              }),
             convertAmount: jest.fn(),
           },
         },
@@ -643,9 +642,9 @@ describe('QuotationsService', () => {
     it('should throw NotFoundException when quotation not found', async () => {
       (prismaService.quotation.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.update('nonexistent', updateDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update('nonexistent', updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when quotation is not DRAFT', async () => {
@@ -654,12 +653,10 @@ describe('QuotationsService', () => {
         status: QuotationStatus.SENT,
       });
 
-      await expect(
-        service.update('quotation-123', updateDto),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.update('quotation-123', updateDto),
-      ).rejects.toThrow(
+      await expect(service.update('quotation-123', updateDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.update('quotation-123', updateDto)).rejects.toThrow(
         'Solo se pueden editar cotizaciones en estado borrador',
       );
     });
@@ -931,9 +928,9 @@ describe('QuotationsService', () => {
     it('should throw NotFoundException when quotation not found', async () => {
       (prismaService.quotation.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.convert('nonexistent', mockUserId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.convert('nonexistent', mockUserId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when quotation is not ACCEPTED', async () => {

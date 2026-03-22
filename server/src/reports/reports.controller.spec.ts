@@ -93,7 +93,9 @@ describe('ReportsController', () => {
     };
 
     const mockExogenaService = {
-      generateExogena: jest.fn().mockResolvedValue({ year: 2026, formatos: [] }),
+      generateExogena: jest
+        .fn()
+        .mockResolvedValue({ year: 2026, formatos: [] }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -101,7 +103,10 @@ describe('ReportsController', () => {
       providers: [
         { provide: ReportsService, useValue: mockReportsService },
         { provide: ArcjetService, useValue: mockArcjetService },
-        { provide: AccountingReportsService, useValue: mockAccountingReportsService },
+        {
+          provide: AccountingReportsService,
+          useValue: mockAccountingReportsService,
+        },
         { provide: ExogenaService, useValue: mockExogenaService },
       ],
     }).compile();
@@ -852,12 +857,16 @@ describe('ReportsController', () => {
 
     describe('PDF format', () => {
       it('should return PDF buffer from service', async () => {
-        reportsService.generateCostCenterBalanceReport.mockResolvedValue(mockPdfBuffer);
+        reportsService.generateCostCenterBalanceReport.mockResolvedValue(
+          mockPdfBuffer,
+        );
         const res = mockResponse();
 
         await controller.getCostCenterBalanceReport(mockCCBalanceQueryPdf, res);
 
-        expect(reportsService.generateCostCenterBalanceReport).toHaveBeenCalledWith(
+        expect(
+          reportsService.generateCostCenterBalanceReport,
+        ).toHaveBeenCalledWith(
           mockCCBalanceQueryPdf.fromDate,
           mockCCBalanceQueryPdf.toDate,
           ReportFormat.PDF,
@@ -867,7 +876,9 @@ describe('ReportsController', () => {
       });
 
       it('should set correct PDF response headers', async () => {
-        reportsService.generateCostCenterBalanceReport.mockResolvedValue(mockPdfBuffer);
+        reportsService.generateCostCenterBalanceReport.mockResolvedValue(
+          mockPdfBuffer,
+        );
         const res = mockResponse();
 
         await controller.getCostCenterBalanceReport(mockCCBalanceQueryPdf, res);
@@ -882,12 +893,19 @@ describe('ReportsController', () => {
 
     describe('Excel format', () => {
       it('should return Excel buffer from service', async () => {
-        reportsService.generateCostCenterBalanceReport.mockResolvedValue(mockExcelBuffer);
+        reportsService.generateCostCenterBalanceReport.mockResolvedValue(
+          mockExcelBuffer,
+        );
         const res = mockResponse();
 
-        await controller.getCostCenterBalanceReport(mockCCBalanceQueryExcel, res);
+        await controller.getCostCenterBalanceReport(
+          mockCCBalanceQueryExcel,
+          res,
+        );
 
-        expect(reportsService.generateCostCenterBalanceReport).toHaveBeenCalledWith(
+        expect(
+          reportsService.generateCostCenterBalanceReport,
+        ).toHaveBeenCalledWith(
           mockCCBalanceQueryExcel.fromDate,
           mockCCBalanceQueryExcel.toDate,
           ReportFormat.EXCEL,
@@ -897,10 +915,15 @@ describe('ReportsController', () => {
       });
 
       it('should set correct Excel response headers', async () => {
-        reportsService.generateCostCenterBalanceReport.mockResolvedValue(mockExcelBuffer);
+        reportsService.generateCostCenterBalanceReport.mockResolvedValue(
+          mockExcelBuffer,
+        );
         const res = mockResponse();
 
-        await controller.getCostCenterBalanceReport(mockCCBalanceQueryExcel, res);
+        await controller.getCostCenterBalanceReport(
+          mockCCBalanceQueryExcel,
+          res,
+        );
 
         expect(res.set).toHaveBeenCalledWith(
           expect.objectContaining({

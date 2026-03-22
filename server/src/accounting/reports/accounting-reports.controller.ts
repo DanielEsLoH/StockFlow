@@ -35,11 +35,13 @@ export class AccountingReportsController {
   @Get('trial-balance')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Get trial balance (Balance de Prueba)' })
-  @ApiQuery({ name: 'asOfDate', required: false, description: 'As-of date (YYYY-MM-DD), defaults to today' })
+  @ApiQuery({
+    name: 'asOfDate',
+    required: false,
+    description: 'As-of date (YYYY-MM-DD), defaults to today',
+  })
   @ApiResponse({ status: 200, description: 'Trial balance report' })
-  async getTrialBalance(
-    @Query('asOfDate') asOfDate?: string,
-  ) {
+  async getTrialBalance(@Query('asOfDate') asOfDate?: string) {
     const date = asOfDate ? this.parseDate(asOfDate) : new Date();
     return this.reportsService.getTrialBalance(date);
   }
@@ -47,8 +49,16 @@ export class AccountingReportsController {
   @Get('general-journal')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Get general journal (Libro Diario)' })
-  @ApiQuery({ name: 'fromDate', required: true, description: 'Start date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'toDate', required: true, description: 'End date (YYYY-MM-DD)' })
+  @ApiQuery({
+    name: 'fromDate',
+    required: true,
+    description: 'Start date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'toDate',
+    required: true,
+    description: 'End date (YYYY-MM-DD)',
+  })
   @ApiResponse({ status: 200, description: 'General journal report' })
   async getGeneralJournal(
     @Query('fromDate') fromDate: string,
@@ -64,9 +74,21 @@ export class AccountingReportsController {
   @Get('general-ledger')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Get general ledger (Libro Mayor)' })
-  @ApiQuery({ name: 'fromDate', required: true, description: 'Start date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'toDate', required: true, description: 'End date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'accountId', required: false, description: 'Filter by specific account ID' })
+  @ApiQuery({
+    name: 'fromDate',
+    required: true,
+    description: 'Start date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'toDate',
+    required: true,
+    description: 'End date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'accountId',
+    required: false,
+    description: 'Filter by specific account ID',
+  })
   @ApiResponse({ status: 200, description: 'General ledger report' })
   async getGeneralLedger(
     @Query('fromDate') fromDate: string,
@@ -84,11 +106,13 @@ export class AccountingReportsController {
   @Get('balance-sheet')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Get balance sheet (Balance General)' })
-  @ApiQuery({ name: 'asOfDate', required: false, description: 'As-of date (YYYY-MM-DD), defaults to today' })
+  @ApiQuery({
+    name: 'asOfDate',
+    required: false,
+    description: 'As-of date (YYYY-MM-DD), defaults to today',
+  })
   @ApiResponse({ status: 200, description: 'Balance sheet report' })
-  async getBalanceSheet(
-    @Query('asOfDate') asOfDate?: string,
-  ) {
+  async getBalanceSheet(@Query('asOfDate') asOfDate?: string) {
     const date = asOfDate ? this.parseDate(asOfDate) : new Date();
     return this.reportsService.getBalanceSheet(date);
   }
@@ -96,8 +120,16 @@ export class AccountingReportsController {
   @Get('income-statement')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Get income statement (Estado de Resultados)' })
-  @ApiQuery({ name: 'fromDate', required: true, description: 'Start date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'toDate', required: true, description: 'End date (YYYY-MM-DD)' })
+  @ApiQuery({
+    name: 'fromDate',
+    required: true,
+    description: 'Start date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'toDate',
+    required: true,
+    description: 'End date (YYYY-MM-DD)',
+  })
   @ApiResponse({ status: 200, description: 'Income statement report' })
   async getIncomeStatement(
     @Query('fromDate') fromDate: string,
@@ -113,8 +145,16 @@ export class AccountingReportsController {
   @Get('cash-flow')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Get cash flow statement (Flujo de Efectivo)' })
-  @ApiQuery({ name: 'fromDate', required: true, description: 'Start date (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'toDate', required: true, description: 'End date (YYYY-MM-DD)' })
+  @ApiQuery({
+    name: 'fromDate',
+    required: true,
+    description: 'Start date (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'toDate',
+    required: true,
+    description: 'End date (YYYY-MM-DD)',
+  })
   @ApiResponse({ status: 200, description: 'Cash flow report' })
   async getCashFlow(
     @Query('fromDate') fromDate: string,
@@ -130,11 +170,13 @@ export class AccountingReportsController {
   @Get('ar-aging')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Get AR aging report (Cartera CxC por Edades)' })
-  @ApiQuery({ name: 'asOfDate', required: false, description: 'As-of date (YYYY-MM-DD), defaults to today' })
+  @ApiQuery({
+    name: 'asOfDate',
+    required: false,
+    description: 'As-of date (YYYY-MM-DD), defaults to today',
+  })
   @ApiResponse({ status: 200, description: 'AR aging report' })
-  async getARAgingReport(
-    @Query('asOfDate') asOfDate?: string,
-  ) {
+  async getARAgingReport(@Query('asOfDate') asOfDate?: string) {
     const date = asOfDate ? this.parseDate(asOfDate) : new Date();
     return this.reportsService.getARAgingReport(date);
   }
@@ -142,11 +184,13 @@ export class AccountingReportsController {
   @Get('ap-aging')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Get AP aging report (Cartera CxP por Edades)' })
-  @ApiQuery({ name: 'asOfDate', required: false, description: 'As-of date (YYYY-MM-DD), defaults to today' })
+  @ApiQuery({
+    name: 'asOfDate',
+    required: false,
+    description: 'As-of date (YYYY-MM-DD), defaults to today',
+  })
   @ApiResponse({ status: 200, description: 'AP aging report' })
-  async getAPAgingReport(
-    @Query('asOfDate') asOfDate?: string,
-  ) {
+  async getAPAgingReport(@Query('asOfDate') asOfDate?: string) {
     const date = asOfDate ? this.parseDate(asOfDate) : new Date();
     return this.reportsService.getAPAgingReport(date);
   }
@@ -155,9 +199,15 @@ export class AccountingReportsController {
 
   @Get('iva-declaration')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
-  @ApiOperation({ summary: 'Get IVA declaration (Declaracion de IVA bimestral)' })
+  @ApiOperation({
+    summary: 'Get IVA declaration (Declaracion de IVA bimestral)',
+  })
   @ApiQuery({ name: 'year', required: true, description: 'Year (e.g. 2026)' })
-  @ApiQuery({ name: 'period', required: true, description: 'Bimonthly period 1-6 (1=Jan-Feb, 2=Mar-Apr, etc.)' })
+  @ApiQuery({
+    name: 'period',
+    required: true,
+    description: 'Bimonthly period 1-6 (1=Jan-Feb, 2=Mar-Apr, etc.)',
+  })
   @ApiResponse({ status: 200, description: 'IVA declaration report' })
   async getIvaDeclaration(
     @Query('year') year: string,
@@ -170,7 +220,9 @@ export class AccountingReportsController {
 
   @Get('retefuente-summary')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
-  @ApiOperation({ summary: 'Get ReteFuente summary (Resumen ReteFuente mensual)' })
+  @ApiOperation({
+    summary: 'Get ReteFuente summary (Resumen ReteFuente mensual)',
+  })
   @ApiQuery({ name: 'year', required: true, description: 'Year (e.g. 2026)' })
   @ApiQuery({ name: 'month', required: true, description: 'Month 1-12' })
   @ApiResponse({ status: 200, description: 'ReteFuente summary report' })
@@ -188,9 +240,7 @@ export class AccountingReportsController {
   @ApiOperation({ summary: 'Get YTD tax summary (Resumen Tributario)' })
   @ApiQuery({ name: 'year', required: true, description: 'Year (e.g. 2026)' })
   @ApiResponse({ status: 200, description: 'Year-to-date tax summary' })
-  async getYtdTaxSummary(
-    @Query('year') year: string,
-  ) {
+  async getYtdTaxSummary(@Query('year') year: string) {
     const y = this.parseYear(year);
     return this.reportsService.getYtdTaxSummary(y);
   }
@@ -198,7 +248,12 @@ export class AccountingReportsController {
   @Get('exogena')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Get información exógena (medios magnéticos)' })
-  @ApiQuery({ name: 'year', required: true, description: 'Tax year', type: Number })
+  @ApiQuery({
+    name: 'year',
+    required: true,
+    description: 'Tax year',
+    type: Number,
+  })
   @ApiResponse({ status: 200, description: 'Exogena report data' })
   async getExogena(@Query('year', ParseIntPipe) year: number) {
     return this.exogenaService.generateExogena(year);
@@ -207,7 +262,12 @@ export class AccountingReportsController {
   @Get('dashboard')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Dashboard contable con métricas agregadas' })
-  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Año (default: actual)' })
+  @ApiQuery({
+    name: 'year',
+    required: false,
+    type: Number,
+    description: 'Año (default: actual)',
+  })
   async getDashboard(@Query('year') year?: string) {
     const y = year ? parseInt(year, 10) : new Date().getFullYear();
     return this.reportsService.getDashboard(y);

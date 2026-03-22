@@ -16,7 +16,10 @@ import type {
   CollectionDashboard,
   OverdueInvoiceInfo,
 } from './collection-reminders.service';
-import type { CreateCollectionReminderDto, FilterCollectionRemindersDto } from './dto';
+import type {
+  CreateCollectionReminderDto,
+  FilterCollectionRemindersDto,
+} from './dto';
 
 describe('CollectionRemindersController', () => {
   let controller: CollectionRemindersController;

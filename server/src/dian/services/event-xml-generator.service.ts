@@ -36,8 +36,7 @@ export class EventXmlGeneratorService {
   } {
     const now = new Date();
     const issueDate = now.toISOString().split('T')[0];
-    const issueTime =
-      now.toTimeString().split(' ')[0] + '-05:00';
+    const issueTime = now.toTimeString().split(' ')[0] + '-05:00';
 
     const documentNumber = `EVT-${params.eventCode}-${params.invoiceNumber}`;
 
@@ -53,10 +52,7 @@ export class EventXmlGeneratorService {
       params.softwarePin,
     ].join('');
 
-    const cude = crypto
-      .createHash('sha384')
-      .update(cudeString)
-      .digest('hex');
+    const cude = crypto.createHash('sha384').update(cudeString).digest('hex');
 
     const eventName = EVENT_NAMES[params.eventCode];
     const rejectionNote =

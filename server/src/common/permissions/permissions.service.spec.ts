@@ -57,11 +57,15 @@ describe('PermissionsService', () => {
 
       expect(result).toEqual(Object.values(Permission));
       // Should not query database for SUPER_ADMIN
-      expect(prismaService.userPermissionOverride.findMany).not.toHaveBeenCalled();
+      expect(
+        prismaService.userPermissionOverride.findMany,
+      ).not.toHaveBeenCalled();
     });
 
     it('should return default role permissions for EMPLOYEE without overrides', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
       const result = await service.getUserPermissions(
         mockUserId,
@@ -69,14 +73,20 @@ describe('PermissionsService', () => {
         mockTenantId,
       );
 
-      expect(result).toEqual(expect.arrayContaining(DEFAULT_ROLE_PERMISSIONS[UserRole.EMPLOYEE]));
-      expect(result.length).toBe(DEFAULT_ROLE_PERMISSIONS[UserRole.EMPLOYEE].length);
+      expect(result).toEqual(
+        expect.arrayContaining(DEFAULT_ROLE_PERMISSIONS[UserRole.EMPLOYEE]),
+      );
+      expect(result.length).toBe(
+        DEFAULT_ROLE_PERMISSIONS[UserRole.EMPLOYEE].length,
+      );
     });
 
     it('should include granted permission overrides', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([
-        { permission: Permission.POS_REFUND, granted: true },
-      ]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([
+          { permission: Permission.POS_REFUND, granted: true },
+        ]);
 
       const result = await service.getUserPermissions(
         mockUserId,
@@ -88,9 +98,11 @@ describe('PermissionsService', () => {
     });
 
     it('should exclude revoked permission overrides', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([
-        { permission: Permission.POS_SELL, granted: false },
-      ]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([
+          { permission: Permission.POS_SELL, granted: false },
+        ]);
 
       const result = await service.getUserPermissions(
         mockUserId,
@@ -103,21 +115,35 @@ describe('PermissionsService', () => {
     });
 
     it('should cache permissions', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
       // First call
-      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
+      await service.getUserPermissions(
+        mockUserId,
+        UserRole.EMPLOYEE,
+        mockTenantId,
+      );
       // Second call should use cache
-      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
+      await service.getUserPermissions(
+        mockUserId,
+        UserRole.EMPLOYEE,
+        mockTenantId,
+      );
 
       // Should only have called the database once
-      expect(prismaService.userPermissionOverride.findMany).toHaveBeenCalledTimes(1);
+      expect(
+        prismaService.userPermissionOverride.findMany,
+      ).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('hasPermission', () => {
     it('should return true when user has permission from role default', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
       const result = await service.hasPermission(
         mockUserId,
@@ -130,7 +156,9 @@ describe('PermissionsService', () => {
     });
 
     it('should return false when user does not have permission', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
       const result = await service.hasPermission(
         mockUserId,
@@ -151,13 +179,17 @@ describe('PermissionsService', () => {
       );
 
       expect(result).toBe(true);
-      expect(prismaService.userPermissionOverride.findMany).not.toHaveBeenCalled();
+      expect(
+        prismaService.userPermissionOverride.findMany,
+      ).not.toHaveBeenCalled();
     });
 
     it('should return true when permission is granted via override', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([
-        { permission: Permission.POS_REFUND, granted: true },
-      ]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([
+          { permission: Permission.POS_REFUND, granted: true },
+        ]);
 
       const result = await service.hasPermission(
         mockUserId,
@@ -170,9 +202,11 @@ describe('PermissionsService', () => {
     });
 
     it('should return false when permission is revoked via override', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([
-        { permission: Permission.POS_SELL, granted: false },
-      ]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([
+          { permission: Permission.POS_SELL, granted: false },
+        ]);
 
       const result = await service.hasPermission(
         mockUserId,
@@ -187,7 +221,9 @@ describe('PermissionsService', () => {
 
   describe('hasAllPermissions', () => {
     it('should return true when user has all permissions', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
       const result = await service.hasAllPermissions(
         mockUserId,
@@ -200,7 +236,9 @@ describe('PermissionsService', () => {
     });
 
     it('should return false when user lacks any permission', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
       const result = await service.hasAllPermissions(
         mockUserId,
@@ -215,7 +253,9 @@ describe('PermissionsService', () => {
 
   describe('hasAnyPermission', () => {
     it('should return true when user has at least one permission', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
       const result = await service.hasAnyPermission(
         mockUserId,
@@ -228,7 +268,9 @@ describe('PermissionsService', () => {
     });
 
     it('should return false when user has none of the permissions', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
       const result = await service.hasAnyPermission(
         mockUserId,
@@ -243,7 +285,9 @@ describe('PermissionsService', () => {
 
   describe('grantPermission', () => {
     it('should create a grant override', async () => {
-      prismaService.userPermissionOverride.upsert = jest.fn().mockResolvedValue({});
+      prismaService.userPermissionOverride.upsert = jest
+        .fn()
+        .mockResolvedValue({});
 
       await service.grantPermission(
         mockUserId,
@@ -278,11 +322,19 @@ describe('PermissionsService', () => {
     });
 
     it('should clear cache after granting permission', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
-      prismaService.userPermissionOverride.upsert = jest.fn().mockResolvedValue({});
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
+      prismaService.userPermissionOverride.upsert = jest
+        .fn()
+        .mockResolvedValue({});
 
       // Prime the cache
-      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
+      await service.getUserPermissions(
+        mockUserId,
+        UserRole.EMPLOYEE,
+        mockTenantId,
+      );
 
       // Grant permission (clears cache)
       await service.grantPermission(
@@ -293,15 +345,23 @@ describe('PermissionsService', () => {
       );
 
       // Next call should hit the database again
-      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
+      await service.getUserPermissions(
+        mockUserId,
+        UserRole.EMPLOYEE,
+        mockTenantId,
+      );
 
-      expect(prismaService.userPermissionOverride.findMany).toHaveBeenCalledTimes(2);
+      expect(
+        prismaService.userPermissionOverride.findMany,
+      ).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('revokePermission', () => {
     it('should create a revoke override', async () => {
-      prismaService.userPermissionOverride.upsert = jest.fn().mockResolvedValue({});
+      prismaService.userPermissionOverride.upsert = jest
+        .fn()
+        .mockResolvedValue({});
 
       await service.revokePermission(
         mockUserId,
@@ -338,39 +398,69 @@ describe('PermissionsService', () => {
 
   describe('removeOverride', () => {
     it('should delete a permission override', async () => {
-      prismaService.userPermissionOverride.deleteMany = jest.fn().mockResolvedValue({ count: 1 });
+      prismaService.userPermissionOverride.deleteMany = jest
+        .fn()
+        .mockResolvedValue({ count: 1 });
 
-      await service.removeOverride(mockUserId, mockTenantId, Permission.POS_REFUND);
+      await service.removeOverride(
+        mockUserId,
+        mockTenantId,
+        Permission.POS_REFUND,
+      );
 
-      expect(prismaService.userPermissionOverride.deleteMany).toHaveBeenCalledWith({
+      expect(
+        prismaService.userPermissionOverride.deleteMany,
+      ).toHaveBeenCalledWith({
         where: { userId: mockUserId, permission: Permission.POS_REFUND },
       });
     });
 
     it('should clear cache after removing override', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
-      prismaService.userPermissionOverride.deleteMany = jest.fn().mockResolvedValue({ count: 1 });
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
+      prismaService.userPermissionOverride.deleteMany = jest
+        .fn()
+        .mockResolvedValue({ count: 1 });
 
       // Prime the cache
-      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
+      await service.getUserPermissions(
+        mockUserId,
+        UserRole.EMPLOYEE,
+        mockTenantId,
+      );
 
       // Remove override (clears cache)
-      await service.removeOverride(mockUserId, mockTenantId, Permission.POS_REFUND);
+      await service.removeOverride(
+        mockUserId,
+        mockTenantId,
+        Permission.POS_REFUND,
+      );
 
       // Next call should hit the database again
-      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
+      await service.getUserPermissions(
+        mockUserId,
+        UserRole.EMPLOYEE,
+        mockTenantId,
+      );
 
-      expect(prismaService.userPermissionOverride.findMany).toHaveBeenCalledTimes(2);
+      expect(
+        prismaService.userPermissionOverride.findMany,
+      ).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('removeAllOverrides', () => {
     it('should delete all permission overrides for a user', async () => {
-      prismaService.userPermissionOverride.deleteMany = jest.fn().mockResolvedValue({ count: 5 });
+      prismaService.userPermissionOverride.deleteMany = jest
+        .fn()
+        .mockResolvedValue({ count: 5 });
 
       await service.removeAllOverrides(mockUserId, mockTenantId);
 
-      expect(prismaService.userPermissionOverride.deleteMany).toHaveBeenCalledWith({
+      expect(
+        prismaService.userPermissionOverride.deleteMany,
+      ).toHaveBeenCalledWith({
         where: { userId: mockUserId, tenantId: mockTenantId },
       });
     });
@@ -379,7 +469,11 @@ describe('PermissionsService', () => {
   describe('setPermissionOverrides', () => {
     it('should upsert multiple overrides in a transaction', async () => {
       const overrides = [
-        { permission: Permission.POS_REFUND, granted: true, reason: 'Promotion' },
+        {
+          permission: Permission.POS_REFUND,
+          granted: true,
+          reason: 'Promotion',
+        },
         { permission: Permission.POS_SELL, granted: false, reason: 'Security' },
       ];
 
@@ -392,7 +486,9 @@ describe('PermissionsService', () => {
 
       expect(prismaService.$transaction).toHaveBeenCalled();
       // The transaction callback receives the mock prisma service and should call upsert for each override
-      expect(prismaService.userPermissionOverride.upsert).toHaveBeenCalledTimes(2);
+      expect(prismaService.userPermissionOverride.upsert).toHaveBeenCalledTimes(
+        2,
+      );
 
       expect(prismaService.userPermissionOverride.upsert).toHaveBeenCalledWith({
         where: {
@@ -442,10 +538,16 @@ describe('PermissionsService', () => {
     });
 
     it('should invalidate cache after setting overrides', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
       // Prime the cache
-      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
+      await service.getUserPermissions(
+        mockUserId,
+        UserRole.EMPLOYEE,
+        mockTenantId,
+      );
 
       // Set overrides (clears cache)
       await service.setPermissionOverrides(
@@ -456,9 +558,15 @@ describe('PermissionsService', () => {
       );
 
       // Next call should hit the database again
-      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
+      await service.getUserPermissions(
+        mockUserId,
+        UserRole.EMPLOYEE,
+        mockTenantId,
+      );
 
-      expect(prismaService.userPermissionOverride.findMany).toHaveBeenCalledTimes(2);
+      expect(
+        prismaService.userPermissionOverride.findMany,
+      ).toHaveBeenCalledTimes(2);
     });
 
     it('should handle empty overrides array', async () => {
@@ -470,7 +578,9 @@ describe('PermissionsService', () => {
       );
 
       expect(prismaService.$transaction).toHaveBeenCalled();
-      expect(prismaService.userPermissionOverride.upsert).not.toHaveBeenCalled();
+      expect(
+        prismaService.userPermissionOverride.upsert,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -494,12 +604,19 @@ describe('PermissionsService', () => {
           updatedAt: new Date('2024-01-02'),
         },
       ];
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue(mockOverrides);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue(mockOverrides);
 
-      const result = await service.getPermissionOverrides(mockUserId, mockTenantId);
+      const result = await service.getPermissionOverrides(
+        mockUserId,
+        mockTenantId,
+      );
 
       expect(result).toEqual(mockOverrides);
-      expect(prismaService.userPermissionOverride.findMany).toHaveBeenCalledWith({
+      expect(
+        prismaService.userPermissionOverride.findMany,
+      ).toHaveBeenCalledWith({
         where: { userId: mockUserId, tenantId: mockTenantId },
         select: {
           permission: true,
@@ -513,9 +630,14 @@ describe('PermissionsService', () => {
     });
 
     it('should return empty array when no overrides exist', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
-      const result = await service.getPermissionOverrides(mockUserId, mockTenantId);
+      const result = await service.getPermissionOverrides(
+        mockUserId,
+        mockTenantId,
+      );
 
       expect(result).toEqual([]);
     });
@@ -523,31 +645,55 @@ describe('PermissionsService', () => {
 
   describe('clearCache', () => {
     it('should clear the entire cache', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([]);
 
       // Prime the cache for multiple users
-      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
-      await service.getUserPermissions(mockAdminId, UserRole.ADMIN, mockTenantId);
+      await service.getUserPermissions(
+        mockUserId,
+        UserRole.EMPLOYEE,
+        mockTenantId,
+      );
+      await service.getUserPermissions(
+        mockAdminId,
+        UserRole.ADMIN,
+        mockTenantId,
+      );
 
-      expect(prismaService.userPermissionOverride.findMany).toHaveBeenCalledTimes(2);
+      expect(
+        prismaService.userPermissionOverride.findMany,
+      ).toHaveBeenCalledTimes(2);
 
       // Clear entire cache
       service.clearCache();
 
       // Next calls should hit the database again
-      await service.getUserPermissions(mockUserId, UserRole.EMPLOYEE, mockTenantId);
-      await service.getUserPermissions(mockAdminId, UserRole.ADMIN, mockTenantId);
+      await service.getUserPermissions(
+        mockUserId,
+        UserRole.EMPLOYEE,
+        mockTenantId,
+      );
+      await service.getUserPermissions(
+        mockAdminId,
+        UserRole.ADMIN,
+        mockTenantId,
+      );
 
-      expect(prismaService.userPermissionOverride.findMany).toHaveBeenCalledTimes(4);
+      expect(
+        prismaService.userPermissionOverride.findMany,
+      ).toHaveBeenCalledTimes(4);
     });
   });
 
   describe('getUserPermissionsDetail', () => {
     it('should return detailed permissions info', async () => {
-      prismaService.userPermissionOverride.findMany = jest.fn().mockResolvedValue([
-        { permission: Permission.POS_REFUND, granted: true },
-        { permission: Permission.POS_SELL, granted: false },
-      ]);
+      prismaService.userPermissionOverride.findMany = jest
+        .fn()
+        .mockResolvedValue([
+          { permission: Permission.POS_REFUND, granted: true },
+          { permission: Permission.POS_SELL, granted: false },
+        ]);
 
       const result = await service.getUserPermissionsDetail(
         mockUserId,

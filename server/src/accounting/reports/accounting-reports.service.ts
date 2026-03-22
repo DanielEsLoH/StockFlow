@@ -460,8 +460,7 @@ export class AccountingReportsService {
         const mappedMovements: LedgerMovement[] = movements.map((m) => {
           const d = Number(m.debit);
           const c = Number(m.credit);
-          running +=
-            account.nature === AccountNature.DEBIT ? d - c : c - d;
+          running += account.nature === AccountNature.DEBIT ? d - c : c - d;
           return {
             entryId: m.journalEntry.id,
             entryNumber: m.journalEntry.entryNumber,
@@ -564,11 +563,7 @@ export class AccountingReportsService {
     toDate: Date,
   ): Promise<IncomeStatementReport> {
     const tenantId = this.tenantContext.requireTenantId();
-    const balances = await this.calculateBalances(
-      tenantId,
-      toDate,
-      fromDate,
-    );
+    const balances = await this.calculateBalances(tenantId, toDate, fromDate);
 
     const revenue = balances.filter((b) => b.type === AccountType.REVENUE);
     const cogs = balances.filter((b) => b.type === AccountType.COGS);
@@ -607,10 +602,7 @@ export class AccountingReportsService {
    * 6. Flujo de Efectivo — Cash Flow Statement.
    * Movements in cash and bank accounts.
    */
-  async getCashFlow(
-    fromDate: Date,
-    toDate: Date,
-  ): Promise<CashFlowReport> {
+  async getCashFlow(fromDate: Date, toDate: Date): Promise<CashFlowReport> {
     const tenantId = this.tenantContext.requireTenantId();
 
     // Find all cash/bank accounts (class 11)
@@ -649,8 +641,7 @@ export class AccountingReportsService {
       _sum: { debit: true, credit: true },
     });
     const openingBalance =
-      Number(openingAgg._sum.debit ?? 0) -
-      Number(openingAgg._sum.credit ?? 0);
+      Number(openingAgg._sum.debit ?? 0) - Number(openingAgg._sum.credit ?? 0);
 
     // Movements in period
     const lines = await this.prisma.journalEntryLine.findMany({
@@ -705,7 +696,13 @@ export class AccountingReportsService {
       where: {
         tenantId,
         paymentStatus: { not: PaymentStatus.PAID },
-        status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.VOID, InvoiceStatus.DRAFT] },
+        status: {
+          notIn: [
+            InvoiceStatus.CANCELLED,
+            InvoiceStatus.VOID,
+            InvoiceStatus.DRAFT,
+          ],
+        },
         issueDate: { lte: asOfDate },
       },
       include: {
@@ -719,7 +716,10 @@ export class AccountingReportsService {
 
     for (const invoice of invoices) {
       const customerId = invoice.customerId ?? 'unknown';
-      const paidAmount = invoice.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+      const paidAmount = invoice.payments.reduce(
+        (sum, p) => sum + Number(p.amount),
+        0,
+      );
       const balance = Number(invoice.total) - paidAmount;
       if (balance <= 0) continue;
 
@@ -777,7 +777,9 @@ export class AccountingReportsService {
       totalBalance: rows.reduce((s, r) => s + r.totalBalance, 0),
     };
 
-    this.logger.debug(`AR Aging: ${rows.length} customers, total balance ${totals.totalBalance}`);
+    this.logger.debug(
+      `AR Aging: ${rows.length} customers, total balance ${totals.totalBalance}`,
+    );
 
     return {
       asOfDate: asOfDate.toISOString().split('T')[0],
@@ -801,7 +803,14 @@ export class AccountingReportsService {
         issueDate: { lte: asOfDate },
       },
       include: {
-        supplier: { select: { id: true, name: true, documentNumber: true, paymentTerms: true } },
+        supplier: {
+          select: {
+            id: true,
+            name: true,
+            documentNumber: true,
+            paymentTerms: true,
+          },
+        },
         purchasePayments: { select: { amount: true } },
       },
     });
@@ -819,7 +828,9 @@ export class AccountingReportsService {
 
       // Calculate due date from payment terms
       const termsDays = this.paymentTermsToDays(order.supplier.paymentTerms);
-      const dueDate = new Date(order.issueDate.getTime() + termsDays * 86400000);
+      const dueDate = new Date(
+        order.issueDate.getTime() + termsDays * 86400000,
+      );
       const daysOverdue = Math.floor(
         (asOfDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
       );
@@ -873,7 +884,9 @@ export class AccountingReportsService {
       totalBalance: rows.reduce((s, r) => s + r.totalBalance, 0),
     };
 
-    this.logger.debug(`AP Aging: ${rows.length} suppliers, total balance ${totals.totalBalance}`);
+    this.logger.debug(
+      `AP Aging: ${rows.length} suppliers, total balance ${totals.totalBalance}`,
+    );
 
     return {
       asOfDate: asOfDate.toISOString().split('T')[0],
@@ -884,11 +897,16 @@ export class AccountingReportsService {
 
   private paymentTermsToDays(terms: PaymentTerms): number {
     switch (terms) {
-      case PaymentTerms.IMMEDIATE: return 0;
-      case PaymentTerms.NET_15: return 15;
-      case PaymentTerms.NET_30: return 30;
-      case PaymentTerms.NET_60: return 60;
-      default: return 30;
+      case PaymentTerms.IMMEDIATE:
+        return 0;
+      case PaymentTerms.NET_15:
+        return 15;
+      case PaymentTerms.NET_30:
+        return 30;
+      case PaymentTerms.NET_60:
+        return 60;
+      default:
+        return 30;
     }
   }
 
@@ -900,7 +918,10 @@ export class AccountingReportsService {
    * 9. Declaracion de IVA — IVA Declaration (bimonthly).
    * Queries Invoice/InvoiceItem and PurchaseOrder/PurchaseOrderItem directly.
    */
-  async getIvaDeclaration(year: number, bimonthlyPeriod: number): Promise<IvaDeclarationReport> {
+  async getIvaDeclaration(
+    year: number,
+    bimonthlyPeriod: number,
+  ): Promise<IvaDeclarationReport> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const { from, to, label } = this.getBimonthlyRange(year, bimonthlyPeriod);
@@ -909,11 +930,24 @@ export class AccountingReportsService {
     const invoices = await this.prisma.invoice.findMany({
       where: {
         tenantId,
-        status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.VOID, InvoiceStatus.DRAFT] },
+        status: {
+          notIn: [
+            InvoiceStatus.CANCELLED,
+            InvoiceStatus.VOID,
+            InvoiceStatus.DRAFT,
+          ],
+        },
         issueDate: { gte: from, lte: to },
       },
       include: {
-        items: { select: { taxRate: true, taxCategory: true, subtotal: true, tax: true } },
+        items: {
+          select: {
+            taxRate: true,
+            taxCategory: true,
+            subtotal: true,
+            tax: true,
+          },
+        },
       },
     });
 
@@ -931,7 +965,11 @@ export class AccountingReportsService {
         if (cat === TaxCategory.EXENTO || cat === TaxCategory.EXCLUIDO) {
           const key = cat as string;
           if (!salesExemptMap.has(key)) {
-            salesExemptMap.set(key, { category: cat as 'EXENTO' | 'EXCLUIDO', taxableBase: 0, invoiceCount: 0 });
+            salesExemptMap.set(key, {
+              category: cat as 'EXENTO' | 'EXCLUIDO',
+              taxableBase: 0,
+              invoiceCount: 0,
+            });
           }
           const entry = salesExemptMap.get(key)!;
           entry.taxableBase += subtotal;
@@ -941,7 +979,12 @@ export class AccountingReportsService {
           }
         } else if (rate > 0) {
           if (!salesRateMap.has(rate)) {
-            salesRateMap.set(rate, { taxRate: rate, taxableBase: 0, taxAmount: 0, invoiceCount: 0 });
+            salesRateMap.set(rate, {
+              taxRate: rate,
+              taxableBase: 0,
+              taxAmount: 0,
+              invoiceCount: 0,
+            });
           }
           const entry = salesRateMap.get(rate)!;
           entry.taxableBase += subtotal;
@@ -962,7 +1005,14 @@ export class AccountingReportsService {
         issueDate: { gte: from, lte: to },
       },
       include: {
-        items: { select: { taxRate: true, taxCategory: true, subtotal: true, tax: true } },
+        items: {
+          select: {
+            taxRate: true,
+            taxCategory: true,
+            subtotal: true,
+            tax: true,
+          },
+        },
       },
     });
 
@@ -980,7 +1030,11 @@ export class AccountingReportsService {
         if (cat === TaxCategory.EXENTO || cat === TaxCategory.EXCLUIDO) {
           const key = cat as string;
           if (!purchasesExemptMap.has(key)) {
-            purchasesExemptMap.set(key, { category: cat as 'EXENTO' | 'EXCLUIDO', taxableBase: 0, invoiceCount: 0 });
+            purchasesExemptMap.set(key, {
+              category: cat as 'EXENTO' | 'EXCLUIDO',
+              taxableBase: 0,
+              invoiceCount: 0,
+            });
           }
           const entry = purchasesExemptMap.get(key)!;
           entry.taxableBase += subtotal;
@@ -990,7 +1044,12 @@ export class AccountingReportsService {
           }
         } else if (rate > 0) {
           if (!purchasesRateMap.has(rate)) {
-            purchasesRateMap.set(rate, { taxRate: rate, taxableBase: 0, taxAmount: 0, invoiceCount: 0 });
+            purchasesRateMap.set(rate, {
+              taxRate: rate,
+              taxableBase: 0,
+              taxAmount: 0,
+              invoiceCount: 0,
+            });
           }
           const entry = purchasesRateMap.get(rate)!;
           entry.taxableBase += subtotal;
@@ -1003,9 +1062,13 @@ export class AccountingReportsService {
       }
     }
 
-    const salesByRate = Array.from(salesRateMap.values()).sort((a, b) => b.taxRate - a.taxRate);
+    const salesByRate = Array.from(salesRateMap.values()).sort(
+      (a, b) => b.taxRate - a.taxRate,
+    );
     const salesExempt = Array.from(salesExemptMap.values());
-    const purchasesByRate = Array.from(purchasesRateMap.values()).sort((a, b) => b.taxRate - a.taxRate);
+    const purchasesByRate = Array.from(purchasesRateMap.values()).sort(
+      (a, b) => b.taxRate - a.taxRate,
+    );
     const purchasesExempt = Array.from(purchasesExemptMap.values());
 
     // --- Credit/Debit note adjustments from journal entries ---
@@ -1013,7 +1076,9 @@ export class AccountingReportsService {
       where: {
         tenantId,
         status: JournalEntryStatus.POSTED,
-        source: { in: [JournalEntrySource.CREDIT_NOTE, JournalEntrySource.DEBIT_NOTE] },
+        source: {
+          in: [JournalEntrySource.CREDIT_NOTE, JournalEntrySource.DEBIT_NOTE],
+        },
         date: { gte: from, lte: to },
       },
       include: {
@@ -1052,14 +1117,26 @@ export class AccountingReportsService {
       }
     }
 
-    const totalSalesBase = salesByRate.reduce((s, r) => s + r.taxableBase, 0) + salesExempt.reduce((s, r) => s + r.taxableBase, 0)
-      - creditNoteBaseAdjustment + debitNoteBaseAdjustment;
-    const totalIvaGenerado = salesByRate.reduce((s, r) => s + r.taxAmount, 0)
-      - creditNoteIvaAdjustment + debitNoteIvaAdjustment;
-    const totalPurchasesBase = purchasesByRate.reduce((s, r) => s + r.taxableBase, 0) + purchasesExempt.reduce((s, r) => s + r.taxableBase, 0);
-    const totalIvaDescontable = purchasesByRate.reduce((s, r) => s + r.taxAmount, 0);
+    const totalSalesBase =
+      salesByRate.reduce((s, r) => s + r.taxableBase, 0) +
+      salesExempt.reduce((s, r) => s + r.taxableBase, 0) -
+      creditNoteBaseAdjustment +
+      debitNoteBaseAdjustment;
+    const totalIvaGenerado =
+      salesByRate.reduce((s, r) => s + r.taxAmount, 0) -
+      creditNoteIvaAdjustment +
+      debitNoteIvaAdjustment;
+    const totalPurchasesBase =
+      purchasesByRate.reduce((s, r) => s + r.taxableBase, 0) +
+      purchasesExempt.reduce((s, r) => s + r.taxableBase, 0);
+    const totalIvaDescontable = purchasesByRate.reduce(
+      (s, r) => s + r.taxAmount,
+      0,
+    );
 
-    this.logger.debug(`IVA Declaration ${year}-${bimonthlyPeriod}: generado=${totalIvaGenerado}, descontable=${totalIvaDescontable}, NC adj=${creditNoteIvaAdjustment}, ND adj=${debitNoteIvaAdjustment}`);
+    this.logger.debug(
+      `IVA Declaration ${year}-${bimonthlyPeriod}: generado=${totalIvaGenerado}, descontable=${totalIvaDescontable}, NC adj=${creditNoteIvaAdjustment}, ND adj=${debitNoteIvaAdjustment}`,
+    );
 
     return {
       year,
@@ -1082,15 +1159,28 @@ export class AccountingReportsService {
   /**
    * 10. Resumen ReteFuente — Withholding Tax Summary (monthly).
    */
-  async getReteFuenteSummary(year: number, month: number): Promise<ReteFuenteSummaryReport> {
+  async getReteFuenteSummary(
+    year: number,
+    month: number,
+  ): Promise<ReteFuenteSummaryReport> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const from = new Date(year, month - 1, 1);
     const to = new Date(year, month, 0, 23, 59, 59, 999);
 
     const monthNames = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
     const monthLabel = `${monthNames[month - 1]} ${year}`;
 
@@ -1157,9 +1247,13 @@ export class AccountingReportsService {
       }
     }
 
-    const rows = Array.from(supplierMap.values()).sort((a, b) => b.totalWithheld - a.totalWithheld);
+    const rows = Array.from(supplierMap.values()).sort(
+      (a, b) => b.totalWithheld - a.totalWithheld,
+    );
 
-    this.logger.debug(`ReteFuente Summary ${monthLabel}: ${rows.length} suppliers`);
+    this.logger.debug(
+      `ReteFuente Summary ${monthLabel}: ${rows.length} suppliers`,
+    );
 
     return {
       year,
@@ -1186,13 +1280,22 @@ export class AccountingReportsService {
     const invoices = await this.prisma.invoice.findMany({
       where: {
         tenantId,
-        status: { notIn: [InvoiceStatus.CANCELLED, InvoiceStatus.VOID, InvoiceStatus.DRAFT] },
+        status: {
+          notIn: [
+            InvoiceStatus.CANCELLED,
+            InvoiceStatus.VOID,
+            InvoiceStatus.DRAFT,
+          ],
+        },
         issueDate: { gte: from, lte: to },
       },
       select: { tax: true },
     });
 
-    const ivaGeneradoYtd = invoices.reduce((sum, inv) => sum + Number(inv.tax), 0);
+    const ivaGeneradoYtd = invoices.reduce(
+      (sum, inv) => sum + Number(inv.tax),
+      0,
+    );
 
     // IVA descontable: sum of tax from received POs
     const purchaseOrders = await this.prisma.purchaseOrder.findMany({
@@ -1204,7 +1307,10 @@ export class AccountingReportsService {
       select: { tax: true, subtotal: true },
     });
 
-    const ivaDescontableYtd = purchaseOrders.reduce((sum, po) => sum + Number(po.tax), 0);
+    const ivaDescontableYtd = purchaseOrders.reduce(
+      (sum, po) => sum + Number(po.tax),
+      0,
+    );
 
     // ReteFuente: calculated from POs where subtotal > min base
     let reteFuenteBaseYtd = 0;
@@ -1213,11 +1319,14 @@ export class AccountingReportsService {
       const subtotal = Number(po.subtotal);
       if (subtotal > RETE_FUENTE_MIN_BASE) {
         reteFuenteBaseYtd += subtotal;
-        reteFuenteWithheldYtd += Math.round(subtotal * RETE_FUENTE_RATE * 100) / 100;
+        reteFuenteWithheldYtd +=
+          Math.round(subtotal * RETE_FUENTE_RATE * 100) / 100;
       }
     }
 
-    this.logger.debug(`YTD Tax Summary ${year}: IVA generado=${ivaGeneradoYtd}, descontable=${ivaDescontableYtd}, reteFuente=${reteFuenteWithheldYtd}`);
+    this.logger.debug(
+      `YTD Tax Summary ${year}: IVA generado=${ivaGeneradoYtd}, descontable=${ivaDescontableYtd}, reteFuente=${reteFuenteWithheldYtd}`,
+    );
 
     return {
       year,
@@ -1241,10 +1350,17 @@ export class AccountingReportsService {
     return `${y}-${m}-${d}`;
   }
 
-  private getBimonthlyRange(year: number, period: number): { from: Date; to: Date; label: string } {
+  private getBimonthlyRange(
+    year: number,
+    period: number,
+  ): { from: Date; to: Date; label: string } {
     const periodNames = [
-      'Enero - Febrero', 'Marzo - Abril', 'Mayo - Junio',
-      'Julio - Agosto', 'Septiembre - Octubre', 'Noviembre - Diciembre',
+      'Enero - Febrero',
+      'Marzo - Abril',
+      'Mayo - Junio',
+      'Julio - Agosto',
+      'Septiembre - Octubre',
+      'Noviembre - Diciembre',
     ];
     const startMonth = (period - 1) * 2;
     const from = new Date(year, startMonth, 1);
@@ -1293,7 +1409,12 @@ export class AccountingReportsService {
     });
 
     // Monthly entry counts for chart
-    const monthlyEntries: { month: number; count: number; debits: number; credits: number }[] = [];
+    const monthlyEntries: {
+      month: number;
+      count: number;
+      debits: number;
+      credits: number;
+    }[] = [];
     for (let m = 0; m < 12; m++) {
       const mStart = new Date(year, m, 1);
       const mEnd = new Date(year, m + 1, 1);

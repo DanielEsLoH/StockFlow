@@ -17,7 +17,11 @@
     "vacio",
     "arcjet",
     "Arcjet",
-    "PYME"
+    "PYME",
+    "Resends",
+    "brevo",
+    "Brevo",
+    "invitacion"
   ],
   "ignorePaths": ["node_modules", "dist", "build", ".react-router"]
 }

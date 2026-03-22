@@ -57,7 +57,11 @@ export class PayrollPeriodsService {
       where: { id, tenantId },
       include: {
         entries: {
-          include: { employee: { select: { firstName: true, lastName: true, documentNumber: true } } },
+          include: {
+            employee: {
+              select: { firstName: true, lastName: true, documentNumber: true },
+            },
+          },
           orderBy: { employee: { lastName: 'asc' } },
         },
         _count: { select: { entries: true } },
@@ -78,16 +82,16 @@ export class PayrollPeriodsService {
     const endDate = new Date(dto.endDate);
 
     if (endDate <= startDate) {
-      throw new BadRequestException('La fecha fin debe ser posterior a la fecha inicio');
+      throw new BadRequestException(
+        'La fecha fin debe ser posterior a la fecha inicio',
+      );
     }
 
     // Check for overlapping periods
     const overlap = await this.prisma.payrollPeriod.findFirst({
       where: {
         tenantId,
-        OR: [
-          { startDate: { lte: endDate }, endDate: { gte: startDate } },
-        ],
+        OR: [{ startDate: { lte: endDate }, endDate: { gte: startDate } }],
       },
     });
 
@@ -143,7 +147,10 @@ export class PayrollPeriodsService {
     }
 
     // Calculate days in period
-    const periodDays = this.calculatePeriodDays(period.startDate, period.endDate);
+    const periodDays = this.calculatePeriodDays(
+      period.startDate,
+      period.endDate,
+    );
 
     let totalDevengados = 0;
     let totalDeducciones = 0;
@@ -167,14 +174,18 @@ export class PayrollPeriodsService {
         const result = this.calculationService.calculatePayrollEntry({
           baseSalary,
           salaryType: employee.salaryType,
-          daysWorked: existingEntry ? Number(existingEntry.daysWorked) : periodDays,
+          daysWorked: existingEntry
+            ? Number(existingEntry.daysWorked)
+            : periodDays,
           arlRiskLevel: employee.arlRiskLevel,
           auxilioTransporte: employee.auxilioTransporte,
           smmlv: config.smmlv,
           auxilioTransporteVal: config.auxilioTransporteVal,
           uvtValue: config.uvtValue,
           overtime,
-          bonificaciones: existingEntry ? Number(existingEntry.bonificaciones) : 0,
+          bonificaciones: existingEntry
+            ? Number(existingEntry.bonificaciones)
+            : 0,
           comisiones: existingEntry ? Number(existingEntry.comisiones) : 0,
           viaticos: existingEntry ? Number(existingEntry.viaticos) : 0,
           incapacidadDias: 0,
@@ -182,11 +193,17 @@ export class PayrollPeriodsService {
           vacacionesDias: 0,
           sindicato: existingEntry ? Number(existingEntry.sindicato) : 0,
           libranzas: existingEntry ? Number(existingEntry.libranzas) : 0,
-          otrasDeducciones: existingEntry ? Number(existingEntry.otrasDeducciones) : 0,
-          otrosDevengados: existingEntry ? Number(existingEntry.otrosDevengados) : 0,
+          otrasDeducciones: existingEntry
+            ? Number(existingEntry.otrasDeducciones)
+            : 0,
+          otrosDevengados: existingEntry
+            ? Number(existingEntry.otrosDevengados)
+            : 0,
         });
 
-        const entryNumber = existingEntry?.entryNumber ?? await this.getNextEntryNumber(tx, tenantId);
+        const entryNumber =
+          existingEntry?.entryNumber ??
+          (await this.getNextEntryNumber(tx, tenantId));
 
         const entryData = {
           tenantId,
@@ -196,7 +213,9 @@ export class PayrollPeriodsService {
           status: PayrollEntryStatus.CALCULATED,
           baseSalary: baseSalary,
           salaryType: employee.salaryType,
-          daysWorked: existingEntry ? Number(existingEntry.daysWorked) : periodDays,
+          daysWorked: existingEntry
+            ? Number(existingEntry.daysWorked)
+            : periodDays,
           sueldo: result.sueldo,
           auxilioTransporte: result.auxilioTransporte,
           horasExtras: result.horasExtras,
@@ -321,20 +340,62 @@ export class PayrollPeriodsService {
         totalDevengados: Number(period.totalDevengados),
         totalDeducciones: Number(period.totalDeducciones),
         totalNeto: Number(period.totalNeto),
-        totalSaludEmpleado: entries.reduce((s, e) => s + Number(e.saludEmpleado), 0),
-        totalPensionEmpleado: entries.reduce((s, e) => s + Number(e.pensionEmpleado), 0),
-        totalFondoSolidaridad: entries.reduce((s, e) => s + Number(e.fondoSolidaridad), 0),
-        totalRetencionFuente: entries.reduce((s, e) => s + Number(e.retencionFuente), 0),
-        totalSaludEmpleador: entries.reduce((s, e) => s + Number(e.saludEmpleador), 0),
-        totalPensionEmpleador: entries.reduce((s, e) => s + Number(e.pensionEmpleador), 0),
-        totalArlEmpleador: entries.reduce((s, e) => s + Number(e.arlEmpleador), 0),
-        totalCajaEmpleador: entries.reduce((s, e) => s + Number(e.cajaEmpleador), 0),
-        totalSenaEmpleador: entries.reduce((s, e) => s + Number(e.senaEmpleador), 0),
-        totalIcbfEmpleador: entries.reduce((s, e) => s + Number(e.icbfEmpleador), 0),
-        totalProvisionPrima: entries.reduce((s, e) => s + Number(e.provisionPrima), 0),
-        totalProvisionCesantias: entries.reduce((s, e) => s + Number(e.provisionCesantias), 0),
-        totalProvisionIntereses: entries.reduce((s, e) => s + Number(e.provisionIntereses), 0),
-        totalProvisionVacaciones: entries.reduce((s, e) => s + Number(e.provisionVacaciones), 0),
+        totalSaludEmpleado: entries.reduce(
+          (s, e) => s + Number(e.saludEmpleado),
+          0,
+        ),
+        totalPensionEmpleado: entries.reduce(
+          (s, e) => s + Number(e.pensionEmpleado),
+          0,
+        ),
+        totalFondoSolidaridad: entries.reduce(
+          (s, e) => s + Number(e.fondoSolidaridad),
+          0,
+        ),
+        totalRetencionFuente: entries.reduce(
+          (s, e) => s + Number(e.retencionFuente),
+          0,
+        ),
+        totalSaludEmpleador: entries.reduce(
+          (s, e) => s + Number(e.saludEmpleador),
+          0,
+        ),
+        totalPensionEmpleador: entries.reduce(
+          (s, e) => s + Number(e.pensionEmpleador),
+          0,
+        ),
+        totalArlEmpleador: entries.reduce(
+          (s, e) => s + Number(e.arlEmpleador),
+          0,
+        ),
+        totalCajaEmpleador: entries.reduce(
+          (s, e) => s + Number(e.cajaEmpleador),
+          0,
+        ),
+        totalSenaEmpleador: entries.reduce(
+          (s, e) => s + Number(e.senaEmpleador),
+          0,
+        ),
+        totalIcbfEmpleador: entries.reduce(
+          (s, e) => s + Number(e.icbfEmpleador),
+          0,
+        ),
+        totalProvisionPrima: entries.reduce(
+          (s, e) => s + Number(e.provisionPrima),
+          0,
+        ),
+        totalProvisionCesantias: entries.reduce(
+          (s, e) => s + Number(e.provisionCesantias),
+          0,
+        ),
+        totalProvisionIntereses: entries.reduce(
+          (s, e) => s + Number(e.provisionIntereses),
+          0,
+        ),
+        totalProvisionVacaciones: entries.reduce(
+          (s, e) => s + Number(e.provisionVacaciones),
+          0,
+        ),
       });
     } catch (error) {
       this.logger.error('Failed to create payroll journal entry:', error);
@@ -421,21 +482,22 @@ export class PayrollPeriodsService {
   private mapPeriodDetailToResponse(period: any) {
     return {
       ...this.mapPeriodToResponse(period),
-      entries: period.entries?.map((e: any) => ({
-        id: e.id,
-        entryNumber: e.entryNumber,
-        status: e.status,
-        employeeId: e.employeeId,
-        employeeName: e.employee
-          ? `${e.employee.firstName} ${e.employee.lastName}`
-          : null,
-        employeeDocument: e.employee?.documentNumber ?? null,
-        baseSalary: Number(e.baseSalary),
-        daysWorked: Number(e.daysWorked),
-        totalDevengados: Number(e.totalDevengados),
-        totalDeducciones: Number(e.totalDeducciones),
-        totalNeto: Number(e.totalNeto),
-      })) ?? [],
+      entries:
+        period.entries?.map((e: any) => ({
+          id: e.id,
+          entryNumber: e.entryNumber,
+          status: e.status,
+          employeeId: e.employeeId,
+          employeeName: e.employee
+            ? `${e.employee.firstName} ${e.employee.lastName}`
+            : null,
+          employeeDocument: e.employee?.documentNumber ?? null,
+          baseSalary: Number(e.baseSalary),
+          daysWorked: Number(e.daysWorked),
+          totalDevengados: Number(e.totalDevengados),
+          totalDeducciones: Number(e.totalDeducciones),
+          totalNeto: Number(e.totalNeto),
+        })) ?? [],
     };
   }
 }

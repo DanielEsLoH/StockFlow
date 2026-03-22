@@ -1255,9 +1255,9 @@ describe('SystemAdminService', () => {
       expect(result).toBeDefined();
       expect(result).not.toBeNull();
       expect(result!.plan).toBe(SubscriptionPlan.PRO);
-      expect(subscriptionManagementService.getSubscription).toHaveBeenCalledWith(
-        mockTenant.id,
-      );
+      expect(
+        subscriptionManagementService.getSubscription,
+      ).toHaveBeenCalledWith(mockTenant.id);
     });
 
     it('should return null if no subscription found', async () => {

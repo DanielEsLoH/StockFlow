@@ -1,12 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ImportValidator } from './import-validator.interface';
 
-const VALID_TAX_CATEGORIES = [
-  'GRAVADO_19',
-  'GRAVADO_5',
-  'EXENTO',
-  'EXCLUIDO',
-];
+const VALID_TAX_CATEGORIES = ['GRAVADO_19', 'GRAVADO_5', 'EXENTO', 'EXCLUIDO'];
 
 /**
  * ProductImportValidator handles validation and mapping of product import rows.

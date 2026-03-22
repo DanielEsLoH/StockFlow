@@ -614,9 +614,7 @@ describe('LimitCheckInterceptor', () => {
 
       // Bypass getLimitValue by spying on it to return a non-unlimited value
       // so the code proceeds to getCurrentCount with the unknown type.
-      jest
-        .spyOn(interceptor as any, 'getLimitValue')
-        .mockReturnValue(10);
+      jest.spyOn(interceptor as any, 'getLimitValue').mockReturnValue(10);
 
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
 
@@ -626,9 +624,7 @@ describe('LimitCheckInterceptor', () => {
 
       expect(result).toBeDefined();
       expect(mockCallHandler.handle).toHaveBeenCalled();
-      expect(errorSpy).toHaveBeenCalledWith(
-        'Unknown limit type: unknownType',
-      );
+      expect(errorSpy).toHaveBeenCalledWith('Unknown limit type: unknownType');
     });
   });
 });

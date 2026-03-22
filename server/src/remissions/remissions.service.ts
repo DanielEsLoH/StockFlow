@@ -173,9 +173,7 @@ export class RemissionsService {
       });
 
       if (!invoice) {
-        throw new NotFoundException(
-          `Factura no encontrada: ${dto.invoiceId}`,
-        );
+        throw new NotFoundException(`Factura no encontrada: ${dto.invoiceId}`);
       }
     }
 
@@ -802,9 +800,7 @@ export class RemissionsService {
   }> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.debug(
-      `Getting remission statistics for tenant ${tenantId}`,
-    );
+    this.logger.debug(`Getting remission statistics for tenant ${tenantId}`);
 
     const remissions = await this.prisma.remission.findMany({
       where: { tenantId },
@@ -972,9 +968,7 @@ export class RemissionsService {
    * @param remission - The remission entity to map (with or without relations)
    * @returns RemissionResponse object
    */
-  private mapToResponse(
-    remission: RemissionWithRelations,
-  ): RemissionResponse {
+  private mapToResponse(remission: RemissionWithRelations): RemissionResponse {
     const response: RemissionResponse = {
       id: remission.id,
       tenantId: remission.tenantId,

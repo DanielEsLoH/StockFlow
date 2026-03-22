@@ -100,9 +100,9 @@ describe('WebhooksController', () => {
         new Error('Invalid signature'),
       );
 
-      await expect(
-        controller.handleWompiWebhook(webhookBody),
-      ).rejects.toThrow('Invalid signature');
+      await expect(controller.handleWompiWebhook(webhookBody)).rejects.toThrow(
+        'Invalid signature',
+      );
     });
 
     it('should handle empty body', async () => {

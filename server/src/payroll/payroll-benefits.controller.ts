@@ -63,7 +63,9 @@ export class PayrollBenefitsController {
     @Param('employeeId') employeeId: string,
     @Body() dto: CalculateBenefitPaymentDto,
   ) {
-    const paymentDate = dto.paymentDate ? new Date(dto.paymentDate) : new Date();
+    const paymentDate = dto.paymentDate
+      ? new Date(dto.paymentDate)
+      : new Date();
     return this.benefitsService.calculateBenefitPayment(
       employeeId,
       dto.benefitType,

@@ -29,8 +29,12 @@ export class CreateBankAccountDto {
     example: 'Bancolombia',
   })
   @IsString({ message: 'El nombre del banco es requerido' })
-  @MinLength(2, { message: 'El nombre del banco debe tener al menos 2 caracteres' })
-  @MaxLength(100, { message: 'El nombre del banco no puede exceder 100 caracteres' })
+  @MinLength(2, {
+    message: 'El nombre del banco debe tener al menos 2 caracteres',
+  })
+  @MaxLength(100, {
+    message: 'El nombre del banco no puede exceder 100 caracteres',
+  })
   @Transform(({ value }: { value: string }) => value?.trim())
   bankName: string;
 
@@ -39,8 +43,12 @@ export class CreateBankAccountDto {
     example: '123-456789-00',
   })
   @IsString({ message: 'El numero de cuenta es requerido' })
-  @MinLength(5, { message: 'El numero de cuenta debe tener al menos 5 caracteres' })
-  @MaxLength(30, { message: 'El numero de cuenta no puede exceder 30 caracteres' })
+  @MinLength(5, {
+    message: 'El numero de cuenta debe tener al menos 5 caracteres',
+  })
+  @MaxLength(30, {
+    message: 'El numero de cuenta no puede exceder 30 caracteres',
+  })
   @Transform(({ value }: { value: string }) => value?.trim())
   accountNumber: string;
 

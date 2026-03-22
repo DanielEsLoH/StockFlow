@@ -63,7 +63,10 @@ export class CreateRecurringInvoiceDto {
   @IsString()
   notes?: string;
 
-  @ApiProperty({ description: 'Invoice items', type: [RecurringInvoiceItemDto] })
+  @ApiProperty({
+    description: 'Invoice items',
+    type: [RecurringInvoiceItemDto],
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RecurringInvoiceItemDto)

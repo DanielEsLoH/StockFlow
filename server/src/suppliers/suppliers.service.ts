@@ -497,7 +497,11 @@ export class SuppliersService {
   ): Promise<void> {
     await this.cache.invalidate(CACHE_KEYS.SUPPLIERS, tenantId);
     if (supplierId) {
-      const key = this.cache.generateKey(CACHE_KEYS.SUPPLIER, tenantId, supplierId);
+      const key = this.cache.generateKey(
+        CACHE_KEYS.SUPPLIER,
+        tenantId,
+        supplierId,
+      );
       await this.cache.del(key);
     }
     await this.cache.invalidate(CACHE_KEYS.DASHBOARD, tenantId);

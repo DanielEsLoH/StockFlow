@@ -457,10 +457,7 @@ export class PayrollReportsService {
       const monthDeductions = Number(period.totalDeducciones) || 0;
       const monthNetPay = Number(period.totalNeto) || 0;
 
-      if (
-        period.status === 'APPROVED' ||
-        period.status === 'CLOSED'
-      ) {
+      if (period.status === 'APPROVED' || period.status === 'CLOSED') {
         totalEarnings += monthEarnings;
         totalDeductions += monthDeductions;
         totalNetPay += monthNetPay;

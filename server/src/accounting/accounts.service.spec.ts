@@ -247,9 +247,22 @@ describe('AccountsService', () => {
     });
 
     it('should nest children under their parent', async () => {
-      const parent = { ...mockAccount, id: 'parent-1', code: '11', parentId: null };
-      const child = { ...mockAccount, id: 'child-1', code: '1105', parentId: 'parent-1' };
-      (prismaService.account.findMany as jest.Mock).mockResolvedValue([parent, child]);
+      const parent = {
+        ...mockAccount,
+        id: 'parent-1',
+        code: '11',
+        parentId: null,
+      };
+      const child = {
+        ...mockAccount,
+        id: 'child-1',
+        code: '1105',
+        parentId: 'parent-1',
+      };
+      (prismaService.account.findMany as jest.Mock).mockResolvedValue([
+        parent,
+        child,
+      ]);
 
       const result = await service.findTree();
 
@@ -260,7 +273,11 @@ describe('AccountsService', () => {
     });
 
     it('should place accounts with missing parent into roots', async () => {
-      const orphan = { ...mockAccount, id: 'orphan-1', parentId: 'non-existent-parent' };
+      const orphan = {
+        ...mockAccount,
+        id: 'orphan-1',
+        parentId: 'non-existent-parent',
+      };
       (prismaService.account.findMany as jest.Mock).mockResolvedValue([orphan]);
 
       const result = await service.findTree();
@@ -307,7 +324,9 @@ describe('AccountsService', () => {
     });
 
     it('should initialize children as empty arrays on all nodes', async () => {
-      (prismaService.account.findMany as jest.Mock).mockResolvedValue([mockAccount]);
+      (prismaService.account.findMany as jest.Mock).mockResolvedValue([
+        mockAccount,
+      ]);
 
       const result = await service.findTree();
 
@@ -317,7 +336,9 @@ describe('AccountsService', () => {
 
   describe('findOne', () => {
     it('should return a single account by id', async () => {
-      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
       const result = await service.findOne('account-123');
 
@@ -343,7 +364,9 @@ describe('AccountsService', () => {
     });
 
     it('should scope query to tenant', async () => {
-      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
       await service.findOne('account-123');
 
@@ -353,7 +376,9 @@ describe('AccountsService', () => {
     });
 
     it('should include all expected fields in response', async () => {
-      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
       const result = await service.findOne('account-123');
 
@@ -376,7 +401,9 @@ describe('AccountsService', () => {
 
   describe('findByCode', () => {
     it('should return an account by code', async () => {
-      (prismaService.account.findUnique as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
       const result = await service.findByCode('1105');
 
@@ -432,7 +459,9 @@ describe('AccountsService', () => {
 
     beforeEach(() => {
       (prismaService.account.findUnique as jest.Mock).mockResolvedValue(null);
-      (prismaService.account.create as jest.Mock).mockResolvedValue(createdAccount);
+      (prismaService.account.create as jest.Mock).mockResolvedValue(
+        createdAccount,
+      );
     });
 
     it('should create a new account', async () => {
@@ -457,13 +486,19 @@ describe('AccountsService', () => {
     });
 
     it('should throw ConflictException when code already exists', async () => {
-      (prismaService.account.findUnique as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
-      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ConflictException with correct message', async () => {
-      (prismaService.account.findUnique as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findUnique as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
       await expect(service.create(createDto)).rejects.toThrow(
         'Ya existe una cuenta con el codigo 110505',
@@ -475,7 +510,9 @@ describe('AccountsService', () => {
         ...createDto,
         parentId: 'parent-account-id',
       };
-      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(mockParentAccount);
+      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(
+        mockParentAccount,
+      );
 
       await service.create(dtoWithParent);
 
@@ -601,7 +638,10 @@ describe('AccountsService', () => {
     });
 
     it('should set isBankAccount when provided', async () => {
-      const dtoWithBank: CreateAccountDto = { ...createDto, isBankAccount: true };
+      const dtoWithBank: CreateAccountDto = {
+        ...createDto,
+        isBankAccount: true,
+      };
 
       await service.create(dtoWithBank);
 
@@ -651,7 +691,9 @@ describe('AccountsService', () => {
     };
 
     beforeEach(() => {
-      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
       (prismaService.account.update as jest.Mock).mockResolvedValue({
         ...mockAccount,
         name: 'Caja Actualizada',
@@ -708,9 +750,9 @@ describe('AccountsService', () => {
         .mockResolvedValueOnce(mockAccount)
         .mockResolvedValueOnce(null);
 
-      await expect(service.update('account-123', dtoWithParent)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.update('account-123', dtoWithParent),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException with correct message for missing parent', async () => {
@@ -721,9 +763,9 @@ describe('AccountsService', () => {
         .mockResolvedValueOnce(mockAccount)
         .mockResolvedValueOnce(null);
 
-      await expect(service.update('account-123', dtoWithParent)).rejects.toThrow(
-        'La cuenta padre no existe',
-      );
+      await expect(
+        service.update('account-123', dtoWithParent),
+      ).rejects.toThrow('La cuenta padre no existe');
     });
 
     it('should prevent circular reference when parentId equals own id', async () => {
@@ -785,7 +827,9 @@ describe('AccountsService', () => {
     });
 
     it('should update only provided fields', async () => {
-      const partialUpdate: UpdateAccountDto = { description: 'Solo descripcion' };
+      const partialUpdate: UpdateAccountDto = {
+        description: 'Solo descripcion',
+      };
       (prismaService.account.update as jest.Mock).mockResolvedValue({
         ...mockAccount,
         description: 'Solo descripcion',
@@ -821,7 +865,9 @@ describe('AccountsService', () => {
 
   describe('mapToResponse', () => {
     it('should map all account fields correctly', async () => {
-      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
       const result = await service.findOne('account-123');
 
@@ -842,8 +888,13 @@ describe('AccountsService', () => {
     });
 
     it('should not include unexpected properties', async () => {
-      const accountWithExtra = { ...mockAccount, extraField: 'should not appear' };
-      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(accountWithExtra);
+      const accountWithExtra = {
+        ...mockAccount,
+        extraField: 'should not appear',
+      };
+      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(
+        accountWithExtra,
+      );
 
       const result = await service.findOne('account-123');
 
@@ -876,8 +927,12 @@ describe('AccountsService', () => {
 
     it('should log when account is updated', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
-      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(mockAccount);
-      (prismaService.account.update as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
+      (prismaService.account.update as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
       await service.update('account-123', { description: 'Updated' });
 
@@ -901,7 +956,9 @@ describe('AccountsService', () => {
     });
 
     it('should scope findOne to tenant', async () => {
-      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
       await service.findOne('account-123');
 
@@ -933,7 +990,9 @@ describe('AccountsService', () => {
 
     it('should scope create uniqueness check to tenant', async () => {
       (prismaService.account.findUnique as jest.Mock).mockResolvedValue(null);
-      (prismaService.account.create as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.create as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
       await service.create({
         code: '1105',
@@ -950,8 +1009,12 @@ describe('AccountsService', () => {
     });
 
     it('should scope update account lookup to tenant', async () => {
-      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(mockAccount);
-      (prismaService.account.update as jest.Mock).mockResolvedValue(mockAccount);
+      (prismaService.account.findFirst as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
+      (prismaService.account.update as jest.Mock).mockResolvedValue(
+        mockAccount,
+      );
 
       await service.update('account-123', { name: 'Test' });
 

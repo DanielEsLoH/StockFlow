@@ -4,7 +4,11 @@ import { PurchasePaymentsService } from './purchase-payments.service';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { AccountingBridgeService } from '../accounting';
-import { PaymentMethod, PaymentStatus, PurchaseOrderStatus } from '@prisma/client';
+import {
+  PaymentMethod,
+  PaymentStatus,
+  PurchaseOrderStatus,
+} from '@prisma/client';
 
 const TENANT_ID = 'tenant-1';
 
@@ -66,7 +70,9 @@ describe('PurchasePaymentsService', () => {
     });
 
     it('should return payments ordered by date desc', async () => {
-      mockPrismaService.purchaseOrder.findFirst.mockResolvedValue({ id: 'po-1' });
+      mockPrismaService.purchaseOrder.findFirst.mockResolvedValue({
+        id: 'po-1',
+      });
       mockPrismaService.purchasePayment.findMany.mockResolvedValue([
         {
           id: 'pay-1',
@@ -162,7 +168,9 @@ describe('PurchasePaymentsService', () => {
         },
       };
 
-      mockPrismaService.purchasePayment.create.mockResolvedValue(createdPayment);
+      mockPrismaService.purchasePayment.create.mockResolvedValue(
+        createdPayment,
+      );
       mockPrismaService.purchaseOrder.update = jest.fn();
 
       const result = await service.create('po-1', baseDto);
@@ -190,7 +198,9 @@ describe('PurchasePaymentsService', () => {
         },
       };
 
-      mockPrismaService.purchasePayment.create.mockResolvedValue(createdPayment);
+      mockPrismaService.purchasePayment.create.mockResolvedValue(
+        createdPayment,
+      );
       mockPrismaService.purchaseOrder.update = jest.fn();
 
       const result = await service.create('po-1', {
@@ -220,12 +230,16 @@ describe('PurchasePaymentsService', () => {
         },
       };
 
-      mockPrismaService.purchasePayment.create.mockResolvedValue(createdPayment);
+      mockPrismaService.purchasePayment.create.mockResolvedValue(
+        createdPayment,
+      );
       mockPrismaService.purchaseOrder.update = jest.fn();
 
       await service.create('po-1', baseDto);
 
-      expect(mockAccountingBridge.onPurchasePaymentCreated).toHaveBeenCalledWith(
+      expect(
+        mockAccountingBridge.onPurchasePaymentCreated,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: TENANT_ID,
           purchasePaymentId: 'pay-1',

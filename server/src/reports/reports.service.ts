@@ -1165,7 +1165,16 @@ export class ReportsService {
         costCenterId: string;
         costCenterCode: string;
         costCenterName: string;
-        accounts: Map<string, { accountId: string; accountCode: string; accountName: string; totalDebit: number; totalCredit: number }>;
+        accounts: Map<
+          string,
+          {
+            accountId: string;
+            accountCode: string;
+            accountName: string;
+            totalDebit: number;
+            totalCredit: number;
+          }
+        >;
       }
     >();
 
@@ -1221,9 +1230,17 @@ export class ReportsService {
       .sort((a, b) => a.costCenterCode.localeCompare(b.costCenterCode));
 
     if (format === 'excel') {
-      return this.generateCostCenterBalanceExcel(costCenterBalances, fromDate, toDate);
+      return this.generateCostCenterBalanceExcel(
+        costCenterBalances,
+        fromDate,
+        toDate,
+      );
     }
-    return this.generateCostCenterBalancePdf(costCenterBalances, fromDate, toDate);
+    return this.generateCostCenterBalancePdf(
+      costCenterBalances,
+      fromDate,
+      toDate,
+    );
   }
 
   private async generateCostCenterBalancePdf(
@@ -1246,8 +1263,15 @@ export class ReportsService {
     for (const cc of data) {
       // Cost center header row
       body.push([
-        { text: `${cc.costCenterCode} - ${cc.costCenterName}`, colSpan: 5, style: 'subheader' },
-        {}, {}, {}, {},
+        {
+          text: `${cc.costCenterCode} - ${cc.costCenterName}`,
+          colSpan: 5,
+          style: 'subheader',
+        },
+        {},
+        {},
+        {},
+        {},
       ]);
 
       for (const acc of cc.accounts) {
@@ -1264,9 +1288,21 @@ export class ReportsService {
       body.push([
         { text: 'Subtotal', colSpan: 2, style: 'tableTotal' },
         {},
-        { text: this.formatNumber(cc.totalDebit), alignment: 'right', style: 'tableTotal' },
-        { text: this.formatNumber(cc.totalCredit), alignment: 'right', style: 'tableTotal' },
-        { text: this.formatNumber(cc.totalDebit - cc.totalCredit), alignment: 'right', style: 'tableTotal' },
+        {
+          text: this.formatNumber(cc.totalDebit),
+          alignment: 'right',
+          style: 'tableTotal',
+        },
+        {
+          text: this.formatNumber(cc.totalCredit),
+          alignment: 'right',
+          style: 'tableTotal',
+        },
+        {
+          text: this.formatNumber(cc.totalDebit - cc.totalCredit),
+          alignment: 'right',
+          style: 'tableTotal',
+        },
       ]);
     }
 
@@ -1292,8 +1328,18 @@ export class ReportsService {
         companyName: { fontSize: 14, bold: true, margin: [0, 0, 0, 2] },
         header: { fontSize: 12, margin: [0, 0, 0, 4] },
         period: { fontSize: 9, color: '#666', margin: [0, 0, 0, 10] },
-        subheader: { fontSize: 10, bold: true, fillColor: '#f0f0f0', margin: [0, 4, 0, 4] },
-        tableHeader: { fontSize: 9, bold: true, fillColor: '#333', color: '#fff' },
+        subheader: {
+          fontSize: 10,
+          bold: true,
+          fillColor: '#f0f0f0',
+          margin: [0, 4, 0, 4],
+        },
+        tableHeader: {
+          fontSize: 9,
+          bold: true,
+          fillColor: '#333',
+          color: '#fff',
+        },
         tableTotal: { fontSize: 9, bold: true },
       },
       defaultStyle: { fontSize: 8 },
@@ -1314,7 +1360,15 @@ export class ReportsService {
       ['Balance por Centro de Costo'],
       [`Periodo: ${this.formatDate(fromDate)} - ${this.formatDate(toDate)}`],
       [],
-      ['Centro de Costo', 'Codigo CC', 'Cuenta', 'Nombre Cuenta', 'Debitos', 'Creditos', 'Saldo'],
+      [
+        'Centro de Costo',
+        'Codigo CC',
+        'Cuenta',
+        'Nombre Cuenta',
+        'Debitos',
+        'Creditos',
+        'Saldo',
+      ],
     ];
 
     for (const cc of data) {
@@ -1359,7 +1413,13 @@ export class ReportsService {
           a.balance,
         ]),
         [],
-        ['TOTAL', '', cc.totalDebit, cc.totalCredit, cc.totalDebit - cc.totalCredit],
+        [
+          'TOTAL',
+          '',
+          cc.totalDebit,
+          cc.totalCredit,
+          cc.totalDebit - cc.totalCredit,
+        ],
       ];
 
       const sheet = XLSX.utils.aoa_to_sheet(rows);
@@ -1385,12 +1445,30 @@ export class ReportsService {
       periodLabel: string;
       fromDate: string;
       toDate: string;
-      salesByRate: { taxRate: number; taxableBase: number; taxAmount: number; invoiceCount: number }[];
-      salesExempt: { category: string; taxableBase: number; invoiceCount: number }[];
+      salesByRate: {
+        taxRate: number;
+        taxableBase: number;
+        taxAmount: number;
+        invoiceCount: number;
+      }[];
+      salesExempt: {
+        category: string;
+        taxableBase: number;
+        invoiceCount: number;
+      }[];
       totalSalesBase: number;
       totalIvaGenerado: number;
-      purchasesByRate: { taxRate: number; taxableBase: number; taxAmount: number; invoiceCount: number }[];
-      purchasesExempt: { category: string; taxableBase: number; invoiceCount: number }[];
+      purchasesByRate: {
+        taxRate: number;
+        taxableBase: number;
+        taxAmount: number;
+        invoiceCount: number;
+      }[];
+      purchasesExempt: {
+        category: string;
+        taxableBase: number;
+        invoiceCount: number;
+      }[];
       totalPurchasesBase: number;
       totalIvaDescontable: number;
       netIvaPayable: number;
@@ -1403,7 +1481,9 @@ export class ReportsService {
     return this.generateIvaDeclarationPdf(data);
   }
 
-  private async generateIvaDeclarationPdf(data: Parameters<typeof this.generateIvaDeclarationReport>[0]): Promise<Buffer> {
+  private async generateIvaDeclarationPdf(
+    data: Parameters<typeof this.generateIvaDeclarationReport>[0],
+  ): Promise<Buffer> {
     const tenant = await this.tenantContext.getTenant();
 
     const salesBody: any[][] = [
@@ -1433,8 +1513,16 @@ export class ReportsService {
     }
     salesBody.push([
       { text: 'Total Ventas', style: 'tableTotal' },
-      { text: this.formatNumber(data.totalSalesBase), alignment: 'right', style: 'tableTotal' },
-      { text: this.formatNumber(data.totalIvaGenerado), alignment: 'right', style: 'tableTotal' },
+      {
+        text: this.formatNumber(data.totalSalesBase),
+        alignment: 'right',
+        style: 'tableTotal',
+      },
+      {
+        text: this.formatNumber(data.totalIvaGenerado),
+        alignment: 'right',
+        style: 'tableTotal',
+      },
       {},
     ]);
 
@@ -1465,8 +1553,16 @@ export class ReportsService {
     }
     purchasesBody.push([
       { text: 'Total Compras', style: 'tableTotal' },
-      { text: this.formatNumber(data.totalPurchasesBase), alignment: 'right', style: 'tableTotal' },
-      { text: this.formatNumber(data.totalIvaDescontable), alignment: 'right', style: 'tableTotal' },
+      {
+        text: this.formatNumber(data.totalPurchasesBase),
+        alignment: 'right',
+        style: 'tableTotal',
+      },
+      {
+        text: this.formatNumber(data.totalIvaDescontable),
+        alignment: 'right',
+        style: 'tableTotal',
+      },
       {},
     ]);
 
@@ -1484,7 +1580,11 @@ export class ReportsService {
         { text: '', margin: [0, 15, 0, 0] },
         { text: 'IVA Descontable (Compras)', style: 'subheader' },
         {
-          table: { headerRows: 1, widths: [60, '*', 100, 60], body: purchasesBody },
+          table: {
+            headerRows: 1,
+            widths: [60, '*', 100, 60],
+            body: purchasesBody,
+          },
           layout: 'lightHorizontalLines',
         },
         { text: '', margin: [0, 15, 0, 0] },
@@ -1492,11 +1592,28 @@ export class ReportsService {
           table: {
             widths: ['*', 120],
             body: [
-              [{ text: 'Total IVA Generado', bold: true }, { text: this.formatNumber(data.totalIvaGenerado), alignment: 'right' }],
-              [{ text: 'Total IVA Descontable', bold: true }, { text: this.formatNumber(data.totalIvaDescontable), alignment: 'right' }],
+              [
+                { text: 'Total IVA Generado', bold: true },
+                {
+                  text: this.formatNumber(data.totalIvaGenerado),
+                  alignment: 'right',
+                },
+              ],
+              [
+                { text: 'Total IVA Descontable', bold: true },
+                {
+                  text: this.formatNumber(data.totalIvaDescontable),
+                  alignment: 'right',
+                },
+              ],
               [
                 { text: 'IVA NETO A PAGAR', bold: true, fontSize: 11 },
-                { text: this.formatNumber(data.netIvaPayable), alignment: 'right', bold: true, fontSize: 11 },
+                {
+                  text: this.formatNumber(data.netIvaPayable),
+                  alignment: 'right',
+                  bold: true,
+                  fontSize: 11,
+                },
               ],
             ],
           },
@@ -1508,7 +1625,12 @@ export class ReportsService {
         header: { fontSize: 12, margin: [0, 0, 0, 4] },
         period: { fontSize: 9, color: '#666', margin: [0, 0, 0, 10] },
         subheader: { fontSize: 10, bold: true, margin: [0, 4, 0, 4] },
-        tableHeader: { fontSize: 9, bold: true, fillColor: '#333', color: '#fff' },
+        tableHeader: {
+          fontSize: 9,
+          bold: true,
+          fillColor: '#333',
+          color: '#fff',
+        },
         tableTotal: { fontSize: 9, bold: true },
       },
       defaultStyle: { fontSize: 8 },
@@ -1517,7 +1639,9 @@ export class ReportsService {
     return this.generatePdfBuffer(docDefinition);
   }
 
-  private generateIvaDeclarationExcel(data: Parameters<typeof this.generateIvaDeclarationReport>[0]): Buffer {
+  private generateIvaDeclarationExcel(
+    data: Parameters<typeof this.generateIvaDeclarationReport>[0],
+  ): Buffer {
     const workbook = XLSX.utils.book_new();
 
     const rows: any[][] = [
@@ -1529,7 +1653,12 @@ export class ReportsService {
     ];
 
     for (const row of data.salesByRate) {
-      rows.push([`${row.taxRate}%`, row.taxableBase, row.taxAmount, row.invoiceCount]);
+      rows.push([
+        `${row.taxRate}%`,
+        row.taxableBase,
+        row.taxAmount,
+        row.invoiceCount,
+      ]);
     }
     for (const row of data.salesExempt) {
       rows.push([row.category, row.taxableBase, 0, row.invoiceCount]);
@@ -1540,12 +1669,22 @@ export class ReportsService {
     rows.push(['Tarifa', 'Base Gravable', 'IVA', 'Compras']);
 
     for (const row of data.purchasesByRate) {
-      rows.push([`${row.taxRate}%`, row.taxableBase, row.taxAmount, row.invoiceCount]);
+      rows.push([
+        `${row.taxRate}%`,
+        row.taxableBase,
+        row.taxAmount,
+        row.invoiceCount,
+      ]);
     }
     for (const row of data.purchasesExempt) {
       rows.push([row.category, row.taxableBase, 0, row.invoiceCount]);
     }
-    rows.push(['Total Compras', data.totalPurchasesBase, data.totalIvaDescontable, '']);
+    rows.push([
+      'Total Compras',
+      data.totalPurchasesBase,
+      data.totalIvaDescontable,
+      '',
+    ]);
     rows.push([]);
     rows.push(['RESUMEN']);
     rows.push(['Total IVA Generado', data.totalIvaGenerado]);
@@ -1561,7 +1700,15 @@ export class ReportsService {
   async generateReteFuenteSummaryReport(
     data: {
       monthLabel: string;
-      rows: { supplierNit: string; supplierName: string; totalBase: number; totalWithheld: number; withholdingRate: number; purchaseCount: number; certificateNumber: string | null }[];
+      rows: {
+        supplierNit: string;
+        supplierName: string;
+        totalBase: number;
+        totalWithheld: number;
+        withholdingRate: number;
+        purchaseCount: number;
+        certificateNumber: string | null;
+      }[];
       totalBase: number;
       totalWithheld: number;
     },
@@ -1573,7 +1720,9 @@ export class ReportsService {
     return this.generateReteFuenteSummaryPdf(data);
   }
 
-  private async generateReteFuenteSummaryPdf(data: Parameters<typeof this.generateReteFuenteSummaryReport>[0]): Promise<Buffer> {
+  private async generateReteFuenteSummaryPdf(
+    data: Parameters<typeof this.generateReteFuenteSummaryReport>[0],
+  ): Promise<Buffer> {
     const tenant = await this.tenantContext.getTenant();
 
     const body: any[][] = [
@@ -1603,9 +1752,18 @@ export class ReportsService {
     body.push([
       { text: 'TOTALES', colSpan: 2, style: 'tableTotal' },
       {},
-      { text: this.formatNumber(data.totalBase), alignment: 'right', style: 'tableTotal' },
-      { text: this.formatNumber(data.totalWithheld), alignment: 'right', style: 'tableTotal' },
-      {}, {},
+      {
+        text: this.formatNumber(data.totalBase),
+        alignment: 'right',
+        style: 'tableTotal',
+      },
+      {
+        text: this.formatNumber(data.totalWithheld),
+        alignment: 'right',
+        style: 'tableTotal',
+      },
+      {},
+      {},
       {},
     ]);
 
@@ -1625,7 +1783,12 @@ export class ReportsService {
         companyName: { fontSize: 14, bold: true, margin: [0, 0, 0, 2] },
         header: { fontSize: 12, margin: [0, 0, 0, 4] },
         period: { fontSize: 9, color: '#666', margin: [0, 0, 0, 10] },
-        tableHeader: { fontSize: 9, bold: true, fillColor: '#333', color: '#fff' },
+        tableHeader: {
+          fontSize: 9,
+          bold: true,
+          fillColor: '#333',
+          color: '#fff',
+        },
         tableTotal: { fontSize: 9, bold: true },
       },
       defaultStyle: { fontSize: 8 },
@@ -1634,14 +1797,24 @@ export class ReportsService {
     return this.generatePdfBuffer(docDefinition);
   }
 
-  private generateReteFuenteSummaryExcel(data: Parameters<typeof this.generateReteFuenteSummaryReport>[0]): Buffer {
+  private generateReteFuenteSummaryExcel(
+    data: Parameters<typeof this.generateReteFuenteSummaryReport>[0],
+  ): Buffer {
     const workbook = XLSX.utils.book_new();
 
     const rows: any[][] = [
       ['Resumen de ReteFuente'],
       [`Periodo: ${data.monthLabel}`],
       [],
-      ['NIT', 'Proveedor', 'Base', 'Retencion', 'Tarifa', 'Compras', 'Certificado'],
+      [
+        'NIT',
+        'Proveedor',
+        'Base',
+        'Retencion',
+        'Tarifa',
+        'Compras',
+        'Certificado',
+      ],
     ];
 
     for (const row of data.rows) {
@@ -1673,7 +1846,17 @@ export class ReportsService {
         [`NIT: ${data.tenantNit} - ${data.tenantName}`],
         [`Año Gravable: ${data.year}`],
         [],
-        ['Concepto', 'Tipo Doc', 'No. Documento', 'DV', 'Razon Social', 'Direccion', 'Ciudad', 'Monto', 'IVA'],
+        [
+          'Concepto',
+          'Tipo Doc',
+          'No. Documento',
+          'DV',
+          'Razon Social',
+          'Direccion',
+          'Ciudad',
+          'Monto',
+          'IVA',
+        ],
       ];
 
       for (const row of formato.rows) {
@@ -1691,7 +1874,17 @@ export class ReportsService {
       }
 
       rows.push([]);
-      rows.push(['', '', '', '', '', '', 'TOTALES', formato.totalAmount, formato.totalTaxAmount]);
+      rows.push([
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        'TOTALES',
+        formato.totalAmount,
+        formato.totalTaxAmount,
+      ]);
 
       const sheet = XLSX.utils.aoa_to_sheet(rows);
       XLSX.utils.book_append_sheet(workbook, sheet, `F${formato.formatNumber}`);

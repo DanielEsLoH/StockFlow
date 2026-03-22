@@ -13,8 +13,7 @@ export class FilterPurchaseOrdersDto extends PaginationDto {
     example: 'DRAFT',
   })
   @IsEnum(PurchaseOrderStatus, {
-    message:
-      'El estado debe ser DRAFT, SENT, CONFIRMED, RECEIVED o CANCELLED',
+    message: 'El estado debe ser DRAFT, SENT, CONFIRMED, RECEIVED o CANCELLED',
   })
   @IsOptional()
   status?: PurchaseOrderStatus;

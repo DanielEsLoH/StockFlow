@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  Logger,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { ExpenseCategory, ExpenseStatus, PaymentMethod } from '@prisma/client';
 import { ExpensesService } from './expenses.service';
 import { PrismaService } from '../prisma';
@@ -496,9 +492,9 @@ describe('ExpensesService', () => {
     it('should throw NotFoundException when not found', async () => {
       (prisma.expense.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.approve('nonexistent', mockUserId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.approve('nonexistent', mockUserId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ConflictException for non-DRAFT expense', async () => {
@@ -507,9 +503,9 @@ describe('ExpensesService', () => {
         status: ExpenseStatus.APPROVED,
       });
 
-      await expect(
-        service.approve('expense-1', mockUserId),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.approve('expense-1', mockUserId)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -698,14 +694,33 @@ describe('ExpensesService', () => {
       (prisma.expense.groupBy as jest.Mock)
         .mockResolvedValueOnce([
           // Status aggregates
-          { status: ExpenseStatus.DRAFT, _count: { status: 2 }, _sum: { total: 200000 } },
-          { status: ExpenseStatus.APPROVED, _count: { status: 1 }, _sum: { total: 100000 } },
-          { status: ExpenseStatus.PAID, _count: { status: 1 }, _sum: { total: 300000 } },
-          { status: ExpenseStatus.CANCELLED, _count: { status: 1 }, _sum: { total: 50000 } },
+          {
+            status: ExpenseStatus.DRAFT,
+            _count: { status: 2 },
+            _sum: { total: 200000 },
+          },
+          {
+            status: ExpenseStatus.APPROVED,
+            _count: { status: 1 },
+            _sum: { total: 100000 },
+          },
+          {
+            status: ExpenseStatus.PAID,
+            _count: { status: 1 },
+            _sum: { total: 300000 },
+          },
+          {
+            status: ExpenseStatus.CANCELLED,
+            _count: { status: 1 },
+            _sum: { total: 50000 },
+          },
         ])
         .mockResolvedValueOnce([
           // Category aggregates (current month)
-          { category: ExpenseCategory.SERVICIOS_PUBLICOS, _sum: { total: 169000 } },
+          {
+            category: ExpenseCategory.SERVICIOS_PUBLICOS,
+            _sum: { total: 169000 },
+          },
           { category: ExpenseCategory.HONORARIOS, _sum: { total: 500000 } },
         ]);
 

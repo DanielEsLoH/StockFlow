@@ -36,14 +36,20 @@ export class AccountingConfigController {
   @Get('config')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
   @ApiOperation({ summary: 'Get accounting configuration' })
-  @ApiResponse({ status: 200, description: 'Config returned (or null if not set up)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Config returned (or null if not set up)',
+  })
   async getConfig(): Promise<AccountingConfigResponse | null> {
     return this.configService.getConfig();
   }
 
   @Patch('config')
   @RequirePermissions(Permission.ACCOUNTING_CONFIG)
-  @ApiOperation({ summary: 'Update accounting configuration', description: 'Map PUC accounts to business operations' })
+  @ApiOperation({
+    summary: 'Update accounting configuration',
+    description: 'Map PUC accounts to business operations',
+  })
   @ApiResponse({ status: 200, description: 'Config updated' })
   async updateConfig(
     @Body() dto: UpdateAccountingConfigDto,
@@ -55,10 +61,14 @@ export class AccountingConfigController {
   @RequirePermissions(Permission.ACCOUNTING_CONFIG)
   @ApiOperation({
     summary: 'Initial accounting setup',
-    description: 'Seeds the PUC chart of accounts and creates initial config for this tenant',
+    description:
+      'Seeds the PUC chart of accounts and creates initial config for this tenant',
   })
   @ApiResponse({ status: 201, description: 'Accounting set up successfully' })
-  @ApiResponse({ status: 409, description: 'Accounting already set up for this tenant' })
+  @ApiResponse({
+    status: 409,
+    description: 'Accounting already set up for this tenant',
+  })
   async setup(): Promise<{ message: string; accountsCreated: number }> {
     return this.setupService.setup();
   }

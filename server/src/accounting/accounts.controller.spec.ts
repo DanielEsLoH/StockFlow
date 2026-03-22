@@ -36,9 +36,7 @@ describe('AccountsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AccountsController],
-      providers: [
-        { provide: AccountsService, useValue: mockService },
-      ],
+      providers: [{ provide: AccountsService, useValue: mockService }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -77,7 +75,11 @@ describe('AccountsController', () => {
     it('should pass search and type filters', async () => {
       await controller.findAll('caja', AccountType.ASSET);
 
-      expect(service.findAll).toHaveBeenCalledWith('caja', AccountType.ASSET, true);
+      expect(service.findAll).toHaveBeenCalledWith(
+        'caja',
+        AccountType.ASSET,
+        true,
+      );
     });
 
     it('should pass activeOnly false when query is "false"', async () => {
@@ -115,13 +117,19 @@ describe('AccountsController', () => {
     it('should propagate NotFoundException', async () => {
       service.findOne.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findOne('invalid')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   // ─── CREATE ────────────────────────────────────────────────────
   describe('create', () => {
-    const dto = { code: '110510', name: 'Caja Menor', type: AccountType.ASSET } as any;
+    const dto = {
+      code: '110510',
+      name: 'Caja Menor',
+      type: AccountType.ASSET,
+    } as any;
 
     it('should delegate to service', async () => {
       const result = await controller.create(dto);
@@ -150,7 +158,9 @@ describe('AccountsController', () => {
     it('should propagate NotFoundException', async () => {
       service.update.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.update('invalid', {} as any)).rejects.toThrow(NotFoundException);
+      await expect(controller.update('invalid', {} as any)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

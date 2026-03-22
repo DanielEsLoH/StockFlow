@@ -35,7 +35,10 @@ export class AccountsController {
 
   @Get()
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
-  @ApiOperation({ summary: 'List all accounts (flat)', description: 'Returns all accounts in flat list ordered by code' })
+  @ApiOperation({
+    summary: 'List all accounts (flat)',
+    description: 'Returns all accounts in flat list ordered by code',
+  })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'type', required: false, enum: AccountType })
   @ApiQuery({ name: 'activeOnly', required: false, type: Boolean })
@@ -45,17 +48,19 @@ export class AccountsController {
     @Query('type') type?: AccountType,
     @Query('activeOnly') activeOnly?: string,
   ): Promise<AccountResponse[]> {
-    return this.accountsService.findAll(
-      search,
-      type,
-      activeOnly !== 'false',
-    );
+    return this.accountsService.findAll(search, type, activeOnly !== 'false');
   }
 
   @Get('tree')
   @RequirePermissions(Permission.ACCOUNTING_VIEW)
-  @ApiOperation({ summary: 'Get accounts tree', description: 'Returns accounts in hierarchical tree structure' })
-  @ApiResponse({ status: 200, description: 'Account tree returned successfully' })
+  @ApiOperation({
+    summary: 'Get accounts tree',
+    description: 'Returns accounts in hierarchical tree structure',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Account tree returned successfully',
+  })
   async findTree(): Promise<AccountTreeResponse> {
     return this.accountsService.findTree();
   }
@@ -71,7 +76,10 @@ export class AccountsController {
 
   @Post()
   @RequirePermissions(Permission.ACCOUNTING_CONFIG)
-  @ApiOperation({ summary: 'Create a new account', description: 'Create a custom account in the chart of accounts' })
+  @ApiOperation({
+    summary: 'Create a new account',
+    description: 'Create a custom account in the chart of accounts',
+  })
   @ApiResponse({ status: 201, description: 'Account created' })
   @ApiResponse({ status: 409, description: 'Account code already exists' })
   async create(@Body() dto: CreateAccountDto): Promise<AccountResponse> {

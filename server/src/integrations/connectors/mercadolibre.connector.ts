@@ -60,10 +60,9 @@ export class MercadoLibreConnector implements PlatformConnector {
       for (let i = 0; i < itemsData.results.length; i += batchSize) {
         const batch = itemsData.results.slice(i, i + batchSize);
         const ids = batch.join(',');
-        const batchRes = await fetch(
-          `${this.baseUrl}/items?ids=${ids}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } },
-        );
+        const batchRes = await fetch(`${this.baseUrl}/items?ids=${ids}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
 
         if (!batchRes.ok) continue;
 
@@ -129,7 +128,11 @@ export class MercadoLibreConnector implements PlatformConnector {
       const ordersData = (await ordersRes.json()) as {
         results: Array<{
           id: number;
-          buyer: { first_name: string; last_name: string; email: string | null };
+          buyer: {
+            first_name: string;
+            last_name: string;
+            email: string | null;
+          };
           order_items: Array<{
             item: { id: string; title: string; seller_sku: string | null };
             quantity: number;
@@ -191,9 +194,6 @@ export class MercadoLibreConnector implements PlatformConnector {
       .createHmac('sha256', secret)
       .update(payload)
       .digest('hex');
-    return crypto.timingSafeEqual(
-      Buffer.from(hmac),
-      Buffer.from(signature),
-    );
+    return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(signature));
   }
 }

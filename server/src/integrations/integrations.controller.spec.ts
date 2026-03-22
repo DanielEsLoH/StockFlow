@@ -357,9 +357,9 @@ describe('IntegrationsController', () => {
         new NotFoundException('Integracion no encontrada'),
       );
 
-      await expect(
-        controller.verifyConnection('nonexistent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.verifyConnection('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -744,9 +744,7 @@ describe('IntegrationsController', () => {
     });
 
     it('should handle limit of 1', async () => {
-      integrationsService.findSyncLogs.mockResolvedValue([
-        mockSyncLog,
-      ] as any);
+      integrationsService.findSyncLogs.mockResolvedValue([mockSyncLog] as any);
 
       await controller.findSyncLogs('integration-1', '1');
 
@@ -769,9 +767,9 @@ describe('IntegrationsController', () => {
         new NotFoundException('Integracion no encontrada'),
       );
 
-      await expect(
-        controller.findSyncLogs('nonexistent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.findSyncLogs('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should use default limit when limit string is undefined', async () => {

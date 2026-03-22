@@ -80,7 +80,10 @@ describe('PhysicalInventoryCountsService', () => {
 
   describe('create', () => {
     it('should create a new count for a valid warehouse', async () => {
-      prisma.warehouse.findFirst.mockResolvedValue({ id: 'wh-1', name: 'Bodega 1' });
+      prisma.warehouse.findFirst.mockResolvedValue({
+        id: 'wh-1',
+        name: 'Bodega 1',
+      });
       prisma.physicalInventoryCount.findFirst.mockResolvedValue(null); // no active count
       prisma.physicalInventoryCount.create.mockResolvedValue({
         id: 'count-1',
@@ -114,7 +117,9 @@ describe('PhysicalInventoryCountsService', () => {
 
     it('should throw BadRequestException when active count exists', async () => {
       prisma.warehouse.findFirst.mockResolvedValue({ id: 'wh-1' });
-      prisma.physicalInventoryCount.findFirst.mockResolvedValue({ id: 'existing' });
+      prisma.physicalInventoryCount.findFirst.mockResolvedValue({
+        id: 'existing',
+      });
 
       await expect(
         service.create({ warehouseId: 'wh-1' }, userId),
@@ -155,7 +160,11 @@ describe('PhysicalInventoryCountsService', () => {
       prisma.physicalInventoryCount.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.addItem('count-x', { productId: 'prod-1', physicalQuantity: 5 }, userId),
+        service.addItem(
+          'count-x',
+          { productId: 'prod-1', physicalQuantity: 5 },
+          userId,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -166,7 +175,11 @@ describe('PhysicalInventoryCountsService', () => {
       });
 
       await expect(
-        service.addItem('count-1', { productId: 'prod-1', physicalQuantity: 5 }, userId),
+        service.addItem(
+          'count-1',
+          { productId: 'prod-1', physicalQuantity: 5 },
+          userId,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });

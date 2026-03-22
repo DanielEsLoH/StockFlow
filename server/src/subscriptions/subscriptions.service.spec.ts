@@ -62,9 +62,7 @@ function createMockSubscription(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function createMockWompiTransaction(
-  overrides: Record<string, unknown> = {},
-) {
+function createMockWompiTransaction(overrides: Record<string, unknown> = {}) {
   return {
     id: TRANSACTION_ID,
     status: 'APPROVED' as const,
@@ -79,9 +77,7 @@ function createMockWompiTransaction(
   };
 }
 
-function createMockBillingTransaction(
-  overrides: Record<string, unknown> = {},
-) {
+function createMockBillingTransaction(overrides: Record<string, unknown> = {}) {
   return {
     id: BILLING_TX_ID,
     tenantId: TENANT_ID,
@@ -219,7 +215,9 @@ describe('SubscriptionsService', () => {
     };
 
     const brevoService = {
-      sendSubscriptionPaymentEmail: jest.fn().mockResolvedValue({ success: true }),
+      sendSubscriptionPaymentEmail: jest
+        .fn()
+        .mockResolvedValue({ success: true }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -470,8 +468,10 @@ describe('SubscriptionsService', () => {
       );
 
       const expectedPrice =
-        calculatePlanPrice(SubscriptionPlan.PYME, SubscriptionPeriod.QUARTERLY) *
-        100;
+        calculatePlanPrice(
+          SubscriptionPlan.PYME,
+          SubscriptionPeriod.QUARTERLY,
+        ) * 100;
 
       expect(wompiService.generateIntegrityHash).toHaveBeenCalledWith(
         expect.stringMatching(/^SF-/),
@@ -875,11 +875,7 @@ describe('SubscriptionsService', () => {
         customer_email: 'company@test.com',
       });
 
-      await service.createPaymentSource(
-        TENANT_ID,
-        'token',
-        'accept',
-      );
+      await service.createPaymentSource(TENANT_ID, 'token', 'accept');
 
       expect(wompiService.createPaymentSource).toHaveBeenCalledWith(
         'token',
@@ -1910,7 +1906,14 @@ describe('SubscriptionsService', () => {
           { provide: PrismaService, useValue: prisma },
           { provide: ConfigService, useValue: configService },
           { provide: WompiService, useValue: wompiService },
-          { provide: BrevoService, useValue: { sendSubscriptionPaymentEmail: jest.fn().mockResolvedValue({ success: true }) } },
+          {
+            provide: BrevoService,
+            useValue: {
+              sendSubscriptionPaymentEmail: jest
+                .fn()
+                .mockResolvedValue({ success: true }),
+            },
+          },
         ],
       }).compile();
 

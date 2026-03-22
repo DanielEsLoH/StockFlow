@@ -39,7 +39,11 @@ const FONDO_SOLIDARIDAD_THRESHOLD = 4;
 /** Base fondo solidaridad rate */
 const FONDO_SOLIDARIDAD_BASE_RATE = 0.01;
 /** Additional fondo solidaridad sub-contribution for >16 SMMLV */
-const FONDO_SUBSISTENCIA_RATES: { minSmmlv: number; maxSmmlv: number; rate: number }[] = [
+const FONDO_SUBSISTENCIA_RATES: {
+  minSmmlv: number;
+  maxSmmlv: number;
+  rate: number;
+}[] = [
   { minSmmlv: 16, maxSmmlv: 17, rate: 0.002 },
   { minSmmlv: 17, maxSmmlv: 18, rate: 0.004 },
   { minSmmlv: 18, maxSmmlv: 19, rate: 0.006 },
@@ -184,7 +188,9 @@ export class PayrollCalculationService {
   /**
    * Main calculation method — computes all payroll components.
    */
-  calculatePayrollEntry(params: PayrollCalculationParams): PayrollCalculationResult {
+  calculatePayrollEntry(
+    params: PayrollCalculationParams,
+  ): PayrollCalculationResult {
     const {
       baseSalary,
       salaryType,
@@ -223,14 +229,24 @@ export class PayrollCalculationService {
       auxilioTransporteVal,
       daysWorked,
     );
-    const horasExtras = isIntegral ? 0 : this.calculateOvertime(baseSalary, overtime);
+    const horasExtras = isIntegral
+      ? 0
+      : this.calculateOvertime(baseSalary, overtime);
     const incapacidad = this.calculateIncapacidad(baseSalary, incapacidadDias);
     const licencia = this.calculateLicencia(baseSalary, licenciaDias);
     const vacaciones = this.calculateVacaciones(baseSalary, vacacionesDias);
 
     const totalDevengados = this.round(
-      sueldo + auxTransporte + horasExtras + bonificaciones +
-      comisiones + viaticos + incapacidad + licencia + vacaciones + otrosDevengados,
+      sueldo +
+        auxTransporte +
+        horasExtras +
+        bonificaciones +
+        comisiones +
+        viaticos +
+        incapacidad +
+        licencia +
+        vacaciones +
+        otrosDevengados,
     );
 
     // === IBC (Ingreso Base de Cotización) ===
@@ -252,8 +268,13 @@ export class PayrollCalculationService {
     );
 
     const totalDeducciones = this.round(
-      saludEmpleado + pensionEmpleado + fondoSolidaridad +
-      retencionFuente + sindicato + libranzas + otrasDeducciones,
+      saludEmpleado +
+        pensionEmpleado +
+        fondoSolidaridad +
+        retencionFuente +
+        sindicato +
+        libranzas +
+        otrasDeducciones,
     );
 
     // === Aportes empleador ===
@@ -272,10 +293,14 @@ export class PayrollCalculationService {
     // Monthly provision = base / 12 (prima, cesantias) or base / 24 (vacaciones)
     // Proportional to days worked in the period.
     const dayFraction = daysWorked / DAYS_PER_MONTH;
-    const benefitBase = isIntegral ? 0 : baseSalary + auxilioTransporteVal * (hasAuxilio ? 1 : 0);
+    const benefitBase = isIntegral
+      ? 0
+      : baseSalary + auxilioTransporteVal * (hasAuxilio ? 1 : 0);
     const provisionPrima = this.round((benefitBase / 12) * dayFraction);
     const provisionCesantias = this.round((benefitBase / 12) * dayFraction);
-    const provisionIntereses = this.round(provisionCesantias * INTERESES_CESANTIAS_RATE);
+    const provisionIntereses = this.round(
+      provisionCesantias * INTERESES_CESANTIAS_RATE,
+    );
     const provisionVacaciones = isIntegral
       ? 0
       : this.round((baseSalary / 24) * dayFraction);
@@ -389,7 +414,10 @@ export class PayrollCalculationService {
     // Additional sub-contribution for very high salaries
     const smmlvMultiple = ibc / smmlv;
     for (const bracket of FONDO_SUBSISTENCIA_RATES) {
-      if (smmlvMultiple >= bracket.minSmmlv && smmlvMultiple < bracket.maxSmmlv) {
+      if (
+        smmlvMultiple >= bracket.minSmmlv &&
+        smmlvMultiple < bracket.maxSmmlv
+      ) {
         rate += bracket.rate;
         break;
       }
@@ -411,8 +439,10 @@ export class PayrollCalculationService {
     uvtValue: number,
   ): number {
     // Taxable base: devengados - auxilio - mandatory contributions
-    const mandatoryContributions = saludEmpleado + pensionEmpleado + fondoSolidaridad;
-    const taxableBase = totalDevengados - auxilioTransporte - mandatoryContributions;
+    const mandatoryContributions =
+      saludEmpleado + pensionEmpleado + fondoSolidaridad;
+    const taxableBase =
+      totalDevengados - auxilioTransporte - mandatoryContributions;
 
     // 25% renta exenta
     const rentaExenta = taxableBase * 0.25;
@@ -428,7 +458,8 @@ export class PayrollCalculationService {
       const range = RETENCION_TABLE[i];
       if (baseInUvt >= range.minUvt) {
         if (range.rate === 0) return 0;
-        const taxInUvt = RETENCION_ACCUMULATED[i] + (baseInUvt - range.minUvt) * range.rate;
+        const taxInUvt =
+          RETENCION_ACCUMULATED[i] + (baseInUvt - range.minUvt) * range.rate;
         return this.round(taxInUvt * uvtValue);
       }
     }

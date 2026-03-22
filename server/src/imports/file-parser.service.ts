@@ -48,16 +48,13 @@ export class FileParserService {
       const sheetName = workbook.SheetNames[0];
 
       if (!sheetName) {
-        throw new BadRequestException(
-          'El archivo no contiene hojas de datos',
-        );
+        throw new BadRequestException('El archivo no contiene hojas de datos');
       }
 
       const sheet = workbook.Sheets[sheetName];
-      const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
-        sheet,
-        { defval: '' },
-      );
+      const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+        defval: '',
+      });
 
       if (rawRows.length === 0) {
         throw new BadRequestException(
@@ -79,9 +76,7 @@ export class FileParserService {
           const normalizedKey = this.normalizeHeader(key);
           if (normalizedKey) {
             normalizedRow[normalizedKey] =
-              value !== null && value !== undefined
-                ? String(value).trim()
-                : '';
+              value !== null && value !== undefined ? String(value).trim() : '';
           }
         }
 

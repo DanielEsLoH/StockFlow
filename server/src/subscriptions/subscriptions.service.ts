@@ -389,7 +389,8 @@ export class SubscriptionsService {
       );
     }
 
-    const billingStatus = WOMPI_STATUS_MAP[wompiTx.status] ?? BillingStatus.ERROR;
+    const billingStatus =
+      WOMPI_STATUS_MAP[wompiTx.status] ?? BillingStatus.ERROR;
 
     // Create BillingTransaction record
     const billingTransaction = await this.prisma.billingTransaction.create({
@@ -415,11 +416,7 @@ export class SubscriptionsService {
 
       if (isSamePlan && hasActiveSubscription) {
         // Renewal: extend current subscription end date
-        await this.extendSubscription(
-          tenantId,
-          period,
-          billingTransaction.id,
-        );
+        await this.extendSubscription(tenantId, period, billingTransaction.id);
       } else {
         // New plan or upgrade: activate subscription
         await this.activateSubscription(
@@ -462,9 +459,7 @@ export class SubscriptionsService {
 
     const customerEmail = tenant.wompiCustomerEmail ?? tenant.email;
 
-    let paymentSource: Awaited<
-      ReturnType<WompiService['createPaymentSource']>
-    >;
+    let paymentSource: Awaited<ReturnType<WompiService['createPaymentSource']>>;
 
     try {
       // WompiService.createPaymentSource(token, customerEmail, acceptanceToken, personalAuthToken?)
@@ -506,9 +501,7 @@ export class SubscriptionsService {
    * @throws NotFoundException if tenant or subscription does not exist
    * @throws BadRequestException if tenant has no stored payment source
    */
-  async chargeRecurring(
-    tenantId: string,
-  ): Promise<SubscriptionStatusResponse> {
+  async chargeRecurring(tenantId: string): Promise<SubscriptionStatusResponse> {
     this.logger.log(`Charging recurring payment for tenant ${tenantId}`);
 
     const tenant = await this.prisma.tenant.findUnique({
@@ -565,7 +558,8 @@ export class SubscriptionsService {
       );
     }
 
-    const billingStatus = WOMPI_STATUS_MAP[wompiTx.status] ?? BillingStatus.ERROR;
+    const billingStatus =
+      WOMPI_STATUS_MAP[wompiTx.status] ?? BillingStatus.ERROR;
 
     const billingTransaction = await this.prisma.billingTransaction.create({
       data: {
@@ -795,9 +789,7 @@ export class SubscriptionsService {
 
       // Extend from the current endDate (or now if already expired)
       const baseDate =
-        subscription.endDate > new Date()
-          ? subscription.endDate
-          : new Date();
+        subscription.endDate > new Date() ? subscription.endDate : new Date();
 
       newEndDate = new Date(
         baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000,
@@ -871,9 +863,7 @@ export class SubscriptionsService {
    * Updates the BillingTransaction record and activates the plan if the
    * transaction transitions to APPROVED.
    */
-  private async handleTransactionUpdated(
-    transactionData: any,
-  ): Promise<void> {
+  private async handleTransactionUpdated(transactionData: any): Promise<void> {
     if (!transactionData?.id) {
       this.logger.warn(
         'Webhook transaction.updated received without transaction data',
@@ -890,10 +880,9 @@ export class SubscriptionsService {
     );
 
     // Find the existing billing transaction
-    const billingTransaction =
-      await this.prisma.billingTransaction.findUnique({
-        where: { wompiTransactionId },
-      });
+    const billingTransaction = await this.prisma.billingTransaction.findUnique({
+      where: { wompiTransactionId },
+    });
 
     if (!billingTransaction) {
       this.logger.warn(
@@ -913,8 +902,7 @@ export class SubscriptionsService {
           transactionData.payment_method_type ??
           billingTransaction.paymentMethodType,
         failureReason:
-          transactionData.status_message ??
-          billingTransaction.failureReason,
+          transactionData.status_message ?? billingTransaction.failureReason,
       },
     });
 

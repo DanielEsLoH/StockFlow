@@ -10,7 +10,9 @@ describe('PayrollCuneGeneratorService', () => {
       providers: [PayrollCuneGeneratorService],
     }).compile();
 
-    service = module.get<PayrollCuneGeneratorService>(PayrollCuneGeneratorService);
+    service = module.get<PayrollCuneGeneratorService>(
+      PayrollCuneGeneratorService,
+    );
   });
 
   it('should be defined', () => {
@@ -77,12 +79,22 @@ describe('PayrollCuneGeneratorService', () => {
         'NOM-0000012026-01-3110:30:00-05:001623500.00113880.001509620.0090012345612345678902123451020';
 
       // Verify our concatenation logic matches
-      const expected = crypto.createHash('sha384').update(
-        params.numNIE + params.fecNIE + params.horNIE +
-        params.valDev + params.valDed + params.valTol +
-        params.nitNIE + params.docEmp + params.tipoAmb +
-        params.softwarePin + params.tipoXML,
-      ).digest('hex');
+      const expected = crypto
+        .createHash('sha384')
+        .update(
+          params.numNIE +
+            params.fecNIE +
+            params.horNIE +
+            params.valDev +
+            params.valDed +
+            params.valTol +
+            params.nitNIE +
+            params.docEmp +
+            params.tipoAmb +
+            params.softwarePin +
+            params.tipoXML,
+        )
+        .digest('hex');
 
       const cune = service.generateCune(params);
       expect(cune).toBe(expected);

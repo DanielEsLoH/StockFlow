@@ -57,7 +57,13 @@ const mockCreateDto = {
   warehouseId: 'warehouse-123',
   items: [
     { productId: 'product-1', quantity: 10, unitPrice: 50 },
-    { productId: 'product-2', quantity: 5, unitPrice: 100, taxRate: 5, discount: 10 },
+    {
+      productId: 'product-2',
+      quantity: 5,
+      unitPrice: 100,
+      taxRate: 5,
+      discount: 10,
+    },
   ],
   notes: 'Test PO',
 };
@@ -118,7 +124,12 @@ const mockPurchaseOrderWithRelations = {
     },
   ],
   supplier: mockSupplier,
-  user: { id: mockUserId, firstName: 'Juan', lastName: 'Perez', email: 'juan@test.com' },
+  user: {
+    id: mockUserId,
+    firstName: 'Juan',
+    lastName: 'Perez',
+    email: 'juan@test.com',
+  },
   warehouse: mockWarehouse,
   movements: [],
   _count: { items: 2 },
@@ -202,13 +213,19 @@ describe('PurchaseOrdersService', () => {
         PurchaseOrdersService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: TenantContextService, useValue: mockTenantContextService },
-        { provide: AccountingBridgeService, useValue: mockAccountingBridgeService },
+        {
+          provide: AccountingBridgeService,
+          useValue: mockAccountingBridgeService,
+        },
         {
           provide: ExchangeRatesService,
           useValue: {
             getLatestRate: jest
               .fn()
-              .mockResolvedValue({ rate: { toNumber: () => 1 }, source: 'manual' }),
+              .mockResolvedValue({
+                rate: { toNumber: () => 1 },
+                source: 'manual',
+              }),
             convertAmount: jest.fn(),
           },
         },
@@ -239,14 +256,23 @@ describe('PurchaseOrdersService', () => {
   // ─── CREATE ────────────────────────────────────────────────────
   describe('create', () => {
     beforeEach(() => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
-      (prismaService.product.findMany as jest.Mock).mockResolvedValue([mockProduct1, mockProduct2]);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct1,
+        mockProduct2,
+      ]);
 
       mockTx.purchaseOrder.findFirst.mockResolvedValue(null); // no existing POs
       mockTx.purchaseOrder.create.mockResolvedValue({ id: 'po-123' });
       mockTx.purchaseOrderItem.createMany.mockResolvedValue({ count: 2 });
-      mockTx.purchaseOrder.findUnique.mockResolvedValue(mockPurchaseOrderWithRelations);
+      mockTx.purchaseOrder.findUnique.mockResolvedValue(
+        mockPurchaseOrderWithRelations,
+      );
     });
 
     it('should create a purchase order in DRAFT status', async () => {
@@ -279,7 +305,9 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should validate all products exist', async () => {
-      (prismaService.product.findMany as jest.Mock).mockResolvedValue([mockProduct1]);
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct1,
+      ]);
       // product-2 is missing
 
       await expect(service.create(mockCreateDto, mockUserId)).rejects.toThrow(
@@ -294,7 +322,8 @@ describe('PurchaseOrdersService', () => {
       await service.create(mockCreateDto, mockUserId);
 
       // Verify the createMany call items
-      const createManyCall = mockTx.purchaseOrderItem.createMany.mock.calls[0][0];
+      const createManyCall =
+        mockTx.purchaseOrderItem.createMany.mock.calls[0][0];
       const items = createManyCall.data;
 
       // Item 1: qty 10, price 50 → subtotal 500, tax 19% = 95, discount 0 → total 595
@@ -311,21 +340,24 @@ describe('PurchaseOrdersService', () => {
     it('should default taxRate to 19 when not specified', async () => {
       await service.create(mockCreateDto, mockUserId);
 
-      const createManyCall = mockTx.purchaseOrderItem.createMany.mock.calls[0][0];
+      const createManyCall =
+        mockTx.purchaseOrderItem.createMany.mock.calls[0][0];
       expect(createManyCall.data[0].taxRate).toBe(19);
     });
 
     it('should use provided taxRate when specified', async () => {
       await service.create(mockCreateDto, mockUserId);
 
-      const createManyCall = mockTx.purchaseOrderItem.createMany.mock.calls[0][0];
+      const createManyCall =
+        mockTx.purchaseOrderItem.createMany.mock.calls[0][0];
       expect(createManyCall.data[1].taxRate).toBe(5);
     });
 
     it('should default discount to 0 when not specified', async () => {
       await service.create(mockCreateDto, mockUserId);
 
-      const createManyCall = mockTx.purchaseOrderItem.createMany.mock.calls[0][0];
+      const createManyCall =
+        mockTx.purchaseOrderItem.createMany.mock.calls[0][0];
       expect(createManyCall.data[0].discount).toBe(0);
     });
 
@@ -387,15 +419,18 @@ describe('PurchaseOrdersService', () => {
     it('should use product taxCategory as fallback when item has no taxCategory', async () => {
       await service.create(mockCreateDto, mockUserId);
 
-      const createManyCall = mockTx.purchaseOrderItem.createMany.mock.calls[0][0];
+      const createManyCall =
+        mockTx.purchaseOrderItem.createMany.mock.calls[0][0];
       // Item 1 has no taxCategory → uses product's GRAVADO_19
       expect(createManyCall.data[0].taxCategory).toBe(TaxCategory.GRAVADO_19);
     });
 
     it('should require tenant context', async () => {
-      (tenantContextService.requireTenantId as jest.Mock).mockImplementation(() => {
-        throw new Error('Tenant not found');
-      });
+      (tenantContextService.requireTenantId as jest.Mock).mockImplementation(
+        () => {
+          throw new Error('Tenant not found');
+        },
+      );
 
       await expect(service.create(mockCreateDto, mockUserId)).rejects.toThrow(
         'Tenant not found',
@@ -523,8 +558,17 @@ describe('PurchaseOrdersService', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             OR: [
-              { purchaseOrderNumber: { contains: 'OC-00001', mode: 'insensitive' } },
-              { supplier: { name: { contains: 'OC-00001', mode: 'insensitive' } } },
+              {
+                purchaseOrderNumber: {
+                  contains: 'OC-00001',
+                  mode: 'insensitive',
+                },
+              },
+              {
+                supplier: {
+                  name: { contains: 'OC-00001', mode: 'insensitive' },
+                },
+              },
             ],
           }),
         }),
@@ -568,9 +612,13 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should throw NotFoundException when PO not found', async () => {
-      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
-      await expect(service.findOne('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(service.findOne('invalid-id')).rejects.toThrow(
         'Orden de compra no encontrada',
       );
@@ -623,9 +671,13 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should throw NotFoundException when PO not found', async () => {
-      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
-      await expect(service.update('invalid-id', {})).rejects.toThrow(NotFoundException);
+      await expect(service.update('invalid-id', {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ConflictException when PO is not DRAFT', async () => {
@@ -634,7 +686,9 @@ describe('PurchaseOrdersService', () => {
         status: PurchaseOrderStatus.SENT,
       });
 
-      await expect(service.update('po-123', {})).rejects.toThrow(ConflictException);
+      await expect(service.update('po-123', {})).rejects.toThrow(
+        ConflictException,
+      );
       await expect(service.update('po-123', {})).rejects.toThrow(
         'Solo se pueden editar ordenes de compra en estado borrador',
       );
@@ -649,7 +703,9 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should validate warehouse when warehouseId is provided', async () => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
       (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(null);
 
       await expect(
@@ -658,13 +714,16 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should recalculate totals when items are provided', async () => {
-      (prismaService.product.findMany as jest.Mock).mockResolvedValue([mockProduct1]);
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct1,
+      ]);
 
       await service.update('po-123', {
         items: [{ productId: 'product-1', quantity: 20, unitPrice: 30 }],
       });
 
-      const updateCall = (prismaService.purchaseOrder.update as jest.Mock).mock.calls[0][0];
+      const updateCall = (prismaService.purchaseOrder.update as jest.Mock).mock
+        .calls[0][0];
       // qty 20, price 30 → subtotal 600, tax 19% = 114, discount 0 → total 714
       expect(updateCall.data.subtotal).toBe(600);
       expect(updateCall.data.tax).toBe(114);
@@ -682,13 +741,16 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should replace items with deleteMany + createMany', async () => {
-      (prismaService.product.findMany as jest.Mock).mockResolvedValue([mockProduct1]);
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct1,
+      ]);
 
       await service.update('po-123', {
         items: [{ productId: 'product-1', quantity: 5, unitPrice: 40 }],
       });
 
-      const updateCall = (prismaService.purchaseOrder.update as jest.Mock).mock.calls[0][0];
+      const updateCall = (prismaService.purchaseOrder.update as jest.Mock).mock
+        .calls[0][0];
       expect(updateCall.data.items).toEqual(
         expect.objectContaining({
           deleteMany: {},
@@ -708,7 +770,8 @@ describe('PurchaseOrdersService', () => {
     it('should update notes without affecting items', async () => {
       await service.update('po-123', { notes: 'New notes' });
 
-      const updateCall = (prismaService.purchaseOrder.update as jest.Mock).mock.calls[0][0];
+      const updateCall = (prismaService.purchaseOrder.update as jest.Mock).mock
+        .calls[0][0];
       expect(updateCall.data.notes).toBe('New notes');
       expect(updateCall.data.items).toBeUndefined();
     });
@@ -718,7 +781,8 @@ describe('PurchaseOrdersService', () => {
 
       await service.update('po-123', { expectedDeliveryDate: date });
 
-      const updateCall = (prismaService.purchaseOrder.update as jest.Mock).mock.calls[0][0];
+      const updateCall = (prismaService.purchaseOrder.update as jest.Mock).mock
+        .calls[0][0];
       expect(updateCall.data.expectedDeliveryDate).toEqual(date);
     });
   });
@@ -739,9 +803,13 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should throw NotFoundException when PO not found', async () => {
-      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
-      await expect(service.remove('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ConflictException when PO is not DRAFT', async () => {
@@ -780,9 +848,13 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should throw NotFoundException when PO not found', async () => {
-      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
-      await expect(service.send('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.send('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ConflictException when PO is not DRAFT', async () => {
@@ -821,9 +893,13 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should throw NotFoundException when PO not found', async () => {
-      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
-      await expect(service.confirm('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.confirm('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ConflictException when PO is not SENT', async () => {
@@ -832,7 +908,9 @@ describe('PurchaseOrdersService', () => {
         status: PurchaseOrderStatus.DRAFT,
       });
 
-      await expect(service.confirm('po-123')).rejects.toThrow(ConflictException);
+      await expect(service.confirm('po-123')).rejects.toThrow(
+        ConflictException,
+      );
       await expect(service.confirm('po-123')).rejects.toThrow(
         'Solo se pueden confirmar ordenes de compra en estado enviada',
       );
@@ -1012,9 +1090,9 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should not throw if accountingBridge fails', async () => {
-      (accountingBridgeService.onPurchaseReceived as jest.Mock).mockRejectedValue(
-        new Error('Accounting error'),
-      );
+      (
+        accountingBridgeService.onPurchaseReceived as jest.Mock
+      ).mockRejectedValue(new Error('Accounting error'));
 
       // Should not throw — the .catch(() => {}) silences the error
       const result = await service.receive('po-123', mockUserId);
@@ -1110,9 +1188,13 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should throw NotFoundException when PO not found', async () => {
-      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(null);
+      (prismaService.purchaseOrder.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
-      await expect(service.cancel('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.cancel('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -1355,13 +1437,22 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should scope supplier validation to tenant in create', async () => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
-      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
-      (prismaService.product.findMany as jest.Mock).mockResolvedValue([mockProduct1, mockProduct2]);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
+      (prismaService.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
+      (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+        mockProduct1,
+        mockProduct2,
+      ]);
       mockTx.purchaseOrder.findFirst.mockResolvedValue(null);
       mockTx.purchaseOrder.create.mockResolvedValue({ id: 'po-123' });
       mockTx.purchaseOrderItem.createMany.mockResolvedValue({ count: 2 });
-      mockTx.purchaseOrder.findUnique.mockResolvedValue(mockPurchaseOrderWithRelations);
+      mockTx.purchaseOrder.findUnique.mockResolvedValue(
+        mockPurchaseOrderWithRelations,
+      );
 
       await service.create(mockCreateDto, mockUserId);
 

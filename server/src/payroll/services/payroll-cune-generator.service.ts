@@ -56,9 +56,14 @@ export class PayrollCuneGeneratorService {
       params.tipoXML,
     ].join('');
 
-    const cune = crypto.createHash('sha384').update(concatenation).digest('hex');
+    const cune = crypto
+      .createHash('sha384')
+      .update(concatenation)
+      .digest('hex');
 
-    this.logger.debug(`CUNE generated for ${params.numNIE}: ${cune.substring(0, 16)}...`);
+    this.logger.debug(
+      `CUNE generated for ${params.numNIE}: ${cune.substring(0, 16)}...`,
+    );
     return cune;
   }
 

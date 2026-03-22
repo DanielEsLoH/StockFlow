@@ -35,9 +35,7 @@ describe('PayrollBenefitsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PayrollBenefitsController],
-      providers: [
-        { provide: PayrollBenefitsService, useValue: mockService },
-      ],
+      providers: [{ provide: PayrollBenefitsService, useValue: mockService }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -66,9 +64,7 @@ describe('PayrollBenefitsController', () => {
     });
 
     it('should propagate NotFoundException', async () => {
-      service.getLiquidationPreview.mockRejectedValue(
-        new NotFoundException(),
-      );
+      service.getLiquidationPreview.mockRejectedValue(new NotFoundException());
 
       await expect(
         controller.getBenefitsPreview('nonexistent'),

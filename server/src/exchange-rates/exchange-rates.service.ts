@@ -77,10 +77,7 @@ export class ExchangeRatesService {
   /**
    * Get the latest exchange rate for a currency pair.
    */
-  async getLatestRate(
-    fromCurrency: CurrencyCode,
-    toCurrency: CurrencyCode,
-  ) {
+  async getLatestRate(fromCurrency: CurrencyCode, toCurrency: CurrencyCode) {
     // Same currency — rate is always 1
     if (fromCurrency === toCurrency) {
       return { rate: new Prisma.Decimal(1), source: 'identity' };

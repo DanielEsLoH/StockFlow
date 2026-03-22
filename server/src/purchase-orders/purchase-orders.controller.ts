@@ -165,9 +165,7 @@ export class PurchaseOrdersController {
     description: 'Unauthorized - Invalid or missing JWT token',
   })
   @ApiResponse({ status: 404, description: 'Purchase order not found' })
-  async findOne(
-    @Param('id') id: string,
-  ): Promise<PurchaseOrderEntity> {
+  async findOne(@Param('id') id: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`Getting purchase order: ${id}`);
 
     return this.purchaseOrdersService.findOne(id);
@@ -391,9 +389,7 @@ export class PurchaseOrdersController {
     status: 409,
     description: 'Conflict - Purchase order is not in DRAFT status',
   })
-  async send(
-    @Param('id') id: string,
-  ): Promise<PurchaseOrderEntity> {
+  async send(@Param('id') id: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`Sending purchase order: ${id}`);
 
     return this.purchaseOrdersService.send(id);
@@ -442,9 +438,7 @@ export class PurchaseOrdersController {
     status: 409,
     description: 'Conflict - Purchase order is not in SENT status',
   })
-  async confirm(
-    @Param('id') id: string,
-  ): Promise<PurchaseOrderEntity> {
+  async confirm(@Param('id') id: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`Confirming purchase order: ${id}`);
 
     return this.purchaseOrdersService.confirm(id);
@@ -501,9 +495,7 @@ export class PurchaseOrdersController {
     @Param('id') id: string,
     @CurrentUser() user: RequestUser,
   ): Promise<PurchaseOrderEntity> {
-    this.logger.log(
-      `Receiving purchase order ${id} by user: ${user.userId}`,
-    );
+    this.logger.log(`Receiving purchase order ${id} by user: ${user.userId}`);
 
     return this.purchaseOrdersService.receive(id, user.userId);
   }
@@ -551,12 +543,9 @@ export class PurchaseOrdersController {
   })
   @ApiResponse({
     status: 409,
-    description:
-      'Conflict - Purchase order is already received or cancelled',
+    description: 'Conflict - Purchase order is already received or cancelled',
   })
-  async cancel(
-    @Param('id') id: string,
-  ): Promise<PurchaseOrderEntity> {
+  async cancel(@Param('id') id: string): Promise<PurchaseOrderEntity> {
     this.logger.log(`Cancelling purchase order: ${id}`);
 
     return this.purchaseOrdersService.cancel(id);
@@ -594,9 +583,7 @@ export class PurchaseOrdersController {
   @ApiOperation({ summary: 'Delete a purchase payment' })
   @ApiParam({ name: 'id', description: 'Purchase order ID' })
   @ApiParam({ name: 'paymentId', description: 'Payment ID' })
-  async deletePayment(
-    @Param('paymentId') paymentId: string,
-  ): Promise<void> {
+  async deletePayment(@Param('paymentId') paymentId: string): Promise<void> {
     return this.purchasePaymentsService.delete(paymentId);
   }
 }

@@ -110,10 +110,7 @@ export class PurchasePaymentsService {
     }
 
     const newTotalPaid = totalPaid + dto.amount;
-    const newPaymentStatus = this.calculatePaymentStatus(
-      newTotalPaid,
-      poTotal,
-    );
+    const newPaymentStatus = this.calculatePaymentStatus(newTotalPaid, poTotal);
 
     const payment = await this.prisma.$transaction(async (tx) => {
       const newPayment = await tx.purchasePayment.create({

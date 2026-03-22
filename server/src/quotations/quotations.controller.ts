@@ -288,8 +288,7 @@ export class QuotationsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete a quotation',
-    description:
-      'Deletes a quotation. Only ADMIN users can delete quotations.',
+    description: 'Deletes a quotation. Only ADMIN users can delete quotations.',
   })
   @ApiParam({
     name: 'id',
@@ -387,7 +386,8 @@ export class QuotationsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - Quotation is not in a valid status for acceptance',
+    description:
+      'Bad Request - Quotation is not in a valid status for acceptance',
   })
   @ApiResponse({
     status: 401,
@@ -433,7 +433,8 @@ export class QuotationsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - Quotation is not in a valid status for rejection',
+    description:
+      'Bad Request - Quotation is not in a valid status for rejection',
   })
   @ApiResponse({
     status: 401,
@@ -497,7 +498,9 @@ export class QuotationsController {
     @Param('id') id: string,
     @CurrentUser() user: RequestUser,
   ): Promise<QuotationEntity> {
-    this.logger.log(`Converting quotation ${id} to invoice by user: ${user.userId}`);
+    this.logger.log(
+      `Converting quotation ${id} to invoice by user: ${user.userId}`,
+    );
 
     return this.quotationsService.convert(id, user.userId);
   }

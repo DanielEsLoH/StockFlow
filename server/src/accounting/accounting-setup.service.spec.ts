@@ -85,7 +85,8 @@ describe('AccountingSetupService', () => {
     it('should create accounts with correct tenantId', async () => {
       await service.setup();
 
-      const firstCreateCall = (prismaService.account.create as jest.Mock).mock.calls[0][0];
+      const firstCreateCall = (prismaService.account.create as jest.Mock).mock
+        .calls[0][0];
       expect(firstCreateCall.data.tenantId).toBe(mockTenantId);
     });
 
@@ -120,27 +121,34 @@ describe('AccountingSetupService', () => {
       const allCalls = (prismaService.account.create as jest.Mock).mock.calls;
 
       // Find level 1 (code length 1, e.g., '1')
-      const level1Calls = allCalls.filter((call) => call[0].data.code.length <= 1);
+      const level1Calls = allCalls.filter(
+        (call) => call[0].data.code.length <= 1,
+      );
       for (const call of level1Calls) {
         expect(call[0].data.level).toBe(1);
       }
 
       // Find level 2 (code length 2, e.g., '11')
-      const level2Calls = allCalls.filter((call) => call[0].data.code.length === 2);
+      const level2Calls = allCalls.filter(
+        (call) => call[0].data.code.length === 2,
+      );
       for (const call of level2Calls) {
         expect(call[0].data.level).toBe(2);
       }
 
       // Find level 3 (code length 3-4, e.g., '1105')
       const level3Calls = allCalls.filter(
-        (call) => call[0].data.code.length === 3 || call[0].data.code.length === 4,
+        (call) =>
+          call[0].data.code.length === 3 || call[0].data.code.length === 4,
       );
       for (const call of level3Calls) {
         expect(call[0].data.level).toBe(3);
       }
 
       // Find level 4 (code length > 4, e.g., '110505')
-      const level4Calls = allCalls.filter((call) => call[0].data.code.length > 4);
+      const level4Calls = allCalls.filter(
+        (call) => call[0].data.code.length > 4,
+      );
       for (const call of level4Calls) {
         expect(call[0].data.level).toBe(4);
       }
@@ -150,7 +158,8 @@ describe('AccountingSetupService', () => {
       await service.setup();
 
       expect(prismaService.accountingConfig.create).toHaveBeenCalledTimes(1);
-      const configCall = (prismaService.accountingConfig.create as jest.Mock).mock.calls[0][0];
+      const configCall = (prismaService.accountingConfig.create as jest.Mock)
+        .mock.calls[0][0];
       expect(configCall.data.tenantId).toBe(mockTenantId);
       expect(configCall.data.autoGenerateEntries).toBe(false);
       // All mapped account IDs should be strings (not null) since they come from created accounts
@@ -184,11 +193,15 @@ describe('AccountingSetupService', () => {
       await service.setup();
 
       const allCalls = (prismaService.account.create as jest.Mock).mock.calls;
-      const bankAccountCalls = allCalls.filter((call) => call[0].data.isBankAccount === true);
+      const bankAccountCalls = allCalls.filter(
+        (call) => call[0].data.isBankAccount === true,
+      );
 
       expect(bankAccountCalls.length).toBeGreaterThan(0);
       // 111005 Bancos Nacionales should be a bank account
-      const bancosCall = allCalls.find((call) => call[0].data.code === '111005');
+      const bancosCall = allCalls.find(
+        (call) => call[0].data.code === '111005',
+      );
       expect(bancosCall![0].data.isBankAccount).toBe(true);
     });
   });

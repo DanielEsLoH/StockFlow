@@ -245,9 +245,7 @@ describe('InvoicesService', () => {
         {
           provide: ReportsService,
           useValue: {
-            generateInvoicePdf: jest
-              .fn()
-              .mockResolvedValue(Buffer.from('pdf')),
+            generateInvoicePdf: jest.fn().mockResolvedValue(Buffer.from('pdf')),
           },
         },
         {
@@ -255,7 +253,10 @@ describe('InvoicesService', () => {
           useValue: {
             getLatestRate: jest
               .fn()
-              .mockResolvedValue({ rate: { toNumber: () => 1 }, source: 'manual' }),
+              .mockResolvedValue({
+                rate: { toNumber: () => 1 },
+                source: 'manual',
+              }),
             convertAmount: jest.fn(),
           },
         },
@@ -1462,7 +1463,10 @@ describe('InvoicesService', () => {
       await service.generateInvoiceNumber();
 
       expect(prismaService.invoice.findFirst).toHaveBeenCalledWith({
-        where: { tenantId: mockTenantId, invoiceNumber: { startsWith: 'INV-' } },
+        where: {
+          tenantId: mockTenantId,
+          invoiceNumber: { startsWith: 'INV-' },
+        },
         orderBy: { invoiceNumber: 'desc' },
         select: { invoiceNumber: true },
       });
@@ -3759,9 +3763,7 @@ describe('InvoicesService', () => {
           },
           mockUserId,
         ),
-      ).rejects.toThrow(
-        'No hay bodegas activas. Cree una bodega primero.',
-      );
+      ).rejects.toThrow('No hay bodegas activas. Cree una bodega primero.');
     });
   });
 

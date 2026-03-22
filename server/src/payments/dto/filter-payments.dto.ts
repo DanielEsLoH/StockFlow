@@ -18,7 +18,9 @@ export class FilterPaymentsDto extends PaginationDto {
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsString({ message: 'El ID de la factura debe ser una cadena de texto' })
-  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID de la factura debe ser un CUID valido' })
+  @Matches(/^c[a-z0-9]{24,}$/, {
+    message: 'El ID de la factura debe ser un CUID valido',
+  })
   @IsOptional()
   invoiceId?: string;
 

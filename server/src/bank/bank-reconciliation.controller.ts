@@ -26,11 +26,16 @@ import { Permission } from '../common/permissions/permission.enum';
 export class BankReconciliationController {
   private readonly logger = new Logger(BankReconciliationController.name);
 
-  constructor(private readonly reconciliationService: BankReconciliationService) {}
+  constructor(
+    private readonly reconciliationService: BankReconciliationService,
+  ) {}
 
   @Post(':statementId/auto-match')
   @RequirePermissions(Permission.BANK_RECONCILE)
-  @ApiOperation({ summary: 'Auto-match statement lines', description: 'Matches by amount, date ±3 days, reference' })
+  @ApiOperation({
+    summary: 'Auto-match statement lines',
+    description: 'Matches by amount, date ±3 days, reference',
+  })
   @ApiResponse({ status: 200, description: 'Auto-match completed' })
   async autoMatch(
     @Param('statementId') statementId: string,
@@ -47,7 +52,11 @@ export class BankReconciliationController {
     @Body('journalEntryId') journalEntryId: string,
     @Request() req: any,
   ): Promise<{ message: string }> {
-    await this.reconciliationService.manualMatch(lineId, journalEntryId, req.user?.id);
+    await this.reconciliationService.manualMatch(
+      lineId,
+      journalEntryId,
+      req.user?.id,
+    );
     return { message: 'Linea conciliada exitosamente' };
   }
 
@@ -62,7 +71,10 @@ export class BankReconciliationController {
 
   @Post(':statementId/finalize')
   @RequirePermissions(Permission.BANK_RECONCILE)
-  @ApiOperation({ summary: 'Finalize reconciliation', description: 'Marks statement as RECONCILED' })
+  @ApiOperation({
+    summary: 'Finalize reconciliation',
+    description: 'Marks statement as RECONCILED',
+  })
   @ApiResponse({ status: 200, description: 'Reconciliation finalized' })
   async finalize(
     @Param('statementId') statementId: string,

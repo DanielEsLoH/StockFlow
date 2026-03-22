@@ -1,8 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { PayrollBenefitsService } from './payroll-benefits.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TenantContextService } from '../../common/services/tenant-context.service';
@@ -289,7 +286,9 @@ describe('PayrollBenefitsService', () => {
 
       const benefitBase = SMMLV + AUXILIO_TRANSPORTE;
       const cesantias = (benefitBase * daysWorked) / 360;
-      const expectedIntereses = Math.round((cesantias * 0.12 * daysWorked) / 360);
+      const expectedIntereses = Math.round(
+        (cesantias * 0.12 * daysWorked) / 360,
+      );
       expect(result.calculatedAmount).toBe(expectedIntereses);
     });
 
@@ -477,9 +476,7 @@ describe('PayrollBenefitsService', () => {
         terminationDate,
       );
 
-      const cesantias = result.benefits.find(
-        (b) => b.concept === 'Cesantias',
-      );
+      const cesantias = result.benefits.find((b) => b.concept === 'Cesantias');
       expect(cesantias).toBeDefined();
       // From Jan 1 2026 to Feb 24 2026 = (1-0)*30 + (24-1) = 53 days
       expect(cesantias!.days).toBe(53);
@@ -529,9 +526,7 @@ describe('PayrollBenefitsService', () => {
       const prima = result.benefits.find(
         (b) => b.concept === 'Prima de servicios',
       );
-      const cesantias = result.benefits.find(
-        (b) => b.concept === 'Cesantias',
-      );
+      const cesantias = result.benefits.find((b) => b.concept === 'Cesantias');
 
       // From Feb 1 to Feb 24 = (24-1) = 23 days (360-day convention)
       expect(prima!.days).toBe(23);

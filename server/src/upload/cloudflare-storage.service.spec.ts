@@ -91,9 +91,7 @@ describe('CloudflareStorageService', () => {
     it('should throw InternalServerErrorException on network failure', async () => {
       fetchSpy.mockRejectedValue(new Error('Network error'));
 
-      await expect(
-        service.upload(key, buffer, contentType),
-      ).rejects.toThrow();
+      await expect(service.upload(key, buffer, contentType)).rejects.toThrow();
     });
   });
 
@@ -157,7 +155,9 @@ describe('CloudflareStorageService', () => {
     });
 
     it('should return null for non-matching URL', () => {
-      expect(service.extractKeyFromUrl('https://other.com/file.jpg')).toBeNull();
+      expect(
+        service.extractKeyFromUrl('https://other.com/file.jpg'),
+      ).toBeNull();
     });
 
     it('should handle URLs with nested paths', () => {

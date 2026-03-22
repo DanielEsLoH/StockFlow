@@ -1337,9 +1337,7 @@ describe('ReportsService', () => {
         toDate,
       );
 
-      expect(result.movements[2].description).toBe(
-        'Ajuste - Conteo fisico',
-      );
+      expect(result.movements[2].description).toBe('Ajuste - Conteo fisico');
     });
 
     it('should build plain description when no reference or reason', async () => {
@@ -1472,12 +1470,7 @@ describe('ReportsService', () => {
     it('should log debug message', async () => {
       const debugSpy = jest.spyOn(Logger.prototype, 'debug');
 
-      await service.getKardexReport(
-        'product-123',
-        undefined,
-        fromDate,
-        toDate,
-      );
+      await service.getKardexReport('product-123', undefined, fromDate, toDate);
 
       expect(debugSpy).toHaveBeenCalledWith(
         expect.stringContaining('Generating Kardex report'),
@@ -1485,12 +1478,7 @@ describe('ReportsService', () => {
     });
 
     it('should query tenant-scoped data', async () => {
-      await service.getKardexReport(
-        'product-123',
-        undefined,
-        fromDate,
-        toDate,
-      );
+      await service.getKardexReport('product-123', undefined, fromDate, toDate);
 
       expect(mockPrismaProduct.findFirst).toHaveBeenCalledWith({
         where: { id: 'product-123', tenantId: mockTenantId },
@@ -1505,12 +1493,7 @@ describe('ReportsService', () => {
     });
 
     it('should batch-fetch invoice numbers', async () => {
-      await service.getKardexReport(
-        'product-123',
-        undefined,
-        fromDate,
-        toDate,
-      );
+      await service.getKardexReport('product-123', undefined, fromDate, toDate);
 
       expect(mockPrismaInvoice.findMany).toHaveBeenCalledWith({
         where: { id: { in: ['invoice-456'] }, tenantId: mockTenantId },
@@ -1536,12 +1519,7 @@ describe('ReportsService', () => {
           },
         ]);
 
-      await service.getKardexReport(
-        'product-123',
-        undefined,
-        fromDate,
-        toDate,
-      );
+      await service.getKardexReport('product-123', undefined, fromDate, toDate);
 
       // Invoice findMany should NOT have been called (only the one from beforeEach reset matters)
       // We need to check it was not called after the reset
@@ -2320,7 +2298,12 @@ describe('ReportsService', () => {
       fromDate: '2024-01-01',
       toDate: '2024-01-31',
       salesByRate: [
-        { taxRate: 19, taxableBase: 1000000, taxAmount: 190000, invoiceCount: 15 },
+        {
+          taxRate: 19,
+          taxableBase: 1000000,
+          taxAmount: 190000,
+          invoiceCount: 15,
+        },
         { taxRate: 5, taxableBase: 500000, taxAmount: 25000, invoiceCount: 5 },
       ],
       salesExempt: [
@@ -2329,7 +2312,12 @@ describe('ReportsService', () => {
       totalSalesBase: 1700000,
       totalIvaGenerado: 215000,
       purchasesByRate: [
-        { taxRate: 19, taxableBase: 600000, taxAmount: 114000, invoiceCount: 10 },
+        {
+          taxRate: 19,
+          taxableBase: 600000,
+          taxAmount: 114000,
+          invoiceCount: 10,
+        },
       ],
       purchasesExempt: [
         { category: 'Excluido', taxableBase: 100000, invoiceCount: 2 },

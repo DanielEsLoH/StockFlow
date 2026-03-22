@@ -126,38 +126,44 @@ export class PaymentsService {
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
 
     // Aggregate payment stats using database queries instead of loading all records
-    const [allTimeAgg, todayAgg, weekAgg, methodCounts, pendingStats, overdueAgg] =
-      await Promise.all([
-        // Total payments + total received
-        this.prisma.payment.aggregate({
-          where: { tenantId },
-          _count: true,
-          _sum: { amount: true },
-          _avg: { amount: true },
-        }),
-        // Today's payments
-        this.prisma.payment.aggregate({
-          where: { tenantId, paymentDate: { gte: startOfToday } },
-          _count: true,
-          _sum: { amount: true },
-        }),
-        // This week's payments
-        this.prisma.payment.aggregate({
-          where: { tenantId, paymentDate: { gte: startOfWeek } },
-          _count: true,
-          _sum: { amount: true },
-        }),
-        // Payments grouped by method
-        this.prisma.payment.groupBy({
-          by: ['method'],
-          where: { tenantId },
-          _count: true,
-        }),
-        // Pending invoices: total pending amount using raw SQL for efficiency
-        this.prisma.$queryRawUnsafe<
-          Array<{ pending_count: bigint; pending_amount: number }>
-        >(
-          `SELECT COUNT(*) as pending_count,
+    const [
+      allTimeAgg,
+      todayAgg,
+      weekAgg,
+      methodCounts,
+      pendingStats,
+      overdueAgg,
+    ] = await Promise.all([
+      // Total payments + total received
+      this.prisma.payment.aggregate({
+        where: { tenantId },
+        _count: true,
+        _sum: { amount: true },
+        _avg: { amount: true },
+      }),
+      // Today's payments
+      this.prisma.payment.aggregate({
+        where: { tenantId, paymentDate: { gte: startOfToday } },
+        _count: true,
+        _sum: { amount: true },
+      }),
+      // This week's payments
+      this.prisma.payment.aggregate({
+        where: { tenantId, paymentDate: { gte: startOfWeek } },
+        _count: true,
+        _sum: { amount: true },
+      }),
+      // Payments grouped by method
+      this.prisma.payment.groupBy({
+        by: ['method'],
+        where: { tenantId },
+        _count: true,
+      }),
+      // Pending invoices: total pending amount using raw SQL for efficiency
+      this.prisma.$queryRawUnsafe<
+        Array<{ pending_count: bigint; pending_amount: number }>
+      >(
+        `SELECT COUNT(*) as pending_count,
                   COALESCE(SUM(i.total - COALESCE(p.paid, 0)), 0) as pending_amount
            FROM "Invoice" i
            LEFT JOIN (SELECT "invoiceId", SUM(amount) as paid FROM "Payment" GROUP BY "invoiceId") p
@@ -165,18 +171,18 @@ export class PaymentsService {
            WHERE i."tenantId" = $1
              AND i."paymentStatus" IN ('UNPAID', 'PARTIALLY_PAID')
              AND i.status NOT IN ('DRAFT', 'CANCELLED', 'VOID')`,
+        tenantId,
+      ),
+      // Overdue invoices count
+      this.prisma.invoice.count({
+        where: {
           tenantId,
-        ),
-        // Overdue invoices count
-        this.prisma.invoice.count({
-          where: {
-            tenantId,
-            paymentStatus: { in: ['UNPAID', 'PARTIALLY_PAID'] },
-            status: { notIn: ['DRAFT', 'CANCELLED', 'VOID'] },
-            dueDate: { lt: now },
-          },
-        }),
-      ]);
+          paymentStatus: { in: ['UNPAID', 'PARTIALLY_PAID'] },
+          status: { notIn: ['DRAFT', 'CANCELLED', 'VOID'] },
+          dueDate: { lt: now },
+        },
+      }),
+    ]);
 
     const totalPayments = allTimeAgg._count;
     const totalReceived = Number(allTimeAgg._sum.amount ?? 0);
@@ -498,7 +504,11 @@ export class PaymentsService {
 
     // Invalidate invoice and dashboard cache after payment status change
     await this.cache.invalidate(CACHE_KEYS.INVOICES, tenantId);
-    const invoiceCacheKey = this.cache.generateKey(CACHE_KEYS.INVOICE, tenantId, dto.invoiceId);
+    const invoiceCacheKey = this.cache.generateKey(
+      CACHE_KEYS.INVOICE,
+      tenantId,
+      dto.invoiceId,
+    );
     await this.cache.del(invoiceCacheKey);
     await this.cache.invalidate(CACHE_KEYS.DASHBOARD, tenantId);
 
@@ -507,13 +517,15 @@ export class PaymentsService {
     );
 
     // Non-blocking: generate accounting entry for payment
-    this.accountingBridge.onPaymentCreated({
-      tenantId,
-      paymentId: payment.id,
-      invoiceNumber: invoice.invoiceNumber,
-      amount: Number(dto.amount),
-      method: dto.method,
-    }).catch(() => {});
+    this.accountingBridge
+      .onPaymentCreated({
+        tenantId,
+        paymentId: payment.id,
+        invoiceNumber: invoice.invoiceNumber,
+        amount: Number(dto.amount),
+        method: dto.method,
+      })
+      .catch(() => {});
 
     // Fire-and-forget: send payment receipt email to customer
     this.notificationsService
@@ -597,7 +609,11 @@ export class PaymentsService {
 
     // Invalidate invoice and dashboard cache after payment deletion
     await this.cache.invalidate(CACHE_KEYS.INVOICES, tenantId);
-    const invoiceCacheKey = this.cache.generateKey(CACHE_KEYS.INVOICE, tenantId, payment.invoiceId);
+    const invoiceCacheKey = this.cache.generateKey(
+      CACHE_KEYS.INVOICE,
+      tenantId,
+      payment.invoiceId,
+    );
     await this.cache.del(invoiceCacheKey);
     await this.cache.invalidate(CACHE_KEYS.DASHBOARD, tenantId);
 

@@ -5,10 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
-import {
-  CreateRecurringInvoiceDto,
-  UpdateRecurringInvoiceDto,
-} from './dto';
+import { CreateRecurringInvoiceDto, UpdateRecurringInvoiceDto } from './dto';
 
 @Injectable()
 export class RecurringInvoicesService {

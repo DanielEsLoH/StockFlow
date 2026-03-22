@@ -125,7 +125,9 @@ describe('PaymentsService', () => {
         },
         {
           provide: AccountingBridgeService,
-          useValue: { onPaymentCreated: jest.fn().mockResolvedValue(undefined) },
+          useValue: {
+            onPaymentCreated: jest.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();
@@ -476,17 +478,24 @@ describe('PaymentsService', () => {
     };
 
     // Helper to create a transaction mock that simulates the locked-read flow
-    const createTxMock = (invoiceData: typeof mockInvoice & { payments: Array<{ id: string; amount: number }> }, paymentResult = mockPayment) => {
+    const createTxMock = (
+      invoiceData: typeof mockInvoice & {
+        payments: Array<{ id: string; amount: number }>;
+      },
+      paymentResult = mockPayment,
+    ) => {
       (prismaService.$transaction as jest.Mock).mockImplementation(
         async (callback: (tx: typeof prismaService) => Promise<unknown>) => {
           const txMock = {
-            $queryRawUnsafe: jest.fn().mockResolvedValue([{
-              id: invoiceData.id,
-              tenantId: invoiceData.tenantId,
-              total: invoiceData.total,
-              paymentStatus: invoiceData.paymentStatus,
-              invoiceNumber: invoiceData.invoiceNumber,
-            }]),
+            $queryRawUnsafe: jest.fn().mockResolvedValue([
+              {
+                id: invoiceData.id,
+                tenantId: invoiceData.tenantId,
+                total: invoiceData.total,
+                paymentStatus: invoiceData.paymentStatus,
+                invoiceNumber: invoiceData.invoiceNumber,
+              },
+            ]),
             invoice: {
               findFirst: jest.fn().mockResolvedValue(invoiceData),
               update: jest.fn().mockResolvedValue(invoiceData),
@@ -623,7 +632,9 @@ describe('PaymentsService', () => {
 
     describe('payment status calculation', () => {
       const createStatusTxMock = (
-        invoiceData: typeof mockInvoice & { payments: Array<{ id: string; amount: number }> },
+        invoiceData: typeof mockInvoice & {
+          payments: Array<{ id: string; amount: number }>;
+        },
         paymentResult: typeof mockPayment,
       ) => {
         let invoiceUpdateCalled = false;
@@ -631,13 +642,15 @@ describe('PaymentsService', () => {
         (prismaService.$transaction as jest.Mock).mockImplementation(
           async (callback: (tx: typeof prismaService) => Promise<unknown>) => {
             const txMock = {
-              $queryRawUnsafe: jest.fn().mockResolvedValue([{
-                id: invoiceData.id,
-                tenantId: invoiceData.tenantId,
-                total: invoiceData.total,
-                paymentStatus: invoiceData.paymentStatus,
-                invoiceNumber: invoiceData.invoiceNumber,
-              }]),
+              $queryRawUnsafe: jest.fn().mockResolvedValue([
+                {
+                  id: invoiceData.id,
+                  tenantId: invoiceData.tenantId,
+                  total: invoiceData.total,
+                  paymentStatus: invoiceData.paymentStatus,
+                  invoiceNumber: invoiceData.invoiceNumber,
+                },
+              ]),
               invoice: {
                 findFirst: jest.fn().mockResolvedValue(invoiceData),
                 update: jest.fn().mockImplementation((data: unknown) => {
@@ -653,13 +666,22 @@ describe('PaymentsService', () => {
             return callback(txMock as unknown as typeof prismaService);
           },
         );
-        return { getInvoiceUpdateCalled: () => invoiceUpdateCalled, getInvoiceUpdateData: () => invoiceUpdateData };
+        return {
+          getInvoiceUpdateCalled: () => invoiceUpdateCalled,
+          getInvoiceUpdateData: () => invoiceUpdateData,
+        };
       };
 
       it('should update invoice to PARTIALLY_PAID for partial payment', async () => {
         const { getInvoiceUpdateCalled } = createStatusTxMock(
           { ...mockInvoice, paymentStatus: PaymentStatus.UNPAID, payments: [] },
-          { ...mockPayment, invoice: { ...mockPayment.invoice, paymentStatus: PaymentStatus.PARTIALLY_PAID } },
+          {
+            ...mockPayment,
+            invoice: {
+              ...mockPayment.invoice,
+              paymentStatus: PaymentStatus.PARTIALLY_PAID,
+            },
+          },
         );
 
         await service.create(createDto);
@@ -670,7 +692,14 @@ describe('PaymentsService', () => {
       it('should update invoice to PAID when fully paid', async () => {
         const { getInvoiceUpdateData } = createStatusTxMock(
           { ...mockInvoice, paymentStatus: PaymentStatus.UNPAID, payments: [] },
-          { ...mockPayment, amount: 1000, invoice: { ...mockPayment.invoice, paymentStatus: PaymentStatus.PAID } } as any,
+          {
+            ...mockPayment,
+            amount: 1000,
+            invoice: {
+              ...mockPayment.invoice,
+              paymentStatus: PaymentStatus.PAID,
+            },
+          } as any,
         );
 
         await service.create({ ...createDto, amount: 1000 });
@@ -685,7 +714,14 @@ describe('PaymentsService', () => {
       it('should update PARTIALLY_PAID to PAID when remaining balance is paid', async () => {
         const { getInvoiceUpdateData } = createStatusTxMock(
           mockInvoiceWithPayments as any,
-          { ...mockPayment, amount: 700, invoice: { ...mockPayment.invoice, paymentStatus: PaymentStatus.PAID } } as any,
+          {
+            ...mockPayment,
+            amount: 700,
+            invoice: {
+              ...mockPayment.invoice,
+              paymentStatus: PaymentStatus.PAID,
+            },
+          } as any,
         );
 
         await service.create({ ...createDto, amount: 700 });
@@ -699,8 +735,18 @@ describe('PaymentsService', () => {
 
       it('should not update invoice status if already correct', async () => {
         const { getInvoiceUpdateCalled } = createStatusTxMock(
-          { ...mockInvoiceWithPayments, paymentStatus: PaymentStatus.PARTIALLY_PAID } as any,
-          { ...mockPayment, amount: 200, invoice: { ...mockPayment.invoice, paymentStatus: PaymentStatus.PARTIALLY_PAID } },
+          {
+            ...mockInvoiceWithPayments,
+            paymentStatus: PaymentStatus.PARTIALLY_PAID,
+          } as any,
+          {
+            ...mockPayment,
+            amount: 200,
+            invoice: {
+              ...mockPayment.invoice,
+              paymentStatus: PaymentStatus.PARTIALLY_PAID,
+            },
+          },
         );
 
         await service.create({ ...createDto, amount: 200 });
@@ -973,16 +1019,26 @@ describe('PaymentsService', () => {
   });
 
   describe('getStats', () => {
-    const setupStatsMocks = (overrides: {
-      allTimeAgg?: { _count: number; _sum: { amount: number | null }; _avg: { amount: number | null } };
-      todayAgg?: { _count: number; _sum: { amount: number | null } };
-      weekAgg?: { _count: number; _sum: { amount: number | null } };
-      methodCounts?: Array<{ method: PaymentMethod; _count: number }>;
-      pendingStats?: Array<{ pending_count: bigint; pending_amount: number }>;
-      overdueCount?: number;
-    } = {}) => {
+    const setupStatsMocks = (
+      overrides: {
+        allTimeAgg?: {
+          _count: number;
+          _sum: { amount: number | null };
+          _avg: { amount: number | null };
+        };
+        todayAgg?: { _count: number; _sum: { amount: number | null } };
+        weekAgg?: { _count: number; _sum: { amount: number | null } };
+        methodCounts?: Array<{ method: PaymentMethod; _count: number }>;
+        pendingStats?: Array<{ pending_count: bigint; pending_amount: number }>;
+        overdueCount?: number;
+      } = {},
+    ) => {
       const defaults = {
-        allTimeAgg: { _count: 0, _sum: { amount: null }, _avg: { amount: null } },
+        allTimeAgg: {
+          _count: 0,
+          _sum: { amount: null },
+          _avg: { amount: null },
+        },
         todayAgg: { _count: 0, _sum: { amount: null } },
         weekAgg: { _count: 0, _sum: { amount: null } },
         methodCounts: [],
@@ -995,9 +1051,15 @@ describe('PaymentsService', () => {
         .mockResolvedValueOnce(cfg.allTimeAgg)
         .mockResolvedValueOnce(cfg.todayAgg)
         .mockResolvedValueOnce(cfg.weekAgg);
-      (prismaService.payment.groupBy as jest.Mock).mockResolvedValue(cfg.methodCounts);
-      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue(cfg.pendingStats);
-      (prismaService.invoice.count as jest.Mock).mockResolvedValue(cfg.overdueCount);
+      (prismaService.payment.groupBy as jest.Mock).mockResolvedValue(
+        cfg.methodCounts,
+      );
+      (prismaService.$queryRawUnsafe as jest.Mock).mockResolvedValue(
+        cfg.pendingStats,
+      );
+      (prismaService.invoice.count as jest.Mock).mockResolvedValue(
+        cfg.overdueCount,
+      );
     };
 
     it('should return empty stats when no payments exist', async () => {
@@ -1017,7 +1079,11 @@ describe('PaymentsService', () => {
 
     it('should calculate stats correctly with payments', async () => {
       setupStatsMocks({
-        allTimeAgg: { _count: 3, _sum: { amount: 3500 }, _avg: { amount: 1166.67 } },
+        allTimeAgg: {
+          _count: 3,
+          _sum: { amount: 3500 },
+          _avg: { amount: 1166.67 },
+        },
         todayAgg: { _count: 2, _sum: { amount: 3000 } },
         weekAgg: { _count: 3, _sum: { amount: 3500 } },
         methodCounts: [

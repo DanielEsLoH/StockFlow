@@ -99,7 +99,10 @@ describe('LoggingInterceptor', () => {
       process.env.NODE_ENV = 'production';
       const prodInterceptor = new LoggingInterceptor();
 
-      const result = prodInterceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result = prodInterceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       result.subscribe({
         complete: () => {
           expect(logSpy).toHaveBeenCalled();
@@ -391,7 +394,10 @@ describe('LoggingInterceptor', () => {
       process.env.NODE_ENV = 'production';
       const prodInterceptor = new LoggingInterceptor();
 
-      const result = prodInterceptor.intercept(mockExecutionContext, mockCallHandler);
+      const result = prodInterceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
       result.subscribe({
         complete: () => {
           expect(logSpy).toHaveBeenCalled();

@@ -1,5 +1,9 @@
 export { ReportsModule } from './reports.module';
-export { ReportsService, type KardexReport, type KardexMovement } from './reports.service';
+export {
+  ReportsService,
+  type KardexReport,
+  type KardexMovement,
+} from './reports.service';
 export { ReportsController } from './reports.controller';
 export {
   ReportQueryDto,

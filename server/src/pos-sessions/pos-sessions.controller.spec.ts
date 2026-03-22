@@ -169,7 +169,10 @@ describe('POSSessionsController', () => {
       const result = await controller.openSession(openDto, mockUser);
 
       expect(result).toEqual(mockSessionWithDetails);
-      expect(service.openSession).toHaveBeenCalledWith(openDto, mockUser.userId);
+      expect(service.openSession).toHaveBeenCalledWith(
+        openDto,
+        mockUser.userId,
+      );
     });
 
     it('should propagate NotFoundException for cash register', async () => {

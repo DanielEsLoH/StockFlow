@@ -4,7 +4,12 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { Prisma, PurchaseOrderStatus, Supplier, WithholdingCertificate } from '@prisma/client';
+import {
+  Prisma,
+  PurchaseOrderStatus,
+  Supplier,
+  WithholdingCertificate,
+} from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import {
@@ -178,7 +183,9 @@ export class WithholdingCertificatesService {
   async findOne(id: string): Promise<WithholdingCertificateResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.debug(`Finding withholding certificate ${id} in tenant ${tenantId}`);
+    this.logger.debug(
+      `Finding withholding certificate ${id} in tenant ${tenantId}`,
+    );
 
     const certificate = await this.prisma.withholdingCertificate.findFirst({
       where: { id, tenantId },
@@ -210,7 +217,9 @@ export class WithholdingCertificatesService {
    * @throws NotFoundException if supplier not found
    * @throws BadRequestException if no purchase orders found for the period
    */
-  async generate(dto: GenerateCertificateDto): Promise<WithholdingCertificateResponse> {
+  async generate(
+    dto: GenerateCertificateDto,
+  ): Promise<WithholdingCertificateResponse> {
     const tenantId = this.tenantContext.requireTenantId();
     const { supplierId, year, withholdingType } = dto;
 
@@ -313,7 +322,9 @@ export class WithholdingCertificatesService {
    * @param dto - Year and optional withholding type
    * @returns Summary of generated certificates
    */
-  async generateAll(dto: GenerateAllCertificatesDto): Promise<GenerateAllResult> {
+  async generateAll(
+    dto: GenerateAllCertificatesDto,
+  ): Promise<GenerateAllResult> {
     const tenantId = this.tenantContext.requireTenantId();
     const { year, withholdingType = 'RENTA' } = dto;
 
@@ -426,7 +437,10 @@ export class WithholdingCertificatesService {
       },
     });
 
-    const byType: Record<string, { count: number; base: number; withheld: number }> = {};
+    const byType: Record<
+      string,
+      { count: number; base: number; withheld: number }
+    > = {};
     let totalBase = 0;
     let totalWithheld = 0;
 
@@ -511,9 +525,7 @@ export class WithholdingCertificatesService {
     let nextNumber = 1;
 
     if (lastCertificate?.certificateNumber) {
-      const match = lastCertificate.certificateNumber.match(
-        /CRT-\d{4}-(\d+)/,
-      );
+      const match = lastCertificate.certificateNumber.match(/CRT-\d{4}-(\d+)/);
       if (match) {
         nextNumber = parseInt(match[1], 10) + 1;
       }

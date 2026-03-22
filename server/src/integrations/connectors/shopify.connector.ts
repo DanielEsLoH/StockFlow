@@ -122,7 +122,11 @@ export class ShopifyConnector implements PlatformConnector {
         orders: Array<{
           id: number;
           name: string;
-          customer: { first_name: string; last_name: string; email: string | null };
+          customer: {
+            first_name: string;
+            last_name: string;
+            email: string | null;
+          };
           line_items: Array<{
             product_id: number;
             sku: string | null;
@@ -139,7 +143,8 @@ export class ShopifyConnector implements PlatformConnector {
       return data.orders.map((o) => ({
         externalId: String(o.id),
         orderNumber: o.name,
-        customerName: `${o.customer?.first_name ?? ''} ${o.customer?.last_name ?? ''}`.trim(),
+        customerName:
+          `${o.customer?.first_name ?? ''} ${o.customer?.last_name ?? ''}`.trim(),
         customerEmail: o.customer?.email ?? null,
         items: o.line_items.map((li) => ({
           externalProductId: String(li.product_id),
@@ -226,9 +231,6 @@ export class ShopifyConnector implements PlatformConnector {
       .createHmac('sha256', secret)
       .update(payload)
       .digest('base64');
-    return crypto.timingSafeEqual(
-      Buffer.from(hmac),
-      Buffer.from(signature),
-    );
+    return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(signature));
   }
 }

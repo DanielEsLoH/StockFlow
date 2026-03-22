@@ -1,5 +1,9 @@
 // Permission enum and metadata
-export { Permission, PERMISSION_CATEGORIES, PERMISSION_LABELS } from './permission.enum';
+export {
+  Permission,
+  PERMISSION_CATEGORIES,
+  PERMISSION_LABELS,
+} from './permission.enum';
 
 // Role-permission mappings
 export {
@@ -11,7 +15,10 @@ export {
 
 // Service
 export { PermissionsService } from './permissions.service';
-export type { UserPermissions, PermissionOverrideDto } from './permissions.service';
+export type {
+  UserPermissions,
+  PermissionOverrideDto,
+} from './permissions.service';
 
 // Module
 export { PermissionsModule } from './permissions.module';

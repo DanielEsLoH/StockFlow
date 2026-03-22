@@ -80,7 +80,9 @@ export class CreateProductDto {
     example: 'clx1234567890abcdef',
   })
   @IsString({ message: 'Category ID must be a string' })
-  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID de la categoría debe ser un CUID valido' })
+  @Matches(/^c[a-z0-9]{24,}$/, {
+    message: 'El ID de la categoría debe ser un CUID valido',
+  })
   @IsOptional()
   categoryId?: string;
 
@@ -122,8 +124,7 @@ export class CreateProductDto {
     default: 'GRAVADO_19',
   })
   @IsEnum(TaxCategory, {
-    message:
-      'Tax category must be GRAVADO_19, GRAVADO_5, EXENTO, or EXCLUIDO',
+    message: 'Tax category must be GRAVADO_19, GRAVADO_5, EXENTO, or EXCLUIDO',
   })
   @IsOptional()
   taxCategory?: TaxCategory = TaxCategory.GRAVADO_19;

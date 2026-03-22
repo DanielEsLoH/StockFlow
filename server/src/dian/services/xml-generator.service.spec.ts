@@ -1390,9 +1390,7 @@ describe('XmlGeneratorService', () => {
     it('should use invoice type code 03 for documento equivalente', () => {
       const xml = service.generateDocumentoEquivalenteXml(makeConfig());
 
-      expect(xml).toContain(
-        '<cbc:InvoiceTypeCode>03</cbc:InvoiceTypeCode>',
-      );
+      expect(xml).toContain('<cbc:InvoiceTypeCode>03</cbc:InvoiceTypeCode>');
     });
 
     it('should use customization ID 11', () => {
@@ -1690,9 +1688,7 @@ describe('XmlGeneratorService', () => {
       );
 
       expect(xml).toContain('<cac:DiscrepancyResponse>');
-      expect(xml).toContain(
-        '<cbc:ReferenceID>POS00000010</cbc:ReferenceID>',
-      );
+      expect(xml).toContain('<cbc:ReferenceID>POS00000010</cbc:ReferenceID>');
       expect(xml).toContain('<cbc:ResponseCode>2</cbc:ResponseCode>');
       expect(xml).toContain(
         '<cbc:Description>Anulacion de documento equivalente</cbc:Description>',
@@ -1847,9 +1843,7 @@ describe('XmlGeneratorService', () => {
       );
 
       expect(xml).toContain('<cbc:ResponseCode>3</cbc:ResponseCode>');
-      expect(xml).toContain(
-        '<cbc:Description>Descuento POS</cbc:Description>',
-      );
+      expect(xml).toContain('<cbc:Description>Descuento POS</cbc:Description>');
     });
 
     it('should handle invoice with no customer (generic consumer)', () => {
@@ -1921,15 +1915,9 @@ describe('XmlGeneratorService', () => {
         /<cac:DebitNoteLine>\s*<cbc:ID>(\d+)<\/cbc:ID>/g,
       );
       expect(lineIdMatches).toHaveLength(3);
-      expect(xml).toContain(
-        '<cac:DebitNoteLine>\n    <cbc:ID>1</cbc:ID>',
-      );
-      expect(xml).toContain(
-        '<cac:DebitNoteLine>\n    <cbc:ID>2</cbc:ID>',
-      );
-      expect(xml).toContain(
-        '<cac:DebitNoteLine>\n    <cbc:ID>3</cbc:ID>',
-      );
+      expect(xml).toContain('<cac:DebitNoteLine>\n    <cbc:ID>1</cbc:ID>');
+      expect(xml).toContain('<cac:DebitNoteLine>\n    <cbc:ID>2</cbc:ID>');
+      expect(xml).toContain('<cac:DebitNoteLine>\n    <cbc:ID>3</cbc:ID>');
     });
 
     it('should calculate per-line extension amount as quantity * unitPrice', () => {
@@ -2031,12 +2019,8 @@ describe('XmlGeneratorService', () => {
 
       expect(xml).toContain('<cbc:Percent>19.00</cbc:Percent>');
       expect(xml).toContain('<cbc:Percent>5.00</cbc:Percent>');
-      expect(xml).toContain(
-        '<cbc:Description>Item IVA 19%</cbc:Description>',
-      );
-      expect(xml).toContain(
-        '<cbc:Description>Item IVA 5%</cbc:Description>',
-      );
+      expect(xml).toContain('<cbc:Description>Item IVA 19%</cbc:Description>');
+      expect(xml).toContain('<cbc:Description>Item IVA 5%</cbc:Description>');
     });
   });
 });

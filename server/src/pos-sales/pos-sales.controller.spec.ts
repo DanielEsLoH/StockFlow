@@ -131,7 +131,10 @@ describe('POSSalesController', () => {
       const result = await controller.createSale(createDto, mockUser);
 
       expect(result).toEqual(mockSaleWithDetails);
-      expect(service.createSale).toHaveBeenCalledWith(createDto, mockUser.userId);
+      expect(service.createSale).toHaveBeenCalledWith(
+        createDto,
+        mockUser.userId,
+      );
     });
 
     it('should propagate BadRequestException for no active session', async () => {
@@ -215,7 +218,11 @@ describe('POSSalesController', () => {
     it('should process a partial return', async () => {
       service.partialReturn.mockResolvedValue(mockSaleWithDetails);
 
-      const result = await controller.partialReturn('sale-123', returnDto, mockUser);
+      const result = await controller.partialReturn(
+        'sale-123',
+        returnDto,
+        mockUser,
+      );
 
       expect(result).toEqual(mockSaleWithDetails);
       expect(service.partialReturn).toHaveBeenCalledWith(

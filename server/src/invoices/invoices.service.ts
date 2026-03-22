@@ -199,10 +199,7 @@ export class InvoicesService {
           select: { amount: true },
         },
       },
-      orderBy: [
-        { dueDate: 'asc' },
-        { createdAt: 'asc' },
-      ],
+      orderBy: [{ dueDate: 'asc' }, { createdAt: 'asc' }],
     });
 
     return invoices.map((invoice) => {
@@ -616,7 +613,9 @@ export class InvoicesService {
           notes: dto.notes ?? null,
           isExport: dto.isExport ?? false,
           incoterms: dto.isExport ? (dto.incoterms ?? null) : null,
-          destinationCountry: dto.isExport ? (dto.destinationCountry ?? null) : null,
+          destinationCountry: dto.isExport
+            ? (dto.destinationCountry ?? null)
+            : null,
         },
         include: {
           customer: true,
@@ -648,8 +647,7 @@ export class InvoicesService {
 
       // Use the resolved warehouse for stock operations
       const warehouseId =
-        invoiceWarehouseId ??
-        (await this.getDefaultWarehouseId(tx, tenantId));
+        invoiceWarehouseId ?? (await this.getDefaultWarehouseId(tx, tenantId));
 
       // Validate warehouse stock availability before decrementing
       for (const item of itemsData) {
@@ -744,19 +742,21 @@ export class InvoicesService {
     await this.invalidateCache(tenantId);
 
     // Non-blocking: generate automatic accounting entry
-    this.accountingBridge.onInvoiceCreated({
-      tenantId: invoice.tenantId,
-      invoiceId: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      subtotal: Number(invoice.subtotal),
-      tax: Number(invoice.tax),
-      total: Number(invoice.total),
-      items: (invoice.items ?? []).map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        product: item.product ? { costPrice: item.product.costPrice } : null,
-      })),
-    }).catch(() => {});
+    this.accountingBridge
+      .onInvoiceCreated({
+        tenantId: invoice.tenantId,
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        subtotal: Number(invoice.subtotal),
+        tax: Number(invoice.tax),
+        total: Number(invoice.total),
+        items: (invoice.items ?? []).map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          product: item.product ? { costPrice: item.product.costPrice } : null,
+        })),
+      })
+      .catch(() => {});
 
     return this.mapToInvoiceResponse(invoice);
   }
@@ -835,13 +835,15 @@ export class InvoicesService {
 
     // Non-blocking: generate payment accounting entry for POS immediate payment
     if (dto.immediatePayment) {
-      this.accountingBridge.onPaymentCreated({
-        tenantId,
-        paymentId: '',
-        invoiceNumber: updatedInvoice.invoiceNumber,
-        amount: Number(updatedInvoice.total),
-        method: (dto.paymentMethod ?? 'CASH') as any,
-      }).catch(() => {});
+      this.accountingBridge
+        .onPaymentCreated({
+          tenantId,
+          paymentId: '',
+          invoiceNumber: updatedInvoice.invoiceNumber,
+          amount: Number(updatedInvoice.total),
+          method: (dto.paymentMethod ?? 'CASH') as any,
+        })
+        .catch(() => {});
     }
 
     return this.mapToInvoiceResponse(updatedInvoice);
@@ -1318,20 +1320,22 @@ export class InvoicesService {
     await this.invalidateCache(tenantId, id);
 
     // Non-blocking: generate reverse accounting entry
-    this.accountingBridge.onInvoiceCancelled({
-      tenantId: cancelledInvoice.tenantId,
-      invoiceId: cancelledInvoice.id,
-      invoiceNumber: cancelledInvoice.invoiceNumber,
-      subtotal: Number(cancelledInvoice.subtotal),
-      tax: Number(cancelledInvoice.tax),
-      total: Number(cancelledInvoice.total),
-      items: (cancelledInvoice.items ?? []).map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        product: item.product ? { costPrice: item.product.costPrice } : null,
-      })),
-      isPosImmediate: cancelledInvoice.source === 'POS',
-    }).catch(() => {});
+    this.accountingBridge
+      .onInvoiceCancelled({
+        tenantId: cancelledInvoice.tenantId,
+        invoiceId: cancelledInvoice.id,
+        invoiceNumber: cancelledInvoice.invoiceNumber,
+        subtotal: Number(cancelledInvoice.subtotal),
+        tax: Number(cancelledInvoice.tax),
+        total: Number(cancelledInvoice.total),
+        items: (cancelledInvoice.items ?? []).map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          product: item.product ? { costPrice: item.product.costPrice } : null,
+        })),
+        isPosImmediate: cancelledInvoice.source === 'POS',
+      })
+      .catch(() => {});
 
     return this.mapToInvoiceResponse(cancelledInvoice);
   }
@@ -1909,9 +1913,7 @@ export class InvoicesService {
    *
    * @returns Generated invoice number
    */
-  async generateInvoiceNumber(
-    tx?: Prisma.TransactionClient,
-  ): Promise<string> {
+  async generateInvoiceNumber(tx?: Prisma.TransactionClient): Promise<string> {
     const tenantId = this.tenantContext.requireTenantId();
     const client = tx ?? this.prisma;
 
@@ -2267,7 +2269,11 @@ export class InvoicesService {
   ): Promise<void> {
     await this.cache.invalidate(CACHE_KEYS.INVOICES, tenantId);
     if (invoiceId) {
-      const key = this.cache.generateKey(CACHE_KEYS.INVOICE, tenantId, invoiceId);
+      const key = this.cache.generateKey(
+        CACHE_KEYS.INVOICE,
+        tenantId,
+        invoiceId,
+      );
       await this.cache.del(key);
     }
     await this.cache.invalidate(CACHE_KEYS.DASHBOARD, tenantId);
@@ -2328,8 +2334,7 @@ export class InvoicesService {
       orderBy: { createdAt: 'desc' },
     });
     if (dianDoc) {
-      xmlContent =
-        dianDoc.signedXml || dianDoc.xmlContent || undefined;
+      xmlContent = dianDoc.signedXml || dianDoc.xmlContent || undefined;
     }
 
     // Send email (fire and forget)

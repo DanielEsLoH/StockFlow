@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PurchaseOrderStatus } from '@prisma/client';
 import { WithholdingCertificatesService } from './withholding-certificates.service';
 import { PrismaService } from '../prisma';
@@ -112,7 +108,9 @@ describe('WithholdingCertificatesService', () => {
       ],
     }).compile();
 
-    service = module.get<WithholdingCertificatesService>(WithholdingCertificatesService);
+    service = module.get<WithholdingCertificatesService>(
+      WithholdingCertificatesService,
+    );
     prismaService = module.get(PrismaService);
     tenantContextService = module.get(TenantContextService);
 
@@ -135,10 +133,12 @@ describe('WithholdingCertificatesService', () => {
   // ─── FINDALL ────────────────────────────────────────────────────
   describe('findAll', () => {
     beforeEach(() => {
-      (prismaService.withholdingCertificate.findMany as jest.Mock).mockResolvedValue([
-        mockCertificate,
-      ]);
-      (prismaService.withholdingCertificate.count as jest.Mock).mockResolvedValue(1);
+      (
+        prismaService.withholdingCertificate.findMany as jest.Mock
+      ).mockResolvedValue([mockCertificate]);
+      (
+        prismaService.withholdingCertificate.count as jest.Mock
+      ).mockResolvedValue(1);
     });
 
     it('should return paginated certificates with default params', async () => {
@@ -156,14 +156,18 @@ describe('WithholdingCertificatesService', () => {
     it('should calculate correct skip for page 2', async () => {
       await service.findAll({ page: 2, limit: 10 });
 
-      expect(prismaService.withholdingCertificate.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ skip: 10, take: 10 }),
-      );
+      expect(
+        prismaService.withholdingCertificate.findMany,
+      ).toHaveBeenCalledWith(expect.objectContaining({ skip: 10, take: 10 }));
     });
 
     it('should return empty data when no certificates exist', async () => {
-      (prismaService.withholdingCertificate.findMany as jest.Mock).mockResolvedValue([]);
-      (prismaService.withholdingCertificate.count as jest.Mock).mockResolvedValue(0);
+      (
+        prismaService.withholdingCertificate.findMany as jest.Mock
+      ).mockResolvedValue([]);
+      (
+        prismaService.withholdingCertificate.count as jest.Mock
+      ).mockResolvedValue(0);
 
       const result = await service.findAll();
 
@@ -174,7 +178,9 @@ describe('WithholdingCertificatesService', () => {
     it('should filter by year when provided', async () => {
       await service.findAll({ year: 2025 });
 
-      expect(prismaService.withholdingCertificate.findMany).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             tenantId: mockTenantId,
@@ -187,7 +193,9 @@ describe('WithholdingCertificatesService', () => {
     it('should filter by supplierId when provided', async () => {
       await service.findAll({ supplierId: 'supplier-123' });
 
-      expect(prismaService.withholdingCertificate.findMany).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             supplierId: 'supplier-123',
@@ -199,7 +207,9 @@ describe('WithholdingCertificatesService', () => {
     it('should filter by withholdingType when provided', async () => {
       await service.findAll({ withholdingType: 'IVA' });
 
-      expect(prismaService.withholdingCertificate.findMany).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
             withholdingType: 'IVA',
@@ -211,7 +221,9 @@ describe('WithholdingCertificatesService', () => {
     it('should order by generatedAt descending', async () => {
       await service.findAll();
 
-      expect(prismaService.withholdingCertificate.findMany).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { generatedAt: 'desc' },
         }),
@@ -221,7 +233,9 @@ describe('WithholdingCertificatesService', () => {
     it('should scope queries to tenant', async () => {
       await service.findAll();
 
-      expect(prismaService.withholdingCertificate.findMany).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ tenantId: mockTenantId }),
         }),
@@ -231,7 +245,9 @@ describe('WithholdingCertificatesService', () => {
     it('should include supplier relation', async () => {
       await service.findAll();
 
-      expect(prismaService.withholdingCertificate.findMany).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           include: expect.objectContaining({
             supplier: expect.any(Object),
@@ -244,9 +260,9 @@ describe('WithholdingCertificatesService', () => {
   // ─── FINDONE ────────────────────────────────────────────────────
   describe('findOne', () => {
     it('should return a certificate with supplier info', async () => {
-      (prismaService.withholdingCertificate.findFirst as jest.Mock).mockResolvedValue(
-        mockCertificate,
-      );
+      (
+        prismaService.withholdingCertificate.findFirst as jest.Mock
+      ).mockResolvedValue(mockCertificate);
 
       const result = await service.findOne('cert-123');
 
@@ -256,22 +272,28 @@ describe('WithholdingCertificatesService', () => {
     });
 
     it('should throw NotFoundException when certificate not found', async () => {
-      (prismaService.withholdingCertificate.findFirst as jest.Mock).mockResolvedValue(null);
+      (
+        prismaService.withholdingCertificate.findFirst as jest.Mock
+      ).mockResolvedValue(null);
 
-      await expect(service.findOne('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(service.findOne('invalid-id')).rejects.toThrow(
         'Certificado de retencion no encontrado',
       );
     });
 
     it('should scope query to tenant', async () => {
-      (prismaService.withholdingCertificate.findFirst as jest.Mock).mockResolvedValue(
-        mockCertificate,
-      );
+      (
+        prismaService.withholdingCertificate.findFirst as jest.Mock
+      ).mockResolvedValue(mockCertificate);
 
       await service.findOne('cert-123');
 
-      expect(prismaService.withholdingCertificate.findFirst).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findFirst,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'cert-123', tenantId: mockTenantId },
         }),
@@ -279,9 +301,9 @@ describe('WithholdingCertificatesService', () => {
     });
 
     it('should map Decimal fields to numbers in response', async () => {
-      (prismaService.withholdingCertificate.findFirst as jest.Mock).mockResolvedValue(
-        mockCertificate,
-      );
+      (
+        prismaService.withholdingCertificate.findFirst as jest.Mock
+      ).mockResolvedValue(mockCertificate);
 
       const result = await service.findOne('cert-123');
 
@@ -293,8 +315,12 @@ describe('WithholdingCertificatesService', () => {
   // ─── GENERATE ───────────────────────────────────────────────────
   describe('generate', () => {
     beforeEach(() => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
-      (prismaService.purchaseOrder.findMany as jest.Mock).mockResolvedValue(mockPurchaseOrders);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
+      (prismaService.purchaseOrder.findMany as jest.Mock).mockResolvedValue(
+        mockPurchaseOrders,
+      );
       mockTx.withholdingCertificate.findFirst.mockResolvedValue(null); // no existing certificates
       mockTx.withholdingCertificate.upsert.mockResolvedValue(mockCertificate);
     });
@@ -494,9 +520,11 @@ describe('WithholdingCertificatesService', () => {
     });
 
     it('should require tenant context', async () => {
-      (tenantContextService.requireTenantId as jest.Mock).mockImplementation(() => {
-        throw new Error('Tenant not found');
-      });
+      (tenantContextService.requireTenantId as jest.Mock).mockImplementation(
+        () => {
+          throw new Error('Tenant not found');
+        },
+      );
 
       await expect(
         service.generate({
@@ -517,7 +545,9 @@ describe('WithholdingCertificatesService', () => {
           { supplierId: 'supplier-456' },
         ])
         .mockResolvedValue(mockPurchaseOrders);
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
       mockTx.withholdingCertificate.findFirst.mockResolvedValue(null);
       mockTx.withholdingCertificate.upsert.mockResolvedValue(mockCertificate);
     });
@@ -569,7 +599,10 @@ describe('WithholdingCertificatesService', () => {
         .mockResolvedValueOnce(mockSupplier)
         .mockResolvedValueOnce(null); // supplier not found for second
 
-      const result = await service.generateAll({ year: 2025, withholdingType: 'RENTA' });
+      const result = await service.generateAll({
+        year: 2025,
+        withholdingType: 'RENTA',
+      });
 
       // Only 1 should succeed
       expect(result.generated).toBe(1);
@@ -579,9 +612,9 @@ describe('WithholdingCertificatesService', () => {
   // ─── REMOVE ─────────────────────────────────────────────────────
   describe('remove', () => {
     it('should delete a certificate', async () => {
-      (prismaService.withholdingCertificate.findFirst as jest.Mock).mockResolvedValue(
-        mockCertificate,
-      );
+      (
+        prismaService.withholdingCertificate.findFirst as jest.Mock
+      ).mockResolvedValue(mockCertificate);
 
       await service.remove('cert-123');
 
@@ -591,22 +624,28 @@ describe('WithholdingCertificatesService', () => {
     });
 
     it('should throw NotFoundException when certificate not found', async () => {
-      (prismaService.withholdingCertificate.findFirst as jest.Mock).mockResolvedValue(null);
+      (
+        prismaService.withholdingCertificate.findFirst as jest.Mock
+      ).mockResolvedValue(null);
 
-      await expect(service.remove('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(service.remove('invalid-id')).rejects.toThrow(
         'Certificado de retencion no encontrado',
       );
     });
 
     it('should scope query to tenant', async () => {
-      (prismaService.withholdingCertificate.findFirst as jest.Mock).mockResolvedValue(
-        mockCertificate,
-      );
+      (
+        prismaService.withholdingCertificate.findFirst as jest.Mock
+      ).mockResolvedValue(mockCertificate);
 
       await service.remove('cert-123');
 
-      expect(prismaService.withholdingCertificate.findFirst).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findFirst,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'cert-123', tenantId: mockTenantId },
         }),
@@ -617,7 +656,9 @@ describe('WithholdingCertificatesService', () => {
   // ─── GETSTATS ───────────────────────────────────────────────────
   describe('getStats', () => {
     it('should return correct statistics by type', async () => {
-      (prismaService.withholdingCertificate.findMany as jest.Mock).mockResolvedValue([
+      (
+        prismaService.withholdingCertificate.findMany as jest.Mock
+      ).mockResolvedValue([
         { withholdingType: 'RENTA', totalBase: 10000, totalWithheld: 250 },
         { withholdingType: 'RENTA', totalBase: 8000, totalWithheld: 200 },
         { withholdingType: 'IVA', totalBase: 5000, totalWithheld: 142.5 },
@@ -629,12 +670,22 @@ describe('WithholdingCertificatesService', () => {
       expect(result.totalCertificates).toBe(3);
       expect(result.totalBase).toBe(23000);
       expect(result.totalWithheld).toBe(592.5);
-      expect(result.byType.RENTA).toEqual({ count: 2, base: 18000, withheld: 450 });
-      expect(result.byType.IVA).toEqual({ count: 1, base: 5000, withheld: 142.5 });
+      expect(result.byType.RENTA).toEqual({
+        count: 2,
+        base: 18000,
+        withheld: 450,
+      });
+      expect(result.byType.IVA).toEqual({
+        count: 1,
+        base: 5000,
+        withheld: 142.5,
+      });
     });
 
     it('should return zeros when no certificates exist', async () => {
-      (prismaService.withholdingCertificate.findMany as jest.Mock).mockResolvedValue([]);
+      (
+        prismaService.withholdingCertificate.findMany as jest.Mock
+      ).mockResolvedValue([]);
 
       const result = await service.getStats(2025);
 
@@ -645,11 +696,15 @@ describe('WithholdingCertificatesService', () => {
     });
 
     it('should scope to tenant and year', async () => {
-      (prismaService.withholdingCertificate.findMany as jest.Mock).mockResolvedValue([]);
+      (
+        prismaService.withholdingCertificate.findMany as jest.Mock
+      ).mockResolvedValue([]);
 
       await service.getStats(2025);
 
-      expect(prismaService.withholdingCertificate.findMany).toHaveBeenCalledWith({
+      expect(
+        prismaService.withholdingCertificate.findMany,
+      ).toHaveBeenCalledWith({
         where: { tenantId: mockTenantId, year: 2025 },
         select: {
           withholdingType: true,
@@ -702,12 +757,18 @@ describe('WithholdingCertificatesService', () => {
   // ─── TENANT ISOLATION ──────────────────────────────────────────
   describe('tenant isolation', () => {
     it('should scope findAll to tenant', async () => {
-      (prismaService.withholdingCertificate.findMany as jest.Mock).mockResolvedValue([]);
-      (prismaService.withholdingCertificate.count as jest.Mock).mockResolvedValue(0);
+      (
+        prismaService.withholdingCertificate.findMany as jest.Mock
+      ).mockResolvedValue([]);
+      (
+        prismaService.withholdingCertificate.count as jest.Mock
+      ).mockResolvedValue(0);
 
       await service.findAll();
 
-      expect(prismaService.withholdingCertificate.findMany).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findMany,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ tenantId: mockTenantId }),
         }),
@@ -715,13 +776,15 @@ describe('WithholdingCertificatesService', () => {
     });
 
     it('should scope findOne to tenant', async () => {
-      (prismaService.withholdingCertificate.findFirst as jest.Mock).mockResolvedValue(
-        mockCertificate,
-      );
+      (
+        prismaService.withholdingCertificate.findFirst as jest.Mock
+      ).mockResolvedValue(mockCertificate);
 
       await service.findOne('cert-123');
 
-      expect(prismaService.withholdingCertificate.findFirst).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findFirst,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'cert-123', tenantId: mockTenantId },
         }),
@@ -729,13 +792,15 @@ describe('WithholdingCertificatesService', () => {
     });
 
     it('should scope remove to tenant', async () => {
-      (prismaService.withholdingCertificate.findFirst as jest.Mock).mockResolvedValue(
-        mockCertificate,
-      );
+      (
+        prismaService.withholdingCertificate.findFirst as jest.Mock
+      ).mockResolvedValue(mockCertificate);
 
       await service.remove('cert-123');
 
-      expect(prismaService.withholdingCertificate.findFirst).toHaveBeenCalledWith(
+      expect(
+        prismaService.withholdingCertificate.findFirst,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'cert-123', tenantId: mockTenantId },
         }),
@@ -743,8 +808,12 @@ describe('WithholdingCertificatesService', () => {
     });
 
     it('should scope supplier validation to tenant in generate', async () => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
-      (prismaService.purchaseOrder.findMany as jest.Mock).mockResolvedValue(mockPurchaseOrders);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
+      (prismaService.purchaseOrder.findMany as jest.Mock).mockResolvedValue(
+        mockPurchaseOrders,
+      );
       mockTx.withholdingCertificate.findFirst.mockResolvedValue(null);
       mockTx.withholdingCertificate.upsert.mockResolvedValue(mockCertificate);
 

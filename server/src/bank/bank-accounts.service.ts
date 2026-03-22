@@ -82,11 +82,15 @@ export class BankAccountsService {
 
     // Check account number uniqueness
     const existing = await this.prisma.bankAccount.findUnique({
-      where: { tenantId_accountNumber: { tenantId, accountNumber: dto.accountNumber } },
+      where: {
+        tenantId_accountNumber: { tenantId, accountNumber: dto.accountNumber },
+      },
     });
 
     if (existing) {
-      throw new ConflictException(`Ya existe una cuenta con el numero ${dto.accountNumber}`);
+      throw new ConflictException(
+        `Ya existe una cuenta con el numero ${dto.accountNumber}`,
+      );
     }
 
     // Create a PUC sub-account under 1110 (Bancos)
@@ -144,7 +148,10 @@ export class BankAccountsService {
     return this.mapToResponse(bankAccount);
   }
 
-  async update(id: string, dto: UpdateBankAccountDto): Promise<BankAccountResponse> {
+  async update(
+    id: string,
+    dto: UpdateBankAccountDto,
+  ): Promise<BankAccountResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const account = await this.prisma.bankAccount.findFirst({

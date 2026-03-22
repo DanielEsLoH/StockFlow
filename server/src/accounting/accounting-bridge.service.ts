@@ -52,17 +52,37 @@ export class AccountingBridgeService {
     subtotal: number;
     tax: number;
     total: number;
-    items: { productId: string | null; quantity: number; product?: { costPrice: any } | null }[];
+    items: {
+      productId: string | null;
+      quantity: number;
+      product?: { costPrice: any } | null;
+    }[];
     isPosImmediate?: boolean;
     paymentMethod?: string;
   }): Promise<void> {
     try {
-      const config = await this.configService.getConfigForTenant(params.tenantId);
+      const config = await this.configService.getConfigForTenant(
+        params.tenantId,
+      );
       if (!config?.autoGenerateEntries) return;
 
-      const { accountsReceivableId, cashAccountId, revenueAccountId, ivaPorPagarId, cogsAccountId, inventoryAccountId } = config;
-      if (!accountsReceivableId || !revenueAccountId || !cogsAccountId || !inventoryAccountId) {
-        this.logger.warn(`Accounting config incomplete for tenant ${params.tenantId}, skipping invoice entry`);
+      const {
+        accountsReceivableId,
+        cashAccountId,
+        revenueAccountId,
+        ivaPorPagarId,
+        cogsAccountId,
+        inventoryAccountId,
+      } = config;
+      if (
+        !accountsReceivableId ||
+        !revenueAccountId ||
+        !cogsAccountId ||
+        !inventoryAccountId
+      ) {
+        this.logger.warn(
+          `Accounting config incomplete for tenant ${params.tenantId}, skipping invoice entry`,
+        );
         return;
       }
 
@@ -72,9 +92,17 @@ export class AccountingBridgeService {
           `POS sale ${params.invoiceNumber} requires cash account but cashAccountId is not configured. Falling back to accounts receivable.`,
         );
       }
-      const debitAccountId = (params.isPosImmediate && cashAccountId) ? cashAccountId : accountsReceivableId;
+      const debitAccountId =
+        params.isPosImmediate && cashAccountId
+          ? cashAccountId
+          : accountsReceivableId;
 
-      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+      const lines: {
+        accountId: string;
+        description?: string;
+        debit: number;
+        credit: number;
+      }[] = [];
 
       // DR Clientes/Caja = total
       lines.push({
@@ -105,7 +133,10 @@ export class AccountingBridgeService {
       // COGS: DR Costo de ventas, CR Inventario
       const totalCogs = params.items.reduce((sum, item) => {
         if (!item.product?.costPrice) return sum;
-        return sum + Math.round(Number(item.product.costPrice) * item.quantity * 100) / 100;
+        return (
+          sum +
+          Math.round(Number(item.product.costPrice) * item.quantity * 100) / 100
+        );
       }, 0);
 
       if (totalCogs > 0) {
@@ -133,7 +164,9 @@ export class AccountingBridgeService {
         lines,
       });
 
-      this.logger.debug(`Accounting entry generated for invoice ${params.invoiceNumber}`);
+      this.logger.debug(
+        `Accounting entry generated for invoice ${params.invoiceNumber}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to generate accounting entry for invoice ${params.invoiceNumber}`,
@@ -153,20 +186,47 @@ export class AccountingBridgeService {
     subtotal: number;
     tax: number;
     total: number;
-    items: { productId: string | null; quantity: number; product?: { costPrice: any } | null }[];
+    items: {
+      productId: string | null;
+      quantity: number;
+      product?: { costPrice: any } | null;
+    }[];
     isPosImmediate?: boolean;
   }): Promise<void> {
     try {
-      const config = await this.configService.getConfigForTenant(params.tenantId);
+      const config = await this.configService.getConfigForTenant(
+        params.tenantId,
+      );
       if (!config?.autoGenerateEntries) return;
 
-      const { accountsReceivableId, cashAccountId, revenueAccountId, ivaPorPagarId, cogsAccountId, inventoryAccountId } = config;
-      if (!accountsReceivableId || !revenueAccountId || !cogsAccountId || !inventoryAccountId) return;
+      const {
+        accountsReceivableId,
+        cashAccountId,
+        revenueAccountId,
+        ivaPorPagarId,
+        cogsAccountId,
+        inventoryAccountId,
+      } = config;
+      if (
+        !accountsReceivableId ||
+        !revenueAccountId ||
+        !cogsAccountId ||
+        !inventoryAccountId
+      )
+        return;
 
       // Use the same account that was debited in the original sale entry
-      const creditAccountId = (params.isPosImmediate && cashAccountId) ? cashAccountId : accountsReceivableId;
+      const creditAccountId =
+        params.isPosImmediate && cashAccountId
+          ? cashAccountId
+          : accountsReceivableId;
 
-      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+      const lines: {
+        accountId: string;
+        description?: string;
+        debit: number;
+        credit: number;
+      }[] = [];
 
       // Reverse: CR Clientes/Caja = total
       lines.push({
@@ -197,7 +257,10 @@ export class AccountingBridgeService {
       // Reverse COGS
       const totalCogs = params.items.reduce((sum, item) => {
         if (!item.product?.costPrice) return sum;
-        return sum + Math.round(Number(item.product.costPrice) * item.quantity * 100) / 100;
+        return (
+          sum +
+          Math.round(Number(item.product.costPrice) * item.quantity * 100) / 100
+        );
       }, 0);
 
       if (totalCogs > 0) {
@@ -225,7 +288,9 @@ export class AccountingBridgeService {
         lines,
       });
 
-      this.logger.debug(`Cancellation entry generated for invoice ${params.invoiceNumber}`);
+      this.logger.debug(
+        `Cancellation entry generated for invoice ${params.invoiceNumber}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to generate cancellation entry for invoice ${params.invoiceNumber}`,
@@ -250,16 +315,24 @@ export class AccountingBridgeService {
     method: PaymentMethod;
   }): Promise<void> {
     try {
-      const config = await this.configService.getConfigForTenant(params.tenantId);
+      const config = await this.configService.getConfigForTenant(
+        params.tenantId,
+      );
       if (!config?.autoGenerateEntries) return;
 
       const { cashAccountId, bankAccountId, accountsReceivableId } = config;
       if (!accountsReceivableId) return;
 
       // Map payment method to account
-      const debitAccountId = this.getPaymentAccountId(params.method, cashAccountId, bankAccountId);
+      const debitAccountId = this.getPaymentAccountId(
+        params.method,
+        cashAccountId,
+        bankAccountId,
+      );
       if (!debitAccountId) {
-        this.logger.warn(`No account mapped for payment method ${params.method}`);
+        this.logger.warn(
+          `No account mapped for payment method ${params.method}`,
+        );
         return;
       }
 
@@ -285,7 +358,9 @@ export class AccountingBridgeService {
         ],
       });
 
-      this.logger.debug(`Payment entry generated for invoice ${params.invoiceNumber}`);
+      this.logger.debug(
+        `Payment entry generated for invoice ${params.invoiceNumber}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to generate payment entry for invoice ${params.invoiceNumber}`,
@@ -311,15 +386,23 @@ export class AccountingBridgeService {
     method: PaymentMethod;
   }): Promise<void> {
     try {
-      const config = await this.configService.getConfigForTenant(params.tenantId);
+      const config = await this.configService.getConfigForTenant(
+        params.tenantId,
+      );
       if (!config?.autoGenerateEntries) return;
 
       const { cashAccountId, bankAccountId, accountsPayableId } = config;
       if (!accountsPayableId) return;
 
-      const creditAccountId = this.getPaymentAccountId(params.method, cashAccountId, bankAccountId);
+      const creditAccountId = this.getPaymentAccountId(
+        params.method,
+        cashAccountId,
+        bankAccountId,
+      );
       if (!creditAccountId) {
-        this.logger.warn(`No account mapped for payment method ${params.method}`);
+        this.logger.warn(
+          `No account mapped for payment method ${params.method}`,
+        );
         return;
       }
 
@@ -345,7 +428,9 @@ export class AccountingBridgeService {
         ],
       });
 
-      this.logger.debug(`Purchase payment entry generated for OC ${params.purchaseOrderNumber}`);
+      this.logger.debug(
+        `Purchase payment entry generated for OC ${params.purchaseOrderNumber}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to generate purchase payment entry for OC ${params.purchaseOrderNumber}`,
@@ -373,7 +458,9 @@ export class AccountingBridgeService {
     total: number;
   }): Promise<void> {
     try {
-      const config = await this.configService.getConfigForTenant(params.tenantId);
+      const config = await this.configService.getConfigForTenant(
+        params.tenantId,
+      );
       if (!config?.autoGenerateEntries) return;
 
       const {
@@ -385,7 +472,12 @@ export class AccountingBridgeService {
 
       if (!inventoryAccountId || !accountsPayableId) return;
 
-      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+      const lines: {
+        accountId: string;
+        description?: string;
+        debit: number;
+        credit: number;
+      }[] = [];
 
       // DR Inventario = subtotal
       lines.push({
@@ -422,7 +514,11 @@ export class AccountingBridgeService {
 
       // ReteICA: municipal withholding on subtotal
       let reteIca = 0;
-      if (config.reteIcaEnabled && config.reteIcaAccountId && params.subtotal > config.reteIcaMinBase) {
+      if (
+        config.reteIcaEnabled &&
+        config.reteIcaAccountId &&
+        params.subtotal > config.reteIcaMinBase
+      ) {
         reteIca = Math.round(params.subtotal * config.reteIcaRate * 100) / 100;
         if (reteIca > 0) {
           lines.push({
@@ -436,7 +532,11 @@ export class AccountingBridgeService {
 
       // ReteIVA: withholding on IVA amount
       let reteIva = 0;
-      if (config.reteIvaEnabled && config.reteIvaAccountId && params.tax > config.reteIvaMinBase) {
+      if (
+        config.reteIvaEnabled &&
+        config.reteIvaAccountId &&
+        params.tax > config.reteIvaMinBase
+      ) {
         reteIva = Math.round(params.tax * config.reteIvaRate * 100) / 100;
         if (reteIva > 0) {
           lines.push({
@@ -466,7 +566,9 @@ export class AccountingBridgeService {
         lines,
       });
 
-      this.logger.debug(`Purchase entry generated for OC ${params.purchaseOrderNumber}`);
+      this.logger.debug(
+        `Purchase entry generated for OC ${params.purchaseOrderNumber}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to generate purchase entry for OC ${params.purchaseOrderNumber}`,
@@ -490,7 +592,9 @@ export class AccountingBridgeService {
     costPrice: number;
   }): Promise<void> {
     try {
-      const config = await this.configService.getConfigForTenant(params.tenantId);
+      const config = await this.configService.getConfigForTenant(
+        params.tenantId,
+      );
       if (!config?.autoGenerateEntries) return;
 
       const { inventoryAccountId, inventoryAdjustmentId } = config;
@@ -507,13 +611,33 @@ export class AccountingBridgeService {
       const lines = isPositive
         ? [
             // Sobrante: DR Inventario, CR Ingresos diversos
-            { accountId: inventoryAccountId, description: `Sobrante ${params.productSku}`, debit: amount, credit: 0 },
-            { accountId: inventoryAdjustmentId, description: `Ajuste ${params.productSku}`, debit: 0, credit: amount },
+            {
+              accountId: inventoryAccountId,
+              description: `Sobrante ${params.productSku}`,
+              debit: amount,
+              credit: 0,
+            },
+            {
+              accountId: inventoryAdjustmentId,
+              description: `Ajuste ${params.productSku}`,
+              debit: 0,
+              credit: amount,
+            },
           ]
         : [
             // Faltante: DR Gastos diversos, CR Inventario
-            { accountId: inventoryAdjustmentId, description: `Faltante ${params.productSku}`, debit: amount, credit: 0 },
-            { accountId: inventoryAccountId, description: `Ajuste ${params.productSku}`, debit: 0, credit: amount },
+            {
+              accountId: inventoryAdjustmentId,
+              description: `Faltante ${params.productSku}`,
+              debit: amount,
+              credit: 0,
+            },
+            {
+              accountId: inventoryAccountId,
+              description: `Ajuste ${params.productSku}`,
+              debit: 0,
+              credit: amount,
+            },
           ];
 
       await this.journalEntriesService.createAutoEntry({
@@ -571,7 +695,9 @@ export class AccountingBridgeService {
     totalProvisionVacaciones: number;
   }): Promise<void> {
     try {
-      const config = await this.configService.getConfigForTenant(params.tenantId);
+      const config = await this.configService.getConfigForTenant(
+        params.tenantId,
+      );
       if (!config?.autoGenerateEntries) return;
 
       const {
@@ -583,11 +709,18 @@ export class AccountingBridgeService {
       } = config;
 
       if (!payrollExpenseId || !payrollPayableId) {
-        this.logger.warn(`Payroll accounting config incomplete for tenant ${params.tenantId}`);
+        this.logger.warn(
+          `Payroll accounting config incomplete for tenant ${params.tenantId}`,
+        );
         return;
       }
 
-      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+      const lines: {
+        accountId: string;
+        description?: string;
+        debit: number;
+        credit: number;
+      }[] = [];
 
       // DR Gastos de personal = totalDevengados
       if (params.totalDevengados > 0) {
@@ -601,9 +734,12 @@ export class AccountingBridgeService {
 
       // DR Aportes patronales (gasto)
       const totalAportes =
-        params.totalSaludEmpleador + params.totalPensionEmpleador +
-        params.totalArlEmpleador + params.totalCajaEmpleador +
-        params.totalSenaEmpleador + params.totalIcbfEmpleador;
+        params.totalSaludEmpleador +
+        params.totalPensionEmpleador +
+        params.totalArlEmpleador +
+        params.totalCajaEmpleador +
+        params.totalSenaEmpleador +
+        params.totalIcbfEmpleador;
 
       if (totalAportes > 0) {
         lines.push({
@@ -616,8 +752,10 @@ export class AccountingBridgeService {
 
       // DR Provisiones prestaciones (gasto)
       const totalProvisiones =
-        params.totalProvisionPrima + params.totalProvisionCesantias +
-        params.totalProvisionIntereses + params.totalProvisionVacaciones;
+        params.totalProvisionPrima +
+        params.totalProvisionCesantias +
+        params.totalProvisionIntereses +
+        params.totalProvisionVacaciones;
 
       if (totalProvisiones > 0) {
         lines.push({
@@ -650,7 +788,9 @@ export class AccountingBridgeService {
 
       // CR Aportes empleado por pagar
       const totalAportesEmpleado =
-        params.totalSaludEmpleado + params.totalPensionEmpleado + params.totalFondoSolidaridad;
+        params.totalSaludEmpleado +
+        params.totalPensionEmpleado +
+        params.totalFondoSolidaridad;
 
       if (totalAportesEmpleado > 0 && payrollContributionsId) {
         lines.push({
@@ -714,16 +854,33 @@ export class AccountingBridgeService {
     tax: number;
     total: number;
     reasonCode: string;
-    items?: { productId: string | null; quantity: number; product?: { costPrice: any } | null }[];
+    items?: {
+      productId: string | null;
+      quantity: number;
+      product?: { costPrice: any } | null;
+    }[];
   }): Promise<void> {
     try {
-      const config = await this.configService.getConfigForTenant(params.tenantId);
+      const config = await this.configService.getConfigForTenant(
+        params.tenantId,
+      );
       if (!config?.autoGenerateEntries) return;
 
-      const { accountsReceivableId, revenueAccountId, ivaPorPagarId, cogsAccountId, inventoryAccountId } = config;
+      const {
+        accountsReceivableId,
+        revenueAccountId,
+        ivaPorPagarId,
+        cogsAccountId,
+        inventoryAccountId,
+      } = config;
       if (!accountsReceivableId || !revenueAccountId) return;
 
-      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+      const lines: {
+        accountId: string;
+        description?: string;
+        debit: number;
+        credit: number;
+      }[] = [];
 
       // CR Clientes = total (reduce receivable)
       lines.push({
@@ -753,14 +910,19 @@ export class AccountingBridgeService {
 
       // COGS reversal for returns (DEVOLUCION_PARCIAL or DEVOLUCION_TOTAL)
       if (
-        (params.reasonCode === 'DEVOLUCION_PARCIAL' || params.reasonCode === 'DEVOLUCION_TOTAL') &&
+        (params.reasonCode === 'DEVOLUCION_PARCIAL' ||
+          params.reasonCode === 'DEVOLUCION_TOTAL') &&
         params.items &&
         cogsAccountId &&
         inventoryAccountId
       ) {
         const totalCogs = params.items.reduce((sum, item) => {
           if (!item.product?.costPrice) return sum;
-          return sum + Math.round(Number(item.product.costPrice) * item.quantity * 100) / 100;
+          return (
+            sum +
+            Math.round(Number(item.product.costPrice) * item.quantity * 100) /
+              100
+          );
         }, 0);
 
         if (totalCogs > 0) {
@@ -789,7 +951,9 @@ export class AccountingBridgeService {
         lines,
       });
 
-      this.logger.debug(`Accounting entry generated for credit note ${params.noteNumber}`);
+      this.logger.debug(
+        `Accounting entry generated for credit note ${params.noteNumber}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to generate accounting entry for credit note ${params.noteNumber}`,
@@ -812,13 +976,20 @@ export class AccountingBridgeService {
     total: number;
   }): Promise<void> {
     try {
-      const config = await this.configService.getConfigForTenant(params.tenantId);
+      const config = await this.configService.getConfigForTenant(
+        params.tenantId,
+      );
       if (!config?.autoGenerateEntries) return;
 
       const { accountsReceivableId, revenueAccountId, ivaPorPagarId } = config;
       if (!accountsReceivableId || !revenueAccountId) return;
 
-      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+      const lines: {
+        accountId: string;
+        description?: string;
+        debit: number;
+        credit: number;
+      }[] = [];
 
       // DR Clientes = total (increase receivable)
       lines.push({
@@ -855,7 +1026,9 @@ export class AccountingBridgeService {
         lines,
       });
 
-      this.logger.debug(`Accounting entry generated for debit note ${params.noteNumber}`);
+      this.logger.debug(
+        `Accounting entry generated for debit note ${params.noteNumber}`,
+      );
     } catch (error) {
       this.logger.error(
         `Failed to generate accounting entry for debit note ${params.noteNumber}`,
@@ -889,10 +1062,17 @@ export class AccountingBridgeService {
     issueDate: Date;
   }): Promise<void> {
     try {
-      const config = await this.configService.getConfigForTenant(expense.tenantId);
+      const config = await this.configService.getConfigForTenant(
+        expense.tenantId,
+      );
       if (!config?.autoGenerateEntries) return;
 
-      const { cashAccountId, bankAccountId, ivaDescontableId, reteFuentePayableId } = config;
+      const {
+        cashAccountId,
+        bankAccountId,
+        ivaDescontableId,
+        reteFuentePayableId,
+      } = config;
 
       // Determine the expense account: use expense.accountId if set, otherwise find default 5XXX account
       let expenseAccountId = expense.accountId;
@@ -909,18 +1089,21 @@ export class AccountingBridgeService {
       }
 
       if (!expenseAccountId) {
-        this.logger.warn(`No expense account found for tenant ${expense.tenantId}, skipping expense entry`);
+        this.logger.warn(
+          `No expense account found for tenant ${expense.tenantId}, skipping expense entry`,
+        );
         return;
       }
 
       // Determine payment account based on payment method
       const paymentMethod = expense.paymentMethod as PaymentMethod | null;
-      const creditAccountId = paymentMethod === PaymentMethod.CASH
-        ? cashAccountId
-        : bankAccountId;
+      const creditAccountId =
+        paymentMethod === PaymentMethod.CASH ? cashAccountId : bankAccountId;
 
       if (!creditAccountId) {
-        this.logger.warn(`No cash/bank account mapped for tenant ${expense.tenantId}, skipping expense entry`);
+        this.logger.warn(
+          `No cash/bank account mapped for tenant ${expense.tenantId}, skipping expense entry`,
+        );
         return;
       }
 
@@ -929,7 +1112,12 @@ export class AccountingBridgeService {
       const reteFuente = Number(expense.reteFuente);
       const total = Number(expense.total);
 
-      const lines: { accountId: string; description?: string; debit: number; credit: number }[] = [];
+      const lines: {
+        accountId: string;
+        description?: string;
+        debit: number;
+        credit: number;
+      }[] = [];
 
       // DR 5XXX Cuenta Gasto = subtotal
       lines.push({
@@ -969,7 +1157,11 @@ export class AccountingBridgeService {
 
       // CR ReteICA = subtotal * reteIcaRate (if enabled and base > min)
       let reteIca = 0;
-      if (config.reteIcaEnabled && config.reteIcaAccountId && subtotal > config.reteIcaMinBase) {
+      if (
+        config.reteIcaEnabled &&
+        config.reteIcaAccountId &&
+        subtotal > config.reteIcaMinBase
+      ) {
         reteIca = Math.round(subtotal * config.reteIcaRate * 100) / 100;
         if (reteIca > 0) {
           lines.push({
@@ -980,7 +1172,9 @@ export class AccountingBridgeService {
           });
 
           // Adjust payment account credit to subtract ReteICA
-          const paymentLine = lines.find(l => l.accountId === creditAccountId);
+          const paymentLine = lines.find(
+            (l) => l.accountId === creditAccountId,
+          );
           if (paymentLine) {
             paymentLine.credit -= reteIca;
           }
@@ -989,7 +1183,11 @@ export class AccountingBridgeService {
 
       // CR ReteIVA = tax * reteIvaRate (if enabled and tax > min)
       let reteIva = 0;
-      if (config.reteIvaEnabled && config.reteIvaAccountId && tax > config.reteIvaMinBase) {
+      if (
+        config.reteIvaEnabled &&
+        config.reteIvaAccountId &&
+        tax > config.reteIvaMinBase
+      ) {
         reteIva = Math.round(tax * config.reteIvaRate * 100) / 100;
         if (reteIva > 0) {
           lines.push({
@@ -1000,7 +1198,9 @@ export class AccountingBridgeService {
           });
 
           // Adjust payment account credit to subtract ReteIVA
-          const paymentLine = lines.find(l => l.accountId === creditAccountId);
+          const paymentLine = lines.find(
+            (l) => l.accountId === creditAccountId,
+          );
           if (paymentLine) {
             paymentLine.credit -= reteIva;
           }

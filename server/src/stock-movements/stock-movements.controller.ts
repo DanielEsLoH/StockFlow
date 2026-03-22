@@ -24,7 +24,11 @@ import type {
   PaginatedMovementsResponse,
   TransferResponse,
 } from './stock-movements.service';
-import { CreateMovementDto, CreateTransferDto, FilterMovementsDto } from './dto';
+import {
+  CreateMovementDto,
+  CreateTransferDto,
+  FilterMovementsDto,
+} from './dto';
 import { JwtAuthGuard, RolesGuard } from '../auth';
 import { Roles, CurrentUser } from '../common/decorators';
 import {

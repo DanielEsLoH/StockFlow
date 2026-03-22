@@ -784,7 +784,9 @@ export class UsersController {
     @Param('permission') permission: string,
     @CurrentUser() currentUser: CurrentUserContext,
   ): Promise<void> {
-    this.logger.log(`Removing permission override ${permission} from user: ${id}`);
+    this.logger.log(
+      `Removing permission override ${permission} from user: ${id}`,
+    );
 
     // Verify the user exists and is in the same tenant
     await this.usersService.findOne(id);

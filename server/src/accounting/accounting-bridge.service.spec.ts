@@ -197,7 +197,9 @@ describe('AccountingBridgeService', () => {
         new Error('DB error'),
       );
 
-      await expect(service.onInvoiceCreated(baseParams)).resolves.toBeUndefined();
+      await expect(
+        service.onInvoiceCreated(baseParams),
+      ).resolves.toBeUndefined();
       expect(Logger.prototype.error).toHaveBeenCalled();
     });
   });
@@ -606,7 +608,9 @@ describe('AccountingBridgeService', () => {
     it('should CR Clientes and DR Ingresos + IVA', async () => {
       await service.onCreditNoteCreated(creditNoteParams);
 
-      expect(mockJournalEntriesService.createAutoEntry).toHaveBeenCalledTimes(1);
+      expect(mockJournalEntriesService.createAutoEntry).toHaveBeenCalledTimes(
+        1,
+      );
       const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
 
       expect(call.source).toBe(JournalEntrySource.CREDIT_NOTE);
@@ -614,11 +618,29 @@ describe('AccountingBridgeService', () => {
 
       const lines = call.lines;
       // CR Clientes = total
-      expect(lines[0]).toEqual(expect.objectContaining({ accountId: 'acc-ar', credit: 1190, debit: 0 }));
+      expect(lines[0]).toEqual(
+        expect.objectContaining({
+          accountId: 'acc-ar',
+          credit: 1190,
+          debit: 0,
+        }),
+      );
       // DR Ingresos = subtotal
-      expect(lines[1]).toEqual(expect.objectContaining({ accountId: 'acc-rev', debit: 1000, credit: 0 }));
+      expect(lines[1]).toEqual(
+        expect.objectContaining({
+          accountId: 'acc-rev',
+          debit: 1000,
+          credit: 0,
+        }),
+      );
       // DR IVA = tax
-      expect(lines[2]).toEqual(expect.objectContaining({ accountId: 'acc-iva-pp', debit: 190, credit: 0 }));
+      expect(lines[2]).toEqual(
+        expect.objectContaining({
+          accountId: 'acc-iva-pp',
+          debit: 190,
+          credit: 0,
+        }),
+      );
     });
 
     it('should include COGS reversal for DEVOLUCION_PARCIAL', async () => {
@@ -633,8 +655,20 @@ describe('AccountingBridgeService', () => {
 
       // Should have 5 lines: CR Clientes, DR Ingresos, DR IVA, CR COGS, DR Inventario
       expect(lines).toHaveLength(5);
-      expect(lines[3]).toEqual(expect.objectContaining({ accountId: 'acc-cogs', credit: 1000, debit: 0 }));
-      expect(lines[4]).toEqual(expect.objectContaining({ accountId: 'acc-inv', debit: 1000, credit: 0 }));
+      expect(lines[3]).toEqual(
+        expect.objectContaining({
+          accountId: 'acc-cogs',
+          credit: 1000,
+          debit: 0,
+        }),
+      );
+      expect(lines[4]).toEqual(
+        expect.objectContaining({
+          accountId: 'acc-inv',
+          debit: 1000,
+          credit: 0,
+        }),
+      );
     });
 
     it('should skip COGS reversal for ANULACION', async () => {
@@ -649,14 +683,21 @@ describe('AccountingBridgeService', () => {
     });
 
     it('should skip when autoGenerateEntries is false', async () => {
-      mockConfigService.getConfigForTenant.mockResolvedValue({ ...fullConfig, autoGenerateEntries: false });
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        autoGenerateEntries: false,
+      });
       await service.onCreditNoteCreated(creditNoteParams);
       expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
     });
 
     it('should not throw when createAutoEntry fails', async () => {
-      mockJournalEntriesService.createAutoEntry.mockRejectedValue(new Error('db error'));
-      await expect(service.onCreditNoteCreated(creditNoteParams)).resolves.toBeUndefined();
+      mockJournalEntriesService.createAutoEntry.mockRejectedValue(
+        new Error('db error'),
+      );
+      await expect(
+        service.onCreditNoteCreated(creditNoteParams),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -677,7 +718,9 @@ describe('AccountingBridgeService', () => {
     it('should DR Clientes and CR Ingresos + IVA', async () => {
       await service.onDebitNoteCreated(debitNoteParams);
 
-      expect(mockJournalEntriesService.createAutoEntry).toHaveBeenCalledTimes(1);
+      expect(mockJournalEntriesService.createAutoEntry).toHaveBeenCalledTimes(
+        1,
+      );
       const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
 
       expect(call.source).toBe(JournalEntrySource.DEBIT_NOTE);
@@ -685,29 +728,54 @@ describe('AccountingBridgeService', () => {
 
       const lines = call.lines;
       // DR Clientes = total
-      expect(lines[0]).toEqual(expect.objectContaining({ accountId: 'acc-ar', debit: 595, credit: 0 }));
+      expect(lines[0]).toEqual(
+        expect.objectContaining({ accountId: 'acc-ar', debit: 595, credit: 0 }),
+      );
       // CR Ingresos = subtotal
-      expect(lines[1]).toEqual(expect.objectContaining({ accountId: 'acc-rev', debit: 0, credit: 500 }));
+      expect(lines[1]).toEqual(
+        expect.objectContaining({
+          accountId: 'acc-rev',
+          debit: 0,
+          credit: 500,
+        }),
+      );
       // CR IVA = tax
-      expect(lines[2]).toEqual(expect.objectContaining({ accountId: 'acc-iva-pp', debit: 0, credit: 95 }));
+      expect(lines[2]).toEqual(
+        expect.objectContaining({
+          accountId: 'acc-iva-pp',
+          debit: 0,
+          credit: 95,
+        }),
+      );
     });
 
     it('should skip IVA line when tax is 0', async () => {
-      await service.onDebitNoteCreated({ ...debitNoteParams, tax: 0, total: 500 });
+      await service.onDebitNoteCreated({
+        ...debitNoteParams,
+        tax: 0,
+        total: 500,
+      });
 
       const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
       expect(call.lines).toHaveLength(2); // No IVA line
     });
 
     it('should skip when autoGenerateEntries is false', async () => {
-      mockConfigService.getConfigForTenant.mockResolvedValue({ ...fullConfig, autoGenerateEntries: false });
+      mockConfigService.getConfigForTenant.mockResolvedValue({
+        ...fullConfig,
+        autoGenerateEntries: false,
+      });
       await service.onDebitNoteCreated(debitNoteParams);
       expect(mockJournalEntriesService.createAutoEntry).not.toHaveBeenCalled();
     });
 
     it('should not throw when createAutoEntry fails', async () => {
-      mockJournalEntriesService.createAutoEntry.mockRejectedValue(new Error('db error'));
-      await expect(service.onDebitNoteCreated(debitNoteParams)).resolves.toBeUndefined();
+      mockJournalEntriesService.createAutoEntry.mockRejectedValue(
+        new Error('db error'),
+      );
+      await expect(
+        service.onDebitNoteCreated(debitNoteParams),
+      ).resolves.toBeUndefined();
     });
   });
 
@@ -715,7 +783,8 @@ describe('AccountingBridgeService', () => {
   // onExpensePaid
   // ---------------------------------------------------------------------------
   describe('onExpensePaid', () => {
-    const makeDecimal = (n: number) => ({ valueOf: () => n, toString: () => String(n) }) as any;
+    const makeDecimal = (n: number) =>
+      ({ valueOf: () => n, toString: () => String(n) }) as any;
     const expenseParams = {
       id: 'exp-1',
       tenantId: mockTenantId,
@@ -781,8 +850,12 @@ describe('AccountingBridgeService', () => {
       const reteFuente = 25_000;
 
       const call = mockJournalEntriesService.createAutoEntry.mock.calls[0][0];
-      const paymentLine = call.lines.find((l: any) => l.accountId === 'acc-cash' && l.credit > 0);
-      expect(paymentLine.credit).toBe(1_190_000 - reteFuente - reteIca - reteIva);
+      const paymentLine = call.lines.find(
+        (l: any) => l.accountId === 'acc-cash' && l.credit > 0,
+      );
+      expect(paymentLine.credit).toBe(
+        1_190_000 - reteFuente - reteIca - reteIva,
+      );
     });
 
     it('should NOT apply ReteICA/ReteIVA when disabled', async () => {

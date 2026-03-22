@@ -51,7 +51,10 @@ export class PayrollEntriesController {
   @Post(':id/adjustment')
   @RequirePermissions(Permission.PAYROLL_APPROVE)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Crear nómina de ajuste (tipo 103) referenciando una entrada existente' })
+  @ApiOperation({
+    summary:
+      'Crear nómina de ajuste (tipo 103) referenciando una entrada existente',
+  })
   @ApiParam({ name: 'id', description: 'ID de la entrada original a ajustar' })
   async createAdjustment(
     @Param('id') id: string,

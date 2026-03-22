@@ -15,7 +15,13 @@ import { getPlanLimits } from '../../subscriptions/plan-limits';
 /**
  * Supported limit types that can be checked against tenant plan limits.
  */
-export type LimitType = 'users' | 'products' | 'invoices' | 'warehouses' | 'contadores' | 'employees';
+export type LimitType =
+  | 'users'
+  | 'products'
+  | 'invoices'
+  | 'warehouses'
+  | 'contadores'
+  | 'employees';
 
 /**
  * Interface for the authenticated request with tenant information.

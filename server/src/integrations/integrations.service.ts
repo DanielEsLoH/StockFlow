@@ -54,9 +54,7 @@ export class IntegrationsService {
   getConnector(platform: IntegrationPlatform): PlatformConnector {
     const connector = this.connectors.get(platform);
     if (!connector) {
-      throw new BadRequestException(
-        `Plataforma no soportada: ${platform}`,
-      );
+      throw new BadRequestException(`Plataforma no soportada: ${platform}`);
     }
     return connector;
   }
@@ -129,9 +127,7 @@ export class IntegrationsService {
           : IntegrationStatus.ERROR;
       } catch {
         status = IntegrationStatus.ERROR;
-        this.logger.warn(
-          `Connection verification failed for ${dto.platform}`,
-        );
+        this.logger.warn(`Connection verification failed for ${dto.platform}`);
       }
     }
 
@@ -153,10 +149,7 @@ export class IntegrationsService {
   }
 
   /** Update an existing integration. */
-  async update(
-    id: string,
-    dto: UpdateIntegrationDto,
-  ): Promise<Integration> {
+  async update(id: string, dto: UpdateIntegrationDto): Promise<Integration> {
     const tenantId = this.tenantContext.requireTenantId();
     const existing = await this.prisma.integration.findFirst({
       where: { id, tenantId },
@@ -252,7 +245,9 @@ export class IntegrationsService {
     return this.prisma.productMapping.findMany({
       where: { tenantId, integrationId },
       include: {
-        product: { select: { id: true, name: true, sku: true, salePrice: true } },
+        product: {
+          select: { id: true, name: true, sku: true, salePrice: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -279,10 +274,7 @@ export class IntegrationsService {
     const existingMapping = await this.prisma.productMapping.findFirst({
       where: {
         integrationId,
-        OR: [
-          { externalId: dto.externalId },
-          { productId: dto.productId },
-        ],
+        OR: [{ externalId: dto.externalId }, { productId: dto.productId }],
       },
     });
 
@@ -332,10 +324,7 @@ export class IntegrationsService {
   // ────────────────────── Sync Logs ──────────────────────
 
   /** Get sync logs for an integration. */
-  async findSyncLogs(
-    integrationId: string,
-    limit = 20,
-  ): Promise<any[]> {
+  async findSyncLogs(integrationId: string, limit = 20): Promise<any[]> {
     const tenantId = this.tenantContext.requireTenantId();
     await this.findOne(integrationId);
 

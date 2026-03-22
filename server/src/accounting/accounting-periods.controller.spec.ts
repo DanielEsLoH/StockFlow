@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Logger,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { AccountingPeriodsController } from './accounting-periods.controller';
 import { AccountingPeriodsService } from './accounting-periods.service';
 import { JwtAuthGuard } from '../auth';
@@ -24,14 +29,14 @@ describe('AccountingPeriodsController', () => {
       findAll: jest.fn().mockResolvedValue([mockPeriod]),
       findOne: jest.fn().mockResolvedValue(mockPeriod),
       create: jest.fn().mockResolvedValue(mockPeriod),
-      closePeriod: jest.fn().mockResolvedValue({ ...mockPeriod, status: 'CLOSED' }),
+      closePeriod: jest
+        .fn()
+        .mockResolvedValue({ ...mockPeriod, status: 'CLOSED' }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AccountingPeriodsController],
-      providers: [
-        { provide: AccountingPeriodsService, useValue: mockService },
-      ],
+      providers: [{ provide: AccountingPeriodsService, useValue: mockService }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -39,7 +44,9 @@ describe('AccountingPeriodsController', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<AccountingPeriodsController>(AccountingPeriodsController);
+    controller = module.get<AccountingPeriodsController>(
+      AccountingPeriodsController,
+    );
     service = module.get(AccountingPeriodsService);
 
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -80,7 +87,9 @@ describe('AccountingPeriodsController', () => {
     it('should propagate NotFoundException', async () => {
       service.findOne.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findOne('invalid')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -127,7 +136,9 @@ describe('AccountingPeriodsController', () => {
       service.closePeriod.mockRejectedValue(new BadRequestException());
 
       const req = { user: { id: 'user-1' } };
-      await expect(controller.closePeriod('period-123', req)).rejects.toThrow(BadRequestException);
+      await expect(controller.closePeriod('period-123', req)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

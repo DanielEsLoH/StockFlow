@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/require-await, @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import {
   CollectionReminderType,
   ReminderChannel,
@@ -192,10 +188,12 @@ describe('CollectionRemindersService', () => {
 
   describe('findAll', () => {
     it('should return paginated reminders', async () => {
-      (prismaService.collectionReminder.findMany as jest.Mock).mockResolvedValue(
-        [mockReminder],
+      (
+        prismaService.collectionReminder.findMany as jest.Mock
+      ).mockResolvedValue([mockReminder]);
+      (prismaService.collectionReminder.count as jest.Mock).mockResolvedValue(
+        1,
       );
-      (prismaService.collectionReminder.count as jest.Mock).mockResolvedValue(1);
 
       const result = await service.findAll({ page: 1, limit: 10 });
 
@@ -207,10 +205,12 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should apply filters correctly', async () => {
-      (prismaService.collectionReminder.findMany as jest.Mock).mockResolvedValue(
-        [],
+      (
+        prismaService.collectionReminder.findMany as jest.Mock
+      ).mockResolvedValue([]);
+      (prismaService.collectionReminder.count as jest.Mock).mockResolvedValue(
+        0,
       );
-      (prismaService.collectionReminder.count as jest.Mock).mockResolvedValue(0);
 
       await service.findAll({
         status: ReminderStatus.PENDING,
@@ -239,10 +239,12 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should return empty data with zero totalPages when no results', async () => {
-      (prismaService.collectionReminder.findMany as jest.Mock).mockResolvedValue(
-        [],
+      (
+        prismaService.collectionReminder.findMany as jest.Mock
+      ).mockResolvedValue([]);
+      (prismaService.collectionReminder.count as jest.Mock).mockResolvedValue(
+        0,
       );
-      (prismaService.collectionReminder.count as jest.Mock).mockResolvedValue(0);
 
       const result = await service.findAll({});
 
@@ -253,9 +255,9 @@ describe('CollectionRemindersService', () => {
 
   describe('findOne', () => {
     it('should return reminder with relations', async () => {
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue(
-        mockReminder,
-      );
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue(mockReminder);
 
       const result = await service.findOne('reminder-123');
 
@@ -265,9 +267,9 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should throw NotFoundException when reminder not found', async () => {
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue(null);
 
       await expect(service.findOne('nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -277,10 +279,13 @@ describe('CollectionRemindersService', () => {
 
   describe('cancel', () => {
     it('should cancel a pending reminder', async () => {
-      const pendingReminder = { ...mockReminder, status: ReminderStatus.PENDING };
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue(
-        pendingReminder,
-      );
+      const pendingReminder = {
+        ...mockReminder,
+        status: ReminderStatus.PENDING,
+      };
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue(pendingReminder);
       (prismaService.collectionReminder.update as jest.Mock).mockResolvedValue({
         ...pendingReminder,
         status: ReminderStatus.CANCELLED,
@@ -298,9 +303,9 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should throw NotFoundException when reminder not found', async () => {
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue(null);
 
       await expect(service.cancel('nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -308,7 +313,9 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should throw BadRequestException when reminder is not PENDING', async () => {
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue({
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue({
         ...mockReminder,
         status: ReminderStatus.SENT,
       });
@@ -321,16 +328,19 @@ describe('CollectionRemindersService', () => {
 
   describe('markSent', () => {
     it('should mark a pending reminder as sent', async () => {
-      const pendingReminder = { ...mockReminder, status: ReminderStatus.PENDING };
+      const pendingReminder = {
+        ...mockReminder,
+        status: ReminderStatus.PENDING,
+      };
       const sentReminder = {
         ...pendingReminder,
         status: ReminderStatus.SENT,
         sentAt: new Date(),
       };
 
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue(
-        pendingReminder,
-      );
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue(pendingReminder);
       (prismaService.collectionReminder.update as jest.Mock).mockResolvedValue(
         sentReminder,
       );
@@ -351,9 +361,9 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should throw NotFoundException when reminder not found', async () => {
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue(null);
 
       await expect(service.markSent('nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -361,7 +371,9 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should throw BadRequestException when reminder is not PENDING', async () => {
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue({
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue({
         ...mockReminder,
         status: ReminderStatus.CANCELLED,
       });
@@ -374,16 +386,19 @@ describe('CollectionRemindersService', () => {
 
   describe('markFailed', () => {
     it('should mark a pending reminder as failed with notes', async () => {
-      const pendingReminder = { ...mockReminder, status: ReminderStatus.PENDING };
+      const pendingReminder = {
+        ...mockReminder,
+        status: ReminderStatus.PENDING,
+      };
       const failedReminder = {
         ...pendingReminder,
         status: ReminderStatus.FAILED,
         notes: 'Email rebotado',
       };
 
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue(
-        pendingReminder,
-      );
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue(pendingReminder);
       (prismaService.collectionReminder.update as jest.Mock).mockResolvedValue(
         failedReminder,
       );
@@ -404,15 +419,18 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should mark as failed without notes', async () => {
-      const pendingReminder = { ...mockReminder, status: ReminderStatus.PENDING };
+      const pendingReminder = {
+        ...mockReminder,
+        status: ReminderStatus.PENDING,
+      };
       const failedReminder = {
         ...pendingReminder,
         status: ReminderStatus.FAILED,
       };
 
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue(
-        pendingReminder,
-      );
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue(pendingReminder);
       (prismaService.collectionReminder.update as jest.Mock).mockResolvedValue(
         failedReminder,
       );
@@ -423,9 +441,9 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should throw NotFoundException when reminder not found', async () => {
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue(null);
 
       await expect(
         service.markFailed('nonexistent', 'some notes'),
@@ -433,7 +451,9 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should throw BadRequestException when reminder is not PENDING', async () => {
-      (prismaService.collectionReminder.findFirst as jest.Mock).mockResolvedValue({
+      (
+        prismaService.collectionReminder.findFirst as jest.Mock
+      ).mockResolvedValue({
         ...mockReminder,
         status: ReminderStatus.SENT,
       });
@@ -458,9 +478,7 @@ describe('CollectionRemindersService', () => {
         paymentStatus: PaymentStatus.UNPAID,
         customerId: 'customer-123',
         customer: mockCustomer,
-        collectionReminders: [
-          { createdAt: new Date('2024-11-20') },
-        ],
+        collectionReminders: [{ createdAt: new Date('2024-11-20') }],
       };
 
       (prismaService.invoice.findMany as jest.Mock).mockResolvedValue([
@@ -516,9 +534,9 @@ describe('CollectionRemindersService', () => {
           collectionReminders: [],
         },
       ]);
-      (prismaService.collectionReminder.createMany as jest.Mock).mockResolvedValue(
-        { count: 3 },
-      );
+      (
+        prismaService.collectionReminder.createMany as jest.Mock
+      ).mockResolvedValue({ count: 3 });
 
       const result = await service.generateAutoReminders();
 
@@ -553,9 +571,9 @@ describe('CollectionRemindersService', () => {
           ],
         },
       ]);
-      (prismaService.collectionReminder.createMany as jest.Mock).mockResolvedValue(
-        { count: 1 },
-      );
+      (
+        prismaService.collectionReminder.createMany as jest.Mock
+      ).mockResolvedValue({ count: 1 });
 
       const result = await service.generateAutoReminders();
 
@@ -587,9 +605,9 @@ describe('CollectionRemindersService', () => {
           collectionReminders: [],
         },
       ]);
-      (prismaService.collectionReminder.createMany as jest.Mock).mockResolvedValue(
-        { count: 2 },
-      );
+      (
+        prismaService.collectionReminder.createMany as jest.Mock
+      ).mockResolvedValue({ count: 2 });
 
       const result = await service.generateAutoReminders();
 
@@ -600,7 +618,9 @@ describe('CollectionRemindersService', () => {
 
   describe('getStats', () => {
     it('should return counts grouped by status and type', async () => {
-      (prismaService.collectionReminder.findMany as jest.Mock).mockResolvedValue([
+      (
+        prismaService.collectionReminder.findMany as jest.Mock
+      ).mockResolvedValue([
         { status: ReminderStatus.PENDING, type: CollectionReminderType.MANUAL },
         {
           status: ReminderStatus.SENT,
@@ -630,9 +650,9 @@ describe('CollectionRemindersService', () => {
     });
 
     it('should return all zeros when no reminders exist', async () => {
-      (prismaService.collectionReminder.findMany as jest.Mock).mockResolvedValue(
-        [],
-      );
+      (
+        prismaService.collectionReminder.findMany as jest.Mock
+      ).mockResolvedValue([]);
 
       const result = await service.getStats();
 
@@ -649,11 +669,13 @@ describe('CollectionRemindersService', () => {
         { total: 300000 },
       ]);
 
-      (prismaService.collectionReminder.groupBy as jest.Mock).mockResolvedValue([
-        { status: ReminderStatus.PENDING, _count: { id: 5 } },
-        { status: ReminderStatus.SENT, _count: { id: 12 } },
-        { status: ReminderStatus.FAILED, _count: { id: 2 } },
-      ]);
+      (prismaService.collectionReminder.groupBy as jest.Mock).mockResolvedValue(
+        [
+          { status: ReminderStatus.PENDING, _count: { id: 5 } },
+          { status: ReminderStatus.SENT, _count: { id: 12 } },
+          { status: ReminderStatus.FAILED, _count: { id: 2 } },
+        ],
+      );
 
       const result = await service.getDashboard();
 

@@ -146,9 +146,7 @@ export class SupportDocumentsController {
     description: 'Unauthorized - Invalid or missing JWT token',
   })
   @ApiResponse({ status: 404, description: 'Support document not found' })
-  async findOne(
-    @Param('id') id: string,
-  ): Promise<SupportDocumentResponse> {
+  async findOne(@Param('id') id: string): Promise<SupportDocumentResponse> {
     this.logger.log(`Getting support document: ${id}`);
 
     return this.supportDocumentsService.findOne(id);
@@ -355,9 +353,7 @@ export class SupportDocumentsController {
     description: 'Forbidden - Insufficient permissions',
   })
   @ApiResponse({ status: 404, description: 'Support document not found' })
-  async generate(
-    @Param('id') id: string,
-  ): Promise<SupportDocumentResponse> {
+  async generate(@Param('id') id: string): Promise<SupportDocumentResponse> {
     this.logger.log(`Generating support document: ${id}`);
 
     return this.supportDocumentsService.generate(id);

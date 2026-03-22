@@ -245,9 +245,9 @@ describe('UploadController', () => {
       tenantContextService.getTenantId.mockReturnValue(null as any);
       const file = createMockFile();
 
-      await expect(
-        controller.uploadAvatar(file, mockUser),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.uploadAvatar(file, mockUser)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should log avatar upload operation', async () => {

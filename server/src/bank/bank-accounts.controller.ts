@@ -37,7 +37,9 @@ export class BankAccountsController {
   @ApiOperation({ summary: 'List bank accounts' })
   @ApiQuery({ name: 'activeOnly', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Bank accounts listed' })
-  async findAll(@Query('activeOnly') activeOnly?: string): Promise<BankAccountResponse[]> {
+  async findAll(
+    @Query('activeOnly') activeOnly?: string,
+  ): Promise<BankAccountResponse[]> {
     return this.bankAccountsService.findAll(activeOnly !== 'false');
   }
 
@@ -52,10 +54,15 @@ export class BankAccountsController {
 
   @Post()
   @RequirePermissions(Permission.BANK_CREATE)
-  @ApiOperation({ summary: 'Create bank account', description: 'Also creates a PUC sub-account under 1110' })
+  @ApiOperation({
+    summary: 'Create bank account',
+    description: 'Also creates a PUC sub-account under 1110',
+  })
   @ApiResponse({ status: 201, description: 'Bank account created' })
   @ApiResponse({ status: 409, description: 'Account number already exists' })
-  async create(@Body() dto: CreateBankAccountDto): Promise<BankAccountResponse> {
+  async create(
+    @Body() dto: CreateBankAccountDto,
+  ): Promise<BankAccountResponse> {
     return this.bankAccountsService.create(dto);
   }
 

@@ -59,7 +59,12 @@ describe('SubscriptionsController', () => {
       description: 'Plan gratuito para empezar',
       features: ['Funciones básicas'],
       priceMonthly: 0,
-      limits: { maxUsers: 2, maxProducts: 50, maxInvoices: 100, maxWarehouses: 1 },
+      limits: {
+        maxUsers: 2,
+        maxProducts: 50,
+        maxInvoices: 100,
+        maxWarehouses: 1,
+      },
       prices: {
         MONTHLY: { total: 0, totalInCents: 0, monthly: 0, discount: 0 },
         QUARTERLY: { total: 0, totalInCents: 0, monthly: 0, discount: 0 },
@@ -72,11 +77,31 @@ describe('SubscriptionsController', () => {
       description: 'Plan para pequeñas empresas',
       features: ['Multi-usuario', 'Reportes'],
       priceMonthly: 59900,
-      limits: { maxUsers: 5, maxProducts: 100, maxInvoices: 200, maxWarehouses: 2 },
+      limits: {
+        maxUsers: 5,
+        maxProducts: 100,
+        maxInvoices: 200,
+        maxWarehouses: 2,
+      },
       prices: {
-        MONTHLY: { total: 59900, totalInCents: 5990000, monthly: 59900, discount: 0 },
-        QUARTERLY: { total: 161730, totalInCents: 16173000, monthly: 53910, discount: 10 },
-        ANNUAL: { total: 575040, totalInCents: 57504000, monthly: 47920, discount: 20 },
+        MONTHLY: {
+          total: 59900,
+          totalInCents: 5990000,
+          monthly: 59900,
+          discount: 0,
+        },
+        QUARTERLY: {
+          total: 161730,
+          totalInCents: 16173000,
+          monthly: 53910,
+          discount: 10,
+        },
+        ANNUAL: {
+          total: 575040,
+          totalInCents: 57504000,
+          monthly: 47920,
+          discount: 20,
+        },
       },
     },
   ];
@@ -182,9 +207,9 @@ describe('SubscriptionsController', () => {
 
       await controller.getStatus(mockTenantId);
 
-      expect(
-        subscriptionsService.getSubscriptionStatus,
-      ).toHaveBeenCalledWith(mockTenantId);
+      expect(subscriptionsService.getSubscriptionStatus).toHaveBeenCalledWith(
+        mockTenantId,
+      );
     });
 
     it('should call the service exactly once', async () => {
@@ -194,9 +219,9 @@ describe('SubscriptionsController', () => {
 
       await controller.getStatus(mockTenantId);
 
-      expect(
-        subscriptionsService.getSubscriptionStatus,
-      ).toHaveBeenCalledTimes(1);
+      expect(subscriptionsService.getSubscriptionStatus).toHaveBeenCalledTimes(
+        1,
+      );
     });
 
     it('should log the operation with the tenant ID', async () => {
@@ -386,9 +411,7 @@ describe('SubscriptionsController', () => {
 
       await controller.getCheckoutConfig(mockTenantId, checkoutDto);
 
-      expect(
-        subscriptionsService.getCheckoutConfig,
-      ).toHaveBeenCalledTimes(1);
+      expect(subscriptionsService.getCheckoutConfig).toHaveBeenCalledTimes(1);
     });
 
     it('should log the operation with plan and period', async () => {
@@ -402,12 +425,8 @@ describe('SubscriptionsController', () => {
       expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining(mockTenantId),
       );
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('PYME'),
-      );
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('MONTHLY'),
-      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('PYME'));
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('MONTHLY'));
     });
 
     it('should work with PRO plan and QUARTERLY period', async () => {
@@ -529,10 +548,7 @@ describe('SubscriptionsController', () => {
         mockSubscriptionStatus,
       );
 
-      const result = await controller.verifyPayment(
-        mockTenantId,
-        verifyDto,
-      );
+      const result = await controller.verifyPayment(mockTenantId, verifyDto);
 
       expect(result).toEqual(mockSubscriptionStatus);
     });
@@ -576,12 +592,8 @@ describe('SubscriptionsController', () => {
       expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining('12345-1234567890-12345'),
       );
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('PYME'),
-      );
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('MONTHLY'),
-      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('PYME'));
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('MONTHLY'));
     });
 
     it('should handle verification with PRO plan and ANNUAL period', async () => {
@@ -597,10 +609,7 @@ describe('SubscriptionsController', () => {
       };
       subscriptionsService.verifyPayment.mockResolvedValue(proStatus);
 
-      const result = await controller.verifyPayment(
-        mockTenantId,
-        proAnnualDto,
-      );
+      const result = await controller.verifyPayment(mockTenantId, proAnnualDto);
 
       expect(result.plan).toBe(SubscriptionPlan.PRO);
       expect(result.periodType).toBe(SubscriptionPeriod.ANNUAL);
@@ -617,10 +626,7 @@ describe('SubscriptionsController', () => {
         mockSubscriptionStatus,
       );
 
-      const result = await controller.verifyPayment(
-        mockTenantId,
-        verifyDto,
-      );
+      const result = await controller.verifyPayment(mockTenantId, verifyDto);
 
       expect(result).toHaveProperty('tenantId');
       expect(result).toHaveProperty('plan');
@@ -693,9 +699,7 @@ describe('SubscriptionsController', () => {
 
       await controller.createPaymentSource(mockTenantId, paymentSourceDto);
 
-      expect(
-        subscriptionsService.createPaymentSource,
-      ).toHaveBeenCalledWith(
+      expect(subscriptionsService.createPaymentSource).toHaveBeenCalledWith(
         mockTenantId,
         'tok_test_1234567890_abcdef',
         'eyJhY2NlcHRhbmNl...',
@@ -710,9 +714,7 @@ describe('SubscriptionsController', () => {
 
       await controller.createPaymentSource(mockTenantId, paymentSourceDto);
 
-      expect(
-        subscriptionsService.createPaymentSource,
-      ).toHaveBeenCalledTimes(1);
+      expect(subscriptionsService.createPaymentSource).toHaveBeenCalledTimes(1);
     });
 
     it('should log the operation with the tenant ID', async () => {
@@ -742,9 +744,7 @@ describe('SubscriptionsController', () => {
         dtoWithoutPersonalAuth as any,
       );
 
-      expect(
-        subscriptionsService.createPaymentSource,
-      ).toHaveBeenCalledWith(
+      expect(subscriptionsService.createPaymentSource).toHaveBeenCalledWith(
         mockTenantId,
         'tok_test_1234567890_abcdef',
         'eyJhY2NlcHRhbmNl...',
@@ -816,9 +816,9 @@ describe('SubscriptionsController', () => {
 
       await controller.getBillingHistory(mockTenantId);
 
-      expect(
-        subscriptionsService.getBillingHistory,
-      ).toHaveBeenCalledWith(mockTenantId);
+      expect(subscriptionsService.getBillingHistory).toHaveBeenCalledWith(
+        mockTenantId,
+      );
     });
 
     it('should call the service exactly once', async () => {
@@ -828,9 +828,7 @@ describe('SubscriptionsController', () => {
 
       await controller.getBillingHistory(mockTenantId);
 
-      expect(
-        subscriptionsService.getBillingHistory,
-      ).toHaveBeenCalledTimes(1);
+      expect(subscriptionsService.getBillingHistory).toHaveBeenCalledTimes(1);
     });
 
     it('should log the operation with the tenant ID', async () => {
@@ -871,18 +869,18 @@ describe('SubscriptionsController', () => {
       const error = new Error('Database error');
       subscriptionsService.getBillingHistory.mockRejectedValue(error);
 
-      await expect(
-        controller.getBillingHistory(mockTenantId),
-      ).rejects.toThrow('Database error');
+      await expect(controller.getBillingHistory(mockTenantId)).rejects.toThrow(
+        'Database error',
+      );
     });
 
     it('should propagate NotFoundException from service', async () => {
       const error = new NotFoundException('Tenant not found');
       subscriptionsService.getBillingHistory.mockRejectedValue(error);
 
-      await expect(
-        controller.getBillingHistory(mockTenantId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.getBillingHistory(mockTenantId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -892,10 +890,7 @@ describe('SubscriptionsController', () => {
 
   describe('guard application', () => {
     it('should have JwtAuthGuard and RolesGuard at controller level', () => {
-      const guards = Reflect.getMetadata(
-        '__guards__',
-        SubscriptionsController,
-      );
+      const guards = Reflect.getMetadata('__guards__', SubscriptionsController);
 
       expect(guards).toBeDefined();
       expect(guards.length).toBe(2);
@@ -931,9 +926,9 @@ describe('SubscriptionsController', () => {
       const result = await controller.getStatus(differentTenantId);
 
       expect(result.tenantId).toBe(differentTenantId);
-      expect(
-        subscriptionsService.getSubscriptionStatus,
-      ).toHaveBeenCalledWith(differentTenantId);
+      expect(subscriptionsService.getSubscriptionStatus).toHaveBeenCalledWith(
+        differentTenantId,
+      );
     });
 
     it('should handle EMPRENDEDOR plan in checkout config dto', async () => {
@@ -1008,12 +1003,11 @@ describe('SubscriptionsController', () => {
         mockBillingHistory as any,
       );
 
-      const [statusResult, plansResult, historyResult] =
-        await Promise.all([
-          controller.getStatus(mockTenantId),
-          Promise.resolve(controller.getPlans()),
-          controller.getBillingHistory(mockTenantId),
-        ]);
+      const [statusResult, plansResult, historyResult] = await Promise.all([
+        controller.getStatus(mockTenantId),
+        Promise.resolve(controller.getPlans()),
+        controller.getBillingHistory(mockTenantId),
+      ]);
 
       expect(statusResult).toEqual(mockSubscriptionStatus);
       expect(plansResult).toEqual(mockPlans);

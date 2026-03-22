@@ -207,7 +207,8 @@ export class WithholdingCertificatesController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Solicitud invalida - No se encontraron ordenes de compra para el periodo',
+    description:
+      'Solicitud invalida - No se encontraron ordenes de compra para el periodo',
   })
   @ApiResponse({
     status: 401,
@@ -261,9 +262,7 @@ export class WithholdingCertificatesController {
     status: 403,
     description: 'Prohibido - Se requiere rol ADMIN',
   })
-  async generateAll(
-    @Body() dto: GenerateAllCertificatesDto,
-  ) {
+  async generateAll(@Body() dto: GenerateAllCertificatesDto) {
     this.logger.log(
       `Generando certificados masivos: ano ${dto.year}, tipo ${dto.withholdingType ?? 'RENTA'}`,
     );

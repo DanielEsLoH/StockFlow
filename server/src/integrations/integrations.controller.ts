@@ -117,10 +117,7 @@ export class IntegrationsController {
   @ApiOperation({ summary: 'Create a product mapping' })
   @ApiParam({ name: 'id', description: 'Integration ID' })
   @ApiResponse({ status: 201, description: 'Mapping created' })
-  createMapping(
-    @Param('id') id: string,
-    @Body() dto: CreateProductMappingDto,
-  ) {
+  createMapping(@Param('id') id: string, @Body() dto: CreateProductMappingDto) {
     return this.integrationsService.createMapping(id, dto);
   }
 
@@ -201,10 +198,7 @@ export class IntegrationsController {
     description: 'Max logs to return (default 20)',
   })
   @ApiResponse({ status: 200, description: 'Sync logs listed' })
-  findSyncLogs(
-    @Param('id') id: string,
-    @Query('limit') limit?: string,
-  ) {
+  findSyncLogs(@Param('id') id: string, @Query('limit') limit?: string) {
     return this.integrationsService.findSyncLogs(
       id,
       limit ? parseInt(limit, 10) : 20,

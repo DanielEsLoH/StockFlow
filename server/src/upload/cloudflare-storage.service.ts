@@ -53,15 +53,12 @@ export class CloudflareStorageService {
   }
 
   async delete(key: string): Promise<void> {
-    const response = await fetch(
-      `${this.workerUrl}/api/images/${key}`,
-      {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${this.authSecret}`,
-        },
+    const response = await fetch(`${this.workerUrl}/api/images/${key}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${this.authSecret}`,
       },
-    );
+    });
 
     if (response.status === 404) {
       this.logger.warn(`Image not found for deletion: ${key}`);

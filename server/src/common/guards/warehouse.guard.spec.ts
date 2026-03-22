@@ -208,10 +208,9 @@ describe('WarehouseGuard', () => {
       prisma.user.findUnique.mockResolvedValue({
         warehouseId: 'warehouse-1',
       });
-      const context = createMockExecutionContext(
-        mockEmployee,
-        { warehouseId: 'warehouse-1' },
-      );
+      const context = createMockExecutionContext(mockEmployee, {
+        warehouseId: 'warehouse-1',
+      });
 
       const result = await guard.canActivate(context);
 
@@ -222,10 +221,9 @@ describe('WarehouseGuard', () => {
       prisma.user.findUnique.mockResolvedValue({
         warehouseId: 'warehouse-1',
       });
-      const context = createMockExecutionContext(
-        mockEmployee,
-        { warehouseId: 'warehouse-2' },
-      );
+      const context = createMockExecutionContext(mockEmployee, {
+        warehouseId: 'warehouse-2',
+      });
 
       await expect(guard.canActivate(context)).rejects.toThrow(
         ForbiddenException,

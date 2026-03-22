@@ -49,7 +49,8 @@ export class CreateAccountDto {
     example: 'ASSET',
   })
   @IsEnum(AccountType, {
-    message: 'El tipo de cuenta debe ser ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE o COGS',
+    message:
+      'El tipo de cuenta debe ser ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE o COGS',
   })
   type: AccountType;
 

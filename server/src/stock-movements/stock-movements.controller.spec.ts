@@ -12,7 +12,11 @@ import type {
   PaginatedMovementsResponse,
   TransferResponse,
 } from './stock-movements.service';
-import { CreateMovementDto, CreateTransferDto, FilterMovementsDto } from './dto';
+import {
+  CreateMovementDto,
+  CreateTransferDto,
+  FilterMovementsDto,
+} from './dto';
 
 describe('StockMovementsController', () => {
   let controller: StockMovementsController;
@@ -562,12 +566,18 @@ describe('StockMovementsController', () => {
         type: MovementType.TRANSFER,
         quantity: 10,
         warehouseId: 'warehouse-456',
-        warehouse: { id: 'warehouse-456', code: 'ALM-02', name: 'Secondary Warehouse' },
+        warehouse: {
+          id: 'warehouse-456',
+          code: 'ALM-02',
+          name: 'Secondary Warehouse',
+        },
       },
     };
 
     it('should create and return a transfer with out and in movements', async () => {
-      stockMovementsService.createTransfer.mockResolvedValue(mockTransferResponse);
+      stockMovementsService.createTransfer.mockResolvedValue(
+        mockTransferResponse,
+      );
 
       const result = await controller.createTransfer(transferDto, mockUserId);
 
@@ -581,7 +591,9 @@ describe('StockMovementsController', () => {
     });
 
     it('should log transfer details including product, quantity, source and destination', async () => {
-      stockMovementsService.createTransfer.mockResolvedValue(mockTransferResponse);
+      stockMovementsService.createTransfer.mockResolvedValue(
+        mockTransferResponse,
+      );
       const logSpy = jest.spyOn(Logger.prototype, 'log');
 
       await controller.createTransfer(transferDto, mockUserId);

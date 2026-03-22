@@ -113,8 +113,7 @@ export class CreateInvoiceItemDto {
     example: 'GRAVADO_19',
   })
   @IsEnum(TaxCategory, {
-    message:
-      'Tax category must be GRAVADO_19, GRAVADO_5, EXENTO, or EXCLUIDO',
+    message: 'Tax category must be GRAVADO_19, GRAVADO_5, EXENTO, or EXCLUIDO',
   })
   @IsOptional()
   taxCategory?: TaxCategory;
@@ -225,7 +224,8 @@ export class CreateInvoiceDto {
     example: 'COP',
   })
   @IsEnum(CurrencyCode, {
-    message: 'La moneda debe ser un código válido (COP, USD, EUR, MXN, PEN, BRL)',
+    message:
+      'La moneda debe ser un código válido (COP, USD, EUR, MXN, PEN, BRL)',
   })
   @IsOptional()
   currency?: CurrencyCode;

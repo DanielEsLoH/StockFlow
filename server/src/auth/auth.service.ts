@@ -255,7 +255,7 @@ export class AuthService {
   async validateUser(
     email: string,
     password: string,
-  ): Promise<(UserWithRelations) | null> {
+  ): Promise<UserWithRelations | null> {
     this.logger.debug(`Validating user: ${email}`);
 
     const user = await this.prisma.user.findFirst({
@@ -723,9 +723,7 @@ export class AuthService {
     });
 
     if (!user) {
-      this.logger.debug(
-        `Forgot password - user not found: ${normalizedEmail}`,
-      );
+      this.logger.debug(`Forgot password - user not found: ${normalizedEmail}`);
       return { message: genericMessage };
     }
 
@@ -775,9 +773,7 @@ export class AuthService {
     token: string,
     password: string,
   ): Promise<ResetPasswordResponse> {
-    this.logger.debug(
-      `Reset password with token: ${token.substring(0, 8)}...`,
-    );
+    this.logger.debug(`Reset password with token: ${token.substring(0, 8)}...`);
 
     const hashedResetToken = this.hashToken(token);
     const user = await this.prisma.user.findFirst({
@@ -1045,7 +1041,9 @@ export class AuthService {
    * @returns AuthUser object with safe user data
    */
   private mapToAuthUser(
-    user: User & { warehouse?: { id: string; name: string; code: string } | null },
+    user: User & {
+      warehouse?: { id: string; name: string; code: string } | null;
+    },
   ): AuthUser {
     return {
       id: user.id,
@@ -1164,8 +1162,7 @@ export class AuthService {
             );
           }
         } else {
-          const maxRegularUsers =
-            tenant.maxUsers - planLimits.maxContadores;
+          const maxRegularUsers = tenant.maxUsers - planLimits.maxContadores;
           const regularUserCount = await tx.user.count({
             where: {
               tenantId: invitation.tenantId,
@@ -1194,9 +1191,9 @@ export class AuthService {
           emailVerified: true, // Email is verified since they received the invitation
         },
         include: {
-        tenant: true,
-        warehouse: { select: { id: true, name: true, code: true } },
-      },
+          tenant: true,
+          warehouse: { select: { id: true, name: true, code: true } },
+        },
       });
 
       // Update invitation status to ACCEPTED
@@ -1282,9 +1279,9 @@ export class AuthService {
       let user = await this.prisma.user.findFirst({
         where: { [oauthIdField]: oauthId },
         include: {
-        tenant: true,
-        warehouse: { select: { id: true, name: true, code: true } },
-      },
+          tenant: true,
+          warehouse: { select: { id: true, name: true, code: true } },
+        },
       });
 
       // If not found by OAuth ID, try to find by email
@@ -1292,9 +1289,9 @@ export class AuthService {
         user = await this.prisma.user.findFirst({
           where: { email: oauthUser.email.toLowerCase() },
           include: {
-        tenant: true,
-        warehouse: { select: { id: true, name: true, code: true } },
-      },
+            tenant: true,
+            warehouse: { select: { id: true, name: true, code: true } },
+          },
         });
       }
 

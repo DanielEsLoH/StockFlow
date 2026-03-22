@@ -37,7 +37,9 @@ describe('BankReconciliationController', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<BankReconciliationController>(BankReconciliationController);
+    controller = module.get<BankReconciliationController>(
+      BankReconciliationController,
+    );
     service = module.get(BankReconciliationService);
 
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -68,7 +70,9 @@ describe('BankReconciliationController', () => {
     it('should propagate NotFoundException', async () => {
       service.autoMatch.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.autoMatch('invalid')).rejects.toThrow(NotFoundException);
+      await expect(controller.autoMatch('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -79,7 +83,11 @@ describe('BankReconciliationController', () => {
       const result = await controller.manualMatch('line-1', 'je-1', req);
 
       expect(result).toEqual({ message: 'Linea conciliada exitosamente' });
-      expect(service.manualMatch).toHaveBeenCalledWith('line-1', 'je-1', 'user-1');
+      expect(service.manualMatch).toHaveBeenCalledWith(
+        'line-1',
+        'je-1',
+        'user-1',
+      );
     });
 
     it('should handle missing user in request', async () => {
@@ -87,14 +95,20 @@ describe('BankReconciliationController', () => {
       const result = await controller.manualMatch('line-1', 'je-1', req);
 
       expect(result).toEqual({ message: 'Linea conciliada exitosamente' });
-      expect(service.manualMatch).toHaveBeenCalledWith('line-1', 'je-1', undefined);
+      expect(service.manualMatch).toHaveBeenCalledWith(
+        'line-1',
+        'je-1',
+        undefined,
+      );
     });
 
     it('should propagate NotFoundException', async () => {
       service.manualMatch.mockRejectedValue(new NotFoundException());
 
       const req = { user: { id: 'user-1' } };
-      await expect(controller.manualMatch('line-1', 'je-1', req)).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.manualMatch('line-1', 'je-1', req),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -110,7 +124,9 @@ describe('BankReconciliationController', () => {
     it('should propagate BadRequestException', async () => {
       service.unmatch.mockRejectedValue(new BadRequestException());
 
-      await expect(controller.unmatch('line-1')).rejects.toThrow(BadRequestException);
+      await expect(controller.unmatch('line-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -119,14 +135,18 @@ describe('BankReconciliationController', () => {
     it('should delegate to service and return success message', async () => {
       const result = await controller.finalize('stmt-123');
 
-      expect(result).toEqual({ message: 'Conciliacion finalizada exitosamente' });
+      expect(result).toEqual({
+        message: 'Conciliacion finalizada exitosamente',
+      });
       expect(service.finalize).toHaveBeenCalledWith('stmt-123');
     });
 
     it('should propagate BadRequestException', async () => {
       service.finalize.mockRejectedValue(new BadRequestException());
 
-      await expect(controller.finalize('stmt-123')).rejects.toThrow(BadRequestException);
+      await expect(controller.finalize('stmt-123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

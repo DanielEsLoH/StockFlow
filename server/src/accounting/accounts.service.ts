@@ -88,7 +88,10 @@ export class AccountsService {
     const roots: AccountResponse[] = [];
 
     for (const account of accounts) {
-      accountMap.set(account.id, { ...this.mapToResponse(account), children: [] });
+      accountMap.set(account.id, {
+        ...this.mapToResponse(account),
+        children: [],
+      });
     }
 
     for (const account of accounts) {
@@ -136,7 +139,9 @@ export class AccountsService {
     });
 
     if (existing) {
-      throw new ConflictException(`Ya existe una cuenta con el codigo ${dto.code}`);
+      throw new ConflictException(
+        `Ya existe una cuenta con el codigo ${dto.code}`,
+      );
     }
 
     // Validate parent exists if provided
@@ -191,7 +196,9 @@ export class AccountsService {
       }
       // Prevent circular reference
       if (dto.parentId === id) {
-        throw new BadRequestException('Una cuenta no puede ser su propia cuenta padre');
+        throw new BadRequestException(
+          'Una cuenta no puede ser su propia cuenta padre',
+        );
       }
     }
 

@@ -344,7 +344,9 @@ describe('XmlSignerService', () => {
     const CERT_BAG_OID = forge.pki.oids.certBag;
 
     // Mock objects
-    const mockPrivateKey = { n: 'mock-modulus' } as unknown as forge.pki.PrivateKey;
+    const mockPrivateKey = {
+      n: 'mock-modulus',
+    } as unknown as forge.pki.PrivateKey;
     const mockCert = {
       issuer: {
         attributes: [
@@ -382,18 +384,20 @@ describe('XmlSignerService', () => {
       const resolvedCertBags = certBags ?? [{ cert }];
 
       const mockP12 = {
-        getBags: jest.fn().mockImplementation(({ bagType }: { bagType: string }) => {
-          if (bagType === SHROUDED_KEY_BAG_OID) {
-            return { [SHROUDED_KEY_BAG_OID]: shroudedBags };
-          }
-          if (bagType === KEY_BAG_OID) {
-            return { [KEY_BAG_OID]: keyBags };
-          }
-          if (bagType === CERT_BAG_OID) {
-            return { [CERT_BAG_OID]: resolvedCertBags };
-          }
-          return {};
-        }),
+        getBags: jest
+          .fn()
+          .mockImplementation(({ bagType }: { bagType: string }) => {
+            if (bagType === SHROUDED_KEY_BAG_OID) {
+              return { [SHROUDED_KEY_BAG_OID]: shroudedBags };
+            }
+            if (bagType === KEY_BAG_OID) {
+              return { [KEY_BAG_OID]: keyBags };
+            }
+            if (bagType === CERT_BAG_OID) {
+              return { [CERT_BAG_OID]: resolvedCertBags };
+            }
+            return {};
+          }),
       };
 
       const mockAsn1 = { type: 'mock-asn1' };
@@ -401,10 +405,22 @@ describe('XmlSignerService', () => {
       const mockDerBytes = 'mock-der-binary-bytes';
 
       jest.spyOn(forge.asn1, 'fromDer').mockReturnValue(mockAsn1 as any);
-      jest.spyOn(forge.pkcs12, 'pkcs12FromAsn1').mockReturnValue(mockP12 as any);
-      jest.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('-----BEGIN RSA PRIVATE KEY-----\nmockkey\n-----END RSA PRIVATE KEY-----');
-      jest.spyOn(forge.pki, 'certificateToPem').mockReturnValue('-----BEGIN CERTIFICATE-----\nmockcert\n-----END CERTIFICATE-----');
-      jest.spyOn(forge.pki, 'certificateToAsn1').mockReturnValue(mockCertAsn1 as any);
+      jest
+        .spyOn(forge.pkcs12, 'pkcs12FromAsn1')
+        .mockReturnValue(mockP12 as any);
+      jest
+        .spyOn(forge.pki, 'privateKeyToPem')
+        .mockReturnValue(
+          '-----BEGIN RSA PRIVATE KEY-----\nmockkey\n-----END RSA PRIVATE KEY-----',
+        );
+      jest
+        .spyOn(forge.pki, 'certificateToPem')
+        .mockReturnValue(
+          '-----BEGIN CERTIFICATE-----\nmockcert\n-----END CERTIFICATE-----',
+        );
+      jest
+        .spyOn(forge.pki, 'certificateToAsn1')
+        .mockReturnValue(mockCertAsn1 as any);
       jest.spyOn(forge.asn1, 'toDer').mockReturnValue({
         getBytes: () => mockDerBytes,
       } as any);
@@ -415,7 +431,10 @@ describe('XmlSignerService', () => {
     it('should successfully parse a .p12 certificate with shrouded key bag', () => {
       setupForgeMocks({ shroudedBags: [{ key: mockPrivateKey }] });
 
-      const result = service.loadCertificate(Buffer.from('mock-p12'), 'password');
+      const result = service.loadCertificate(
+        Buffer.from('mock-p12'),
+        'password',
+      );
 
       expect(result.privateKeyPem).toContain('BEGIN RSA PRIVATE KEY');
       expect(result.certPem).toContain('BEGIN CERTIFICATE');
@@ -431,7 +450,10 @@ describe('XmlSignerService', () => {
         keyBags: [{ key: mockPrivateKey }],
       });
 
-      const result = service.loadCertificate(Buffer.from('mock-p12'), 'password');
+      const result = service.loadCertificate(
+        Buffer.from('mock-p12'),
+        'password',
+      );
 
       expect(result.privateKeyPem).toContain('BEGIN RSA PRIVATE KEY');
     });
@@ -442,7 +464,10 @@ describe('XmlSignerService', () => {
         keyBags: [{ key: mockPrivateKey }],
       });
 
-      const result = service.loadCertificate(Buffer.from('mock-p12'), 'password');
+      const result = service.loadCertificate(
+        Buffer.from('mock-p12'),
+        'password',
+      );
 
       expect(result.privateKeyPem).toContain('BEGIN RSA PRIVATE KEY');
     });
@@ -488,7 +513,10 @@ describe('XmlSignerService', () => {
     it('should compute DER-encoded base64 of the certificate', () => {
       setupForgeMocks({});
 
-      const result = service.loadCertificate(Buffer.from('mock-p12'), 'password');
+      const result = service.loadCertificate(
+        Buffer.from('mock-p12'),
+        'password',
+      );
 
       const expectedDerBuffer = Buffer.from('mock-der-binary-bytes', 'binary');
       const expectedBase64 = expectedDerBuffer.toString('base64');
@@ -501,7 +529,10 @@ describe('XmlSignerService', () => {
     it('should compute SHA-256 digest of the DER certificate', () => {
       setupForgeMocks({});
 
-      const result = service.loadCertificate(Buffer.from('mock-p12'), 'password');
+      const result = service.loadCertificate(
+        Buffer.from('mock-p12'),
+        'password',
+      );
 
       const expectedDerBuffer = Buffer.from('mock-der-binary-bytes', 'binary');
       const expectedDigest = crypto
@@ -515,7 +546,10 @@ describe('XmlSignerService', () => {
     it('should parse serial number as decimal from hex', () => {
       setupForgeMocks({});
 
-      const result = service.loadCertificate(Buffer.from('mock-p12'), 'password');
+      const result = service.loadCertificate(
+        Buffer.from('mock-p12'),
+        'password',
+      );
 
       // '0a1b2c3d' in hex = 169,858,109 in decimal
       const expectedSerial = BigInt('0x0a1b2c3d').toString(10);
@@ -525,7 +559,10 @@ describe('XmlSignerService', () => {
     it('should build issuer DN string with mapped attribute names in reverse order', () => {
       setupForgeMocks({});
 
-      const result = service.loadCertificate(Buffer.from('mock-p12'), 'password');
+      const result = service.loadCertificate(
+        Buffer.from('mock-p12'),
+        'password',
+      );
 
       // Attributes are [CN=Test Issuer CA, O=Test Org, C=CO]
       // Reversed: C=CO,O=Test Org,CN=Test Issuer CA
@@ -535,7 +572,10 @@ describe('XmlSignerService', () => {
     it('should build subject DN string with mapped attribute names in reverse order', () => {
       setupForgeMocks({});
 
-      const result = service.loadCertificate(Buffer.from('mock-p12'), 'password');
+      const result = service.loadCertificate(
+        Buffer.from('mock-p12'),
+        'password',
+      );
 
       // Attributes are [CN=Test Subject, O=Subject Org]
       // Reversed: O=Subject Org,CN=Test Subject
@@ -544,50 +584,71 @@ describe('XmlSignerService', () => {
 
     it('should handle getBags returning undefined instead of array for shroudedBags', () => {
       const mockP12 = {
-        getBags: jest.fn().mockImplementation(({ bagType }: { bagType: string }) => {
-          if (bagType === SHROUDED_KEY_BAG_OID) {
-            return { [SHROUDED_KEY_BAG_OID]: undefined };
-          }
-          if (bagType === KEY_BAG_OID) {
-            return { [KEY_BAG_OID]: [{ key: mockPrivateKey }] };
-          }
-          if (bagType === CERT_BAG_OID) {
-            return { [CERT_BAG_OID]: [{ cert: mockCert }] };
-          }
-          return {};
-        }),
+        getBags: jest
+          .fn()
+          .mockImplementation(({ bagType }: { bagType: string }) => {
+            if (bagType === SHROUDED_KEY_BAG_OID) {
+              return { [SHROUDED_KEY_BAG_OID]: undefined };
+            }
+            if (bagType === KEY_BAG_OID) {
+              return { [KEY_BAG_OID]: [{ key: mockPrivateKey }] };
+            }
+            if (bagType === CERT_BAG_OID) {
+              return { [CERT_BAG_OID]: [{ cert: mockCert }] };
+            }
+            return {};
+          }),
       };
 
       jest.spyOn(forge.asn1, 'fromDer').mockReturnValue({} as any);
-      jest.spyOn(forge.pkcs12, 'pkcs12FromAsn1').mockReturnValue(mockP12 as any);
-      jest.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('-----BEGIN RSA PRIVATE KEY-----\nmock\n-----END RSA PRIVATE KEY-----');
-      jest.spyOn(forge.pki, 'certificateToPem').mockReturnValue('-----BEGIN CERTIFICATE-----\nmock\n-----END CERTIFICATE-----');
+      jest
+        .spyOn(forge.pkcs12, 'pkcs12FromAsn1')
+        .mockReturnValue(mockP12 as any);
+      jest
+        .spyOn(forge.pki, 'privateKeyToPem')
+        .mockReturnValue(
+          '-----BEGIN RSA PRIVATE KEY-----\nmock\n-----END RSA PRIVATE KEY-----',
+        );
+      jest
+        .spyOn(forge.pki, 'certificateToPem')
+        .mockReturnValue(
+          '-----BEGIN CERTIFICATE-----\nmock\n-----END CERTIFICATE-----',
+        );
       jest.spyOn(forge.pki, 'certificateToAsn1').mockReturnValue({} as any);
-      jest.spyOn(forge.asn1, 'toDer').mockReturnValue({ getBytes: () => 'x' } as any);
+      jest
+        .spyOn(forge.asn1, 'toDer')
+        .mockReturnValue({ getBytes: () => 'x' } as any);
 
-      const result = service.loadCertificate(Buffer.from('mock-p12'), 'password');
+      const result = service.loadCertificate(
+        Buffer.from('mock-p12'),
+        'password',
+      );
 
       expect(result.privateKeyPem).toContain('BEGIN RSA PRIVATE KEY');
     });
 
     it('should handle getBags returning undefined for keyBags when shroudedBags is empty', () => {
       const mockP12 = {
-        getBags: jest.fn().mockImplementation(({ bagType }: { bagType: string }) => {
-          if (bagType === SHROUDED_KEY_BAG_OID) {
-            return { [SHROUDED_KEY_BAG_OID]: [] };
-          }
-          if (bagType === KEY_BAG_OID) {
-            return { [KEY_BAG_OID]: undefined };
-          }
-          if (bagType === CERT_BAG_OID) {
-            return { [CERT_BAG_OID]: [{ cert: mockCert }] };
-          }
-          return {};
-        }),
+        getBags: jest
+          .fn()
+          .mockImplementation(({ bagType }: { bagType: string }) => {
+            if (bagType === SHROUDED_KEY_BAG_OID) {
+              return { [SHROUDED_KEY_BAG_OID]: [] };
+            }
+            if (bagType === KEY_BAG_OID) {
+              return { [KEY_BAG_OID]: undefined };
+            }
+            if (bagType === CERT_BAG_OID) {
+              return { [CERT_BAG_OID]: [{ cert: mockCert }] };
+            }
+            return {};
+          }),
       };
 
       jest.spyOn(forge.asn1, 'fromDer').mockReturnValue({} as any);
-      jest.spyOn(forge.pkcs12, 'pkcs12FromAsn1').mockReturnValue(mockP12 as any);
+      jest
+        .spyOn(forge.pkcs12, 'pkcs12FromAsn1')
+        .mockReturnValue(mockP12 as any);
 
       expect(() =>
         service.loadCertificate(Buffer.from('mock-p12'), 'password'),
@@ -596,23 +657,31 @@ describe('XmlSignerService', () => {
 
     it('should handle getBags returning undefined for certBags', () => {
       const mockP12 = {
-        getBags: jest.fn().mockImplementation(({ bagType }: { bagType: string }) => {
-          if (bagType === SHROUDED_KEY_BAG_OID) {
-            return { [SHROUDED_KEY_BAG_OID]: [{ key: mockPrivateKey }] };
-          }
-          if (bagType === KEY_BAG_OID) {
-            return { [KEY_BAG_OID]: [] };
-          }
-          if (bagType === CERT_BAG_OID) {
-            return { [CERT_BAG_OID]: undefined };
-          }
-          return {};
-        }),
+        getBags: jest
+          .fn()
+          .mockImplementation(({ bagType }: { bagType: string }) => {
+            if (bagType === SHROUDED_KEY_BAG_OID) {
+              return { [SHROUDED_KEY_BAG_OID]: [{ key: mockPrivateKey }] };
+            }
+            if (bagType === KEY_BAG_OID) {
+              return { [KEY_BAG_OID]: [] };
+            }
+            if (bagType === CERT_BAG_OID) {
+              return { [CERT_BAG_OID]: undefined };
+            }
+            return {};
+          }),
       };
 
       jest.spyOn(forge.asn1, 'fromDer').mockReturnValue({} as any);
-      jest.spyOn(forge.pkcs12, 'pkcs12FromAsn1').mockReturnValue(mockP12 as any);
-      jest.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('-----BEGIN RSA PRIVATE KEY-----\nmock\n-----END RSA PRIVATE KEY-----');
+      jest
+        .spyOn(forge.pkcs12, 'pkcs12FromAsn1')
+        .mockReturnValue(mockP12 as any);
+      jest
+        .spyOn(forge.pki, 'privateKeyToPem')
+        .mockReturnValue(
+          '-----BEGIN RSA PRIVATE KEY-----\nmock\n-----END RSA PRIVATE KEY-----',
+        );
 
       expect(() =>
         service.loadCertificate(Buffer.from('mock-p12'), 'password'),
@@ -704,26 +773,40 @@ describe('XmlSignerService', () => {
       };
 
       const mockP12 = {
-        getBags: jest.fn().mockImplementation(({ bagType }: { bagType: string }) => {
-          if (bagType === SHROUDED_KEY_BAG_OID) {
-            return { [SHROUDED_KEY_BAG_OID]: [{ key: mockPrivateKey }] };
-          }
-          if (bagType === KEY_BAG_OID) {
-            return { [KEY_BAG_OID]: [] };
-          }
-          if (bagType === CERT_BAG_OID) {
-            return { [CERT_BAG_OID]: [{ cert: mockCert }] };
-          }
-          return {};
-        }),
+        getBags: jest
+          .fn()
+          .mockImplementation(({ bagType }: { bagType: string }) => {
+            if (bagType === SHROUDED_KEY_BAG_OID) {
+              return { [SHROUDED_KEY_BAG_OID]: [{ key: mockPrivateKey }] };
+            }
+            if (bagType === KEY_BAG_OID) {
+              return { [KEY_BAG_OID]: [] };
+            }
+            if (bagType === CERT_BAG_OID) {
+              return { [CERT_BAG_OID]: [{ cert: mockCert }] };
+            }
+            return {};
+          }),
       };
 
       jest.spyOn(forge.asn1, 'fromDer').mockReturnValue({} as any);
-      jest.spyOn(forge.pkcs12, 'pkcs12FromAsn1').mockReturnValue(mockP12 as any);
-      jest.spyOn(forge.pki, 'privateKeyToPem').mockReturnValue('-----BEGIN RSA PRIVATE KEY-----\nmock\n-----END RSA PRIVATE KEY-----');
-      jest.spyOn(forge.pki, 'certificateToPem').mockReturnValue('-----BEGIN CERTIFICATE-----\nmock\n-----END CERTIFICATE-----');
+      jest
+        .spyOn(forge.pkcs12, 'pkcs12FromAsn1')
+        .mockReturnValue(mockP12 as any);
+      jest
+        .spyOn(forge.pki, 'privateKeyToPem')
+        .mockReturnValue(
+          '-----BEGIN RSA PRIVATE KEY-----\nmock\n-----END RSA PRIVATE KEY-----',
+        );
+      jest
+        .spyOn(forge.pki, 'certificateToPem')
+        .mockReturnValue(
+          '-----BEGIN CERTIFICATE-----\nmock\n-----END CERTIFICATE-----',
+        );
       jest.spyOn(forge.pki, 'certificateToAsn1').mockReturnValue({} as any);
-      jest.spyOn(forge.asn1, 'toDer').mockReturnValue({ getBytes: () => 'x' } as any);
+      jest
+        .spyOn(forge.asn1, 'toDer')
+        .mockReturnValue({ getBytes: () => 'x' } as any);
     }
 
     it('should map all known attribute names to their short forms', () => {
@@ -734,7 +817,11 @@ describe('XmlSignerService', () => {
           { name: 'organizationalUnitName', shortName: 'OU', value: 'My Unit' },
           { name: 'countryName', shortName: 'C', value: 'CO' },
           { name: 'localityName', shortName: 'L', value: 'Bogota' },
-          { name: 'stateOrProvinceName', shortName: 'ST', value: 'Cundinamarca' },
+          {
+            name: 'stateOrProvinceName',
+            shortName: 'ST',
+            value: 'Cundinamarca',
+          },
           { name: 'emailAddress', shortName: 'E', value: 'test@example.com' },
         ],
         [{ name: 'commonName', shortName: 'CN', value: 'Subject' }],
@@ -749,9 +836,7 @@ describe('XmlSignerService', () => {
 
     it('should fallback to shortName when attribute name is not in the mapping', () => {
       setupForDnTest(
-        [
-          { name: 'unknownAttribute', shortName: 'UA', value: 'Unknown Value' },
-        ],
+        [{ name: 'unknownAttribute', shortName: 'UA', value: 'Unknown Value' }],
         [{ name: 'commonName', shortName: 'CN', value: 'Subject' }],
       );
 
@@ -762,9 +847,7 @@ describe('XmlSignerService', () => {
 
     it('should fallback to name when neither mapping nor shortName exists', () => {
       setupForDnTest(
-        [
-          { name: 'customField', value: 'Custom Value' },
-        ],
+        [{ name: 'customField', value: 'Custom Value' }],
         [{ name: 'commonName', shortName: 'CN', value: 'Subject' }],
       );
 
@@ -813,9 +896,7 @@ describe('XmlSignerService', () => {
 
     it('should use shortName ?? name fallback chain correctly for attribute without shortName or known name', () => {
       setupForDnTest(
-        [
-          { name: 'streetAddress', shortName: undefined, value: 'Calle 100' },
-        ],
+        [{ name: 'streetAddress', shortName: undefined, value: 'Calle 100' }],
         [{ name: 'commonName', shortName: 'CN', value: 'Subject' }],
       );
 

@@ -363,7 +363,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 /**
  * Check if a role has a permission by default
  */
-export function roleHasPermission(role: UserRole, permission: Permission): boolean {
+export function roleHasPermission(
+  role: UserRole,
+  permission: Permission,
+): boolean {
   const rolePermissions = DEFAULT_ROLE_PERMISSIONS[role];
   return rolePermissions?.includes(permission) ?? false;
 }

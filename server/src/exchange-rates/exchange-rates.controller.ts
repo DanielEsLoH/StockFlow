@@ -66,10 +66,7 @@ export class ExchangeRatesController {
   @ApiQuery({ name: 'to', required: true })
   @ApiResponse({ status: 200, description: 'Latest exchange rate' })
   getLatestRate(@Query('from') from: string, @Query('to') to: string) {
-    return this.exchangeRatesService.getLatestRate(
-      from as any,
-      to as any,
-    );
+    return this.exchangeRatesService.getLatestRate(from as any, to as any);
   }
 
   @Post()

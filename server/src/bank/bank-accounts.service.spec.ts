@@ -496,9 +496,9 @@ describe('BankAccountsService', () => {
         null,
       );
 
-      await expect(
-        service.update('nonexistent', updateDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update('nonexistent', updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException with correct message', async () => {
@@ -506,9 +506,9 @@ describe('BankAccountsService', () => {
         null,
       );
 
-      await expect(
-        service.update('nonexistent', updateDto),
-      ).rejects.toThrow('Cuenta bancaria con ID nonexistent no encontrada');
+      await expect(service.update('nonexistent', updateDto)).rejects.toThrow(
+        'Cuenta bancaria con ID nonexistent no encontrada',
+      );
     });
 
     it('should scope lookup to tenant', async () => {

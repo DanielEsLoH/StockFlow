@@ -76,7 +76,9 @@ export class ReportQueryDto {
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsString({ message: 'El ID de categoria debe ser una cadena de texto' })
-  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID de categoria debe ser un CUID valido' })
+  @Matches(/^c[a-z0-9]{24,}$/, {
+    message: 'El ID de categoria debe ser un CUID valido',
+  })
   @IsOptional()
   categoryId?: string;
 }
@@ -108,7 +110,9 @@ export class InventoryReportQueryDto {
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsString({ message: 'El ID de categoria debe ser una cadena de texto' })
-  @Matches(/^c[a-z0-9]{24,}$/, { message: 'El ID de categoria debe ser un CUID valido' })
+  @Matches(/^c[a-z0-9]{24,}$/, {
+    message: 'El ID de categoria debe ser un CUID valido',
+  })
   @IsOptional()
   categoryId?: string;
 }
@@ -244,7 +248,10 @@ export class IvaDeclarationQueryDto {
   @Type(() => Number)
   year: number;
 
-  @ApiProperty({ description: 'Bimonthly period 1-6 (1=Jan-Feb, etc.)', example: 1 })
+  @ApiProperty({
+    description: 'Bimonthly period 1-6 (1=Jan-Feb, etc.)',
+    example: 1,
+  })
   @IsInt({ message: 'El periodo debe ser un numero entero' })
   @Min(1)
   @Max(6)

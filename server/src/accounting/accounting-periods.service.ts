@@ -8,7 +8,11 @@ import {
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common';
 import { CreateAccountingPeriodDto } from './dto/create-accounting-period.dto';
-import { AccountingPeriodStatus, AccountType, JournalEntrySource } from '@prisma/client';
+import {
+  AccountingPeriodStatus,
+  AccountType,
+  JournalEntrySource,
+} from '@prisma/client';
 import { JournalEntriesService } from './journal-entries.service';
 
 export interface AccountingPeriodResponse {
@@ -61,28 +65,32 @@ export class AccountingPeriodsService {
     });
 
     if (!period) {
-      throw new NotFoundException(`Periodo contable con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Periodo contable con ID ${id} no encontrado`,
+      );
     }
 
     return this.mapToResponse(period);
   }
 
-  async create(dto: CreateAccountingPeriodDto): Promise<AccountingPeriodResponse> {
+  async create(
+    dto: CreateAccountingPeriodDto,
+  ): Promise<AccountingPeriodResponse> {
     const tenantId = this.tenantContext.requireTenantId();
     const startDate = new Date(dto.startDate);
     const endDate = new Date(dto.endDate);
 
     if (endDate <= startDate) {
-      throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+      throw new BadRequestException(
+        'La fecha de fin debe ser posterior a la fecha de inicio',
+      );
     }
 
     // Check for overlapping periods
     const overlapping = await this.prisma.accountingPeriod.findFirst({
       where: {
         tenantId,
-        OR: [
-          { startDate: { lte: endDate }, endDate: { gte: startDate } },
-        ],
+        OR: [{ startDate: { lte: endDate }, endDate: { gte: startDate } }],
       },
     });
 
@@ -109,7 +117,10 @@ export class AccountingPeriodsService {
     return this.mapToResponse(period);
   }
 
-  async closePeriod(id: string, userId: string): Promise<AccountingPeriodResponse> {
+  async closePeriod(
+    id: string,
+    userId: string,
+  ): Promise<AccountingPeriodResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const period = await this.prisma.accountingPeriod.findFirst({
@@ -120,7 +131,9 @@ export class AccountingPeriodsService {
     });
 
     if (!period) {
-      throw new NotFoundException(`Periodo contable con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Periodo contable con ID ${id} no encontrado`,
+      );
     }
 
     if (period.status === AccountingPeriodStatus.CLOSED) {
@@ -197,7 +210,9 @@ export class AccountingPeriodsService {
           status: 'POSTED',
         },
         account: {
-          type: { in: [AccountType.REVENUE, AccountType.EXPENSE, AccountType.COGS] },
+          type: {
+            in: [AccountType.REVENUE, AccountType.EXPENSE, AccountType.COGS],
+          },
         },
       },
       include: {
@@ -206,12 +221,17 @@ export class AccountingPeriodsService {
     });
 
     if (plLines.length === 0) {
-      this.logger.debug(`No P&L entries in period ${period.name}, skipping closing entry`);
+      this.logger.debug(
+        `No P&L entries in period ${period.name}, skipping closing entry`,
+      );
       return;
     }
 
     // Aggregate balances by account
-    const accountBalances = new Map<string, { accountId: string; type: AccountType; debit: number; credit: number }>();
+    const accountBalances = new Map<
+      string,
+      { accountId: string; type: AccountType; debit: number; credit: number }
+    >();
     for (const line of plLines) {
       if (!accountBalances.has(line.accountId)) {
         accountBalances.set(line.accountId, {
@@ -245,7 +265,12 @@ export class AccountingPeriodsService {
     }
 
     // Build closing entry lines
-    const closingLines: { accountId: string; debit: number; credit: number; description: string }[] = [];
+    const closingLines: {
+      accountId: string;
+      debit: number;
+      credit: number;
+      description: string;
+    }[] = [];
     let totalRevenue = 0;
     let totalExpenses = 0;
 
@@ -305,9 +330,13 @@ export class AccountingPeriodsService {
         source: JournalEntrySource.PERIOD_CLOSE,
         lines: closingLines,
       });
-      this.logger.log(`Closing entry created for period ${period.name}: net income = ${roundedNetIncome}`);
+      this.logger.log(
+        `Closing entry created for period ${period.name}: net income = ${roundedNetIncome}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to create closing entry for period ${period.name}: ${error}`);
+      this.logger.error(
+        `Failed to create closing entry for period ${period.name}: ${error}`,
+      );
       throw new BadRequestException(
         `Error al generar asiento de cierre: ${error instanceof Error ? error.message : 'Error desconocido'}`,
       );

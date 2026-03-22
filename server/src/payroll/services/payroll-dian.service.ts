@@ -74,7 +74,8 @@ export class PayrollDianService {
     const { date, time } = this.cuneGenerator.generateTimestamp();
     const ambiente = config.payrollTestSetId ? '2' : '1';
 
-    const isAdjustment = entry.dianDocumentType === PayrollDocumentType.NOMINA_AJUSTE;
+    const isAdjustment =
+      entry.dianDocumentType === PayrollDocumentType.NOMINA_AJUSTE;
     const tipoXML = isAdjustment ? '103' : '102';
 
     // Generate CUNE
@@ -129,7 +130,9 @@ export class PayrollDianService {
         codigoTrabajador: entry.employee.id.substring(0, 10),
         tipoTrabajador: '01',
         subTipoTrabajador: '00',
-        altoRiesgoPension: ['LEVEL_IV', 'LEVEL_V'].includes(entry.employee.arlRiskLevel),
+        altoRiesgoPension: ['LEVEL_IV', 'LEVEL_V'].includes(
+          entry.employee.arlRiskLevel,
+        ),
         fechaIngreso: entry.employee.startDate.toISOString().split('T')[0],
         fechaRetiro: entry.employee.endDate
           ? entry.employee.endDate.toISOString().split('T')[0]
@@ -197,7 +200,9 @@ export class PayrollDianService {
       },
     });
 
-    this.logger.log(`XML generado para entrada ${entry.entryNumber}, CUNE: ${cune.substring(0, 16)}...`);
+    this.logger.log(
+      `XML generado para entrada ${entry.entryNumber}, CUNE: ${cune.substring(0, 16)}...`,
+    );
 
     return { cune, xml };
   }
@@ -227,13 +232,20 @@ export class PayrollDianService {
       },
     });
 
-    const results: { entryId: string; entryNumber: string; cune: string }[] = [];
+    const results: { entryId: string; entryNumber: string; cune: string }[] =
+      [];
     for (const entry of entries) {
       const result = await this.generateEntryXml(entry.id);
-      results.push({ entryId: entry.id, entryNumber: entry.entryNumber, cune: result.cune });
+      results.push({
+        entryId: entry.id,
+        entryNumber: entry.entryNumber,
+        cune: result.cune,
+      });
     }
 
-    this.logger.log(`XMLs generados para periodo ${period.name}: ${results.length} entradas`);
+    this.logger.log(
+      `XMLs generados para periodo ${period.name}: ${results.length} entradas`,
+    );
     return { periodId, generated: results.length, entries: results };
   }
 
@@ -257,7 +269,10 @@ export class PayrollDianService {
       );
     }
 
-    if (entry.status === PayrollEntryStatus.SENT || entry.status === PayrollEntryStatus.ACCEPTED) {
+    if (
+      entry.status === PayrollEntryStatus.SENT ||
+      entry.status === PayrollEntryStatus.ACCEPTED
+    ) {
       throw new BadRequestException('La entrada ya fue enviada a la DIAN');
     }
 
@@ -267,7 +282,9 @@ export class PayrollDianService {
     });
 
     if (!tenant?.dianConfig) {
-      throw new BadRequestException('Se requiere configuración DIAN del tenant');
+      throw new BadRequestException(
+        'Se requiere configuración DIAN del tenant',
+      );
     }
 
     const dianConfig = tenant.dianConfig;
@@ -288,7 +305,9 @@ export class PayrollDianService {
         cert.serialNumber,
       );
     } else {
-      this.logger.warn('Certificado no configurado — enviando XML sin firma (solo modo prueba)');
+      this.logger.warn(
+        'Certificado no configurado — enviando XML sin firma (solo modo prueba)',
+      );
     }
 
     // Update with signed XML
@@ -303,7 +322,12 @@ export class PayrollDianService {
     const testSetId = config.payrollTestSetId;
 
     const result = testSetId
-      ? await this.dianClient.sendTestSetDocument(dianConfig, signedXml, fileName, testSetId)
+      ? await this.dianClient.sendTestSetDocument(
+          dianConfig,
+          signedXml,
+          fileName,
+          testSetId,
+        )
       : await this.dianClient.sendDocument(dianConfig, signedXml, fileName);
 
     // Determine final status
@@ -355,7 +379,9 @@ export class PayrollDianService {
     if (!period) throw new NotFoundException('Periodo no encontrado');
 
     if (period.status !== PayrollPeriodStatus.APPROVED) {
-      throw new BadRequestException('El periodo debe estar aprobado para enviar a DIAN');
+      throw new BadRequestException(
+        'El periodo debe estar aprobado para enviar a DIAN',
+      );
     }
 
     // Get all approved entries (with or without XML)
@@ -379,7 +405,12 @@ export class PayrollDianService {
     }
 
     // Sign and submit each entry
-    const results: { entryId: string; entryNumber: string; success: boolean; message: string }[] = [];
+    const results: {
+      entryId: string;
+      entryNumber: string;
+      success: boolean;
+      message: string;
+    }[] = [];
     for (const entry of entries) {
       try {
         const result = await this.signAndSubmitEntry(entry.id);

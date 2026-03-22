@@ -83,7 +83,9 @@ export class CustomersService {
       orderBy: { city: 'asc' },
     });
 
-    return cities.map((c) => c.city).filter((city): city is string => city !== null);
+    return cities
+      .map((c) => c.city)
+      .filter((city): city is string => city !== null);
   }
 
   /**
@@ -413,12 +415,12 @@ export class CustomersService {
       notes: customer.notes,
       status: customer.status,
       isActive: customer.status === CustomerStatus.ACTIVE,
-      type: customer.documentType === DocumentType.NIT ? 'BUSINESS' : 'INDIVIDUAL',
+      type:
+        customer.documentType === DocumentType.NIT ? 'BUSINESS' : 'INDIVIDUAL',
       totalPurchases: customer.invoices?.length ?? 0,
-      totalSpent: customer.invoices?.reduce(
-        (sum, inv) => sum + Number(inv.total),
+      totalSpent:
+        customer.invoices?.reduce((sum, inv) => sum + Number(inv.total), 0) ??
         0,
-      ) ?? 0,
       tenantId: customer.tenantId,
       createdAt: customer.createdAt,
       updatedAt: customer.updatedAt,
@@ -437,7 +439,11 @@ export class CustomersService {
   ): Promise<void> {
     await this.cache.invalidate(CACHE_KEYS.CUSTOMERS, tenantId);
     if (customerId) {
-      const key = this.cache.generateKey(CACHE_KEYS.CUSTOMER, tenantId, customerId);
+      const key = this.cache.generateKey(
+        CACHE_KEYS.CUSTOMER,
+        tenantId,
+        customerId,
+      );
       await this.cache.del(key);
     }
     await this.cache.invalidate(CACHE_KEYS.DASHBOARD, tenantId);

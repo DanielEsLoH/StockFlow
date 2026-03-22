@@ -20,19 +20,95 @@ describe('AccountingReportsService', () => {
   const mockTenantId = 'tenant-123';
 
   const mockAccounts = [
-    { id: 'acc-caja', code: '1105', name: 'Caja', type: AccountType.ASSET, nature: AccountNature.DEBIT, level: 3, isActive: true, tenantId: mockTenantId },
-    { id: 'acc-bank', code: '1110', name: 'Bancos', type: AccountType.ASSET, nature: AccountNature.DEBIT, level: 3, isActive: true, tenantId: mockTenantId },
-    { id: 'acc-ar', code: '1305', name: 'Clientes', type: AccountType.ASSET, nature: AccountNature.DEBIT, level: 3, isActive: true, tenantId: mockTenantId },
-    { id: 'acc-ap', code: '2205', name: 'Proveedores', type: AccountType.LIABILITY, nature: AccountNature.CREDIT, level: 3, isActive: true, tenantId: mockTenantId },
-    { id: 'acc-revenue', code: '4135', name: 'Comercio', type: AccountType.REVENUE, nature: AccountNature.CREDIT, level: 3, isActive: true, tenantId: mockTenantId },
-    { id: 'acc-cogs', code: '6135', name: 'CMV', type: AccountType.COGS, nature: AccountNature.DEBIT, level: 3, isActive: true, tenantId: mockTenantId },
-    { id: 'acc-expense', code: '5105', name: 'Gastos', type: AccountType.EXPENSE, nature: AccountNature.DEBIT, level: 3, isActive: true, tenantId: mockTenantId },
-    { id: 'acc-equity', code: '3105', name: 'Capital', type: AccountType.EQUITY, nature: AccountNature.CREDIT, level: 3, isActive: true, tenantId: mockTenantId },
+    {
+      id: 'acc-caja',
+      code: '1105',
+      name: 'Caja',
+      type: AccountType.ASSET,
+      nature: AccountNature.DEBIT,
+      level: 3,
+      isActive: true,
+      tenantId: mockTenantId,
+    },
+    {
+      id: 'acc-bank',
+      code: '1110',
+      name: 'Bancos',
+      type: AccountType.ASSET,
+      nature: AccountNature.DEBIT,
+      level: 3,
+      isActive: true,
+      tenantId: mockTenantId,
+    },
+    {
+      id: 'acc-ar',
+      code: '1305',
+      name: 'Clientes',
+      type: AccountType.ASSET,
+      nature: AccountNature.DEBIT,
+      level: 3,
+      isActive: true,
+      tenantId: mockTenantId,
+    },
+    {
+      id: 'acc-ap',
+      code: '2205',
+      name: 'Proveedores',
+      type: AccountType.LIABILITY,
+      nature: AccountNature.CREDIT,
+      level: 3,
+      isActive: true,
+      tenantId: mockTenantId,
+    },
+    {
+      id: 'acc-revenue',
+      code: '4135',
+      name: 'Comercio',
+      type: AccountType.REVENUE,
+      nature: AccountNature.CREDIT,
+      level: 3,
+      isActive: true,
+      tenantId: mockTenantId,
+    },
+    {
+      id: 'acc-cogs',
+      code: '6135',
+      name: 'CMV',
+      type: AccountType.COGS,
+      nature: AccountNature.DEBIT,
+      level: 3,
+      isActive: true,
+      tenantId: mockTenantId,
+    },
+    {
+      id: 'acc-expense',
+      code: '5105',
+      name: 'Gastos',
+      type: AccountType.EXPENSE,
+      nature: AccountNature.DEBIT,
+      level: 3,
+      isActive: true,
+      tenantId: mockTenantId,
+    },
+    {
+      id: 'acc-equity',
+      code: '3105',
+      name: 'Capital',
+      type: AccountType.EQUITY,
+      nature: AccountNature.CREDIT,
+      level: 3,
+      isActive: true,
+      tenantId: mockTenantId,
+    },
   ];
 
   const mockPrismaService = {
     account: { findMany: jest.fn() },
-    journalEntryLine: { groupBy: jest.fn(), findMany: jest.fn(), aggregate: jest.fn() },
+    journalEntryLine: {
+      groupBy: jest.fn(),
+      findMany: jest.fn(),
+      aggregate: jest.fn(),
+    },
     journalEntry: { findMany: jest.fn() },
     invoice: { findMany: jest.fn() },
     purchaseOrder: { findMany: jest.fn() },
@@ -96,9 +172,7 @@ describe('AccountingReportsService', () => {
     });
 
     it('should return only accounts with non-zero movement', async () => {
-      stubCalculateBalances(mockAccounts, [
-        makeAggRow('acc-caja', 5000, 1000),
-      ]);
+      stubCalculateBalances(mockAccounts, [makeAggRow('acc-caja', 5000, 1000)]);
 
       const result = await service.getTrialBalance(asOfDate);
 
@@ -107,9 +181,7 @@ describe('AccountingReportsService', () => {
     });
 
     it('should compute DEBIT nature balance as totalDebit - totalCredit', async () => {
-      stubCalculateBalances(mockAccounts, [
-        makeAggRow('acc-caja', 5000, 1000),
-      ]);
+      stubCalculateBalances(mockAccounts, [makeAggRow('acc-caja', 5000, 1000)]);
 
       const result = await service.getTrialBalance(asOfDate);
 
@@ -118,9 +190,7 @@ describe('AccountingReportsService', () => {
     });
 
     it('should compute CREDIT nature balance as totalCredit - totalDebit', async () => {
-      stubCalculateBalances(mockAccounts, [
-        makeAggRow('acc-ap', 500, 3000),
-      ]);
+      stubCalculateBalances(mockAccounts, [makeAggRow('acc-ap', 500, 3000)]);
 
       const result = await service.getTrialBalance(asOfDate);
 
@@ -137,8 +207,8 @@ describe('AccountingReportsService', () => {
 
       const result = await service.getTrialBalance(asOfDate);
 
-      expect(result.totalDebit).toBe(8200);   // 5000 + 3000 + 200
-      expect(result.totalCredit).toBe(6000);   // 1000 + 500 + 4500
+      expect(result.totalDebit).toBe(8200); // 5000 + 3000 + 200
+      expect(result.totalCredit).toBe(6000); // 1000 + 500 + 4500
     });
 
     it('should return empty accounts when no movements exist', async () => {
@@ -272,8 +342,18 @@ describe('AccountingReportsService', () => {
           totalDebit: 500,
           totalCredit: 500,
           lines: [
-            { account: { code: '6135', name: 'CMV' }, description: null, debit: 500, credit: 0 },
-            { account: { code: '2205', name: 'Proveedores' }, description: null, debit: 0, credit: 500 },
+            {
+              account: { code: '6135', name: 'CMV' },
+              description: null,
+              debit: 500,
+              credit: 0,
+            },
+            {
+              account: { code: '2205', name: 'Proveedores' },
+              description: null,
+              debit: 0,
+              credit: 500,
+            },
           ],
         },
       ];
@@ -281,7 +361,7 @@ describe('AccountingReportsService', () => {
 
       const result = await service.getGeneralJournal(fromDate, toDate);
 
-      expect(result.totalDebit).toBe(1500);  // 1000 + 500
+      expect(result.totalDebit).toBe(1500); // 1000 + 500
       expect(result.totalCredit).toBe(1500); // 1000 + 500
     });
 
@@ -332,14 +412,21 @@ describe('AccountingReportsService', () => {
           debit: 500,
           credit: 0,
           description: 'Deposito',
-          journalEntry: { id: 'e1', entryNumber: 'JE-010', date: new Date('2024-06-15'), description: 'Deposito efectivo' },
+          journalEntry: {
+            id: 'e1',
+            entryNumber: 'JE-010',
+            date: new Date('2024-06-15'),
+            description: 'Deposito efectivo',
+          },
         },
       ]);
 
       const result = await service.getGeneralLedger(fromDate, toDate);
 
       // The opening balance for a DEBIT account: 10000 - 2000 = 8000
-      const cajaSection = result.accounts.find((a) => a.accountId === 'acc-caja');
+      const cajaSection = result.accounts.find(
+        (a) => a.accountId === 'acc-caja',
+      );
       expect(cajaSection).toBeDefined();
       expect(cajaSection!.openingBalance).toBe(8000);
     });
@@ -355,20 +442,32 @@ describe('AccountingReportsService', () => {
           debit: 500,
           credit: 0,
           description: null,
-          journalEntry: { id: 'e1', entryNumber: 'JE-010', date: new Date('2024-06-10'), description: 'Deposito' },
+          journalEntry: {
+            id: 'e1',
+            entryNumber: 'JE-010',
+            date: new Date('2024-06-10'),
+            description: 'Deposito',
+          },
         },
         {
           accountId: 'acc-caja',
           debit: 0,
           credit: 300,
           description: 'Retiro',
-          journalEntry: { id: 'e2', entryNumber: 'JE-011', date: new Date('2024-06-20'), description: 'Retiro de efectivo' },
+          journalEntry: {
+            id: 'e2',
+            entryNumber: 'JE-011',
+            date: new Date('2024-06-20'),
+            description: 'Retiro de efectivo',
+          },
         },
       ]);
 
       const result = await service.getGeneralLedger(fromDate, toDate);
 
-      const cajaSection = result.accounts.find((a) => a.accountId === 'acc-caja')!;
+      const cajaSection = result.accounts.find(
+        (a) => a.accountId === 'acc-caja',
+      )!;
       // DEBIT nature: running = opening + debit - credit per movement
       expect(cajaSection.movements[0].runningBalance).toBe(8500); // 8000 + 500 - 0
       expect(cajaSection.movements[1].runningBalance).toBe(8200); // 8500 + 0 - 300
@@ -386,14 +485,24 @@ describe('AccountingReportsService', () => {
           debit: 0,
           credit: 2000,
           description: null,
-          journalEntry: { id: 'e1', entryNumber: 'JE-010', date: new Date('2024-06-05'), description: 'Compra a credito' },
+          journalEntry: {
+            id: 'e1',
+            entryNumber: 'JE-010',
+            date: new Date('2024-06-05'),
+            description: 'Compra a credito',
+          },
         },
         {
           accountId: 'acc-ap',
           debit: 800,
           credit: 0,
           description: null,
-          journalEntry: { id: 'e2', entryNumber: 'JE-011', date: new Date('2024-06-25'), description: 'Pago a proveedor' },
+          journalEntry: {
+            id: 'e2',
+            entryNumber: 'JE-011',
+            date: new Date('2024-06-25'),
+            description: 'Pago a proveedor',
+          },
         },
       ]);
 
@@ -423,7 +532,11 @@ describe('AccountingReportsService', () => {
       mockPrismaService.journalEntryLine.groupBy.mockResolvedValue([]);
       mockPrismaService.journalEntryLine.findMany.mockResolvedValue([]);
 
-      const result = await service.getGeneralLedger(fromDate, toDate, 'acc-caja');
+      const result = await service.getGeneralLedger(
+        fromDate,
+        toDate,
+        'acc-caja',
+      );
 
       // When accountId is specified, account is included even with no movements
       expect(result.accounts).toHaveLength(1);
@@ -442,20 +555,32 @@ describe('AccountingReportsService', () => {
           debit: 100,
           credit: 0,
           description: 'Linea especifica',
-          journalEntry: { id: 'e1', entryNumber: 'JE-020', date: new Date('2024-06-10'), description: 'Descripcion general' },
+          journalEntry: {
+            id: 'e1',
+            entryNumber: 'JE-020',
+            date: new Date('2024-06-10'),
+            description: 'Descripcion general',
+          },
         },
         {
           accountId: 'acc-caja',
           debit: 200,
           credit: 0,
           description: null,
-          journalEntry: { id: 'e2', entryNumber: 'JE-021', date: new Date('2024-06-11'), description: 'Otra descripcion' },
+          journalEntry: {
+            id: 'e2',
+            entryNumber: 'JE-021',
+            date: new Date('2024-06-11'),
+            description: 'Otra descripcion',
+          },
         },
       ]);
 
       const result = await service.getGeneralLedger(fromDate, toDate);
 
-      const cajaSection = result.accounts.find((a) => a.accountId === 'acc-caja')!;
+      const cajaSection = result.accounts.find(
+        (a) => a.accountId === 'acc-caja',
+      )!;
       expect(cajaSection.movements[0].description).toBe('Linea especifica');
       expect(cajaSection.movements[1].description).toBe('Otra descripcion');
     });
@@ -493,19 +618,25 @@ describe('AccountingReportsService', () => {
 
       const result = await service.getBalanceSheet(asOfDate);
 
-      expect(result.assets.accounts.some((a) => a.accountId === 'acc-caja')).toBe(true);
-      expect(result.liabilities.accounts.some((a) => a.accountId === 'acc-ap')).toBe(true);
+      expect(
+        result.assets.accounts.some((a) => a.accountId === 'acc-caja'),
+      ).toBe(true);
+      expect(
+        result.liabilities.accounts.some((a) => a.accountId === 'acc-ap'),
+      ).toBe(true);
       // Equity section includes the actual equity accounts plus net income synthetic row
-      expect(result.equity.accounts.some((a) => a.accountId === 'acc-equity')).toBe(true);
+      expect(
+        result.equity.accounts.some((a) => a.accountId === 'acc-equity'),
+      ).toBe(true);
     });
 
     it('should calculate netIncome as revenue - cogs - expenses and add to equity', async () => {
       stubCalculateBalances(mockAccounts, [
         makeAggRow('acc-caja', 10000, 0),
         makeAggRow('acc-equity', 0, 5000),
-        makeAggRow('acc-revenue', 0, 4000),   // balance = 4000 (CREDIT nature)
-        makeAggRow('acc-cogs', 1000, 0),       // balance = 1000 (DEBIT nature)
-        makeAggRow('acc-expense', 500, 0),     // balance = 500 (DEBIT nature)
+        makeAggRow('acc-revenue', 0, 4000), // balance = 4000 (CREDIT nature)
+        makeAggRow('acc-cogs', 1000, 0), // balance = 1000 (DEBIT nature)
+        makeAggRow('acc-expense', 500, 0), // balance = 500 (DEBIT nature)
       ]);
 
       const result = await service.getBalanceSheet(asOfDate);
@@ -576,9 +707,9 @@ describe('AccountingReportsService', () => {
       stubCalculateBalances(mockAccounts, [
         makeAggRow('acc-caja', 5000, 0),
         makeAggRow('acc-equity', 0, 7000),
-        makeAggRow('acc-revenue', 0, 1000),   // revenue = 1000
-        makeAggRow('acc-cogs', 800, 0),        // cogs = 800
-        makeAggRow('acc-expense', 1500, 0),    // expenses = 1500
+        makeAggRow('acc-revenue', 0, 1000), // revenue = 1000
+        makeAggRow('acc-cogs', 800, 0), // cogs = 800
+        makeAggRow('acc-expense', 1500, 0), // expenses = 1500
         makeAggRow('acc-ap', 0, 500),
       ]);
 
@@ -691,8 +822,8 @@ describe('AccountingReportsService', () => {
 
       const result = await service.getIncomeStatement(fromDate, toDate);
 
-      expect(result.grossProfit).toBe(500);   // 2000 - 1500
-      expect(result.netIncome).toBe(-2500);   // 500 - 3000
+      expect(result.grossProfit).toBe(500); // 2000 - 1500
+      expect(result.netIncome).toBe(-2500); // 500 - 3000
     });
   });
 
@@ -764,13 +895,21 @@ describe('AccountingReportsService', () => {
           accountId: 'acc-caja',
           debit: 5000,
           credit: 0,
-          journalEntry: { date: new Date('2024-06-10'), description: 'Cobro cliente', entryNumber: 'JE-050' },
+          journalEntry: {
+            date: new Date('2024-06-10'),
+            description: 'Cobro cliente',
+            entryNumber: 'JE-050',
+          },
         },
         {
           accountId: 'acc-bank',
           debit: 0,
           credit: 2000,
-          journalEntry: { date: new Date('2024-06-15'), description: 'Pago proveedor', entryNumber: 'JE-051' },
+          journalEntry: {
+            date: new Date('2024-06-15'),
+            description: 'Pago proveedor',
+            entryNumber: 'JE-051',
+          },
         },
       ]);
 
@@ -793,23 +932,31 @@ describe('AccountingReportsService', () => {
           accountId: 'acc-caja',
           debit: 5000,
           credit: 0,
-          journalEntry: { date: new Date('2024-06-10'), description: 'Ingreso', entryNumber: 'JE-060' },
+          journalEntry: {
+            date: new Date('2024-06-10'),
+            description: 'Ingreso',
+            entryNumber: 'JE-060',
+          },
         },
         {
           accountId: 'acc-bank',
           debit: 0,
           credit: 3000,
-          journalEntry: { date: new Date('2024-06-20'), description: 'Pago', entryNumber: 'JE-061' },
+          journalEntry: {
+            date: new Date('2024-06-20'),
+            description: 'Pago',
+            entryNumber: 'JE-061',
+          },
         },
       ]);
 
       const result = await service.getCashFlow(fromDate, toDate);
 
-      expect(result.openingBalance).toBe(12000);  // 20000 - 8000
+      expect(result.openingBalance).toBe(12000); // 20000 - 8000
       expect(result.totalInflows).toBe(5000);
       expect(result.totalOutflows).toBe(3000);
-      expect(result.netChange).toBe(2000);          // 5000 - 3000
-      expect(result.closingBalance).toBe(14000);    // 12000 + 2000
+      expect(result.netChange).toBe(2000); // 5000 - 3000
+      expect(result.closingBalance).toBe(14000); // 12000 + 2000
     });
 
     it('should handle null aggregate sums gracefully', async () => {
@@ -857,7 +1004,11 @@ describe('AccountingReportsService', () => {
         total,
         issueDate,
         dueDate,
-        customer: { id: customerId, name: customerName, documentNumber: '900111222' },
+        customer: {
+          id: customerId,
+          name: customerName,
+          documentNumber: '900111222',
+        },
         payments: paidAmounts.map((a) => ({ amount: a })),
       };
     }
@@ -875,7 +1026,14 @@ describe('AccountingReportsService', () => {
     it('should classify a current (not overdue) invoice correctly', async () => {
       // dueDate is in the future relative to asOfDate
       mockPrismaService.invoice.findMany.mockResolvedValue([
-        makeInvoice('inv-1', 'cust-1', 'Acme', 1000, new Date('2024-12-01'), new Date('2025-01-15')),
+        makeInvoice(
+          'inv-1',
+          'cust-1',
+          'Acme',
+          1000,
+          new Date('2024-12-01'),
+          new Date('2025-01-15'),
+        ),
       ]);
 
       const result = await service.getARAgingReport(asOfDate);
@@ -889,13 +1047,41 @@ describe('AccountingReportsService', () => {
     it('should classify invoices into correct aging bands', async () => {
       mockPrismaService.invoice.findMany.mockResolvedValue([
         // 15 days overdue → 1-30 band
-        makeInvoice('inv-1', 'cust-1', 'Acme', 500, new Date('2024-11-01'), new Date('2024-12-16')),
+        makeInvoice(
+          'inv-1',
+          'cust-1',
+          'Acme',
+          500,
+          new Date('2024-11-01'),
+          new Date('2024-12-16'),
+        ),
         // 45 days overdue → 31-60 band
-        makeInvoice('inv-2', 'cust-1', 'Acme', 300, new Date('2024-10-01'), new Date('2024-11-16')),
+        makeInvoice(
+          'inv-2',
+          'cust-1',
+          'Acme',
+          300,
+          new Date('2024-10-01'),
+          new Date('2024-11-16'),
+        ),
         // 75 days overdue → 61-90 band
-        makeInvoice('inv-3', 'cust-1', 'Acme', 200, new Date('2024-09-01'), new Date('2024-10-17')),
+        makeInvoice(
+          'inv-3',
+          'cust-1',
+          'Acme',
+          200,
+          new Date('2024-09-01'),
+          new Date('2024-10-17'),
+        ),
         // 120 days overdue → 90+ band
-        makeInvoice('inv-4', 'cust-1', 'Acme', 100, new Date('2024-07-01'), new Date('2024-09-02')),
+        makeInvoice(
+          'inv-4',
+          'cust-1',
+          'Acme',
+          100,
+          new Date('2024-07-01'),
+          new Date('2024-09-02'),
+        ),
       ]);
 
       const result = await service.getARAgingReport(asOfDate);
@@ -912,7 +1098,15 @@ describe('AccountingReportsService', () => {
 
     it('should subtract payments from invoice balance', async () => {
       mockPrismaService.invoice.findMany.mockResolvedValue([
-        makeInvoice('inv-1', 'cust-1', 'Acme', 1000, new Date('2024-12-01'), new Date('2025-01-15'), [400, 200]),
+        makeInvoice(
+          'inv-1',
+          'cust-1',
+          'Acme',
+          1000,
+          new Date('2024-12-01'),
+          new Date('2025-01-15'),
+          [400, 200],
+        ),
       ]);
 
       const result = await service.getARAgingReport(asOfDate);
@@ -922,7 +1116,15 @@ describe('AccountingReportsService', () => {
 
     it('should skip invoices fully paid via payments', async () => {
       mockPrismaService.invoice.findMany.mockResolvedValue([
-        makeInvoice('inv-1', 'cust-1', 'Acme', 1000, new Date('2024-12-01'), new Date('2025-01-15'), [1000]),
+        makeInvoice(
+          'inv-1',
+          'cust-1',
+          'Acme',
+          1000,
+          new Date('2024-12-01'),
+          new Date('2025-01-15'),
+          [1000],
+        ),
       ]);
 
       const result = await service.getARAgingReport(asOfDate);
@@ -932,9 +1134,30 @@ describe('AccountingReportsService', () => {
 
     it('should group multiple invoices by customer', async () => {
       mockPrismaService.invoice.findMany.mockResolvedValue([
-        makeInvoice('inv-1', 'cust-1', 'Acme', 500, new Date('2024-12-01'), new Date('2025-01-15')),
-        makeInvoice('inv-2', 'cust-1', 'Acme', 300, new Date('2024-11-01'), new Date('2024-12-16')),
-        makeInvoice('inv-3', 'cust-2', 'Beta', 800, new Date('2024-12-01'), new Date('2025-01-10')),
+        makeInvoice(
+          'inv-1',
+          'cust-1',
+          'Acme',
+          500,
+          new Date('2024-12-01'),
+          new Date('2025-01-15'),
+        ),
+        makeInvoice(
+          'inv-2',
+          'cust-1',
+          'Acme',
+          300,
+          new Date('2024-11-01'),
+          new Date('2024-12-16'),
+        ),
+        makeInvoice(
+          'inv-3',
+          'cust-2',
+          'Beta',
+          800,
+          new Date('2024-12-01'),
+          new Date('2025-01-10'),
+        ),
       ]);
 
       const result = await service.getARAgingReport(asOfDate);
@@ -947,7 +1170,14 @@ describe('AccountingReportsService', () => {
     it('should use issueDate as fallback when dueDate is null', async () => {
       // dueDate null, issueDate = 2024-12-16 → 15 days overdue → 1-30 band
       mockPrismaService.invoice.findMany.mockResolvedValue([
-        makeInvoice('inv-1', 'cust-1', 'Acme', 500, new Date('2024-12-16'), null),
+        makeInvoice(
+          'inv-1',
+          'cust-1',
+          'Acme',
+          500,
+          new Date('2024-12-16'),
+          null,
+        ),
       ]);
 
       const result = await service.getARAgingReport(asOfDate);
@@ -957,8 +1187,22 @@ describe('AccountingReportsService', () => {
 
     it('should compute totals across all customers', async () => {
       mockPrismaService.invoice.findMany.mockResolvedValue([
-        makeInvoice('inv-1', 'cust-1', 'Acme', 1000, new Date('2024-12-01'), new Date('2025-01-15')),
-        makeInvoice('inv-2', 'cust-2', 'Beta', 2000, new Date('2024-11-01'), new Date('2024-12-16')),
+        makeInvoice(
+          'inv-1',
+          'cust-1',
+          'Acme',
+          1000,
+          new Date('2024-12-01'),
+          new Date('2025-01-15'),
+        ),
+        makeInvoice(
+          'inv-2',
+          'cust-2',
+          'Beta',
+          2000,
+          new Date('2024-11-01'),
+          new Date('2024-12-16'),
+        ),
       ]);
 
       const result = await service.getARAgingReport(asOfDate);
@@ -989,7 +1233,12 @@ describe('AccountingReportsService', () => {
         supplierId,
         total,
         issueDate,
-        supplier: { id: supplierId, name: supplierName, documentNumber: '800333444', paymentTerms },
+        supplier: {
+          id: supplierId,
+          name: supplierName,
+          documentNumber: '800333444',
+          paymentTerms,
+        },
         purchasePayments,
       };
     }
@@ -1007,7 +1256,14 @@ describe('AccountingReportsService', () => {
     it('should classify a current PO (not overdue based on payment terms)', async () => {
       // issueDate 2024-12-15 + NET_30 = due 2025-01-14, so current
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makePO('po-1', 'sup-1', 'Proveedor A', 5000, new Date('2024-12-15'), PaymentTerms.NET_30),
+        makePO(
+          'po-1',
+          'sup-1',
+          'Proveedor A',
+          5000,
+          new Date('2024-12-15'),
+          PaymentTerms.NET_30,
+        ),
       ]);
 
       const result = await service.getAPAgingReport(asOfDate);
@@ -1020,11 +1276,32 @@ describe('AccountingReportsService', () => {
     it('should classify overdue POs into correct aging bands', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
         // Due = 2024-12-16 (issueDate + 0 IMMEDIATE), 15 days overdue → 1-30
-        makePO('po-1', 'sup-1', 'Proveedor A', 1000, new Date('2024-12-16'), PaymentTerms.IMMEDIATE),
+        makePO(
+          'po-1',
+          'sup-1',
+          'Proveedor A',
+          1000,
+          new Date('2024-12-16'),
+          PaymentTerms.IMMEDIATE,
+        ),
         // Due = 2024-11-01 + 15 = 2024-11-16, 45 days overdue → 31-60
-        makePO('po-2', 'sup-1', 'Proveedor A', 2000, new Date('2024-11-01'), PaymentTerms.NET_15),
+        makePO(
+          'po-2',
+          'sup-1',
+          'Proveedor A',
+          2000,
+          new Date('2024-11-01'),
+          PaymentTerms.NET_15,
+        ),
         // Due = 2024-08-01 + 30 = 2024-08-31, 122 days overdue → 90+
-        makePO('po-3', 'sup-1', 'Proveedor A', 3000, new Date('2024-08-01'), PaymentTerms.NET_30),
+        makePO(
+          'po-3',
+          'sup-1',
+          'Proveedor A',
+          3000,
+          new Date('2024-08-01'),
+          PaymentTerms.NET_30,
+        ),
       ]);
 
       const result = await service.getAPAgingReport(asOfDate);
@@ -1040,9 +1317,30 @@ describe('AccountingReportsService', () => {
 
     it('should group multiple POs by supplier', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makePO('po-1', 'sup-1', 'Proveedor A', 1000, new Date('2024-12-15'), PaymentTerms.NET_30),
-        makePO('po-2', 'sup-1', 'Proveedor A', 2000, new Date('2024-12-15'), PaymentTerms.NET_30),
-        makePO('po-3', 'sup-2', 'Proveedor B', 5000, new Date('2024-12-15'), PaymentTerms.NET_30),
+        makePO(
+          'po-1',
+          'sup-1',
+          'Proveedor A',
+          1000,
+          new Date('2024-12-15'),
+          PaymentTerms.NET_30,
+        ),
+        makePO(
+          'po-2',
+          'sup-1',
+          'Proveedor A',
+          2000,
+          new Date('2024-12-15'),
+          PaymentTerms.NET_30,
+        ),
+        makePO(
+          'po-3',
+          'sup-2',
+          'Proveedor B',
+          5000,
+          new Date('2024-12-15'),
+          PaymentTerms.NET_30,
+        ),
       ]);
 
       const result = await service.getAPAgingReport(asOfDate);
@@ -1058,7 +1356,14 @@ describe('AccountingReportsService', () => {
     it('should use correct payment terms days', async () => {
       // NET_60: issueDate 2024-10-15 + 60 = due 2024-12-14, 17 days overdue → 1-30
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makePO('po-1', 'sup-1', 'Proveedor A', 1000, new Date('2024-10-15'), PaymentTerms.NET_60),
+        makePO(
+          'po-1',
+          'sup-1',
+          'Proveedor A',
+          1000,
+          new Date('2024-10-15'),
+          PaymentTerms.NET_60,
+        ),
       ]);
 
       const result = await service.getAPAgingReport(asOfDate);
@@ -1068,7 +1373,16 @@ describe('AccountingReportsService', () => {
 
     it('should skip POs with zero balance', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        { ...makePO('po-1', 'sup-1', 'Proveedor A', 0, new Date('2024-12-15'), PaymentTerms.NET_30) },
+        {
+          ...makePO(
+            'po-1',
+            'sup-1',
+            'Proveedor A',
+            0,
+            new Date('2024-12-15'),
+            PaymentTerms.NET_30,
+          ),
+        },
       ]);
 
       const result = await service.getAPAgingReport(asOfDate);
@@ -1078,10 +1392,15 @@ describe('AccountingReportsService', () => {
 
     it('should deduct purchase payments from balance', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makePO('po-1', 'sup-1', 'Proveedor A', 5000, new Date('2024-12-15'), PaymentTerms.NET_30, [
-          { amount: 2000 },
-          { amount: 1000 },
-        ]),
+        makePO(
+          'po-1',
+          'sup-1',
+          'Proveedor A',
+          5000,
+          new Date('2024-12-15'),
+          PaymentTerms.NET_30,
+          [{ amount: 2000 }, { amount: 1000 }],
+        ),
       ]);
 
       const result = await service.getAPAgingReport(asOfDate);
@@ -1093,9 +1412,15 @@ describe('AccountingReportsService', () => {
 
     it('should skip fully paid POs', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makePO('po-1', 'sup-1', 'Proveedor A', 5000, new Date('2024-12-15'), PaymentTerms.NET_30, [
-          { amount: 5000 },
-        ]),
+        makePO(
+          'po-1',
+          'sup-1',
+          'Proveedor A',
+          5000,
+          new Date('2024-12-15'),
+          PaymentTerms.NET_30,
+          [{ amount: 5000 }],
+        ),
       ]);
 
       const result = await service.getAPAgingReport(asOfDate);
@@ -1109,11 +1434,29 @@ describe('AccountingReportsService', () => {
   // getIvaDeclaration
   // ---------------------------------------------------------------------------
   describe('getIvaDeclaration', () => {
-    function makeInvoiceWithItems(id: string, issueDate: Date, items: { taxRate: number; taxCategory: string; subtotal: number; tax: number }[]) {
+    function makeInvoiceWithItems(
+      id: string,
+      issueDate: Date,
+      items: {
+        taxRate: number;
+        taxCategory: string;
+        subtotal: number;
+        tax: number;
+      }[],
+    ) {
       return { id, issueDate, items };
     }
 
-    function makePOWithItems(id: string, issueDate: Date, items: { taxRate: number; taxCategory: string; subtotal: number; tax: number }[]) {
+    function makePOWithItems(
+      id: string,
+      issueDate: Date,
+      items: {
+        taxRate: number;
+        taxCategory: string;
+        subtotal: number;
+        tax: number;
+      }[],
+    ) {
       return { id, issueDate, items };
     }
 
@@ -1147,10 +1490,10 @@ describe('AccountingReportsService', () => {
       const result = await service.getIvaDeclaration(2026, 1);
 
       expect(result.salesByRate).toHaveLength(2);
-      const rate19 = result.salesByRate.find(r => r.taxRate === 19)!;
+      const rate19 = result.salesByRate.find((r) => r.taxRate === 19)!;
       expect(rate19.taxableBase).toBe(3000);
       expect(rate19.taxAmount).toBe(570);
-      const rate5 = result.salesByRate.find(r => r.taxRate === 5)!;
+      const rate5 = result.salesByRate.find((r) => r.taxRate === 5)!;
       expect(rate5.taxableBase).toBe(500);
       expect(rate5.taxAmount).toBe(25);
       expect(result.totalIvaGenerado).toBe(595);
@@ -1174,7 +1517,12 @@ describe('AccountingReportsService', () => {
     it('should calculate net IVA payable correctly', async () => {
       mockPrismaService.invoice.findMany.mockResolvedValue([
         makeInvoiceWithItems('inv-1', new Date('2026-01-15'), [
-          { taxRate: 19, taxCategory: 'GRAVADO_19', subtotal: 10000, tax: 1900 },
+          {
+            taxRate: 19,
+            taxCategory: 'GRAVADO_19',
+            subtotal: 10000,
+            tax: 1900,
+          },
         ]),
       ]);
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
@@ -1200,8 +1548,12 @@ describe('AccountingReportsService', () => {
       const result = await service.getIvaDeclaration(2026, 1);
 
       expect(result.salesExempt).toHaveLength(2);
-      expect(result.salesExempt.find(e => e.category === 'EXENTO')!.taxableBase).toBe(3000);
-      expect(result.salesExempt.find(e => e.category === 'EXCLUIDO')!.taxableBase).toBe(2000);
+      expect(
+        result.salesExempt.find((e) => e.category === 'EXENTO')!.taxableBase,
+      ).toBe(3000);
+      expect(
+        result.salesExempt.find((e) => e.category === 'EXCLUIDO')!.taxableBase,
+      ).toBe(2000);
       expect(result.totalSalesBase).toBe(5000);
       expect(result.totalIvaGenerado).toBe(0);
     });
@@ -1222,19 +1574,35 @@ describe('AccountingReportsService', () => {
   // getReteFuenteSummary
   // ---------------------------------------------------------------------------
   describe('getReteFuenteSummary', () => {
-    function makeRetePO(id: string, supplierId: string, supplierName: string, subtotal: number, issueDate: Date) {
+    function makeRetePO(
+      id: string,
+      supplierId: string,
+      supplierName: string,
+      subtotal: number,
+      issueDate: Date,
+    ) {
       return {
         id,
         supplierId,
         subtotal,
         issueDate,
-        supplier: { id: supplierId, name: supplierName, documentNumber: '900111222' },
+        supplier: {
+          id: supplierId,
+          name: supplierName,
+          documentNumber: '900111222',
+        },
       };
     }
 
     it('should return empty rows when no POs exceed min base', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makeRetePO('po-1', 'sup-1', 'Proveedor A', 500000, new Date('2026-02-10')),
+        makeRetePO(
+          'po-1',
+          'sup-1',
+          'Proveedor A',
+          500000,
+          new Date('2026-02-10'),
+        ),
       ]);
 
       const result = await service.getReteFuenteSummary(2026, 2);
@@ -1245,7 +1613,13 @@ describe('AccountingReportsService', () => {
 
     it('should calculate withholding for POs above min base', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makeRetePO('po-1', 'sup-1', 'Proveedor A', 1000000, new Date('2026-02-10')),
+        makeRetePO(
+          'po-1',
+          'sup-1',
+          'Proveedor A',
+          1000000,
+          new Date('2026-02-10'),
+        ),
       ]);
       mockPrismaService.withholdingCertificate.findMany.mockResolvedValue([]);
 
@@ -1259,24 +1633,52 @@ describe('AccountingReportsService', () => {
 
     it('should group by supplier', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makeRetePO('po-1', 'sup-1', 'Proveedor A', 600000, new Date('2026-02-05')),
-        makeRetePO('po-2', 'sup-1', 'Proveedor A', 800000, new Date('2026-02-15')),
-        makeRetePO('po-3', 'sup-2', 'Proveedor B', 1000000, new Date('2026-02-20')),
+        makeRetePO(
+          'po-1',
+          'sup-1',
+          'Proveedor A',
+          600000,
+          new Date('2026-02-05'),
+        ),
+        makeRetePO(
+          'po-2',
+          'sup-1',
+          'Proveedor A',
+          800000,
+          new Date('2026-02-15'),
+        ),
+        makeRetePO(
+          'po-3',
+          'sup-2',
+          'Proveedor B',
+          1000000,
+          new Date('2026-02-20'),
+        ),
       ]);
       mockPrismaService.withholdingCertificate.findMany.mockResolvedValue([]);
 
       const result = await service.getReteFuenteSummary(2026, 2);
 
       expect(result.rows).toHaveLength(2);
-      const supA = result.rows.find(r => r.supplierName === 'Proveedor A')!;
+      const supA = result.rows.find((r) => r.supplierName === 'Proveedor A')!;
       expect(supA.totalBase).toBe(1400000);
       expect(supA.purchaseCount).toBe(2);
-      expect(result.totalWithheld).toBe(supA.totalWithheld + result.rows.find(r => r.supplierName === 'Proveedor B')!.totalWithheld);
+      expect(result.totalWithheld).toBe(
+        supA.totalWithheld +
+          result.rows.find((r) => r.supplierName === 'Proveedor B')!
+            .totalWithheld,
+      );
     });
 
     it('should cross-reference withholding certificates', async () => {
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        makeRetePO('po-1', 'sup-1', 'Proveedor A', 1000000, new Date('2026-02-10')),
+        makeRetePO(
+          'po-1',
+          'sup-1',
+          'Proveedor A',
+          1000000,
+          new Date('2026-02-10'),
+        ),
       ]);
       mockPrismaService.withholdingCertificate.findMany.mockResolvedValue([
         { id: 'cert-1', supplierId: 'sup-1', certificateNumber: 'CERT-001' },
@@ -1323,8 +1725,8 @@ describe('AccountingReportsService', () => {
         { tax: 950 },
       ]);
       mockPrismaService.purchaseOrder.findMany.mockResolvedValue([
-        { tax: 380, subtotal: 2000 },       // below min base
-        { tax: 1900, subtotal: 1000000 },    // above min base
+        { tax: 380, subtotal: 2000 }, // below min base
+        { tax: 1900, subtotal: 1000000 }, // above min base
       ]);
 
       const result = await service.getYtdTaxSummary(2026);

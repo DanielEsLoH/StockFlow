@@ -10,7 +10,9 @@ export class CreateProductMappingDto {
     example: 'cmkcykam80004reya0hsdx337',
   })
   @IsString()
-  @Matches(CUID_PATTERN, { message: 'El ID del producto debe ser un CUID válido' })
+  @Matches(CUID_PATTERN, {
+    message: 'El ID del producto debe ser un CUID válido',
+  })
   productId: string;
 
   @ApiProperty({

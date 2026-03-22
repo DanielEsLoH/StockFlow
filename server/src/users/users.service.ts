@@ -601,21 +601,19 @@ export class UsersService {
       });
 
       if (!warehouse) {
-        throw new NotFoundException(
-          `Bodega no encontrada: ${warehouseId}`,
-        );
+        throw new NotFoundException(`Bodega no encontrada: ${warehouseId}`);
       }
 
       if (warehouse.status !== WarehouseStatus.ACTIVE) {
-        throw new BadRequestException(
-          'La bodega asignada debe estar activa',
-        );
+        throw new BadRequestException('La bodega asignada debe estar activa');
       }
     }
   }
 
   private mapToUserResponse(
-    user: User & { warehouse?: { id: string; name: string; code: string } | null },
+    user: User & {
+      warehouse?: { id: string; name: string; code: string } | null;
+    },
   ): UserResponse {
     return {
       id: user.id,

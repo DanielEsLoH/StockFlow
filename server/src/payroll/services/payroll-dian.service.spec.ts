@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PayrollEntryStatus, PayrollPeriodStatus } from '@prisma/client';
 import { PayrollDianService } from './payroll-dian.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -126,7 +122,9 @@ describe('PayrollDianService', () => {
     };
 
     const mockXmlGenerator = {
-      generateNominaIndividualXml: jest.fn().mockReturnValue('<xml>payroll</xml>'),
+      generateNominaIndividualXml: jest
+        .fn()
+        .mockReturnValue('<xml>payroll</xml>'),
     };
 
     const mockCuneGenerator = {
@@ -135,7 +133,9 @@ describe('PayrollDianService', () => {
         time: '10:00:00',
       }),
       generateCune: jest.fn().mockReturnValue('cune-generated-hash'),
-      formatMoney: jest.fn().mockImplementation((val: number) => val.toFixed(2)),
+      formatMoney: jest
+        .fn()
+        .mockImplementation((val: number) => val.toFixed(2)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -154,13 +154,19 @@ describe('PayrollDianService', () => {
         },
         {
           provide: XmlSignerService,
-          useValue: { signXml: jest.fn().mockResolvedValue('<signed>xml</signed>') },
+          useValue: {
+            signXml: jest.fn().mockResolvedValue('<signed>xml</signed>'),
+          },
         },
         {
           provide: DianClientService,
           useValue: {
-            sendDocument: jest.fn().mockResolvedValue({ statusCode: 200, isValid: true }),
-            sendTestSetDocument: jest.fn().mockResolvedValue({ statusCode: 200, isValid: true }),
+            sendDocument: jest
+              .fn()
+              .mockResolvedValue({ statusCode: 200, isValid: true }),
+            sendTestSetDocument: jest
+              .fn()
+              .mockResolvedValue({ statusCode: 200, isValid: true }),
           },
         },
       ],
@@ -277,9 +283,9 @@ describe('PayrollDianService', () => {
     it('should throw NotFoundException when period not found', async () => {
       (prisma.payrollPeriod.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.generatePeriodXmls('nonexistent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.generatePeriodXmls('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException for non-APPROVED period', async () => {
@@ -289,9 +295,9 @@ describe('PayrollDianService', () => {
         status: PayrollPeriodStatus.OPEN,
       });
 
-      await expect(
-        service.generatePeriodXmls('period-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.generatePeriodXmls('period-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should return zero when no entries need XML generation', async () => {

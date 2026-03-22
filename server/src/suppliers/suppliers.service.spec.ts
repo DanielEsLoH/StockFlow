@@ -114,7 +114,9 @@ describe('SuppliersService', () => {
   // ─── FINDALL ───────────────────────────────────────────────────
   describe('findAll', () => {
     beforeEach(() => {
-      (prismaService.supplier.findMany as jest.Mock).mockResolvedValue([mockSupplier]);
+      (prismaService.supplier.findMany as jest.Mock).mockResolvedValue([
+        mockSupplier,
+      ]);
       (prismaService.supplier.count as jest.Mock).mockResolvedValue(1);
     });
 
@@ -254,7 +256,9 @@ describe('SuppliersService', () => {
     });
 
     it('should search active suppliers by name and document', async () => {
-      (prismaService.supplier.findMany as jest.Mock).mockResolvedValue([mockSupplier]);
+      (prismaService.supplier.findMany as jest.Mock).mockResolvedValue([
+        mockSupplier,
+      ]);
 
       const result = await service.search('ABC');
 
@@ -288,7 +292,9 @@ describe('SuppliersService', () => {
   // ─── FINDONE ───────────────────────────────────────────────────
   describe('findOne', () => {
     it('should return a supplier with purchase order summary', async () => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
 
       const result = await service.findOne('supplier-123');
 
@@ -300,11 +306,15 @@ describe('SuppliersService', () => {
     it('should throw NotFoundException when supplier not found', async () => {
       (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.findOne('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should scope query to tenant', async () => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
 
       await service.findOne('supplier-123');
 
@@ -327,7 +337,9 @@ describe('SuppliersService', () => {
 
     beforeEach(() => {
       (prismaService.supplier.findUnique as jest.Mock).mockResolvedValue(null);
-      (prismaService.supplier.create as jest.Mock).mockResolvedValue(mockSupplier);
+      (prismaService.supplier.create as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
     });
 
     it('should create a supplier with ACTIVE status', async () => {
@@ -353,9 +365,13 @@ describe('SuppliersService', () => {
     });
 
     it('should throw ConflictException for duplicate document number', async () => {
-      (prismaService.supplier.findUnique as jest.Mock).mockResolvedValue(mockSupplier);
+      (prismaService.supplier.findUnique as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
 
-      await expect(service.create(createDto)).rejects.toThrow(ConflictException);
+      await expect(service.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
       await expect(service.create(createDto)).rejects.toThrow(
         'El numero de documento ya existe',
       );
@@ -388,8 +404,12 @@ describe('SuppliersService', () => {
   // ─── UPDATE ────────────────────────────────────────────────────
   describe('update', () => {
     beforeEach(() => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
-      (prismaService.supplier.update as jest.Mock).mockResolvedValue(mockSupplier);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
+      (prismaService.supplier.update as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
     });
 
     it('should update supplier fields', async () => {
@@ -404,7 +424,9 @@ describe('SuppliersService', () => {
     it('should throw NotFoundException when supplier not found', async () => {
       (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.update('invalid-id', {})).rejects.toThrow(NotFoundException);
+      await expect(service.update('invalid-id', {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should check uniqueness when document number changes', async () => {
@@ -423,7 +445,9 @@ describe('SuppliersService', () => {
     });
 
     it('should throw ConflictException when new document number already exists', async () => {
-      (prismaService.supplier.findUnique as jest.Mock).mockResolvedValue(mockSupplier2);
+      (prismaService.supplier.findUnique as jest.Mock).mockResolvedValue(
+        mockSupplier2,
+      );
 
       await expect(
         service.update('supplier-123', { documentNumber: '800654321-0' }),
@@ -457,7 +481,9 @@ describe('SuppliersService', () => {
   // ─── DELETE ────────────────────────────────────────────────────
   describe('delete', () => {
     beforeEach(() => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
       (prismaService.purchaseOrder.count as jest.Mock).mockResolvedValue(0);
     });
 
@@ -472,7 +498,9 @@ describe('SuppliersService', () => {
     it('should throw NotFoundException when supplier not found', async () => {
       (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.delete('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.delete('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException when purchase orders exist', async () => {
@@ -503,7 +531,9 @@ describe('SuppliersService', () => {
   // ─── MAPTORESPONSE ─────────────────────────────────────────────
   describe('mapToSupplierResponse', () => {
     it('should compute isActive from status', async () => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
 
       const result = await service.findOne('supplier-123');
 
@@ -572,7 +602,9 @@ describe('SuppliersService', () => {
     });
 
     it('should scope delete to tenant', async () => {
-      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(mockSupplier);
+      (prismaService.supplier.findFirst as jest.Mock).mockResolvedValue(
+        mockSupplier,
+      );
       (prismaService.purchaseOrder.count as jest.Mock).mockResolvedValue(0);
 
       await service.delete('supplier-123');

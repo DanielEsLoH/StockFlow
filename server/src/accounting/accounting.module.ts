@@ -50,10 +50,6 @@ import { ExogenaService } from './reports/exogena.service';
     AccountingReportsService,
     ExogenaService,
   ],
-  exports: [
-    AccountsService,
-    AccountingBridgeService,
-    ExogenaService,
-  ],
+  exports: [AccountsService, AccountingBridgeService, ExogenaService],
 })
 export class AccountingModule {}

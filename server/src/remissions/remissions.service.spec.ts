@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { RemissionStatus } from '@prisma/client';
 import { RemissionsService } from './remissions.service';
 import { PrismaService } from '../prisma';
@@ -156,7 +152,9 @@ describe('RemissionsService', () => {
 
     it('should create a remission with items', async () => {
       (prisma.customer.findFirst as jest.Mock).mockResolvedValue(mockCustomer);
-      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
       (prisma.product.findMany as jest.Mock).mockResolvedValue([
         { id: 'prod-1' },
       ]);
@@ -243,17 +241,21 @@ describe('RemissionsService', () => {
     it('should throw NotFoundException when invoice not found', async () => {
       const dtoWithInvoice = { ...createDto, invoiceId: 'inv-1' };
       (prisma.customer.findFirst as jest.Mock).mockResolvedValue(mockCustomer);
-      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
       (prisma.invoice.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(
-        service.create(dtoWithInvoice, mockUserId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.create(dtoWithInvoice, mockUserId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException when product in items not found', async () => {
       (prisma.customer.findFirst as jest.Mock).mockResolvedValue(mockCustomer);
-      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
       (prisma.product.findMany as jest.Mock).mockResolvedValue([]);
 
       await expect(service.create(createDto, mockUserId)).rejects.toThrow(
@@ -263,7 +265,9 @@ describe('RemissionsService', () => {
 
     it('should throw BadRequestException when transaction returns null', async () => {
       (prisma.customer.findFirst as jest.Mock).mockResolvedValue(mockCustomer);
-      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(mockWarehouse);
+      (prisma.warehouse.findFirst as jest.Mock).mockResolvedValue(
+        mockWarehouse,
+      );
       (prisma.product.findMany as jest.Mock).mockResolvedValue([
         { id: 'prod-1' },
       ]);
@@ -487,9 +491,9 @@ describe('RemissionsService', () => {
         status: RemissionStatus.DISPATCHED,
       });
 
-      await expect(
-        service.update('rem-1', { notes: 'test' }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.update('rem-1', { notes: 'test' })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should validate customer when customerId provided', async () => {
@@ -579,9 +583,7 @@ describe('RemissionsService', () => {
 
       await expect(
         service.update('rem-1', {
-          items: [
-            { productId: 'bad-prod', description: 'Test', quantity: 1 },
-          ],
+          items: [{ productId: 'bad-prod', description: 'Test', quantity: 1 }],
         }),
       ).rejects.toThrow(NotFoundException);
     });

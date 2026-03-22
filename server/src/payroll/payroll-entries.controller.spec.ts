@@ -42,9 +42,7 @@ describe('PayrollEntriesController', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<PayrollEntriesController>(
-      PayrollEntriesController,
-    );
+    controller = module.get<PayrollEntriesController>(PayrollEntriesController);
     service = module.get(PayrollEntriesService);
   });
 

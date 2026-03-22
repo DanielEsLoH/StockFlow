@@ -334,20 +334,26 @@ describe('ProductsService', () => {
 
       beforeEach(() => {
         // Add warehouse mock to prismaService
-        (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse = {
+        (
+          prismaService as unknown as { warehouse: { findFirst: jest.Mock } }
+        ).warehouse = {
           findFirst: jest.fn(),
         };
       });
 
       it('should return warehouse-specific stock when warehouseId is provided', async () => {
-        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        const warehouseFindFirst = (
+          prismaService as unknown as { warehouse: { findFirst: jest.Mock } }
+        ).warehouse.findFirst;
         warehouseFindFirst.mockResolvedValue(mockWarehouse);
 
         const productsWithWarehouseStock = [
           { ...mockProduct, warehouseStock: [{ quantity: 25 }] },
           { ...mockProduct2, warehouseStock: [{ quantity: 10 }] },
         ];
-        (prismaService.product.findMany as jest.Mock).mockResolvedValue(productsWithWarehouseStock);
+        (prismaService.product.findMany as jest.Mock).mockResolvedValue(
+          productsWithWarehouseStock,
+        );
         (prismaService.product.count as jest.Mock).mockResolvedValue(2);
 
         const result = await service.findAll({ warehouseId: 'warehouse-123' });
@@ -357,13 +363,17 @@ describe('ProductsService', () => {
       });
 
       it('should return stock as 0 for products not in the warehouse', async () => {
-        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        const warehouseFindFirst = (
+          prismaService as unknown as { warehouse: { findFirst: jest.Mock } }
+        ).warehouse.findFirst;
         warehouseFindFirst.mockResolvedValue(mockWarehouse);
 
         const productsWithNoWarehouseStock = [
           { ...mockProduct, warehouseStock: [] },
         ];
-        (prismaService.product.findMany as jest.Mock).mockResolvedValue(productsWithNoWarehouseStock);
+        (prismaService.product.findMany as jest.Mock).mockResolvedValue(
+          productsWithNoWarehouseStock,
+        );
         (prismaService.product.count as jest.Mock).mockResolvedValue(1);
 
         const result = await service.findAll({ warehouseId: 'warehouse-123' });
@@ -372,7 +382,9 @@ describe('ProductsService', () => {
       });
 
       it('should throw NotFoundException when warehouse does not exist', async () => {
-        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        const warehouseFindFirst = (
+          prismaService as unknown as { warehouse: { findFirst: jest.Mock } }
+        ).warehouse.findFirst;
         warehouseFindFirst.mockResolvedValue(null);
 
         await expect(
@@ -381,7 +393,9 @@ describe('ProductsService', () => {
       });
 
       it('should throw NotFoundException with Spanish message when warehouse not found', async () => {
-        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        const warehouseFindFirst = (
+          prismaService as unknown as { warehouse: { findFirst: jest.Mock } }
+        ).warehouse.findFirst;
         warehouseFindFirst.mockResolvedValue(null);
 
         await expect(
@@ -390,7 +404,10 @@ describe('ProductsService', () => {
       });
 
       it('should return global stock when warehouseId is not provided', async () => {
-        (prismaService.product.findMany as jest.Mock).mockResolvedValue([mockProduct, mockProduct2]);
+        (prismaService.product.findMany as jest.Mock).mockResolvedValue([
+          mockProduct,
+          mockProduct2,
+        ]);
         (prismaService.product.count as jest.Mock).mockResolvedValue(2);
 
         const result = await service.findAll({});
@@ -400,11 +417,17 @@ describe('ProductsService', () => {
       });
 
       it('should verify warehouse belongs to tenant', async () => {
-        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        const warehouseFindFirst = (
+          prismaService as unknown as { warehouse: { findFirst: jest.Mock } }
+        ).warehouse.findFirst;
         warehouseFindFirst.mockResolvedValue(mockWarehouse);
 
-        const productsWithWarehouseStock = [{ ...mockProduct, warehouseStock: [{ quantity: 50 }] }];
-        (prismaService.product.findMany as jest.Mock).mockResolvedValue(productsWithWarehouseStock);
+        const productsWithWarehouseStock = [
+          { ...mockProduct, warehouseStock: [{ quantity: 50 }] },
+        ];
+        (prismaService.product.findMany as jest.Mock).mockResolvedValue(
+          productsWithWarehouseStock,
+        );
         (prismaService.product.count as jest.Mock).mockResolvedValue(1);
 
         await service.findAll({ warehouseId: 'warehouse-123' });
@@ -415,11 +438,17 @@ describe('ProductsService', () => {
       });
 
       it('should include warehouseStock in query when warehouseId is provided', async () => {
-        const warehouseFindFirst = (prismaService as unknown as { warehouse: { findFirst: jest.Mock } }).warehouse.findFirst;
+        const warehouseFindFirst = (
+          prismaService as unknown as { warehouse: { findFirst: jest.Mock } }
+        ).warehouse.findFirst;
         warehouseFindFirst.mockResolvedValue(mockWarehouse);
 
-        const productsWithWarehouseStock = [{ ...mockProduct, warehouseStock: [{ quantity: 50 }] }];
-        (prismaService.product.findMany as jest.Mock).mockResolvedValue(productsWithWarehouseStock);
+        const productsWithWarehouseStock = [
+          { ...mockProduct, warehouseStock: [{ quantity: 50 }] },
+        ];
+        (prismaService.product.findMany as jest.Mock).mockResolvedValue(
+          productsWithWarehouseStock,
+        );
         (prismaService.product.count as jest.Mock).mockResolvedValue(1);
 
         await service.findAll({ warehouseId: 'warehouse-123' });
@@ -1752,7 +1781,8 @@ describe('ProductsService', () => {
       };
 
       // Access cacheService from the service instance
-      const cacheService = (service as unknown as { cache: { get: jest.Mock } }).cache;
+      const cacheService = (service as unknown as { cache: { get: jest.Mock } })
+        .cache;
       cacheService.get.mockResolvedValue(cachedProduct);
 
       const result = await service.findOne('product-123');

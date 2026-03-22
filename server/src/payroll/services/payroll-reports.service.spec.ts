@@ -139,9 +139,9 @@ describe('PayrollReportsService', () => {
     it('should throw NotFoundException when employee not found', async () => {
       prisma.employee.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.getIncomeCertificate('emp-x', 2026),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.getIncomeCertificate('emp-x', 2026)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should return zero totals when no entries exist', async () => {
@@ -205,9 +205,9 @@ describe('PayrollReportsService', () => {
     it('should throw NotFoundException when employee not found', async () => {
       prisma.employee.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.getEmployeeYtdReport('emp-x', 2026),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.getEmployeeYtdReport('emp-x', 2026)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

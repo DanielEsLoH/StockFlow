@@ -129,12 +129,7 @@ describe('EmployeesService', () => {
       prisma.employee.findMany.mockResolvedValue([]);
       prisma.employee.count.mockResolvedValue(0);
 
-      await service.findAll(
-        1,
-        20,
-        undefined,
-        ContractType.TERMINO_INDEFINIDO,
-      );
+      await service.findAll(1, 20, undefined, ContractType.TERMINO_INDEFINIDO);
 
       expect(prisma.employee.findMany).toHaveBeenCalledWith(
         expect.objectContaining({

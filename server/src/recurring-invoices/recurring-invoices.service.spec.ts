@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/require-await, @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { RecurringInterval } from '@prisma/client';
 import { RecurringInvoicesService } from './recurring-invoices.service';
 import { PrismaService } from '../prisma';
@@ -202,7 +199,9 @@ describe('RecurringInvoicesService', () => {
       mockPrisma.recurringInvoice.findFirst.mockResolvedValue(mockRecurring);
       mockPrisma.recurringInvoice.update.mockResolvedValue(updated);
 
-      const result = await service.update('rec-123', { notes: 'Updated notes' });
+      const result = await service.update('rec-123', {
+        notes: 'Updated notes',
+      });
       expect(result.notes).toBe('Updated notes');
     });
 

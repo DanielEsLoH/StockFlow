@@ -107,9 +107,7 @@ describe('WooCommerceConnector', () => {
 
   describe('verifyConnection', () => {
     it('should return true when system_status responds ok', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ environment: {} }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ environment: {} }));
 
       const result = await connector.verifyConnection(ACCESS_TOKEN, SHOP_URL);
 
@@ -161,9 +159,7 @@ describe('WooCommerceConnector', () => {
 
   describe('fetchProducts', () => {
     it('should fetch and transform products correctly', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse([wooProduct]),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse([wooProduct]));
 
       const products = await connector.fetchProducts(ACCESS_TOKEN, SHOP_URL);
 
@@ -181,9 +177,7 @@ describe('WooCommerceConnector', () => {
     });
 
     it('should handle products with empty/null optional fields', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse([wooProductMinimal]),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse([wooProductMinimal]));
 
       const products = await connector.fetchProducts(ACCESS_TOKEN, SHOP_URL);
 
@@ -242,9 +236,7 @@ describe('WooCommerceConnector', () => {
 
   describe('fetchOrders', () => {
     it('should fetch and transform orders correctly', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse([wooOrder]),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse([wooOrder]));
 
       const orders = await connector.fetchOrders(ACCESS_TOKEN, SHOP_URL);
 
@@ -307,9 +299,7 @@ describe('WooCommerceConnector', () => {
     it('should handle line items with empty sku', async () => {
       const orderNoSku = {
         ...wooOrder,
-        line_items: [
-          { ...wooOrder.line_items[0], sku: '' },
-        ],
+        line_items: [{ ...wooOrder.line_items[0], sku: '' }],
       };
 
       fetchSpy.mockResolvedValueOnce(mockFetchResponse([orderNoSku]));
@@ -399,11 +389,7 @@ describe('WooCommerceConnector', () => {
         .update(payload)
         .digest('base64');
 
-      const result = connector.verifyWebhook(
-        payload,
-        wrongHmac,
-        webhookSecret,
-      );
+      const result = connector.verifyWebhook(payload, wrongHmac, webhookSecret);
 
       expect(result).toBe(false);
     });

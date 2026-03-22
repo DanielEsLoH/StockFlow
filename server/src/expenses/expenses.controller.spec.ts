@@ -161,7 +161,10 @@ describe('ExpensesController', () => {
   describe('update', () => {
     it('should update an expense', async () => {
       const dto = { description: 'Updated' };
-      service.update.mockResolvedValue({ ...mockExpense, description: 'Updated' });
+      service.update.mockResolvedValue({
+        ...mockExpense,
+        description: 'Updated',
+      });
 
       const result = await controller.update('expense-1', dto);
 

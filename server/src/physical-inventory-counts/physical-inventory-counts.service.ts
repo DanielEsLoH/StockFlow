@@ -37,7 +37,9 @@ export class PhysicalInventoryCountsService {
       where: {
         tenantId,
         warehouseId: dto.warehouseId,
-        status: { in: [PhysicalCountStatus.DRAFT, PhysicalCountStatus.IN_PROGRESS] },
+        status: {
+          in: [PhysicalCountStatus.DRAFT, PhysicalCountStatus.IN_PROGRESS],
+        },
       },
     });
 
@@ -60,7 +62,9 @@ export class PhysicalInventoryCountsService {
       },
     });
 
-    this.logger.log(`Conteo físico creado: ${count.id} (bodega: ${warehouse.name})`);
+    this.logger.log(
+      `Conteo físico creado: ${count.id} (bodega: ${warehouse.name})`,
+    );
 
     return this.mapToResponse(count);
   }
@@ -287,7 +291,9 @@ export class PhysicalInventoryCountsService {
       item.count.status !== PhysicalCountStatus.DRAFT &&
       item.count.status !== PhysicalCountStatus.IN_PROGRESS
     ) {
-      throw new BadRequestException('No se puede modificar un conteo finalizado');
+      throw new BadRequestException(
+        'No se puede modificar un conteo finalizado',
+      );
     }
 
     const variance = dto.physicalQuantity - item.systemQuantity;
@@ -320,7 +326,9 @@ export class PhysicalInventoryCountsService {
       item.count.status !== PhysicalCountStatus.DRAFT &&
       item.count.status !== PhysicalCountStatus.IN_PROGRESS
     ) {
-      throw new BadRequestException('No se puede modificar un conteo finalizado');
+      throw new BadRequestException(
+        'No se puede modificar un conteo finalizado',
+      );
     }
 
     await this.prisma.physicalCountItem.delete({ where: { id: itemId } });
@@ -339,7 +347,9 @@ export class PhysicalInventoryCountsService {
     }
 
     if (count.status !== PhysicalCountStatus.DRAFT) {
-      throw new BadRequestException('Solo se puede iniciar un conteo en estado BORRADOR');
+      throw new BadRequestException(
+        'Solo se puede iniciar un conteo en estado BORRADOR',
+      );
     }
 
     const updated = await this.prisma.physicalInventoryCount.update({
@@ -475,7 +485,9 @@ export class PhysicalInventoryCountsService {
     }
 
     if (count.status === PhysicalCountStatus.COMPLETED) {
-      throw new BadRequestException('No se puede cancelar un conteo completado');
+      throw new BadRequestException(
+        'No se puede cancelar un conteo completado',
+      );
     }
 
     if (count.status === PhysicalCountStatus.CANCELLED) {

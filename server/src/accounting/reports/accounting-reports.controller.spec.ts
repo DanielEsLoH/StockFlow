@@ -12,11 +12,45 @@ const mockGeneralLedger = { accounts: [] };
 const mockBalanceSheet = { assets: [], liabilities: [], equity: [] };
 const mockIncomeStatement = { revenue: [], expenses: [], netIncome: 0 };
 const mockCashFlow = { operating: [], investing: [], financing: [] };
-const mockARAgingReport = { asOfDate: '2025-01-01', rows: [], totals: { current: 0, days1to30: 0, days31to60: 0, days61to90: 0, days90plus: 0, totalOverdue: 0, totalBalance: 0 } };
-const mockIvaDeclaration = { year: 2026, bimonthlyPeriod: 1, salesByRate: [], netIvaPayable: 0 };
-const mockReteFuenteSummary = { year: 2026, month: 2, rows: [], totalWithheld: 0 };
+const mockARAgingReport = {
+  asOfDate: '2025-01-01',
+  rows: [],
+  totals: {
+    current: 0,
+    days1to30: 0,
+    days31to60: 0,
+    days61to90: 0,
+    days90plus: 0,
+    totalOverdue: 0,
+    totalBalance: 0,
+  },
+};
+const mockIvaDeclaration = {
+  year: 2026,
+  bimonthlyPeriod: 1,
+  salesByRate: [],
+  netIvaPayable: 0,
+};
+const mockReteFuenteSummary = {
+  year: 2026,
+  month: 2,
+  rows: [],
+  totalWithheld: 0,
+};
 const mockYtdTaxSummary = { year: 2026, ivaGeneradoYtd: 0, netIvaYtd: 0 };
-const mockAPAgingReport = { asOfDate: '2025-01-01', rows: [], totals: { current: 0, days1to30: 0, days31to60: 0, days61to90: 0, days90plus: 0, totalOverdue: 0, totalBalance: 0 } };
+const mockAPAgingReport = {
+  asOfDate: '2025-01-01',
+  rows: [],
+  totals: {
+    current: 0,
+    days1to30: 0,
+    days31to60: 0,
+    days61to90: 0,
+    days90plus: 0,
+    totalOverdue: 0,
+    totalBalance: 0,
+  },
+};
 
 describe('AccountingReportsController', () => {
   let controller: AccountingReportsController;
@@ -40,7 +74,9 @@ describe('AccountingReportsController', () => {
     };
 
     const mockExogenaService = {
-      generateExogena: jest.fn().mockResolvedValue({ year: 2026, formatos: [] }),
+      generateExogena: jest
+        .fn()
+        .mockResolvedValue({ year: 2026, formatos: [] }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -56,7 +92,9 @@ describe('AccountingReportsController', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<AccountingReportsController>(AccountingReportsController);
+    controller = module.get<AccountingReportsController>(
+      AccountingReportsController,
+    );
     service = module.get(AccountingReportsService);
 
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -93,7 +131,9 @@ describe('AccountingReportsController', () => {
     });
 
     it('should throw BadRequestException for invalid date', async () => {
-      await expect(controller.getTrialBalance('not-a-date')).rejects.toThrow(BadRequestException);
+      await expect(controller.getTrialBalance('not-a-date')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -179,7 +219,9 @@ describe('AccountingReportsController', () => {
     });
 
     it('should throw BadRequestException for invalid date', async () => {
-      await expect(controller.getBalanceSheet('garbage')).rejects.toThrow(BadRequestException);
+      await expect(controller.getBalanceSheet('garbage')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -243,7 +285,9 @@ describe('AccountingReportsController', () => {
     });
 
     it('should throw BadRequestException for invalid date', async () => {
-      await expect(controller.getARAgingReport('not-a-date')).rejects.toThrow(BadRequestException);
+      await expect(controller.getARAgingReport('not-a-date')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should return the service result', async () => {
@@ -271,7 +315,9 @@ describe('AccountingReportsController', () => {
     });
 
     it('should throw BadRequestException for invalid date', async () => {
-      await expect(controller.getAPAgingReport('invalid')).rejects.toThrow(BadRequestException);
+      await expect(controller.getAPAgingReport('invalid')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should return the service result', async () => {
@@ -290,12 +336,18 @@ describe('AccountingReportsController', () => {
     });
 
     it('should throw BadRequestException for invalid year', async () => {
-      await expect(controller.getIvaDeclaration('abc', '1')).rejects.toThrow(BadRequestException);
+      await expect(controller.getIvaDeclaration('abc', '1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException for invalid period', async () => {
-      await expect(controller.getIvaDeclaration('2026', '7')).rejects.toThrow(BadRequestException);
-      await expect(controller.getIvaDeclaration('2026', '0')).rejects.toThrow(BadRequestException);
+      await expect(controller.getIvaDeclaration('2026', '7')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(controller.getIvaDeclaration('2026', '0')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should return the service result', async () => {
@@ -314,8 +366,12 @@ describe('AccountingReportsController', () => {
     });
 
     it('should throw BadRequestException for invalid month', async () => {
-      await expect(controller.getReteFuenteSummary('2026', '13')).rejects.toThrow(BadRequestException);
-      await expect(controller.getReteFuenteSummary('2026', '0')).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.getReteFuenteSummary('2026', '13'),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.getReteFuenteSummary('2026', '0'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should return the service result', async () => {
@@ -334,7 +390,9 @@ describe('AccountingReportsController', () => {
     });
 
     it('should throw BadRequestException for invalid year', async () => {
-      await expect(controller.getYtdTaxSummary('abc')).rejects.toThrow(BadRequestException);
+      await expect(controller.getYtdTaxSummary('abc')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should return the service result', async () => {

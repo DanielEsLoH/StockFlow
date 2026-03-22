@@ -210,8 +210,8 @@ describe('IntegrationsSyncService', () => {
 
   /** Set up the syncLog.update mock to resolve with its data argument merged into base. */
   function setupSyncLogUpdate() {
-    (prismaService.syncLog.update as jest.Mock).mockImplementation(
-      ({ data }) => Promise.resolve({ ...mockSyncLog, ...data }),
+    (prismaService.syncLog.update as jest.Mock).mockImplementation(({ data }) =>
+      Promise.resolve({ ...mockSyncLog, ...data }),
     );
   }
 
@@ -1033,23 +1033,23 @@ describe('IntegrationsSyncService', () => {
         null,
       );
 
-      await expect(
-        service.syncProducts(mockIntegrationId),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.syncProducts(mockIntegrationId),
-      ).rejects.toThrow('Integración no encontrada');
+      await expect(service.syncProducts(mockIntegrationId)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.syncProducts(mockIntegrationId)).rejects.toThrow(
+        'Integración no encontrada',
+      );
     });
 
     it('should throw NotFoundException when integration has no accessToken', async () => {
       setupActiveIntegration({ accessToken: null });
 
-      await expect(
-        service.syncProducts(mockIntegrationId),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.syncProducts(mockIntegrationId),
-      ).rejects.toThrow('La integración no tiene credenciales configuradas');
+      await expect(service.syncProducts(mockIntegrationId)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.syncProducts(mockIntegrationId)).rejects.toThrow(
+        'La integración no tiene credenciales configuradas',
+      );
     });
 
     it('should scope integration lookup to current tenant', async () => {

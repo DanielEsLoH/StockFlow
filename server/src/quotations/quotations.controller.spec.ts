@@ -218,9 +218,7 @@ describe('QuotationsController', () => {
 
       await controller.findAll({ page: 2 });
 
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('limit: 10'),
-      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('limit: 10'));
     });
 
     it('should log actual page and limit when provided', async () => {
@@ -230,9 +228,7 @@ describe('QuotationsController', () => {
       await controller.findAll({ page: 5, limit: 25 });
 
       expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('page: 5'));
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('limit: 25'),
-      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('limit: 25'));
     });
 
     it('should propagate service errors', async () => {
@@ -426,9 +422,9 @@ describe('QuotationsController', () => {
       const error = new NotFoundException('Cotizacion no encontrada');
       quotationsService.update.mockRejectedValue(error);
 
-      await expect(
-        controller.update('invalid-id', updateDto),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.update('invalid-id', updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should propagate status validation errors', async () => {
@@ -628,9 +624,9 @@ describe('QuotationsController', () => {
       const error = new NotFoundException('Cotizacion no encontrada');
       quotationsService.convert.mockRejectedValue(error);
 
-      await expect(
-        controller.convert('invalid-id', mockUser),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.convert('invalid-id', mockUser)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should propagate status validation errors', async () => {
@@ -684,9 +680,7 @@ describe('QuotationsController', () => {
       const dbError = new Error('Database connection failed');
       quotationsService.remove.mockRejectedValue(dbError);
 
-      await expect(controller.remove('quotation-123')).rejects.toThrow(
-        dbError,
-      );
+      await expect(controller.remove('quotation-123')).rejects.toThrow(dbError);
     });
 
     it('should propagate database errors from send', async () => {
@@ -700,18 +694,14 @@ describe('QuotationsController', () => {
       const dbError = new Error('Database connection failed');
       quotationsService.accept.mockRejectedValue(dbError);
 
-      await expect(controller.accept('quotation-123')).rejects.toThrow(
-        dbError,
-      );
+      await expect(controller.accept('quotation-123')).rejects.toThrow(dbError);
     });
 
     it('should propagate database errors from reject', async () => {
       const dbError = new Error('Database connection failed');
       quotationsService.reject.mockRejectedValue(dbError);
 
-      await expect(controller.reject('quotation-123')).rejects.toThrow(
-        dbError,
-      );
+      await expect(controller.reject('quotation-123')).rejects.toThrow(dbError);
     });
 
     it('should propagate database errors from convert', async () => {

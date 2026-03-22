@@ -103,7 +103,12 @@ describe('WithholdingCertificatesController', () => {
     });
 
     it('should pass filter parameters to service', async () => {
-      const filters = { year: 2025, withholdingType: 'RENTA', page: 1, limit: 20 };
+      const filters = {
+        year: 2025,
+        withholdingType: 'RENTA',
+        page: 1,
+        limit: 20,
+      };
 
       await controller.findAll(filters);
 

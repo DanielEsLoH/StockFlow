@@ -219,11 +219,19 @@ export const PERMISSION_CATEGORIES = {
   },
   dian: {
     label: 'DIAN',
-    permissions: [Permission.DIAN_VIEW, Permission.DIAN_CONFIG, Permission.DIAN_SEND],
+    permissions: [
+      Permission.DIAN_VIEW,
+      Permission.DIAN_CONFIG,
+      Permission.DIAN_SEND,
+    ],
   },
   users: {
     label: 'Usuarios',
-    permissions: [Permission.USERS_VIEW, Permission.USERS_MANAGE, Permission.USERS_INVITE],
+    permissions: [
+      Permission.USERS_VIEW,
+      Permission.USERS_MANAGE,
+      Permission.USERS_INVITE,
+    ],
   },
   settings: {
     label: 'Configuracion',
@@ -235,7 +243,10 @@ export const PERMISSION_CATEGORIES = {
   },
   cashRegisters: {
     label: 'Cajas Registradoras',
-    permissions: [Permission.CASH_REGISTERS_VIEW, Permission.CASH_REGISTERS_MANAGE],
+    permissions: [
+      Permission.CASH_REGISTERS_VIEW,
+      Permission.CASH_REGISTERS_MANAGE,
+    ],
   },
   quotations: {
     label: 'Cotizaciones',
@@ -311,7 +322,10 @@ export const PERMISSION_CATEGORIES = {
   },
   exchangeRates: {
     label: 'Tasas de Cambio',
-    permissions: [Permission.EXCHANGE_RATES_VIEW, Permission.EXCHANGE_RATES_MANAGE],
+    permissions: [
+      Permission.EXCHANGE_RATES_VIEW,
+      Permission.EXCHANGE_RATES_MANAGE,
+    ],
   },
   integrations: {
     label: 'Integraciones',

@@ -19,7 +19,10 @@ describe('JwtRefreshStrategy', () => {
 
   // Test data — DB stores SHA-256 hash, not plaintext
   const validRefreshToken = 'valid-refresh-token';
-  const hashedRefreshToken = crypto.createHash('sha256').update(validRefreshToken).digest('hex');
+  const hashedRefreshToken = crypto
+    .createHash('sha256')
+    .update(validRefreshToken)
+    .digest('hex');
 
   const mockTenant = {
     id: 'tenant-123',

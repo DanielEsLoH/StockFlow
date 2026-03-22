@@ -9,7 +9,10 @@ import { TenantContextService } from '../common/services/tenant-context.service'
 import { PayrollCalculationService } from './services/payroll-calculation.service';
 import { PayrollConfigService } from './payroll-config.service';
 import { UpdatePayrollEntryDto } from './dto/update-payroll-entry.dto';
-import { CreatePayrollAdjustmentDto, AdjustmentNoteType } from './dto/create-payroll-adjustment.dto';
+import {
+  CreatePayrollAdjustmentDto,
+  AdjustmentNoteType,
+} from './dto/create-payroll-adjustment.dto';
 import { PayrollEntryStatus, PayrollDocumentType } from '@prisma/client';
 
 @Injectable()
@@ -77,7 +80,8 @@ export class PayrollEntriesService {
 
     const config = await this.configService.getOrFail();
 
-    const overtime = dto.overtimeDetails ?? (entry.overtimeDetails as any[] ?? []);
+    const overtime =
+      dto.overtimeDetails ?? (entry.overtimeDetails as any[]) ?? [];
     const daysWorked = dto.daysWorked ?? Number(entry.daysWorked);
 
     const result = this.calculationService.calculatePayrollEntry({
@@ -166,7 +170,10 @@ export class PayrollEntriesService {
    * Create a Nómina de Ajuste (tipo 103) referencing an existing entry.
    * The original entry must be SENT or ACCEPTED by DIAN.
    */
-  async createAdjustment(originalEntryId: string, dto: CreatePayrollAdjustmentDto) {
+  async createAdjustment(
+    originalEntryId: string,
+    dto: CreatePayrollAdjustmentDto,
+  ) {
     const tenantId = this.tenantContext.requireTenantId();
 
     const original = await this.prisma.payrollEntry.findFirst({
@@ -257,8 +264,10 @@ export class PayrollEntriesService {
         vacacionesDias: 0,
         sindicato: dto.sindicato ?? Number(original.sindicato),
         libranzas: dto.libranzas ?? Number(original.libranzas),
-        otrasDeducciones: dto.otrasDeducciones ?? Number(original.otrasDeducciones),
-        otrosDevengados: dto.otrosDevengados ?? Number(original.otrosDevengados),
+        otrasDeducciones:
+          dto.otrasDeducciones ?? Number(original.otrasDeducciones),
+        otrosDevengados:
+          dto.otrosDevengados ?? Number(original.otrosDevengados),
       });
 
       adjustmentData = {

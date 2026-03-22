@@ -28,9 +28,6 @@ import { BankReconciliationService } from './bank-reconciliation.service';
     BankStatementsService,
     BankReconciliationService,
   ],
-  exports: [
-    BankAccountsService,
-    BankStatementsService,
-  ],
+  exports: [BankAccountsService, BankStatementsService],
 })
 export class BankModule {}

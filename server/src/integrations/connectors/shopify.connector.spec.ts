@@ -30,9 +30,7 @@ const shopifyProduct = {
   id: 7001,
   title: 'Wireless Mouse',
   body_html: '<p>Ergonomic wireless mouse</p>',
-  variants: [
-    { sku: 'WM-001', price: '29.99', inventory_quantity: 150 },
-  ],
+  variants: [{ sku: 'WM-001', price: '29.99', inventory_quantity: 150 }],
   images: [{ src: 'https://cdn.shopify.com/mouse.jpg' }],
   handle: 'wireless-mouse',
 };
@@ -249,17 +247,13 @@ describe('ShopifyConnector', () => {
     });
 
     it('should append created_at_min param when since is provided', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ orders: [] }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ orders: [] }));
 
       const since = new Date('2026-01-01T00:00:00.000Z');
       await connector.fetchOrders(ACCESS_TOKEN, SHOP_URL, since);
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          `&created_at_min=${since.toISOString()}`,
-        ),
+        expect.stringContaining(`&created_at_min=${since.toISOString()}`),
         expect.anything(),
       );
     });
@@ -364,9 +358,7 @@ describe('ShopifyConnector', () => {
     });
 
     it('should not set inventory when no inventory_item_id is found', async () => {
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({ variants: [] }),
-      );
+      fetchSpy.mockResolvedValueOnce(mockFetchResponse({ variants: [] }));
 
       await connector.pushInventory(ACCESS_TOKEN, '7001', 10, SHOP_URL);
 

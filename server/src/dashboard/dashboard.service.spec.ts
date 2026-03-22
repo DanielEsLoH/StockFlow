@@ -260,7 +260,9 @@ describe('DashboardService', () => {
       (prismaService.invoiceItem.groupBy as jest.Mock).mockResolvedValue([]);
       (prismaService.product.findMany as jest.Mock).mockResolvedValue([]);
       // Mock $queryRaw for low stock count
-      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([{ count: BigInt(0) }]);
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
+        { count: BigInt(0) },
+      ]);
     });
 
     it('should return total product count', async () => {
@@ -268,7 +270,9 @@ describe('DashboardService', () => {
         .mockResolvedValueOnce(100) // total
         .mockResolvedValueOnce(5); // outOfStock
 
-      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([{ count: BigInt(0) }]);
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
+        { count: BigInt(0) },
+      ]);
 
       const result = await service.getProductMetrics(mockTenantId);
 
@@ -280,7 +284,9 @@ describe('DashboardService', () => {
         .mockResolvedValueOnce(100) // total
         .mockResolvedValueOnce(5); // outOfStock
 
-      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([{ count: BigInt(0) }]);
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
+        { count: BigInt(0) },
+      ]);
 
       const result = await service.getProductMetrics(mockTenantId);
 
@@ -293,7 +299,9 @@ describe('DashboardService', () => {
         .mockResolvedValueOnce(1); // outOfStock
 
       // Now uses $queryRaw for low stock count instead of findMany
-      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([{ count: BigInt(1) }]);
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
+        { count: BigInt(1) },
+      ]);
 
       const result = await service.getProductMetrics(mockTenantId);
 
@@ -302,7 +310,9 @@ describe('DashboardService', () => {
 
     it('should return empty top selling when no sales', async () => {
       (prismaService.product.count as jest.Mock).mockResolvedValue(0);
-      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([{ count: BigInt(0) }]);
+      (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
+        { count: BigInt(0) },
+      ]);
       (prismaService.invoiceItem.groupBy as jest.Mock).mockResolvedValue([]);
 
       const result = await service.getProductMetrics(mockTenantId);
@@ -766,9 +776,21 @@ describe('DashboardService', () => {
     // Now uses $queryRaw for SQL-based aggregation
     it('should return sales grouped by category', async () => {
       (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
-        { category_id: 'category-1', category_name: 'Electronics', total: BigInt(5000) },
-        { category_id: 'category-2', category_name: 'Clothing', total: BigInt(3000) },
-        { category_id: null, category_name: 'Sin categoria', total: BigInt(2000) },
+        {
+          category_id: 'category-1',
+          category_name: 'Electronics',
+          total: BigInt(5000),
+        },
+        {
+          category_id: 'category-2',
+          category_name: 'Clothing',
+          total: BigInt(3000),
+        },
+        {
+          category_id: null,
+          category_name: 'Sin categoria',
+          total: BigInt(2000),
+        },
       ]);
 
       const result = await service.getSalesByCategory(mockTenantId);
@@ -778,8 +800,16 @@ describe('DashboardService', () => {
 
     it('should calculate percentages correctly', async () => {
       (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
-        { category_id: 'category-1', category_name: 'Electronics', total: BigInt(5000) },
-        { category_id: 'category-2', category_name: 'Clothing', total: BigInt(5000) },
+        {
+          category_id: 'category-1',
+          category_name: 'Electronics',
+          total: BigInt(5000),
+        },
+        {
+          category_id: 'category-2',
+          category_name: 'Clothing',
+          total: BigInt(5000),
+        },
       ]);
 
       const result = await service.getSalesByCategory(mockTenantId);
@@ -790,7 +820,11 @@ describe('DashboardService', () => {
 
     it('should handle uncategorized products', async () => {
       (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
-        { category_id: null, category_name: 'Sin categoria', total: BigInt(1000) },
+        {
+          category_id: null,
+          category_name: 'Sin categoria',
+          total: BigInt(1000),
+        },
       ]);
 
       const result = await service.getSalesByCategory(mockTenantId);
@@ -811,8 +845,16 @@ describe('DashboardService', () => {
     it('should sort by amount descending', async () => {
       // SQL query already returns sorted by total DESC
       (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
-        { category_id: 'category-2', category_name: 'Large', total: BigInt(5000) },
-        { category_id: 'category-1', category_name: 'Small', total: BigInt(2000) },
+        {
+          category_id: 'category-2',
+          category_name: 'Large',
+          total: BigInt(5000),
+        },
+        {
+          category_id: 'category-1',
+          category_name: 'Small',
+          total: BigInt(2000),
+        },
       ]);
 
       const result = await service.getSalesByCategory(mockTenantId);
@@ -824,7 +866,11 @@ describe('DashboardService', () => {
     it('should return aggregated data from database', async () => {
       // SQL query performs aggregation, so we return already aggregated data
       (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
-        { category_id: 'category-1', category_name: 'Electronics', total: BigInt(10000) },
+        {
+          category_id: 'category-1',
+          category_name: 'Electronics',
+          total: BigInt(10000),
+        },
       ]);
 
       const result = await service.getSalesByCategory(mockTenantId);
@@ -839,8 +885,16 @@ describe('DashboardService', () => {
     it('should return multiple categories with correct percentages', async () => {
       // Data already aggregated by SQL query
       (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
-        { category_id: 'category-1', category_name: 'Electronics', total: BigInt(8000) },
-        { category_id: 'category-2', category_name: 'Clothing', total: BigInt(7000) },
+        {
+          category_id: 'category-1',
+          category_name: 'Electronics',
+          total: BigInt(8000),
+        },
+        {
+          category_id: 'category-2',
+          category_name: 'Clothing',
+          total: BigInt(7000),
+        },
       ]);
 
       const result = await service.getSalesByCategory(mockTenantId);
@@ -861,7 +915,11 @@ describe('DashboardService', () => {
     it('should handle null category with aggregated total', async () => {
       // SQL query aggregates all uncategorized items
       (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
-        { category_id: null, category_name: 'Sin categoria', total: BigInt(6000) },
+        {
+          category_id: null,
+          category_name: 'Sin categoria',
+          total: BigInt(6000),
+        },
       ]);
 
       const result = await service.getSalesByCategory(mockTenantId);
@@ -1137,7 +1195,11 @@ describe('DashboardService', () => {
       // Just test getSalesByCategory directly instead of through getCharts
       // to avoid complex mocking of multiple raw queries
       (prismaService.$queryRaw as jest.Mock).mockResolvedValue([
-        { category_id: 'cat-1', category_name: 'Electronics', total: BigInt(5000) },
+        {
+          category_id: 'cat-1',
+          category_name: 'Electronics',
+          total: BigInt(5000),
+        },
       ]);
 
       const result = await service.getSalesByCategory(mockTenantId);

@@ -11,7 +11,8 @@ export class CreateCostCenterDto {
    * @example "CC-001"
    */
   @ApiProperty({
-    description: 'Código único del centro de costos (debe ser único dentro del tenant)',
+    description:
+      'Código único del centro de costos (debe ser único dentro del tenant)',
     example: 'CC-001',
     minLength: 1,
     maxLength: 20,

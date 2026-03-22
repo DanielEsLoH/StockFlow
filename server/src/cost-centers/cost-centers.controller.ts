@@ -93,9 +93,7 @@ export class CostCentersController {
   ): Promise<CostCenterResponse[]> {
     const searchQuery = search?.trim() || undefined;
 
-    this.logger.log(
-      `Listing cost centers - search: "${searchQuery ?? ''}"`,
-    );
+    this.logger.log(`Listing cost centers - search: "${searchQuery ?? ''}"`);
 
     return this.costCentersService.findAll(searchQuery);
   }
@@ -213,9 +211,7 @@ export class CostCentersController {
     status: 409,
     description: 'Conflicto - El código del centro de costos ya existe',
   })
-  async create(
-    @Body() dto: CreateCostCenterDto,
-  ): Promise<CostCenterResponse> {
+  async create(@Body() dto: CreateCostCenterDto): Promise<CostCenterResponse> {
     this.logger.log(`Creating cost center: ${dto.code} - ${dto.name}`);
     return this.costCentersService.create(dto);
   }

@@ -102,7 +102,7 @@ export class JournalEntriesService {
           lines: {
             include: {
               account: { select: { code: true, name: true } },
-            costCenter: { select: { code: true, name: true } },
+              costCenter: { select: { code: true, name: true } },
             },
           },
         },
@@ -140,13 +140,18 @@ export class JournalEntriesService {
     });
 
     if (!entry) {
-      throw new NotFoundException(`Asiento contable con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Asiento contable con ID ${id} no encontrado`,
+      );
     }
 
     return this.mapToResponse(entry);
   }
 
-  async create(dto: CreateJournalEntryDto, userId?: string): Promise<JournalEntryResponse> {
+  async create(
+    dto: CreateJournalEntryDto,
+    userId?: string,
+  ): Promise<JournalEntryResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
     // Validate debit/credit balance
@@ -182,7 +187,9 @@ export class JournalEntriesService {
         throw new NotFoundException('Periodo contable no encontrado');
       }
       if (period.status === AccountingPeriodStatus.CLOSED) {
-        throw new BadRequestException('No se pueden crear asientos en un periodo cerrado');
+        throw new BadRequestException(
+          'No se pueden crear asientos en un periodo cerrado',
+        );
       }
     }
 
@@ -193,7 +200,9 @@ export class JournalEntriesService {
     });
 
     if (accounts.length !== accountIds.length) {
-      throw new BadRequestException('Una o mas cuentas no existen o estan inactivas');
+      throw new BadRequestException(
+        'Una o mas cuentas no existen o estan inactivas',
+      );
     }
 
     // Generate entry number with retry on unique constraint collision
@@ -241,14 +250,18 @@ export class JournalEntriesService {
           error.code === 'P2002' &&
           attempt < MAX_ENTRY_NUMBER_RETRIES - 1
         ) {
-          this.logger.warn(`Entry number collision (${entryNumber}), retrying...`);
+          this.logger.warn(
+            `Entry number collision (${entryNumber}), retrying...`,
+          );
           continue;
         }
         throw error;
       }
     }
 
-    throw new ConflictException('No se pudo generar un numero de asiento unico');
+    throw new ConflictException(
+      'No se pudo generar un numero de asiento unico',
+    );
   }
 
   /**
@@ -266,7 +279,13 @@ export class JournalEntriesService {
     stockMovementId?: string;
     dianDocumentId?: string;
     expenseId?: string;
-    lines: { accountId: string; costCenterId?: string; description?: string; debit: number; credit: number }[];
+    lines: {
+      accountId: string;
+      costCenterId?: string;
+      description?: string;
+      debit: number;
+      credit: number;
+    }[];
   }): Promise<JournalEntryResponse> {
     const totalDebit = params.lines.reduce((sum, l) => sum + l.debit, 0);
     const totalCredit = params.lines.reduce((sum, l) => sum + l.credit, 0);
@@ -327,7 +346,9 @@ export class JournalEntriesService {
           },
         });
 
-        this.logger.log(`Auto journal entry created: ${entryNumber} (${params.source})`);
+        this.logger.log(
+          `Auto journal entry created: ${entryNumber} (${params.source})`,
+        );
         return this.mapToResponse(entry);
       } catch (error) {
         if (
@@ -335,14 +356,18 @@ export class JournalEntriesService {
           error.code === 'P2002' &&
           attempt < MAX_ENTRY_NUMBER_RETRIES - 1
         ) {
-          this.logger.warn(`Entry number collision (${entryNumber}), retrying...`);
+          this.logger.warn(
+            `Entry number collision (${entryNumber}), retrying...`,
+          );
           continue;
         }
         throw error;
       }
     }
 
-    throw new ConflictException('No se pudo generar un numero de asiento unico');
+    throw new ConflictException(
+      'No se pudo generar un numero de asiento unico',
+    );
   }
 
   async postEntry(id: string): Promise<JournalEntryResponse> {
@@ -353,11 +378,15 @@ export class JournalEntriesService {
     });
 
     if (!entry) {
-      throw new NotFoundException(`Asiento contable con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Asiento contable con ID ${id} no encontrado`,
+      );
     }
 
     if (entry.status !== JournalEntryStatus.DRAFT) {
-      throw new BadRequestException('Solo se pueden publicar asientos en estado borrador');
+      throw new BadRequestException(
+        'Solo se pueden publicar asientos en estado borrador',
+      );
     }
 
     const updated = await this.prisma.journalEntry.update({
@@ -388,7 +417,9 @@ export class JournalEntriesService {
     });
 
     if (!entry) {
-      throw new NotFoundException(`Asiento contable con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Asiento contable con ID ${id} no encontrado`,
+      );
     }
 
     if (entry.status === JournalEntryStatus.VOIDED) {

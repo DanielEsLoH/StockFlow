@@ -483,8 +483,7 @@ export class RemissionsController {
   })
   @ApiResponse({
     status: 400,
-    description:
-      'Bad Request - Remission is already delivered or cancelled',
+    description: 'Bad Request - Remission is already delivered or cancelled',
   })
   @ApiResponse({
     status: 401,

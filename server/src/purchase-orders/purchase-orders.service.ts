@@ -224,10 +224,7 @@ export class PurchaseOrdersService {
     // Calculate purchase order totals
     const poSubtotal = itemsData.reduce((sum, item) => sum + item.subtotal, 0);
     const poTax = itemsData.reduce((sum, item) => sum + item.tax, 0);
-    const poDiscount = itemsData.reduce(
-      (sum, item) => sum + item.discount,
-      0,
-    );
+    const poDiscount = itemsData.reduce((sum, item) => sum + item.discount, 0);
     const poTotal = poSubtotal + poTax - poDiscount;
 
     // Resolve currency and exchange rate
@@ -795,10 +792,7 @@ export class PurchaseOrdersService {
    * @throws NotFoundException if purchase order not found
    * @throws ConflictException if purchase order is not in CONFIRMED status
    */
-  async receive(
-    id: string,
-    userId: string,
-  ): Promise<PurchaseOrderResponse> {
+  async receive(id: string, userId: string): Promise<PurchaseOrderResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
     this.logger.debug(`Receiving purchase order ${id} in tenant ${tenantId}`);
@@ -903,14 +897,16 @@ export class PurchaseOrdersService {
     );
 
     // Non-blocking: generate accounting entry for purchase
-    this.accountingBridge.onPurchaseReceived({
-      tenantId: result.tenantId,
-      purchaseOrderId: result.id,
-      purchaseOrderNumber: result.purchaseOrderNumber,
-      subtotal: Number(result.subtotal),
-      tax: Number(result.tax),
-      total: Number(result.total),
-    }).catch(() => {});
+    this.accountingBridge
+      .onPurchaseReceived({
+        tenantId: result.tenantId,
+        purchaseOrderId: result.id,
+        purchaseOrderNumber: result.purchaseOrderNumber,
+        subtotal: Number(result.subtotal),
+        tax: Number(result.tax),
+        total: Number(result.total),
+      })
+      .catch(() => {});
 
     return this.mapToResponse(result);
   }
@@ -946,9 +942,7 @@ export class PurchaseOrdersService {
     }
 
     if (purchaseOrder.status === PurchaseOrderStatus.CANCELLED) {
-      throw new ConflictException(
-        'La orden de compra ya esta cancelada',
-      );
+      throw new ConflictException('La orden de compra ya esta cancelada');
     }
 
     const updatedPurchaseOrder = await this.prisma.purchaseOrder.update({
@@ -1058,7 +1052,9 @@ export class PurchaseOrdersService {
 
     const purchaseOrderNumber = `OC-${nextNumber.toString().padStart(5, '0')}`;
 
-    this.logger.debug(`Generated purchase order number: ${purchaseOrderNumber}`);
+    this.logger.debug(
+      `Generated purchase order number: ${purchaseOrderNumber}`,
+    );
 
     return purchaseOrderNumber;
   }

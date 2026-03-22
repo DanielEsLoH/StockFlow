@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { TaxCategory, AuditAction } from '@prisma/client';
 import { PrismaService } from '../prisma';
 import { TenantContextService } from '../common/services';
@@ -98,9 +94,7 @@ export class ImportsService {
     const invalidRows = validationRows.filter(
       (r) => r.errors.length > 0,
     ).length;
-    const duplicateRows = validationRows.filter(
-      (r) => r.isDuplicate,
-    ).length;
+    const duplicateRows = validationRows.filter((r) => r.isDuplicate).length;
 
     this.logger.log(
       `Validation complete for ${module}: ${validRows} valid, ${invalidRows} invalid, ${duplicateRows} duplicates out of ${validationRows.length} rows`,
@@ -156,9 +150,7 @@ export class ImportsService {
     });
 
     // 2. Reject if any rows have errors
-    const rowsWithErrors = validationRows.filter(
-      (r) => r.errors.length > 0,
-    );
+    const rowsWithErrors = validationRows.filter((r) => r.errors.length > 0);
     if (rowsWithErrors.length > 0) {
       const allErrors = rowsWithErrors.flatMap((r) => r.errors);
       throw new BadRequestException({
@@ -173,13 +165,7 @@ export class ImportsService {
     // 3. Execute in a transaction
     const result = await this.prisma.$transaction(
       async (tx) => {
-        return this.processRows(
-          tx,
-          validationRows,
-          module,
-          strategy,
-          tenantId,
-        );
+        return this.processRows(tx, validationRows, module, strategy, tenantId);
       },
       { timeout: 60000 },
     );
@@ -484,10 +470,8 @@ export class ImportsService {
         if (data.name !== undefined) updateData.name = data.name;
         if (data.description !== undefined)
           updateData.description = data.description;
-        if (data.costPrice !== undefined)
-          updateData.costPrice = data.costPrice;
-        if (data.salePrice !== undefined)
-          updateData.salePrice = data.salePrice;
+        if (data.costPrice !== undefined) updateData.costPrice = data.costPrice;
+        if (data.salePrice !== undefined) updateData.salePrice = data.salePrice;
         if (data.taxCategory !== undefined) {
           updateData.taxCategory = data.taxCategory;
           updateData.taxRate = taxRateFromCategory(

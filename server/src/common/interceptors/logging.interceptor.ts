@@ -222,7 +222,12 @@ export class LoggingInterceptor implements NestInterceptor {
   /**
    * Logs request without colors (for production or non-TTY environments)
    */
-  private logPlain(method: string, url: string, duration: number, statusCode = 200): void {
+  private logPlain(
+    method: string,
+    url: string,
+    duration: number,
+    statusCode = 200,
+  ): void {
     this.logger.log(`${method} ${url} ${statusCode} - ${duration}ms`);
   }
 

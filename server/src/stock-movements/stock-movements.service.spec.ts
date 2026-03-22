@@ -108,7 +108,9 @@ describe('StockMovementsService', () => {
         { provide: TenantContextService, useValue: mockTenantContextService },
         {
           provide: AccountingBridgeService,
-          useValue: { onStockAdjustment: jest.fn().mockResolvedValue(undefined) },
+          useValue: {
+            onStockAdjustment: jest.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();
@@ -1588,7 +1590,9 @@ describe('StockMovementsService', () => {
         reason: 'Stock removal',
       };
 
-      await expect(service.create(negativeDtoNoStock, mockUserId)).rejects.toThrow(
+      await expect(
+        service.create(negativeDtoNoStock, mockUserId),
+      ).rejects.toThrow(
         'El ajuste resultaria en stock negativo en la bodega. Stock actual: 0, ajuste: -5',
       );
     });
@@ -1670,9 +1674,9 @@ describe('StockMovementsService', () => {
         },
       );
 
-      await expect(service.create(createDtoNoWarehouse, mockUserId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.create(createDtoNoWarehouse, mockUserId),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException with Spanish message when no active warehouses', async () => {
@@ -1697,9 +1701,9 @@ describe('StockMovementsService', () => {
         },
       );
 
-      await expect(service.create(createDtoNoWarehouse, mockUserId)).rejects.toThrow(
-        'No hay bodegas activas. Cree una bodega primero.',
-      );
+      await expect(
+        service.create(createDtoNoWarehouse, mockUserId),
+      ).rejects.toThrow('No hay bodegas activas. Cree una bodega primero.');
     });
   });
 
@@ -1724,7 +1728,8 @@ describe('StockMovementsService', () => {
       warehouseId: 'warehouse-source',
       type: MovementType.TRANSFER,
       quantity: -10,
-      reason: 'Salida: Transferencia de Source Warehouse a Destination Warehouse',
+      reason:
+        'Salida: Transferencia de Source Warehouse a Destination Warehouse',
       warehouse: {
         id: 'warehouse-source',
         code: 'SRC-01',
@@ -1738,7 +1743,8 @@ describe('StockMovementsService', () => {
       warehouseId: 'warehouse-dest',
       type: MovementType.TRANSFER,
       quantity: 10,
-      reason: 'Entrada: Transferencia de Source Warehouse a Destination Warehouse',
+      reason:
+        'Entrada: Transferencia de Source Warehouse a Destination Warehouse',
       warehouse: {
         id: 'warehouse-dest',
         code: 'DST-01',
@@ -1755,7 +1761,9 @@ describe('StockMovementsService', () => {
     };
 
     beforeEach(() => {
-      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(mockProduct);
+      (prismaService.product.findFirst as jest.Mock).mockResolvedValue(
+        mockProduct,
+      );
       (prismaService.warehouse.findFirst as jest.Mock)
         .mockResolvedValueOnce(mockSourceWarehouse)
         .mockResolvedValueOnce(mockDestWarehouse);
@@ -1822,9 +1830,9 @@ describe('StockMovementsService', () => {
         destinationWarehouseId: 'warehouse-source',
       };
 
-      await expect(service.createTransfer(sameWarehouseDto, mockUserId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createTransfer(sameWarehouseDto, mockUserId),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException with Spanish message when source equals destination', async () => {
@@ -1833,25 +1841,25 @@ describe('StockMovementsService', () => {
         destinationWarehouseId: 'warehouse-source',
       };
 
-      await expect(service.createTransfer(sameWarehouseDto, mockUserId)).rejects.toThrow(
-        'La bodega origen y destino no pueden ser la misma',
-      );
+      await expect(
+        service.createTransfer(sameWarehouseDto, mockUserId),
+      ).rejects.toThrow('La bodega origen y destino no pueden ser la misma');
     });
 
     it('should throw NotFoundException when product not found', async () => {
       (prismaService.product.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.createTransfer(transferDto, mockUserId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.createTransfer(transferDto, mockUserId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException with Spanish message when product not found', async () => {
       (prismaService.product.findFirst as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.createTransfer(transferDto, mockUserId)).rejects.toThrow(
-        'Producto no encontrado',
-      );
+      await expect(
+        service.createTransfer(transferDto, mockUserId),
+      ).rejects.toThrow('Producto no encontrado');
     });
 
     it('should throw NotFoundException when source warehouse not found', async () => {
@@ -1860,9 +1868,9 @@ describe('StockMovementsService', () => {
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(mockDestWarehouse);
 
-      await expect(service.createTransfer(transferDto, mockUserId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.createTransfer(transferDto, mockUserId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException with Spanish message when source warehouse not found', async () => {
@@ -1871,9 +1879,9 @@ describe('StockMovementsService', () => {
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(mockDestWarehouse);
 
-      await expect(service.createTransfer(transferDto, mockUserId)).rejects.toThrow(
-        'Bodega origen no encontrada',
-      );
+      await expect(
+        service.createTransfer(transferDto, mockUserId),
+      ).rejects.toThrow('Bodega origen no encontrada');
     });
 
     it('should throw NotFoundException when destination warehouse not found', async () => {
@@ -1882,9 +1890,9 @@ describe('StockMovementsService', () => {
         .mockResolvedValueOnce(mockSourceWarehouse)
         .mockResolvedValueOnce(null);
 
-      await expect(service.createTransfer(transferDto, mockUserId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.createTransfer(transferDto, mockUserId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw NotFoundException with Spanish message when destination warehouse not found', async () => {
@@ -1893,9 +1901,9 @@ describe('StockMovementsService', () => {
         .mockResolvedValueOnce(mockSourceWarehouse)
         .mockResolvedValueOnce(null);
 
-      await expect(service.createTransfer(transferDto, mockUserId)).rejects.toThrow(
-        'Bodega destino no encontrada',
-      );
+      await expect(
+        service.createTransfer(transferDto, mockUserId),
+      ).rejects.toThrow('Bodega destino no encontrada');
     });
 
     it('should throw BadRequestException when insufficient stock in source warehouse', async () => {
@@ -1913,9 +1921,9 @@ describe('StockMovementsService', () => {
         },
       );
 
-      await expect(service.createTransfer(transferDto, mockUserId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createTransfer(transferDto, mockUserId),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException with Spanish message for insufficient stock', async () => {
@@ -1933,7 +1941,9 @@ describe('StockMovementsService', () => {
         },
       );
 
-      await expect(service.createTransfer(transferDto, mockUserId)).rejects.toThrow(
+      await expect(
+        service.createTransfer(transferDto, mockUserId),
+      ).rejects.toThrow(
         'Stock insuficiente en bodega origen. Disponible: 5, solicitado: 10',
       );
     });
@@ -1953,7 +1963,9 @@ describe('StockMovementsService', () => {
         },
       );
 
-      await expect(service.createTransfer(transferDto, mockUserId)).rejects.toThrow(
+      await expect(
+        service.createTransfer(transferDto, mockUserId),
+      ).rejects.toThrow(
         'Stock insuficiente en bodega origen. Disponible: 0, solicitado: 10',
       );
     });
@@ -2132,9 +2144,13 @@ describe('StockMovementsService', () => {
             },
             stockMovement: {
               create: jest.fn().mockImplementation((args: unknown) => {
-                const argsObj = args as { data: { quantity: number; reason: string } };
+                const argsObj = args as {
+                  data: { quantity: number; reason: string };
+                };
                 movementReasons.push(argsObj.data.reason);
-                return argsObj.data.quantity < 0 ? mockOutMovement : mockInMovement;
+                return argsObj.data.quantity < 0
+                  ? mockOutMovement
+                  : mockInMovement;
               }),
             },
           };
@@ -2165,9 +2181,13 @@ describe('StockMovementsService', () => {
             },
             stockMovement: {
               create: jest.fn().mockImplementation((args: unknown) => {
-                const argsObj = args as { data: { quantity: number; notes: string | null } };
+                const argsObj = args as {
+                  data: { quantity: number; notes: string | null };
+                };
                 movementNotes.push(argsObj.data.notes);
-                return argsObj.data.quantity < 0 ? mockOutMovement : mockInMovement;
+                return argsObj.data.quantity < 0
+                  ? mockOutMovement
+                  : mockInMovement;
               }),
             },
           };
@@ -2193,9 +2213,13 @@ describe('StockMovementsService', () => {
             },
             stockMovement: {
               create: jest.fn().mockImplementation((args: unknown) => {
-                const argsObj = args as { data: { quantity: number; notes: string | null } };
+                const argsObj = args as {
+                  data: { quantity: number; notes: string | null };
+                };
                 movementNotes.push(argsObj.data.notes);
-                return argsObj.data.quantity < 0 ? mockOutMovement : mockInMovement;
+                return argsObj.data.quantity < 0
+                  ? mockOutMovement
+                  : mockInMovement;
               }),
             },
           };
@@ -2228,9 +2252,13 @@ describe('StockMovementsService', () => {
             },
             stockMovement: {
               create: jest.fn().mockImplementation((args: unknown) => {
-                const argsObj = args as { data: { quantity: number; userId: string | null } };
+                const argsObj = args as {
+                  data: { quantity: number; userId: string | null };
+                };
                 movementUserIds.push(argsObj.data.userId);
-                return argsObj.data.quantity < 0 ? mockOutMovement : mockInMovement;
+                return argsObj.data.quantity < 0
+                  ? mockOutMovement
+                  : mockInMovement;
               }),
             },
           };
@@ -2256,9 +2284,13 @@ describe('StockMovementsService', () => {
             },
             stockMovement: {
               create: jest.fn().mockImplementation((args: unknown) => {
-                const argsObj = args as { data: { quantity: number; userId: string | null } };
+                const argsObj = args as {
+                  data: { quantity: number; userId: string | null };
+                };
                 movementUserIds.push(argsObj.data.userId);
-                return argsObj.data.quantity < 0 ? mockOutMovement : mockInMovement;
+                return argsObj.data.quantity < 0
+                  ? mockOutMovement
+                  : mockInMovement;
               }),
             },
           };

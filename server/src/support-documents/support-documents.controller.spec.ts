@@ -98,9 +98,7 @@ describe('SupportDocumentsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SupportDocumentsController],
-      providers: [
-        { provide: SupportDocumentsService, useValue: mockService },
-      ],
+      providers: [{ provide: SupportDocumentsService, useValue: mockService }],
     }).compile();
 
     controller = module.get<SupportDocumentsController>(
@@ -204,9 +202,7 @@ describe('SupportDocumentsController', () => {
         supplierId: 'invalid',
         supplierName: 'Test',
         supplierDocument: '123',
-        items: [
-          { description: 'Item', quantity: 1, unitPrice: 1000 },
-        ],
+        items: [{ description: 'Item', quantity: 1, unitPrice: 1000 }],
       };
 
       await expect(controller.create(dto, mockUser)).rejects.toThrow(

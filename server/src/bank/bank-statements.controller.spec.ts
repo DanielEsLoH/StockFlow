@@ -78,10 +78,16 @@ describe('BankStatementsController', () => {
     const mockFile = {
       buffer: Buffer.from('test'),
       originalname: 'extracto.xlsx',
-      mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      mimetype:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     } as Express.Multer.File;
 
-    const mockHeaderRow = { A: 'Fecha', B: 'Descripcion', C: 'Debito', D: 'Credito' };
+    const mockHeaderRow = {
+      A: 'Fecha',
+      B: 'Descripcion',
+      C: 'Debito',
+      D: 'Credito',
+    };
     const mockDataRow = {
       A: new Date('2025-01-15'),
       B: 'Pago cliente',
@@ -191,7 +197,8 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines[0].lineDate).toEqual(date);
     });
 
@@ -204,7 +211,8 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines[0].lineDate).toBeInstanceOf(Date);
       expect(lines[0].lineDate.getFullYear()).toBeGreaterThanOrEqual(2024);
     });
@@ -217,7 +225,8 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines[0].lineDate).toBeInstanceOf(Date);
     });
 
@@ -230,7 +239,8 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines).toHaveLength(1);
       expect(lines[0].description).toBe('Valid row');
     });
@@ -244,7 +254,8 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines).toHaveLength(1);
       expect(lines[0].description).toBe('Has desc');
     });
@@ -258,7 +269,8 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines).toHaveLength(1);
     });
 
@@ -270,7 +282,8 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines[0].debit).toBe(50000);
     });
 
@@ -282,8 +295,9 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
-      expect(lines[0].debit).toBe(1500.50);
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
+      expect(lines[0].debit).toBe(1500.5);
     });
 
     it('should use Math.abs for parsed numbers', async () => {
@@ -294,7 +308,8 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines[0].debit).toBe(5000);
     });
 
@@ -311,7 +326,12 @@ describe('BankStatementsController', () => {
 
     it('should match columns by partial name', async () => {
       (XLSX.utils.sheet_to_json as jest.Mock).mockReturnValue([
-        { A: 'Fecha Movimiento', B: 'Descripcion del Movimiento', C: 'Monto Debito', D: 'Monto Credito' },
+        {
+          A: 'Fecha Movimiento',
+          B: 'Descripcion del Movimiento',
+          C: 'Monto Debito',
+          D: 'Monto Credito',
+        },
         { A: new Date(), B: 'Partial match', C: 1000, D: 0 },
       ]);
 
@@ -328,13 +348,21 @@ describe('BankStatementsController', () => {
       };
 
       (XLSX.utils.sheet_to_json as jest.Mock).mockReturnValue([
-        { A: 'Fecha', B: 'Descripcion', C: 'Debito', D: 'Credito', E: 'Referencia', F: 'Saldo' },
+        {
+          A: 'Fecha',
+          B: 'Descripcion',
+          C: 'Debito',
+          D: 'Credito',
+          E: 'Referencia',
+          F: 'Saldo',
+        },
         { A: new Date(), B: 'With ref', C: 1000, D: 0, E: 'REF-001', F: 50000 },
       ]);
 
       await controller.importStatement(mockFile, dtoWithOptionals, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines[0].reference).toBe('REF-001');
       expect(lines[0].balance).toBe(50000);
     });
@@ -382,7 +410,8 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines[0].debit).toBe(0);
       expect(lines[0].credit).toBe(1000);
     });
@@ -391,12 +420,22 @@ describe('BankStatementsController', () => {
       (XLSX.utils.sheet_to_json as jest.Mock).mockReturnValue([
         mockHeaderRow,
         { A: new Date(), B: 'Good row', C: 1000, D: 0 },
-        { A: { toString: () => { throw new Error('bad'); } }, B: 'Bad row', C: 500, D: 0 },
+        {
+          A: {
+            toString: () => {
+              throw new Error('bad');
+            },
+          },
+          B: 'Bad row',
+          C: 500,
+          D: 0,
+        },
       ]);
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       expect(lines.length).toBeGreaterThanOrEqual(1);
     });
 
@@ -409,7 +448,8 @@ describe('BankStatementsController', () => {
 
       await controller.importStatement(mockFile, mockDto, 'user-123');
 
-      const lines = (statementsService.importLines as jest.Mock).mock.calls[0][4];
+      const lines = (statementsService.importLines as jest.Mock).mock
+        .calls[0][4];
       // First row skipped (invalid date), only second row present
       expect(lines).toHaveLength(1);
       expect(lines[0].description).toBe('Valid');
@@ -422,7 +462,9 @@ describe('BankStatementsController', () => {
       const result = await controller.findByBankAccount('bank-acc-123');
 
       expect(result).toEqual([mockStatementResponse]);
-      expect(statementsService.findByBankAccount).toHaveBeenCalledWith('bank-acc-123');
+      expect(statementsService.findByBankAccount).toHaveBeenCalledWith(
+        'bank-acc-123',
+      );
     });
   });
 

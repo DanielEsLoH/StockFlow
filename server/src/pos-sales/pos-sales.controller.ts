@@ -150,7 +150,8 @@ export class POSSalesController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - Sale voided, quantity exceeds available, or payment mismatch',
+    description:
+      'Bad Request - Sale voided, quantity exceeds available, or payment mismatch',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Sale or item not found' })

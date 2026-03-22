@@ -273,7 +273,11 @@ export class InvoicesController {
     description:
       'Creates invoice, marks as SENT, and optionally records immediate payment. Used by the POS system for quick sales.',
   })
-  @ApiResponse({ status: 201, description: 'Checkout completed successfully', type: InvoiceEntity })
+  @ApiResponse({
+    status: 201,
+    description: 'Checkout completed successfully',
+    type: InvoiceEntity,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -302,7 +306,11 @@ export class InvoicesController {
       'Records a payment for the remaining balance and updates payment status to PAID. If the invoice is DRAFT, it is first moved to SENT.',
   })
   @ApiParam({ name: 'id', description: 'Invoice ID' })
-  @ApiResponse({ status: 200, description: 'Invoice marked as paid', type: InvoiceEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'Invoice marked as paid',
+    type: InvoiceEntity,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
   async markAsPaid(
@@ -483,9 +491,7 @@ export class InvoicesController {
     description: 'Customer has no email address',
   })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
-  async sendByEmail(
-    @Param('id') id: string,
-  ): Promise<{ message: string }> {
+  async sendByEmail(@Param('id') id: string): Promise<{ message: string }> {
     this.logger.log(`Sending invoice by email: ${id}`);
     return this.invoicesService.sendByEmail(id);
   }

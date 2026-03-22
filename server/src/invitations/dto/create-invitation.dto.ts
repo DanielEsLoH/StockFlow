@@ -1,4 +1,10 @@
-import { IsEmail, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
 import { UserRole } from '@prisma/client';
 
 // CUID pattern: starts with 'c' followed by lowercase letters and numbers, typically 25 chars

@@ -55,9 +55,7 @@ export class WebhooksController {
     status: 400,
     description: 'Bad Request - Invalid signature or payload',
   })
-  async handleWompiWebhook(
-    @Body() body: any,
-  ): Promise<{ received: boolean }> {
+  async handleWompiWebhook(@Body() body: any): Promise<{ received: boolean }> {
     this.logger.log('Received Wompi webhook');
 
     await this.subscriptionsService.handleWebhook(body);

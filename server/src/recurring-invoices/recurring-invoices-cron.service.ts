@@ -70,9 +70,7 @@ export class RecurringInvoicesCronService {
         invoiceNumber,
         issueDate: new Date(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        status: template.autoSend
-          ? InvoiceStatus.SENT
-          : InvoiceStatus.DRAFT,
+        status: template.autoSend ? InvoiceStatus.SENT : InvoiceStatus.DRAFT,
         notes: template.notes,
         subtotal: 0,
         tax: 0,
@@ -137,10 +135,7 @@ export class RecurringInvoicesCronService {
     );
   }
 
-  calculateNextIssueDate(
-    current: Date,
-    interval: RecurringInterval,
-  ): Date {
+  calculateNextIssueDate(current: Date, interval: RecurringInterval): Date {
     const next = new Date(current);
     switch (interval) {
       case RecurringInterval.WEEKLY:

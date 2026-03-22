@@ -171,10 +171,7 @@ export class SupportDocumentsService {
     });
 
     // Calculate aggregate totals
-    const docSubtotal = itemsData.reduce(
-      (sum, item) => sum + item.subtotal,
-      0,
-    );
+    const docSubtotal = itemsData.reduce((sum, item) => sum + item.subtotal, 0);
     const docTax = itemsData.reduce((sum, item) => sum + item.tax, 0);
     const docTotal = docSubtotal + docTax;
 
@@ -317,9 +314,7 @@ export class SupportDocumentsService {
   async findOne(id: string): Promise<SupportDocumentResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.debug(
-      `Finding support document ${id} in tenant ${tenantId}`,
-    );
+    this.logger.debug(`Finding support document ${id} in tenant ${tenantId}`);
 
     const document = await this.prisma.supportDocument.findFirst({
       where: { id, tenantId },
@@ -355,9 +350,7 @@ export class SupportDocumentsService {
   ): Promise<SupportDocumentResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.debug(
-      `Updating support document ${id} in tenant ${tenantId}`,
-    );
+    this.logger.debug(`Updating support document ${id} in tenant ${tenantId}`);
 
     // Find the document
     const document = await this.prisma.supportDocument.findFirst({
@@ -489,9 +482,7 @@ export class SupportDocumentsService {
   async remove(id: string): Promise<void> {
     const tenantId = this.tenantContext.requireTenantId();
 
-    this.logger.debug(
-      `Deleting support document ${id} in tenant ${tenantId}`,
-    );
+    this.logger.debug(`Deleting support document ${id} in tenant ${tenantId}`);
 
     const document = await this.prisma.supportDocument.findFirst({
       where: { id, tenantId },

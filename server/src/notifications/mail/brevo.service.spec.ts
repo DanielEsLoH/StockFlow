@@ -1327,13 +1327,12 @@ describe('BrevoService', () => {
 
     describe('sendAdminUserVerifiedEmail', () => {
       it('should send admin notification email successfully', async () => {
-        const result =
-          await brevoServiceConfigured.sendAdminUserVerifiedEmail({
-            userEmail: 'newuser@example.com',
-            userName: 'John Doe',
-            tenantName: 'Acme Corp',
-            verificationDate: new Date('2024-01-15'),
-          });
+        const result = await brevoServiceConfigured.sendAdminUserVerifiedEmail({
+          userEmail: 'newuser@example.com',
+          userName: 'John Doe',
+          tenantName: 'Acme Corp',
+          verificationDate: new Date('2024-01-15'),
+        });
 
         expect(result.success).toBe(true);
         expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
@@ -1694,14 +1693,19 @@ describe('BrevoService', () => {
       };
 
       it('should send first payment confirmation email successfully', async () => {
-        const result = await brevoServiceConfigured.sendSubscriptionPaymentEmail(basePaymentData);
+        const result =
+          await brevoServiceConfigured.sendSubscriptionPaymentEmail(
+            basePaymentData,
+          );
 
         expect(result.success).toBe(true);
         expect(mockApiInstance.sendTransacEmail).toHaveBeenCalled();
       });
 
       it('should include plan name in subject for first payment', async () => {
-        await brevoServiceConfigured.sendSubscriptionPaymentEmail(basePaymentData);
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail(
+          basePaymentData,
+        );
 
         const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
         expect(callArgs.subject).toContain('Confirmación de pago');
@@ -1709,7 +1713,9 @@ describe('BrevoService', () => {
       });
 
       it('should include dashboard link for first payment', async () => {
-        await brevoServiceConfigured.sendSubscriptionPaymentEmail(basePaymentData);
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail(
+          basePaymentData,
+        );
 
         const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
         expect(callArgs.htmlContent).toContain('/dashboard');
@@ -1717,7 +1723,9 @@ describe('BrevoService', () => {
       });
 
       it('should include features list for first payment', async () => {
-        await brevoServiceConfigured.sendSubscriptionPaymentEmail(basePaymentData);
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail(
+          basePaymentData,
+        );
 
         const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
         expect(callArgs.htmlContent).toContain('Inventario ilimitado');
@@ -1757,7 +1765,9 @@ describe('BrevoService', () => {
       });
 
       it('should include transaction reference', async () => {
-        await brevoServiceConfigured.sendSubscriptionPaymentEmail(basePaymentData);
+        await brevoServiceConfigured.sendSubscriptionPaymentEmail(
+          basePaymentData,
+        );
 
         const callArgs = mockApiInstance.sendTransacEmail.mock.calls[0][0];
         expect(callArgs.htmlContent).toContain('TXN-123456');

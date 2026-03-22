@@ -58,7 +58,9 @@ export class AccountingConfigService {
     return config ? this.mapToResponse(config) : null;
   }
 
-  async updateConfig(dto: UpdateAccountingConfigDto): Promise<AccountingConfigResponse> {
+  async updateConfig(
+    dto: UpdateAccountingConfigDto,
+  ): Promise<AccountingConfigResponse> {
     const tenantId = this.tenantContext.requireTenantId();
 
     const config = await this.prisma.accountingConfig.upsert({
@@ -78,7 +80,9 @@ export class AccountingConfigService {
    * Get the config for a specific tenant (used by AccountingBridgeService
    * which operates outside the normal tenant context).
    */
-  async getConfigForTenant(tenantId: string): Promise<AccountingConfigResponse | null> {
+  async getConfigForTenant(
+    tenantId: string,
+  ): Promise<AccountingConfigResponse | null> {
     const config = await this.prisma.accountingConfig.findUnique({
       where: { tenantId },
     });

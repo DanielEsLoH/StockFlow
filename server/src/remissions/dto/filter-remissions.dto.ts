@@ -22,8 +22,7 @@ export class FilterRemissionsDto extends PaginationDto {
     example: 'DRAFT',
   })
   @IsEnum(RemissionStatus, {
-    message:
-      'El estado debe ser DRAFT, DISPATCHED, DELIVERED o CANCELLED',
+    message: 'El estado debe ser DRAFT, DISPATCHED, DELIVERED o CANCELLED',
   })
   @IsOptional()
   status?: RemissionStatus;

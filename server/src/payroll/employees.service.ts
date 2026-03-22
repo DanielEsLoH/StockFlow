@@ -209,10 +209,7 @@ export class EmployeesService {
     }
 
     // If document number changed, check for duplicates
-    if (
-      dto.documentNumber &&
-      dto.documentNumber !== existing.documentNumber
-    ) {
+    if (dto.documentNumber && dto.documentNumber !== existing.documentNumber) {
       const duplicate = await this.prisma.employee.findFirst({
         where: {
           tenantId,
@@ -293,9 +290,7 @@ export class EmployeesService {
     }
 
     if (existing.status === status) {
-      throw new BadRequestException(
-        `El empleado ya tiene estado ${status}`,
-      );
+      throw new BadRequestException(`El empleado ya tiene estado ${status}`);
     }
 
     // If terminating, check no open payroll entries

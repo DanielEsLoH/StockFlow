@@ -1,5 +1,8 @@
 import { SetMetadata, UseGuards, applyDecorators } from '@nestjs/common';
-import { WAREHOUSE_SCOPED_KEY, WarehouseGuard } from '../guards/warehouse.guard';
+import {
+  WAREHOUSE_SCOPED_KEY,
+  WarehouseGuard,
+} from '../guards/warehouse.guard';
 
 /**
  * Decorator that marks an endpoint as warehouse-scoped.

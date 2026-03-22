@@ -296,9 +296,7 @@ describe('WompiService', () => {
     });
 
     it('should throw on network failure', async () => {
-      (global.fetch as jest.Mock).mockRejectedValue(
-        new Error('Network error'),
-      );
+      (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       await expect(service.getMerchantInfo()).rejects.toThrow('Network error');
     });
@@ -609,9 +607,7 @@ describe('WompiService', () => {
     });
 
     it('should throw on network failure', async () => {
-      (global.fetch as jest.Mock).mockRejectedValue(
-        new Error('fetch failed'),
-      );
+      (global.fetch as jest.Mock).mockRejectedValue(new Error('fetch failed'));
 
       await expect(service.getTransaction('txn-001')).rejects.toThrow(
         'fetch failed',
@@ -773,9 +769,7 @@ describe('WompiService', () => {
 
       const concatenated =
         values.join('') + String(timestamp) + TEST_EVENT_SECRET;
-      const checksum = createHash('sha256')
-        .update(concatenated)
-        .digest('hex');
+      const checksum = createHash('sha256').update(concatenated).digest('hex');
 
       return {
         event: 'transaction.updated',
@@ -799,11 +793,7 @@ describe('WompiService', () => {
 
       const body = buildSignedWebhookBody(
         data,
-        [
-          'transaction.id',
-          'transaction.status',
-          'transaction.amount_in_cents',
-        ],
+        ['transaction.id', 'transaction.status', 'transaction.amount_in_cents'],
         1700000000,
       );
 
@@ -1032,9 +1022,7 @@ describe('WompiService', () => {
       };
 
       const result = service.verifyWebhookSignature(
-        body as unknown as Parameters<
-          typeof service.verifyWebhookSignature
-        >[0],
+        body as unknown as Parameters<typeof service.verifyWebhookSignature>[0],
       );
 
       expect(result).toBe(false);

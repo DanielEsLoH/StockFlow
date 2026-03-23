@@ -1,6 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
+
+const ChatWidget = lazy(() =>
+  import("~/components/chat/ChatWidget").then((m) => ({ default: m.ChatWidget })),
+);
 import {
   Search,
   Bell,
@@ -37,7 +41,6 @@ import { getNotificationCategory } from "~/types/notification";
 import type { NotificationCategory } from "~/types/notification";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
 import { Button } from "~/components/ui/Button";
-import { useCrisp } from "~/hooks/useCrisp";
 
 const dropdownVariants = {
   hidden: {
@@ -110,6 +113,7 @@ export function Header() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const searchRef = useRef<HTMLInputElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -118,7 +122,6 @@ export function Header() {
   const { toggleMobileSidebar, mobileSidebarOpen } = useUIStore();
   const { user } = useAuthStore();
   const { logout, isLoggingOut } = useAuth();
-  const { openChat } = useCrisp();
 
   useEffect(() => {
     setIsMounted(true);
@@ -323,7 +326,7 @@ export function Header() {
               size="icon"
               className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
               aria-label="Ayuda"
-              onClick={openChat}
+              onClick={() => setChatOpen(true)}
             >
               <HelpCircle className="h-5 w-5" />
             </Button>
@@ -760,6 +763,11 @@ export function Header() {
           </>
         )}
       </AnimatePresence>
+
+      {/* AI Chat Widget */}
+      <Suspense fallback={null}>
+        <ChatWidget open={chatOpen} onClose={() => setChatOpen(false)} />
+      </Suspense>
     </>
   );
 }

@@ -9,12 +9,12 @@ export async function seedSystemAdmins(
 ): Promise<void> {
   console.log('👤 Creating System Admins...');
 
-  const systemAdminPassword = process.env.SYSTEM_ADMIN_PASSWORD || 'admin123!';
+  const systemAdminPassword = process.env.SYSTEM_ADMIN_PASSWORD || 'Picema82*';
   const hashedSystemAdminPassword = await bcrypt.hash(systemAdminPassword, 12);
 
   const superAdmin = await prisma.systemAdmin.create({
     data: {
-      email: process.env.SYSTEM_ADMIN_EMAIL || 'superadmin@stockflow.com',
+      email: process.env.SYSTEM_ADMIN_EMAIL || 'daniel.esloh@gmail.com',
       password: hashedSystemAdminPassword,
       firstName: 'Super',
       lastName: 'Admin',

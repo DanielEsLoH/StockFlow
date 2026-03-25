@@ -32,7 +32,9 @@ import {
 import { UsersQueryDto, PendingUsersQueryDto, TenantsQueryDto } from './dto';
 import { BrevoService } from '../notifications/mail/brevo.service';
 import { SubscriptionManagementService } from '../subscriptions/subscription-management.service';
+import { SystemAdminNotificationsService } from './system-admin-notifications.service';
 import { PLAN_LIMITS } from '../subscriptions/plan-limits';
+import { SystemAdminNotificationType } from '@prisma/client';
 
 /**
  * SystemAdminService handles all system admin operations including:
@@ -54,6 +56,7 @@ export class SystemAdminService {
     private readonly jwtService: JwtService,
     private readonly brevoService: BrevoService,
     private readonly subscriptionManagementService: SubscriptionManagementService,
+    private readonly adminNotificationsService: SystemAdminNotificationsService,
   ) {}
 
   // ============================================================================
@@ -509,6 +512,14 @@ export class SystemAdminService {
         );
       });
 
+    // Create admin notification
+    this.createAdminNotification(
+      SystemAdminNotificationType.NEW_USER_REGISTRATION,
+      'Usuario aprobado',
+      `${user.firstName} ${user.lastName} (${user.email}) fue aprobado para ${user.tenant.name}`,
+      `/system-admin/users`,
+    );
+
     this.logger.log(
       `User approved successfully: ${user.email} by admin: ${adminId}`,
     );
@@ -573,6 +584,14 @@ export class SystemAdminService {
         tenantName: user.tenant.name,
         reason,
       },
+    );
+
+    // Create admin notification
+    this.createAdminNotification(
+      SystemAdminNotificationType.USER_SUSPENDED,
+      'Usuario suspendido',
+      `${user.email} fue suspendido${reason ? `: ${reason}` : ''}`,
+      `/system-admin/users`,
     );
 
     this.logger.log(
@@ -874,6 +893,14 @@ export class SystemAdminService {
       },
     );
 
+    // Create admin notification
+    this.createAdminNotification(
+      SystemAdminNotificationType.PLAN_UPGRADE,
+      'Plan activado',
+      `Plan ${plan} activado para ${result.tenant.name} (${period})`,
+      `/system-admin/tenants`,
+    );
+
     this.logger.log(
       `Plan ${plan} activated for tenant ${tenantId} until ${result.subscription.endDate.toISOString()} by admin: ${adminId}`,
     );
@@ -926,6 +953,14 @@ export class SystemAdminService {
       },
     );
 
+    // Create admin notification
+    this.createAdminNotification(
+      SystemAdminNotificationType.PLAN_SUSPENDED,
+      'Plan suspendido',
+      `Plan suspendido para ${result.tenant.name}: ${reason}`,
+      `/system-admin/tenants`,
+    );
+
     this.logger.log(
       `Plan suspended for tenant ${tenantId} by admin: ${adminId}. Reason: ${reason}`,
     );
@@ -972,6 +1007,14 @@ export class SystemAdminService {
       },
     );
 
+    // Create admin notification
+    this.createAdminNotification(
+      SystemAdminNotificationType.PLAN_REACTIVATED,
+      'Plan reactivado',
+      `Plan reactivado para ${result.tenant.name}`,
+      `/system-admin/tenants`,
+    );
+
     this.logger.log(
       `Plan reactivated for tenant ${tenantId} by admin: ${adminId}`,
     );
@@ -1001,6 +1044,94 @@ export class SystemAdminService {
    */
   getAllPlanLimits() {
     return PLAN_LIMITS;
+  }
+
+  // ============================================================================
+  // DASHBOARD METHODS
+  // ============================================================================
+
+  /**
+   * Gets aggregated dashboard statistics for the system admin panel.
+   *
+   * @returns Dashboard statistics including totals, distributions, and recent activity
+   */
+  async getDashboardStats() {
+    this.logger.debug('Getting dashboard stats');
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Run all queries in parallel for performance
+    const [
+      totalTenants,
+      totalUsers,
+      activeUsers,
+      pendingApprovals,
+      tenantsThisMonth,
+      usersThisMonth,
+      planDistributionRaw,
+      tenantGrowthRaw,
+      recentRegistrations,
+    ] = await Promise.all([
+      this.prisma.tenant.count(),
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { status: UserStatus.ACTIVE } }),
+      this.prisma.user.count({ where: { status: UserStatus.PENDING } }),
+      this.prisma.tenant.count({
+        where: { createdAt: { gte: startOfMonth } },
+      }),
+      this.prisma.user.count({
+        where: { createdAt: { gte: startOfMonth } },
+      }),
+      this.prisma.tenant.groupBy({
+        by: ['plan'],
+        _count: { plan: true },
+      }),
+      this.prisma.$queryRaw<Array<{ month: string; count: bigint }>>`
+        SELECT
+          TO_CHAR(created_at, 'YYYY-MM') AS month,
+          COUNT(*)::bigint AS count
+        FROM tenants
+        WHERE created_at >= NOW() - INTERVAL '6 months'
+        GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+        ORDER BY month ASC
+      `,
+      this.prisma.user.findMany({
+        where: { status: UserStatus.PENDING },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          createdAt: true,
+          tenant: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+    ]);
+
+    const planDistribution = planDistributionRaw.map((item) => ({
+      plan: item.plan,
+      count: item._count.plan,
+    }));
+
+    const tenantGrowth = tenantGrowthRaw.map((item) => ({
+      month: item.month,
+      count: Number(item.count),
+    }));
+
+    return {
+      totalTenants,
+      totalUsers,
+      activeUsers,
+      pendingApprovals,
+      tenantsThisMonth,
+      usersThisMonth,
+      planDistribution,
+      tenantGrowth,
+      recentRegistrations,
+    };
   }
 
   // ============================================================================
@@ -1096,6 +1227,42 @@ export class SystemAdminService {
       maxInvoices: limits.maxInvoices,
       maxWarehouses: limits.maxWarehouses,
     };
+  }
+
+  /**
+   * Creates an admin notification and sends email to admin.
+   * Runs asynchronously — never blocks the calling operation.
+   */
+  private createAdminNotification(
+    type: SystemAdminNotificationType,
+    title: string,
+    message: string,
+    link?: string,
+  ): void {
+    this.adminNotificationsService
+      .broadcast({ type, title, message, link })
+      .catch((error) => {
+        this.logger.error(
+          `Failed to create admin notification: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      });
+
+    // Send email notification to admin
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+    if (adminEmail) {
+      this.brevoService
+        .sendAdminNotificationEmail({
+          to: adminEmail,
+          subject: `[StockFlow Admin] ${title}`,
+          eventType: title,
+          details: { message },
+        })
+        .catch((error) => {
+          this.logger.error(
+            `Failed to send admin notification email: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          );
+        });
+    }
   }
 
   /**

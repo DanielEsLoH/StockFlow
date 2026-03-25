@@ -5,7 +5,6 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import Home, { meta, loader } from "./home";
 import { handleScrollToSection } from "~/components/landing/LandingHeader";
 import React from "react";
-import * as authServer from "~/lib/auth.server";
 
 // Mock ThemeToggle
 vi.mock("~/components/ui/ThemeToggle", () => ({
@@ -107,9 +106,8 @@ vi.mock("framer-motion", async () => {
 });
 
 // Mock the auth.server module
-vi.mock("~/lib/auth.server", () => ({
-  requireGuest: vi.fn(),
-}));
+const authServerMock = { requireGuest: vi.fn() };
+vi.mock("~/lib/auth.server", () => authServerMock);
 
 describe("Home route", () => {
   function renderHome() {
@@ -218,7 +216,7 @@ describe("Home route", () => {
 
     it("should call requireGuest with the request", () => {
       const mockRequest = new Request("http://localhost/");
-      const requireGuestSpy = vi.spyOn(authServer, "requireGuest");
+      const requireGuestSpy = vi.spyOn(authServerMock, "requireGuest");
 
       loader({ request: mockRequest, params: {}, context: {} } as Parameters<
         typeof loader

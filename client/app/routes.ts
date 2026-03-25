@@ -26,6 +26,7 @@ export default [
     route("system-admin/dashboard", "routes/system-admin.dashboard.tsx"),
     route("system-admin/users", "routes/system-admin.users.tsx"),
     route("system-admin/tenants", "routes/system-admin.tenants.tsx"),
+    route("system-admin/notifications", "routes/system-admin.notifications.tsx"),
   ]),
 
   // Protected app routes with layout

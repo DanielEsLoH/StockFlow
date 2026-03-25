@@ -169,16 +169,35 @@ export interface TenantActionResult {
 // Dashboard stats
 export interface DashboardStats {
   totalTenants: number;
+  totalUsers: number;
   pendingApprovals: number;
   activeUsers: number;
+  tenantsThisMonth: number;
+  usersThisMonth: number;
+  planDistribution: { plan: string; count: number }[];
+  tenantGrowth: { month: string; count: number }[];
   recentRegistrations: {
     id: string;
     email: string;
     firstName: string;
     lastName: string;
-    tenantName: string;
     createdAt: string;
+    tenant: { name: string };
   }[];
+}
+
+export interface AdminNotification {
+  id: string;
+  adminId: string | null;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  readAt: string | null;
+  link: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Query parameters
@@ -329,38 +348,10 @@ export const systemAdminService = {
 
   // Dashboard
   async getDashboardStats(): Promise<DashboardStats> {
-    // Since the backend doesn't have a dashboard endpoint yet,
-    // we'll aggregate data from existing endpoints
-    const [, tenantsResponse, pendingResponse] = await Promise.all([
-      systemAdminApi.get<PaginatedResponse<UserListItem>>(
-        "/system-admin/users?limit=1",
-      ),
-      systemAdminApi.get<PaginatedResponse<TenantListItem>>(
-        "/system-admin/tenants?limit=1",
-      ),
-      systemAdminApi.get<PaginatedResponse<UserListItem>>(
-        "/system-admin/users/pending?limit=5",
-      ),
-    ]);
-
-    // Get active users count
-    const activeUsersResponse = await systemAdminApi.get<
-      PaginatedResponse<UserListItem>
-    >("/system-admin/users?status=ACTIVE&limit=1");
-
-    return {
-      totalTenants: tenantsResponse.data.meta.total,
-      pendingApprovals: pendingResponse.data.meta.total,
-      activeUsers: activeUsersResponse.data.meta.total,
-      recentRegistrations: pendingResponse.data.data.map((user) => ({
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        tenantName: user.tenantName,
-        createdAt: user.createdAt,
-      })),
-    };
+    const { data } = await systemAdminApi.get<DashboardStats>(
+      "/system-admin/dashboard",
+    );
+    return data;
   },
 
   // User Management
@@ -481,5 +472,54 @@ export const systemAdminService = {
       "/system-admin/plans",
     );
     return data;
+  },
+
+  // Notifications
+  async getNotifications(params: {
+    page?: number;
+    limit?: number;
+    read?: boolean;
+    type?: string;
+  } = {}): Promise<{
+    data: AdminNotification[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const queryParts: string[] = [];
+    if (params.page) queryParts.push(`page=${params.page}`);
+    if (params.limit) queryParts.push(`limit=${params.limit}`);
+    if (params.read !== undefined) queryParts.push(`read=${params.read}`);
+    if (params.type) queryParts.push(`type=${params.type}`);
+    const qs = queryParts.length ? `?${queryParts.join("&")}` : "";
+    const { data } = await systemAdminApi.get(`/system-admin/notifications${qs}`);
+    return data;
+  },
+
+  async getRecentNotifications(): Promise<AdminNotification[]> {
+    const { data } = await systemAdminApi.get<AdminNotification[]>(
+      "/system-admin/notifications/recent",
+    );
+    return data;
+  },
+
+  async getUnreadCount(): Promise<{ count: number }> {
+    const { data } = await systemAdminApi.get<{ count: number }>(
+      "/system-admin/notifications/unread-count",
+    );
+    return data;
+  },
+
+  async markNotificationAsRead(id: string): Promise<AdminNotification> {
+    const { data } = await systemAdminApi.patch<AdminNotification>(
+      `/system-admin/notifications/${id}/read`,
+    );
+    return data;
+  },
+
+  async markAllNotificationsAsRead(): Promise<void> {
+    await systemAdminApi.patch("/system-admin/notifications/read-all");
+  },
+
+  async deleteNotification(id: string): Promise<void> {
+    await systemAdminApi.delete(`/system-admin/notifications/${id}`);
   },
 };

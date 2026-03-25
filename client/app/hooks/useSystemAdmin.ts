@@ -17,6 +17,8 @@ const BASE_KEY = ["system-admin"] as const;
 const USERS_KEY = [...BASE_KEY, "users"] as const;
 const TENANTS_KEY = [...BASE_KEY, "tenants"] as const;
 
+const NOTIFICATIONS_KEY = [...BASE_KEY, "notifications"] as const;
+
 export const systemAdminQueryKeys = {
   all: BASE_KEY,
   me: () => [...BASE_KEY, "me"] as const,
@@ -32,6 +34,13 @@ export const systemAdminQueryKeys = {
     all: TENANTS_KEY,
     list: (params?: TenantsQueryParams) =>
       [...TENANTS_KEY, "list", params] as const,
+  },
+  notifications: {
+    all: NOTIFICATIONS_KEY,
+    list: (params?: Record<string, unknown>) =>
+      [...NOTIFICATIONS_KEY, "list", params] as const,
+    recent: () => [...NOTIFICATIONS_KEY, "recent"] as const,
+    unreadCount: () => [...NOTIFICATIONS_KEY, "unread-count"] as const,
   },
 };
 
@@ -350,5 +359,62 @@ export function useSystemAdminPlanLimits() {
     queryKey: [...systemAdminQueryKeys.all, "plans"] as const,
     queryFn: systemAdminService.getAllPlanLimits,
     staleTime: 1000 * 60 * 60, // 1 hour - plan limits rarely change
+  });
+}
+
+/**
+ * Hook for admin notifications
+ */
+export function useSystemAdminNotifications(params: {
+  page?: number;
+  limit?: number;
+  read?: boolean;
+  type?: string;
+} = {}) {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: systemAdminQueryKeys.notifications.list(params),
+    queryFn: () => systemAdminService.getNotifications(params),
+    staleTime: 1000 * 30,
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: (id: string) => systemAdminService.markNotificationAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.notifications.all });
+    },
+  });
+
+  const markAllAsReadMutation = useMutation({
+    mutationFn: () => systemAdminService.markAllNotificationsAsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.notifications.all });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => systemAdminService.deleteNotification(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: systemAdminQueryKeys.notifications.all });
+    },
+  });
+
+  return {
+    notifications: query.data?.data ?? [],
+    meta: query.data?.meta,
+    isLoading: query.isLoading,
+    markAsRead: markAsReadMutation.mutate,
+    markAllAsRead: markAllAsReadMutation.mutate,
+    deleteNotification: deleteMutation.mutate,
+  };
+}
+
+export function useSystemAdminUnreadCount() {
+  return useQuery({
+    queryKey: systemAdminQueryKeys.notifications.unreadCount(),
+    queryFn: systemAdminService.getUnreadCount,
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 30, // Auto-refresh every 30s
   });
 }

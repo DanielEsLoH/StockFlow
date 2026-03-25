@@ -1,20 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
   UserCheck,
   UserX,
   Trash2,
   AlertCircle,
   X,
+  ChevronLeft,
+  ChevronRight,
+  Users,
 } from "lucide-react";
 import { useSystemAdminUsers } from "~/hooks/useSystemAdmin";
 import { Button } from "~/components/ui/Button";
-import { Input } from "~/components/ui/Input";
+import {
+  pageVariants,
+  pageItemVariants,
+  tableRowVariants,
+  modalOverlayVariants,
+  modalContentVariants,
+} from "~/lib/animations";
 import type { UserStatus, UserRole } from "~/services/system-admin.service";
 
 export function meta() {
@@ -24,78 +30,54 @@ export function meta() {
   ];
 }
 
-// Status badge component
 function StatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<
-    string,
-    { bg: string; text: string; label: string }
-  > = {
+  const config: Record<string, { classes: string; label: string }> = {
     PENDING: {
-      bg: "bg-yellow-100 dark:bg-yellow-900/20",
-      text: "text-yellow-700 dark:text-yellow-400",
+      classes:
+        "bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400",
       label: "Pendiente",
     },
     ACTIVE: {
-      bg: "bg-green-100 dark:bg-green-900/20",
-      text: "text-green-700 dark:text-green-400",
+      classes:
+        "bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400",
       label: "Activo",
     },
     SUSPENDED: {
-      bg: "bg-red-100 dark:bg-red-900/20",
-      text: "text-red-700 dark:text-red-400",
+      classes:
+        "bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400",
       label: "Suspendido",
     },
     INACTIVE: {
-      bg: "bg-neutral-100 dark:bg-neutral-800",
-      text: "text-neutral-700 dark:text-neutral-400",
+      classes: "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400",
       label: "Inactivo",
     },
   };
-
-  const config = statusConfig[status] || statusConfig.INACTIVE;
-
+  const c = config[status] || config.INACTIVE;
   return (
     <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}
+      className={`inline-flex rounded-lg px-2 py-0.5 text-[11px] font-medium ${c.classes}`}
     >
-      {config.label}
+      {c.label}
     </span>
   );
 }
 
-// Role badge component
 function RoleBadge({ role }: { role: string }) {
-  const roleConfig: Record<string, { bg: string; text: string }> = {
-    SUPER_ADMIN: {
-      bg: "bg-purple-100 dark:bg-purple-900/20",
-      text: "text-purple-700 dark:text-purple-400",
-    },
-    ADMIN: {
-      bg: "bg-blue-100 dark:bg-blue-900/20",
-      text: "text-blue-700 dark:text-blue-400",
-    },
-    MANAGER: {
-      bg: "bg-cyan-100 dark:bg-cyan-900/20",
-      text: "text-cyan-700 dark:text-cyan-400",
-    },
-    EMPLOYEE: {
-      bg: "bg-neutral-100 dark:bg-neutral-800",
-      text: "text-neutral-700 dark:text-neutral-400",
-    },
+  const config: Record<string, string> = {
+    SUPER_ADMIN: "bg-accent-50 text-accent-600 dark:bg-accent-500/10 dark:text-accent-400",
+    ADMIN: "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400",
+    MANAGER: "bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400",
+    EMPLOYEE: "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400",
   };
-
-  const config = roleConfig[role] || roleConfig.EMPLOYEE;
-
   return (
     <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}
+      className={`inline-flex rounded-lg px-2 py-0.5 text-[11px] font-medium ${config[role] || config.EMPLOYEE}`}
     >
       {role}
     </span>
   );
 }
 
-// Confirmation dialog component
 function ConfirmDialog({
   isOpen,
   title,
@@ -118,40 +100,64 @@ function ConfirmDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onCancel} />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="relative z-10 w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-      >
-        <button
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <motion.div
+          variants={modalOverlayVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
           onClick={onCancel}
-          className="absolute right-4 top-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+        />
+        <motion.div
+          variants={modalContentVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className="relative z-10 w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
         >
-          <X className="h-5 w-5" />
-        </button>
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-          {title}
-        </h3>
-        <p className="mt-2 text-neutral-600 dark:text-neutral-400">{message}</p>
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="secondary" onClick={onCancel} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button
-            variant={confirmVariant}
-            onClick={onConfirm}
-            disabled={isLoading}
-            isLoading={isLoading}
-          >
-            {confirmLabel}
-          </Button>
-        </div>
-      </motion.div>
-    </div>
+          <h3 className="font-display text-lg font-semibold text-neutral-900 dark:text-white">
+            {title}
+          </h3>
+          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+            {message}
+          </p>
+          <div className="mt-6 flex justify-end gap-3">
+            <Button variant="secondary" size="sm" onClick={onCancel} disabled={isLoading}>
+              Cancelar
+            </Button>
+            <Button
+              variant={confirmVariant}
+              size="sm"
+              onClick={onConfirm}
+              disabled={isLoading}
+              isLoading={isLoading}
+            >
+              {confirmLabel}
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
   );
 }
+
+const statusOptions: { value: UserStatus | ""; label: string }[] = [
+  { value: "", label: "Todos" },
+  { value: "PENDING", label: "Pendiente" },
+  { value: "ACTIVE", label: "Activo" },
+  { value: "SUSPENDED", label: "Suspendido" },
+  { value: "INACTIVE", label: "Inactivo" },
+];
+
+const roleOptions: { value: UserRole | ""; label: string }[] = [
+  { value: "", label: "Todos" },
+  { value: "SUPER_ADMIN", label: "Super Admin" },
+  { value: "ADMIN", label: "Admin" },
+  { value: "MANAGER", label: "Manager" },
+  { value: "EMPLOYEE", label: "Employee" },
+];
 
 export default function SystemAdminUsersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -164,7 +170,6 @@ export default function SystemAdminUsersPage() {
     userName: string;
   } | null>(null);
 
-  // Get query params
   const page = parseInt(searchParams.get("page") || "1", 10);
   const status = searchParams.get("status") as UserStatus | undefined;
   const role = searchParams.get("role") as UserRole | undefined;
@@ -183,33 +188,35 @@ export default function SystemAdminUsersPage() {
     isDeleting,
   } = useSystemAdminUsers({ page, status, role, search, limit: 20 });
 
-  // Update search params
-  const updateParams = (updates: Record<string, string | undefined>) => {
-    const newParams = new URLSearchParams(searchParams);
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === undefined || value === "") {
-        newParams.delete(key);
-      } else {
-        newParams.set(key, value);
+  const updateParams = useCallback(
+    (updates: Record<string, string | undefined>) => {
+      const newParams = new URLSearchParams(searchParams);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === undefined || value === "") {
+          newParams.delete(key);
+        } else {
+          newParams.set(key, value);
+        }
+      });
+      if (!("page" in updates)) newParams.delete("page");
+      setSearchParams(newParams);
+    },
+    [searchParams, setSearchParams],
+  );
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const current = searchParams.get("search") || "";
+      if (searchInput !== current) {
+        updateParams({ search: searchInput || undefined });
       }
-    });
-    // Reset to page 1 when filters change (except when changing page)
-    if (!("page" in updates)) {
-      newParams.delete("page");
-    }
-    setSearchParams(newParams);
-  };
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, searchParams, updateParams]);
 
-  // Handle search submit
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateParams({ search: searchInput || undefined });
-  };
-
-  // Handle confirm action
   const handleConfirmAction = () => {
     if (!confirmDialog) return;
-
     switch (confirmDialog.type) {
       case "approve":
         approveUser(confirmDialog.userId);
@@ -224,335 +231,343 @@ export default function SystemAdminUsersPage() {
     setConfirmDialog(null);
   };
 
-  // Status filter options
-  const statusOptions: { value: UserStatus | ""; label: string }[] = [
-    { value: "", label: "Todos los estados" },
-    { value: "PENDING", label: "Pendiente" },
-    { value: "ACTIVE", label: "Activo" },
-    { value: "SUSPENDED", label: "Suspendido" },
-    { value: "INACTIVE", label: "Inactivo" },
-  ];
-
-  // Role filter options
-  const roleOptions: { value: UserRole | ""; label: string }[] = [
-    { value: "", label: "Todos los roles" },
-    { value: "SUPER_ADMIN", label: "Super Admin" },
-    { value: "ADMIN", label: "Admin" },
-    { value: "MANAGER", label: "Manager" },
-    { value: "EMPLOYEE", label: "Employee" },
-  ];
-
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <AlertCircle className="h-12 w-12 text-error-500 mb-4" />
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mb-2">
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-error-50 dark:bg-error-500/10">
+          <AlertCircle className="h-7 w-7 text-error-500" />
+        </div>
+        <h2 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-white">
           Error al cargar usuarios
         </h2>
-        <p className="text-neutral-600 dark:text-neutral-400">
-          No se pudieron cargar los datos de usuarios
+        <p className="mt-1 text-sm text-neutral-500">
+          No se pudieron cargar los datos
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-            <Input
-              type="text"
-              placeholder="Buscar por email o nombre..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Button type="submit" variant="secondary">
-            Buscar
-          </Button>
-        </form>
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-5"
+    >
+      {/* Header */}
+      <motion.div
+        variants={pageItemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div>
+          <h1 className="font-display text-2xl font-bold text-neutral-900 dark:text-white">
+            Usuarios
+          </h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            {meta
+              ? `${meta.total} usuarios en total`
+              : "Gestion de usuarios del sistema"}
+          </p>
+        </div>
+      </motion.div>
 
+      {/* Filters */}
+      <motion.div
+        variants={pageItemVariants}
+        className="flex flex-col gap-3 sm:flex-row sm:items-center"
+      >
+        {/* Search */}
+        <div className="relative flex-1 sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+          <input
+            type="text"
+            placeholder="Buscar por email o nombre..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="flex h-10 w-full rounded-xl border border-neutral-200 bg-white pl-9 pr-4 text-sm transition-colors placeholder:text-neutral-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-500"
+          />
+        </div>
+
+        {/* Filter selects */}
         <div className="flex gap-2">
           <select
             value={status || ""}
             onChange={(e) =>
               updateParams({ status: e.target.value || undefined })
             }
-            className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+            className="h-10 rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-700 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
           >
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            {statusOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
               </option>
             ))}
           </select>
-
           <select
             value={role || ""}
             onChange={(e) =>
               updateParams({ role: e.target.value || undefined })
             }
-            className="h-11 rounded-xl border border-neutral-200 bg-white px-3 text-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
+            className="h-10 rounded-xl border border-neutral-200 bg-white px-3 text-sm text-neutral-700 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
           >
-            {roleOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            {roleOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
               </option>
             ))}
           </select>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Active filters */}
+      {/* Active filter pills */}
       {(status || role || search) && (
-        <div className="flex flex-wrap gap-2">
+        <motion.div
+          variants={pageItemVariants}
+          className="flex flex-wrap gap-2"
+        >
           {status && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
-              Estado: {statusOptions.find((o) => o.value === status)?.label}
-              <button onClick={() => updateParams({ status: undefined })}>
-                <X className="h-4 w-4" />
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
+              {statusOptions.find((o) => o.value === status)?.label}
+              <button
+                onClick={() => updateParams({ status: undefined })}
+                className="hover:text-primary-800 dark:hover:text-primary-200"
+              >
+                <X className="h-3 w-3" />
               </button>
             </span>
           )}
           {role && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-              Rol: {role}
-              <button onClick={() => updateParams({ role: undefined })}>
-                <X className="h-4 w-4" />
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-accent-50 px-2.5 py-1 text-xs font-medium text-accent-600 dark:bg-accent-500/10 dark:text-accent-400">
+              {role}
+              <button
+                onClick={() => updateParams({ role: undefined })}
+                className="hover:text-accent-800 dark:hover:text-accent-200"
+              >
+                <X className="h-3 w-3" />
               </button>
             </span>
           )}
           {search && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-3 py-1 text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
-              Busqueda: {search}
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+              "{search}"
               <button
                 onClick={() => {
                   setSearchInput("");
                   updateParams({ search: undefined });
                 }}
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3" />
               </button>
             </span>
           )}
-        </div>
+        </motion.div>
       )}
 
-      {/* Users Table */}
+      {/* Table */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+        variants={pageItemVariants}
+        className="overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
       >
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-800/50">
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400">
                   Usuario
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400">
                   Tenant
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                <th className="hidden px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400 md:table-cell">
                   Rol
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                <th className="hidden px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400 lg:table-cell">
                   Registro
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                <th className="px-5 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-neutral-400">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
-              {isLoading ? (
-                // Loading skeleton
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-700" />
-                        <div>
-                          <div className="h-4 w-32 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
-                          <div className="mt-1 h-3 w-40 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {isLoading
+                ? Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 animate-pulse rounded-xl bg-neutral-200 dark:bg-neutral-700" />
+                          <div>
+                            <div className="h-3.5 w-28 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+                            <div className="mt-1.5 h-3 w-36 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-4 w-24 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-5 w-16 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-5 w-16 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-4 w-20 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-8 w-24 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700 ml-auto" />
-                    </td>
-                  </tr>
-                ))
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <Filter className="mx-auto h-12 w-12 text-neutral-400 mb-4" />
-                    <p className="text-neutral-600 dark:text-neutral-400">
-                      No se encontraron usuarios con los filtros seleccionados
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/20">
-                          <span className="text-sm font-medium text-primary-700 dark:text-primary-400">
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="h-3.5 w-24 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+                      </td>
+                      <td className="hidden px-5 py-3.5 md:table-cell">
+                        <div className="h-5 w-16 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="h-5 w-16 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+                      </td>
+                      <td className="hidden px-5 py-3.5 lg:table-cell">
+                        <div className="h-3.5 w-20 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="ml-auto h-8 w-20 animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-700" />
+                      </td>
+                    </tr>
+                  ))
+                : users.length === 0
+                  ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-16 text-center">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800">
+                          <Users className="h-6 w-6 text-neutral-400" />
+                        </div>
+                        <p className="mt-3 text-sm text-neutral-500">
+                          No se encontraron usuarios
+                        </p>
+                      </td>
+                    </tr>
+                  )
+                  : users.map((user, i) => (
+                    <motion.tr
+                      key={user.id}
+                      custom={i}
+                      variants={tableRowVariants}
+                      initial="hidden"
+                      animate="visible"
+                      className="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/30"
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-xs font-semibold text-primary-600 dark:bg-primary-500/10 dark:text-primary-400">
                             {user.firstName[0]}
                             {user.lastName[0]}
-                          </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-neutral-900 dark:text-white">
+                              {user.firstName} {user.lastName}
+                            </p>
+                            <p className="truncate text-xs text-neutral-500">
+                              {user.email}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-neutral-900 dark:text-white">
-                            {user.firstName} {user.lastName}
-                          </p>
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            {user.email}
-                          </p>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                          {user.tenantName}
+                        </p>
+                      </td>
+                      <td className="hidden px-5 py-3.5 md:table-cell">
+                        <RoleBadge role={user.role} />
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <StatusBadge status={user.status} />
+                      </td>
+                      <td className="hidden px-5 py-3.5 text-xs text-neutral-400 lg:table-cell">
+                        {new Date(user.createdAt).toLocaleDateString("es-ES")}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex justify-end gap-1.5">
+                          {user.status === "PENDING" && (
+                            <Button
+                              size="icon-xs"
+                              variant="soft-success"
+                              title="Aprobar"
+                              onClick={() =>
+                                setConfirmDialog({
+                                  type: "approve",
+                                  userId: user.id,
+                                  userName: `${user.firstName} ${user.lastName}`,
+                                })
+                              }
+                            >
+                              <UserCheck className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {user.status === "ACTIVE" && (
+                            <Button
+                              size="icon-xs"
+                              variant="soft-warning"
+                              title="Suspender"
+                              onClick={() =>
+                                setConfirmDialog({
+                                  type: "suspend",
+                                  userId: user.id,
+                                  userName: `${user.firstName} ${user.lastName}`,
+                                })
+                              }
+                            >
+                              <UserX className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {user.status === "SUSPENDED" && (
+                            <Button
+                              size="icon-xs"
+                              variant="soft-success"
+                              title="Activar"
+                              onClick={() =>
+                                setConfirmDialog({
+                                  type: "approve",
+                                  userId: user.id,
+                                  userName: `${user.firstName} ${user.lastName}`,
+                                })
+                              }
+                            >
+                              <UserCheck className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button
+                            size="icon-xs"
+                            variant="soft-danger"
+                            title="Eliminar"
+                            onClick={() =>
+                              setConfirmDialog({
+                                type: "delete",
+                                userId: user.id,
+                                userName: `${user.firstName} ${user.lastName}`,
+                              })
+                            }
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-neutral-900 dark:text-white">
-                        {user.tenantName}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <RoleBadge role={user.role} />
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge status={user.status} />
-                    </td>
-                    <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                      {new Date(user.createdAt).toLocaleDateString("es-ES")}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        {user.status === "PENDING" && (
-                          <Button
-                            size="sm"
-                            variant="success"
-                            onClick={() =>
-                              setConfirmDialog({
-                                type: "approve",
-                                userId: user.id,
-                                userName: `${user.firstName} ${user.lastName}`,
-                              })
-                            }
-                          >
-                            <UserCheck className="h-4 w-4" />
-                            <span className="hidden sm:inline ml-1">
-                              Aprobar
-                            </span>
-                          </Button>
-                        )}
-                        {user.status === "ACTIVE" && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() =>
-                              setConfirmDialog({
-                                type: "suspend",
-                                userId: user.id,
-                                userName: `${user.firstName} ${user.lastName}`,
-                              })
-                            }
-                          >
-                            <UserX className="h-4 w-4" />
-                            <span className="hidden sm:inline ml-1">
-                              Suspender
-                            </span>
-                          </Button>
-                        )}
-                        {user.status === "SUSPENDED" && (
-                          <Button
-                            size="sm"
-                            variant="success"
-                            onClick={() =>
-                              setConfirmDialog({
-                                type: "approve",
-                                userId: user.id,
-                                userName: `${user.firstName} ${user.lastName}`,
-                              })
-                            }
-                          >
-                            <UserCheck className="h-4 w-4" />
-                            <span className="hidden sm:inline ml-1">
-                              Activar
-                            </span>
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() =>
-                            setConfirmDialog({
-                              type: "delete",
-                              userId: user.id,
-                              userName: `${user.firstName} ${user.lastName}`,
-                            })
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+                      </td>
+                    </motion.tr>
+                  ))}
             </tbody>
           </table>
         </div>
 
         {/* Pagination */}
         {meta && meta.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-neutral-200 px-6 py-4 dark:border-neutral-800">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Mostrando {(meta.page - 1) * meta.limit + 1} a{" "}
-              {Math.min(meta.page * meta.limit, meta.total)} de {meta.total}{" "}
-              usuarios
+          <div className="flex items-center justify-between border-t border-neutral-200 px-5 py-3 dark:border-neutral-800">
+            <p className="text-xs text-neutral-400">
+              {(meta.page - 1) * meta.limit + 1}–
+              {Math.min(meta.page * meta.limit, meta.total)} de {meta.total}
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Button
-                variant="secondary"
-                size="sm"
+                variant="ghost"
+                size="icon-xs"
                 disabled={!meta.hasPreviousPage}
                 onClick={() => updateParams({ page: String(page - 1) })}
               >
                 <ChevronLeft className="h-4 w-4" />
-                Anterior
               </Button>
               <Button
-                variant="secondary"
-                size="sm"
+                variant="ghost"
+                size="icon-xs"
                 disabled={!meta.hasNextPage}
                 onClick={() => updateParams({ page: String(page + 1) })}
               >
-                Siguiente
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -560,7 +575,7 @@ export default function SystemAdminUsersPage() {
         )}
       </motion.div>
 
-      {/* Confirmation Dialog */}
+      {/* Confirm Dialog */}
       <ConfirmDialog
         isOpen={!!confirmDialog}
         title={
@@ -572,10 +587,10 @@ export default function SystemAdminUsersPage() {
         }
         message={
           confirmDialog?.type === "approve"
-            ? `Esta seguro de aprobar al usuario ${confirmDialog?.userName}? Podra acceder al sistema.`
+            ? `¿Aprobar a ${confirmDialog?.userName}? Podra acceder al sistema.`
             : confirmDialog?.type === "suspend"
-              ? `Esta seguro de suspender al usuario ${confirmDialog?.userName}? No podra acceder al sistema.`
-              : `Esta seguro de eliminar al usuario ${confirmDialog?.userName}? Esta accion no se puede deshacer.`
+              ? `¿Suspender a ${confirmDialog?.userName}? No podra acceder al sistema.`
+              : `¿Eliminar a ${confirmDialog?.userName}? Esta accion no se puede deshacer.`
         }
         confirmLabel={
           confirmDialog?.type === "approve"
@@ -591,6 +606,6 @@ export default function SystemAdminUsersPage() {
         onCancel={() => setConfirmDialog(null)}
         isLoading={isApproving || isSuspending || isDeleting}
       />
-    </div>
+    </motion.div>
   );
 }

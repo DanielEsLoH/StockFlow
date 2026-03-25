@@ -1926,4 +1926,70 @@ export class BrevoService {
     };
     return methodMap[method] ?? method;
   }
+
+  // ============================================================================
+  // ADMIN NOTIFICATION EMAIL
+  // ============================================================================
+
+  /**
+   * Sends a notification email to the super admin about system events.
+   *
+   * @param data - Notification data
+   * @returns Send result
+   */
+  async sendAdminNotificationEmail(data: {
+    to: string;
+    subject: string;
+    eventType: string;
+    details: Record<string, string>;
+  }): Promise<SendMailResult> {
+    const { to, subject, eventType, details } = data;
+
+    const detailRows = Object.entries(details)
+      .map(
+        ([key, value]) =>
+          `<tr>
+            <td style="padding: 8px 12px; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">${key}</td>
+            <td style="padding: 8px 12px; color: #111827; font-size: 14px; border-bottom: 1px solid #f3f4f6;">${value}</td>
+          </tr>`,
+      )
+      .join('');
+
+    const content = `
+      <div style="padding: 12px 16px; background-color: #eef2ff; border-left: 4px solid #6366f1; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #4338ca; font-size: 14px; font-weight: 500;">
+          ${eventType}
+        </p>
+      </div>
+      <h2 style="margin: 0 0 16px 0; color: #111827; font-size: 20px; font-weight: 600;">
+        Notificacion del Sistema
+      </h2>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; margin-bottom: 24px;">
+        ${detailRows}
+      </table>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px 0;">
+        <tr>
+          <td style="border-radius: 6px; background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+            <a href="${this.appUrl}/system-admin/dashboard" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 500;">
+              Ir al Panel de Admin
+            </a>
+          </td>
+        </tr>
+      </table>
+      <p style="margin: 0; color: #6b7280; font-size: 14px;">
+        Este es un correo automatico del sistema de administracion de StockFlow.
+      </p>`;
+
+    const htmlContent = this.getEmailTemplate(
+      content,
+      `${eventType} - StockFlow Admin`,
+    );
+
+    return this.sendEmail({
+      to,
+      subject,
+      htmlContent,
+      textContent: `${eventType}: ${Object.values(details).join('. ')}`,
+    });
+  }
 }

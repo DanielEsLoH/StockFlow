@@ -11,6 +11,9 @@ import {
   HttpStatus,
   Logger,
   UseGuards,
+  ParseBoolPipe,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,6 +24,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { SystemAdminService } from './system-admin.service';
+import { SystemAdminNotificationsService } from './system-admin-notifications.service';
 import {
   SystemAdminLoginDto,
   UserIdParamDto,
@@ -77,7 +81,10 @@ import { Public } from '../common/decorators';
 export class SystemAdminController {
   private readonly logger = new Logger(SystemAdminController.name);
 
-  constructor(private readonly systemAdminService: SystemAdminService) {}
+  constructor(
+    private readonly systemAdminService: SystemAdminService,
+    private readonly notificationsService: SystemAdminNotificationsService,
+  ) {}
 
   // ============================================================================
   // AUTHENTICATION ENDPOINTS
@@ -787,5 +794,118 @@ export class SystemAdminController {
   getAllPlanLimits() {
     this.logger.log('Get all plan limits request');
     return this.systemAdminService.getAllPlanLimits();
+  }
+
+  // ============================================================================
+  // DASHBOARD ENDPOINTS
+  // ============================================================================
+
+  @Get('dashboard')
+  @UseGuards(SystemAdminAuthGuard)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Get dashboard statistics',
+    description:
+      'Returns aggregated dashboard statistics including totals, plan distribution, tenant growth, and recent registrations.',
+  })
+  @ApiResponse({ status: 200, description: 'Dashboard statistics' })
+  async getDashboardStats() {
+    this.logger.log('Get dashboard stats request');
+    return this.systemAdminService.getDashboardStats();
+  }
+
+  // ============================================================================
+  // NOTIFICATION ENDPOINTS
+  // ============================================================================
+
+  @Get('notifications')
+  @UseGuards(SystemAdminAuthGuard)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'List notifications',
+    description: 'Returns paginated notifications for the current admin.',
+  })
+  @ApiResponse({ status: 200, description: 'Paginated notifications' })
+  async getNotifications(
+    @CurrentAdmin() admin: SystemAdminRequestUser,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('read') read?: string,
+    @Query('type') type?: string,
+  ) {
+    const filters = {
+      page,
+      limit,
+      ...(read !== undefined && { read: read === 'true' }),
+      ...(type && { type: type as any }),
+    };
+    return this.notificationsService.findAll(admin.adminId, filters);
+  }
+
+  @Get('notifications/recent')
+  @UseGuards(SystemAdminAuthGuard)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Get recent notifications',
+    description: 'Returns the 5 most recent notifications for the dropdown.',
+  })
+  @ApiResponse({ status: 200, description: 'Recent notifications' })
+  async getRecentNotifications(
+    @CurrentAdmin() admin: SystemAdminRequestUser,
+  ) {
+    return this.notificationsService.findRecent(admin.adminId);
+  }
+
+  @Get('notifications/unread-count')
+  @UseGuards(SystemAdminAuthGuard)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Get unread notification count',
+    description: 'Returns the count of unread notifications.',
+  })
+  @ApiResponse({ status: 200, description: 'Unread count' })
+  async getUnreadCount(
+    @CurrentAdmin() admin: SystemAdminRequestUser,
+  ) {
+    const count = await this.notificationsService.getUnreadCount(admin.adminId);
+    return { count };
+  }
+
+  @Patch('notifications/:id/read')
+  @UseGuards(SystemAdminAuthGuard)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Mark notification as read',
+    description: 'Marks a specific notification as read.',
+  })
+  @ApiResponse({ status: 200, description: 'Notification marked as read' })
+  async markNotificationAsRead(@Param('id') id: string) {
+    return this.notificationsService.markAsRead(id);
+  }
+
+  @Patch('notifications/read-all')
+  @UseGuards(SystemAdminAuthGuard)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Mark all notifications as read',
+    description: 'Marks all notifications for the current admin as read.',
+  })
+  @ApiResponse({ status: 200, description: 'All notifications marked as read' })
+  async markAllNotificationsAsRead(
+    @CurrentAdmin() admin: SystemAdminRequestUser,
+  ) {
+    return this.notificationsService.markAllAsRead(admin.adminId);
+  }
+
+  @Delete('notifications/:id')
+  @UseGuards(SystemAdminAuthGuard)
+  @ApiBearerAuth('SystemAdmin-JWT')
+  @ApiOperation({
+    summary: 'Delete a notification',
+    description: 'Deletes a specific notification.',
+  })
+  @ApiResponse({ status: 200, description: 'Notification deleted' })
+  async deleteNotification(@Param('id') id: string) {
+    return this.notificationsService.delete(id);
   }
 }

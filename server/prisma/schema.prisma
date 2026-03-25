@@ -147,6 +147,17 @@ enum SystemAdminStatus {
   SUSPENDED
 }
 
+enum SystemAdminNotificationType {
+  NEW_USER_REGISTRATION
+  SUBSCRIPTION_CHANGE
+  PLAN_UPGRADE
+  PLAN_DOWNGRADE
+  PLAN_SUSPENDED
+  PLAN_REACTIVATED
+  USER_SUSPENDED
+  SYSTEM_ALERT
+}
+
 enum InvitationStatus {
   PENDING
   ACCEPTED
@@ -939,7 +950,8 @@ model SystemAdmin {
   createdAt    DateTime          @default(now()) @map("created_at")
   updatedAt    DateTime          @updatedAt @map("updated_at")
 
-  auditLogs SystemAdminAuditLog[]
+  auditLogs     SystemAdminAuditLog[]
+  notifications SystemAdminNotification[]
 
   @@index([email])
   @@index([status])
@@ -962,6 +974,25 @@ model SystemAdminAuditLog {
   @@index([action])
   @@index([createdAt])
   @@map("system_admin_audit_logs")
+}
+
+model SystemAdminNotification {
+  id        String                      @id @default(cuid())
+  adminId   String?                     @map("admin_id")
+  admin     SystemAdmin?                @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  type      SystemAdminNotificationType
+  title     String
+  message   String
+  read      Boolean                     @default(false)
+  readAt    DateTime?                   @map("read_at")
+  link      String?
+  metadata  Json?
+  createdAt DateTime                    @default(now()) @map("created_at")
+  updatedAt DateTime                    @updatedAt @map("updated_at")
+
+  @@index([adminId, read])
+  @@index([createdAt])
+  @@map("system_admin_notifications")
 }
 
 // ============================================================================

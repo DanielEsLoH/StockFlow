@@ -621,6 +621,23 @@ export class AuthService {
         error instanceof Error ? error.stack : undefined,
       );
     }
+
+    // Create in-app notification for system admins
+    try {
+      await this.prisma.systemAdminNotification.create({
+        data: {
+          type: 'NEW_USER_REGISTRATION',
+          title: 'Nuevo usuario pendiente',
+          message: `${userName} (${user.email}) de ${user.tenant.name} verifico su email y espera aprobacion`,
+          link: '/system-admin/users',
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to create admin in-app notification for user: ${user.email}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   /**

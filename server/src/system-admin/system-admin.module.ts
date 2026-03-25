@@ -4,6 +4,7 @@ import { JwtModule, type JwtModuleOptions } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SystemAdminController } from './system-admin.controller';
 import { SystemAdminService } from './system-admin.service';
+import { SystemAdminNotificationsService } from './system-admin-notifications.service';
 import {
   SystemAdminJwtStrategy,
   SystemAdminJwtRefreshStrategy,
@@ -56,11 +57,12 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
   controllers: [SystemAdminController],
   providers: [
     SystemAdminService,
+    SystemAdminNotificationsService,
     SystemAdminJwtStrategy,
     SystemAdminJwtRefreshStrategy,
     SystemAdminAuthGuard,
     SystemAdminRoleGuard,
   ],
-  exports: [SystemAdminService],
+  exports: [SystemAdminService, SystemAdminNotificationsService],
 })
 export class SystemAdminModule {}

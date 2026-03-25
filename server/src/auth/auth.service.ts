@@ -1268,12 +1268,16 @@ export class AuthService {
 
     try {
       // Determine which OAuth ID field to search
-      const oauthIdField =
-        provider === AuthProvider.GOOGLE ? 'googleId' : 'githubId';
-      const oauthId =
-        provider === AuthProvider.GOOGLE
-          ? oauthUser.googleId
-          : oauthUser.githubId;
+      const oauthIdFieldMap: Record<string, string> = {
+        [AuthProvider.GOOGLE]: 'googleId',
+        [AuthProvider.GITHUB]: 'githubId',
+      };
+      const oauthIdValueMap: Record<string, string | undefined> = {
+        [AuthProvider.GOOGLE]: oauthUser.googleId,
+        [AuthProvider.GITHUB]: oauthUser.githubId,
+      };
+      const oauthIdField = oauthIdFieldMap[provider];
+      const oauthId = oauthIdValueMap[provider];
 
       // First, try to find user by OAuth ID
       let user = await this.prisma.user.findFirst({
@@ -1390,27 +1394,44 @@ export class AuthService {
     }
 
     // Validate tenant status
-    if (
-      user.tenant.status === TenantStatus.SUSPENDED ||
-      user.tenant.status === TenantStatus.INACTIVE
-    ) {
-      this.logger.warn(`OAuth login denied - tenant not active: ${user.email}`);
+    if (user.tenant.status === TenantStatus.SUSPENDED) {
+      this.logger.warn(
+        `OAuth login denied - tenant suspended: ${user.email}`,
+      );
       return {
         status: 'error',
         error:
-          'Your organization account is not active. Please contact support.',
+          'Your organization has been suspended. Please contact support.',
+      };
+    }
+
+    if (user.tenant.status === TenantStatus.INACTIVE) {
+      this.logger.warn(
+        `OAuth login denied - tenant inactive: ${user.email}`,
+      );
+      return {
+        status: 'error',
+        error:
+          'Your organization account is inactive. Please contact support.',
       };
     }
 
     // Validate user status
-    if (
-      user.status === UserStatus.SUSPENDED ||
-      user.status === UserStatus.INACTIVE
-    ) {
-      this.logger.warn(`OAuth login denied - user not active: ${user.email}`);
+    if (user.status === UserStatus.SUSPENDED) {
+      this.logger.warn(`OAuth login denied - user suspended: ${user.email}`);
       return {
         status: 'error',
-        error: 'Your account is not active. Please contact your administrator.',
+        error:
+          'Your account has been suspended. Please contact your administrator.',
+      };
+    }
+
+    if (user.status === UserStatus.INACTIVE) {
+      this.logger.warn(`OAuth login denied - user inactive: ${user.email}`);
+      return {
+        status: 'error',
+        error:
+          'Your account is inactive. Please contact your administrator.',
       };
     }
 

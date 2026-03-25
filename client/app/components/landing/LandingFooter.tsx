@@ -75,7 +75,7 @@ const recursosLinks: FooterLink[] = [
 
 const legalLinks: FooterLink[] = [
   { label: "Términos", href: "#empresa" },
-  { label: "Privacidad", href: "#empresa" },
+  { label: "Privacidad", href: "/privacy" },
   { label: "Cookies", href: "#empresa" },
 ];
 

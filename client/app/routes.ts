@@ -17,6 +17,7 @@ export default [
   route("reset-password", "routes/reset-password.tsx"),
   route("accept-invitation", "routes/accept-invitation.tsx"),
   route("oauth/callback", "routes/oauth.callback.tsx"),
+  route("privacy", "routes/privacy.tsx"),
 
   // System Admin routes (separate from tenant app)
   route("system-admin/login", "routes/system-admin.login.tsx"),

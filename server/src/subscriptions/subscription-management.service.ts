@@ -254,21 +254,31 @@ export class SubscriptionManagementService {
       throw new BadRequestException('Subscription is not suspended');
     }
 
-    // Check if subscription hasn't expired
-    if (subscription.endDate < new Date()) {
-      throw new BadRequestException(
-        'Subscription has expired. Please activate a new plan.',
-      );
-    }
+    // If subscription has expired, extend it from today
+    const now = new Date();
+    const isExpired = subscription.endDate < now;
 
     const result = await this.prisma.$transaction(async (tx) => {
+      const updateData: Record<string, unknown> = {
+        status: SubscriptionStatus.ACTIVE,
+        suspendedAt: null,
+        suspendedReason: null,
+      };
+
+      if (isExpired) {
+        const periodDays = getPeriodDays(subscription.periodType);
+        const newEndDate = new Date(now);
+        newEndDate.setDate(newEndDate.getDate() + periodDays);
+        updateData.startDate = now;
+        updateData.endDate = newEndDate;
+        this.logger.log(
+          `Subscription expired, extending ${periodDays} days from today for tenant ${tenantId}`,
+        );
+      }
+
       const updatedSubscription = await tx.subscription.update({
         where: { tenantId },
-        data: {
-          status: SubscriptionStatus.ACTIVE,
-          suspendedAt: null,
-          suspendedReason: null,
-        },
+        data: updateData,
       });
 
       const updatedTenant = await tx.tenant.update({

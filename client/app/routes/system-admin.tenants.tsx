@@ -480,32 +480,32 @@ export default function SystemAdminTenantsPage() {
                       <td className="px-5 py-3.5">
                         <div className="flex justify-end gap-1.5">
                           <Button
-                            size="icon-xs"
+                            size="xs"
                             variant="soft-primary"
-                            title={tenant.plan ? "Cambiar Plan" : "Activar Plan"}
                             onClick={() => setActivatePlanDialog({ tenantId: tenant.id, tenantName: tenant.name, currentPlan: tenant.plan })}
                             disabled={tenant.status === "SUSPENDED"}
+                            leftIcon={<Calendar className="h-3 w-3" />}
                           >
-                            <Calendar className="h-3.5 w-3.5" />
+                            {tenant.plan ? "Cambiar" : "Activar"}
                           </Button>
                           {tenant.status === "SUSPENDED" ? (
                             <Button
-                              size="icon-xs"
+                              size="xs"
                               variant="soft-success"
-                              title="Reactivar"
                               onClick={() => reactivatePlan(tenant.id)}
                               disabled={isReactivatingPlan}
+                              leftIcon={<Play className="h-3 w-3" />}
                             >
-                              <Play className="h-3.5 w-3.5" />
+                              Reactivar
                             </Button>
                           ) : tenant.plan ? (
                             <Button
-                              size="icon-xs"
+                              size="xs"
                               variant="soft-danger"
-                              title="Suspender"
                               onClick={() => setSuspendPlanDialog({ tenantId: tenant.id, tenantName: tenant.name })}
+                              leftIcon={<Ban className="h-3 w-3" />}
                             >
-                              <Ban className="h-3.5 w-3.5" />
+                              Suspender
                             </Button>
                           ) : null}
                         </div>

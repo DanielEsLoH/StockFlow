@@ -478,9 +478,9 @@ export default function SystemAdminUsersPage() {
                         <div className="flex justify-end gap-1.5">
                           {user.status === "PENDING" && (
                             <Button
-                              size="icon-xs"
+                              size="xs"
                               variant="soft-success"
-                              title="Aprobar"
+                              leftIcon={<UserCheck className="h-3 w-3" />}
                               onClick={() =>
                                 setConfirmDialog({
                                   type: "approve",
@@ -489,14 +489,14 @@ export default function SystemAdminUsersPage() {
                                 })
                               }
                             >
-                              <UserCheck className="h-3.5 w-3.5" />
+                              Aprobar
                             </Button>
                           )}
                           {user.status === "ACTIVE" && (
                             <Button
-                              size="icon-xs"
+                              size="xs"
                               variant="soft-warning"
-                              title="Suspender"
+                              leftIcon={<UserX className="h-3 w-3" />}
                               onClick={() =>
                                 setConfirmDialog({
                                   type: "suspend",
@@ -505,14 +505,14 @@ export default function SystemAdminUsersPage() {
                                 })
                               }
                             >
-                              <UserX className="h-3.5 w-3.5" />
+                              Suspender
                             </Button>
                           )}
                           {user.status === "SUSPENDED" && (
                             <Button
-                              size="icon-xs"
+                              size="xs"
                               variant="soft-success"
-                              title="Activar"
+                              leftIcon={<UserCheck className="h-3 w-3" />}
                               onClick={() =>
                                 setConfirmDialog({
                                   type: "approve",
@@ -521,13 +521,13 @@ export default function SystemAdminUsersPage() {
                                 })
                               }
                             >
-                              <UserCheck className="h-3.5 w-3.5" />
+                              Activar
                             </Button>
                           )}
                           <Button
-                            size="icon-xs"
+                            size="xs"
                             variant="soft-danger"
-                            title="Eliminar"
+                            leftIcon={<Trash2 className="h-3 w-3" />}
                             onClick={() =>
                               setConfirmDialog({
                                 type: "delete",
@@ -536,7 +536,7 @@ export default function SystemAdminUsersPage() {
                               })
                             }
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            Eliminar
                           </Button>
                         </div>
                       </td>

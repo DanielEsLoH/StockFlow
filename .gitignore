@@ -44,6 +44,12 @@ yarn-error.log*
 /.claude
 /client/.claude
 
+# Claude planning files (working memory, not project code)
+findings.md
+progress.md
+task_plan.md
+skills-lock.json
+
 # Agents
 .agents/
 

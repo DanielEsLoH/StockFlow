@@ -3,6 +3,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   SubscriptionStatus,
   TenantStatus,
+  NotificationType,
+  NotificationPriority,
   Subscription,
   Tenant,
   User,
@@ -37,13 +39,13 @@ export class SubscriptionExpiryService {
     this.logger.log('Running subscription expiry check...');
 
     try {
-      // 1. Send warning emails for subscriptions expiring in 7 days
-      await this.notifyExpiringSubscriptions();
+      // Warnings: 30, 15, 7 days and tomorrow
+      await this.notifyExpiring(30);
+      await this.notifyExpiring(15);
+      await this.notifyExpiring(7);
+      await this.notifyExpiring(1);
 
-      // 2. Send final warning for subscriptions expiring tomorrow
-      await this.notifyExpiringTomorrow();
-
-      // 3. Expire subscriptions that have passed their end date
+      // Expire subscriptions that have passed their end date
       await this.expireSubscriptions();
 
       this.logger.log('Subscription expiry check completed');
@@ -56,79 +58,36 @@ export class SubscriptionExpiryService {
   }
 
   /**
-   * Notifies tenants whose subscriptions expire in 7 days.
+   * Notifies tenants whose subscriptions expire in exactly `days` days.
+   * Uses a 24-hour window to ensure each subscription only triggers once per interval.
    */
-  private async notifyExpiringSubscriptions(): Promise<void> {
-    const sevenDaysFromNow = new Date();
-    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+  private async notifyExpiring(days: number): Promise<void> {
+    const upper = new Date();
+    upper.setDate(upper.getDate() + days);
 
-    const sixDaysFromNow = new Date();
-    sixDaysFromNow.setDate(sixDaysFromNow.getDate() + 6);
+    const lower = new Date();
+    lower.setDate(lower.getDate() + days - 1);
 
-    // Find subscriptions expiring in exactly 7 days (within a 24-hour window)
     const expiringSubscriptions = await this.prisma.subscription.findMany({
       where: {
         status: SubscriptionStatus.ACTIVE,
-        endDate: {
-          gte: sixDaysFromNow,
-          lte: sevenDaysFromNow,
-        },
+        endDate: { gte: lower, lte: upper },
       },
       include: {
         tenant: {
           include: {
-            users: {
-              where: { role: 'ADMIN', status: 'ACTIVE' },
-            },
+            users: { where: { role: 'ADMIN', status: 'ACTIVE' } },
           },
         },
       },
     });
 
     this.logger.log(
-      `Found ${expiringSubscriptions.length} subscriptions expiring in 7 days`,
+      `Found ${expiringSubscriptions.length} subscriptions expiring in ${days} day(s)`,
     );
 
     for (const subscription of expiringSubscriptions) {
-      await this.sendExpiryWarning(subscription, 7);
-    }
-  }
-
-  /**
-   * Notifies tenants whose subscriptions expire tomorrow.
-   */
-  private async notifyExpiringTomorrow(): Promise<void> {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const today = new Date();
-
-    // Find subscriptions expiring tomorrow (within a 24-hour window)
-    const expiringSubscriptions = await this.prisma.subscription.findMany({
-      where: {
-        status: SubscriptionStatus.ACTIVE,
-        endDate: {
-          gte: today,
-          lte: tomorrow,
-        },
-      },
-      include: {
-        tenant: {
-          include: {
-            users: {
-              where: { role: 'ADMIN', status: 'ACTIVE' },
-            },
-          },
-        },
-      },
-    });
-
-    this.logger.log(
-      `Found ${expiringSubscriptions.length} subscriptions expiring tomorrow`,
-    );
-
-    for (const subscription of expiringSubscriptions) {
-      await this.sendExpiryWarning(subscription, 1);
+      await this.sendExpiryWarning(subscription, days);
     }
   }
 
@@ -206,7 +165,7 @@ export class SubscriptionExpiryService {
   }
 
   /**
-   * Sends a warning email about upcoming subscription expiration.
+   * Sends a warning email and in-app notification about upcoming subscription expiration.
    */
   private async sendExpiryWarning(
     subscription: Subscription & {
@@ -216,8 +175,22 @@ export class SubscriptionExpiryService {
   ): Promise<void> {
     const planLimits = PLAN_LIMITS[subscription.plan];
 
+    // Urgency escalates as expiry approaches
+    const priority =
+      daysUntilExpiry <= 3
+        ? NotificationPriority.URGENT
+        : daysUntilExpiry <= 7
+          ? NotificationPriority.HIGH
+          : NotificationPriority.MEDIUM;
+
+    const title =
+      daysUntilExpiry === 1
+        ? 'Tu suscripción vence mañana'
+        : `Tu suscripción vence en ${daysUntilExpiry} días`;
+
     for (const user of subscription.tenant.users) {
       try {
+        // Email notification
         const result = await this.brevoService.sendSubscriptionExpiringEmail({
           to: user.email,
           firstName: user.firstName,
@@ -235,6 +208,33 @@ export class SubscriptionExpiryService {
           this.logger.warn(
             `Failed to send expiry warning to ${user.email}: ${result.error}`,
           );
+        }
+
+        // In-app notification (deduplicated: skip if one was already created today)
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const existing = await this.prisma.notification.findFirst({
+          where: {
+            tenantId: subscription.tenantId,
+            userId: user.id,
+            type: NotificationType.SUBSCRIPTION_EXPIRING,
+            createdAt: { gte: startOfDay },
+          },
+        });
+
+        if (!existing) {
+          await this.prisma.notification.create({
+            data: {
+              tenantId: subscription.tenantId,
+              userId: user.id,
+              type: NotificationType.SUBSCRIPTION_EXPIRING,
+              title,
+              message: `El plan ${planLimits.displayName} de ${subscription.tenant.name} vence el ${subscription.endDate.toLocaleDateString('es-CO')}. Renueva para continuar sin interrupciones.`,
+              priority,
+              link: '/settings/billing',
+            },
+          });
         }
       } catch (error) {
         this.logger.error(
@@ -255,6 +255,7 @@ export class SubscriptionExpiryService {
     const planLimits = PLAN_LIMITS[subscription.plan];
 
     try {
+      // Email
       const result = await this.brevoService.sendSubscriptionExpiredEmail({
         to: user.email,
         firstName: user.firstName,
@@ -272,6 +273,19 @@ export class SubscriptionExpiryService {
           `Failed to send expiration notification to ${user.email}: ${result.error}`,
         );
       }
+
+      // In-app notification
+      await this.prisma.notification.create({
+        data: {
+          tenantId: subscription.tenantId,
+          userId: user.id,
+          type: NotificationType.SUBSCRIPTION_EXPIRED,
+          title: 'Tu suscripción ha vencido',
+          message: `El plan ${planLimits.displayName} de ${subscription.tenant.name} ha expirado. Renueva ahora para recuperar el acceso.`,
+          priority: NotificationPriority.URGENT,
+          link: '/settings/billing',
+        },
+      });
     } catch (error) {
       this.logger.error(
         `Error sending expiration notification to ${user.email}`,

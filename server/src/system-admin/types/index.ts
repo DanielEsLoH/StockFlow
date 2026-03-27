@@ -111,6 +111,8 @@ export interface TenantListItem {
   status: string;
   plan: string | null;
   userCount: number;
+  subscriptionEndDate: Date | null;
+  subscriptionStatus: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

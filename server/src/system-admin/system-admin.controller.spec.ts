@@ -66,6 +66,8 @@ describe('SystemAdminController', () => {
     status: 'ACTIVE',
     plan: 'PYME',
     userCount: 5,
+    subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    subscriptionStatus: 'ACTIVE',
     createdAt: new Date(),
     updatedAt: new Date(),
   };

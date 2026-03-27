@@ -105,6 +105,8 @@ export interface TenantListItem {
   status: TenantStatus;
   plan: SubscriptionPlan | null;
   userCount: number;
+  subscriptionEndDate: string | null;
+  subscriptionStatus: string | null;
   createdAt: string;
   updatedAt: string;
 }

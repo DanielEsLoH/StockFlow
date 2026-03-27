@@ -12,6 +12,7 @@ import {
   Calendar,
   Ban,
   Play,
+  Clock,
 } from "lucide-react";
 import {
   useSystemAdminTenants,
@@ -82,6 +83,68 @@ function PlanBadge({ plan }: { plan: string | null }) {
   return (
     <span className={`inline-flex rounded-lg px-2 py-0.5 text-[11px] font-medium ${config[plan] || "bg-neutral-100 text-neutral-500 dark:bg-neutral-800"}`}>
       {plan}
+    </span>
+  );
+}
+
+function ExpiryBadge({
+  endDate,
+  status,
+}: {
+  endDate: string | null;
+  status: string | null;
+}) {
+  if (!endDate || !status || status === "CANCELLED") {
+    return <span className="text-xs text-neutral-400">—</span>;
+  }
+
+  const end = new Date(endDate);
+  const now = new Date();
+  const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (status === "EXPIRED" || daysLeft <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-lg bg-error-50 px-2 py-0.5 text-[11px] font-medium text-error-600 dark:bg-error-500/10 dark:text-error-400">
+        <span className="h-1.5 w-1.5 rounded-full bg-error-500" />
+        Vencida
+      </span>
+    );
+  }
+
+  if (daysLeft <= 7) {
+    return (
+      <motion.span
+        animate={{ opacity: [1, 0.5, 1] }}
+        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+        className="inline-flex items-center gap-1 rounded-lg bg-error-50 px-2 py-0.5 text-[11px] font-semibold text-error-600 dark:bg-error-500/10 dark:text-error-400"
+      >
+        <Clock className="h-3 w-3" />
+        {daysLeft}d
+      </motion.span>
+    );
+  }
+
+  if (daysLeft <= 15) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-lg bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-600 dark:bg-orange-500/10 dark:text-orange-400">
+        <Clock className="h-3 w-3" />
+        {daysLeft}d
+      </span>
+    );
+  }
+
+  if (daysLeft <= 30) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-lg bg-warning-50 px-2 py-0.5 text-[11px] font-medium text-warning-600 dark:bg-warning-500/10 dark:text-warning-400">
+        <Clock className="h-3 w-3" />
+        {daysLeft}d
+      </span>
+    );
+  }
+
+  return (
+    <span className="text-xs text-neutral-500 dark:text-neutral-400" title={end.toLocaleDateString("es-CO")}>
+      {end.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}
     </span>
   );
 }
@@ -419,7 +482,8 @@ export default function SystemAdminTenantsPage() {
                 <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400">Plan</th>
                 <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400">Estado</th>
                 <th className="hidden px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400 md:table-cell">Usuarios</th>
-                <th className="hidden px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400 lg:table-cell">Registro</th>
+                <th className="hidden px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400 lg:table-cell">Activo hasta</th>
+                <th className="hidden px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-400 xl:table-cell">Registro</th>
                 <th className="px-5 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-neutral-400">Acciones</th>
               </tr>
             </thead>
@@ -431,14 +495,15 @@ export default function SystemAdminTenantsPage() {
                       <td className="px-5 py-3.5"><div className="h-5 w-16 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" /></td>
                       <td className="px-5 py-3.5"><div className="h-5 w-16 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" /></td>
                       <td className="hidden px-5 py-3.5 md:table-cell"><div className="h-3.5 w-8 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" /></td>
-                      <td className="hidden px-5 py-3.5 lg:table-cell"><div className="h-3.5 w-20 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" /></td>
+                      <td className="hidden px-5 py-3.5 lg:table-cell"><div className="h-5 w-20 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" /></td>
+                      <td className="hidden px-5 py-3.5 xl:table-cell"><div className="h-3.5 w-20 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" /></td>
                       <td className="px-5 py-3.5"><div className="ml-auto h-8 w-24 animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-700" /></td>
                     </tr>
                   ))
                 : tenants.length === 0
                   ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-16 text-center">
+                      <td colSpan={7} className="px-5 py-16 text-center">
                         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800">
                           <Building2 className="h-6 w-6 text-neutral-400" />
                         </div>
@@ -474,7 +539,10 @@ export default function SystemAdminTenantsPage() {
                           {tenant.userCount}
                         </div>
                       </td>
-                      <td className="hidden px-5 py-3.5 text-xs text-neutral-400 lg:table-cell">
+                      <td className="hidden px-5 py-3.5 lg:table-cell">
+                        <ExpiryBadge endDate={tenant.subscriptionEndDate} status={tenant.subscriptionStatus} />
+                      </td>
+                      <td className="hidden px-5 py-3.5 text-xs text-neutral-400 xl:table-cell">
                         {new Date(tenant.createdAt).toLocaleDateString("es-ES")}
                       </td>
                       <td className="px-5 py-3.5">

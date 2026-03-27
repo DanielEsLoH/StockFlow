@@ -733,6 +733,9 @@ export class SystemAdminService {
           _count: {
             select: { users: true },
           },
+          subscription: {
+            select: { endDate: true, status: true },
+          },
         },
         skip,
         take: limit,
@@ -754,6 +757,8 @@ export class SystemAdminService {
         status: tenant.status,
         plan: tenant.plan,
         userCount: tenant._count.users,
+        subscriptionEndDate: tenant.subscription?.endDate ?? null,
+        subscriptionStatus: tenant.subscription?.status ?? null,
         createdAt: tenant.createdAt,
         updatedAt: tenant.updatedAt,
       })),

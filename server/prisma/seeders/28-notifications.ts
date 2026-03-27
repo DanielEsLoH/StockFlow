@@ -147,6 +147,59 @@ export async function seedNotifications(
     }
 
     console.log(`   ✅ ${sysAdminActions.length} System Admin Audit Logs created`);
+
+    // ========================================================================
+    // System Admin Notifications (20+ — ALL 8 types covered)
+    // ========================================================================
+    console.log('🔔 Creating System Admin Notifications...');
+
+    const adminNotifications = [
+      // NEW_USER_REGISTRATION (5)
+      { type: 'NEW_USER_REGISTRATION', title: 'Nuevo usuario registrado', message: 'admin@tienda-demo.com se registró en Tienda Demo', link: '/system-admin/users', daysAgo: 0, read: false },
+      { type: 'NEW_USER_REGISTRATION', title: 'Nuevo usuario registrado', message: 'admin@distribuidoranacional.com se registró en Distribuidora Nacional', link: '/system-admin/users', daysAgo: 1, read: true },
+      { type: 'NEW_USER_REGISTRATION', title: 'Nuevo usuario registrado', message: 'admin@nuevonegocio.com se registró en Nuevo Negocio', link: '/system-admin/users', daysAgo: 3, read: true },
+      { type: 'NEW_USER_REGISTRATION', title: 'Nuevo usuario registrado', message: 'admin@papeleriacentral.com se registró en Papelería Central', link: '/system-admin/users', daysAgo: 5, read: true },
+      { type: 'NEW_USER_REGISTRATION', title: 'Nuevo usuario pendiente', message: 'empleado.nuevo@email.com requiere aprobación para Tienda Demo', link: '/system-admin/users', daysAgo: 0, read: false },
+      // SUBSCRIPTION_CHANGE (3)
+      { type: 'SUBSCRIPTION_CHANGE', title: 'Cambio de suscripción', message: 'Tienda Demo cambió de PYME a PRO', link: '/system-admin/tenants', daysAgo: 15, read: true },
+      { type: 'SUBSCRIPTION_CHANGE', title: 'Cambio de suscripción', message: 'Distribuidora Nacional activó plan PLUS', link: '/system-admin/tenants', daysAgo: 10, read: true },
+      { type: 'SUBSCRIPTION_CHANGE', title: 'Nueva suscripción', message: 'Papelería Central activó plan PYME', link: '/system-admin/tenants', daysAgo: 7, read: true },
+      // PLAN_UPGRADE (2)
+      { type: 'PLAN_UPGRADE', title: 'Upgrade de plan', message: 'Tienda Demo pasó de PYME a PRO — aumento de usuarios y bodegas', link: '/system-admin/tenants', daysAgo: 15, read: true },
+      { type: 'PLAN_UPGRADE', title: 'Upgrade de plan', message: 'Distribuidora Nacional pasó de PRO a PLUS', link: '/system-admin/tenants', daysAgo: 10, read: true },
+      // PLAN_DOWNGRADE (1)
+      { type: 'PLAN_DOWNGRADE', title: 'Downgrade de plan', message: 'Test Empresa redujo de PRO a EMPRENDEDOR', link: '/system-admin/tenants', daysAgo: 30, read: true },
+      // PLAN_SUSPENDED (2)
+      { type: 'PLAN_SUSPENDED', title: 'Plan suspendido', message: 'Test Empresa fue suspendida por impago — 3 intentos fallidos', link: '/system-admin/tenants', daysAgo: 25, read: true },
+      { type: 'PLAN_SUSPENDED', title: 'Plan suspendido', message: 'Empresa Temporal suspendida — periodo de gracia vencido', link: '/system-admin/tenants', daysAgo: 20, read: true },
+      // PLAN_REACTIVATED (1)
+      { type: 'PLAN_REACTIVATED', title: 'Plan reactivado', message: 'Test Empresa fue reactivada — pago procesado exitosamente', link: '/system-admin/tenants', daysAgo: 22, read: true },
+      // USER_SUSPENDED (2)
+      { type: 'USER_SUSPENDED', title: 'Usuario suspendido', message: 'usuario.suspendido@tienda-demo.com fue suspendido — inactividad', link: '/system-admin/users', daysAgo: 12, read: true },
+      { type: 'USER_SUSPENDED', title: 'Usuario suspendido', message: 'test.usuario@email.com fue suspendido por el admin del tenant', link: '/system-admin/users', daysAgo: 8, read: false },
+      // SYSTEM_ALERT (4)
+      { type: 'SYSTEM_ALERT', title: 'Alerta del sistema', message: 'Base de datos alcanzó 80% de capacidad — considerar escalamiento', link: null, daysAgo: 2, read: false },
+      { type: 'SYSTEM_ALERT', title: 'Mantenimiento completado', message: 'Migración de base de datos completada exitosamente — 0 errores', link: null, daysAgo: 5, read: true },
+      { type: 'SYSTEM_ALERT', title: 'Alerta de seguridad', message: '3 intentos fallidos de login al panel de admin desde IP 45.33.xx.xx', link: null, daysAgo: 1, read: false },
+      { type: 'SYSTEM_ALERT', title: 'Certificado SSL', message: 'El certificado SSL de stockflow.com.co se renueva en 15 días', link: null, daysAgo: 0, read: false },
+    ];
+
+    for (const notif of adminNotifications) {
+      await prisma.systemAdminNotification.create({
+        data: {
+          adminId: superAdmin.id,
+          type: notif.type as any,
+          title: notif.title,
+          message: notif.message,
+          read: notif.read,
+          readAt: notif.read ? daysAgo(notif.daysAgo) : null,
+          link: notif.link,
+          createdAt: daysAgo(notif.daysAgo),
+        },
+      });
+    }
+
+    console.log(`   ✅ ${adminNotifications.length} System Admin Notifications created (8 types)`);
   }
 
   // ============================================================================

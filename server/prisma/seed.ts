@@ -96,7 +96,7 @@ async function main() {
 
   // ── Summary ──
   console.log('\n══════════════════════════════════════════════════════');
-  console.log('📊 FULL SEED COMPLETED — All 63 models seeded');
+  console.log('📊 FULL SEED COMPLETED — All 65 models seeded');
   console.log('══════════════════════════════════════════════════════');
   console.log('\n🔑 ACCESS CREDENTIALS:');
   console.log('──────────────────────────────────────────────────────');
@@ -113,7 +113,7 @@ async function main() {
   console.log('    contador@papeleriacentral.com / password123 (CONTADOR)');
   console.log('──────────────────────────────────────────────────────');
   console.log('  System Admin:');
-  console.log(`    ${process.env.SYSTEM_ADMIN_EMAIL || 'superadmin@stockflow.com'} / ${process.env.SYSTEM_ADMIN_PASSWORD || 'admin123!'}`);
+  console.log(`    ${process.env.SYSTEM_ADMIN_EMAIL || 'daniel.esloh@gmail.com'} / ${process.env.SYSTEM_ADMIN_PASSWORD || 'Picema82*'}`);
   console.log('══════════════════════════════════════════════════════');
 
   console.log('\n🎉 FULL SEED COMPLETED');

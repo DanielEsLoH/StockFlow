@@ -5,9 +5,16 @@ import type { PrismaClient } from '@prisma/client';
  * Covers all 63 models in the schema.
  */
 export async function cleanup(prisma: PrismaClient): Promise<void> {
-  console.log('🗑️  Cleaning existing data (all 63 models)...');
+  console.log('🗑️  Cleaning existing data (all 65 models)...');
 
   // --- Leaf / child tables first ---
+
+  // Offline invoicing
+  await prisma.invoiceNumberReservation.deleteMany();
+
+  // Physical Inventory
+  await prisma.physicalCountItem.deleteMany();
+  await prisma.physicalInventoryCount.deleteMany();
 
   // Integrations
   await prisma.syncLog.deleteMany();
@@ -109,8 +116,9 @@ export async function cleanup(prisma: PrismaClient): Promise<void> {
   await prisma.tenant.deleteMany();
 
   // System Admins
+  await prisma.systemAdminNotification.deleteMany();
   await prisma.systemAdminAuditLog.deleteMany();
   await prisma.systemAdmin.deleteMany();
 
-  console.log('   ✅ All data cleaned (63 models)');
+  console.log('   ✅ All data cleaned (65 models)');
 }

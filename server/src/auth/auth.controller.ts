@@ -131,6 +131,31 @@ export class AuthController {
   }
 
   /**
+   * Returns tenant configuration for offline caching.
+   * Includes tenant info and last invoice number for consecutive pre-assignment.
+   */
+  @Get('tenant/offline-config')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get tenant config for offline caching',
+    description:
+      'Returns tenant configuration needed for offline invoice creation.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tenant offline config retrieved successfully',
+  })
+  async getTenantOfflineConfig(
+    @CurrentUser() user: CurrentUserContext,
+  ) {
+    this.logger.log(
+      `Fetching offline tenant config for user: ${user.email}`,
+    );
+    return this.authService.getTenantOfflineConfig(user.userId);
+  }
+
+  /**
    * Registers a new user in the system
    *
    * Rate limit: 3 requests per hour per IP (strict for registration)

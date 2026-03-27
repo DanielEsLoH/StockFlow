@@ -440,6 +440,7 @@ model Tenant {
   syncLogs                SyncLog[]
   physicalCounts          PhysicalInventoryCount[]
   physicalCountItems      PhysicalCountItem[]
+  invoiceNumberReservations InvoiceNumberReservation[]
 
   @@map("tenants")
 }
@@ -737,6 +738,31 @@ model Invoice {
   @@index([tenantId, source])
   @@index([warehouseId])
   @@map("invoices")
+}
+
+model InvoiceNumberReservation {
+  id            String                       @id @default(cuid())
+  tenantId      String                       @map("tenant_id")
+  invoiceNumber String                       @map("invoice_number")
+  deviceId      String                       @map("device_id")
+  status        InvoiceNumberReservationStatus @default(RESERVED)
+  reservedAt    DateTime                     @default(now()) @map("reserved_at")
+  expiresAt     DateTime                     @map("expires_at")
+  usedAt        DateTime?                    @map("used_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId, status])
+  @@index([tenantId, deviceId])
+  @@index([expiresAt])
+  @@map("invoice_number_reservations")
+}
+
+enum InvoiceNumberReservationStatus {
+  RESERVED
+  USED
+  EXPIRED
 }
 
 model InvoiceItem {

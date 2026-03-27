@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import {
   Invoice,
   InvoiceItem,
@@ -1913,6 +1914,180 @@ export class InvoicesService {
    *
    * @returns Generated invoice number
    */
+  /**
+   * Reserves a block of invoice numbers for offline use.
+   * Numbers are marked as RESERVED and expire after 24 hours.
+   *
+   * @param count - Number of consecutive numbers to reserve (max 50)
+   * @param deviceId - Unique identifier for the device
+   * @param userId - User requesting the reservation
+   * @returns Reserved numbers and expiration time
+   */
+  async reserveInvoiceNumbers(
+    count: number,
+    deviceId: string,
+    userId: string,
+  ) {
+    const tenantId = this.tenantContext.requireTenantId();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+    this.logger.debug(
+      `Reserving ${count} invoice numbers for tenant ${tenantId}, device ${deviceId}`,
+    );
+
+    // Generate numbers in a transaction to prevent race conditions
+    return this.prisma.$transaction(async (tx) => {
+      // Get the highest existing number (from invoices + reservations)
+      const [lastInvoice, lastReservation] = await Promise.all([
+        tx.invoice.findFirst({
+          where: { tenantId, invoiceNumber: { startsWith: 'INV-' } },
+          orderBy: { invoiceNumber: 'desc' },
+          select: { invoiceNumber: true },
+        }),
+        tx.invoiceNumberReservation.findFirst({
+          where: { tenantId, invoiceNumber: { startsWith: 'INV-' } },
+          orderBy: { invoiceNumber: 'desc' },
+          select: { invoiceNumber: true },
+        }),
+      ]);
+
+      // Parse the highest number from both sources
+      const parseNum = (inv: string | undefined | null): number => {
+        if (!inv) return 0;
+        const match = inv.match(/INV-(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+
+      const lastNum = Math.max(
+        parseNum(lastInvoice?.invoiceNumber),
+        parseNum(lastReservation?.invoiceNumber),
+      );
+
+      // Generate the numbers
+      const numbers: string[] = [];
+
+      for (let i = 1; i <= count; i++) {
+        const num = `INV-${(lastNum + i).toString().padStart(5, '0')}`;
+        numbers.push(num);
+      }
+
+      // Bulk create reservations
+      await tx.invoiceNumberReservation.createMany({
+        data: numbers.map((num) => ({
+          tenantId,
+          invoiceNumber: num,
+          deviceId,
+          expiresAt,
+        })),
+      });
+
+      this.logger.log(
+        `Reserved ${count} numbers: ${numbers[0]} to ${numbers[numbers.length - 1]}`,
+      );
+
+      return {
+        numbers,
+        expiresAt: expiresAt.toISOString(),
+        deviceId,
+      };
+    });
+  }
+
+  /**
+   * Processes a batch of offline-created invoices.
+   * Validates each invoice, creates them in order, and returns results.
+   *
+   * @param invoices - Array of invoice DTOs from offline queue
+   * @param userId - User who created the invoices offline
+   * @returns Sync results with status per invoice
+   */
+  async batchSyncOfflineInvoices(
+    invoices: Array<CreateInvoiceDto & { offlineInvoiceNumber?: string }>,
+    userId: string,
+  ) {
+    const tenantId = this.tenantContext.requireTenantId();
+    const results: Array<{
+      index: number;
+      invoiceNumber: string;
+      status: 'synced' | 'conflict' | 'error';
+      serverInvoiceId?: string;
+      error?: string;
+      conflictDetails?: string;
+    }> = [];
+
+    this.logger.log(
+      `Batch sync: processing ${invoices.length} offline invoices for tenant ${tenantId}`,
+    );
+
+    for (let i = 0; i < invoices.length; i++) {
+      const { offlineInvoiceNumber, ...dto } = invoices[i];
+      try {
+        // Mark the reserved number as used (if it was reserved)
+        if (offlineInvoiceNumber) {
+          await this.prisma.invoiceNumberReservation.updateMany({
+            where: {
+              tenantId,
+              invoiceNumber: offlineInvoiceNumber,
+              status: 'RESERVED',
+            },
+            data: { status: 'USED', usedAt: new Date() },
+          });
+        }
+
+        // Create the invoice using the existing create method
+        const invoice = await this.create(dto, userId);
+
+        results.push({
+          index: i,
+          invoiceNumber: invoice.invoiceNumber,
+          status: 'synced',
+          serverInvoiceId: invoice.id,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Unknown error';
+        this.logger.warn(
+          `Batch sync: invoice ${i} failed: ${message}`,
+        );
+        results.push({
+          index: i,
+          invoiceNumber: offlineInvoiceNumber ?? `offline-${i}`,
+          status: 'error',
+          error: message,
+        });
+      }
+    }
+
+    const synced = results.filter((r) => r.status === 'synced').length;
+    const failed = results.filter((r) => r.status !== 'synced').length;
+    this.logger.log(`Batch sync complete: ${synced} synced, ${failed} failed`);
+
+    return { results, synced, failed, total: invoices.length };
+  }
+
+  /**
+   * Cleans up expired invoice number reservations.
+   * Runs every hour automatically.
+   */
+  @Cron('0 * * * *', { name: 'cleanup-expired-reservations' })
+  async cleanupExpiredReservations(): Promise<number> {
+    const result = await this.prisma.invoiceNumberReservation.updateMany({
+      where: {
+        status: 'RESERVED',
+        expiresAt: { lt: new Date() },
+      },
+      data: { status: 'EXPIRED' },
+    });
+
+    if (result.count > 0) {
+      this.logger.log(
+        `Cleaned up ${result.count} expired invoice number reservations`,
+      );
+    }
+
+    return result.count;
+  }
+
   async generateInvoiceNumber(tx?: Prisma.TransactionClient): Promise<string> {
     const tenantId = this.tenantContext.requireTenantId();
     const client = tx ?? this.prisma;

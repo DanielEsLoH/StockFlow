@@ -159,6 +159,21 @@ export class WarehousesController {
    * @example
    * GET /warehouses/:id
    */
+  @Get('offline-bundle')
+  @ApiOperation({
+    summary: 'Get all warehouses for offline caching',
+    description:
+      'Returns all active warehouses for offline storage.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Warehouse bundle retrieved successfully',
+  })
+  async getOfflineBundle() {
+    this.logger.log('Fetching offline warehouse bundle');
+    return this.warehousesService.getOfflineBundle();
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get warehouse by ID',

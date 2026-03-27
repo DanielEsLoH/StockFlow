@@ -185,6 +185,25 @@ export class ProductsController {
   }
 
   /**
+   * Returns all active products for offline caching.
+   * Optimized: returns only fields needed for offline invoice creation.
+   */
+  @Get('offline-bundle')
+  @ApiOperation({
+    summary: 'Get all products for offline caching',
+    description:
+      'Returns all active products with reduced fields for offline storage in IndexedDB.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Product bundle retrieved successfully',
+  })
+  async getOfflineBundle() {
+    this.logger.log('Fetching offline product bundle');
+    return this.productsService.getOfflineBundle();
+  }
+
+  /**
    * Gets a product by ID.
    */
   @Get(':id')

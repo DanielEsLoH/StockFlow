@@ -89,6 +89,53 @@ export class CustomersService {
   }
 
   /**
+   * Returns all active customers for offline caching.
+   * Selects only fields needed for offline invoice creation (perf-optimize-database).
+   */
+  async getOfflineBundle() {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(
+      `Fetching offline customer bundle for tenant ${tenantId}`,
+    );
+
+    const customers = await this.prisma.customer.findMany({
+      where: { tenantId, status: 'ACTIVE' },
+      select: {
+        id: true,
+        tenantId: true,
+        name: true,
+        email: true,
+        phone: true,
+        documentType: true,
+        documentNumber: true,
+        dv: true,
+        address: true,
+        city: true,
+        state: true,
+        businessName: true,
+        taxId: true,
+        creditLimit: true,
+        status: true,
+        updatedAt: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    const data = customers.map((c) => ({
+      ...c,
+      creditLimit: c.creditLimit ? Number(c.creditLimit) : null,
+      updatedAt: c.updatedAt.toISOString(),
+    }));
+
+    return {
+      data,
+      syncTimestamp: new Date().toISOString(),
+      totalCount: data.length,
+    };
+  }
+
+  /**
    * Lists all customers within the current tenant with pagination.
    *
    * @param page - Page number (1-indexed)

@@ -158,6 +158,68 @@ export class InvoicesController {
   }
 
   /**
+   * Reserves a block of invoice numbers for offline use.
+   * Numbers expire after 24h if not used.
+   */
+  @Post('reserve-numbers')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Reserve invoice numbers for offline use',
+    description:
+      'Reserves a block of consecutive invoice numbers for a device to use offline. Max 50 per request. Numbers expire after 24h.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        count: { type: 'number', minimum: 1, maximum: 50, default: 10 },
+        deviceId: { type: 'string' },
+      },
+      required: ['deviceId'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Numbers reserved successfully' })
+  async reserveNumbers(
+    @Body() body: { count?: number; deviceId: string },
+    @CurrentUser() user: RequestUser,
+  ) {
+    const count = Math.min(50, Math.max(1, body.count ?? 10));
+    this.logger.log(
+      `Reserving ${count} invoice numbers for device ${body.deviceId}`,
+    );
+    return this.invoicesService.reserveInvoiceNumbers(
+      count,
+      body.deviceId,
+      user.userId,
+    );
+  }
+
+  /**
+   * Batch sync offline-created invoices.
+   * Processes multiple invoices in a single transaction.
+   */
+  @Post('batch-sync')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Batch sync offline invoices',
+    description:
+      'Receives an array of invoices created offline and processes them in order. Returns sync results with status per invoice.',
+  })
+  @ApiResponse({ status: 200, description: 'Batch sync completed' })
+  async batchSync(
+    @Body() body: { invoices: CreateInvoiceDto[] },
+    @CurrentUser() user: RequestUser,
+  ) {
+    this.logger.log(
+      `Batch sync: ${body.invoices.length} invoices from user ${user.userId}`,
+    );
+    return this.invoicesService.batchSyncOfflineInvoices(
+      body.invoices,
+      user.userId,
+    );
+  }
+
+  /**
    * Gets an invoice by ID.
    * Includes all items, customer, and user relations.
    *

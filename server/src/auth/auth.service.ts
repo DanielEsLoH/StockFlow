@@ -949,6 +949,52 @@ export class AuthService {
    * @throws NotFoundException if user is not found
    * @throws ForbiddenException if tenant or user is suspended/inactive
    */
+  /**
+   * Returns tenant configuration for offline caching.
+   * Includes basic tenant info and last invoice number for consecutive assignment.
+   */
+  async getTenantOfflineConfig(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        tenantId: true,
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            defaultCurrency: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get the last invoice number for this tenant
+    const lastInvoice = await this.prisma.invoice.findFirst({
+      where: { tenantId: user.tenantId },
+      orderBy: { createdAt: 'desc' },
+      select: { invoiceNumber: true },
+    });
+
+    return {
+      data: {
+        tenantId: user.tenant.id,
+        name: user.tenant.name,
+        email: user.tenant.email,
+        phone: user.tenant.phone,
+        defaultCurrency: user.tenant.defaultCurrency,
+        lastInvoiceNumber: lastInvoice?.invoiceNumber ?? null,
+        updatedAt: new Date().toISOString(),
+      },
+      syncTimestamp: new Date().toISOString(),
+    };
+  }
+
   async getMe(userId: string): Promise<AuthResponse> {
     this.logger.debug(`Fetching user info for: ${userId}`);
 

@@ -209,6 +209,24 @@ export class CustomersController {
   }
 
   /**
+   * Returns all active customers for offline caching.
+   */
+  @Get('offline-bundle')
+  @ApiOperation({
+    summary: 'Get all customers for offline caching',
+    description:
+      'Returns all active customers with fields needed for offline invoice creation.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Customer bundle retrieved successfully',
+  })
+  async getOfflineBundle() {
+    this.logger.log('Fetching offline customer bundle');
+    return this.customersService.getOfflineBundle();
+  }
+
+  /**
    * Gets a customer by ID.
    *
    * @param id - Customer ID

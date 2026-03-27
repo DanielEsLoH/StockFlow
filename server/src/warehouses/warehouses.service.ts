@@ -115,6 +115,38 @@ export class WarehousesService {
   }
 
   /**
+   * Returns all active warehouses for offline caching.
+   */
+  async getOfflineBundle() {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(
+      `Fetching offline warehouse bundle for tenant ${tenantId}`,
+    );
+
+    const warehouses = await this.prisma.warehouse.findMany({
+      where: { tenantId, status: 'ACTIVE' },
+      select: {
+        id: true,
+        tenantId: true,
+        name: true,
+        code: true,
+        address: true,
+        city: true,
+        isMain: true,
+        status: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    return {
+      data: warehouses,
+      syncTimestamp: new Date().toISOString(),
+      totalCount: warehouses.length,
+    };
+  }
+
+  /**
    * Lists all warehouses within the current tenant with pagination.
    *
    * @param page - Page number (1-indexed)

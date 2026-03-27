@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { InvoicesController } from './invoices.controller';
 import { InvoicesService } from './invoices.service';
 import { PaymentsModule } from '../payments';
@@ -34,6 +35,7 @@ import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
  */
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     forwardRef(() => PaymentsModule),
     DianModule,
     AccountingModule,

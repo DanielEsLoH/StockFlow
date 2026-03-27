@@ -94,6 +94,58 @@ export class ProductsService {
   ) {}
 
   /**
+   * Returns all active products for offline caching.
+   * Selects only fields needed for offline invoice creation (perf-optimize-database).
+   *
+   * @returns Bundle with products array, sync timestamp, and total count
+   */
+  async getOfflineBundle() {
+    const tenantId = this.tenantContext.requireTenantId();
+
+    this.logger.debug(`Fetching offline product bundle for tenant ${tenantId}`);
+
+    const products = await this.prisma.product.findMany({
+      where: { tenantId, status: 'ACTIVE' },
+      select: {
+        id: true,
+        tenantId: true,
+        categoryId: true,
+        sku: true,
+        name: true,
+        description: true,
+        costPrice: true,
+        salePrice: true,
+        taxRate: true,
+        taxCategory: true,
+        stock: true,
+        minStock: true,
+        barcode: true,
+        brand: true,
+        unit: true,
+        imageUrl: true,
+        status: true,
+        updatedAt: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    // Convert Decimals to numbers for JSON serialization
+    const data = products.map((p) => ({
+      ...p,
+      costPrice: Number(p.costPrice),
+      salePrice: Number(p.salePrice),
+      taxRate: Number(p.taxRate),
+      updatedAt: p.updatedAt.toISOString(),
+    }));
+
+    return {
+      data,
+      syncTimestamp: new Date().toISOString(),
+      totalCount: data.length,
+    };
+  }
+
+  /**
    * Lists all products within the current tenant with filtering and pagination.
    * When warehouseId is provided, returns warehouse-specific stock instead of global stock.
    *

@@ -92,10 +92,15 @@ export default defineConfig({
       workbox: {
         // Precache app shell
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+        // SPA routing offline — serve index.html for all navigation requests
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api\//, /^\/sw\.js$/],
+        // Remove old caches from previous SW versions
+        cleanupOutdatedCaches: true,
         // Runtime caching strategies
         runtimeCaching: [
           {
-            // API calls — network first with cache fallback
+            // API calls — network first with cache fallback (5s timeout for slow connections)
             urlPattern: /^https?:\/\/.*\/api\/.*/i,
             handler: "NetworkFirst",
             options: {
@@ -104,7 +109,7 @@ export default defineConfig({
                 maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24, // 24 hours
               },
-              networkTimeoutSeconds: 10,
+              networkTimeoutSeconds: 5,
               cacheableResponse: {
                 statuses: [0, 200],
               },

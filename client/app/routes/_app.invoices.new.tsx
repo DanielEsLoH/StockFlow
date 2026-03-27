@@ -22,6 +22,11 @@ import { useProducts } from "~/hooks/useProducts";
 import { useCategories } from "~/hooks/useCategories";
 import { useWarehouses } from "~/hooks/useWarehouses";
 import { useAuthStore } from "~/stores/auth.store";
+import { useNetworkStatus } from "~/hooks/useNetworkStatus";
+import { createOfflineInvoice } from "~/lib/offline/create-offline-invoice";
+import { queueInvoice } from "~/lib/offline/invoice-queue";
+import { autoRefill } from "~/lib/offline/number-pool";
+import type { OfflineProduct } from "~/lib/offline/schemas";
 import { usePOSCart } from "~/hooks/usePOSCart";
 import { Button } from "~/components/ui/Button";
 import { Badge } from "~/components/ui/Badge";
@@ -124,6 +129,16 @@ export default function POSPage() {
     canCheckout,
   } = usePOSCart();
 
+  // Network status for offline fallback
+  const { isEffectivelyOffline } = useNetworkStatus();
+
+  // Auto-refill number pool when online
+  useEffect(() => {
+    if (!isEffectivelyOffline) {
+      void autoRefill();
+    }
+  }, [isEffectivelyOffline]);
+
   // Auth store — check if user has an assigned warehouse
   const authUser = useAuthStore((state) => state.user);
   const userWarehouseId = authUser?.warehouseId ?? null;
@@ -188,9 +203,9 @@ export default function POSPage() {
     return customers.find((c) => c.id === selectedCustomerId) ?? null;
   }, [selectedCustomerId, customers]);
 
-  // Handle checkout
+  // Handle checkout — online or offline
   const handleCheckout = useCallback(
-    (status: "PENDING" | "PAID") => {
+    async (status: "PENDING" | "PAID") => {
       if (!canCheckout) {
         if (!selectedCustomerId) {
           toast.error("Selecciona un cliente para continuar");
@@ -206,7 +221,74 @@ export default function POSPage() {
       const cartSnapshot = [...cart];
       const totalsSnapshot = { ...totals };
       const customerSnapshot = selectedCustomer;
+      const tenantId = authUser?.tenantId;
 
+      // --- OFFLINE PATH ---
+      if (isEffectivelyOffline && tenantId) {
+        const offlineInvoice = createOfflineInvoice({
+          tenantId,
+          customerId: selectedCustomerId ?? null,
+          customerName: selectedCustomer?.name ?? null,
+          source: invoiceMode === "POS" ? "POS" : "MANUAL",
+          warehouseId: selectedWarehouseId ?? null,
+          notes: notes || null,
+          currency: "COP",
+          items: cart.map((item) => ({
+            product: {
+              id: item.productId,
+              tenantId,
+              categoryId: null,
+              sku: item.product.sku ?? "",
+              name: item.product.name,
+              description: null,
+              costPrice: 0,
+              salePrice: item.unitPrice,
+              taxRate: isExportInvoice ? 0 : item.tax,
+              taxCategory: "GRAVADO_19",
+              stock: 0,
+              minStock: 0,
+              barcode: null,
+              brand: null,
+              unit: "unit",
+              imageUrl: null,
+              status: "ACTIVE",
+              updatedAt: new Date().toISOString(),
+            } satisfies OfflineProduct,
+            quantity: item.quantity,
+            discount: item.discount,
+          })),
+        });
+
+        if (!offlineInvoice) {
+          toast.error("No hay numeros de factura disponibles offline. Conectate a internet para reservar mas.");
+          setProcessing(false);
+          return;
+        }
+
+        await queueInvoice(offlineInvoice);
+
+        setLastInvoice({
+          invoiceNumber: offlineInvoice.invoiceNumber,
+          items: cartSnapshot,
+          totals: totalsSnapshot,
+          customer: customerSnapshot,
+          payments:
+            status === "PAID"
+              ? [{ method: "CASH", amount: totalsSnapshot.total }]
+              : [],
+        });
+
+        resetState();
+        setProcessing(false);
+        toast.success(`Factura ${offlineInvoice.invoiceNumber} guardada offline — se sincronizara al reconectarse`);
+
+        if (status === "PAID") {
+          setShowTicketModal(true);
+        }
+        return;
+      }
+
+      // --- ONLINE PATH ---
       checkoutInvoice.mutate(
         {
           customerId: selectedCustomerId!,
@@ -258,6 +340,7 @@ export default function POSPage() {
       canCheckout,
       selectedCustomerId,
       selectedCustomer,
+      selectedWarehouseId,
       cart,
       totals,
       notes,
@@ -268,6 +351,8 @@ export default function POSPage() {
       checkoutInvoice,
       setProcessing,
       resetState,
+      isEffectivelyOffline,
+      authUser,
     ],
   );
 

@@ -7,9 +7,10 @@ interface NavItemProps {
   icon: React.ComponentType<{ className?: string }>;
   onClick?: () => void;
   compact?: boolean;
+  badge?: React.ReactNode;
 }
 
-export function NavItem({ name, href, icon: Icon, onClick, compact = true }: NavItemProps) {
+export function NavItem({ name, href, icon: Icon, onClick, compact = true, badge }: NavItemProps) {
   const location = useLocation();
   const isActive = location.pathname === href || location.pathname.startsWith(`${href}/`);
 
@@ -37,12 +38,13 @@ export function NavItem({ name, href, icon: Icon, onClick, compact = true }: Nav
       />
       <span
         className={cn(
-          "text-sm whitespace-nowrap",
+          "text-sm whitespace-nowrap flex-1",
           isActive ? "font-medium" : "font-normal",
         )}
       >
         {name}
       </span>
+      {badge ? badge : null}
     </NavLink>
   );
 }

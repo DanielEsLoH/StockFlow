@@ -59,6 +59,11 @@ import type {
 import { useUrlFilters } from "~/hooks/useUrlFilters";
 import { useListPageHotkeys } from "~/hooks/useListPageHotkeys";
 import { useCustomerOptions } from "~/hooks/useCustomerOptions";
+import { SyncPanel } from "~/components/offline/SyncPanel";
+import { useOfflineSync } from "~/hooks/useOfflineSync";
+import { getAllOfflineInvoices } from "~/lib/offline/invoice-queue";
+import { useAuthStore } from "~/stores/auth.store";
+import { useLiveQuery } from "dexie-react-hooks";
 
 // Meta for SEO - used by React Router
 export const meta: Route.MetaFunction = () => {
@@ -224,6 +229,15 @@ export default function InvoicesPage() {
 
   useListPageHotkeys({ createUrl: canCreateInvoices ? "/invoices/new" : undefined, onClearFilters: clearFilters });
 
+  // Offline sync
+  const { isSyncing, syncNow } = useOfflineSync();
+  const tenant = useAuthStore((s) => s.tenant);
+  const offlineInvoices = useLiveQuery(
+    () => (tenant?.id ? getAllOfflineInvoices(tenant.id) : Promise.resolve([])),
+    [tenant?.id],
+    [],
+  );
+
   // Queries
   const { data: invoicesData, isLoading, isError } = useInvoices(filters);
   const { data: stats } = useInvoiceStats(filters.source);
@@ -342,6 +356,17 @@ export default function InvoicesPage() {
           />
         </div>
       </PageSection>
+
+      {/* Offline Sync Panel */}
+      {offlineInvoices.length > 0 ? (
+        <PageSection>
+          <SyncPanel
+            invoices={offlineInvoices}
+            onSyncNow={syncNow}
+            isSyncing={isSyncing}
+          />
+        </PageSection>
+      ) : null}
 
       {/* Search and Filters */}
       <PageSection>

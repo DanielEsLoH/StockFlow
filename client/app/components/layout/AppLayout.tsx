@@ -15,6 +15,7 @@ import { Header } from "./Header";
 import { OfflineIndicator } from "~/components/pwa/OfflineIndicator";
 import { UpdateAvailable } from "~/components/pwa/UpdateAvailable";
 import { InstallPrompt } from "~/components/pwa/InstallPrompt";
+import { useOfflineSync } from "~/hooks/useOfflineSync";
 
 // Media query breakpoint for lg (1024px)
 const DESKTOP_BREAKPOINT = 1024;
@@ -31,6 +32,9 @@ const bottomNavItems = [
 export function AppLayout() {
   const { sidebarCollapsed, setMobileSidebarOpen } = useUIStore();
   const [isMounted, setIsMounted] = useState(false);
+
+  // Start offline data sync (products, customers, warehouses)
+  useOfflineSync();
 
   useEffect(() => {
     setIsMounted(true);

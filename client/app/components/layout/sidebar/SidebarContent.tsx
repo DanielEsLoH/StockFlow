@@ -16,6 +16,7 @@ import { dashboardItem, navSections } from "./sidebar-nav-data";
 import { NavItem } from "./NavItem";
 import { SectionLabel } from "./SectionLabel";
 import { UserSection } from "./UserSection";
+import { OfflineBadge } from "~/components/offline/OfflineBadge";
 
 interface SidebarContentProps {
   onToggleCollapse?: () => void;
@@ -145,6 +146,7 @@ export function SidebarContent({
                 icon={item.icon}
                 onClick={onClose}
                 compact={!isMobile}
+                badge={item.href === "/invoices" ? <OfflineBadge /> : undefined}
               />
             ))}
           </div>

@@ -1,6 +1,10 @@
 import axios, { type AxiosInstance } from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const _API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+// Ensure the URL always includes the /v1 prefix required by the NestJS global prefix
+const API_URL = _API_BASE.replace(/\/+$/, "").endsWith("/v1")
+  ? _API_BASE.replace(/\/+$/, "")
+  : `${_API_BASE.replace(/\/+$/, "")}/v1`;
 
 // Separate token storage for system admin (isolated from tenant user tokens)
 const SYSTEM_ADMIN_ACCESS_TOKEN_KEY = "system_admin_access_token";

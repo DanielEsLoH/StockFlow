@@ -54,7 +54,7 @@ WORKDIR /app
 
 # Build arguments for Vite environment variables
 # These are embedded into the client bundle at build time
-ARG VITE_API_URL=/api
+ARG VITE_API_URL=/api/v1
 
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules

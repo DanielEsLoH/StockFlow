@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 import compression from 'compression';
@@ -40,6 +40,7 @@ async function bootstrap() {
       process.env.FRONTEND_URL,
       'https://www.stockflow.com.co',
       'https://stockflow.com.co',
+      'https://api.stockflow.com.co',
       'http://localhost:3001',
       'http://localhost:5173',
       'http://localhost',
@@ -145,6 +146,24 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Global prefix /v1 for all routes
+  // Excluded routes bypass versioning because they are called by external systems
+  // with fixed URLs that cannot be changed:
+  //   - /health* : load balancers and monitoring tools
+  //   - /webhooks* : payment providers and external services use hardcoded URLs
+  //   - /auth/google/callback, /auth/github/callback : registered in OAuth consoles
+  //   - /api/docs : Swagger UI (registered directly via Express, not NestJS routing)
+  app.setGlobalPrefix('v1', {
+    exclude: [
+      { path: 'health', method: RequestMethod.ALL },
+      { path: 'health/:check', method: RequestMethod.ALL },
+      { path: 'webhooks', method: RequestMethod.ALL },
+      { path: 'webhooks/:provider', method: RequestMethod.ALL },
+      { path: 'auth/google/callback', method: RequestMethod.ALL },
+      { path: 'auth/github/callback', method: RequestMethod.ALL },
+    ],
+  });
 
   // Enable graceful shutdown hooks for clean resource cleanup
   // Handles SIGTERM/SIGINT signals for proper container orchestration

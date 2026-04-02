@@ -200,8 +200,8 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        # Vite embeds this at build time - use /api to go through nginx proxy
-        VITE_API_URL: /api
+        # Vite embeds this at build time - use /api/v1 to go through nginx proxy
+        VITE_API_URL: /api/v1
     container_name: stockflow-client
     restart: unless-stopped
     ports:
@@ -217,7 +217,7 @@ services:
       API_URL: http://backend:3000
 
       # Public API URL for client-side requests
-      VITE_API_URL: ${VITE_API_URL:-/api}
+      VITE_API_URL: ${VITE_API_URL:-/api/v1}
     depends_on:
       backend:
         condition: service_healthy
